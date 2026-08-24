@@ -187,6 +187,7 @@ function counts() {
     awaitingResponse: g(
       "SELECT COUNT(*) n FROM message m LEFT JOIN response r ON r.message_id = m.id WHERE m.state = 'APPROVED' AND r.id IS NULL"),
     published: g("SELECT COUNT(*) n FROM message WHERE state = 'PUBLISHED'"),
+    rejected: g("SELECT COUNT(*) n FROM message WHERE state = 'REJECTED'"),
     total: g('SELECT COUNT(*) n FROM message'),
     visitors: g('SELECT COUNT(*) n FROM visitor'),
     today: g('SELECT COUNT(*) n FROM message WHERE submitted_at >= ?',

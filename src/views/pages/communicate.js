@@ -18,6 +18,54 @@ function stateLabel(s) {
 }
 
 /**
+ * The crossing dial. A bezel, a dark glass face with a faint grid, Earth at
+ * the lower left, Mars at the upper right, and the route between them as an
+ * arc. Static here; composer.js runs the packet along #xroute and lengthens
+ * #xtrail behind it.
+ */
+function crossingDial() {
+  const S = 320, C = 160;
+  const earth = [80, 232], mars = [236, 106];
+  const route = `M${earth[0]},${earth[1]} Q 96,112 ${mars[0]},${mars[1]}`;
+  const grid = [];
+  for (let i = -5; i <= 5; i++) {
+    const o = C + i * 26;
+    grid.push(`<line x1="${o}" y1="${C - 134}" x2="${o}" y2="${C + 134}" class="xdial-grid"/>`);
+    grid.push(`<line x1="${C - 134}" y1="${o}" x2="${C + 134}" y2="${o}" class="xdial-grid"/>`);
+  }
+  const screws = [[C, 22], [C + 138, C], [C, C + 138], [22, C]]
+    .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="4" class="xdial-screw"/>`).join('');
+  return `<svg class="xdial" viewBox="0 0 ${S} ${S}" role="img" aria-label="The message crossing from Earth to Mars">
+    <defs>
+      <radialGradient id="bezelGrad" cx="50%" cy="30%" r="80%">
+        <stop offset="0" stop-color="#3a3a40"/><stop offset="1" stop-color="#151518"/>
+      </radialGradient>
+      <radialGradient id="faceGrad" cx="50%" cy="38%" r="75%">
+        <stop offset="0" stop-color="#232327"/><stop offset="1" stop-color="#0b0b0d"/>
+      </radialGradient>
+      <clipPath id="faceClip"><circle cx="${C}" cy="${C}" r="134"/></clipPath>
+    </defs>
+    <circle cx="${C}" cy="${C}" r="158" class="xdial-bezel"/>
+    <circle cx="${C}" cy="${C}" r="150" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="3"/>
+    ${screws}
+    <circle cx="${C}" cy="${C}" r="134" class="xdial-face"/>
+    <g clip-path="url(#faceClip)">${grid.join('')}</g>
+    <circle cx="${C}" cy="${C}" r="118" class="xdial-ring"/>
+    <circle cx="${C}" cy="${C}" r="70" class="xdial-ring"/>
+    <path id="xroute" d="${route}" class="xdial-route"/>
+    <path id="xtrail" d="${route}" class="xdial-trail" stroke-dasharray="0 1000"/>
+    <line x1="${mars[0] - 44}" y1="${mars[1]}" x2="${mars[0] - 12}" y2="${mars[1]}" stroke="rgba(255,255,255,.2)" stroke-dasharray="2 3"/>
+    <circle cx="${mars[0]}" cy="${mars[1]}" r="12" class="xdial-mars-halo" style="transform-origin:${mars[0]}px ${mars[1]}px"/>
+    <circle cx="${mars[0]}" cy="${mars[1]}" r="9" class="xdial-mars"/>
+    <text x="${mars[0]}" y="${mars[1] - 20}" text-anchor="middle" class="xdial-label mars">Mars</text>
+    <circle cx="${earth[0]}" cy="${earth[1]}" r="7" class="xdial-earth"/>
+    <text x="${earth[0]}" y="${earth[1] + 22}" text-anchor="middle" class="xdial-label">Earth</text>
+    <circle id="xpacket" cx="${earth[0]}" cy="${earth[1]}" r="5" class="xdial-packet"/>
+    <text x="${C}" y="${C + 122}" class="xdial-word" id="xword">Sending</text>
+  </svg>`;
+}
+
+/**
  * The composer, the transit view, or the closed notice — whichever applies.
  * Shared so the landing page and /communicate cannot drift apart: there is one
  * writing surface on this site and it behaves identically wherever it appears.
@@ -32,14 +80,14 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
   // After the run the channel always closes -- there is nobody left to read
   // anything. Before it, closing is optional.
   const closed = (phase === 'COMPLETE' || (phase === 'PRE_LAUNCH' && HOLD_BEFORE_LAUNCH)) ? `
-    <div class="transit" style="text-align:left">
+    <div class="transit closed" style="text-align:left">
       <div class="state">CHANNEL CLOSED</div>
       ${phase === 'PRE_LAUNCH' ? `
         <div class="clock" id="countdown" data-opens="${esc(ctx.mission.opensAt)}">T−${String(ctx.mission.countdown.days).padStart(3, '0')}:${String(ctx.mission.countdown.hours).padStart(2, '0')}:${String(ctx.mission.countdown.minutes).padStart(2, '0')}:${String(ctx.mission.countdown.seconds).padStart(2, '0')}</div>
         <p class="note" style="margin-top:12px">There is nobody in the habitat to read this yet.
         The channel opens on ${esc(ctx.mission.start_date)} at 00:00 ${esc(ctx.mission.timezone)},
         and stays open for ${ctx.mission.totalDays} days.</p>
-        <p><a class="btn" href="/what">How it will work</a></p>`
+        <p><a class="btn" href="#what">How it will work</a></p>`
       : `
         <p class="note" style="margin-top:12px">The crew left the habitat on
         ${esc(ctx.mission.end_date)}. Nothing sent now would reach anyone.</p>
@@ -50,58 +98,41 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
       </div>
     </div>` : null;
 
-  const form = `
-  <form method="post" action="/communicate" id="${uid('composer')}" class="composer">
+  // `ghost` renders the same form without ids or a destination, invisible
+  // and inert, purely to hold the device at the size it has while writing:
+  // the transit view is laid over it, so pressing transmit changes what the
+  // box shows and nothing about the box.
+  const formHtml = (ghost = false) => `
+  <form ${ghost ? 'class="composer ghost" inert aria-hidden="true"' :
+    `method="post" action="/communicate" id="${uid('composer')}" class="composer"`}>
     <label class="f msgfield"><span class="sr-only">Message</span>
       <div class="msgbox">
-        <textarea name="body" id="${uid('body')}" maxlength="${MAX}" required
-          placeholder="Write to the crew. They will read this ${orbital.formatLightTime(g.lightSeconds)} from now, if the relay holds.">${esc(draft || '')}</textarea>
-        <span class="counter" id="${uid('count')}">0 / ${MAX}</span>
+        <textarea ${ghost ? '' : `name="body" id="${uid('body')}" required`} maxlength="${MAX}" rows="1"
+          placeholder="Type your message to the crew…">${ghost ? '' : esc(draft || '')}</textarea>
+        <span class="counter" ${ghost ? '' : `id="${uid('count')}"`}>0 / ${MAX}</span>
       </div>
     </label>
-    <div class="counter tags-note">CHOOSE UP TO 3 TAGS</div>
-    <div class="tags" id="${uid('tags')}">
-      ${TAGS.map((t) => `<label><input type="checkbox" name="tags" value="${t}"><span>${t}</span></label>`).join('')}
-    </div>
-    <hr>
-    <button type="submit" class="primary">Transmit to Mars</button>
-    <p class="note" style="margin-top:14px">Messages are read by mission control before they reach
-    the board. You will be able to send again once this one has arrived.</p>
+    <button type="${ghost ? 'button' : 'submit'}" class="primary">Send</button>
   </form>`;
+  const form = formHtml(false);
 
   const transitBlock = inFlight ? `
+    <div class="dev-stage">
+    ${formHtml(true)}
     <div class="transit transit-block"
          data-arrival="${esc(inFlight.arrival_at)}"
          data-departure="${esc(inFlight.submitted_at)}"
          data-light="${inFlight.light_seconds}">
-
-      <div class="state">Message in transit · Earth → Mars</div>
-
-      <!-- The crossing, drawn as its own thing rather than left to the plot.
-           Earth at one end, Mars at the other, and the packet actually
-           travelling the gap between them. -->
-      <div class="crossing" aria-hidden="true">
-        <div class="crossing-track">
-          <span class="body earth"></span>
-          <span class="trail" id="trail"></span>
-          <span class="packet" id="packet"></span>
-          <span class="body mars"></span>
-        </div>
-        <div class="crossing-labels"><span>Earth</span><span>Mars</span></div>
+      <div class="transit-read">
+        <div class="state"><span class="sr-only">Message in transit · </span>Sending · Earth → Mars ·
+          <b id="tpct">0%</b> of the crossing</div>
+        <div class="clock" id="tclock">--:--</div>
+        <div class="tbar"><i id="tbar" style="width:0%"></i></div>
+        <div class="honesty">Real crossing <b>${orbital.formatLightTime(inFlight.light_seconds)}</b>
+          at ${inFlight.distance_au.toFixed(3)} au — this compresses it.
+          <span class="sr-only">Arrives <span id="tarr">${esc(inFlight.arrival_at.slice(11, 19))} UTC</span></span></div>
       </div>
-
-      <div class="clock" id="tclock">--:--</div>
-      <div class="bar" style="height:8px"><i class="warn" id="tbar" style="width:0%"></i></div>
-      <div class="note" style="margin-top:10px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase">
-        <span id="tpct">0%</span> of the crossing · arrives
-        <span id="tarr">${esc(inFlight.arrival_at.slice(11, 19))} UTC</span>
-      </div>
-
-      <div class="honesty">
-        The real crossing would take <b>${orbital.formatLightTime(inFlight.light_seconds)}</b>
-        at ${inFlight.distance_au.toFixed(3)} au.<br>
-        This interface compresses it. The wait you are having is shorter than the one the crew have.
-      </div>
+    </div>
     </div>` : '';
 
   if (closed) return closed;
@@ -160,4 +191,12 @@ function compose(ctx, { inFlight, mine, error, draft }) {
   });
 }
 
-module.exports = { compose, composerBlock, MAX };
+
+/** The tag chooser as a row of pills, bound to the composer by `form=`. */
+function tagPills(formId = 'composer') {
+  return `<div class="tags tagpills" id="tagpills" role="group" aria-label="Tags, up to three">
+    ${TAGS.map((t) => `<label><input type="checkbox" name="tags" value="${t}" form="${formId}"><span>${t}</span></label>`).join('')}
+  </div>`;
+}
+
+module.exports = { compose, composerBlock, tagPills, crossingDial, MAX };

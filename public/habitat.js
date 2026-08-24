@@ -162,7 +162,7 @@
     $('co2Val').classList.toggle('hot', hotNow);
     $('co2Verdict').textContent = hotNow ? 'Over ' + ch.alertAbove + ' ppm' : 'Within limit';
     $('co2Verdict').classList.toggle('hot', hotNow);
-    $('co2Sub').textContent = pts.length + ' readings · ' + lo + '–' + hi +
+    $('co2Sub').textContent = pts.length + ' readings · ' + Math.round(lo) + '–' + Math.round(hi) +
       ' ppm in view · limit ' + ch.alertAbove + ' ppm';
   }
 
@@ -302,86 +302,196 @@
     }
     return den > 0 ? num / den : plain;
   }
-  function drawBars(ch, days, W) {
-    var H = 78, pad = 6;
-    var svg = svgRoot(W, H, { preserveAspectRatio: 'none', 'aria-label': ch.name + ', daily average' });
-    var y = scaler(ch, H, pad, pad);
-    var lo = ch.domain[0], hi = ch.domain[1];
-    var slot = W / days.length;
-    var gap = Math.min(6, slot * 0.18);
-    var base = y(lo);
+  /* ------------------------------------------------------------ trends */
+  /* One renderer for every trend chart: the four sensor channels as daily
+     averages, and whatever the page hands over in #hbt-trends[data-spec]
+     (stores as a share of what was carried in, the crew's counts). Each
+     chart is a smooth monotone curve per series with a soft gradient
+     beneath it, a point per day, a legend when there is more than one
+     series, gridlines with values, and the dates along the foot. Days with
+     nothing recorded are gaps. */
+  var TONES = { orange: ACCENT, ink: INK, grey: '#9a9aa0' };
+  var gradSeq = 0;
 
-    if (ch.alertAbove != null && ch.alertAbove > lo && ch.alertAbove < hi) {
-      var yl = y(ch.alertAbove);
-      svg.appendChild(el('line', { x1: 0, x2: W, y1: yl, y2: yl, stroke: ALERT, 'stroke-width': 1, opacity: '.35' }));
+  function missionWindow() {
+    var tile = $('hbt-trends');
+    if (!tile) return null;
+    var start = new Date(tile.getAttribute('data-start') + 'T00:00:00');
+    var total = Number(tile.getAttribute('data-days')) || 9;
+    var today = Number(tile.getAttribute('data-today')) || 0;
+    var days = [];
+    for (var i = 0; i < total; i++) {
+      var s = new Date(start); s.setDate(start.getDate() + i);
+      var e = new Date(s); e.setDate(s.getDate() + 1);
+      days.push({ start: s.getTime(), end: e.getTime() });
     }
-    var now = Date.now();
-    days.forEach(function (d, i) {
-      var x = i * slot + gap / 2;
-      var w = slot - gap;
-      if (d.avg[ch.key] === null) {
-        svg.appendChild(el('rect', { x: x, y: base - 1, width: w, height: 1.5, fill: HAIR }));
-        return;
-      }
-      var top = y(d.avg[ch.key]);
-      var hot = isHot(ch, d.avg[ch.key]);
-      svg.appendChild(el('rect', {
-        x: x, y: top, width: w, height: Math.max(1.5, base - top), rx: 3,
-        fill: hot ? ALERT : ACCENT, opacity: d.start > now ? '.35' : '1'
-      }));
-    });
-    svg.appendChild(el('line', { x1: 0, x2: W, y1: base, y2: base, stroke: HAIR, 'stroke-width': 1 }));
-    return svg;
+    return { days: days, today: today, total: total };
   }
-  function spanWindow() {
-    var t1 = Math.max(Date.now(), state.rows.length ? state.rows[state.rows.length - 1].t : 0);
-    var start = new Date(t1); start.setHours(0, 0, 0, 0);
-    start.setDate(start.getDate() - (CFG.spanDays - 1));
-    return { t0: start.getTime(), t1: t1 };
+
+  /* Monotone cubic (Fritsch–Carlson): smooth, and never overshoots a level. */
+  function smoothPath(pts) {
+    var n = pts.length;
+    if (n < 2) return n ? 'M' + pts[0][0] + ',' + pts[0][1] : '';
+    var d = [], m = [], i;
+    for (i = 0; i < n - 1; i++) d.push((pts[i + 1][1] - pts[i][1]) / ((pts[i + 1][0] - pts[i][0]) || 1));
+    m[0] = d[0]; m[n - 1] = d[n - 2];
+    for (i = 1; i < n - 1; i++) m[i] = (d[i - 1] * d[i] <= 0) ? 0 : (d[i - 1] + d[i]) / 2;
+    for (i = 0; i < n - 1; i++) {
+      if (d[i] === 0) { m[i] = 0; m[i + 1] = 0; continue; }
+      var a = m[i] / d[i], b = m[i + 1] / d[i], h = a * a + b * b;
+      if (h > 9) { var t = 3 / Math.sqrt(h); m[i] = t * a * d[i]; m[i + 1] = t * b * d[i]; }
+    }
+    var out = 'M' + pts[0][0].toFixed(1) + ',' + pts[0][1].toFixed(1);
+    for (i = 0; i < n - 1; i++) {
+      var dx = (pts[i + 1][0] - pts[i][0]) / 3;
+      out += ' C' + (pts[i][0] + dx).toFixed(1) + ',' + (pts[i][1] + m[i] * dx).toFixed(1) +
+        ' ' + (pts[i + 1][0] - dx).toFixed(1) + ',' + (pts[i + 1][1] - m[i + 1] * dx).toFixed(1) +
+        ' ' + pts[i + 1][0].toFixed(1) + ',' + pts[i + 1][1].toFixed(1);
+    }
+    return out;
   }
-  function renderSpanCharts() {
-    var host = $('days15'), axis = $('days15Axis');
-    host.innerHTML = ''; axis.innerHTML = '';
-    var win = spanWindow();
 
-    var fmtD = function (ms) {
-      return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' }).format(new Date(ms));
-    };
-    $('days15Title').textContent = fmtD(win.t0) + ' – ' + fmtD(win.t1);
-
-    var days = eachDay(win.t0, win.t1 + 1);
-    days.forEach(function (d) {
-      d.samples = state.rows.filter(function (r) { return r.t >= d.start && r.t < d.end; });
-      d.avg = {};
-      CHANNELS.forEach(function (ch) { d.avg[ch.key] = average(d.samples, ch.key); });
-    });
-
-    var W = 1000;
-    CHANNELS.forEach(function (ch) {
-      var row = document.createElement('div');
-      row.className = 'drow';
-      row.innerHTML = '<div class="dkey"><span class="k">' + ch.name + '</span>' +
-        '<span class="v">' + ch.domain[0] + '–' + ch.domain[1] + ' ' + ch.unit + '</span></div>' +
-        '<div class="dplot"></div>';
-      row.querySelector('.dplot').appendChild(drawBars(ch, days, W));
-      host.appendChild(row);
-    });
-
-    var today = new Date(); today.setHours(0, 0, 0, 0);
-    var ticks = document.createElement('div');
-    ticks.className = 'dticks';
-    days.forEach(function (d, i) {
-      var dt = new Date(d.start);
-      var month = new Intl.DateTimeFormat('en-GB', { month: 'short' }).format(dt);
-      var showMonth = i === 0 || dt.getDate() === 1;
-      var cell = document.createElement('div');
-      cell.className = 'dtick' + (d.start === today.getTime() ? ' today' : '');
-      cell.innerHTML = dt.getDate() + (showMonth ? '<span class="mo">' + month + '</span>' : '');
-      ticks.appendChild(cell);
-    });
-    axis.innerHTML = '<div class="dkey"></div>';
-    axis.appendChild(ticks);
+  function niceMax(v) {
+    if (!(v > 0)) return 1;
+    var p = Math.pow(10, Math.floor(Math.log10(v)));
+    var f = v / p;
+    var n = f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10;
+    return n * p;
   }
+  function fmtNum(v, unit) {
+    if (unit === '%') return Math.round(v) + '%';
+    if (Math.abs(v) >= 1000) return Math.round(v).toLocaleString('en-GB');
+    return Number.isInteger(v) ? String(v) : v.toFixed(1);
+  }
+  function fmtDate(ms) {
+    return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' }).format(new Date(ms));
+  }
+
+  function drawTrend(chart, win) {
+    var W = 640, H = 170, padL = 44, padR = 14, padT = 14, padB = 26;
+    var n = win.total;
+    var x = function (i) { return padL + (n === 1 ? (W - padL - padR) / 2 : (i / (n - 1)) * (W - padL - padR)); };
+    var all = [];
+    chart.series.forEach(function (s) { s.values.forEach(function (v) { if (v !== null && v !== undefined) all.push(v); }); });
+    var ymin, ymax, steps = 2;
+    if (chart.auto && all.length) {
+      // Fit the axis to the data, on round steps, so a slow drift is visible.
+      var lo = Math.min.apply(null, all), hi = Math.max.apply(null, all);
+      var pad = (hi - lo) * 0.35 || Math.abs(hi) * 0.08 || 1;
+      var step = niceMax((hi - lo + 2 * pad) / 2);
+      ymin = Math.floor((lo - pad) / step) * step;
+      if (chart.floor != null) ymin = Math.max(chart.floor, ymin);
+      ymax = ymin + 2 * step;
+      while (ymax < hi + pad * 0.5) { ymax += step; steps++; }
+    } else {
+      ymin = chart.ymin != null ? chart.ymin : 0;
+      ymax = chart.ymax != null ? chart.ymax : niceMax(Math.max.apply(null, all.length ? all : [1]) * 1.08);
+      if (chart.limit != null && ymax < chart.limit * 1.15) ymax = niceMax(chart.limit * 1.15);
+    }
+    var y = function (v) { var c = Math.min(ymax, Math.max(ymin, v)); return padT + (H - padT - padB) * (1 - (c - ymin) / ((ymax - ymin) || 1)); };
+
+    var svg = svgRoot(W, H, { 'class': 'tchart-svg', role: 'img', 'aria-label': chart.title });
+    var defs = el('defs', {});
+    svg.appendChild(defs);
+
+    // gridlines with values
+    var gridFs = []; for (var gi = 0; gi <= steps; gi++) gridFs.push(gi / steps);
+    gridFs.forEach(function (f) {
+      var v = ymin + (ymax - ymin) * f, gy = y(v);
+      svg.appendChild(el('line', { x1: padL, x2: W - padR, y1: gy.toFixed(1), y2: gy.toFixed(1), 'class': 'tgrid' + (f === 0 ? ' base' : '') }));
+      var t = el('text', { x: padL - 8, y: (gy + 3).toFixed(1), 'text-anchor': 'end', 'class': 'taxis-t' });
+      t.textContent = fmtNum(v, chart.unit);
+      svg.appendChild(t);
+    });
+    if (chart.limit != null && chart.limit > ymin && chart.limit < ymax) {
+      svg.appendChild(el('line', { x1: padL, x2: W - padR, y1: y(chart.limit).toFixed(1), y2: y(chart.limit).toFixed(1), 'class': 'talert' }));
+    }
+    // dates along the foot: first, last, and every second day between
+    for (var i = 0; i < n; i++) {
+      var show = i === 0 || i === n - 1 || i % 2 === 0;
+      if (!show) continue;
+      var tx = el('text', { x: x(i).toFixed(1), y: H - 8, 'text-anchor': i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle',
+        'class': 'taxis-t' + (i + 1 === win.today ? ' today' : '') });
+      tx.textContent = fmtDate(win.days[i].start);
+      svg.appendChild(tx);
+    }
+
+    chart.series.forEach(function (s, si) {
+      var colour = TONES[s.tone] || INK;
+      var gid = 'tg' + (++gradSeq);
+      var g = el('linearGradient', { id: gid, x1: 0, y1: 0, x2: 0, y2: 1 });
+      g.appendChild(el('stop', { offset: '0', 'stop-color': colour, 'stop-opacity': chart.series.length > 1 ? '.10' : '.22' }));
+      g.appendChild(el('stop', { offset: '1', 'stop-color': colour, 'stop-opacity': '0' }));
+      defs.appendChild(g);
+
+      var runs = [], run = [];
+      s.values.forEach(function (v, i) {
+        if (v === null || v === undefined) { if (run.length) runs.push(run); run = []; return; }
+        run.push([x(i), y(v), i, v]);
+      });
+      if (run.length) runs.push(run);
+      runs.forEach(function (r) {
+        var path = smoothPath(r);
+        if (r.length > 1) {
+          var area = path + ' L' + r[r.length - 1][0].toFixed(1) + ',' + y(ymin).toFixed(1) +
+            ' L' + r[0][0].toFixed(1) + ',' + y(ymin).toFixed(1) + ' Z';
+          svg.appendChild(el('path', { d: area, fill: 'url(#' + gid + ')', stroke: 'none' }));
+          svg.appendChild(el('path', { d: path, 'class': 'tcurve', stroke: colour }));
+        }
+        r.forEach(function (pt) {
+          var isToday = pt[2] + 1 === win.today;
+          var c = el('circle', { cx: pt[0].toFixed(1), cy: pt[1].toFixed(1), r: isToday ? 4.5 : 3,
+            'class': 'tpt' + (isToday ? ' today' : ''), stroke: colour, fill: isToday ? colour : 'var(--well)' });
+          var t = document.createElementNS(NS, 'title');
+          t.textContent = s.name + ' · ' + fmtDate(win.days[pt[2]].start) + ': ' + fmtNum(pt[3], chart.unit) + (chart.unit === '%' ? '' : ' ' + chart.unit);
+          c.appendChild(t);
+          svg.appendChild(c);
+        });
+      });
+    });
+
+    var box = document.createElement('div');
+    box.className = 'tchart';
+    var head = document.createElement('div');
+    head.className = 'tchart-head';
+    head.innerHTML = '<span class="tchart-title">' + chart.title + '</span>' +
+      (chart.series.length > 1
+        ? '<span class="tlegend">' + chart.series.map(function (s) {
+            return '<span><i style="background:' + (TONES[s.tone] || INK) + '"></i>' + s.name + '</span>';
+          }).join('') + '</span>'
+        : '<span class="tlegend"><span><i style="background:' + (TONES[chart.series[0].tone] || INK) + '"></i>' + chart.series[0].name + '</span></span>');
+    box.appendChild(head);
+    box.appendChild(svg);
+    return box;
+  }
+
+  function sensorCharts(win) {
+    var days = win.days.map(function (d) {
+      var samples = state.rows.filter(function (r) { return r.t >= d.start && r.t < d.end; });
+      var avg = {};
+      CHANNELS.forEach(function (ch) { avg[ch.key] = average(samples, ch.key); });
+      return avg;
+    });
+    return CHANNELS.map(function (ch) {
+      return { id: ch.key, title: ch.name, unit: ch.unit, limit: ch.alertAbove,
+        auto: ch.key !== 'co2', floor: 0, ymin: ch.key === 'co2' ? 0 : undefined,
+        series: [{ name: ch.unit === 'raw' ? 'daily average' : 'daily average, ' + ch.unit, tone: ch.key === 'co2' ? 'orange' : 'ink',
+          values: days.map(function (d) { var v = d[ch.key]; return v === null || v === undefined ? null : Math.round(v * 10) / 10; }) }] };
+    });
+  }
+
+  function renderTrends() {
+    var host = $('hbt-tcharts');
+    if (!host || host.hidden) return;
+    var win = missionWindow();
+    if (!win) return;
+    host.innerHTML = '';
+    var spec = {};
+    try { spec = JSON.parse($('hbt-trends').getAttribute('data-spec') || '{}'); } catch (e) { spec = {}; }
+    var charts = sensorCharts(win).concat(spec.charts || []);
+    charts.forEach(function (c) { host.appendChild(drawTrend(c, win)); });
+  }
+  function renderSpanCharts() { renderTrends(); }
 
   /* ----------------------------------------------------------- notes */
   function notesHTML() {
@@ -404,6 +514,7 @@
     if (!view.length) {
       $('hbt-empty').hidden = false; HOST.hidden = true;
       $('hbt-notes').innerHTML = notesHTML();
+      renderTrends();
       return;
     }
     $('hbt-empty').hidden = true; HOST.hidden = false;

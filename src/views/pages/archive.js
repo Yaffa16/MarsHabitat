@@ -51,8 +51,8 @@ function contents(ctx, { days, counts, entryCounts }) {
       ${eyebrow('Jump into one strand')}
       <p class="note">The same record, cut a different way.</p>
       <p>
-        <a class="btn" href="/board">Every exchange</a>
-        <a class="btn" href="/logbook">Every crew entry</a>
+        <a class="btn" href="/#exchanges">Every exchange</a>
+        <a class="btn" href="/#crewlog">Every crew entry</a>
         <a class="btn" href="/archive/messages">Search messages</a>
         <a class="btn" href="/control">Mission control</a>
       </p>`, 'earth-side')}

@@ -30,6 +30,19 @@ docker compose --profile demo up --build
 The station is configured for the actual run: **19–27 October 2026, nine days,
 Europe/Berlin**. Until 19 October it comes up in its pre-launch state.
 
+### Seeing it full before the sensors exist
+
+```bash
+MISSION_START=$(date -d "-4 days" +%F) MISSION_END=$(date -d "+4 days" +%F) npm run seed
+npm run demo      # plausible habitat readings for every mission day so far
+npm start
+```
+
+`npm run demo` writes synthetic readings into the station's own database — a daily rhythm
+and a slow drift, one sample every 30 minutes from day 1 to now — so the habitat tiles and the
+trend charts fill in. Only rows stamped as demo are ever touched; `npm run demo -- --clear`
+removes them again. The stores and the crew's figures always come from `content/`.
+
 ### Without Docker
 
 ```bash
@@ -61,39 +74,50 @@ The suite needs a live mission, so it overrides the October dates with a window 
 
 ## What's in it
 
-| Area | Route | Notes |
-|---|---|---|
-| Mission | `/` | Composer, recent exchanges, daily mission, resources, crew, habitat, mission state |
-| Messages | `/messages` | Every published exchange, scrollable, filterable by tag |
-| Crew | `/crew` | Captain, science officer, communication officer |
-| Logbook | `/logbook` | Daily entries written by the crew themselves |
-| Daily mission | `/day`, `/day/:n` | Tasks, meals, inventory, notes, that day's crew entries |
-| Archive | `/archive` | **Mission control only.** Day-by-day permanent record |
-| — day record | `/archive/day/:n` | One day complete: schedule, meals, inventory, crew entries, habitat, exchanges |
-| — exchanges | `/archive/messages` | Every published message, filterable |
-| — export | `/archive/export.json` | The entire mission as one file |
-| Whole mission | `/schedule` | Every day of the run on one page, public |
-| What this is | `/what` | How the station behaves, in plain terms |
-| About | `/about` | The project, the habitat, the concept |
-| Who we are | `/who-we-are` | Crew, company, production credits |
+**Two pages.** The public station is one page; mission control is one page. The archive,
+which is mission control's, sits behind the same login.
 
-Mission control is organised **by officer**, not by kind of record — whoever is at the desk
-moves through three people rather than through five kinds of form.
+| Page | Route | Holds |
+|---|---|---|
+| The station | `/` | Composer and orbital plot · the live message board · daily mission (plan, meals, resources, figures, **the whole mission**) · habitat dashboard · resources · **crew** · **crew log** · **about** (the project, how the station behaves, who we are) |
+| Mission control | `/control` | **The reply queue at the top**, then the day's work in four tabs |
+| Archive | `/archive` | **Mission control only.** Day-by-day permanent record; `/archive/day/:n`, `/archive/messages`, `/archive/export.md`, `/archive/export.json` |
+
+Every address the public subpages used to have (`/messages`, `/crew`, `/logbook`, `/day`,
+`/schedule`, `/what`, `/about`, `/who-we-are`) redirects to its section on the landing page, so
+old links and printed material still land somewhere. The footer of the landing page is the
+navigation.
+
+### Mission control
+
+Messages come first: the queue is the top of the page, because answering Earth is the job
+that cannot wait. Each message has its reply box directly beneath it and one orange button.
+**Ctrl+Enter** (Cmd+Enter on a Mac) in the box sends and publishes. Saving a draft, rejecting
+and deleting are on the same row, quieter. A message arriving while the desk is open is
+announced in a banner rather than discovered on the next reload — the page polls a count and
+never rebuilds itself under someone mid-reply.
+
+Beneath the queue, **the day's work**: a day picker, then four tabs that switch without a page
+load. Everything editable lives here.
 
 | Tab | Holds |
 |---|---|
-| **Communication officer** | **The daily mission schedule**, mood, daily blog — then the message queue at the foot. |
-| **Science officer** | Daily science findings, mood, daily blog. |
-| **Health officer** | Daily health activities, **crew figures** (calories and steps), **the daily food plan**, mood, daily blog. |
-| **Habitat** | Inventory levels, the general daily update, anomalies and broadcasts. |
+| **Communication officer** | The daily mission schedule, the officer's state, their daily blog |
+| **Science officer** | Daily science findings, state, blog |
+| **Health officer** | Daily health activities, **crew figures** (calories and steps), **the daily food plan**, state, blog |
+| **Habitat** | Inventory levels, the general daily update, anomalies and broadcasts |
 
-Messages sit under the communication officer because answering Earth is that officer's job.
-Each officer tab has a day picker, so you can work back through the run.
+A save returns you to the tab and day you were on; a reply returns you to the queue in the
+view you were looking at. `/control/science`, `/control/health` and `/control/habitat` still
+work as addresses — they open the page on that tab.
 
 **Reviewing and replying are a single interaction.** There is no approve step: a message
-arrives, you read it, you write the answer and you send it. Approving separately only ever
-produced a queue of half-finished exchanges nobody came back to. Saving without publishing is
-still there as a secondary action for when a reply needs thinking about.
+arrives, you read it, you write the answer and you send it. Until it is answered the message is
+visible only to its sender, under **MY MESSAGES** on the board; the common board carries nothing
+that has not been published. Saving without publishing is still there as a secondary action.
+
+**The board is live.** The landing page polls `/api/board` every few seconds and swaps in
+changes, so a reply published from control appears on every open phone without a reload.
 
 **The day-content tabs write back into `content/`.** Filing a science update appends to
 `notes.json`; saving an inventory level writes `inventory-levels.json`; writing a blog writes
@@ -134,42 +158,28 @@ else inherits yesterday's closing figure minus its daily draw. A normal day need
 reports the file and line number — in the console, on the mission control screen, and at
 `/api/content`.
 
-**The terminal beats the file.** Diary entries in `logbook.json` are what the crew go in with.
-The moment a performer types over one at `/log`, that day belongs to them and no file edit can
-reclaim it. So you can draft ahead safely. Full guide in `content/README.md`.
+**Draft ahead safely.** Diary entries in `logbook.json` are what the crew go in with. Entries
+for days that have not happened yet stay out of public view until the day arrives. The blog
+box on each officer's tab in mission control writes into the same file, so whichever was saved
+last — the file or the form — is the record. Full guide in `content/README.md`.
 
 ## Who writes what
 
 Two kinds of content, with a hard line between them.
 
 **Preset, and edited in files.** The daily schedule, the meal plan and the inventory live in
-`content/` and are prepared in advance for all nine days. Nothing the crew do changes them.
+`content/` and are prepared in advance for all nine days. They can also be edited on the
+matching tab of mission control, which writes into the same files.
 
-**Written daily, and owned by the crew.** The communication, science and health officers each
-file their own diary entry from a terminal inside the habitat at
-**`/log`** — one login each, one entry per person per mission day. Entries go straight to the
-public logbook, and appear on that day's page and on the crew page.
+**Written daily, in the crew's voice.** The communication, science and health officers each
+have a daily blog entry and a state (mood and energy, two sliders). Both are filed from their
+tab in mission control — there is no separate terminal inside the habitat, and no second
+login. Entries go straight to the public crew log on the landing page, and the latest one
+appears under each officer in the Crew section. The slider numbers are never published; only
+the sentence each one maps to.
 
-The terminal is deliberately one screen: the entry box, that day's preset schedule and meals
-for context, and everything that crew member has written before. A performer coming off a
-task can sit down and write without navigating anything. Sessions last 30 days, because
-nobody sealed in a habitat should be signing in twice a day. It warns before losing unsaved
-text — an interrupted performer losing a day's writing to a stray tap would be the worst
-failure in the system.
-
-Mission control can **hold** an entry back from the public logbook at `/control/logbook` — if
-it names a member of the audience, say — and release it again. It cannot rewrite one: there
-is no editing surface for crew text anywhere in mission control, and a held entry still shows
-to its author, marked as held. The crew's words stay the crew's words.
-
-**There is exactly one account.** It signs in to mission control at `/control` and to the
-habitat terminal at `/log`; the seed removes any others. Who is writing at the terminal is
-chosen on the screen rather than by signing in as them — three performers sharing one tablet
-inside a habitat should not be juggling three passphrases, and switching is one tap.
-
-Because mission control is messages only, the crew now file their own state from the terminal
-too: four sliders under the entry box, with the exact public sentence shown beneath each one.
-The numbers are still never published.
+**There is exactly one account.** It signs in to mission control at `/control` and opens the
+archive; the seed removes any others.
 
 ## Wiring the habitat sensors
 
@@ -187,7 +197,7 @@ Content-Type: application/json
 
 **Unknown metrics are accepted and registered automatically.** Point a new sensor at the
 endpoint with `"metric": "oxygen"` and an oxygen channel appears on the habitat page; set its
-thresholds afterwards in `/control/sensors`. No redeploy, no schema change.
+thresholds afterwards in `content/sensors.json`. No redeploy, no schema change.
 
 A channel with no reading for `SENSOR_STALE_SECONDS` (default 300) shows **SIGNAL LOST**
 rather than freezing on its last value. Interruptions will happen during the run; they are
@@ -219,7 +229,7 @@ permanent record shortly after it ends, holding:
 - the schedule as it was actually run, with each task's final status
 - the meal plan, with energy, water and preparation cost
 - the inventory at the close of the day
-- every crew entry written from the habitat terminal
+- every crew entry the crew wrote that day
 - every crew state filed by mission control, with times
 - a summary of every habitat channel — low, high, mean, sample count
 - every published exchange, with the real light-time it crossed that day
@@ -260,39 +270,42 @@ not an afterthought:
 - the mission strip drops its day labels but keeps today's
 - mission control gets fatter slider thumbs and taller controls at tablet width, for someone
   standing up in the dark
-- the habitat terminal gives the crew a full-width button and a 220px writing area
 - there is a print stylesheet, because the archive is the artwork and somebody will
   eventually want it on paper
 
 ## Visual language
 
-Industrial label sheets. Light ground, black hairlines, one safety orange — the whole system
-looks stamped, catalogued and referenced, which is what this station actually does to every
-message that passes through it.
+A soft instrument. A pale grey ground lit from above; the things you touch are raised off it as
+pale slabs with deep, soft shadows; the things you read are dark glass screens set into them.
+One orange, kept for what is live, what is Mars, and what wants pressing.
 
-The devices are working parts, not decoration:
+The parts are working parts, not decoration:
 
-- **Hatch bands** mark the two things you are meant to act on: the composer and the crew's own
-  panels. Nothing else gets one.
-- **Bracketed codes** (`[ MCS-001 ]`, `[ 24 PUBLISHED ]`) carry live counts in the sheet's own
-  register.
-- **Channel tags** stamp every panel with the data channel it renders — `CH-09 / UPLINK`,
-  `CH-32 / GALLEY`.
-- **Crossed boxes** are the empty state, borrowed from the placeholder rectangles on the sheet.
-  An empty panel reads as a blank field waiting to be filled rather than as a failure.
-- **Registration crosshair** replaces the Sun on the orbital plot — the same mark a print sheet
-  uses to align itself.
-- Buttons and cards **cast a hard offset shadow** on hover, the way a die-cut label lifts off
-  the page.
+- **The composer is a device.** An orange LED, a ribbed orange grip at the top edge, a knob and
+  a row of vents; then the operator's callsign in an inset chip and the channel it writes on
+  (`CH-09 · UPLINK`). The writing surface is an inset well; the one orange button transmits.
+- **The board is a screen.** Dark glass beside the composer: callsigns in orange, the crew's
+  replies in orange with a `✧`, an orange scrollbar, the counts in the foot. Its filter chips
+  sit above it on the ground.
+- **The crossing is a dial.** Pressing transmit lifts the device and swaps the form for a bezel
+  with four screws round a dark gridded face: Earth at the foot, Mars at the head, the message
+  travelling the arc between them while `T−mm:ss` counts down beside it.
+- **The station's name** is spelled letter by letter down the left margin; the run's nine days
+  run down the right, today marked. Both fall away below 1420px.
+- **Readings** — link state, mission day, distance, one-way time, your callsign, the theme
+  switch — are a row of small inset pills under the wordmark.
+- **Channel tags** still stamp every panel with the data channel it renders, now as a small
+  grey code in the corner.
+- **Empty states** are dashed wells rather than crossed boxes.
 
 Orange is the only colour. It marks Mars, live state, and anything wanting action. Status is
 still carried by **symbol** as well — filled centre is nominal, single bar is caution, crossed
 ring is out of range, empty ring is no signal — so it survives print and colourblindness.
 
-Type is a bold condensed grotesque for headlines (`Archivo Narrow`, `Roboto Condensed`,
-`Arial Narrow`) against monospace for every code, label and value, with a plain sans for
-reading prose. All system stacks: nothing is fetched from a CDN, so the station looks right
-with the venue's network unplugged.
+Type is a heavy grotesque for the wordmark and headings (`Helvetica Neue`, `Helvetica`,
+`Inter`) against monospace for every code, label and value, with the same sans for reading
+prose. All system stacks: nothing is fetched from a CDN, so the station looks right with the
+venue's network unplugged.
 
 ## Monitoring channels
 
@@ -322,10 +335,10 @@ label and limits.
 
 ## The whole mission, publicly
 
-`/schedule` shows every day of the run on one page — past days marked complete, today marked,
-days ahead shown as planned and dimmed. It answers "what is this run", which is a different
-question from "what is happening now" and the one a visitor arriving cold actually has. Linked
-from the daily-mission section on the mission page and from the footer.
+The **whole mission** fold of the daily-mission panel shows every day of the run — past days
+marked complete, today open, days ahead shown as planned and dimmed — with each day's tasks,
+meals and published mission notes. It answers "what is this run", which is a different question
+from "what is happening now" and the one a visitor arriving cold actually has.
 
 ## Report templates
 
@@ -413,32 +426,32 @@ them between shows.
 
 ## The mission page
 
-The landing page is the MARS!PLATZ layout. It opens on a full-bleed photograph of the surface —
-**`public/hero.jpg`**, swap the file to change the view — with the title, the tagline and the
-mission day stamped over it, and the black status rail directly beneath, sticking to the top of
-the window once the photograph has scrolled away. The landing page carries no top bar; its
-navigation lives in the black footer. Subpages keep **Mission · Messages · Crew log · About**.
+The landing page opens on **the console**: a black instrument on the pale ground, with the
+orange **Marsplatz** plate down its left. Across the top, the project in three lines and one
+sentence, the About · What this is · Who we are buttons (they open their text over the message
+box), and the tags as white pills. Beneath, the readings in one line. In the middle, **the
+message box**: white and small, your avatar over its top edge, your thread with the crew inside
+— what you sent, when, and what they wrote back — and the line you type on across its foot with
+the red SEND. Under it, two black cards: the ZKM | Hertzlab mark, and the Earth → Mars scene,
+which carries the message across while it is in transit ("Sending message to Mars…") and reads
+the one-way time otherwise. Standing in the right edge is **the messages panel**: every
+exchange with an avatar, the callsign, when it was sent, the message, the crew's reply nested
+beneath, the state at the foot; filters and counts along the bottom.
 
-Below the masthead:
+Below the console the page is the **mission dashboard** on the lighter band: a row of headline
+figures, the run as a strip of nine days, then Today's Schedule · Meal · Mood, the Habitat with
+its sensor tiles, the resource rings and the trend charts, then the crew log and the whole
+mission. Nothing sits behind a tab.
 
-1. **Communication Portal** — the composer with the orbital plot beside it
-2. **Message Board** — every published exchange as a staggered column that scrolls in its own
-   field next to the composer, linking through to the Messages tab
-3. **Daily mission** — one panel with pill tabs: daily plan, meal plan, resources and
-   crew figures
-4. **Habitat** — every channel as a dial, with the status key, and the crew with their
-   condition beside them
-5. **Resources** — the inventory gauges as one strip, carried in and never resupplied
+During pre-launch the readings show the countdown in place of the mission day and the day
+strip carries no marker.
 
-During pre-launch the masthead shows the countdown in place of the mission day. The composer
-lost its decorative FROM/TO fields — the callsign line above it already says who you are.
+## The board
 
-## The messages tab
-
-`/messages` holds the whole correspondence: every published exchange in one scrollable field,
-with a tag distribution at the top that doubles as a filter — press `PERSONAL` and the field
-shows only those. The counts are live, so it also reads as a summary of what people actually
-wanted to know.
+The board beside the composer holds the whole correspondence: every published exchange in one
+scrollable field, with tag chips that filter it — press `PERSONAL` and the field shows only
+those — and a **MY MESSAGES** chip that shows your own, including the ones still waiting on the
+crew. The counts are live.
 
 There is exactly one place to write on the public station, at the top of the mission page. A
 second composer beside the exchange was one box too many: it invited a reply to a message you
@@ -466,10 +479,11 @@ in there now — replace it with the real one.
 
 ## Light and dark
 
-Light is the default, matching the reference. The toggle sits at the right of the status rail
-and is remembered in a cookie, resolved on the server and applied to `<html>` before first
-paint — no flash of the wrong ground on load. Dark inverts the stock to near-black and keeps
-the same orange, hairline weights and hatch geometry.
+Light is the default, matching the reference. The toggle is the last pill in the masthead
+readings (the last cell of the rail on the inner pages) and is remembered in a cookie, resolved
+on the server and applied to `<html>` before first paint — no flash of the wrong ground on
+load. Dark turns the ground to charcoal and keeps the same orange, the same raised slabs and
+the same soft shadows, deeper.
 
 ## Three phases
 
@@ -545,37 +559,13 @@ computed, 0.37272 au actual). The station keeps working if the venue loses its c
 3. Set `SECURE_COOKIES=true` if serving over HTTPS.
 4. Replace the placeholder credits in `src/views/pages/info.js` (`CREDITS`, production and
    contact blocks on `/who-we-are`).
-5. Fill in all nine days at `/control/days`. They ship as **drafts** holding placeholder
-   template content, and a draft day shows the public *"day content not yet transmitted"*
-   rather than a half-filled schedule — so nothing is visible until you mark each one
-   **ready**. Nine days is small enough to do by hand; **Copy tasks + meals to…** handles
-   any repeating rhythm.
-6. Walk each performer through `/log` once. They will be writing in costume, in character,
-   possibly tired — the terminal should be familiar before opening night, not discovered
+5. Check all nine days on the landing page's **whole mission** fold. They ship fully written
+   in `content/`; edit the files or the matching tab in mission control.
+6. Walk whoever will sit at mission control through `/control` once: the queue, Ctrl+Enter,
+   the day picker and the tabs. It should be familiar before opening night, not discovered
    during it.
-7. Rehearse the full loop with the performers: send a message from a phone, approve it,
-   write a reply, publish it, watch it reach the board.
-
-### Filling forty days quickly
-
-`/control/import` takes pasted CSV, which is faster than any form for bulk entry:
-
-```
-day,time,label,detail
-17,08:00,Habitat inspection,Seals and west wall
-
-day,slot,name,components,kcal,water_litres,prep_minutes,energy_wh
-17,BREAKFAST,Rehydrated oats,"Oat base | 80 g\nWater | 0.35 L",420,0.35,8,90
-```
-
-Tasks are appended to whatever is already on the day; meals replace the matching slot. Export
-the current content from the same page to get a correctly-shaped file to edit in a
-spreadsheet and paste back. Malformed rows are skipped and counted rather than aborting the
-import. Inside the day editor, **Copy tasks + meals to…** handles a repeating weekly rhythm.
-
-`/control/live` is deliberately the last screen to finalise. Which controls people actually
-reach for while standing in a dark room next to a performance is never quite what you would
-predict — run a technical rehearsal, then cut what nobody touched.
+7. Rehearse the full loop: send a message from a phone, watch it appear under MY MESSAGES,
+   reply from control, watch it reach the board on every phone in the room without a reload.
 
 ---
 

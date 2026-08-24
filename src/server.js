@@ -10,16 +10,12 @@ const missionLib = require('./lib/mission');
 const data = require('./lib/data');
 const callsign = require('./lib/callsign');
 const P = require('./views/pages/public');
-const C = require('./views/pages/communicate');
-const I = require('./views/pages/info');
+const { composerBlock } = require('./views/pages/communicate');
 const control = require('./routes/control');
-const logbook = require('./routes/logbook');
 const archive = require('./lib/archive');
 const content = require('./lib/content');
 const critical = require('./lib/critical');
 const AR = require('./views/pages/archive');
-const MS = require('./views/pages/messages');
-const LB = require('./views/pages/logbook');
 
 const app = express();
 app.set('trust proxy', true);
@@ -45,9 +41,12 @@ app.use((req, res, next) => {
   // Memoised: identify() writes a Set-Cookie but cannot see it on the same
   // request, so building the context twice would mint a second visitor.
   let cached = null;
+  // Decided here, not inside ctx(): by the time a mounted router calls ctx(),
+  // req.path has had its mount prefix stripped and '/control/login' reads as
+  // '/login', which used to mint a visitor callsign for mission control.
+  const internal = req.path.startsWith('/control');
   req.ctx = () => {
     if (cached) return cached;
-    const internal = req.path.startsWith('/control') || req.path.startsWith('/log');
     const visitor = internal ? null : callsign.identify(req, res);
     const newest = db.prepare('SELECT MAX(recorded_at) m FROM sensor_reading').get().m;
     const commsUp = newest ? (Date.now() - Date.parse(newest)) / 1000 < data.STALE_SECONDS : false;
@@ -93,9 +92,35 @@ app.get('/', (req, res) => {
   if (ctx.mission.phase === 'COMPLETE') {
     return res.send(P.complete(ctx, { counts: data.counts(), recent: data.published(3) }));
   }
+  // Two public things exist: this page and mission control. Everything a
+  // visitor can read — the board, the crew, the crew log, the whole schedule,
+  // the about text — is a section of this page.
+  // The crew's diary is drafted ahead in content/logbook.json. Days that have
+  // not happened yet stay out of public view until they do.
+  const upTo = ctx.mission.clampedDay;
+  const crew = data.crewWithMood().map((c) => ({
+    ...c, latestEntry: data.entriesByCrew(c.id, { limit: 30 }).find((e) => e.mission_day <= upTo) || null,
+  }));
+  const logDays = data.logbook().filter((d) => d.missionDay <= upTo);
+  const allDays = [];
+  for (let n = 1; n <= ctx.mission.totalDays; n++) {
+    const d = data.day(n);
+    allDays.push({
+      missionDay: n, date: missionLib.dateForDay(n),
+      tasks: d && d.status !== 'DRAFT' ? d.tasks : [],
+      meals: d && d.status !== 'DRAFT' ? d.meals : [],
+      notes: d && d.status !== 'DRAFT' ? d.notes.filter((n) => n.published_at) : [],
+      // End-of-day stores, for the trend rows. Days still ahead carry the
+      // planned figures, which the page does not plot.
+      inventory: d ? d.inventory : [],
+    });
+  }
   res.send(P.mission(ctx, {
     sensors: data.sensorPanels(),
-    crew: data.crewWithMood(),
+    crew,
+    allDays,
+    logDays,
+    entryCounts: { published: logDays.reduce((n, d) => n + d.entries.length, 0), days: logDays.length },
     today: data.day(ctx.mission.clampedDay),
     counts: data.counts(),
     // Published exchanges for everyone; this visitor's own messages as well,
@@ -108,43 +133,19 @@ app.get('/', (req, res) => {
   }));
 });
 
-// Every channel now lives on the mission page, so this address points there.
-app.get('/habitat', (req, res) => res.redirect(301, '/#habitat'));
-
-app.get('/crew', (req, res) => {
-  const crew = data.crewWithMood().map((c) => ({
-    ...c, latestEntry: data.entriesByCrew(c.id, { limit: 1 })[0] || null,
-  }));
-  res.send(P.crewPage(req.ctx(), { crew }));
-});
-
-/** The whole run in one page — the question a visitor arriving cold actually has. */
-app.get('/schedule', (req, res) => {
-  const ctx = req.ctx();
-  const days = [];
-  for (let n = 1; n <= ctx.mission.totalDays; n++) {
-    const d = data.day(n);
-    // Days still in draft show their date and nothing else, rather than lying.
-    days.push({
-      missionDay: n,
-      date: missionLib.dateForDay(n),
-      tasks: d && d.status !== 'DRAFT' ? d.tasks : [],
-      meals: d && d.status !== 'DRAFT' ? d.meals : [],
-    });
-  }
-  res.send(P.schedule(ctx, { days }));
-});
-
-app.get('/day/:n?', (req, res) => {
-  const ctx = req.ctx();
-  const n = req.params.n ? Number(req.params.n) : ctx.mission.clampedDay;
-  if (!Number.isInteger(n) || n < 1) return res.redirect('/day');
-  res.send(P.dayPage(ctx, {
-    day: data.day(n), dayNumber: n, entries: data.entriesForDay(n),
-    hasPrev: n > 1,
-    hasNext: n < ctx.mission.totalDays && n < ctx.mission.clampedDay,
-  }));
-});
+/* The station has two pages: this one and mission control. Every address a
+   public subpage used to have now points at its section on the landing page,
+   so old links, bookmarks and printed material still land somewhere. */
+const SECTION = {
+  '/habitat': '#habitat', '/crew': '#crew', '/logbook': '#crewlog',
+  '/day': '#mission', '/schedule': '#mission', '/messages': '#exchanges',
+  '/board': '#exchanges', '/communicate': '#write',
+  '/what': '#what', '/about': '#about', '/who-we-are': '#who-we-are',
+};
+for (const [from, to] of Object.entries(SECTION)) {
+  app.get(from, (req, res) => res.redirect(301, '/' + to));
+}
+app.get('/day/:n', (req, res) => res.redirect(301, '/#mission'));
 
 /**
  * The archive holds the whole record — every day, every crew state, every
@@ -227,47 +228,38 @@ app.get('/archive/message/:id', requireControl, (req, res, next) => {
   res.send(P.single(req.ctx(), { message: m }));
 });
 
-app.get('/logbook', (req, res) => {
-  const crewId = req.query.crew ? Number(req.query.crew) : null;
-  res.send(LB.publicLogbook(req.ctx(), {
-    days: data.logbook({ crewId }),
-    crew: data.crewWithMood(),
-    filterCrew: crewId,
-    counts: data.entryCounts(),
-  }));
-});
-
-app.get('/what', (req, res) => res.send(I.what(req.ctx())));
-app.get('/about', (req, res) => res.send(I.about(req.ctx())));
-app.get('/who-we-are', (req, res) => res.send(I.who(req.ctx(), { crew: data.crewWithMood() })));
-
 /* =========================================================== COMMUNICATION */
 
 const MAX_CHARS = Number(process.env.MESSAGE_MAX_CHARS || 500);
 const TRANSIT_MS = Number(process.env.TRANSIT_SECONDS || 12) * 1000;
 
 /** Errors bounce back to the landing page, which is where the composer lives. */
+/**
+ * The composer answers two ways. A plain form post is answered with a
+ * redirect back to the page, as before. A post from composer.js (marked
+ * X-Requested-With: fetch) is answered with the composer fragment alone —
+ * the dial if the message left, the form with its error if it did not — and
+ * the script swaps it into the device in place, so sending a message never
+ * reloads or scrolls the page.
+ */
+const isLive = (req) => req.get('x-requested-with') === 'fetch';
+
+function composerFragment(req, res, extra = {}) {
+  const ctx = req.ctx();
+  const inFlight = ctx.visitor ? data.inFlightFor(ctx.visitor.id) : null;
+  res.set('Cache-Control', 'no-store').type('html')
+    .send(composerBlock(ctx, { inFlight, error: extra.error || null, draft: extra.draft || '' }));
+}
+
 function composeView(req, res, extra = {}) {
+  if (isLive(req)) return composerFragment(req, res, extra);
   const q = extra.error ? `?err=${encodeURIComponent(extra.error)}` : '';
   res.redirect(`/${q}#write`);
 }
 
-app.get('/communicate', (req, res) => res.redirect(301, '/#write'));
-app.get('/board', (req, res) => res.redirect(301, '/messages'));
-
-/** Every published exchange, in one scrollable field. */
-app.get('/messages', (req, res) => {
-  const filter = String(req.query.tag || '').toUpperCase();
-  const all = data.published(500, filter ? { tag: filter } : {});
-  const tally = {};
-  for (const m of data.published(1000)) {
-    for (const t of (m.tags || '').split(',').filter(Boolean)) tally[t] = (tally[t] || 0) + 1;
-  }
-  const tags = Object.entries(tally).map(([tag, n]) => ({ tag, n })).sort((a, b) => b.n - a.n);
-  res.send(MS.messages(req.ctx(), {
-    list: all, counts: data.counts(), tags, filter: filter || null,
-  }));
-});
+/* The composer as it stands for this visitor — what a reload would show.
+   composer.js asks for it when the crossing ends. */
+app.get('/api/composer', (req, res) => composerFragment(req, res));
 
 /**
  * The board, live. board.js polls this every few seconds and swaps the cards
@@ -300,11 +292,11 @@ app.post('/communicate', (req, res) => {
   // Enforced server-side so a closed channel cannot be walked around by
   // posting the form directly. After the run it is always shut.
   const holdBefore = process.env.HOLD_CHANNEL_BEFORE_LAUNCH === 'true';
-  if (ctx.mission.phase === 'COMPLETE') return res.redirect('/communicate');
-  if (ctx.mission.phase === 'PRE_LAUNCH' && holdBefore) return res.redirect('/communicate');
+  if (ctx.mission.phase === 'COMPLETE') return composeView(req, res);
+  if (ctx.mission.phase === 'PRE_LAUNCH' && holdBefore) return composeView(req, res);
 
   // The transit lock is enforced here, not in the browser.
-  if (data.inFlightFor(visitor.id)) return res.redirect('/communicate');
+  if (data.inFlightFor(visitor.id)) return composeView(req, res);
 
   const body = String(req.body.body || '').trim().replace(/\s+\n/g, '\n');
   if (body.length < 2) {
@@ -340,6 +332,7 @@ app.post('/communicate', (req, res) => {
         ctx.mission.phase === 'PRE_LAUNCH' ? 0 : ctx.mission.clampedDay,
         submitted.toISOString(), arrival.toISOString(), geo.lightSeconds, geo.distanceAu, ip);
 
+  if (isLive(req)) return composerFragment(req, res);
   res.redirect('/#write');
 });
 
@@ -434,7 +427,6 @@ app.get('/healthz', (req, res) => res.type('text').send('ok'));
 
 /* =================================================================== CONTROL */
 
-app.use('/log', logbook);
 app.use('/control', control);
 
 /* ===================================================================== 404 */

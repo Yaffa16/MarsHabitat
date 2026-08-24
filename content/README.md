@@ -24,8 +24,7 @@ leave yourself reminders.
 
 ## Two ways to edit
 
-These files are also what mission control's **Crew blogs**, **Daily updates** and **Inventory**
-tabs write to. Filing a science update in the interface appends to `notes.json`; saving an
+These files are also what the officer and habitat tabs in mission control write to. Filing a science update in the interface appends to `notes.json`; saving an
 inventory level writes `inventory-levels.json`. There is no second copy — the interface and
 this folder are edits to the same thing, so use whichever suits the moment.
 
@@ -43,11 +42,10 @@ officer**. Renaming or replacing one in `crew-and-inventory.json` takes effect i
 an officer removed from that file leaves the station along with their states and entries, so a
 rename is a real change, not a relabel.
 
-The crew write their own diary entries at the habitat terminal (`/log`), and mission control
-can write them from that officer's tab. Entries already
-written in `logbook.json` are what they go in with; the moment a performer types over one at
-the terminal, that day becomes theirs and **a file edit will never take it back**. So you can
-draft ahead here safely.
+The crew's diary entries are written from each officer's tab in mission control, which saves
+into `logbook.json` — the same file you can edit here. Whichever was saved last is the record.
+Entries for days that have not happened yet are kept out of public view until the day arrives,
+so you can draft ahead here safely.
 
 ## If you break something
 

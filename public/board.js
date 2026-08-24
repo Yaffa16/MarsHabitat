@@ -30,7 +30,10 @@
   var counter = document.getElementById('feed-counter');
   var live = document.getElementById('feed-live');
 
-  var filter = '';
+  // The page decides which chip starts active (MY MESSAGES once you have
+  // sent something); the script follows it.
+  var initial = bar.querySelector('button.active');
+  var filter = initial ? (initial.getAttribute('data-filter') || '') : '';
   var cards = [];
 
   function collect() {
@@ -77,8 +80,18 @@
     btn.classList.add('active');
     filter = btn.getAttribute('data-filter') || '';
     apply();
+    title();
     if (scroller) scroller.scrollTop = 0;
   });
+
+  /* The panel's title follows the filter. */
+  var titleEl = document.getElementById('board-title');
+  function title() {
+    if (!titleEl) return;
+    titleEl.textContent = filter === 'mine' ? 'My messages'
+      : filter.indexOf('tag:') === 0 ? filter.slice(4).charAt(0) + filter.slice(5).toLowerCase() + ' messages'
+      : 'All messages';
+  }
 
   /* ---------------------------------------------------------- live refresh */
   var url = feed.getAttribute('data-poll');
@@ -106,7 +119,7 @@
       mineCount.hidden = !data.pendingMine;
     }
     if (allLink) allLink.textContent = 'All ' + data.published + ' exchanges';
-    if (counter) counter.textContent = data.total + ' SENT · ' + data.published + ' REPLIED';
+    if (counter) counter.textContent = data.published + ' exchanges · ' + data.total + ' sent';
   }
 
   function poll() {
@@ -143,4 +156,100 @@
   collect();
   apply();
   poll();
+
+  /* composer.js calls this the moment a message leaves and again when it
+     arrives: switch to MY MESSAGES and fetch the board straight away, so the
+     message you just sent is on the screen without waiting for the next poll. */
+  window.MCSBoard = {
+    refresh: function (which) {
+      if (which) {
+        var btn = bar.querySelector('button[data-filter="' + which + '"]');
+        if (btn) {
+          Array.prototype.forEach.call(bar.querySelectorAll('button'), function (b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          filter = which;
+          apply();
+          title();
+        }
+      }
+      wait = BASE_MS;
+      poll();
+    },
+  };
+})();
+
+/* Crew log filter: one voice at a time. Days with nothing left to show fold
+   away rather than standing as empty headings. */
+(function () {
+  'use strict';
+  var bar = document.getElementById('log-filter');
+  if (!bar) return;
+  var days = Array.prototype.slice.call(document.querySelectorAll('#log-days .log-day'));
+  var empty = document.getElementById('log-empty');
+  bar.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('button[data-crew]') : null;
+    if (!btn) return;
+    Array.prototype.forEach.call(bar.querySelectorAll('button'), function (b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    var who = btn.getAttribute('data-crew') || '';
+    var shownDays = 0;
+    days.forEach(function (day) {
+      var visible = 0;
+      Array.prototype.forEach.call(day.querySelectorAll('.card[data-crew]'), function (c) {
+        var show = !who || c.getAttribute('data-crew') === who;
+        c.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      day.style.display = visible ? '' : 'none';
+      if (visible) shownDays++;
+    });
+    if (empty) empty.style.display = shownDays ? 'none' : '';
+  });
+})();
+
+/* The reader: About · What · Who open their text inside the message box,
+   over the writing field, and "Back to writing" closes it. Arriving by hash
+   (/#about, /#what, /#who-we-are) opens the same way. */
+(function () {
+  'use strict';
+  var box = document.querySelector('.mbox');
+  var reader = document.getElementById('mbox-reader');
+  if (!box || !reader) return;
+  var secs = Array.prototype.slice.call(reader.querySelectorAll('.reader-sec'));
+  var links = Array.prototype.slice.call(document.querySelectorAll('[data-reader]'));
+  function open(id) {
+    var target = null;
+    secs.forEach(function (s) { var on = s.id === id; s.hidden = !on; if (on) target = s; });
+    if (!target) return false;
+    reader.hidden = false;
+    box.classList.add('reading');
+    links.forEach(function (l) { l.classList.toggle('on', l.getAttribute('data-reader') === id); });
+    reader.querySelector('.reader-body').scrollTop = 0;
+    return true;
+  }
+  function close() {
+    reader.hidden = true;
+    box.classList.remove('reading');
+    links.forEach(function (l) { l.classList.remove('on'); });
+    if (window.location.hash) history.replaceState(null, '', window.location.pathname);
+  }
+  links.forEach(function (l) {
+    l.addEventListener('click', function (e) {
+      e.preventDefault();
+      var id = l.getAttribute('data-reader');
+      if (l.classList.contains('on')) { close(); return; }
+      open(id);
+      history.replaceState(null, '', '#' + id);
+    });
+  });
+  var closeBtn = document.getElementById('reader-close');
+  if (closeBtn) closeBtn.addEventListener('click', close);
+  function fromHash() {
+    var id = window.location.hash.slice(1);
+    if (id === 'about') id = 'about-project';
+    if (!id) return;
+    if (open(id)) box.scrollIntoView({ block: 'start' });
+  }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
 })();

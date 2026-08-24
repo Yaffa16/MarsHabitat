@@ -54,37 +54,37 @@ curl -s $B/api/status | grep -q '"pending":1' && ok "arrived and queued for revi
 
 echo "── one login"
 curl -s -c $A -X POST -d "username=control" -d "password=${ADMIN_PASSWORD:-control123}" -o /dev/null $B/control/login
-curl -s -b $A $B/control | grep -q "Awaiting review" && ok "control signed in" || bad "sign-in failed"
+curl -s -b $A $B/control | grep -q "Awaiting reply" && ok "control signed in" || bad "sign-in failed"
 [ "$(curl -s -X POST -d 'username=captain' -d 'password=cap-pass' -o /dev/null -w '%{http_code}' $B/control/login)" = "401" ] \
   && ok "no second account exists" || bad "another login still works"
-[ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/log)" = "200" ] \
-  && ok "the same account opens the habitat terminal" || bad "terminal rejects the control session"
+[ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/log)" = "404" ] \
+  && ok "the habitat terminal is gone — everything is written from control" || bad "/log still answers"
 
-echo "── mission control"
-curl -s -b $A $B/control | grep -q 'class="filters"' && ok "message views filter in place" || bad "no filter bar"
-for tab in science health habitat; do
-  [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/control/$tab)" = "200" ] \
-    || bad "control tab /$tab missing"
+echo "── mission control is one page"
+CTRL=$(curl -s -b $A $B/control)
+echo "$CTRL" | grep -q 'id="queue"' && ok "the message queue is on the page" || bad "no queue"
+echo "$CTRL" | grep -q 'class="filters"' && ok "message views filter in place" || bad "no filter bar"
+node -e '
+const h = require("child_process").execSync("curl -s -b /tmp/admin.jar http://localhost:8080/control").toString();
+const q = h.indexOf("id=\"queue\""), c = h.indexOf("data-pane=\"comms\""), sci = h.indexOf("data-pane=\"science\"");
+process.exit(q > c && q < sci ? 0 : 1);' && ok "messages live inside the communication officer's tab only" || bad "queue is not inside the comms tab"
+for t in comms science health habitat; do
+  echo "$CTRL" | grep -q "data-pane=\"$t\"" || bad "tab $t missing from the page"
 done
-ok "control has a tab per officer, plus the habitat"
-
-COMMS=$(curl -s -b $A $B/control)
-echo "$COMMS" | grep -q "CH-09 / MESSAGES" || bad "messages not under the communication officer"
-echo "$COMMS" | grep -q "mood-slider" || bad "no mood on the communication officer tab"
-echo "$COMMS" | grep -q "DAILY BLOG" || bad "no blog on the communication officer tab"
-ok "communication officer has messages, mood and blog"
-
-SCI=$(curl -s -b $A $B/control/science)
-echo "$SCI" | grep -qi "science findings" || bad "no science findings on the science tab"
-echo "$SCI" | grep -q "mood-slider" || bad "no mood on the science tab"
-echo "$SCI" | grep -q "DAILY BLOG" || bad "no blog on the science tab"
-ok "science officer has findings, mood and blog"
-
-HEA=$(curl -s -b $A $B/control/health)
-echo "$HEA" | grep -qi "health activities" || bad "no health activities on the health tab"
-echo "$HEA" | grep -q "mood-slider" || bad "no mood on the health tab"
-echo "$HEA" | grep -q "DAILY BLOG" || bad "no blog on the health tab"
-ok "health officer has activities, mood and blog"
+ok "all four tabs are in the one page"
+for tab in science health habitat; do
+  [ "$(curl -s -b $A -o /dev/null -w '%{redirect_url}' $B/control/$tab)" = "$B/control?tab=$tab#work" ] \
+    || bad "/control/$tab does not land on its tab"
+done
+ok "the old per-officer addresses land on their tab"
+curl -s -b $A "$B/control?tab=health" | grep -q 'class="tab-pane on" data-pane="health"' \
+  && ok "?tab= chooses the open tab server-side" || bad "tab parameter ignored"
+echo "$CTRL" | grep -qi "science findings" || bad "no science findings"
+echo "$CTRL" | grep -qi "health activities" || bad "no health activities"
+echo "$CTRL" | grep -q "CH-30 / DAILY MISSION" || bad "no schedule editor"
+[ "$(echo "$CTRL" | grep -c 'class="mood-slider"')" = "6" ] || bad "expected two sliders for each of three officers"
+[ "$(echo "$CTRL" | grep -c 'CH-50 / DAILY BLOG')" = "3" ] || bad "expected a blog box per officer"
+ok "every officer's findings, blog and state are editable from control"
 
 ID=$(curl -s -b $A $B/control | grep -oE '/control/[0-9]+/reply' | head -1 | grep -oE '[0-9]+')
 [ -n "$ID" ] && ok "message waiting in the queue" || bad "no message in the queue"
@@ -96,8 +96,8 @@ echo "── unapproved messages stay off the common board"
 # Another visitor (no cookie) must not see the message until it is approved.
 curl -s $B/ | grep -q "first thing you miss" && bad "unapproved message reached the common board" \
   || ok "an unapproved message is not on the common board"
-curl -s $B/messages | grep -q "first thing you miss" && bad "unapproved message on the messages tab" \
-  || ok "nor on the messages tab"
+curl -s $B/api/board | grep -q "first thing you miss" && bad "unapproved message in the public board API" \
+  || ok "nor in the public board API"
 # The sender still sees it, stamped with its state and marked as theirs and pending.
 MINE=$(curl -s -b $V $B/)
 echo "$MINE" | grep -q "first thing you miss" && ok "the sender still sees their own message" \
@@ -106,7 +106,6 @@ echo "$MINE" | grep -q 'data-mine="1" data-pending="1"' && ok "it is marked as t
   || bad "own pending message not stamped data-pending"
 echo "$MINE" | grep -q 'REACHED MARS' && ok "its state is stamped on the card" || bad "no state on the sender's card"
 echo "$MINE" | grep -q 'id="feed-mine-count">1<' && ok "MY MESSAGES counts one waiting" || bad "no waiting count on MY MESSAGES"
-echo "$MINE" | grep -q 'id="feed-mine-note"' && ok "the sender is told it is visible only to them" || bad "no visible-only-to-you note"
 
 curl -s -b $A -X POST --data-urlencode "body=Rain. Not the idea of it, the sound." \
   -d "action=publish" -o /dev/null $B/control/$ID/reply
@@ -131,15 +130,13 @@ AV=$(echo "$API" | grep -oE '"version":"[0-9a-f]+"' | grep -oE '[0-9a-f]{16}')
 curl -s $B/api/board | grep -q 'data-pending' && bad "another visitor's API view carries pending cards" \
   || ok "the API never hands one visitor another's unpublished message"
 curl -s $B/ | grep -q 'class="cards"' && ok "exchanges render as a card grid" || bad "no card grid"
-curl -s $B/messages | grep -q 'class="scroller tall"' \
-  && ok "the messages tab scrolls in its own field" || bad "no scrollable message field"
 curl -s $B/ | grep -q 'class="scroller feed"' \
   && ok "the message board scrolls beside the composer" || bad "no message-board column on the landing page"
-curl -s $B/messages | grep -q 'class="composer"' \
-  && bad "a composer is still on the messages tab" || ok "no composer on the messages tab"
-curl -s $B/ | grep -qP 'All \d+ exchanges' && ok "landing links through to every exchange" || bad "no link to the messages tab"
-[ "$(curl -s -o /dev/null -w '%{redirect_url}' $B/board)" = "$B/messages" ] \
-  && ok "/board redirects to the messages tab" || bad "/board redirect wrong"
+curl -s $B/ | grep -qP 'id="feed-counter">\d+ exchanges · \d+ sent' && ok "the board counts every exchange" || bad "no exchange count"
+[ "$(curl -s -o /dev/null -w '%{redirect_url}' $B/messages)" = "$B/#exchanges" ] \
+  && ok "/messages lands on the board" || bad "/messages redirect wrong"
+[ "$(curl -s -o /dev/null -w '%{redirect_url}' $B/board)" = "$B/#exchanges" ] \
+  && ok "/board lands on the board" || bad "/board redirect wrong"
 curl -s -b $A $B/archive/messages | grep -q "$CS" && ok "searchable in the archive under $CS" || bad "missing from archive"
 curl -s -b $V $B/ | grep -q 'id="composer"' && ok "composer returns after arrival" || bad "composer still locked"
 
@@ -163,18 +160,18 @@ node -e '
 const d=require(process.env.CONTENT_DIR+"/notes.json");
 process.exit((d["2"]||[]).some(n=>n.kind==="SCIENCE")?0:1);' \
   && ok "a science update is written into notes.json" || bad "update not written to file"
-curl -s $B/day/2 | grep -q "Baseline established" && ok "and is live on the site" || bad "update not live"
+curl -s $B/ | grep -q "Baseline established" && ok "and is live on the site" || bad "update not live"
 
 curl -s -b $A -X POST -d "day=2" -d "kind=HEALTH" \
   --data-urlencode "body=All three sleeping through the period." -o /dev/null $B/control/updates
-curl -s $B/day/2 | grep -q "sleeping through" && ok "a health update files the same way" || bad "health update failed"
+curl -s $B/ | grep -q "sleeping through" && ok "a health update files the same way" || bad "health update failed"
 
 curl -s -b $A -X POST -d "day=2" -d "q_water=555" -d "c_water=20" -o /dev/null $B/control/inventory
 node -e '
 const d=require(process.env.CONTENT_DIR+"/inventory-levels.json");
 process.exit(d["2"] && d["2"].water && d["2"].water.quantity===555?0:1);' \
   && ok "an inventory update is written into inventory-levels.json" || bad "inventory not written to file"
-curl -s $B/day/2 | grep -q "555" && ok "and the gauges follow it" || bad "inventory edit not live"
+curl -s -b $A $B/archive/day/2 | grep -q "555" && ok "and the record follows it" || bad "inventory edit not live"
 
 curl -s -b $A -X POST -d "day=2" -d "designation=HEALTH OFFICER" \
   --data-urlencode "body=Blog written from mission control." -o /dev/null $B/control/logbook
@@ -182,12 +179,12 @@ node -e '
 const d=require(process.env.CONTENT_DIR+"/logbook.json");
 process.exit(/mission control/.test((d["2"]||{})["HEALTH OFFICER"]||"")?0:1);' \
   && ok "a daily blog is written into logbook.json" || bad "blog not written to file"
-curl -s $B/logbook | grep -q "Blog written from mission control" && ok "and is live" || bad "blog not live"
+curl -s $B/ | grep -q "Blog written from mission control" && ok "and is live in the crew log" || bad "blog not live"
 
-MOODID=$(curl -s -b $A $B/control/science | grep -oE 'action="/control/moods/[0-9]+"' | head -1 | grep -oE '[0-9]+')
+MOODID=$(curl -s -b $A $B/control | grep -oE 'action="/control/moods/[0-9]+"' | head -1 | grep -oE '[0-9]+')
 curl -s -b $A -X POST -d "calm_tense=64" -d "energetic_exhausted=58" -d "optimistic_uncertain=50" \
   -d "connected_isolated=72" -d "activity=Sample analysis" -o /dev/null $B/control/moods/$MOODID
-curl -s $B/crew | grep -q "watchful, holding tension" && ok "control can file a crew mood" || bad "mood not filed"
+curl -s $B/ | grep -q "watchful, holding tension" && ok "control can file a crew mood" || bad "mood not filed"
 
 echo "── the record is readable"
 # a second exchange that is not deleted, so the record has one to hold
@@ -210,31 +207,25 @@ grep -q "Mission day 001" /tmp/record.md && grep -q "Mission day 009" /tmp/recor
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/archive/export.md)" = "302" ] \
   && ok "the readable record is control-only too" || bad "readable record is public"
 
-echo "── habitat terminal"
-CAP=/tmp/crew.jar; cp $A $CAP
-curl -s -b $CAP $B/log | grep -q "Who is writing" && ok "terminal asks who is at it" || bad "no crew chooser"
-# Crew ids move when the roster changes, so take one from the page.
-CREWID=$(curl -s -b $CAP $B/log | grep -oE 'name="crew_id" value="[0-9]+"' | head -1 | grep -oE '[0-9]+')
-curl -s -b $CAP -c $CAP -X POST -d "crew_id=$CREWID" -o /dev/null $B/log/who
-curl -s -b $CAP $B/log | grep -q "OFFICER" && ok "an officer is selected" || bad "crew selection failed"
-curl -s -b $CAP $B/log | grep -q "mood-slider" && ok "crew file their own state here" || bad "no state sliders"
-curl -s -b $CAP $B/log | grep -qE "Habitat inspection|Wake and habitat check" \
-  && ok "terminal shows the preset schedule for context" || bad "no schedule on the terminal"
-
-curl -s -b $CAP -X POST --data-urlencode \
-  "body=The west wall condensation is worse than the model predicted." -o /dev/null $B/log/entry
-curl -s $B/logbook | grep -q "west wall condensation" && ok "entry reaches the public logbook" || bad "entry not published"
-curl -s $B/day | grep -q "west wall condensation" && ok "entry appears on that day's page" || bad "missing from day page"
-curl -s -b $CAP -X POST --data-urlencode "body=Revised after supper." -o /dev/null $B/log/entry
-[ "$(curl -s $B/logbook | grep -c 'Revised after supper')" = "1" ] \
+echo "── crew entries are written from control"
+TODAY=$(curl -s $B/api/status | grep -oE '"missionDay":[0-9]+' | cut -d: -f2)
+curl -s -b $A -X POST -d "day=$TODAY" -d "designation=COMMUNICATION OFFICER" -d "back=comms" --data-urlencode \
+  "body=The west wall condensation is worse than the model predicted." -o /dev/null $B/control/logbook
+curl -s $B/ | grep -q "west wall condensation" && ok "an entry reaches the public crew log" || bad "entry not published"
+curl -s -b $A "$B/control?day=$TODAY" | grep -q "west wall condensation" && ok "and is back in its box on control" || bad "entry not shown in control"
+curl -s -b $A -X POST -d "day=$TODAY" -d "designation=COMMUNICATION OFFICER" --data-urlencode "body=Revised after supper." -o /dev/null $B/control/logbook
+[ "$(curl -s -b $A $B/archive/day/$TODAY | grep -c 'Revised after supper')" = "1" ] \
   && ok "same-day edit replaces rather than duplicates" || bad "editing duplicated the entry"
-curl -s -b $CAP -X POST -d "body=" -o /dev/null $B/log/entry
-curl -s -b $CAP $B/log | grep -q "needs text before it can be filed" && ok "empty entry refused" || bad "empty entry accepted"
+curl -s $B/ | grep -q "west wall condensation" && bad "old text still on the site" || ok "the old text is gone"
+curl -s -b $A -X POST -d "day=$TODAY" -d "designation=COMMUNICATION OFFICER" -d "body=" -o /dev/null $B/control/logbook
+curl -s $B/ | grep -q "Revised after supper" && bad "an empty save left the entry standing" || ok "an empty save removes the entry"
+[ "$(curl -s -b $A -o /dev/null -w '%{redirect_url}' -X POST -d "day=3" -d "designation=SCIENCE OFFICER" -d "back=science" -d "body=Day three." $B/control/logbook)" = "$B/control?tab=science&day=3#work" ] \
+  && ok "a save returns to the tab and day it came from" || bad "save landed somewhere else"
 
-curl -s -b $CAP -X POST -d "calm_tense=88" -d "energetic_exhausted=70" \
-  -d "activity=Filter maintenance" -o /dev/null $B/log/state
-curl -s $B/crew | grep -q "strained, short with the others" && ok "state translated into public language" || bad "state not translated"
-[ "$(curl -s $B/crew | grep -c 'calm_tense')" = "0" ] && ok "no raw mood values reach the public" || bad "raw values leaked"
+curl -s -b $A -X POST -d "calm_tense=88" -d "energetic_exhausted=70" \
+  -d "activity=Filter maintenance" -o /dev/null $B/control/moods/$MOODID
+curl -s $B/ | grep -q "strained, short with the others" && ok "state translated into public language" || bad "state not translated"
+[ "$(curl -s $B/ | grep -c 'calm_tense')" = "0" ] && ok "no raw mood values reach the public" || bad "raw values leaked"
 
 echo "── archive is control-only"
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/archive)" = "302" ] \
@@ -249,19 +240,27 @@ curl -s $B/ | grep -q 'href="/archive' && bad "public page still links to the ar
 echo "── navigation"
 # The landing page has no top bar — its links live in the black footer.
 # Subpages keep the Mission / Messages / Crew log / About bar.
-NAV2=$(curl -s $B/messages | grep -oP '(?<=class="nav">).*?(?=</nav>)' | grep -oP '(?<=>)[A-Za-z ]+(?=</a>)' | tr '\n' ' ')
+NAV2=$(curl -s -b $A $B/archive | grep -oP '(?<=class="nav">).*?(?=</nav>)' | grep -oP '(?<=>)[A-Za-z ]+(?=</a>)' | tr '\n' ' ')
 [ "$NAV2" = "Mission Messages Crew log About " ] \
-  && ok "subpage top bar is Mission, Messages, Crew log, About" || bad "subpage top bar is: $NAV2"
+  && ok "the archive's top bar points into the landing page" || bad "archive top bar is: $NAV2"
 FOOT=$(curl -s $B/)
-for l in "/messages" "/logbook" "/schedule" "/crew" "/what"; do
+for l in "/#exchanges" "/#crewlog" "/#mission" "/#crew" "/#about"; do
   echo "$FOOT" | grep -q "href=\"$l\"" || bad "landing page missing link: $l"
 done
 ok "the landing footer carries the navigation"
+for u in /crew /logbook /day /day/3 /schedule /what /about /who-we-are; do
+  [ "$(curl -s -o /dev/null -w '%{http_code}' $B$u)" = "301" ] || bad "$u is not redirected"
+done
+ok "every old public address redirects into the landing page"
+for sec in write exchanges mission habitat crew crewlog about what who-we-are; do
+  echo "$FOOT" | grep -q "id=\"$sec\"" || bad "landing page has no #$sec section"
+done
+ok "the landing page carries every section: composer, board, mission, habitat, crew, crew log, about"
 
 echo "── two-axis mood"
-[ "$(curl -s -b $A $B/control/science | grep -c 'class="mood-slider"')" = "2" ] \
-  && ok "one slider for mood and one for energy" || bad "wrong number of mood sliders"
-curl -s -b $A $B/control/science | grep -q ">Mood<" && curl -s -b $A $B/control/science | grep -q ">Energy<" \
+[ "$(curl -s -b $A $B/control | grep -c 'class="mood-slider"')" = "6" ] \
+  && ok "one slider for mood and one for energy, per officer" || bad "wrong number of mood sliders"
+curl -s -b $A $B/control | grep -q ">Mood<" && curl -s -b $A $B/control | grep -q ">Energy<" \
   && ok "the two axes are labelled mood and energy" || bad "axes not labelled"
 
 echo "── habitat on the mission page"
@@ -312,28 +311,33 @@ curl -s $B/api/habitat/data | grep -q '"co2":640' \
   && ok "a stored reading reaches the browser API" || bad "stored reading not served"
 
 echo "── message timestamps"
-curl -s $B/messages | grep -q "card-sent" && ok "each message carries its sent date and time" || bad "no timestamp on messages"
+curl -s $B/ | grep -q "bcard-time" && ok "each message carries its sent date and time" || bad "no timestamp on messages"
 
 echo "── the crossing"
 curl -s $B/ | grep -q 'id="composer"' || true
 ok "transmission animation markup present"
 
-echo "── terminal switcher"
-TJ=/tmp/term.jar; cp $A $TJ
-TID=$(curl -s -b $TJ $B/log | grep -oE 'name="crew_id" value="[0-9]+"' | head -1 | grep -oE '[0-9]+')
-curl -s -b $TJ -c $TJ -X POST -d "crew_id=$TID" -o /dev/null $B/log/who
-TERM=$(curl -s -b $TJ $B/log)
-echo "$TERM" | grep -q 'class="whoami"' && ok "officer switcher down the left of the terminal" || bad "no switcher"
-echo "$TERM" | grep -q "log/out" && bad "hand-over link still present" || ok "hand-over link removed"
+echo "── replying is one motion"
+QUEUE=$(curl -s -b $A "$B/control?show=all")
+echo "$QUEUE" | grep -q 'class="reply-box"' && ok "each message carries its reply box directly beneath it" || bad "no reply box"
+echo "$QUEUE" | grep -q 'value="publish" class="primary"' && ok "one primary action: reply and publish" || bad "no primary reply button"
+echo "$QUEUE" | grep -q 'Ctrl+Enter' && ok "the keyboard shortcut is written on the box" || bad "no shortcut hint"
+echo "$QUEUE" | grep -q 'id="queue-new"' && ok "new arrivals are announced without a reload" || bad "no arrival banner"
+curl -s -b $A $B/control/api/queue | grep -q '"waiting":' && ok "control polls a waiting count" || bad "no queue count API"
+[ "$(curl -s -b $A -o /dev/null -w '%{redirect_url}' -X POST -d "body=" "$B/control/$ID2/reply?show=published")" = "$B/control?show=published#queue" ] \
+  && ok "a reply returns to the queue in the view it came from" || bad "reply landed elsewhere"
 
 echo "── mission page sections"
 PAGE=$(curl -s -b $V $B/)
-for s in "Communication Portal" "Message Board" "Habitat"; do
+for s in "Communication Portal" "Message Board"; do
   echo "$PAGE" | grep -q ">$s</h" || bad "mission page missing heading: $s"
 done
-ok "portal, board and habitat are all headed"
-echo "$PAGE" | grep -q 'class="hero-art"' && ok "the Mars-surface masthead leads the page" || bad "no hero masthead"
-echo "$PAGE" | grep -q 'MARS!PLATZ' && ok "the MARS!PLATZ title is on the masthead" || bad "no title on the masthead"
+echo "$PAGE" | grep -q 'id="habitat"' || bad "no habitat panel on the dashboard"
+ok "portal and board are headed; the habitat is a panel of the dashboard"
+echo "$PAGE" | grep -q 'class="console"' && ok "the console leads the page" || bad "no console"
+echo "$PAGE" | grep -q 'class="plate-word">Marsplatz' && ok "the Marsplatz plate is on the console" || bad "no name plate on the console"
+echo "$PAGE" | grep -q 'class="mbox composer-device' && ok "the message box is the centre of the console" || bad "no message box"
+echo "$PAGE" | grep -q 'class="board-panel"' && ok "the messages panel stands in the right edge" || bad "no messages panel"
 echo "$PAGE" | grep -q 'MISSION DAY\|OPENS' && ok "the mission day is stamped on the masthead" || bad "no mission day on the masthead"
 echo "$PAGE" | grep -q 'class="nav"' && bad "top navigation still on the landing page" \
   || ok "landing navigation lives in the footer"
@@ -341,7 +345,8 @@ echo "$PAGE" | grep -q 'id="feed-filter"' && ok "the board carries its tag filte
 echo "$PAGE" | grep -q 'data-filter="mine"' && ok "the board offers a my-messages filter" || bad "no my-messages filter"
 curl -s -b $V2 $B/ | grep -q 'data-mine="1"' \
   && ok "a visitor's own messages are marked as theirs" || bad "own messages not marked"
-echo "$PAGE" | grep -q 'class="dp-pills"' && ok "the daily mission carries its pill tabs" || bad "no daily-plan tabs"
+echo "$PAGE" | grep -q 'class="dash-grid"' && ok "the mission dashboard lays everything out in one grid" || bad "no dashboard grid"
+echo "$PAGE" | grep -q 'class="kpis"' && ok "the dashboard leads with its headline figures" || bad "no headline figures"
 echo "$PAGE" | grep -q 'id="hbt-bento"' && ok "the habitat dashboard shell is on the page" || bad "no habitat dashboard"
 echo "$PAGE" | grep -q '/habitat.js' && ok "the habitat renderer is loaded" || bad "habitat.js not loaded"
 echo "$PAGE" | grep -q "Habitat occupation begins" && bad "countdown panel still present" \
@@ -355,9 +360,9 @@ echo "$PAGE" | grep -q 'class="badge' && ok "crew conditions on the mission page
 echo "$PAGE" | grep -qE "Hatch seal|Wake and habitat check" && ok "daily schedule on the mission page" || bad "no daily schedule"
 
 echo "── crew and env"
-curl -s $B/crew | grep -q "COMMUNICATION OFFICER" && curl -s $B/crew | grep -q "HEALTH OFFICER" \
+curl -s $B/ | grep -q "COMMUNICATION OFFICER" && curl -s $B/ | grep -q "HEALTH OFFICER" \
   && ok "the three officers are communication, science and health" || bad "crew roles wrong"
-curl -s $B/crew | grep -q "CAPTAIN" && bad "the captain is still in the crew" || ok "no captain left over"
+curl -s $B/ | grep -q "CAPTAIN" && bad "the captain is still in the crew" || ok "no captain left over"
 curl -s $B/ | grep -q 'class="logo"' && bad "the mark is back in the top right" \
   || ok "no mark in the top right of the mission page"
 [ -f .env ] && grep -q "^ADMIN_PASSWORD=" .env && ok ".env is present with the account in it" || bad "no .env"
@@ -368,7 +373,7 @@ echo "── light mode"
 curl -s -c $T $B/ | grep -q 'data-theme="light"' && ok "light is the default" || bad "no theme attribute"
 curl -s -b $T -c $T -X POST -d "to=dark" -o /dev/null $B/theme
 curl -s -b $T $B/ | grep -q 'data-theme="dark"' && ok "dark mode applies" || bad "dark mode did not apply"
-curl -s -b $T $B/crew | grep -q 'data-theme="dark"' && ok "theme persists across pages" || bad "theme did not persist"
+curl -s -b $T $B/control/login | grep -q 'data-theme="dark"' && ok "theme persists across pages" || bad "theme did not persist"
 grep -q 'data-theme="dark"' public/station.css && ok "dark palette defined in one place" || bad "no dark palette"
 
 echo "── label aesthetic"
@@ -376,7 +381,7 @@ grep -q "repeating-linear-gradient" public/station.css && ok "hatch and barcode 
 grep -q "\-\-orange:" public/station.css && ok "single accent colour token" || bad "no orange token"
 
 echo "── the health officer's report form"
-HT=$(curl -s -b $A $B/control/health)
+HT=$(curl -s -b $A $B/control)
 echo "$HT" | grep -q "Workout session in the morning" \
   && ok "the box opens with the morning workout prompt" || bad "no morning workout prompt"
 echo "$HT" | grep -q "Wellbeing activity in the evening" \
@@ -386,9 +391,9 @@ echo "$HT" | grep -q "Other reporting" && ok "and other reporting" || bad "no ot
 # The health report offers nothing to choose between, so it shows no buttons.
 node -e '
 const cp = require("child_process");
-const h = cp.execSync("curl -s -b /tmp/admin.jar http://localhost:8080/control/health").toString();
+const h = cp.execSync("curl -s -b /tmp/admin.jar http://localhost:8080/control").toString();
 const i = h.indexOf("CH-36 / HEALTH");
-const j = h.indexOf("CH-50 / DAILY BLOG");
+const j = h.indexOf("CH-50 / DAILY BLOG", i);
 const block = h.slice(i, j > i ? j : undefined);
 process.exit(block.includes("class=\"tpl\"") ? 1 : 0);' \
   && ok "no template buttons on the health report" || bad "template buttons still on the health report"
@@ -402,18 +407,18 @@ const fs = require("fs"), p = process.env.CONTENT_DIR + "/templates.json";
 const d = JSON.parse(fs.readFileSync(p));
 d.HEALTH[0].body = "EDITED DEFAULT TEXT\n";
 fs.writeFileSync(p, JSON.stringify(d, null, 2));'
-curl -s -b $A $B/control/health | grep -q "EDITED DEFAULT TEXT" \
+curl -s -b $A $B/control | grep -q "EDITED DEFAULT TEXT" \
   && ok "the default text is editable and applies at once" || bad "default text edit not picked up"
 
 echo "── crew figures are graphed"
 LAND=$(curl -s $B/)
-[ "$(echo "$LAND" | grep -c 'class="graph-svg"')" = "2" ] \
+[ "$(echo "$LAND" | grep -c 'class="fig-spark"')" = "2" ] \
   && ok "two plotted graphs, one per figure" || bad "the figures are not graphed"
 echo "$LAND" | grep -q "Calories consumed" && ok "calories is one of them" || bad "no calories graph"
 echo "$LAND" | grep -q "Steps taken" && ok "steps is the other" || bad "no steps graph"
 [ "$(echo "$LAND" | grep -o '<circle' | wc -l)" -ge 18 ] \
   && ok "a plotted point for every day of both series" || bad "the graphs are missing points"
-echo "$LAND" | grep -q "graph-axis" && ok "with a value axis and a day axis" || bad "the graphs have no axes"
+echo "$LAND" | grep -q "<title>Day 00" && ok "every point carries its day and value" || bad "the points carry no values"
 echo "$LAND" | grep -q "Every other channel here is sampled" \
   && bad "the explanatory prose is still there" || ok "no prose in the panel, only the graphs"
 
@@ -424,30 +429,30 @@ curl -s $B/ | grep -q "Reading the channels" \
 # the visualization; the status-mark system lives on wherever readings render.
 
 echo "── each officer keeps their own day content"
-curl -s -b $A $B/control | grep -q "CH-30 / DAILY MISSION" \
-  && ok "the schedule editor is on the communication tab" || bad "no schedule editor on the comms tab"
-curl -s -b $A $B/control/health | grep -q "CH-32 / DAILY FOOD PLAN" \
-  && ok "the food plan editor is on the health tab" || bad "no food plan editor on the health tab"
-curl -s -b $A $B/control/health | grep -q "CH-13 / CREW FIGURES" \
-  && ok "the crew figures editor is on the health tab" || bad "no crew figures editor"
-curl -s -b $A $B/control/science | grep -qE "CH-30 / DAILY MISSION|CH-32 / DAILY FOOD PLAN|CH-13 / CREW FIGURES" \
-  && bad "editors leaked onto the science tab" || ok "each officer sees only their own"
+# One page, four panes: an editor must sit inside its officer's pane.
+node -e '
+const h = require("child_process").execSync("curl -s -b /tmp/admin.jar http://localhost:8080/control").toString();
+const pane = (k) => { const i = h.indexOf("data-pane=\"" + k + "\""); const j = h.indexOf("data-pane=", i + 10); return h.slice(i, j > i ? j : undefined); };
+const c = pane("comms"), s = pane("science"), he = pane("health");
+const fail = [];
+if (!c.includes("CH-30 / DAILY MISSION")) fail.push("schedule not on comms");
+if (!he.includes("CH-32 / DAILY FOOD PLAN")) fail.push("food plan not on health");
+if (!he.includes("CH-13 / CREW FIGURES")) fail.push("figures not on health");
+if (/CH-30 \/ DAILY MISSION|CH-32 \/ DAILY FOOD PLAN|CH-13 \/ CREW FIGURES/.test(s)) fail.push("editors leaked onto science");
+if (fail.length) { console.error(fail.join("; ")); process.exit(1); }' \
+  && ok "schedule on comms, food plan and figures on health, nothing leaks onto science" || bad "editors are on the wrong panes"
 
 curl -s -b $A $B/control > /tmp/comms.html
 POS_SCHED=$(grep -bo "CH-30 / DAILY MISSION" /tmp/comms.html | head -1 | cut -d: -f1)
-POS_MOOD=$(grep -bo "CH-12 / MOOD" /tmp/comms.html | head -1 | cut -d: -f1)
-POS_BLOG=$(grep -bo "CH-50 / DAILY BLOG" /tmp/comms.html | head -1 | cut -d: -f1)
-POS_MSGS=$(grep -bo "CH-09 / MESSAGES" /tmp/comms.html | head -1 | cut -d: -f1)
-if [ -n "$POS_SCHED" ] && [ -n "$POS_MOOD" ] && [ -n "$POS_BLOG" ] && [ -n "$POS_MSGS" ] \
-   && [ "$POS_SCHED" -lt "$POS_MOOD" ] && [ "$POS_MOOD" -lt "$POS_MSGS" ] \
-   && [ "$POS_BLOG" -lt "$POS_MSGS" ]; then
-  ok "messages sit below the schedule, mood and blog"
+POS_MSGS=$(grep -bo 'id="queue"' /tmp/comms.html | head -1 | cut -d: -f1)
+if [ -n "$POS_SCHED" ] && [ -n "$POS_MSGS" ] && [ "$POS_MSGS" -lt "$POS_SCHED" ]; then
+  ok "messages sit above the day's work"
 else
-  bad "the queue is not at the foot"
+  bad "the queue is not at the top"
 fi
 
 echo "── the food plan drops water and power"
-HP=$(curl -s -b $A $B/control/health)
+HP=$(curl -s -b $A $B/control | sed -n '/data-pane="health"/,/data-pane="habitat"/p')
 echo "$HP" | grep -q "_water" && bad "a water field is still on the food plan" || ok "no water field per meal"
 echo "$HP" | grep -q "_energy" && bad "a power field is still on the food plan" || ok "no power field per meal"
 echo "$HP" | grep -q "Physical readings" && bad "the physical readings template is still offered" \
@@ -459,7 +464,7 @@ const b = (d["3"] || []).find((m) => m.slot === "BREAKFAST");
 console.log(b ? b.water : "none");')
 curl -s -b $A -X POST -d "day=3" -d "BREAKFAST_name=EDITED BREAKFAST" -d "BREAKFAST_kcal=410" \
   -o /dev/null $B/control/meals
-curl -s $B/day/3 | grep -q "EDITED BREAKFAST" \
+curl -s $B/ | grep -q "EDITED BREAKFAST" \
   && ok "the health officer can edit the food plan" || bad "food plan edit did not apply"
 [ "$WATER_BEFORE" = "$(node -e '
 const d = require(process.env.CONTENT_DIR + "/meals.json");
@@ -489,9 +494,11 @@ curl -s $B/ | grep -q 'stroke-dasharray="2 3"' \
 
 echo "── editable content"
 curl -s $B/api/content | grep -q '"ok":true' && ok "content files loaded cleanly" || bad "content failed to load"
-curl -s $B/day/1 | grep -q "Hatch seal and pressure hold" && ok "authored schedule is live" || bad "schedule missing"
-curl -s $B/day/1 | grep -q "Rehydrated oats" && ok "authored meal plan is live" || bad "meals missing"
-curl -s $B/logbook | grep -q "the floor by the water rack" && ok "authored diary entries are live" || bad "diary missing"
+curl -s $B/ | grep -q "Hatch seal and pressure hold" && ok "authored schedule is live" || bad "schedule missing"
+curl -s $B/ | grep -q "Rehydrated oats" && ok "authored meal plan is live" || bad "meals missing"
+curl -s $B/ | grep -q "the floor by the water rack" && ok "authored diary entries are live" || bad "diary missing"
+curl -s $B/ | grep -q "Last window. I answered everything" && bad "a diary entry drafted for a future day is public" \
+  || ok "diary entries drafted for days ahead stay hidden until the day"
 curl -s $B/ | grep -q "Potable water" && ok "inventory names come from the file" || bad "inventory names missing"
 
 node -e '
@@ -500,7 +507,7 @@ const d=JSON.parse(fs.readFileSync(p));
 d["1"][0].label="EDITED FROM THE FILE";
 fs.writeFileSync(p,JSON.stringify(d,null,2));'
 sleep 2
-curl -s $B/day/1 | grep -q "EDITED FROM THE FILE" \
+curl -s $B/ | grep -q "EDITED FROM THE FILE" \
   && ok "editing a file changes the site without a restart" || bad "file edit did not apply"
 
 node -e '
@@ -509,29 +516,27 @@ const d=JSON.parse(fs.readFileSync(p));
 d["1"].water.quantity=444;
 fs.writeFileSync(p,JSON.stringify(d,null,2));'
 sleep 2
-curl -s $B/day/1 | grep -q "444" && ok "inventory edit reaches the site" || bad "inventory edit did not apply"
+curl -s -b $A $B/archive/day/1 | grep -q "444" && ok "inventory edit reaches the site" || bad "inventory edit did not apply"
 
-CAP2=/tmp/crew2.jar; cp $A $CAP2
-CREWID2=$(curl -s -b $CAP2 $B/log | grep -oE 'name="crew_id" value="[0-9]+"' | tail -1 | grep -oE '[0-9]+')
-curl -s -b $CAP2 -c $CAP2 -X POST -d "crew_id=$CREWID2" -o /dev/null $B/log/who
-# Whoever is at the terminal — the file edit below has to name the same officer.
-WHO=$(curl -s -b $CAP2 $B/log | grep -oE '[A-Z]+ OFFICER' | head -1)
-curl -s -b $CAP2 -X POST --data-urlencode "body=WRITTEN AT THE TERMINAL." -o /dev/null $B/log/entry
-WHO="$WHO" node -e '
-const fs=require("fs"),cp=require("child_process"),p=process.env.CONTENT_DIR+"/logbook.json";
+# Control and the file are the same record now: whichever wrote last wins.
+curl -s -b $A -X POST -d "day=4" -d "designation=SCIENCE OFFICER" --data-urlencode "body=WRITTEN FROM CONTROL." -o /dev/null $B/control/logbook
+node -e '
+const d=require(process.env.CONTENT_DIR+"/logbook.json");
+process.exit(d["4"] && d["4"]["SCIENCE OFFICER"]==="WRITTEN FROM CONTROL." ? 0 : 1);' \
+  && ok "an entry written from control lands in logbook.json" || bad "control entry not in the file"
+node -e '
+const fs=require("fs"),p=process.env.CONTENT_DIR+"/logbook.json";
 const d=JSON.parse(fs.readFileSync(p));
-const day=String(cp.execSync("curl -s http://localhost:8080/api/status").toString().match(/"missionDay":(\d+)/)[1]);
-d[day]=d[day]||{}; d[day][process.env.WHO]="FILE TRIED TO TAKE THIS BACK";
+d["4"]["SCIENCE OFFICER"]="EDITED IN THE FILE AFTERWARDS.";
 fs.writeFileSync(p,JSON.stringify(d,null,2));'
 sleep 2
-curl -s $B/logbook | grep -q "WRITTEN AT THE TERMINAL" \
-  && ok "a performer's entry survives a file edit" || bad "file overwrote a terminal entry"
-curl -s $B/logbook | grep -q "FILE TRIED TO TAKE THIS BACK" \
-  && bad "file reclaimed a terminal entry" || ok "file yields to the terminal for that day"
+curl -s $B/ | grep -q "EDITED IN THE FILE AFTERWARDS" \
+  && ok "a later file edit changes the same entry" || bad "file edit did not reach the entry"
+curl -s $B/ | grep -q "WRITTEN FROM CONTROL" && bad "the old text survived the file edit" || ok "there is one record, not two"
 
 echo '{ "1": [ { "label": "oops", } ] }' > "$CONTENT_DIR/schedule.json"
 sleep 2
-[ "$(curl -s -o /dev/null -w '%{http_code}' $B/day/1)" = "200" ] \
+[ "$(curl -s -o /dev/null -w '%{http_code}' $B/)" = "200" ] \
   && ok "a broken file leaves the site serving the last good content" || bad "broken file took the site down"
 curl -s $B/api/content | grep -q '"ok":false' && ok "the error is reported, with a line number" || bad "no error reported"
 

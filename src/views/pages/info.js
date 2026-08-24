@@ -3,110 +3,37 @@ const L = require('../layout');
 const { esc, panel, eyebrow, pipeline } = L;
 const orbital = require('../../lib/orbital');
 
-/* ================================================================== WHAT */
+/**
+ * The project, the station's behaviour and the credits — one section at the
+ * foot of the landing page, in three folds. The landing page is the only
+ * public page, so this is where the reading matter lives.
+ */
 
-function what(ctx) {
-  const light = orbital.formatLightTime(ctx.geo.lightSeconds);
-  const body = `
-  <div style="padding:30px 0 18px">
-    <div class="eyebrow">Operating notes</div>
-    <h1>What this is</h1>
-    <p class="lede">A communication station, not a website about one. Everything below describes
-    how it actually behaves, so that nothing about the delay comes as a surprise.</p>
-  </div>
+const CREDITS = [
+  ['Concept and direction', 'To be credited'],
+  ['Performance', 'Three performers, credited after the run'],
+  ['Scenography and habitat', 'To be credited'],
+  ['Sound', 'To be credited'],
+  ['Sensor systems and software', 'To be credited'],
+  ['Production', 'ZKM | Hertzlab'],
+  ['Technical direction', 'To be credited'],
+];
 
+function aboutFold(ctx) {
+  return `
   <div class="grid g-hero">
     <div class="prose">
-      <h2>You already have a callsign</h2>
-      <p>The moment you opened this page the station assigned you one — yours is
-      <b style="font-family:var(--mono);color:var(--earth)">${esc(ctx.callsign)}</b>. It is stored in
-      a cookie on your device and nowhere else. There is no account, no email, no name. If you clear
-      your browser you will be issued a new one and lose the thread of your earlier messages.</p>
-
-      <h2>What happens when you send something</h2>
-      <p>You write a message and choose up to three tags. When you transmit it, the composer is
-      replaced by a transit display and you cannot send again until that message has arrived. The
-      station computes the arrival time on the server, so closing the tab, reloading, or switching
-      devices will not shorten the wait.</p>
-      <p>The message then joins a queue that a human reads. Mission control decides whether it goes
-      to the crew and whether it is published. Not every message is carried forward, and that is a
-      real editorial decision rather than a spam filter.</p>
-
-      <h2>The delay is compressed, and we say so</h2>
-      <p>At this moment a radio signal takes <b>${light}</b> to reach Mars, and the same again to
-      come back. The station shows you that figure constantly — it is in the rail at the top of
-      every page. But the animated crossing you watch after pressing transmit runs in about
-      ten seconds. Pretending otherwise would make the piece a lie about physics rather than a
-      piece about distance. The real number is stored with your message and travels with it into
-      the archive.</p>
-
-      <h2>Where the habitat readings come from</h2>
-      <p>Temperature, humidity and any other channel shown on the habitat page are measured by
-      sensors in the physical performance space and posted to this station as they are taken. When
-      a channel stops reporting for more than five minutes it is marked <b>SIGNAL LOST</b> rather
-      than being hidden or frozen on its last value.</p>
-
-      <h2>What the crew page is not</h2>
-      <p>The crew readings are filed by mission control on four axes and translated into sentences
-      here. They are a report about three people, written by people, transmitted deliberately. They
-      are not sentiment analysis and they are not automated.</p>
-    </div>
-
-    <div>
-      ${panel('CH-40 / SEQUENCE', `
-        ${eyebrow('The path of a message')}
-        <div class="rows">
-        ${[
-          ['Draft', 'You are writing. Nothing has left Earth.'],
-          ['Transmitted', 'You pressed send. The station timestamps it.'],
-          ['In transit', 'Crossing the gap. You cannot send again.'],
-          ['Arrived', 'It has reached the Mars endpoint.'],
-          ['Pending approval', 'A human at mission control reads it.'],
-          ['Approved', 'Cleared to be answered.'],
-          ['Response', 'The crew write back.'],
-          ['Published', 'Both halves enter the archive.'],
-        ].map(([a, b], i) => `<div class="row"><div class="t">${String(i + 1).padStart(2, '0')}</div>
-          <div class="m"><b>${a}</b><span>${b}</span></div></div>`).join('')}
-        </div>`, 'earth-side')}
-      ${panel('CH-40 / PRIVACY', `
-        ${eyebrow('What is kept')}
-        <p class="note">Your callsign, your message text, your tags, and the time you sent it. A
-        one-way hash of your IP address is stored for rate limiting and is never displayed. No
-        analytics, no third-party scripts, no tracking of any kind. Published exchanges stay on
-        the mission page as part of the work; the complete day-by-day record is held by mission
-        control and is not public.</p>`, 'earth-side')}
-    </div>
-  </div>
-
-  ${panel('CH-40 / STATES', `${eyebrow('Message states as shown in the interface')}${pipeline('IN_TRANSIT')}`)}
-  `;
-  return L.page({ title: 'What this is', ctx, body, current: '/what' });
-}
-
-/* ================================================================= ABOUT */
-
-function about(ctx) {
-  const body = `
-  <div style="padding:30px 0 18px">
-    <div class="eyebrow">MARS · ZKM | Hertzlab</div>
-    <h1>About the project</h1>
-    <p class="lede">Three performers live in a habitat inside the exhibition space for the duration
-    of the run. This station is the only way in.</p>
-  </div>
-
-  <div class="grid g-hero">
-    <div class="prose">
-      <h2>The habitat</h2>
+      <h3>The habitat</h3>
       <p>MARS is a durational performance. For the length of the mission the crew do not leave the
       habitat. They follow a schedule, eat what has been planned for them, work through a set of
       tasks, and draw down a finite inventory. Visitors to the exhibition can see the habitat from
       outside. What they cannot do is walk in and talk to the people inside it.</p>
-      <p>The sensors that produce the readings on this site are mounted in that structure. When the
-      habitat warms up because a room full of people is standing around it, the number on the
-      habitat page moves. The data is not a simulation of a Mars habitat; it is a measurement of a
-      real enclosed space with three people in it.</p>
+      <p>The sensors that produce the readings on this page are mounted in that structure. When the
+      habitat warms up because a room full of people is standing around it, the number moves. The
+      data is not a simulation of a Mars habitat; it is a measurement of a real enclosed space with
+      three people in it.</p>
 
-      <h2>Distance as the material</h2>
+      <h3>Distance as the material</h3>
       <p>Networked communication is built to remove distance. A message is written and delivered in
       the same breath, and the gap between two people becomes invisible. That invisibility is the
       thing this piece takes apart.</p>
@@ -116,19 +43,17 @@ function about(ctx) {
       shape — and the number in the rail above reminds you that the real crossing is longer still.</p>
       <p>The delay is not friction added for effect. It is the subject.</p>
 
-      <h2>The archive as the work</h2>
+      <h3>The archive as the work</h3>
       <p>Every published exchange stays here. Over the run the archive accumulates into something
       neither the artists nor the audience wrote alone: a record of what people on Earth wanted to
-      ask three strangers in a sealed room, and how those questions shifted as the mission went on.
-      Early messages tend to be curious and technical. Later ones are usually not.</p>
+      ask three strangers in a sealed room, and how those questions shifted as the mission went on.</p>
 
-      <h2>Hertzlab</h2>
+      <h3>Hertzlab</h3>
       <p>Hertzlab is the research and production laboratory of the ZKM | Center for Art and Media
       Karlsruhe, working across performance, sound, media technology and installation. MARS is
       produced within that context, and this station was built as part of the production rather
       than as documentation of it.</p>
     </div>
-
     <div>
       ${panel('CH-41 / MISSION', `
         ${eyebrow('This mission')}
@@ -153,29 +78,76 @@ function about(ctx) {
         not fetched from a service. The station keeps working if the venue loses its connection.</p>`, 'earth-side')}
     </div>
   </div>`;
-  return L.page({ title: 'About', ctx, body, current: '/about' });
 }
 
-/* =========================================================== WHO WE ARE */
+function whatFold(ctx) {
+  const light = orbital.formatLightTime(ctx.geo.lightSeconds);
+  return `
+  <div class="grid g-hero">
+    <div class="prose">
+      <h3>You already have a callsign</h3>
+      <p>The moment you opened this page the station assigned you one — yours is
+      <b style="font-family:var(--mono);color:var(--earth)">${esc(ctx.callsign)}</b>. It is stored in
+      a cookie on your device and nowhere else. There is no account, no email, no name. If you clear
+      your browser you will be issued a new one and lose the thread of your earlier messages.</p>
 
-function who(ctx, { crew }) {
-  const CREDITS = [
-    ['Concept and direction', 'To be credited'],
-    ['Performance', 'Three performers, credited after the run'],
-    ['Scenography and habitat', 'To be credited'],
-    ['Sound', 'To be credited'],
-    ['Sensor systems and software', 'To be credited'],
-    ['Production', 'ZKM | Hertzlab'],
-    ['Technical direction', 'To be credited'],
-  ];
-  const body = `
-  <div style="padding:30px 0 18px">
-    <div class="eyebrow">Crew, company and credits</div>
-    <h1>Who we are</h1>
-    <p class="lede">Two registers, kept deliberately apart: the three people inside the habitat,
-    and the people who built the thing around them.</p>
+      <h3>What happens when you send something</h3>
+      <p>You write a message and choose up to three tags. When you transmit it, the composer is
+      replaced by a transit display and you cannot send again until that message has arrived. The
+      station computes the arrival time on the server, so closing the tab, reloading, or switching
+      devices will not shorten the wait.</p>
+      <p>The message then joins a queue that a human reads. Mission control decides whether it goes
+      to the crew and whether it is published. Until it is answered it is visible only to you,
+      under <b>MY MESSAGES</b> on the board. Not every message is carried forward, and that is a
+      real editorial decision rather than a spam filter.</p>
+
+      <h3>The delay is compressed, and we say so</h3>
+      <p>At this moment a radio signal takes <b>${light}</b> to reach Mars, and the same again to
+      come back. The station shows you that figure constantly — it is in the rail at the top. But
+      the animated crossing you watch after pressing transmit runs in about ten seconds. Pretending
+      otherwise would make the piece a lie about physics rather than a piece about distance. The
+      real number is stored with your message and travels with it into the archive.</p>
+
+      <h3>Where the habitat readings come from</h3>
+      <p>Temperature, humidity and the other channels in the Habitat section are measured by a
+      sensor node in the physical performance space. When the node stops reporting, the dashboard
+      says so rather than freezing on its last value.</p>
+
+      <h3>What the crew readings are not</h3>
+      <p>The crew readings are filed by mission control on two axes and translated into sentences.
+      They are a report about three people, written by people, transmitted deliberately. They are
+      not sentiment analysis and they are not automated.</p>
+    </div>
+    <div>
+      ${panel('CH-40 / SEQUENCE', `
+        ${eyebrow('The path of a message')}
+        <div class="rows">
+        ${[
+          ['Draft', 'You are writing. Nothing has left Earth.'],
+          ['Transmitted', 'You pressed send. The station timestamps it.'],
+          ['In transit', 'Crossing the gap. You cannot send again.'],
+          ['Arrived', 'It has reached the Mars endpoint.'],
+          ['Pending approval', 'A human at mission control reads it.'],
+          ['Approved', 'Cleared to be answered.'],
+          ['Response', 'The crew write back.'],
+          ['Published', 'Both halves enter the archive.'],
+        ].map(([a, b], i) => `<div class="row"><div class="t">${String(i + 1).padStart(2, '0')}</div>
+          <div class="m"><b>${a}</b><span>${b}</span></div></div>`).join('')}
+        </div>`, 'earth-side')}
+      ${panel('CH-40 / PRIVACY', `
+        ${eyebrow('What is kept')}
+        <p class="note">Your callsign, your message text, your tags, and the time you sent it. A
+        one-way hash of your IP address is stored for rate limiting and is never displayed. No
+        analytics, no third-party scripts, no tracking of any kind. Published exchanges stay on
+        this page as part of the work; the complete day-by-day record is held by mission control
+        and is not public.</p>`, 'earth-side')}
+    </div>
   </div>
+  ${panel('CH-40 / STATES', `${eyebrow('Message states as shown in the interface')}${pipeline('IN_TRANSIT')}`)}`;
+}
 
+function whoFold(crew) {
+  return `
   ${panel('CH-42 / CREW', `
     ${eyebrow('Inside the habitat')}
     <p class="note" style="max-width:64ch;margin-bottom:20px">The crew are addressed by
@@ -190,19 +162,15 @@ function who(ctx, { crew }) {
         <p class="note">${esc(c.status)} · currently ${esc((c.activity || 'unlogged').toLowerCase())}</p>
       </div>`).join('')}
     </div>`, 'mars-side')}
-
   <div class="grid g2">
     ${panel('CH-42 / COMPANY', `
       ${eyebrow('Outside the habitat')}
-      <div class="tw"><table>
-        <tbody>
+      <div class="tw"><table><tbody>
         ${CREDITS.map(([role, name]) => `<tr>
           <th style="width:46%">${esc(role)}</th><td>${esc(name)}</td></tr>`).join('')}
-        </tbody>
-      </table></div>
+      </tbody></table></div>
       <p class="note" style="margin-top:14px">Replace these entries in
       <code>src/views/pages/info.js</code> before the run opens.</p>`, 'earth-side')}
-
     <div>
       ${panel('CH-42 / PRODUCTION', `
         ${eyebrow('Produced by')}
@@ -215,10 +183,54 @@ function who(ctx, { crew }) {
         <p class="note">Press and production enquiries reach a person, not this station.
         Messages sent through the communication channel reach the habitat and are answered
         there. The two do not mix.</p>
-        <p><a class="btn" href="/communicate">Write to the habitat instead</a></p>`, 'earth-side')}
+        <p><a class="btn" href="#write">Write to the habitat instead</a></p>`, 'earth-side')}
     </div>
   </div>`;
-  return L.page({ title: 'Who we are', ctx, body, current: '/who-we-are' });
 }
 
-module.exports = { what, about, who };
+/**
+ * The whole reading section, three folds. At the top of the landing page they
+ * sit in a row directly under the masthead, all closed, so the composer stays
+ * where it is; the open one widens to the full row. `name` makes them an
+ * exclusive accordion where the browser supports it.
+ */
+function aboutSection(ctx, { crew }) {
+  const fold = (id, title, sub, inner) => `
+    <details class="fold" id="${id}" name="about">
+      <summary><span class="fold-title">${esc(title)}</span><span class="fold-sub">${esc(sub)}</span></summary>
+      <div class="fold-body">${inner}</div>
+    </details>`;
+  return `
+  <div class="about-top" id="about" aria-label="About">
+  ${fold('about-project', 'About', 'The habitat, the distance, the archive', aboutFold(ctx))}
+  ${fold('what', 'What this is', 'How the station behaves, in plain terms', whatFold(ctx))}
+  ${fold('who-we-are', 'Who we are', 'Crew, company, production credits', whoFold(crew))}
+  </div>`;
+}
+
+/**
+ * The same three texts as a reader inside the message box: the rail's
+ * About · What · Who buttons open one of them over the writing field, and
+ * "Back to writing" closes it. Every section keeps its id, so /#about, /#what
+ * and /#who-we-are still land on the right text.
+ */
+function aboutReader(ctx, { crew }) {
+  const sec = (id, title, sub, inner) => `
+    <section class="reader-sec" id="${id}" hidden>
+      <div class="reader-head"><h3>${esc(title)}</h3><span>${esc(sub)}</span></div>
+      ${inner}
+    </section>`;
+  return `
+  <div class="mbox-reader" id="mbox-reader" hidden>
+    <div class="reader-body" id="about">
+      ${sec('about-project', 'About', 'The habitat, the distance, the archive', aboutFold(ctx))}
+      ${sec('what', 'What this is', 'How the station behaves, in plain terms', whatFold(ctx))}
+      ${sec('who-we-are', 'Who we are', 'Crew, company, production credits', whoFold(crew))}
+    </div>
+    <div class="reader-foot">
+      <button type="button" class="primary reader-close" id="reader-close">Back to writing</button>
+    </div>
+  </div>`;
+}
+
+module.exports = { aboutSection, aboutReader };

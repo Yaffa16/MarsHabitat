@@ -20,7 +20,7 @@ const verify = (pw, stored) => {
   return want.length === got.length && crypto.timingSafeEqual(got, want);
 };
 
-/** There is one account. It opens mission control and the habitat terminal. */
+/** There is one account. It opens mission control and the archive. */
 function currentUser(req) {
   const token = req.cookies.mcs_admin;
   if (!token) return null;
@@ -46,8 +46,7 @@ router.post('/login', (req, res) => {
   res.cookie('mcs_admin', token, { httpOnly: true, sameSite: 'lax',
     maxAge: 30 * 86400000, secure: process.env.SECURE_COOKIES === 'true' });
   audit(u.username, 'session', u.id, 'login');
-  const next = { log: '/log', archive: '/archive' }[req.query.next];
-  res.redirect(next || '/control');
+  res.redirect(req.query.next === 'archive' ? '/archive' : '/control');
 });
 
 router.post('/logout', (req, res) => {
@@ -69,7 +68,24 @@ function takeFlash(req) {
   flashes.delete(req.user.username);
   return f || null;
 }
-const back = (req, res) => res.redirect('/control' + (req.query.show ? `?show=${req.query.show}` : ''));
+
+/* ------------------------------------------------------------ navigation */
+
+/**
+ * Mission control is one page. After a reply you return to the queue, in the
+ * view you were looking at; after an edit you return to the tab and day you
+ * were working on. Nothing lands you somewhere else.
+ */
+const TAB_NAMES = ['comms', 'science', 'health', 'habitat'];
+const tabOf = (v) => {
+  const t = String(v || '').replace(/^\/control\/?/, '') || 'comms';
+  return TAB_NAMES.includes(t) ? t : 'comms';
+};
+const toQueue = (req, res) => {
+  const show = VIEWS[req.query.show] ? req.query.show : 'pending';
+  res.redirect(`/control?show=${show}#queue`);
+};
+const toTab = (res, tab, day) => res.redirect(`/control?tab=${tabOf(tab)}&day=${day}#work`);
 
 /* ================================================================= OFFICERS */
 
@@ -84,12 +100,6 @@ const dayParam = (req, ctx) => {
 const entryFor = (crewId, day) =>
   db.prepare('SELECT * FROM crew_entry WHERE crew_id = ? AND mission_day = ?').get(crewId, day);
 
-const tpl = () => ({
-  SCIENCE: content.templates('SCIENCE'), HEALTH: content.templates('HEALTH'),
-  UPDATE: content.templates('UPDATE'), ANOMALY: content.templates('ANOMALY'),
-  BLOG: content.templates('BLOG'),
-});
-
 const notesFor = (day) =>
   db.prepare('SELECT * FROM day_note WHERE mission_day = ? ORDER BY posted_at').all(day);
 
@@ -102,6 +112,26 @@ const allTemplates = () => ({
   BLOG: content.templates('BLOG'),
 });
 
+/** Inventory for a day, with what carried over and whether the day overrides it. */
+function inventoryFor(day) {
+  const raw = (() => {
+    try { return JSON.parse(require('fs').readFileSync(
+      require('path').join(content.DIR, 'inventory-levels.json'), 'utf8')); }
+    catch { return {}; }
+  })();
+  const overrides = raw[String(day)] || {};
+  return db.prepare(
+    `SELECT il.*, i.key, i.label, i.unit FROM inventory_level il
+     JOIN inventory_item i ON i.id = il.item_id
+     WHERE il.mission_day = ? ORDER BY i.sort_order`).all(day).map((i) => ({
+    ...i,
+    set: Object.prototype.hasOwnProperty.call(overrides, i.key),
+    carried: (db.prepare(
+      `SELECT quantity q FROM inventory_level il JOIN inventory_item i ON i.id = il.item_id
+       WHERE i.key = ? AND il.mission_day = ?`).get(i.key, day - 1) || {}).q ?? null,
+  }));
+}
+
 /* ================================================================= MESSAGES */
 
 const VIEWS = {
@@ -111,65 +141,75 @@ const VIEWS = {
   all: "state NOT IN ('IN_TRANSIT','TRANSMITTED')",
 };
 
+/* =================================================================== THE PAGE */
+
 router.get('/', (req, res) => {
   const ctx = req.ctx();
   data.settleTransits();
-  const filter = VIEWS[req.query.show] ? req.query.show : 'pending';
+  const show = VIEWS[req.query.show] ? req.query.show : 'pending';
   const list = db.prepare(
     `SELECT m.*, r.body AS response_body, r.crew_id
      FROM message m LEFT JOIN response r ON r.message_id = m.id
-     WHERE ${VIEWS[filter]}
-     ORDER BY m.submitted_at ${filter === 'pending' ? 'ASC' : 'DESC'} LIMIT 200`
+     WHERE ${VIEWS[show]}
+     ORDER BY m.submitted_at ${show === 'pending' ? 'ASC' : 'DESC'} LIMIT 200`
   ).all();
-  const officer = officerBy('COMMUNICATION OFFICER');
-  if (!officer) return res.status(500).send('No communication officer in the crew.');
+
   const day = dayParam(req, ctx);
-  res.send(V.commsTab(ctx, { tpl: allTemplates(),
-    officer, list, crew: data.crewWithMood(), counts: data.counts(), filter,
-    day, totalDays: ctx.mission.totalDays, entry: entryFor(officer.id, day),
+  const withEntry = (designation) => {
+    const o = officerBy(designation);
+    if (!o) return null;
+    return { ...o, entry: entryFor(o.id, day) };
+  };
+  const officers = {
+    comms: withEntry('COMMUNICATION OFFICER'),
+    science: withEntry('SCIENCE OFFICER'),
+    health: withEntry('HEALTH OFFICER'),
+  };
+  if (!officers.comms || !officers.science || !officers.health) {
+    return res.status(500).send('The crew in content/crew-and-inventory.json must include a communication, a science and a health officer.');
+  }
+
+  res.send(V.page(ctx, {
+    user: req.user, f: takeFlash(req), content: content.status(),
+    show, tab: tabOf(req.query.tab), day, totalDays: ctx.mission.totalDays,
+    tpl: allTemplates(),
+    list, crew: data.crewWithMood(), counts: data.counts(),
+    officers,
     tasks: db.prepare('SELECT * FROM task WHERE mission_day = ? ORDER BY sort_order, time').all(day),
-    f: takeFlash(req), user: req.user, content: content.status(), tpl: tpl(),
-  }));
-});
-
-router.get('/science', (req, res) => {
-  const ctx = req.ctx();
-  const officer = officerBy('SCIENCE OFFICER');
-  if (!officer) return res.redirect('/control');
-  const day = dayParam(req, ctx);
-  res.send(V.scienceTab(ctx, { tpl: allTemplates(),
-    officer, day, totalDays: ctx.mission.totalDays,
-    entry: entryFor(officer.id, day), notes: notesFor(day),
-    f: takeFlash(req), user: req.user, content: content.status(), tpl: tpl(),
-  }));
-});
-
-router.get('/health', (req, res) => {
-  const ctx = req.ctx();
-  const officer = officerBy('HEALTH OFFICER');
-  if (!officer) return res.redirect('/control');
-  const day = dayParam(req, ctx);
-  res.send(V.healthTab(ctx, { tpl: allTemplates(),
-    officer, day, totalDays: ctx.mission.totalDays,
-    entry: entryFor(officer.id, day), notes: notesFor(day),
-    figures: content.crewFigures(),
     meals: db.prepare(`SELECT * FROM meal WHERE mission_day = ? ORDER BY
       CASE slot WHEN 'BREAKFAST' THEN 1 WHEN 'LUNCH' THEN 2 WHEN 'DINNER' THEN 3 ELSE 4 END`).all(day),
-    f: takeFlash(req), user: req.user, content: content.status(), tpl: tpl(),
+    notes: notesFor(day),
+    figures: content.crewFigures(),
+    items: inventoryFor(day),
   }));
 });
 
+/* The old per-officer addresses land on their tab of the one page. */
+for (const t of ['science', 'health', 'habitat']) {
+  router.get(`/${t}`, (req, res) => {
+    const q = req.query.day ? `&day=${Number(req.query.day) || 1}` : '';
+    res.redirect(301, `/control?tab=${t}${q}#work`);
+  });
+}
+
+/** The count the page polls, so a message arriving while control is open is announced. */
+router.get('/api/queue', (req, res) => {
+  const c = data.counts();
+  res.set('Cache-Control', 'no-store').json({ waiting: c.pending + c.awaitingResponse, total: c.total });
+});
+
+/* ================================================================= REPLIES */
+
 /**
- * Review and reply are one action. Sending the reply approves the message and
- * publishes the exchange in a single step -- approving separately only ever
- * produced a queue of half-finished exchanges nobody came back to.
+ * Reviewing and replying are one action. Sending the reply approves the
+ * message and publishes the exchange in a single step.
  */
-router.post('/:id/reply', (req, res) => {
+router.post('/:id(\\d+)/reply', (req, res) => {
   const id = Number(req.params.id);
   const body = String(req.body.body || '').trim();
   if (body.length < 2) {
     setFlash(req, 'A reply needs actual text before it can be sent.', true);
-    return back(req, res);
+    return toQueue(req, res);
   }
   const crewId = req.body.crew_id ? Number(req.body.crew_id) : null;
   const publish = req.body.action !== 'draft';
@@ -186,52 +226,54 @@ router.post('/:id/reply', (req, res) => {
     .run(publish ? 'PUBLISHED' : 'RESPONSE', now(), req.user.username, id);
   audit(req.user.username, 'Message', id, publish ? 'reply-publish' : 'reply-draft');
   setFlash(req, publish ? `Exchange ${id} is live on the mission page.` : `Reply saved for ${id}, not published.`);
-  back(req, res);
+  toQueue(req, res);
 });
 
-router.post('/:id/reject', (req, res) => {
+router.post('/:id(\\d+)/reject', (req, res) => {
   const id = Number(req.params.id);
   db.prepare("UPDATE message SET state = 'REJECTED', reviewed_at = ?, reviewed_by = ? WHERE id = ?")
     .run(now(), req.user.username, id);
   audit(req.user.username, 'Message', id, 'reject');
   setFlash(req, `Message ${id} rejected. It stays out of the public record.`);
-  back(req, res);
+  toQueue(req, res);
 });
 
-router.post('/:id/restore', (req, res) => {
+router.post('/:id(\\d+)/restore', (req, res) => {
   const id = Number(req.params.id);
   db.prepare("UPDATE message SET state = 'PENDING_APPROVAL', reviewed_at = NULL WHERE id = ?").run(id);
   audit(req.user.username, 'Message', id, 'restore');
   setFlash(req, `Message ${id} is back in the queue.`);
-  back(req, res);
+  toQueue(req, res);
 });
 
-router.post('/:id/unpublish', (req, res) => {
+router.post('/:id(\\d+)/unpublish', (req, res) => {
   const id = Number(req.params.id);
   db.prepare('UPDATE response SET published_at = NULL WHERE message_id = ?').run(id);
   db.prepare("UPDATE message SET state = 'RESPONSE' WHERE id = ?").run(id);
   audit(req.user.username, 'Response', id, 'unpublish');
   setFlash(req, `Exchange ${id} pulled from the mission page. The reply is kept as a draft.`);
-  back(req, res);
+  toQueue(req, res);
 });
 
-router.post('/:id/delete', (req, res) => {
+router.post('/:id(\\d+)/delete', (req, res) => {
   const id = Number(req.params.id);
   const m = db.prepare('SELECT callsign FROM message WHERE id = ?').get(id);
   db.prepare('DELETE FROM response WHERE message_id = ?').run(id);
   db.prepare('DELETE FROM message WHERE id = ?').run(id);
   audit(req.user.username, 'Message', id, 'delete', m ? m.callsign : '');
   setFlash(req, `Message ${id} deleted.`);
-  back(req, res);
+  toQueue(req, res);
 });
 
 /* ==================================================================== MOODS */
 
+const TAB_OF_OFFICER = { 'SCIENCE OFFICER': 'science', 'HEALTH OFFICER': 'health' };
 
 router.post('/moods/:id', (req, res) => {
+  const ctx = req.ctx();
   const id = Number(req.params.id);
   const member = db.prepare('SELECT * FROM crew WHERE id = ?').get(id);
-  if (!member) return res.redirect('/control/moods');
+  if (!member) return res.redirect('/control');
   const v = (k) => Math.max(0, Math.min(100, Number(req.body[k] ?? 50) || 0));
   const activity = String(req.body.activity ?? member.activity);
   db.prepare(
@@ -243,57 +285,59 @@ router.post('/moods/:id', (req, res) => {
   db.prepare('UPDATE crew SET activity = ? WHERE id = ?').run(activity, id);
   audit(req.user.username, 'CrewMood', id, 'file');
   setFlash(req, `State filed for ${member.designation}. The mission page has been updated.`);
-  res.redirect({ 'SCIENCE OFFICER': '/control/science', 'HEALTH OFFICER': '/control/health' }[member.designation] || '/control');
+  toTab(res, TAB_OF_OFFICER[member.designation] || 'comms', dayParam(req, ctx));
 });
 
 /* ================================================================== LOGBOOK */
 
-
-
+/**
+ * The crew's diary entries are written here, into content/logbook.json, so the
+ * interface and the file are edits to the same thing. Saving from control is
+ * always allowed: the file is the record.
+ */
 router.post('/logbook', (req, res) => {
   const ctx = req.ctx();
   const day = dayParam(req, ctx);
   const designation = String(req.body.designation || '');
   const body = String(req.body.body || '').trim();
   const member = db.prepare('SELECT * FROM crew WHERE designation = ?').get(designation);
-  const backTo = String(req.body.back || '/control');
-  if (!member) { setFlash(req, 'No such crew member.', true); return res.redirect(backTo); }
+  const tab = tabOf(req.body.back);
+  if (!member) { setFlash(req, 'No such crew member.', true); return toTab(res, tab, day); }
 
-  const existing = db.prepare('SELECT * FROM crew_entry WHERE crew_id = ? AND mission_day = ?')
-    .get(member.id, day);
-  if (existing && existing.source !== 'file') {
-    setFlash(req, `${designation} wrote day ${day} at the habitat terminal. That entry is theirs.`, true);
-    return res.redirect(`${backTo}?day=${day}`);
-  }
+  // An entry once typed at the old habitat terminal is marked as not the
+  // file's. Hand it back to the file so this edit — and the file — apply.
+  db.prepare("UPDATE crew_entry SET source = 'file' WHERE crew_id = ? AND mission_day = ?")
+    .run(member.id, day);
 
-  // Written straight into content/logbook.json, so the interface and the file
-  // are edits to the same thing rather than two copies of it.
   const r = content.edit('logbook.json', (obj) => {
     obj[String(day)] = obj[String(day)] || {};
     if (body) obj[String(day)][designation] = body;
     else delete obj[String(day)][designation];
   });
+  if (!body) {
+    db.prepare('DELETE FROM crew_entry WHERE crew_id = ? AND mission_day = ?').run(member.id, day);
+  }
   audit(req.user.username, 'CrewEntry', `${designation} day ${day}`, 'write');
   setFlash(req, r.ok ? `Blog entry saved for ${designation}, day ${day}.` : `Saved, but: ${r.error}`, !r.ok);
-  res.redirect(`${backTo}?day=${day}`);
+  toTab(res, tab, day);
 });
 
 /* ================================================================== UPDATES */
-
 
 router.post('/updates', (req, res) => {
   const ctx = req.ctx();
   const day = dayParam(req, ctx);
   const body = String(req.body.body || '').trim();
   const kind = String(req.body.kind || 'UPDATE').toUpperCase();
-  if (body.length < 2) { setFlash(req, 'An update needs text.', true); return res.redirect(`/control/updates?day=${day}`); }
+  const tab = tabOf(req.body.back);
+  if (body.length < 2) { setFlash(req, 'An update needs text.', true); return toTab(res, tab, day); }
   const r = content.edit('notes.json', (obj) => {
     obj[String(day)] = obj[String(day)] || [];
     obj[String(day)].push({ kind, body });
   });
   audit(req.user.username, 'DayNote', day, kind.toLowerCase());
   setFlash(req, r.ok ? `${kind} filed for day ${day}.` : `Saved, but: ${r.error}`, !r.ok);
-  res.redirect(`${String(req.body.back || '/control/habitat')}?day=${day}`);
+  toTab(res, tab, day);
 });
 
 router.post('/updates/delete', (req, res) => {
@@ -307,15 +351,14 @@ router.post('/updates/delete', (req, res) => {
   });
   audit(req.user.username, 'DayNote', day, 'remove');
   setFlash(req, r.ok ? 'Update removed.' : `Removed, but: ${r.error}`, !r.ok);
-  res.redirect(`${String(req.body.back || '/control/habitat')}?day=${day}`);
+  toTab(res, tabOf(req.body.back), day);
 });
 
 /* ================================================================= SCHEDULE */
 
 /**
  * The communication officer keeps the daily mission. The day is rewritten
- * wholesale into content/schedule.json and sorted by clock time, so a task
- * added last lands in its right place rather than at the bottom.
+ * wholesale into content/schedule.json and sorted by clock time.
  */
 router.post('/schedule', (req, res) => {
   const ctx = req.ctx();
@@ -350,12 +393,11 @@ router.post('/schedule', (req, res) => {
   });
   audit(req.user.username, 'Schedule', day, 'edit', `${rows.length} tasks`);
   setFlash(req, r.ok ? `Day ${day} schedule saved — ${rows.length} tasks.` : `Saved, but: ${r.error}`, !r.ok);
-  res.redirect(`/control?day=${day}`);
+  toTab(res, 'comms', day);
 });
 
 /* ============================================================= CREW FIGURES */
 
-/** Calories consumed and steps taken, kept by the health officer. */
 router.post('/crew-figures', (req, res) => {
   const ctx = req.ctx();
   const day = dayParam(req, ctx);
@@ -377,21 +419,19 @@ router.post('/crew-figures', (req, res) => {
   });
   audit(req.user.username, 'CrewFigures', day, 'edit');
   setFlash(req, r.ok ? `Day ${day} crew figures saved.` : `Saved, but: ${r.error}`, !r.ok);
-  res.redirect(`/control/health?day=${day}`);
+  toTab(res, 'health', day);
 });
 
 /* ================================================================ FOOD PLAN */
 
-/** The health officer keeps the daily food plan. */
 router.post('/meals', (req, res) => {
   const ctx = req.ctx();
   const day = dayParam(req, ctx);
   const SLOTS = ['BREAKFAST', 'LUNCH', 'DINNER', 'RATION'];
   const num = (v) => (v === '' || v == null ? 0 : Number(v) || 0);
 
-  // Water and power are not edited here, so they are read back off the existing
-  // meal and carried through. Rewriting the day must not quietly zero figures
-  // the officer was never shown.
+  // Water and power are not edited here, so they are carried through from the
+  // existing meal rather than quietly zeroed.
   const current = db.prepare('SELECT * FROM meal WHERE mission_day = ?').all(day);
   const rows = [];
   for (const slot of SLOTS) {
@@ -416,35 +456,10 @@ router.post('/meals', (req, res) => {
   });
   audit(req.user.username, 'Meals', day, 'edit', `${rows.length} slots`);
   setFlash(req, r.ok ? `Day ${day} food plan saved — ${rows.length} slots.` : `Saved, but: ${r.error}`, !r.ok);
-  res.redirect(`/control/health?day=${day}`);
+  toTab(res, 'health', day);
 });
 
 /* ================================================================ INVENTORY */
-
-router.get('/habitat', (req, res) => {
-  const ctx = req.ctx();
-  const day = dayParam(req, ctx);
-  const raw = (() => {
-    try { return JSON.parse(require('fs').readFileSync(
-      require('path').join(content.DIR, 'inventory-levels.json'), 'utf8')); }
-    catch { return {}; }
-  })();
-  const overrides = raw[String(day)] || {};
-  const items = db.prepare(
-    `SELECT il.*, i.key, i.label, i.unit FROM inventory_level il
-     JOIN inventory_item i ON i.id = il.item_id
-     WHERE il.mission_day = ? ORDER BY i.sort_order`).all(day).map((i) => ({
-    ...i,
-    set: Object.prototype.hasOwnProperty.call(overrides, i.key),
-    carried: (db.prepare(
-      `SELECT quantity q FROM inventory_level il JOIN inventory_item i ON i.id = il.item_id
-       WHERE i.key = ? AND il.mission_day = ?`).get(i.key, day - 1) || {}).q ?? null,
-  }));
-  res.send(V.habitatTab(ctx, { tpl: allTemplates(),
-    day, totalDays: ctx.mission.totalDays, items, notes: notesFor(day),
-    f: takeFlash(req), user: req.user, content: content.status(), tpl: tpl(),
-  }));
-});
 
 router.post('/inventory', (req, res) => {
   const ctx = req.ctx();
@@ -466,7 +481,7 @@ router.post('/inventory', (req, res) => {
   });
   audit(req.user.username, 'Inventory', day, 'update');
   setFlash(req, r.ok ? `Inventory saved for day ${day}. Later days recalculated.` : `Saved, but: ${r.error}`, !r.ok);
-  res.redirect(`/control/habitat?day=${day}`);
+  toTab(res, 'habitat', day);
 });
 
 router.post('/inventory/clear', (req, res) => {
@@ -475,7 +490,7 @@ router.post('/inventory/clear', (req, res) => {
   const r = content.edit('inventory-levels.json', (obj) => { delete obj[String(day)]; });
   audit(req.user.username, 'Inventory', day, 'clear');
   setFlash(req, r.ok ? `Day ${day} now carries forward automatically.` : `Cleared, but: ${r.error}`, !r.ok);
-  res.redirect(`/control/habitat?day=${day}`);
+  toTab(res, 'habitat', day);
 });
 
 module.exports = router;

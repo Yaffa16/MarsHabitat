@@ -17,11 +17,13 @@ const esc = (s) => String(s ?? '')
 // so neither needs a tab of its own.
 // The mission page carries the habitat, the crew, the day and the messages, so
 // the bar stays at three. Everything else is reachable from the foot.
+// Everything public is on the landing page; the bar on the remaining
+// subpages (the archive, sign-in, 404) points into its sections.
 const NAV = [
   ['/', 'Mission'],
-  ['/messages', 'Messages'],
-  ['/logbook', 'Crew log'],
-  ['/about', 'About'],
+  ['/#exchanges', 'Messages'],
+  ['/#crewlog', 'Crew log'],
+  ['/#about', 'About'],
 ];
 
 /** The fixed rail. Present on every page, public and control alike.
@@ -61,6 +63,30 @@ function rail(ctx, landing = false) {
   </div>`;
 }
 
+/** The landing page's readings: the same figures as the rail, as a row of
+ *  small inset pills in the masthead. The theme switch sits at its end. */
+function statusStrip(ctx) {
+  const g = ctx.geo;
+  const link = ctx.commsUp ? 'LINK NOMINAL' : 'LINK DEGRADED';
+  const m = ctx.mission;
+  const day = m.phase === 'PRE_LAUNCH'
+    ? `T−${String(m.countdown.days).padStart(3, '0')} · OPENS ${esc(m.start_date)}`
+    : `MISSION DAY <b>${String(m.clampedDay).padStart(2, '0')}/${String(m.totalDays).padStart(2, '0')}</b>`;
+  return `<div class="status" role="group" aria-label="Station readings">
+    <span class="status-cell link"><span class="dot ${ctx.commsUp ? 'ok' : 'warn'}"></span>${link}</span>
+    <span class="status-cell">${day}</span>
+    <span class="status-cell">EARTH–MARS <b>${g.distanceAu.toFixed(3)} au</b></span>
+    <span class="status-cell">ONE WAY <b>${orbital.formatLightTime(g.lightSeconds)}</b></span>
+    ${ctx.callsign ? `<span class="status-cell">YOU <b class="you">${esc(ctx.callsign)}</b></span>` : ''}
+    <form method="post" action="/theme" class="theme">
+      <input type="hidden" name="to" value="${ctx.theme === 'dark' ? 'light' : 'dark'}">
+      <button type="submit" title="Switch to ${ctx.theme === 'dark' ? 'light' : 'dark'} mode">
+        <span class="theme-mark" aria-hidden="true"></span>${ctx.theme === 'dark' ? 'Light' : 'Dark'}
+      </button>
+    </form>
+  </div>`;
+}
+
 function nav(current) {
   return `<nav class="nav">${NAV.map(([href, label]) =>
     `<a href="${href}"${href === current ? ' aria-current="page"' : ''}>${label}</a>`
@@ -70,9 +96,9 @@ function nav(current) {
 function foot(ctx) {
   return `<div class="foot">
     <div class="foot-links">
-      <a href="/what">What this is</a><a href="/who-we-are">Who we are</a>
-      <a href="/schedule">Mission schedule</a><a href="/day">Today</a><a href="/crew">Crew</a>
-      <a href="/messages">Messages</a><a href="/logbook">Crew log</a>
+      <a href="/#write">Write</a><a href="/#exchanges">Messages</a>
+      <a href="/#mission">Daily mission</a><a href="/#habitat">Habitat</a>
+      <a href="/#crew">Crew</a><a href="/#crewlog">Crew log</a><a href="/#about">About</a>
       <a href="/control">Mission control</a>
     </div>
     <div class="foot-base">
@@ -89,7 +115,7 @@ function foot(ctx) {
  * MARS!PLATZ layout).
  */
 function page({ title, ctx, body, current, bodyClass = '', head = '', scripts = [],
-                hero = '', hideNav = false }) {
+                hero = '', hideNav = false, hideRail = false }) {
   return `<!doctype html>
 <html lang="en" data-theme="${ctx.theme === 'dark' ? 'dark' : 'light'}"><head>
 <meta charset="utf-8">
@@ -101,7 +127,7 @@ function page({ title, ctx, body, current, bodyClass = '', head = '', scripts = 
 ${head}
 </head><body class="${bodyClass}">
 ${hero}
-${rail(ctx, bodyClass.includes('landing'))}
+${hideRail ? '' : rail(ctx, bodyClass.includes('landing'))}
 ${bodyClass.includes('control') || bodyClass.includes('habitat') || hideNav ? '' : nav(current)}
 <main class="shell">${body}</main>
 ${bodyClass.includes('control') || bodyClass.includes('habitat') ? '' : foot(ctx)}
@@ -279,5 +305,5 @@ function scaleStrip(mission) {
 
 module.exports = {
   page, panel, eyebrow, readout, orbitPlot, sparkline, pipeline, scaleStrip,
-  sym, legend, SYMBOL_KEY, esc, NAV, MESSAGE_STATES,
+  statusStrip, sym, legend, SYMBOL_KEY, esc, NAV, MESSAGE_STATES,
 };
