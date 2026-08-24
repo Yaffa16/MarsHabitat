@@ -134,20 +134,30 @@ function published(limit = 100, filters = {}) {
 }
 
 /**
- * The whole board: every message ever sent, whatever became of it — in
- * transit, reached, rejected, replied. The landing page shows the full
- * correspondence with each message's state stamped on it, not only the
- * exchanges that were published.
+ * The board as one visitor sees it: every published exchange, plus that
+ * visitor's own messages whatever became of them — in transit, reached,
+ * rejected, awaiting a reply. Nothing another visitor sent reaches the page
+ * until mission control has approved and published it, so the common board
+ * only ever carries the reviewed record; a sender still sees their own
+ * traffic with its state stamped on it.
+ *
+ * Each row carries `mine` (sent by this visitor) and `pending` (not yet
+ * published, so visible to its sender only).
  */
-function board(limit = 400) {
+function board(limit = 400, visitorId = null) {
   settleTransits();
   return db.prepare(
     `SELECT m.*, r.body AS response_body, r.published_at AS response_at, c.designation AS responder
      FROM message m
      LEFT JOIN response r ON r.message_id = m.id
      LEFT JOIN crew c ON c.id = r.crew_id
+     WHERE m.state = 'PUBLISHED' OR m.visitor_id = ?
      ORDER BY m.submitted_at DESC LIMIT ?`
-  ).all(limit);
+  ).all(visitorId == null ? -1 : visitorId, limit).map((m) => ({
+    ...m,
+    mine: visitorId != null && m.visitor_id === visitorId,
+    pending: m.state !== 'PUBLISHED',
+  }));
 }
 
 function inFlightFor(visitorId) {

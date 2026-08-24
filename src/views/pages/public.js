@@ -203,6 +203,9 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
                         inFlight = null, error = null, draft = '' }) {
   const pre = ctx.mission.phase === 'PRE_LAUNCH';
   const slotName = { BREAKFAST: 'Breakfast', LUNCH: 'Lunch', DINNER: 'Dinner', RATION: 'Ration' };
+  // This visitor's messages that mission control has not yet published. They
+  // are in the page, but only surface under MY MESSAGES.
+  const pendingMine = recent.filter((m) => m.mine && m.pending).length;
 
   /* The masthead: the Martian surface, full bleed, with the title and the
      mission day stamped over it. Drop a different photograph on public/hero.jpg
@@ -241,21 +244,32 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
     </div>
     <section class="feed-col" id="exchanges">
       <h2 class="bigsec">Message Board</h2>
-      <div class="feed-wrap"><div class="feed-scroll">
-        ${recent.length
-          ? `<div class="feed-filter" id="feed-filter" role="group" aria-label="Filter the board">
-               <button type="button" class="chip active" data-filter="">ALL</button>
-               <button type="button" class="chip mine" data-filter="mine">MY MESSAGES</button>
-               ${TAGS.map((t) => `<button type="button" class="chip" data-filter="tag:${t}">${t}</button>`).join('')}
-             </div>
-             <div class="scroller feed"><div class="cards">${
-               recent.map((m) => messageCard(ctx.visitor && m.visitor_id === ctx.visitor.id
-                 ? { ...m, mine: true } : m)).join('')}
-               <div class="empty" id="feed-empty" style="display:none">No messages match this filter</div>
-             </div></div>
-             <p class="feed-foot"><a class="btn" href="/messages">All ${counts.published} exchanges</a>
-               <span class="counter">${counts.total} SENT · ${counts.published} REPLIED</span></p>`
-          : '<div class="empty">Nothing transmitted yet — the first message could be yours</div>'}
+      <!-- The board is live: board.js polls /api/board and swaps the cards in
+           place, so a reply published from mission control, or another
+           visitor's exchange, appears without anyone reloading. The full
+           structure is always rendered, even when empty, so the first card
+           can arrive into it. -->
+      <div class="feed-wrap"><div class="feed-scroll" id="feed" data-poll="/api/board"
+          data-version="${boardVersion(recent)}">
+        <div class="feed-filter" id="feed-filter" role="group" aria-label="Filter the board"${
+          recent.length ? '' : ' hidden'}>
+          <button type="button" class="chip active" data-filter="">ALL</button>
+          <button type="button" class="chip mine" data-filter="mine">MY MESSAGES <span
+            class="chip-count" id="feed-mine-count"${pendingMine ? '' : ' hidden'}>${pendingMine}</span></button>
+          ${TAGS.map((t) => `<button type="button" class="chip" data-filter="tag:${t}">${t}</button>`).join('')}
+        </div>
+        <p class="feed-note" id="feed-mine-note" hidden>Messages still awaiting the crew are
+          visible only to you. They join the board once mission control has approved them.</p>
+        <div class="scroller feed"><div class="cards" id="feed-cards">${boardCards(recent)}
+          <div class="empty" id="feed-empty"${recent.length ? ' style="display:none"' : ''}
+            data-none="Nothing transmitted yet — the first message could be yours"
+            data-filtered="No messages match this filter">${
+            recent.length ? 'No messages match this filter' : 'Nothing transmitted yet — the first message could be yours'}</div>
+        </div></div>
+        <p class="feed-foot"${recent.length ? '' : ' hidden'}>
+          <a class="btn" href="/messages" id="feed-all">All ${counts.published} exchanges</a>
+          <span class="counter" id="feed-counter">${counts.total} SENT · ${counts.published} REPLIED</span>
+          <span class="live" id="feed-live" title="The board refreshes itself every few seconds">LIVE</span></p>
       </div></div>
     </section>
   </div>
@@ -658,8 +672,12 @@ function messageCard(m) {
   const fresh = m.response_at && (Date.now() - Date.parse(m.response_at)) < 6 * 3600000;
   const tags = (m.tags || '').split(',').filter(Boolean);
   const st = cardStatus(m);
+  // A card that is both the viewer's and unpublished is stamped data-pending:
+  // the stylesheet keeps it out of the common board and board.js reveals it
+  // under MY MESSAGES. Such cards only ever reach their own sender's page.
   return `<article class="card ${fresh ? 'fresh' : ''}" id="m${m.id}"
-      data-tags="${esc(tags.join(','))}"${m.mine ? ' data-mine="1"' : ''}>
+      data-tags="${esc(tags.join(','))}"${m.mine ? ' data-mine="1"' : ''}${
+      m.mine && m.pending ? ' data-pending="1"' : ''}>
     <div class="card-top">
       <span class="cs">${esc(m.callsign)}</span>
       ${fresh ? '<span class="badge new">New</span>' : ''}
@@ -682,6 +700,29 @@ function messageCard(m) {
       <span style="margin-left:auto">Ref ${String(m.id).padStart(5, '0')}</span>
     </div>
   </article>`;
+}
+
+/**
+ * The cards of the landing-page board, as one fragment. Rendered into the
+ * page on load and again by /api/board for the live refresh, so the two
+ * cannot drift apart: one function defines what the board holds.
+ */
+function boardCards(recent) {
+  return recent.map(messageCard).join('');
+}
+
+/**
+ * A stamp that changes whenever the board would render differently: a new
+ * message, a change of state, a reply published, or a "New" badge lapsing.
+ * The page carries it and /api/board reports it, so the browser only swaps
+ * the cards when there is actually something new.
+ */
+function boardVersion(recent) {
+  const key = recent.map((m) =>
+    `${m.id}:${m.state}:${m.response_at || ''}:${m.mine ? 1 : 0}:${
+      m.response_at && Date.now() - Date.parse(m.response_at) < 6 * 3600000 ? 'new' : ''}`
+  ).join('|');
+  return require('crypto').createHash('sha1').update(key).digest('hex').slice(0, 16);
 }
 
 function board(ctx, { messages, counts }) {
@@ -754,5 +795,5 @@ function single(ctx, { message }) {
 
 module.exports = {
   mission, complete, schedule, habitat, crewPage, dayPage,
-  inventoryGauges, board, archive, single, messageCard,
+  inventoryGauges, board, boardCards, boardVersion, archive, single, messageCard,
 };

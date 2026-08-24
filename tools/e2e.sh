@@ -91,13 +91,45 @@ ID=$(curl -s -b $A $B/control | grep -oE '/control/[0-9]+/reply' | head -1 | gre
 
 curl -s -b $A -X POST -d "body=" -d "action=publish" -o /dev/null $B/control/$ID/reply
 curl -s $B/ | grep -q 'card-reply' && bad "empty reply accepted" || ok "empty reply refused"
-curl -s $B/ | grep -q 'REACHED MARS' && ok "an unanswered message shows on the board with its state" \
-  || bad "pending message missing from the board"
+
+echo "── unapproved messages stay off the common board"
+# Another visitor (no cookie) must not see the message until it is approved.
+curl -s $B/ | grep -q "first thing you miss" && bad "unapproved message reached the common board" \
+  || ok "an unapproved message is not on the common board"
+curl -s $B/messages | grep -q "first thing you miss" && bad "unapproved message on the messages tab" \
+  || ok "nor on the messages tab"
+# The sender still sees it, stamped with its state and marked as theirs and pending.
+MINE=$(curl -s -b $V $B/)
+echo "$MINE" | grep -q "first thing you miss" && ok "the sender still sees their own message" \
+  || bad "sender cannot see their own unapproved message"
+echo "$MINE" | grep -q 'data-mine="1" data-pending="1"' && ok "it is marked as theirs and awaiting approval" \
+  || bad "own pending message not stamped data-pending"
+echo "$MINE" | grep -q 'REACHED MARS' && ok "its state is stamped on the card" || bad "no state on the sender's card"
+echo "$MINE" | grep -q 'id="feed-mine-count">1<' && ok "MY MESSAGES counts one waiting" || bad "no waiting count on MY MESSAGES"
+echo "$MINE" | grep -q 'id="feed-mine-note"' && ok "the sender is told it is visible only to them" || bad "no visible-only-to-you note"
 
 curl -s -b $A -X POST --data-urlencode "body=Rain. Not the idea of it, the sound." \
   -d "action=publish" -o /dev/null $B/control/$ID/reply
 ok "review and reply are a single action"
 curl -s $B/ | grep -q "Rain. Not the idea of it" && ok "exchange published onto the landing page" || bad "not published"
+curl -s $B/ | grep -q "first thing you miss" && ok "once approved, the message is on the common board" \
+  || bad "approved message missing from the common board"
+curl -s -b $V $B/ | grep -q 'data-pending="1"' && bad "sender's card still stamped pending after approval" \
+  || ok "the sender's card is no longer pending"
+
+echo "── the board is live"
+curl -s $B/ | grep -q 'id="feed" data-poll="/api/board"' && ok "the board is wired to poll /api/board" || bad "no poll address on the board"
+curl -s $B/ | grep -q 'data-version="[0-9a-f]\{16\}"' && ok "the page carries the board version it rendered" || bad "no board version on the page"
+curl -s $B/ | grep -q 'id="feed-live"' && ok "a LIVE mark sits in the foot" || bad "no live mark"
+API=$(curl -s -b $V $B/api/board)
+echo "$API" | grep -q '"version":"[0-9a-f]\{16\}"' && ok "/api/board reports a version" || bad "no version from /api/board"
+echo "$API" | grep -q 'Rain. Not the idea of it' && ok "/api/board carries the rendered cards" || bad "cards missing from /api/board"
+echo "$API" | grep -q '"published":1' && ok "with the published count" || bad "no counts from /api/board"
+PV=$(curl -s -b $V $B/ | grep -oE 'data-version="[0-9a-f]+"' | grep -oE '[0-9a-f]{16}')
+AV=$(echo "$API" | grep -oE '"version":"[0-9a-f]+"' | grep -oE '[0-9a-f]{16}')
+[ -n "$PV" ] && [ "$PV" = "$AV" ] && ok "page and API agree on the version" || bad "version differs between page ($PV) and API ($AV)"
+curl -s $B/api/board | grep -q 'data-pending' && bad "another visitor's API view carries pending cards" \
+  || ok "the API never hands one visitor another's unpublished message"
 curl -s $B/ | grep -q 'class="cards"' && ok "exchanges render as a card grid" || bad "no card grid"
 curl -s $B/messages | grep -q 'class="scroller tall"' \
   && ok "the messages tab scrolls in its own field" || bad "no scrollable message field"

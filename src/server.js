@@ -98,7 +98,9 @@ app.get('/', (req, res) => {
     crew: data.crewWithMood(),
     today: data.day(ctx.mission.clampedDay),
     counts: data.counts(),
-    recent: data.board(400),
+    // Published exchanges for everyone; this visitor's own messages as well,
+    // whatever state they are in, so a sender can always find what they sent.
+    recent: data.board(400, ctx.visitor ? ctx.visitor.id : null),
     latestEntries: data.entriesForDay(ctx.mission.clampedDay),
     crewFigures: content.crewFigures(),
     inFlight: ctx.visitor ? data.inFlightFor(ctx.visitor.id) : null,
@@ -265,6 +267,30 @@ app.get('/messages', (req, res) => {
   res.send(MS.messages(req.ctx(), {
     list: all, counts: data.counts(), tags, filter: filter || null,
   }));
+});
+
+/**
+ * The board, live. board.js polls this every few seconds and swaps the cards
+ * into the page, so an exchange published from mission control reaches every
+ * open phone in the room without a reload. It is rendered by the same
+ * function as the page, for the same visitor (their own unpublished messages
+ * included, nobody else's), so what arrives is exactly what a reload would
+ * have shown. A version stamp lets the browser skip the swap when nothing
+ * has changed.
+ */
+app.get('/api/board', (req, res) => {
+  const ctx = req.ctx();
+  const recent = data.board(400, ctx.visitor ? ctx.visitor.id : null);
+  const counts = data.counts();
+  res.set('Cache-Control', 'no-store').json({
+    version: P.boardVersion(recent),
+    phase: ctx.mission.phase,
+    cards: P.boardCards(recent),
+    count: recent.length,
+    pendingMine: recent.filter((m) => m.mine && m.pending).length,
+    total: counts.total,
+    published: counts.published,
+  });
 });
 
 app.post('/communicate', (req, res) => {

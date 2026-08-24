@@ -1321,6 +1321,44 @@ body.landing .scroller.feed { border-radius: 12px; background: var(--panel-lift)
 .feed-filter .chip.active { background: #101012; border-color: #101012; color: #f2f2f0; }
 .feed-filter .chip.mine { border-color: var(--orange); color: var(--orange); }
 .feed-filter .chip.mine.active { background: var(--orange); border-color: var(--orange); color: var(--orange-ink); }
+/* How many of the viewer's messages are still waiting on the crew. */
+.feed-filter .chip .chip-count {
+  display: inline-block; min-width: 16px; margin-left: 4px; padding: 1px 5px; border-radius: 9px;
+  background: var(--orange); color: var(--orange-ink); font-size: 8px; text-align: center; letter-spacing: 0;
+}
+.feed-filter .chip.mine.active .chip-count { background: var(--orange-ink); color: var(--orange); }
+
+/* Only approved exchanges reach the common board. A visitor's own messages
+   that are still waiting on mission control are in the page, stamped
+   data-pending, and stay hidden until MY MESSAGES lists them (board.js).
+   Without JavaScript they stay hidden, which is the safe side to fail on. */
+.feed .card.is-hidden { display: none; }
+.feed .card[data-pending]:not(.is-listed) { display: none; }
+.feed-note {
+  margin: 0; flex: none; font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; color: var(--dim);
+  padding: 8px 10px; border: 1.5px dashed var(--orange); border-radius: var(--r);
+}
+.feed-note[hidden] { display: none; }
+/* board.js hides these while the board is empty, and shows the count only
+   when something is waiting; the explicit display rules above need overriding. */
+.feed-filter[hidden], .feed-foot[hidden], .feed-filter .chip .chip-count[hidden] { display: none; }
+
+/* The board refreshes itself. The mark sits in the foot as a small live
+   stamp: orange while the station answers, dimmed while it cannot be reached. */
+.feed-foot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.feed-foot .live {
+  margin-left: auto; font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em;
+  color: var(--orange); white-space: nowrap;
+}
+.feed-foot .live::before {
+  content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--orange); margin-right: 6px; vertical-align: 1px;
+  animation: live-pulse 2.4s ease-in-out infinite;
+}
+.feed-foot .live.stale { color: var(--dim); }
+.feed-foot .live.stale::before { background: transparent; border: 1.5px solid var(--dim); animation: none; }
+@keyframes live-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+@media (prefers-reduced-motion: reduce) { .feed-foot .live::before { animation: none; } }
 
 /* The composer, per the sheet: counter inside the message box, pill tags,
    one big rounded transmit control. */
