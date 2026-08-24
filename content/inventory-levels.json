@@ -1,0 +1,47 @@
+{
+  "_note": "Quantity remaining at the end of each mission day, and the planned daily draw. Only list what you want to override — anything missing is carried forward from the previous day using its consumption rate, so a normal day needs no entry at all. Numbers here drive the inventory bars on the landing page.",
+
+  "1": {
+    "water":     { "quantity": 618, "consumption": 22 },
+    "food":      { "quantity": 13,  "consumption": 1 },
+    "oxygen":    { "quantity": 96,  "consumption": 5.2 },
+    "scrubber":  { "quantity": 12,  "consumption": 0.4 },
+    "power":     { "quantity": 60,  "consumption": 2.4 },
+    "filters":   { "quantity": 9,   "consumption": 0.3 },
+    "medical":   { "quantity": 6,   "consumption": 0 },
+    "materials": { "quantity": 48,  "consumption": 1.2 },
+    "seed":      { "quantity": 8,   "consumption": 0 }
+  },
+
+  "4": {
+    "_why": "Water recovery loop drifts 4% low; allowance cut at lunch. Filter change brought forward.",
+    "water":   { "quantity": 528, "consumption": 17 },
+    "filters": { "quantity": 8,   "consumption": 0.3 }
+  },
+
+  "5": {
+    "_why": "Full hand audit at the midpoint. Dust on the panel costs 11% of generation.",
+    "power":     { "quantity": 44, "consumption": 3.4 },
+    "materials": { "quantity": 41, "consumption": 1.2 }
+  },
+
+  "6": {
+    "_why": "CO2 climbing in the sleep period; cartridge swapped early.",
+    "scrubber": { "quantity": 8, "consumption": 0.9 },
+    "oxygen":   { "quantity": 66, "consumption": 5.8 }
+  },
+
+  "7": {
+    "_why": "Recovery membrane replaced; loop back to spec. First greenhouse harvest.",
+    "water": { "quantity": 132, "consumption": 19 },
+    "materials": { "quantity": 33, "consumption": 1.2 }
+  },
+
+  "9": {
+    "_why": "Final count, taken by hand before egress.",
+    "water":    { "quantity": 81, "consumption": 19 },
+    "oxygen":   { "quantity": 52, "consumption": 5.4 },
+    "scrubber": { "quantity": 4,  "consumption": 0.9 },
+    "food":     { "quantity": 5,  "consumption": 1 }
+  }
+}

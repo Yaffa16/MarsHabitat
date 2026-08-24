@@ -1,0 +1,25 @@
+{
+  "_note": "Mission notes filed from control. kind is LOG, ANOMALY or BROADCAST. These appear on the daily mission page and in the archive. This is the file to add to during the run when something happens that is not in the schedule.",
+
+  "3": [
+    { "kind": "LOG",     "body": "Condensation forming on the west wall overnight. Wipe-down added to the daily routine." }
+  ],
+  "4": [
+    { "kind": "ANOMALY", "body": "Water recovery loop running 4% below spec since 02:00. Cause not identified. Water allowance reduced at lunch." },
+    { "kind": "LOG",     "body": "Primary intake filter changed two days ahead of schedule. Dust load higher than modelled." }
+  ],
+  "5": [
+    { "kind": "LOG",     "body": "Full inventory audit completed by hand. Logged figures confirmed. Panel cleaned; generation recovered to within 3% of day one." }
+  ],
+  "6": [
+    { "kind": "ANOMALY", "body": "CO₂ rising faster than modelled during the sleep period. Scrubber cartridge swapped at 09:00. Levels nominal by 11:00." },
+    { "kind": "LOG",     "body": "West panel seal failed a second time. Repair deferred to day 7." }
+  ],
+  "7": [
+    { "kind": "LOG",     "body": "Water recovery membrane replaced. Loop revalidated to spec at 15:00." },
+    { "kind": "BROADCAST", "body": "First greenhouse harvest: 22 grams. Grown inside the habitat, from carbon the crew exhaled." }
+  ],
+  "9": [
+    { "kind": "BROADCAST", "body": "Hatch unseal at 21:00. The mission clock stops. The archive stays open." }
+  ]
+}

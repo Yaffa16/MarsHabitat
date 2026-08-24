@@ -1,0 +1,24 @@
+{
+  "name": "mars-communication-station",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Live communication interface between an Earth-based audience and the MARS habitat crew. ZKM | Hertzlab.",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "seed": "node src/db/seed.js",
+    "simulate": "node tools/simulate-sensors.js",
+    "dev": "node --watch src/server.js",
+    "test": "bash tools/e2e.sh",
+    "backup": "bash tools/backup.sh",
+    "import": "node tools/import-csv.js",
+    "content": "node -e \"require('./src/lib/content').load()\""
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.5.0",
+    "express": "^4.21.2"
+  }
+}

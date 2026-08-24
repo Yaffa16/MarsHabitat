@@ -1,0 +1,282 @@
+{
+  "1": [
+    {
+      "slot": "BREAKFAST",
+      "name": "Rehydrated oats, dried apple",
+      "components": "Oat base | 80 g\r\nDried apple | 20 g\r\nWater | 0.35 L",
+      "kcal": 420,
+      "water": 0.35,
+      "prep": 8,
+      "energy": 90
+    },
+    {
+      "slot": "LUNCH",
+      "name": "Lentil and tomato stew",
+      "components": "Lentil block | 120 g\r\nTomato powder | 25 g\r\nWater | 0.60 L",
+      "kcal": 610,
+      "water": 0.6,
+      "prep": 22,
+      "energy": 260
+    },
+    {
+      "slot": "DINNER",
+      "name": "Rice, beans, preserved greens",
+      "components": "",
+      "kcal": 720,
+      "water": 0.75,
+      "prep": 28,
+      "energy": 310,
+      "notes": "First meal inside. Cooked properly, not reheated."
+    }
+  ],
+  "2": [
+    {
+      "slot": "BREAKFAST",
+      "name": "Protein porridge with seeds",
+      "components": "Protein base | 70 g\nMixed seeds | 15 g",
+      "kcal": 450,
+      "water": 0.3,
+      "prep": 7,
+      "energy": 80
+    },
+    {
+      "slot": "LUNCH",
+      "name": "Chickpea flatbread and paste",
+      "components": "Flour blend | 100 g\nChickpea paste | 80 g",
+      "kcal": 580,
+      "water": 0.45,
+      "prep": 30,
+      "energy": 340,
+      "notes": "Flatbread is the most energy-expensive thing in the plan. Once a week only."
+    },
+    {
+      "slot": "DINNER",
+      "name": "Barley with root vegetable",
+      "components": "Barley | 120 g\nRoot mix | 100 g",
+      "kcal": 690,
+      "water": 0.7,
+      "prep": 26,
+      "energy": 300
+    }
+  ],
+  "3": [
+    {
+      "slot": "BREAKFAST",
+      "name": "Grain bar and tea",
+      "components": "Grain bar | 2 units\nTea | 0.30 L",
+      "kcal": 380,
+      "water": 0.3,
+      "prep": 3,
+      "energy": 40
+    },
+    {
+      "slot": "LUNCH",
+      "name": "Noodles with soy protein",
+      "components": "Noodle block | 110 g\nSoy protein | 70 g",
+      "kcal": 600,
+      "water": 0.55,
+      "prep": 14,
+      "energy": 190
+    },
+    {
+      "slot": "DINNER",
+      "name": "Potato mash, pea protein, dried herb",
+      "components": "Potato flake | 100 g\nPea protein | 60 g\nDried herb | 2 g",
+      "kcal": 660,
+      "water": 0.65,
+      "prep": 18,
+      "energy": 230,
+      "notes": "The herb ration is two grams a day. It is the only thing anyone argues about."
+    }
+  ],
+  "4": [
+    {
+      "slot": "BREAKFAST",
+      "name": "Reduced-water porridge",
+      "components": "Protein base | 70 g\nDried berry | 12 g",
+      "kcal": 430,
+      "water": 0.22,
+      "prep": 7,
+      "energy": 80,
+      "notes": "Water allowance cut after the recovery loop shortfall."
+    },
+    {
+      "slot": "LUNCH",
+      "name": "Bean paste on crispbread",
+      "components": "Crispbread | 4 units\nBean paste | 90 g",
+      "kcal": 540,
+      "water": 0.2,
+      "prep": 5,
+      "energy": 30,
+      "notes": "Chosen for needing almost no water."
+    },
+    {
+      "slot": "DINNER",
+      "name": "Lentil stew, second pressing",
+      "components": "Lentil block | 120 g\nStock recovered from lunch | 0.30 L",
+      "kcal": 640,
+      "water": 0.4,
+      "prep": 24,
+      "energy": 270
+    }
+  ],
+  "5": [
+    {
+      "slot": "BREAKFAST",
+      "name": "Oats with the last of the apple",
+      "components": "Oat base | 80 g\nDried apple | 18 g",
+      "kcal": 420,
+      "water": 0.35,
+      "prep": 8,
+      "energy": 90
+    },
+    {
+      "slot": "LUNCH",
+      "name": "Rice and soy with chilli",
+      "components": "Rice | 110 g\nSoy protein | 70 g\nChilli flake | 1 g",
+      "kcal": 620,
+      "water": 0.55,
+      "prep": 20,
+      "energy": 240
+    },
+    {
+      "slot": "DINNER",
+      "name": "Midpoint meal — barley, greens, preserved lemon",
+      "components": "Barley | 130 g\nPreserved greens | 50 g\nPreserved lemon | 15 g\nHerb | 3 g",
+      "kcal": 780,
+      "water": 0.8,
+      "prep": 40,
+      "energy": 420,
+      "notes": "The one meal with something held back for it since day 1. Forty minutes of cooking, which is a real decision about power."
+    },
+    {
+      "slot": "RATION",
+      "name": "Reserve bar",
+      "components": "Emergency ration | 1 unit",
+      "kcal": 250,
+      "water": 0,
+      "prep": 0,
+      "energy": 0
+    }
+  ],
+  "6": [
+    {
+      "slot": "BREAKFAST",
+      "name": "Grain bar, black tea",
+      "components": "Grain bar | 2 units\nTea | 0.25 L",
+      "kcal": 380,
+      "water": 0.25,
+      "prep": 3,
+      "energy": 40
+    },
+    {
+      "slot": "LUNCH",
+      "name": "Cold noodle and paste",
+      "components": "Noodle block | 100 g\nBean paste | 70 g",
+      "kcal": 560,
+      "water": 0.45,
+      "prep": 12,
+      "energy": 150,
+      "notes": "Served cold. Nobody wanted to stand over the ring."
+    },
+    {
+      "slot": "DINNER",
+      "name": "Potato mash and protein",
+      "components": "Potato flake | 100 g\nPea protein | 60 g",
+      "kcal": 640,
+      "water": 0.6,
+      "prep": 18,
+      "energy": 230
+    }
+  ],
+  "7": [
+    {
+      "slot": "BREAKFAST",
+      "name": "Porridge with the first harvest",
+      "components": "Protein base | 70 g\nGreenhouse cut | 22 g",
+      "kcal": 440,
+      "water": 0.3,
+      "prep": 8,
+      "energy": 85,
+      "notes": "Twenty-two grams of fresh green, split three ways. Grown in here."
+    },
+    {
+      "slot": "LUNCH",
+      "name": "Lentil and tomato, reheated",
+      "components": "Lentil block | 110 g\nTomato powder | 20 g",
+      "kcal": 580,
+      "water": 0.5,
+      "prep": 16,
+      "energy": 180
+    },
+    {
+      "slot": "DINNER",
+      "name": "Rice, beans, herb",
+      "components": "Rice | 110 g\nBean mix | 90 g\nHerb | 2 g",
+      "kcal": 700,
+      "water": 0.7,
+      "prep": 26,
+      "energy": 290
+    }
+  ],
+  "8": [
+    {
+      "slot": "BREAKFAST",
+      "name": "Oats, plain",
+      "components": "Oat base | 80 g",
+      "kcal": 390,
+      "water": 0.3,
+      "prep": 8,
+      "energy": 85
+    },
+    {
+      "slot": "LUNCH",
+      "name": "Crispbread and paste",
+      "components": "Crispbread | 4 units\nChickpea paste | 80 g",
+      "kcal": 530,
+      "water": 0.2,
+      "prep": 5,
+      "energy": 30
+    },
+    {
+      "slot": "DINNER",
+      "name": "Barley and root, last full cook",
+      "components": "Barley | 120 g\nRoot mix | 90 g",
+      "kcal": 680,
+      "water": 0.65,
+      "prep": 26,
+      "energy": 300
+    }
+  ],
+  "9": [
+    {
+      "slot": "BREAKFAST",
+      "name": "Grain bar and tea",
+      "components": "Grain bar | 2 units\nTea | 0.30 L",
+      "kcal": 380,
+      "water": 0.3,
+      "prep": 3,
+      "energy": 40
+    },
+    {
+      "slot": "LUNCH",
+      "name": "Everything remaining, one pot",
+      "components": "Assorted remainder | 240 g",
+      "kcal": 610,
+      "water": 0.55,
+      "prep": 25,
+      "energy": 260,
+      "notes": "Whatever is left goes in. Nothing is carried out."
+    },
+    {
+      "slot": "DINNER",
+      "name": "Last meal inside",
+      "components": "Rice | 110 g\nGreenhouse cut | 30 g\nHerb | 3 g",
+      "kcal": 660,
+      "water": 0.6,
+      "prep": 24,
+      "energy": 280
+    }
+  ],
+  "_note": "Slots are BREAKFAST, LUNCH, DINNER and RATION. 'components' takes one line per item; use \\n between them. kcal, water (litres), prep (minutes) and energy (watt hours) are shown publicly and totalled per day, so food reads as a draw on the habitat rather than as a menu."
+}

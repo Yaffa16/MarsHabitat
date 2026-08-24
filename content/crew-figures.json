@@ -1,0 +1,13 @@
+{
+  "_note": "Calories consumed and steps taken, as crew totals per day. Counted by the health officer at the end of each day rather than sampled by a sensor, which is why they live here and are plotted across the whole mission. A day left out records nothing — that is not the same as recording a zero, and the chart shows the difference.",
+
+  "1": { "calories": 5010, "steps": 6420 },
+  "2": { "calories": 5160, "steps": 7180 },
+  "3": { "calories": 4880, "steps": 6740 },
+  "4": { "calories": 4420, "steps": 5960 },
+  "5": { "calories": 5340, "steps": 7620 },
+  "6": { "calories": 4180, "steps": 4310 },
+  "7": { "calories": 5120, "steps": 7040 },
+  "8": { "calories": 4760, "steps": 6180 },
+  "9": { "calories": 4540, "steps": 5220 }
+}

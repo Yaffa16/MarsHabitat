@@ -1,0 +1,100 @@
+{
+  "_note": "Crew designations and the resources the habitat tracks. Edit and save; the station picks the change up within a couple of seconds. Order here is the order shown on the site.",
+  "crew": [
+    {
+      "designation": "COMMUNICATION OFFICER",
+      "role": "Relay · messages from Earth"
+    },
+    {
+      "designation": "SCIENCE OFFICER",
+      "role": "Research · habitat systems"
+    },
+    {
+      "designation": "HEALTH OFFICER",
+      "role": "Crew health · life support"
+    }
+  ],
+  "inventory": [
+    {
+      "key": "water",
+      "label": "Potable water",
+      "unit": "L",
+      "category": "Consumable",
+      "critical": true,
+      "start": 640,
+      "warnBelow": 90
+    },
+    {
+      "key": "food",
+      "label": "Food rations",
+      "unit": "days",
+      "category": "Consumable",
+      "critical": true,
+      "start": 14,
+      "warnBelow": 3
+    },
+    {
+      "key": "oxygen",
+      "label": "Oxygen reserve",
+      "unit": "%",
+      "category": "Life support",
+      "critical": true,
+      "start": 98,
+      "warnBelow": 40
+    },
+    {
+      "key": "scrubber",
+      "label": "CO₂ scrubber cartridges",
+      "unit": "units",
+      "category": "Life support",
+      "critical": true,
+      "start": 12,
+      "warnBelow": 3
+    },
+    {
+      "key": "power",
+      "label": "Battery charge",
+      "unit": "kWh",
+      "category": "Power",
+      "critical": true,
+      "start": 62,
+      "warnBelow": 14
+    },
+    {
+      "key": "filters",
+      "label": "Dust filters",
+      "unit": "units",
+      "category": "Equipment",
+      "critical": false,
+      "start": 9,
+      "warnBelow": 2
+    },
+    {
+      "key": "medical",
+      "label": "Medical kits",
+      "unit": "kits",
+      "category": "Medical",
+      "critical": false,
+      "start": 6,
+      "warnBelow": 2
+    },
+    {
+      "key": "materials",
+      "label": "Repair materials",
+      "unit": "kg",
+      "category": "Equipment",
+      "critical": false,
+      "start": 48,
+      "warnBelow": 8
+    },
+    {
+      "key": "seed",
+      "label": "Germination trays",
+      "unit": "trays",
+      "category": "Research",
+      "critical": false,
+      "start": 8,
+      "warnBelow": 2
+    }
+  ]
+}
