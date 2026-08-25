@@ -1,0 +1,67 @@
+services:
+  station:
+    build: .
+    image: mars-communication-station:1.0.0
+    container_name: mars-station
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      # --- the mission -----------------------------------------------------
+      # The run — Thu 15 to Tue 27 October 2026, thirteen days, Europe/Berlin —
+      # is fixed in src/lib/run.js and is not read from .env. To rehearse
+      # against other dates set MISSION_OVERRIDE=true, MISSION_START and
+      # MISSION_END in .env; without MISSION_OVERRIDE they are ignored.
+      MISSION_NAME: "${MISSION_NAME:-MARS — HABITAT ONE}"
+      MISSION_OVERRIDE: "${MISSION_OVERRIDE:-false}"
+      MISSION_START: "${MISSION_START:-}"
+      MISSION_END: "${MISSION_END:-}"
+      TZ: "Europe/Berlin"
+
+      # --- access ----------------------------------------------------------
+      ADMIN_USER: "${ADMIN_USER:-control}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}"
+      SENSOR_TOKEN: "${SENSOR_TOKEN:?set SENSOR_TOKEN in .env}"
+      IP_SALT: "${IP_SALT:-change-me}"
+      SECURE_COOKIES: "${SECURE_COOKIES:-false}"
+
+      # --- behaviour -------------------------------------------------------
+      TRANSIT_SECONDS: "${TRANSIT_SECONDS:-12}"
+      MESSAGE_MAX_CHARS: "${MESSAGE_MAX_CHARS:-500}"
+      HOURLY_LIMIT: "${HOURLY_LIMIT:-6}"
+      SENSOR_STALE_SECONDS: "${SENSOR_STALE_SECONDS:-300}"
+      MEDIA_MAX_MB: "${MEDIA_MAX_MB:-4096}"
+      HOLD_CHANNEL_BEFORE_LAUNCH: "${HOLD_CHANNEL_BEFORE_LAUNCH:-false}"
+      WATCH_CONTENT: "${WATCH_CONTENT:-true}"
+    volumes:
+      - station-data:/data
+      # The mission content is mounted, not baked in: edit the files on your
+      # machine and the running site updates within a couple of seconds.
+      - ./content:/app/content
+      # The code itself (src/ and public/) is BAKED INTO THE IMAGE — after
+      # changing it, rebuild with:  docker compose up --build -d
+      # While actively working on the design, uncomment these two lines so a
+      # plain restart picks up code changes without a rebuild:
+      # - ./src:/app/src
+      # - ./public:/app/public
+
+  # Optional. Feeds plausible habitat readings so the site can be demonstrated
+  # or rehearsed before the real sensors are mounted:
+  #   docker compose --profile demo up
+  simulator:
+    build: .
+    image: mars-communication-station:1.0.0
+    container_name: mars-simulator
+    restart: unless-stopped
+    profiles: ["demo"]
+    depends_on:
+      station:
+        condition: service_healthy
+    environment:
+      STATION_URL: "http://station:8080"
+      SENSOR_TOKEN: "${SENSOR_TOKEN:?set SENSOR_TOKEN in .env}"
+      INTERVAL_SECONDS: "${SIM_INTERVAL:-30}"
+    entrypoint: ["node", "tools/simulate-sensors.js"]
+
+volumes:
+  station-data:

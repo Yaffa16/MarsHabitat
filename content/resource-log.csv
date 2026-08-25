@@ -1,0 +1,118 @@
+mission_day,date,item,label,unit,quantity_at_close,daily_use,used_since_start,remaining_pct,days_left_at_this_use,source,note
+1,2026-10-15,water,Potable water,L,618,46,22,97,13.4,filed,"Stowage count at the end of the first day, once everything was in the racks."
+1,2026-10-15,food,Food rations,days,13,1,1,93,13,filed,"Stowage count at the end of the first day, once everything was in the racks."
+1,2026-10-15,oxygen,Oxygen reserve,%,96,3.6,2,98,26.7,filed,"Stowage count at the end of the first day, once everything was in the racks."
+1,2026-10-15,scrubber,CO₂ scrubber cartridges,units,12,0.4,0,100,30,filed,"Stowage count at the end of the first day, once everything was in the racks."
+1,2026-10-15,power,Battery charge,kWh,60,2.4,2,97,25,filed,"Stowage count at the end of the first day, once everything was in the racks."
+1,2026-10-15,filters,Dust filters,units,9,0.3,0,100,30,filed,"Stowage count at the end of the first day, once everything was in the racks."
+1,2026-10-15,medical,Medical kits,kits,6,0,0,100,,filed,"Stowage count at the end of the first day, once everything was in the racks."
+1,2026-10-15,materials,Repair materials,kg,48,1.2,0,100,40,filed,"Stowage count at the end of the first day, once everything was in the racks."
+1,2026-10-15,seed,Germination trays,trays,8,0,0,100,,filed,"Stowage count at the end of the first day, once everything was in the racks."
+2,2026-10-16,water,Potable water,L,618,2,22,97,309,filed,Four trays seeded at greenhouse start-up.
+2,2026-10-16,food,Food rations,days,13,10,1,93,1.3,filed,Four trays seeded at greenhouse start-up.
+2,2026-10-16,oxygen,Oxygen reserve,%,92.4,3.6,5.6,94,25.7,carried,
+2,2026-10-16,scrubber,CO₂ scrubber cartridges,units,11.6,0.4,0.4,97,29,carried,
+2,2026-10-16,power,Battery charge,kWh,57.6,2.4,4.4,93,24,carried,
+2,2026-10-16,filters,Dust filters,units,8.7,0.3,0.3,97,29,carried,
+2,2026-10-16,medical,Medical kits,kits,6,0,0,100,,carried,
+2,2026-10-16,materials,Repair materials,kg,46.8,1.2,1.2,98,39,carried,
+2,2026-10-16,seed,Germination trays,trays,4.8,0,3.2,60,,filed,Four trays seeded at greenhouse start-up.
+3,2026-10-17,water,Potable water,L,616,2,24,96,308,carried,
+3,2026-10-17,food,Food rations,days,3,10,11,21,0.3,carried,
+3,2026-10-17,oxygen,Oxygen reserve,%,88.8,3.6,9.2,91,24.7,carried,
+3,2026-10-17,scrubber,CO₂ scrubber cartridges,units,11.2,0.4,0.8,93,28,carried,
+3,2026-10-17,power,Battery charge,kWh,55.2,2.4,6.8,89,23,carried,
+3,2026-10-17,filters,Dust filters,units,8.4,0.3,0.6,93,28,carried,
+3,2026-10-17,medical,Medical kits,kits,6,0,0,100,,carried,
+3,2026-10-17,materials,Repair materials,kg,45.6,1.2,2.4,95,38,carried,
+3,2026-10-17,seed,Germination trays,trays,4.8,0,3.2,60,,carried,
+4,2026-10-18,water,Potable water,L,614,2,26,96,307,carried,
+4,2026-10-18,food,Food rations,days,0,10,14,0,0,carried,
+4,2026-10-18,oxygen,Oxygen reserve,%,85.2,3.6,12.8,87,23.7,carried,
+4,2026-10-18,scrubber,CO₂ scrubber cartridges,units,10.8,0.4,1.2,90,27,carried,
+4,2026-10-18,power,Battery charge,kWh,52.8,2.4,9.2,85,22,carried,
+4,2026-10-18,filters,Dust filters,units,8.1,0.3,0.9,90,27,carried,
+4,2026-10-18,medical,Medical kits,kits,6,0,0,100,,carried,
+4,2026-10-18,materials,Repair materials,kg,44.4,1.2,3.6,93,37,carried,
+4,2026-10-18,seed,Germination trays,trays,4.8,0,3.2,60,,carried,
+5,2026-10-19,water,Potable water,L,440,36,200,69,12.2,filed,Water recovery loop drifts 4% low; allowance cut at lunch. Filter change brought forward from day 8.
+5,2026-10-19,food,Food rations,days,0,10,14,0,0,carried,
+5,2026-10-19,oxygen,Oxygen reserve,%,81.6,3.6,16.4,83,22.7,carried,
+5,2026-10-19,scrubber,CO₂ scrubber cartridges,units,10.4,0.4,1.6,87,26,carried,
+5,2026-10-19,power,Battery charge,kWh,50.4,2.4,11.6,81,21,carried,
+5,2026-10-19,filters,Dust filters,units,8,0.3,1,89,26.7,filed,Water recovery loop drifts 4% low; allowance cut at lunch. Filter change brought forward from day 8.
+5,2026-10-19,medical,Medical kits,kits,6,0,0,100,,carried,
+5,2026-10-19,materials,Repair materials,kg,43.2,1.2,4.8,90,36,carried,
+5,2026-10-19,seed,Germination trays,trays,4.8,0,3.2,60,,carried,
+6,2026-10-20,water,Potable water,L,404,36,236,63,11.2,carried,
+6,2026-10-20,food,Food rations,days,0,10,14,0,0,carried,
+6,2026-10-20,oxygen,Oxygen reserve,%,78,3.6,20,80,21.7,carried,
+6,2026-10-20,scrubber,CO₂ scrubber cartridges,units,10,0.4,2,83,25,carried,
+6,2026-10-20,power,Battery charge,kWh,44,3.4,18,71,12.9,filed,Dust on the west panel costs 11% of generation until it is cleaned. Repair materials into the seal.
+6,2026-10-20,filters,Dust filters,units,7.7,0.3,1.3,86,25.7,carried,
+6,2026-10-20,medical,Medical kits,kits,6,0,0,100,,carried,
+6,2026-10-20,materials,Repair materials,kg,41,1.2,7,85,34.2,filed,Dust on the west panel costs 11% of generation until it is cleaned. Repair materials into the seal.
+6,2026-10-20,seed,Germination trays,trays,4.8,0,3.2,60,,carried,
+7,2026-10-21,water,Potable water,L,370,36,270,58,10.3,filed,Full hand audit at the midpoint. Generation recovered to within 3% of day one; the log was two litres optimistic.
+7,2026-10-21,food,Food rations,days,0,10,14,0,0,carried,
+7,2026-10-21,oxygen,Oxygen reserve,%,74,3.6,24,76,20.6,filed,Full hand audit at the midpoint. Generation recovered to within 3% of day one; the log was two litres optimistic.
+7,2026-10-21,scrubber,CO₂ scrubber cartridges,units,9.6,0.4,2.4,80,24,carried,
+7,2026-10-21,power,Battery charge,kWh,42,2.6,20,68,16.2,filed,Full hand audit at the midpoint. Generation recovered to within 3% of day one; the log was two litres optimistic.
+7,2026-10-21,filters,Dust filters,units,7.4,0.3,1.6,82,24.7,carried,
+7,2026-10-21,medical,Medical kits,kits,6,0,0,100,,carried,
+7,2026-10-21,materials,Repair materials,kg,39.8,1.2,8.2,83,33.2,carried,
+7,2026-10-21,seed,Germination trays,trays,4.8,0,3.2,60,,carried,
+8,2026-10-22,water,Potable water,L,334,36,306,52,9.3,carried,
+8,2026-10-22,food,Food rations,days,0,10,14,0,0,carried,
+8,2026-10-22,oxygen,Oxygen reserve,%,69,4,29,70,17.3,filed,CO₂ climbing in the sleep period; cartridge swapped early and the spares run faster from here. One medical kit opened. Second attempt on the west seal.
+8,2026-10-22,scrubber,CO₂ scrubber cartridges,units,8,0.8,4,67,10,filed,CO₂ climbing in the sleep period; cartridge swapped early and the spares run faster from here. One medical kit opened. Second attempt on the west seal.
+8,2026-10-22,power,Battery charge,kWh,39.4,2.6,22.6,64,15.2,carried,
+8,2026-10-22,filters,Dust filters,units,7.1,0.3,1.9,79,23.7,carried,
+8,2026-10-22,medical,Medical kits,kits,5,0,1,83,,filed,CO₂ climbing in the sleep period; cartridge swapped early and the spares run faster from here. One medical kit opened. Second attempt on the west seal.
+8,2026-10-22,materials,Repair materials,kg,36,1.2,12,75,30,filed,CO₂ climbing in the sleep period; cartridge swapped early and the spares run faster from here. One medical kit opened. Second attempt on the west seal.
+8,2026-10-22,seed,Germination trays,trays,4.8,0,3.2,60,,carried,
+9,2026-10-23,water,Potable water,L,300,44,340,47,6.8,filed,Recovery membrane replaced; loop back to spec and the full water allowance restored from lunch.
+9,2026-10-23,food,Food rations,days,0,10,14,0,0,carried,
+9,2026-10-23,oxygen,Oxygen reserve,%,65,4,33,66,16.3,carried,
+9,2026-10-23,scrubber,CO₂ scrubber cartridges,units,7.2,0.8,4.8,60,9,carried,
+9,2026-10-23,power,Battery charge,kWh,36.8,2.6,25.2,59,14.2,carried,
+9,2026-10-23,filters,Dust filters,units,6.8,0.3,2.2,76,22.7,carried,
+9,2026-10-23,medical,Medical kits,kits,5,0,1,83,,carried,
+9,2026-10-23,materials,Repair materials,kg,34.8,1.2,13.2,73,29,carried,
+9,2026-10-23,seed,Germination trays,trays,4.8,0,3.2,60,,carried,
+10,2026-10-24,water,Potable water,L,256,44,384,40,5.8,carried,
+10,2026-10-24,food,Food rations,days,0,10,14,0,0,carried,
+10,2026-10-24,oxygen,Oxygen reserve,%,61,4,37,62,15.3,carried,
+10,2026-10-24,scrubber,CO₂ scrubber cartridges,units,6.4,0.8,5.6,53,8,carried,
+10,2026-10-24,power,Battery charge,kWh,34.2,2.6,27.8,55,13.2,carried,
+10,2026-10-24,filters,Dust filters,units,6.5,0.3,2.5,72,21.7,carried,
+10,2026-10-24,medical,Medical kits,kits,5,0,1,83,,carried,
+10,2026-10-24,materials,Repair materials,kg,31,1.2,17,65,25.8,filed,"Third attempt on the west seal, left to cure overnight. First greenhouse harvest."
+10,2026-10-24,seed,Germination trays,trays,4.8,0,3.2,60,,carried,
+11,2026-10-25,water,Potable water,L,212,44,428,33,4.8,carried,
+11,2026-10-25,food,Food rations,days,0,10,14,0,0,carried,
+11,2026-10-25,oxygen,Oxygen reserve,%,57,4,41,58,14.3,carried,
+11,2026-10-25,scrubber,CO₂ scrubber cartridges,units,5.6,0.8,6.4,47,7,carried,
+11,2026-10-25,power,Battery charge,kWh,31.6,2.6,30.4,51,12.2,carried,
+11,2026-10-25,filters,Dust filters,units,6.2,0.3,2.8,69,20.7,carried,
+11,2026-10-25,medical,Medical kits,kits,5,0,1,83,,carried,
+11,2026-10-25,materials,Repair materials,kg,29.8,1.2,18.2,62,24.8,carried,
+11,2026-10-25,seed,Germination trays,trays,4.8,0,3.2,60,,carried,
+12,2026-10-26,water,Potable water,L,168,44,472,26,3.8,carried,
+12,2026-10-26,food,Food rations,days,0,10,14,0,0,carried,
+12,2026-10-26,oxygen,Oxygen reserve,%,53,4,45,54,13.3,carried,
+12,2026-10-26,scrubber,CO₂ scrubber cartridges,units,4.8,0.8,7.2,40,6,carried,
+12,2026-10-26,power,Battery charge,kWh,29,2.6,33,47,11.2,carried,
+12,2026-10-26,filters,Dust filters,units,5.9,0.3,3.1,66,19.7,carried,
+12,2026-10-26,medical,Medical kits,kits,5,0,1,83,,carried,
+12,2026-10-26,materials,Repair materials,kg,28.6,1.2,19.4,60,23.8,carried,
+12,2026-10-26,seed,Germination trays,trays,4.8,0,3.2,60,,carried,
+13,2026-10-27,water,Potable water,L,84,44,556,13,1.9,filed,"Final count, taken by hand before egress. The day-11 projection said 120 litres; the tank said 84."
+13,2026-10-27,food,Food rations,days,1,1,13,7,1,filed,"Final count, taken by hand before egress. The day-11 projection said 120 litres; the tank said 84."
+13,2026-10-27,oxygen,Oxygen reserve,%,48,4,50,49,12,filed,"Final count, taken by hand before egress. The day-11 projection said 120 litres; the tank said 84."
+13,2026-10-27,scrubber,CO₂ scrubber cartridges,units,4,0.8,8,33,5,filed,"Final count, taken by hand before egress. The day-11 projection said 120 litres; the tank said 84."
+13,2026-10-27,power,Battery charge,kWh,26,2.6,36,42,10,filed,"Final count, taken by hand before egress. The day-11 projection said 120 litres; the tank said 84."
+13,2026-10-27,filters,Dust filters,units,5.6,0.3,3.4,62,18.7,carried,
+13,2026-10-27,medical,Medical kits,kits,5,0,1,83,,carried,
+13,2026-10-27,materials,Repair materials,kg,27,1.2,21,56,22.5,filed,"Final count, taken by hand before egress. The day-11 projection said 120 litres; the tank said 84."
+13,2026-10-27,seed,Germination trays,trays,4.8,0,3.2,60,,carried,

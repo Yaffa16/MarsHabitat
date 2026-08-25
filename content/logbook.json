@@ -1,0 +1,68 @@
+{
+  "_note": "Crew diary entries for the thirteen days of the run (Thursday 15 to Tuesday 27 October 2026), keyed by mission day then by officer: 39 slots. Every slot ships as a PLACEHOLDER: an entry whose text begins with [PLACEHOLDER] is a slot to write into. Its first line is shown greyed on the public crew log, so the shape of the whole log is visible from the start; the 'Cue:' line after it is a prompt for the writer and is shown only in mission control. Replace the text — on the Crew log tab of mission control, on the officer's own tab, or here — and the entry is published for that day the moment it is saved. Saving an entry empty puts the placeholder back. Anything written live from mission control takes that slot over and is never replaced from this file, so you can write ahead here safely.",
+  "1": {
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 001 · Thu 15 Oct · Communication officer — to be written at the end of this day.\nCue: Hatch closed, first contact with Earth in the 16:00 window. What arrived, and what it was like to read it from inside.",
+    "SCIENCE OFFICER": "[PLACEHOLDER] Day 001 · Thu 15 Oct · Science officer — to be written at the end of this day.\nCue: Systems handover, the habitat photographed clean. The size of the air, in numbers and in feeling.",
+    "HEALTH OFFICER": "[PLACEHOLDER] Day 001 · Thu 15 Oct · Health officer — to be written at the end of this day.\nCue: Baseline readings on all three before the hatch closed. How everyone arrived, and the first thing learned about the space."
+  },
+  "2": {
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 002 · Fri 16 Oct · Communication officer — to be written at the end of this day.\nCue: The first full day of messages. How many, what people ask, what surprises you about how they ask it.",
+    "SCIENCE OFFICER": "[PLACEHOLDER] Day 002 · Fri 16 Oct · Science officer — to be written at the end of this day.\nCue: First trays seeded, batch A collected, the water loop baselined. What the humidity did over the sleep period.",
+    "HEALTH OFFICER": "[PLACEHOLDER] Day 002 · Fri 16 Oct · Health officer — to be written at the end of this day.\nCue: First full sleep period logged. The conditioning session, and what you are watching for later in the week."
+  },
+  "3": {
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 003 · Sat 17 Oct · Communication officer — to be written at the end of this day.\nCue: A message that stayed with you. The sounds of the habitat — the fan you stop hearing and then hear again.",
+    "SCIENCE OFFICER": "[PLACEHOLDER] Day 003 · Sat 17 Oct · Science officer — to be written at the end of this day.\nCue: Condensation on the west wall: tracing the moisture through the ducting, what was found, and what was not.",
+    "HEALTH OFFICER": "[PLACEHOLDER] Day 003 · Sat 17 Oct · Health officer — to be written at the end of this day.\nCue: The condensation as a health matter. The wipe-down, and a note on who is and is not unwell."
+  },
+  "4": {
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 004 · Sun 18 Oct · Communication officer — to be written at the end of this day.\nCue: A Sunday on Earth. Whether the messages know it is the weekend, and whether you do.",
+    "SCIENCE OFFICER": "[PLACEHOLDER] Day 004 · Sun 18 Oct · Science officer — to be written at the end of this day.\nCue: Batch B collected, batch A under the scope a second time. Grain size, colour, the first thing that does not match the model.",
+    "HEALTH OFFICER": "[PLACEHOLDER] Day 004 · Sun 18 Oct · Health officer — to be written at the end of this day.\nCue: The routine has set. Sleep, appetite, temper on the fourth day — the slow signals, before anything goes wrong."
+  },
+  "5": {
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 005 · Mon 19 Oct · Communication officer — to be written at the end of this day.\nCue: Telling Earth about the water. The first message that came back with worry in it, and what the delay does to worry.",
+    "SCIENCE OFFICER": "[PLACEHOLDER] Day 005 · Mon 19 Oct · Science officer — to be written at the end of this day.\nCue: The recovery loop four per cent low since 02:00 and no cause found. Filter change brought forward; the dust load against the model; the first germination check.",
+    "HEALTH OFFICER": "[PLACEHOLDER] Day 005 · Mon 19 Oct · Health officer — to be written at the end of this day.\nCue: Water allowance cut at lunch. What reduced intake shows up as first, and when you will know if the new figure works."
+  },
+  "6": {
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 006 · Tue 20 Oct · Communication officer — to be written at the end of this day.\nCue: A window on a thirsty day. Which questions you answered fully and which you answered short.",
+    "SCIENCE OFFICER": "[PLACEHOLDER] Day 006 · Tue 20 Oct · Science officer — to be written at the end of this day.\nCue: Dust on the west panel, eleven per cent of the power, and what it looked like up close. Batch B under the scope.",
+    "HEALTH OFFICER": "[PLACEHOLDER] Day 006 · Tue 20 Oct · Health officer — to be written at the end of this day.\nCue: Second day on the reduced allowance. Conditioning on the reduced-water protocol; headaches, tempers, who is drinking less than their share."
+  },
+  "7": {
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 007 · Wed 21 Oct · Communication officer — to be written at the end of this day.\nCue: Halfway, and the longest window of the mission. How many were waiting, how many were answered, and the ratio that bothers you.",
+    "SCIENCE OFFICER": "[PLACEHOLDER] Day 007 · Wed 21 Oct · Science officer — to be written at the end of this day.\nCue: The midpoint audit, every item counted by hand. First shoots on trays 1 and 3. The habitat photographed again and set beside day one.",
+    "HEALTH OFFICER": "[PLACEHOLDER] Day 007 · Wed 21 Oct · Health officer — to be written at the end of this day.\nCue: Six days done, six to go. Grip, pulse, sleep across the crew. What the midpoint meal did that no metric records."
+  },
+  "8": {
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 008 · Thu 22 Oct · Communication officer — to be written at the end of this day.\nCue: The day you did not want to open the window, and opened it. What someone asked, and what you answered.",
+    "SCIENCE OFFICER": "[PLACEHOLDER] Day 008 · Thu 22 Oct · Science officer — to be written at the end of this day.\nCue: The CO₂ number you do not like, and why — not danger, but what it says about the loop. The seal that failed a second time.",
+    "HEALTH OFFICER": "[PLACEHOLDER] Day 008 · Thu 22 Oct · Health officer — to be written at the end of this day.\nCue: The hard day you have been watching for. CO₂ in the sleep period, conditioning shortened, a medical kit opened, two hours you were not sure about."
+  },
+  "9": {
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 009 · Fri 23 Oct · Communication officer — to be written at the end of this day.\nCue: A callsign that has written every day. The first question, finally answered — or not.",
+    "SCIENCE OFFICER": "[PLACEHOLDER] Day 009 · Fri 23 Oct · Science officer — to be written at the end of this day.\nCue: The membrane replaced, the loop back to spec by 11:00. Batch C, the last collection. What the three batches are starting to say, and what you refuse to say yet.",
+    "HEALTH OFFICER": "[PLACEHOLDER] Day 009 · Fri 23 Oct · Health officer — to be written at the end of this day.\nCue: Allowance restored from lunch. What the first full glass of water did to the room."
+  },
+  "10": {
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 010 · Sat 24 Oct · Communication officer — to be written at the end of this day.\nCue: Ten days in. The questions have changed shape — week one about Mars, this week about us. Which ones you answer honestly.",
+    "SCIENCE OFFICER": "[PLACEHOLDER] Day 010 · Sat 24 Oct · Science officer — to be written at the end of this day.\nCue: First harvest. The weight of it, split three ways, eaten at breakfast. The seal, third attempt. Tonight the clocks on Earth go back an hour.",
+    "HEALTH OFFICER": "[PLACEHOLDER] Day 010 · Sat 24 Oct · Health officer — to be written at the end of this day.\nCue: Better. The loop repair, the harvest, the first full conditioning session since day seven — what those did to the crew that you can and cannot measure."
+  },
+  "11": {
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 011 · Sun 25 Oct · Communication officer — to be written at the end of this day.\nCue: The twenty-five-hour day. An extra hour inside; whether Earth noticed, and what the window sounded like now that people know you.",
+    "SCIENCE OFFICER": "[PLACEHOLDER] Day 011 · Sun 25 Oct · Science officer — to be written at the end of this day.\nCue: All three batches side by side. The consumables projection to hatch open, and the margin you are and are not comfortable with.",
+    "HEALTH OFFICER": "[PLACEHOLDER] Day 011 · Sun 25 Oct · Health officer — to be written at the end of this day.\nCue: Second set of full readings. Weight, sleep, grip, pulse — within expectation, and the one figure that is not. Anything the crew are not saying, and how you know."
+  },
+  "12": {
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 012 · Mon 26 Oct · Communication officer — to be written at the end of this day.\nCue: The last full day. What you will miss about the window, if anything, and what is still unanswered.",
+    "SCIENCE OFFICER": "[PLACEHOLDER] Day 012 · Mon 26 Oct · Science officer — to be written at the end of this day.\nCue: Packing the samples: thirty-six vials boxed, labelled, no longer yours to touch. The data copied out. What leaves with you and what stays.",
+    "HEALTH OFFICER": "[PLACEHOLDER] Day 012 · Mon 26 Oct · Health officer — to be written at the end of this day.\nCue: A day nobody was unwell. Record it anyway, and what it took to get here."
+  },
+  "13": {
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 013 · Tue 27 Oct · Communication officer — to be written at the end of this day.\nCue: The final window: everything still waiting, answered. Then the hatch. A message that made someone laugh out loud in a sealed room, or the one that went quiet.",
+    "SCIENCE OFFICER": "[PLACEHOLDER] Day 013 · Tue 27 Oct · Science officer — to be written at the end of this day.\nCue: Second harvest, the final count by hand, the systems powered down in order. What the numbers say now that they are finished.",
+    "HEALTH OFFICER": "[PLACEHOLDER] Day 013 · Tue 27 Oct · Health officer — to be written at the end of this day.\nCue: Hatch open at 21:00 after thirteen days. How everyone leaves, and the last thing learned about the space."
+  }
+}
