@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Mars Mission MARSPLATZ</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  body { width: 1440px; }
+  .top { grid-template-columns: 2fr 1fr; }
+  .bottom { grid-template-columns: 1fr 1fr 1fr; margin-top: 26px; }
+  .panel.tall { min-height: 300px; }
+  .data .kv { grid-template-columns: 170px 1fr 70px; }
+  .data .val { text-align: right; font-variant-numeric: tabular-nums; }
+  .soltrack { display: flex; gap: 6px; margin: 18px 8px 0; }
+  .soltrack span { flex: 1; border: 1px solid #777; text-align: center; font-size: 11px; padding: 3px 0; letter-spacing: .06em; }
+  .soltrack span.now { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+  .soltrack span.past { background: #8f8f8f; border-color: #8f8f8f; }
+  .stores { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin-top: 10px; }
+  .store { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+  .store i { display: block; height: 0; border-top: 3px dashed var(--mag); margin-top: 3px; }
+  .store i.low { border-color: #ff7a3d; }
+</style></head>
+<body>
+<div class="dome-bg" id="dome"></div>
+<div class="wrap">
+  <div class="ticker"><b>Currently happening:</b> SOL 07 · hand audit of every store <span class="sep">·</span> <b>Next window:</b> 21:00, one way 12 min 35 s <span class="sep">·</span> <b>Habitat:</b> 21.4 °C · 38 % · CO₂ 812 ppm</div>
+
+  <header class="masthead">
+    <div class="q">?</div>
+    <div class="wordmark"><div class="l1"><span id="dome-mark"></span>Mars Mission</div><div class="l2">Marsplatz</div></div>
+    <div class="sol"><small>Thu 15 – Tue 27 Oct 2026</small>SOL7/13</div>
+  </header>
+
+  <div class="grid top">
+    <section class="panel tall">
+      <div class="compose">
+        <div>
+          <div class="callsign small">You are <b>CRATER-697</b> · CH-09 · Uplink to the habitat</div>
+          <div class="well">Write to the crew. Every message crosses 226 million kilometres and waits for the next window.</div>
+          <div class="chips"><span class="chip on">Question</span><span class="chip">Personal</span><span class="chip">Science</span><span class="chip">Earth</span><span class="chip">Food</span><span class="chip">Humour</span></div>
+          <span class="btn">Transmit → 12 min 35 s</span>
+        </div>
+        <div class="orbit" id="orbit"></div>
+      </div>
+      <div class="exch">
+        <div class="card"><span class="cs">DUNE-214 · Ref 00042</span> — Does the water taste different after the membrane swap?<div class="re">✧ SCIENCE OFFICER — Flatter. The loop is back to spec, but the first litres out of it taste of nothing at all.</div></div>
+        <div class="card"><span class="cs">ORBIT-051 · Ref 00039</span> — What do you miss first?<div class="re">✧ COMMUNICATION OFFICER — Rain. Not the idea of it, the sound.</div></div>
+      </div>
+      <span class="cap">Communications</span>
+    </section>
+
+    <section class="panel tall data">
+      <div class="kv">
+        <span>Habitat temperature</span><span class="bar" style="width:52%"></span><span class="val">21.4 °C</span>
+        <span>Relative humidity</span><span class="bar" style="width:38%"></span><span class="val">38 %</span>
+        <span>Carbon dioxide</span><span class="bar" style="width:66%"></span><span class="val">812 ppm</span>
+        <span>Air pressure</span><span class="bar" style="width:80%"></span><span class="val">1 004 hPa</span>
+        <span>Radiation dose rate</span><span class="bar" style="width:22%"></span><span class="val">0.12 µSv/h</span>
+        <span>Node battery</span><span class="bar" style="width:74%"></span><span class="val">3.9 V</span>
+      </div>
+      <div class="soltrack">
+        <span class="past">01</span><span class="past">02</span><span class="past">03</span><span class="past">04</span><span class="past">05</span><span class="past">06</span><span class="now">07</span><span>08</span><span>09</span><span>10</span><span>11</span><span>12</span><span>13</span>
+      </div>
+      <div class="stores">
+        <div class="store">Potable water · 370 L<i style="width:58%"></i></div>
+        <div class="store">Oxygen reserve · 74 %<i style="width:75%"></i></div>
+        <div class="store">Battery charge · 42 kWh<i style="width:68%"></i></div>
+        <div class="store">CO₂ cartridges · 10<i style="width:83%"></i></div>
+        <div class="store">Food rations · 7 sols<i style="width:50%"></i></div>
+        <div class="store">Dust filters · 8<i style="width:88%"></i></div>
+      </div>
+      <span class="cap">Data</span>
+    </section>
+  </div>
+
+  <div class="section-title">Habitat — Grundriss</div>
+  <div id="plan"></div>
+  <div class="section-note">Türposition (möglich)<br>M = Modul · A–C = Ringsektoren</div>
+
+  <div class="grid bottom">
+    <section class="panel"><div class="body"><p class="small">Science officer · SOL 07</p><p>Full hand audit at the midpoint. Generation recovered to within 3 % of day one; the log was two litres optimistic. Six done, six to go. The longest window of the run tonight.</p></div><span class="cap arrow">Reports</span></section>
+    <section class="panel"><div class="body"><p class="small">Health officer · SOL 07</p><p>Morning workout on the cycle, 18 minutes at load. Evening wellbeing: the greenhouse, by hand, no talking. Everyone slept through; CO₂ stayed under 900 in the sleep period for the first time since SOL 03.</p></div><span class="cap">Reports</span></section>
+    <section class="panel"><div class="body">
+      <p class="small">Consumables stock<br>last logged SOL 07 · 21:00</p>
+      <div class="moodrow"><span class="small">Mood H1</span><span class="orb a"></span></div>
+      <div class="moodrow"><span class="small">Mood H2</span><span class="orb b"></span></div>
+      <div class="moodrow"><span class="small">Mood H3</span><span class="orb c"></span></div>
+    </div><span class="cap">Data last logged</span></section>
+  </div>
+  <div style="height:520px"></div>
+</div>
+<nav class="footnav"><a>What this is</a><a>Who we are</a><a>Mission schedule</a><a>Today</a><a>Crew messages</a><a>Crew log</a><a>Mission control</a></nav>
+<script src="icons.js"></script>
+<script>
+  document.getElementById('dome').innerHTML = dome(1440, 900, 6);
+  document.getElementById('orbit').innerHTML = orbit(210, 150);
+  document.getElementById('plan').innerHTML = plan(760);
+  document.getElementById('dome-mark').innerHTML = icon('dome', 44);
+</script>
+</body></html>

@@ -5,6 +5,7 @@ const mediaLib = require('../../lib/media');
 const { esc, panel, eyebrow } = L;
 const orbital = require('../../lib/orbital');
 const mood = require('../../lib/mood');
+const missionLib = require('../../lib/mission');
 
 const dd = (n) => String(n).padStart(3, '0');
 
@@ -141,28 +142,26 @@ function queue({ list, crew, counts, show }) {
 
 /* ============================================================= DAY CONTENT */
 
-/** The mood sliders for one officer, with the public sentence live. */
+/** The mood scale for one officer: five faces, calm to angry. */
 function moodBlock(c) {
   const t = mood.translate(c.mood);
+  const current = c.mood ? mood.FACES.reduce((best, f) => (Math.abs(f.v - c.mood.calm_tense) < Math.abs(best.v - c.mood.calm_tense) ? f : best), mood.FACES[0]).v : null;
   return panel('CH-12 / MOOD', `
     ${eyebrow(`${c.designation} · state`)}
     <span class="badge">${esc(t.condition)}</span>
     <form method="post" action="/control/moods/${c.id}" style="margin-top:14px">
-      ${mood.AXES.map((a) => {
-        const v = c.mood ? c.mood[a.key] : 50;
-        return `<div class="axis-row">
-          <div class="poles"><span>${a.low}</span><span>${a.label}</span><span>${a.high}</span></div>
-          <input type="range" min="0" max="100" name="${a.key}" value="${v}"
-                 class="mood-slider" data-axis="${a.key}" data-crew="${c.id}">
-          <div class="axis-read" id="read-${c.id}-${a.key}"></div>
-        </div>`;
-      }).join('')}
-      <label class="f"><span>What they are doing</span>
-        <input type="text" name="activity" value="${esc(c.activity || '')}"></label>
-      <button class="primary">File state</button>
+      <div class="poles mood-poles"><span>${mood.AXES[0].low}</span><span>${mood.AXES[0].label}</span><span>${mood.AXES[0].high}</span></div>
+      <div class="mood-faces" role="radiogroup" aria-label="Mood, calm to angry">
+        ${mood.FACES.map((f, i) => `<label class="mood-face" title="${esc(f.name)} — ${esc(mood.AXES[0].bands[i])}">
+          <input type="radio" name="calm_tense" value="${f.v}" data-crew="${c.id}" data-band="${i}"${current === f.v ? ' checked' : ''} required>
+          ${mood.faceSvg(f)}<span>${esc(f.name)}</span>
+        </label>`).join('')}
+      </div>
+      <div class="axis-read" id="read-${c.id}-calm_tense">${c.mood ? `“${esc(t.lines[0])}”` : ''}</div>
+      <button class="primary">Publish</button>
     </form>
-    <p class="note" style="margin-top:10px">The public never sees these numbers, only the
-    sentence under each slider.</p>`, 'mars-side');
+    <p class="note" style="margin-top:10px">The public never sees the scale, only the
+    sentence under it.</p>`, 'mars-side');
 }
 
 /** What the entry composer needs to know about the media already on an
@@ -192,10 +191,10 @@ function blogBlock(c, tab, day, entry) {
       <input type="hidden" name="day" value="${day}">
       <input type="hidden" name="designation" value="${esc(c.designation)}">
       <input type="hidden" name="back" value="${tab}">
-      <textarea name="body" rows="10"
+      <textarea name="body" rows="18" class="blog-box"
         placeholder="${esc(entry && isPlaceholder(entry.body) ? placeholderCue(entry.body) : 'What happened today, in their voice.')}">${esc(live ? entry.body : '')}</textarea>
       ${attachRow()}
-      <div class="actions"><button class="primary">${live ? 'Update Daily Blog' : 'Publish Daily Blog'}</button>
+      <div class="actions"><button class="primary">Publish</button>
         ${live ? '<button type="submit" class="ghost" name="action" value="clear" title="Take it down and put the placeholder back">Clear</button>' : ''}
         <span class="note">${live ? 'Live on the public crew log.' : 'Goes straight to the crew log the moment it is saved — any day, mission started or not.'}</span></div>
     </form>`, 'mars-side');
@@ -214,9 +213,9 @@ function reportBlock(c, kindKey, label, hint, day, tpl, tab) {
       <input type="hidden" name="kind" value="${esc(kindKey)}">
       <input type="hidden" name="crew_id" value="${c.id}">
       <input type="hidden" name="back" value="${tab}">
-      <textarea name="body" rows="10" placeholder="${esc(label)} for the day…">${esc(live ? c.report : (preset ? preset.body : ''))}</textarea>
+      <textarea name="body" rows="14" class="blog-box" placeholder="${esc(label)} for the day…">${esc(live ? c.report : (preset ? preset.body : ''))}</textarea>
       ${attachRow()}
-      <div class="actions"><button class="primary">${live ? `Update ${label.toLowerCase()}` : `Publish ${label.toLowerCase()}`}</button>
+      <div class="actions"><button class="primary">Publish</button>
         ${live ? '<button type="submit" class="ghost" name="action" value="clear" title="Take it down">Clear</button>' : ''}
         <span class="note">${live ? 'Live on the station, in the day’s mission notes.' : 'Appears in the day’s mission notes the moment it is saved.'}</span></div>
     </form>`, 'mars-side');
@@ -282,7 +281,7 @@ function crewFiguresBlock(day, figures) {
           <input type="number" min="0" name="steps" value="${f.steps ?? ''}"
             placeholder="steps inside the habitat"></label>
       </div>
-      <div class="actions"><button class="primary">Save figures for day ${dd(day)}</button></div>
+      <div class="actions"><button class="primary">Publish</button></div>
     </form>`, 'mars-side');
 }
 
@@ -356,6 +355,108 @@ function inventoryBlock(day, items) {
       <button class="ghost small">Clear this day's override</button></form>`, 'mars-side');
 }
 
+/**
+ * Power consumed that day, by category. Each row is a category: its name
+ * (editable — renaming here renames it everywhere, the record included) and
+ * the day's kWh. A blank amount records nothing for that category, not zero.
+ */
+function powerBlock(day, power) {
+  const d = power.days[String(day)] || {};
+  const filed = power.categories.filter((c) => d[c.key] != null);
+  const total = filed.reduce((s, c) => s + d[c.key], 0);
+  return panel('CH-35 / POWER', `
+    ${eyebrow(`Power consumed · day ${dd(day)}`)}
+    <p class="note" style="margin-bottom:12px">What drew on the batteries that day, in kWh, split
+    by category. The names are editable — a rename here renames the category on the station, in
+    At a Glance and in the record. A blank amount records nothing for that day, not zero. Saving
+    writes <b>content/power.json</b>.</p>
+    <form method="post" action="/control/power">
+      <input type="hidden" name="day" value="${day}">
+      <div class="tw"><table>
+        <thead><tr><th>Category</th><th>kWh that day</th></tr></thead>
+        <tbody>${power.categories.map((c) => `<tr>
+          <td><input type="text" name="name_${esc(c.key)}" value="${esc(c.label)}" aria-label="Category name"></td>
+          <td><input type="number" step="0.01" min="0" name="kwh_${esc(c.key)}" value="${d[c.key] ?? ''}"
+               placeholder="nothing recorded" aria-label="${esc(c.label)} kWh"></td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+      <div class="kv" style="margin-top:6px"><dt>Day total</dt>
+        <dd>${filed.length ? `${total.toFixed(2)} kWh across ${filed.length} categor${filed.length === 1 ? 'y' : 'ies'}` : 'nothing recorded for this day'}</dd></div>
+      <div class="actions"><button class="primary">Save power for day ${dd(day)}</button></div>
+    </form>`, 'mars-side');
+}
+
+/* Start again. The files in content/ are the plan; the reset empties the
+   blog slots, clears everything written live and reloads the mission from
+   the files. content/plan/ is a snapshot of the files, kept as a backup and
+   used to put back a file that has gone missing. */
+function resetBlock(day, plan, locked) {
+  const when = plan.savedAt ? new Date(plan.savedAt).toLocaleString('en-GB', { timeZone: 'Europe/Berlin', dateStyle: 'medium', timeStyle: 'short' }) : null;
+  return panel('CH-00 / START AGAIN', `
+    ${eyebrow('Start again from 15 October')}
+    <p class="note"><b>Reset to 15 October</b> — the button at the top of this page, on every tab — asks you to
+      type <code>RESET</code>, then: empties every blog slot for every day and officer (the crew fill them
+      during the run); empties the crew's figures — calories and steps are filed daily on the Health tab;
+      clears every message, reply and callsign from Earth; clears every crew state filed, so
+      the crew begin with nothing on record; clears the media sent out from the record (the files stay on disk
+      under their hashes); clears every habitat reading — the station's own and the external node's — so the
+      readings and the trend graph start on 15 October, with nothing from before the run; clears the sealed
+      daily records, task statuses and
+      live notes; and reloads the schedule, meals, inventory levels, notes and sensors from the files
+      in <code>content/</code> exactly as they are at that moment. From the reset on, the trend graph carries
+      no plan: every day ahead is empty and fills in as the crew file it. Nothing is copied over the files. The
+      sign-in, the audit trail and the readings log (every reading ever pulled, as JSON files on disk) are
+      kept. It cannot be undone.</p>
+    <p class="note">${locked
+      ? '<b>Locked.</b> The run has begun; the reset is for the weeks before 15 October.'
+      : 'Available until 15 October. From the first day of the run the button is locked.'}</p>
+    <p class="note" style="margin-top:18px">A <b>snapshot</b> of the content files is kept in <code>content/plan/</code>
+      ${plan.exists ? `(saved ${esc(when)} · ${plan.files.length} files)` : '(none yet)'} — a backup, and where a
+      file that has gone missing is restored from at start-up. The reset does not read from it.</p>
+    <form method="post" action="/control/plan/save" class="actions">
+      <input type="hidden" name="day" value="${day}">
+      <button class="ghost small">Save the files as they are now as the snapshot</button>
+    </form>`, 'mars-side');
+}
+
+/* The reset dialog: the word must be typed; the button only wakes up when
+   it has been. Without the page's script the field is still a plain text
+   input the server checks. */
+function resetDialog(locked) {
+  if (locked) return '';
+  return `
+  <dialog class="popup reset-dialog" id="reset-dialog" aria-labelledby="reset-title">
+    <div class="popup-head"><div><span class="fold-title" id="reset-title">Are you sure you want to reset?</span>
+      <span class="fold-sub">Start again for 15 October · cannot be undone</span></div>
+      <button type="button" class="popup-close" data-close aria-label="Close">×</button></div>
+    <div class="popup-body">
+      <p class="note">This empties every blog slot, clears every message and reply from Earth, every crew state,
+        the media sent out, the daily records, and every habitat reading (the readings and the trend graph start on
+        15 October), and reloads the mission from the files in <code>content/</code> as they are now.</p>
+      <form method="post" action="/control/reset" id="reset-form" class="actions" style="align-items:flex-end;gap:12px;margin-top:10px">
+        <label style="display:flex;flex-direction:column;gap:6px;flex:1 1 220px">
+          <span class="note" style="margin:0">Type <b>RESET</b> to confirm</span>
+          <input type="text" name="confirm" id="reset-word" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="RESET" style="text-transform:uppercase">
+        </label>
+        <button class="primary" id="reset-go" disabled>Reset the station</button>
+        <button type="button" class="ghost" data-close>Cancel</button>
+      </form>
+    </div>
+  </dialog>
+  <script>
+  (function () {
+    var open = document.getElementById('reset-open'), dlg = document.getElementById('reset-dialog');
+    if (!open || !dlg) return;
+    var word = document.getElementById('reset-word'), go = document.getElementById('reset-go');
+    function arm() { go.disabled = word.value.trim().toUpperCase() !== 'RESET'; }
+    open.addEventListener('click', function () { word.value = ''; arm(); if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); setTimeout(function () { word.focus(); }, 50); });
+    word.addEventListener('input', arm);
+    dlg.querySelectorAll('[data-close]').forEach(function (b) { b.addEventListener('click', function () { dlg.close ? dlg.close() : dlg.removeAttribute('open'); }); });
+    dlg.addEventListener('click', function (e) { if (e.target === dlg) { dlg.close ? dlg.close() : dlg.removeAttribute('open'); } });
+    document.getElementById('reset-form').addEventListener('submit', function (e) { if (word.value.trim().toUpperCase() !== 'RESET') e.preventDefault(); });
+  })();
+  </script>`;
+}
 
 /* ================================================================== THE PAGE */
 
@@ -365,45 +466,53 @@ function inventoryBlock(day, items) {
  * and inventory. One request renders the whole desk.
  */
 function page(ctx, model) {
-  const { user, f, content, show, tab, day, totalDays, tpl,
-          list, crew, counts, officers, tasks, meals, notes, figures, items,
+  const { user, f, content, show, tab, day, totalDays, tpl, plan = { exists: false }, resetLocked = false,
+          list, crew, counts, officers, tasks, meals, notes, figures, items, power = { categories: [], days: {} },
           media: mediaItems = [], mediaCounts = { total: 0, bytes: 0 }, mediaAccept = '', mediaMaxMb = 0, filter = 'all' } = model;
 
-  const dayPicker = `<nav class="filters daypick" aria-label="Mission day">
-    ${Array.from({ length: totalDays }, (_, i) => i + 1).map((n) =>
-      `<a href="${tabUrl(tab, n)}" class="${n === day ? 'on' : ''}" data-day="${n}">D${dd(n)}</a>`).join('')}
+  const dayPicker = `<nav class="filters daypick daypick-dates" aria-label="Mission day">
+    ${Array.from({ length: totalDays }, (_, i) => i + 1).map((n) => {
+      const d = new Date(missionLib.dateForDay(n) + 'T12:00:00Z');
+      const label = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+      return `<a href="${tabUrl(tab, n)}" class="${n === day ? 'on' : ''}" data-day="${n}"
+        title="Mission day ${dd(n)}">${esc(label)}</a>`;
+    }).join('')}
   </nav>`;
 
   const panes = {
     messages: queue({ list, crew, counts, show }),
+    // Every officer's blocks in one column, full width, the blog first —
+    // the writing gets the room, and nothing sits beside anything.
     comms: `
       <p class="note tab-note">${esc(officers.comms.role)}.</p>
-      <div class="grid g2">
+      <div class="officer-stack">
         ${blogBlock(officers.comms, 'comms', day, officers.comms.entry)}
         ${moodBlock(officers.comms)}
       </div>`,
     science: `
       <p class="note tab-note">${esc(officers.science.role)}.</p>
-      <div class="grid g2">
+      <div class="officer-stack">
         ${blogBlock(officers.science, 'science', day, officers.science.entry)}
         ${reportBlock(officers.science, 'science', 'Daily science findings',
           'Samples, measurements, the greenhouse, anything the habitat did that was worth recording.', day, tpl.SCIENCE, 'science')}
-      </div>
-      ${moodBlock(officers.science)}`,
+        ${moodBlock(officers.science)}
+      </div>`,
     health: `
       <p class="note tab-note">${esc(officers.health.role)}.</p>
-      <div class="grid g2">
+      <div class="officer-stack">
         ${blogBlock(officers.health, 'health', day, officers.health.entry)}
         ${reportBlock(officers.health, 'health', 'Daily health activities',
           'The morning workout, the evening wellbeing activity, and anything else worth recording. The form is prefilled; edit the default text in content/templates.json to change it.', day, tpl.HEALTH, 'health')}
-      </div>
-      ${crewFiguresBlock(day, figures)}
-      ${moodBlock(officers.health)}`,
+        ${crewFiguresBlock(day, figures)}
+        ${moodBlock(officers.health)}
+      </div>`,
     habitat: `
       <p class="note tab-note">The habitat itself: the day's schedule, the food, and what is left.</p>
       ${scheduleBlock(day, tasks)}
       ${mealsBlock(day, meals)}
-      ${inventoryBlock(day, items)}`,
+      ${inventoryBlock(day, items)}
+      ${powerBlock(day, power)}
+      ${resetBlock(day, plan, resetLocked)}`,
   };
 
   const body = `
@@ -414,11 +523,13 @@ function page(ctx, model) {
       <h1 style="margin:0">Mission control</h1>
       <div class="spacer"></div>
       <a class="btn" href="/archive">Archive</a>
-      <a class="btn" href="/archive/export.md">Download record</a>
-      <a class="btn" href="/">Public station</a>
+      <a class="btn" href="/archive/export.pdf" title="The whole mission as one PDF: every exchange, every entry with its photographs, the schedules, meals, inventory, states, trends and the media index">Download full record (PDF)</a>
+      <button type="button" class="ghost" id="reset-open" ${resetLocked ? 'disabled' : ''}
+              title="${resetLocked ? 'Locked: the run has begun. The reset is for the weeks before 15 October.' : 'Start again for 15 October — asks you to type RESET first'}">Reset to 15 October${resetLocked ? ' · locked' : ''}</button>
       <form method="post" action="/control/logout"><button class="ghost">Sign out</button></form>
     </div>
   </div>
+  ${resetDialog(resetLocked)}
 
   ${flash(f)}
   ${content && !content.ok ? `<div class="flash err">

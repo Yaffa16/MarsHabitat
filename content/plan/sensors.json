@@ -1,0 +1,38 @@
+{
+  "_note": "The monitoring channels. Anything a device posts to /api/sensors/ingest with a matching 'metric' appears here with these labels and thresholds. A device may also post a metric that is not listed — it will register itself and show up unconfigured, and you can add it here afterwards to give it a name and limits.",
+
+  "_thresholds": "warnMin/warnMax is the expected band — outside it reads CAUTION. okMin/okMax are the hard limits — outside them reads OUT OF RANGE. A channel silent for longer than SENSOR_STALE_SECONDS reads SIGNAL LOST rather than showing a stale number.",
+
+  "channels": [
+    { "metric": "temperature", "label": "Habitat temperature", "unit": "°C", "channel": "CH-01",
+      "warnMin": 18.5, "warnMax": 24.5, "okMin": 14, "okMax": 30 },
+
+    { "metric": "humidity", "label": "Relative humidity", "unit": "%", "channel": "CH-02",
+      "warnMin": 32, "warnMax": 48, "okMin": 20, "okMax": 70 },
+
+    { "metric": "co2", "label": "Carbon dioxide", "unit": "ppm", "channel": "CH-03",
+      "warnMin": 400, "warnMax": 1200, "okMin": 0, "okMax": 2500 },
+
+    { "metric": "pressure", "label": "Air pressure", "unit": "hPa", "channel": "CH-04",
+      "warnMin": 990, "warnMax": 1025, "okMin": 960, "okMax": 1050 },
+
+    { "metric": "air_quality", "label": "Air quality index", "unit": "AQI", "channel": "CH-05",
+      "warnMin": 0, "warnMax": 50, "okMin": 0, "okMax": 150,
+      "_note": "Composite index from the VOC and particulate sensor. 0-50 good, 51-100 moderate, above 150 the habitat should ventilate." },
+
+    { "metric": "voc", "label": "Volatile organic compounds", "unit": "ppb", "channel": "CH-06",
+      "warnMin": 0, "warnMax": 400, "okMin": 0, "okMax": 1000 },
+
+    { "metric": "pm25", "label": "Particulates PM2.5", "unit": "µg/m³", "channel": "CH-07",
+      "warnMin": 0, "warnMax": 15, "okMin": 0, "okMax": 55,
+      "_note": "Dust carried in on suits shows up here first." },
+
+    { "metric": "radiation", "label": "Radiation dose rate", "unit": "µSv/h", "channel": "CH-08",
+      "warnMin": 0, "warnMax": 0.5, "okMin": 0, "okMax": 2.0,
+      "_note": "Background at sea level on Earth is roughly 0.1-0.3 µSv/h. The warning band is set just above ordinary background so any real change is visible." },
+
+    { "metric": "radiation_cumulative", "label": "Cumulative dose", "unit": "µSv", "channel": "CH-09",
+      "warnMin": 0, "warnMax": 60, "okMin": 0, "okMax": 200,
+      "_note": "Running total across the mission. Rises steadily; the shape matters more than the value." }
+  ]
+}

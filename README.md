@@ -63,11 +63,14 @@ OPERATOR_USER=operator OPERATOR_PASSWORD=op-pass npm run seed
 SENSOR_TOKEN=test-token npm test
 ```
 
-Two hundred checks covering the whole lifecycle — visitor identity, transmission, the transit lock,
+Over two hundred checks covering the whole lifecycle — visitor identity, transmission, the transit lock,
 arrival, approval, the empty-response guard, publication, sensor ingest, unknown-metric
 registration, mood filing and translation, live broadcast, role enforcement in both
-directions, concurrent-edit refusal, CSV import and export round-trip, archive export, the
-drift chart, a check that no raw mood value ever reaches a public page, the crew logbook
+directions, concurrent-edit refusal, CSV import and export round-trip, archive export, the PDF
+record (that it downloads, has a page per day, is bookmarked, carries the reply, the message,
+a filed state, the photograph and its hash, and is control-only), the reset (the typed word, the
+lock from 15 October, empty blog slots, cleared messages, states and readings, the inventory
+read from the file, the floor on the node's readings), the drift chart, a check that no raw mood value ever reaches a public page, the crew logbook
 end to end (sign-in, filing, same-day editing, hold and release, and that mission control has
 no way to rewrite crew text), and phase and T-clock exactness across the 25 October DST
 change, that the composer precedes the habitat data in the page order, that the day record
@@ -87,11 +90,12 @@ which is mission control's, sits behind the same login.
 
 | Page | Route | Holds |
 |---|---|---|
-| The station | `/` | Composer and orbital plot · the live message board · daily mission (plan, meals, resources, figures, **the whole mission**) · habitat dashboard · resources · **crew** · **crew log** · **about** (the project, how the station behaves, who we are) |
-| Mission control | `/control` | Six tabs: **Messages** (the reply queue) first, then one per officer, the habitat, and the crew log |
+| The station | `/` | **The ticker** across the top — the habitat's clock and a running line of the current activity, the next one and the node's reading · composer and orbital plot · the live message board · the mission dashboard (schedule, meal, mood, habitat, resources, trends) · **about** (the project, how the station behaves, who we are). The crew log, the media and the whole mission day by day live on their own pages (`/logbook`, `/media`, `/at-a-glance`) |
+| Mission control | `/control` | Five tabs: **Messages** (the reply queue) first, then one per officer, and the habitat — which ends with the plan and the reset |
+| At a Glance | `/at-a-glance` | **A booklet: one day per page, turned by scrolling or swiping sideways** — arrows either side, ← → on a keyboard, a day strip to jump, a `#day-n` link opens on that day. Each page: each day's crew log with its photographs, the exchanges published, the schedule as run, the meals and their cost, the consumption of every store, the habitat summary, the crew's condition as sentences, the mission notes and the media. Days ahead show the plan, and each page scrolls on its own like a page being read. Opened from the button under the mission dashboard, and from the navigation |
 | Crew log | `/logbook` | All thirteen days in order, each officer's entry where written and its placeholder where not — a day strip to jump by, a chip per voice. Opened from the Crew log panel on the station, and from the nav |
 | Media | `/media` | Everything the crew send out — photographs, video, sound — by day, with filters; `/media/:id` one item; `/media/export.zip` everything as one ZIP; `/media/manifest.json` every file with its SHA-256 |
-| Archive | `/archive` | **Mission control only.** Day-by-day permanent record; `/archive/day/:n`, `/archive/messages`, `/archive/export.md`, `/archive/export.json` |
+| Archive | `/archive` | **Mission control only.** Day-by-day permanent record; `/archive/day/:n`, `/archive/messages`, **`/archive/export.pdf`** (the whole mission as one document), `/archive/export.md`, `/archive/export.json`, **`/archive/readings.zip`** (every reading ever pulled) |
 
 Every address the public subpages used to have (`/messages`, `/crew`, `/day`, `/schedule`,
 `/what`, `/about`, `/who-we-are`) redirects to its section on the landing page, so old links
@@ -115,7 +119,7 @@ page load. Everything editable lives here.
 | **Communication officer** | The **Daily Blog** at the top, then the officer's state |
 | **Science officer** | The **Daily Blog** at the top, then the daily science findings (a post of their own), then the state |
 | **Health officer** | The **Daily Blog** at the top, then the daily health activities (a post of their own), **crew figures** (calories and steps), and the state |
-| **Habitat** | The daily schedule, the daily food plan, and the inventory levels |
+| **Habitat** | The daily schedule, the daily food plan, the inventory levels, and the day's power figures (with the category names, editable in place) |
 
 Every composer is the same: paragraphs and pictures in a column, a ＋ between every two, no
 template buttons. The day picker above the tabs reaches all thirteen days of the run, so any
@@ -144,6 +148,95 @@ report stays with the report. The interface and the files are edits to the same 
 of it, so you can work whichever way suits the moment and never reconcile anything.
 
 
+## Starting again for 15 October
+
+**Reset to 15 October** sits at the top of mission control, on every tab. It opens a dialog that
+asks *Are you sure you want to reset?* and takes the word `RESET` typed into a box — the button
+only wakes up once it has been typed, and the word is checked again on the server, so nothing
+can trigger it by accident. Then it starts the station again for the run:
+
+- **every blog slot is emptied** — `logbook.json` becomes one placeholder per day and officer,
+  for the crew to fill in during the mission;
+- **the crew's figures are emptied** — `crew-figures.json` loses its days; the health officer
+  files each day's calories and steps on the Health tab as the run goes;
+- **the power figures are emptied** — `power.json` loses its days and keeps its categories;
+  each day's kWh by category is filed on the Habitat tab as the run goes;
+- **every message, reply and callsign from Earth is cleared** — the correspondence is logged
+  from the run on;
+- **every crew state is cleared** — the crew begin with nothing filed;
+- **the media sent out is cleared** from the record (the files stay on disk under their hashes,
+  as everywhere else in the station);
+- **every habitat reading is cleared** — the station's own ingest and the readings polled from
+  the external node — and **the readings and the trend graph start on 15 October**: nothing
+  stamped before the first day of the run is stored or shown from then on (see *Where the
+  readings start*, below). Phones that had cached readings drop them on their next poll;
+- the sealed daily records, task statuses and live notes are cleared;
+- and **the mission is reloaded from the files in `content/` exactly as they are at that
+  moment** — schedule, meals, inventory levels, notes, sensors, figures, crew. Nothing is copied
+  over the files: they are the plan.
+
+From the reset on, **the trend graph carries no plan**: every day ahead is null — an empty
+column — and fills in as the crew file the day's figures, levels and entries. (Before the
+reset, after a fresh build, the dashed prepared lines still show, which is useful while the
+mission is being written.)
+
+Kept: the account and its sessions, and the audit trail (the reset is written to it). Rehearse as
+much as you like in the weeks before; one press leaves nothing behind.
+
+**From 15 October the button is locked.** The run is the record, and a stray press could not be
+undone; mission control shows it as *Reset to 15 October · locked* and the server refuses it. A
+rehearsal against made-up dates (`MISSION_OVERRIDE=true`) is never locked, so the test suite and a
+run-through both keep the reset.
+
+`content/plan/` is a **snapshot** of the content files, made from the shipped files the first
+time the station starts and re-saved from the foot of the Habitat tab. It is a backup: a content
+file that has gone missing is restored from it at start-up. The reset does not read from it.
+
+## The trend graph
+
+**Trends** on the landing page is the run: **15 to 27 October, every day on the axis**, SOL 01
+to SOL 13, today marked; after 27 October it stands as the record, and it is the run before
+15 October too once Reset to 15 October has been pressed. Until then, after a fresh build, the
+axis starts on the build day and runs thirteen days from there, labelled by date, so what the
+node sends is on the graph from today; the plan's lines join when the axis becomes the run.
+Days that have happened
+are solid; anything prepared for the days ahead — the depletion curves, daily use, the meal plan,
+the crew's figures — is drawn dashed and turns solid as each day happens. The day's activity
+(tasks done, messages from Earth, exchanges published, crew log entries, media sent out) has no
+planned side and appears only as it happens. The sensor node has a point on every day from its
+first reading; a day it was silent carries the last value it sent, drawn dashed. Every line is
+named at its end in its own colour; hovering a name lifts that line. Each line is on its own
+0–100 scale, so a store is drawn against what was carried in and a channel against its
+instrument's range.
+
+The stores' daily use is also written as a table: **`content/resource-log.csv`**, one row per
+item per day of the run (quantity at close, daily use, used since what was carried in, days
+left at that draw, whether the day was filed or carried forward), rewritten on every content
+load and downloadable at `/resources/log.csv`.
+
+## Editing the day's values during the run
+
+Everything the run updates daily has one file and one tab, which write into each other; edit
+whichever suits the moment and it is live on the station within seconds:
+
+| What | The file | The tab in mission control |
+|---|---|---|
+| Resources — what is left of each store | `content/inventory-levels.json`: per day, per store, `{ "quantity": 618, "consumption": 46 }`. Only write the stores that changed; the rest carry forward at their daily draw | **Habitat** → Inventory levels, with the day picker on the day |
+| Calories and steps | `content/crew-figures.json`: `"5": { "calories": 5010, "steps": 6420 }` | **Health officer** → Crew figures, day picker on the day |
+| Power consumed, by category | `content/power.json`: `"5": { "heating": 1.1, "food": 0.5, "lighting": 0.35, "electronics": 0.45, "other": 0.1 }` — kWh per day. The `categories` list above the days is editable too: rename a label, add or remove one; the key is the stable name in the record | **Habitat** → Power, day picker on the day; the name fields rename the categories everywhere |
+| Today's schedule | `content/schedule.json`: per day, `{ "time": "06:45", "label": "…", "detail": "…" }`; task status (done, active, skipped) is marked on the tab as the day runs | **Habitat** → Schedule |
+| Meals | `content/meals.json`: per day, slots BREAKFAST / LUNCH / DINNER / RATION with `kcal`, `water`, `prep`, `energy` | **Habitat** → Food plan |
+| Mission notes | `content/notes.json`: per day, `{ "kind": "LOG" \| "ANOMALY" \| "BROADCAST", "body": "…" }` | `POST /control/updates` (the notes composer) |
+| Blogs, findings, activities | written over the placeholders in `content/logbook.json` / `notes.json` | each officer's tab |
+
+**Before the run, At a Glance opens on a rehearsal page.** Marked `REHEARSAL · NOT THE RECORD`
+and reached as **NOW** in the day strip, it is a complete day page filled with what there is
+today: the habitat's readings as the sensors are sending them now (tiles and point-by-point
+charts), the plan for SOL 001 (schedule, meals, consumption rings, power), whatever the crew
+have already written into the opening day (blogs, exchanges, media), and any states filed
+today — the real feel of a filled page, weeks early. It is not part of the record and
+disappears on 15 October, when SOL 001 takes its place.
+
 ## The mission is a folder of files
 
 Everything the crew do not write live — the schedule, the meal plan, the inventory, the
@@ -159,6 +252,7 @@ the running station.
 | `schedule.json` | The daily task schedule |
 | `meals.json` | Meals per day, with energy, water and power cost |
 | `inventory-levels.json` | What is left of each resource at the end of each day |
+| `power.json` | Power consumed per day in kWh, split by editable categories (heating, food, lighting, electronics, other as shipped) — drawn on the Habitat panel, in At a Glance, in the Trends and throughout the record |
 | `logbook.json` | The crew's diary entries, by day and crew member |
 | `notes.json` | Mission notes, science findings, health activities, anomalies and broadcasts |
 | `sensors.json` | The monitored channels, with units, channel codes and thresholds |
@@ -273,6 +367,44 @@ the page (HEIC, some MOV) is still whole and downloadable — the page says so.
 
 `bash tools/backup.sh` copies the media folder along with the database.
 
+## Where the readings start
+
+The external node (critical-sensors.de) hands back its last thirty days on every poll. The
+station keeps only what is stamped after its **readings floor**, and serves nothing older, so the
+dashboard and the record never carry weeks of history from before anyone was in the habitat.
+The floor is set in one of two ways:
+
+- **From today**, by a build: every time the station starts from a newly built Docker image —
+  the Dockerfile writes a build stamp into the image, and a station that sees a stamp it has
+  not seen before starts its readings again from midnight at the venue on that day. A restart
+  of the *same* image leaves the floor where it is, so restarting during the run loses nothing;
+  rebuilding during the run would drop everything before that day, so don't. (`docker compose
+  up --build` only makes a new image when something changed; `--no-cache` forces one.) Outside
+  Docker, `STATION_BUILD=…` in the environment does the same, and the first start of a
+  database counts as a build. `READINGS_DAYS_BEFORE` reaches back that many days further
+  (default 0). Before the run the trend graph's axis then starts on the build day and runs
+  thirteen days from there, labelled by date, so what the node sends is on the graph from today.
+- **From 15 October**, by **Reset to 15 October**: the floor goes to midnight at the venue on
+  the first day of the run, whatever the date. Nothing from before the run is stored or shown;
+  the trend graph's axis is the run, SOL 01–13, from the reset on. This is the state to open in.
+
+`READINGS_FROM=2026-10-15` in `.env` pins the floor to a date instead, whatever is built or
+reset.
+
+**The tiles are today, or nothing.** They draw the readings since midnight at the venue, and
+only while the newest of them is less than thirty minutes old (the node transmits every
+twenty). If no reading has arrived today, or none in the last thirty minutes, the tiles are
+cleared — a dash in every figure, *No current reading* — and the panel says which it is and
+when the last reading was. An old number is never left standing as if it were live. The
+history stays on the trend graph, which is where history belongs.
+
+**After a build, the floor never hides everything the node has.** If the node's newest reading
+is older than a from-today floor — the node has gone quiet — the floor moves back so the last
+three days the node *did* send are kept for the graph and the record. A from-15-October floor
+never moves. The panel also says why when there is nothing at all: waiting for the first read,
+the feed carries no readings for this sensor id (check `CRITICAL_SENSOR_ID`), or the feed
+could not be reached. Nothing is ever left as a row of dashes without a reason.
+
 ## Wiring the habitat sensors
 
 Any device that can make an HTTPS request can feed the station.
@@ -330,6 +462,37 @@ permanent record shortly after it ends, holding:
 Raw sensor readings are kept as well; the rollup exists so the record does not depend on
 re-scanning a hundred thousand rows, or on those rows surviving a future cleanup. Nothing
 that has been publicly visible is ever hard-deleted.
+
+### The record, as one document
+
+**Download full record (PDF)** — at the top of mission control, on the archive contents page,
+and at `/archive/export.pdf` — hands over the whole mission as a single PDF, bookmarked by
+section and by day, with a contents page. In order: the mission (crew, what was carried in,
+the monitored channels, the distance); **Trends** — every store's level and daily use, the
+meals' cost, the crew's calories and steps, every habitat channel with its daily low–high
+band, the external sensor node, the crew's mood and energy, and what happened each day, on
+one thirteen-day axis, planned days dashed; **Daily usage** — every store on every day,
+quantity at close, use, used since start, days left at that draw, filed or carried; then
+**each day whole** — the schedule with every task's final status, the meals with their cost
+and the day's totals, the inventory at the close, the mission notes, the crew log with
+**every photograph set in the entry it was sent with** and every video, sound file and
+document listed with its poster frame, size, duration and hash, the science findings and
+health activities, every state filed with the sentence it became, every exchange with its
+reply and the real light-time it crossed, what was sent out that day and the habitat
+summary; then **the crew log, whole** — every blog entry in full, day by day and officer by
+officer, held entries included and marked; **the complete correspondence** — every message that ever reached the
+station, published, rejected or still waiting, in the order it was sent; the **media index**
+with every file's SHA-256, checkable against the ZIP with `sha256sum`; and the **audit
+trail**. `/archive/day/:n/export.pdf` does one day.
+
+The PDF is composed by the station itself — `src/lib/pdf.js` is a dependency-free PDF
+writer in the spirit of the ZIP writer, with the standard Helvetica and Courier that every
+reader has built in, so nothing is embedded and nothing is fetched — and it takes well
+under a second for a full run. Photographs go in as the preview the browser made at upload
+(a JPEG whatever the original was), so the document stays a few megabytes; the originals,
+byte for byte, are in the media ZIP. A PNG with no preview is decoded and stored losslessly.
+The one thing it cannot do is show characters outside WinAnsi, so `✧` and `CO₂` become
+`·` and `CO2`.
 
 ### The record, readable
 
@@ -467,10 +630,11 @@ of a server-side clock, never the thing keeping time.
 
 ## Crew states
 
-Two axes, not four: **Mood** (settled ↔ strained) and **Energy** (rested ↔ spent). Four was
-more resolution than anyone can honestly report at the end of a working day, and these were
-the two that carried the signal. The database columns are unchanged, so states filed under the
-older four-axis scheme still read correctly.
+One scale: **Mood, calm ↔ angry**, filed in mission control as a row of five faces — calm,
+settled, level, tense, angry — like a waiting-room rating card. Picking a face shows the exact
+sentence the public will get; the number itself (0–100 behind the faces) is never published.
+The database columns are unchanged (`calm_tense` carries the value), so states filed under the
+older two- and four-axis schemes still read correctly.
 
 ## Monitoring
 
@@ -502,6 +666,15 @@ rail. (`public/hero.jpg` is no longer referenced and can be deleted.) Below the 
 What this is · Who we are sit as a row of three folds, closed until asked. The landing page
 carries no top bar; its navigation lives in the dark footer slab. Subpages keep the status rail
 and **Mission · Messages · Crew log · About**.
+
+Across the very top runs **the ticker**: an orange cell with the habitat's clock (venue time,
+ticking), then a continuously running line — the SOL, **what the crew are currently doing**
+(the schedule task whose time it is, with its detail — "14:00 · Maintenance — West panel seal,
+third attempt" — switching to the next as its time comes), what is next, the node's current
+reading (or *no current reading*), and the one-way signal time. Every hour it fetches the
+day's schedule again from `/api/ticker`, so an edit made in mission control — or midnight
+turning to a new day — reaches every open phone without a reload. It scrolls like a wire
+ticker, holds while hovered, and stands still under reduced motion.
 
 Below that the page is two things. **The landing fold**: the composer device and the
 message-board screen beside it. **The mission dashboard**: everything else, on the lower band,
@@ -572,6 +745,18 @@ composer closes, and the block is enforced server-side so the form cannot be pos
 **After 27 October — complete.** The landing page reports what the station carried:
 exchanges published, messages sent, callsigns issued. The channel closes. The board and the
 archive stay exactly where they are, because they are the work.
+
+**And nothing is updated by automation again.** The record closes at the end of 27 October
+2026 (Berlin time). From that moment: the external sensor node is not polled again
+(`src/lib/critical.js`); `/api/sensors/ingest` answers `410` and stores nothing, whatever
+token it is sent with; the browser pages stop asking for new readings and the ticker stops
+refetching the schedule; a newly built Docker image no longer moves the readings floor, so a
+rebuild cannot hide or drop the run's stored readings; stale callsigns are no longer pruned —
+the rows stay as the run left them. The one write that still happens after the close is the
+sealing of the final day's summary, shortly after midnight — the closing of the book — after
+which the rollup timer shuts itself down and logs `automation has ended`. Reading never
+stops: every page, export and download keeps serving the record. (For a rehearsal,
+`CRITICAL_FREEZE_AT=<ISO datetime>` moves the closing instant.)
 
 To preview a phase without waiting, run with different dates:
 
@@ -675,6 +860,9 @@ src/
   lib/callsign.js        visitor identity
   lib/media.js           the media archive: hashed files, manifest, verify
   lib/zip.js             dependency-free streaming ZIP writer (Zip64)
+  lib/pdf.js             dependency-free PDF writer: pages, standard fonts, vector, JPEG/PNG, bookmarks
+  lib/record-pdf.js      the complete mission record as one PDF, composed from the archive queries
+  lib/readings-log.js    every reading ever pulled, one JSON file per pull, kept forever
   routes/control.js      all admin write paths
   routes/media.js        the public media pages and downloads
   views/                 server-rendered templates

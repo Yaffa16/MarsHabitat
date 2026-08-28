@@ -52,6 +52,10 @@ function rollup(missionDay) {
     }
   });
   tx();
+  if (rows.length) {
+    require('./readings-log').record('daily', { missionDay, window: { start, end }, sealed: over,
+      channels: rows.map((r) => ({ metric: r.metric, low: r.lo, high: r.hi, mean: r.av, samples: r.n })) }, { dedupe: true });
+  }
   return rows.length;
 }
 
@@ -107,9 +111,13 @@ function dayRecord(missionDay) {
   const sealed = db.prepare('SELECT * FROM day_seal WHERE mission_day = ?').get(missionDay);
   const media = mediaLib.list({ day: missionDay });
 
+  // Power consumed that day, by category — from content/power.json, counted
+  // daily by the crew like the calories and steps.
+  const power = require('./content').powerDay(missionDay);
+
   return {
     missionDay, date: mission.dateForDay(missionDay), day,
-    habitat, entries, moods, messages, traffic, media, sealed: !!sealed,
+    habitat, entries, moods, messages, traffic, media, power, sealed: !!sealed,
     isEmpty: !day && !entries.length && !messages.length && !habitat.length && !media.length,
   };
 }
@@ -157,6 +165,8 @@ function fullExport() {
           waterLitres: m.water_litres, prepMinutes: m.prep_minutes, energyWh: m.energy_wh })) : [],
         inventory: r.day ? r.day.inventory.map((v) => ({
           item: v.label, unit: v.unit, quantity: v.quantity, consumption: v.consumption })) : [],
+        power: r.power.filed ? { totalKwh: r.power.total,
+          categories: r.power.categories.map((c) => ({ key: c.key, label: c.label, kwh: c.kwh })) } : null,
         notes: r.day ? r.day.notes.filter((x) => x.published_at)
           .map((x) => ({ kind: x.kind, body: x.body, postedAt: x.posted_at })) : [],
         crewEntries: r.entries.map((e) => ({
@@ -237,6 +247,13 @@ function dayMarkdown(missionDay) {
       out.push(`| ${i.label} | ${i.quantity} ${i.unit} | ${i.consumption} | ${left} |`);
     }
     out.push('');
+  }
+
+  if (r.power && r.power.filed) {
+    out.push('### Power consumed', '');
+    out.push('| Category | kWh |', '| --- | --- |');
+    for (const c of r.power.categories) out.push(`| ${c.label} | ${c.kwh == null ? '—' : c.kwh} |`);
+    out.push(`| **Day total** | **${r.power.total}** |`, '');
   }
 
   if (r.entries.length) {

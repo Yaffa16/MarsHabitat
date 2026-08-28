@@ -770,6 +770,8 @@ dialog.popup {
 }
 dialog.popup[open] { display: flex; }
 dialog.popup::backdrop { background: rgba(20, 20, 22, 0.55); backdrop-filter: blur(3px); }
+dialog.reset-dialog { width: min(580px, calc(100vw - 32px)); }
+dialog.reset-dialog #reset-word { font-family: var(--mono); letter-spacing: 0.2em; font-size: 16px; }
 .popup-head { display: flex; align-items: center; gap: 14px; padding: 18px 20px 14px 24px; border-bottom: 1px solid var(--rule); flex: none; }
 .popup-head .fold-title { font-family: var(--display); font-size: 20px; letter-spacing: -0.01em; font-weight: 700; }
 .popup-head .fold-sub { font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
@@ -1122,8 +1124,8 @@ body.landing .foot { margin-top: 44px; margin-bottom: 44px; }
 .dpanel .hbt .t-light { grid-column: 4; grid-row: 2; }
 .dpanel .hbt .t-calories { grid-column: 5 / 7; grid-row: 1; }
 .dpanel .hbt .t-steps { grid-column: 5 / 7; grid-row: 2; }
-.dpanel .hbt .aux { grid-template-columns: minmax(0, 1fr); }
-.dpanel .hbt .aux .t-res, .dpanel .hbt .aux .t-days { grid-column: auto; grid-row: auto; }
+.dpanel .hbt .aux { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+.dpanel .hbt .aux .t-res, .dpanel .hbt .aux .t-days, .dpanel .hbt .aux .t-pwr { grid-column: auto; grid-row: auto; }
 
 /* Trends: every trend on one graph — the last fifteen days, a smooth line
    per series on its own 0–100 scale, a point a day, today at the right.
@@ -1217,7 +1219,7 @@ body.landing .foot { margin-top: 44px; margin-bottom: 44px; }
   .dpanel .hbt .t-hum, .dpanel .hbt .t-light { grid-column: span 1; }
   /* The resources row keeps the whole width: nine gauges wrap in threes. */
   .dpanel .hbt .bento.aux { grid-template-columns: minmax(0, 1fr); }
-  .dpanel .hbt .aux .t-res { grid-column: 1 / -1; }
+  .dpanel .hbt .aux .t-res, .dpanel .hbt .aux .t-pwr { grid-column: 1 / -1; }
   .gauges.rounds { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 .dpanel .hbt .dial-wrap { min-height: 150px; }
@@ -1976,3 +1978,149 @@ body.landing.inner .foot { margin-top: 44px; margin-bottom: 44px; }
 .board-group[hidden] { display: none; }
 .board .card[data-mine] { box-shadow: inset 2px 0 0 var(--orange); padding-left: 10px; }
 @media (max-width: 700px) { body:not(.control) .card-when, body:not(.control) .board-group { font-size: 10px; } }
+
+/* At a Glance: the button under the mission dashboard, and the day sections. */
+.glance-link {
+  display: flex; align-items: center; gap: 16px; margin-top: 18px; padding: 20px 24px;
+  border-radius: var(--r-lg); background: linear-gradient(180deg, var(--raise), var(--raise-2));
+  box-shadow: var(--sh-raise), inset 0 1px 0 var(--edge); text-decoration: none; color: var(--ink);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.glance-link:hover { transform: translateY(-2px); box-shadow: var(--sh-raise-lg), inset 0 1px 0 var(--edge); }
+.glance-link:focus-visible { outline: 2px solid var(--orange); outline-offset: 3px; }
+.glance-link-title { font-family: var(--display); font-weight: 700; font-size: 18px; letter-spacing: -0.01em; white-space: nowrap; }
+.glance-link-sub { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); flex: 1; min-width: 0; }
+.glance-link-arrow { font-family: var(--mono); font-size: 16px; color: var(--orange); flex: none; }
+@media (max-width: 760px) { .glance-link { flex-wrap: wrap; gap: 8px; } .glance-link-sub { flex-basis: 100%; } }
+
+/* The booklet: one day per page, turned by scrolling sideways. */
+.booklet-shell { position: relative; }
+.booklet {
+  display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory;
+  gap: 18px; padding-bottom: 6px; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin; outline: none;
+}
+.booklet:focus-visible { outline: 2px solid var(--orange); outline-offset: 4px; }
+.bk-page { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always; }
+.bk-page .panel.glance-day {
+  height: min(78vh, 940px); overflow-y: auto; overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch; margin: 0;
+}
+.bk-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 5;
+  width: 44px; height: 64px; border: 0; border-radius: 12px; cursor: pointer;
+  background: linear-gradient(180deg, var(--raise), var(--raise-2)); color: var(--ink);
+  box-shadow: var(--sh-raise), inset 0 1px 0 var(--edge); font-size: 26px; line-height: 1;
+}
+.bk-arrow:hover { color: var(--orange); }
+.bk-arrow:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.bk-arrow.prev { left: -14px; }
+.bk-arrow.next { right: -14px; }
+.bk-counter { margin: 10px 0 26px; text-align: center; font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; color: var(--dim); }
+@media (max-width: 760px) {
+  .bk-arrow { display: none; }                    /* a thumb turns the pages */
+  .bk-page .panel.glance-day { height: min(74vh, 820px); }
+}
+@media (prefers-reduced-motion: reduce) { .booklet { scroll-behavior: auto; } }
+
+.glance-day { scroll-margin-top: 90px; }
+.glance-head { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap; scroll-margin-top: 90px; }
+.glance-head h2 { margin: 2px 0 0; font-size: 22px; }
+.glance-n { font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; color: var(--orange); }
+.glance-spec { margin: 8px 0 4px; }
+.glance-block { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--rule); }
+.glance-block .cards { margin-top: 4px; }
+
+/* The ticker across the very top: the habitat's clock, then a running line
+   of what is happening in there — the current task, the next one, the node's
+   readings. The line is in the strip twice and scrolled by CSS, so it runs
+   without end; hovering holds it, and reduced motion stops it. */
+.ticker {
+  display: flex; align-items: stretch; gap: 0; overflow: hidden;
+  background: var(--ink); color: #f3f1ee; font-family: var(--mono);
+  font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase;
+}
+[data-theme="dark"] .ticker { background: #000; }
+.tk-clock {
+  flex: none; display: flex; align-items: center; gap: 10px; padding: 10px 18px;
+  background: var(--orange); color: #1a1208; font-weight: 600; white-space: nowrap;
+}
+.tk-clock b { font-size: 13px; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
+.tk-clock-label { font-size: 8.5px; opacity: .8; }
+.tk-window { flex: 1; min-width: 0; overflow: hidden; display: flex; align-items: center; }
+.tk-track { display: inline-flex; white-space: nowrap; animation: tk-run 40s linear infinite; will-change: transform; }
+.tk-window:hover .tk-track { animation-play-state: paused; }
+.tk-line { display: inline-flex; align-items: center; padding-right: 48px; }
+.tk-cell { padding: 10px 0; white-space: nowrap; }
+.tk-cell b { color: var(--orange); font-weight: 600; }
+.tk-sep { padding: 0 18px; opacity: .45; }
+@keyframes tk-run { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .tk-track { animation: none; } }
+@media (max-width: 760px) { .tk-clock { padding: 8px 12px; } .ticker { font-size: 9.5px; } }
+
+/* The mood scale: five faces, calm to angry. The chosen one is orange. */
+.mood-faces { display: flex; gap: 6px; justify-content: space-between; margin: 8px 0 4px; }
+.mood-face { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 8px 2px 6px; border-radius: 12px; color: var(--dim); }
+.mood-face svg { width: 40px; height: 40px; display: block; }
+.mood-face span { font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.12em; text-transform: uppercase; }
+.mood-face input { position: absolute; opacity: 0; pointer-events: none; }
+.mood-face:hover { color: var(--ink); background: var(--well); }
+.mood-face:has(input:checked) { color: var(--orange); background: var(--well); box-shadow: var(--sh-inset); }
+.mood-face:has(input:focus-visible) { outline: 2px solid var(--orange); outline-offset: 2px; }
+.control .mood-face:hover, .control .mood-face:has(input:checked) { background: #f3f1ee; }
+@media (max-width: 760px) { .mood-face svg { width: 44px; height: 44px; } }
+.mood-poles { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+
+/* Mission control: the officer's blocks in one column, and room to write. */
+.officer-stack { display: flex; flex-direction: column; gap: 14px; }
+.officer-stack .panel { margin: 0; }
+textarea.blog-box { min-height: 340px; font-size: 16px; line-height: 1.65; }
+.daypick-dates a { white-space: nowrap; }
+@media (max-width: 760px) { textarea.blog-box { min-height: 280px; } }
+
+/* The blog composer gets the room to write: taller text blocks, a taller well. */
+.officer-stack .ed-blocks { min-height: 300px; }
+.officer-stack .ed-text { min-height: 96px; font-size: 16px; line-height: 1.65; }
+.dash-grid .glance-link { grid-column: 1 / -1; margin-top: 0; }
+
+/* At a Glance: the day's habitat as tiles, like the dashboard. */
+.glance-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.glance-tile { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 12px; background: var(--well); box-shadow: var(--sh-inset); }
+.gt-label { font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+.gt-value { font-family: var(--display); font-weight: 700; font-size: 26px; letter-spacing: -0.02em; }
+.gt-value em { font-family: var(--mono); font-style: normal; font-size: 10px; margin-left: 4px; color: var(--dim); }
+.gt-range { font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.08em; color: var(--faint); }
+
+/* Power consumed by category: a bar per category against the day's biggest
+   draw, the figure at its end, the day total beneath. Used on the landing
+   Habitat panel and, per day, in the At a Glance booklet. */
+.pwr { display: grid; gap: 7px; margin-top: 12px; }
+.pwr-row { display: grid; grid-template-columns: minmax(64px, auto) 1fr 44px; align-items: center; gap: 10px; }
+.pwr-name { font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
+.pwr-track { height: 10px; border-radius: 5px; background: var(--ground-2); box-shadow: var(--sh-inset); overflow: hidden; }
+:root[data-theme="dark"] .pwr-track { background: rgba(255,255,255,.08); }
+.pwr-track i { display: block; height: 100%; border-radius: 5px; background: var(--orange); }
+.pwr-row.none .pwr-name { color: var(--faint); }
+.pwr-val { font-family: var(--mono); font-size: 10px; font-weight: 600; text-align: right; color: var(--ink); }
+.pwr-row.none .pwr-val { color: var(--faint); font-weight: 400; }
+.pwr-total { display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px; padding-top: 8px; border-top: 1px solid var(--rule); }
+.pwr-total span { font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+.pwr-total b { font-family: var(--display); font-size: 18px; letter-spacing: -0.02em; }
+.glance-block .pwr { max-width: 520px; margin-top: 8px; }
+.glance-block .gauges.rounds { margin-bottom: 14px; }
+
+/* Every reading of the day in At a Glance: one small chart per channel,
+   each pull a point across the day's 24 hours, drawn server-side as SVG. */
+.gc-note { font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); margin: 16px 0 8px; }
+.glance-charts { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 10px; }
+.glance-chart { padding: 12px 14px 8px; border-radius: 12px; background: var(--well); box-shadow: var(--sh-inset); min-width: 0; }
+.gc-head { display: flex; flex-direction: column; gap: 2px; margin-bottom: 6px; }
+.gc-head b { font-size: 12px; }
+.gc-head span { font-family: var(--mono); font-size: 8px; letter-spacing: 0.06em; color: var(--faint); }
+.gc-svg { display: block; width: 100%; height: auto; }
+.gc-grid { stroke: var(--rule); stroke-width: 1; }
+.gc-grid.base { stroke: var(--rule-hard); }
+.gc-ax { font-family: var(--mono); font-size: 8.5px; fill: var(--dim); }
+.gc-line { fill: none; stroke: var(--ink); stroke-width: 1.4; stroke-linejoin: round; stroke-linecap: round; opacity: .55; }
+.gc-dot { fill: var(--orange); }
+@media (max-width: 760px) { .glance-charts { grid-template-columns: minmax(0, 1fr); } }

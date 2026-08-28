@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { db, now } = require('../db');
 const mission = require('./mission');
+const run = require('./run');
 
 /**
  * The files in content/ are the source of truth for everything the crew do not
@@ -267,6 +268,19 @@ function load({ quiet = false } = {}) {
   // every load so it always matches what the site is showing.
   try { writeResourceLog(levels, total); } catch (e) { errors.push(`resource-log.csv: ${e.message}`); }
 
+  // The stores and the crew's figures, as the files put them, into the
+  // readings log — a snapshot every time they change, kept forever.
+  try {
+    const log = require('./readings-log');
+    const items = db.prepare('SELECT key, label, unit, category, critical, warn_below FROM inventory_item ORDER BY sort_order, label').all();
+    const pw = power();
+    log.record('resources', { missionDays: total, items, levels: resourceLogRows(levels, total),
+      power: { categories: pw.categories, days: pw.days } }, { dedupe: true });
+    const fig = crewFigures();
+    const days = Object.keys(fig).filter((k) => /^\d+$/.test(k)).sort((a, b) => a - b).map((k) => ({ missionDay: Number(k), ...fig[k] }));
+    log.record('figures', { days }, { dedupe: true });
+  } catch (e) { errors.push(`readings log: ${e.message}`); }
+
   lastLoad = { at: now(), ok: errors.length === 0, errors, counts };
   if (!quiet) {
     const summary = `${counts.days} days · ${counts.tasks} tasks · ${counts.meals} meals · ` +
@@ -344,6 +358,184 @@ function writeResourceLog(levels, total) {
   if (cur !== next) fs.writeFileSync(file, next);
 }
 
+/* ---------------------------------------------------------- the plan, reset */
+
+/**
+ * The plan is a copy of the content files as they should be on 15 October,
+ * kept in content/plan/. It is made once from the shipped files if it does
+ * not exist, and can be re-saved from mission control after the files have
+ * been edited. Reset puts the plan back and clears everything written live
+ * since — so a rehearsal in the weeks before can be wiped in one move and
+ * the station opens clean.
+ */
+const PLAN_DIR = path.join(DIR, 'plan');
+const PLAN_FILES = ['crew-and-inventory.json', 'schedule.json', 'meals.json', 'inventory-levels.json',
+  'logbook.json', 'notes.json', 'sensors.json', 'templates.json', 'crew-figures.json', 'power.json'];
+
+function planStatus() {
+  const files = PLAN_FILES.filter((f) => fs.existsSync(path.join(PLAN_DIR, f)));
+  let savedAt = null;
+  for (const f of files) {
+    const t = fs.statSync(path.join(PLAN_DIR, f)).mtime.toISOString();
+    if (!savedAt || t > savedAt) savedAt = t;
+  }
+  return { exists: files.length > 0, files, savedAt, dir: PLAN_DIR };
+}
+
+/**
+ * Copy one file by reading and writing it. Not fs.copyFile: on a folder
+ * mounted into Docker from a Windows or macOS host, copyFile ends by setting
+ * the copy's permissions to match the original, which the mount refuses
+ * with EPERM — and content/ is exactly such a folder. A plain write is what
+ * the Habitat tab does on every save, and that works everywhere.
+ */
+function copyText(src, dest) {
+  fs.writeFileSync(dest, fs.readFileSync(src));
+}
+
+/** Copy the content files as they are now into content/plan/. */
+function savePlan() {
+  fs.mkdirSync(PLAN_DIR, { recursive: true });
+  let n = 0;
+  for (const f of PLAN_FILES) {
+    const src = path.join(DIR, f);
+    if (!fs.existsSync(src)) continue;
+    copyText(src, path.join(PLAN_DIR, f));
+    n++;
+  }
+  return n;
+}
+
+/**
+ * A plan exists from the first boot on, so reset always has something to put
+ * back. And the other way round: a content file that has gone missing while
+ * the plan still has it is put back at start-up — a copy that failed halfway
+ * (Node removes the destination when copyFile fails, which is how a reset on
+ * a mounted folder once lost crew-and-inventory.json) must never leave the
+ * station serving a stale version of a file that is one copy away.
+ */
+function ensurePlan() {
+  if (!planStatus().exists) {
+    const n = savePlan();
+    if (n) console.log(`[content] plan saved from the shipped files: ${n} files in content/plan/`);
+    return;
+  }
+  for (const f of PLAN_FILES) {
+    const src = path.join(PLAN_DIR, f), dest = path.join(DIR, f);
+    if (fs.existsSync(dest) || !fs.existsSync(src)) continue;
+    copyText(src, dest);
+    console.warn(`[content] ${f} was missing from content/ — restored from the plan`);
+  }
+}
+
+/**
+ * The reset is for the weeks before the run: rehearse, then press it once
+ * and the station opens on 15 October clean. From 15 October the run is the
+ * record, and the button is locked — a stray press could not be undone. A
+ * rehearsal against made-up dates (MISSION_OVERRIDE) is never locked.
+ */
+function resetLocked(state) {
+  const st = state || mission.state();
+  if (run.dates().override) return false;
+  return st.phase !== 'PRE_LAUNCH';
+}
+
+/**
+ * Start again for 15 October. The files in content/ — schedule, meals,
+ * inventory levels, notes, sensors, figures, templates, crew — are the plan,
+ * as they stand at the moment the button is pressed: nothing is copied over
+ * them. What the reset does is clear everything written live and reload
+ * the mission from those files:
+ *
+ *   - every blog slot is emptied — logbook.json becomes a placeholder for
+ *     every day and officer, for the crew to fill in during the run
+ *   - the crew's figures are emptied — crew-figures.json loses its days;
+ *     calories and steps are filed daily on the Health tab from 15 October
+ *   - messages, replies and callsigns from Earth go
+ *   - every crew state filed goes; the crew begin with nothing filed
+ *   - media sent out goes from the record (the files stay on disk under
+ *     their hashes, as everywhere else in the station)
+ *   - every habitat reading goes — the station's own ingest and the readings
+ *     polled from the external node — and the readings, and the trend
+ *     graph, start on 15 October (src/lib/critical.js): nothing from before
+ *     the run is stored or shown
+ *   - the sealed daily records, task statuses and live notes go
+ *   - the inventory, schedule, meals and notes are rebuilt from the files
+ *
+ * Kept: the account and its sessions, the audit trail (the reset is
+ * written to it), and the readings log on disk — every reading ever pulled,
+ * which nothing touches.
+ */
+function reset(actor = 'control') {
+  if (resetLocked()) throw new Error('the run has begun — the reset is locked from 15 October');
+  const mediaLib = require('./media');
+  const st = mission.state();
+
+  // 1. the blog slots, emptied
+  const crewFile = readJson('crew-and-inventory.json', []) || {};
+  const crew = (crewFile.crew || []).map((c) => c.designation).filter(Boolean);
+  const slots = {};
+  for (let n = 1; n <= st.totalDays; n++) {
+    slots[String(n)] = {};
+    for (const d of crew) slots[String(n)][d] = placeholderFor(n, d);
+  }
+  // The crew's figures are dailies, counted by the health officer at the end
+  // of each day — like the blog they start empty and fill in as the run goes.
+  const cf = path.join(DIR, 'crew-figures.json');
+  fs.writeFileSync(cf, JSON.stringify({
+    _note: 'Calories consumed and steps taken, as crew totals per day. Emptied by the reset: the health officer files each day\'s figures on the Health tab of mission control (or write them here as "1": { "calories": 5010, "steps": 6420 }), and each day appears on the station the moment it is saved.',
+  }, null, 2) + '\n');
+
+  // Power is a daily count too: the categories stay as they are shaped, the
+  // days are emptied — each day's kWh is filed on the Habitat tab as it ends.
+  const pw = path.join(DIR, 'power.json');
+  fs.writeFileSync(pw, JSON.stringify({
+    _note: 'Power consumed inside the habitat, in kWh per day, split by category. Rename or reshape the categories freely; the key is the stable name in the record, the label is what the station shows. Emptied of its days by the reset: file each day\'s figures on the Habitat tab of mission control (or write them here as "1": { "heating": 1.1, ... }) and each day appears on the station the moment it is saved.',
+    categories: power().categories,
+    days: {},
+  }, null, 2) + '\n');
+
+  const lb = path.join(DIR, 'logbook.json');
+  let note = null;
+  try { note = (JSON.parse(fs.readFileSync(lb, 'utf8')) || {})._note || null; } catch { /* rewritten below */ }
+  fs.writeFileSync(lb, JSON.stringify({ ...(note ? { _note: note } : {}), ...slots }, null, 2) + '\n');
+  try { fs.unlinkSync(path.join(DIR, LOG_FILE)); } catch { /* not there */ }
+
+  // 2. the database
+  const wiped = {};
+  const wipe = db.transaction(() => {
+    for (const t of ['response', 'message', 'visitor', 'crew_entry', 'crew_mood', 'media',
+                     'sensor_reading', 'sensor_daily', 'day_seal', 'day_note', 'task', 'meal', 'inventory_level',
+                     'external_reading']) {
+      wiped[t] = db.prepare(`DELETE FROM ${t}`).run().changes;
+    }
+    db.prepare("UPDATE day SET status = 'DRAFT', updated_at = ?, updated_by = 'reset'").run(now());
+  });
+  wipe();
+  try { mediaLib.writeManifest(); } catch { /* the manifest is a convenience */ }
+  // The readings start on the first day of the run (or the pinned
+  // READINGS_FROM date): nothing from before 15 October is kept or shown.
+  try {
+    const critical = require('./critical');
+    critical.setFloor('reset', 'run');
+    if (process.env.CRITICAL_POLL !== 'false') setTimeout(() => critical.poll().catch(() => {}), 500);
+  } catch (e) { console.warn('[content] readings floor not moved:', e.message); }
+
+  // 3. the files back into the database
+  const loaded = load();
+  db.prepare('INSERT INTO audit (actor, entity, entity_id, action, detail, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+    .run(actor, 'station', '1', 'reset', JSON.stringify({ slots: crew.length * st.totalDays, wiped }), now());
+  console.log(`[content] RESET by ${actor}: ${crew.length * st.totalDays} blog slots emptied; wiped ` +
+    Object.entries(wiped).filter(([, n]) => n).map(([t, n]) => `${t} ${n}`).join(', ') + '; mission reloaded from content/');
+  return { slots: crew.length * st.totalDays, wiped, loaded };
+}
+
+/** When the last reset happened — the browser drops its cached readings when this changes. */
+function resetEpoch() {
+  const r = db.prepare("SELECT MAX(created_at) t FROM audit WHERE action = 'reset'").get();
+  return r && r.t ? r.t : null;
+}
+
 /**
  * Watch the folder so an edit is live within a second or two. Debounced,
  * because editors write a file in several bursts.
@@ -416,6 +608,51 @@ function templates(kind) {
 }
 
 /**
+ * Power consumed inside the habitat, kWh per day, split by category —
+ * heating, food, lighting, electronics, other, as content/power.json ships
+ * them, though the categories are editable there and on the Habitat tab:
+ * the key is the stable name in the record, the label is what is shown.
+ * Read fresh like the crew figures: numbers handed straight to a view, so
+ * an edit to the file is live the moment it is saved.
+ */
+const POWER_DEFAULTS = [
+  { key: 'heating', label: 'Heating' },
+  { key: 'food', label: 'Food' },
+  { key: 'lighting', label: 'Lighting' },
+  { key: 'electronics', label: 'Electronics' },
+  { key: 'other', label: 'Other' },
+];
+
+function power() {
+  let obj = {};
+  try { obj = JSON.parse(fs.readFileSync(path.join(DIR, 'power.json'), 'utf8')) || {}; }
+  catch { /* defaults below */ }
+  const categories = (Array.isArray(obj.categories) ? obj.categories : [])
+    .filter((c) => c && c.key && /^[a-z0-9_-]+$/i.test(String(c.key)))
+    .map((c) => ({ key: String(c.key), label: String(c.label || c.key) }));
+  const days = {};
+  for (const [k, v] of Object.entries(obj.days && typeof obj.days === 'object' ? obj.days : {})) {
+    if (!/^\d+$/.test(k) || !v || typeof v !== 'object') continue;
+    const d = {};
+    for (const [key, val] of Object.entries(v)) {
+      const n = Number(val);
+      if (Number.isFinite(n) && n >= 0) d[key] = n;
+    }
+    days[k] = d;
+  }
+  return { categories: categories.length ? categories : POWER_DEFAULTS.map((c) => ({ ...c })), days };
+}
+
+/** One day of it: each category with its kWh, the day total, and whether anything was filed. */
+function powerDay(missionDay, p = power()) {
+  const d = p.days[String(missionDay)] || {};
+  const categories = p.categories.map((c) => ({ ...c, kwh: d[c.key] ?? null }));
+  const filed = categories.some((c) => c.kwh != null);
+  const total = categories.reduce((s, c) => s + (c.kwh || 0), 0);
+  return { categories, total: Math.round(total * 100) / 100, filed };
+}
+
+/**
  * Read a content file as an object, hand it to a mutator, write it back and
  * reload. Mission control's day-content tabs go through here, so editing a day
  * in the interface and editing the file by hand are the same operation on the
@@ -452,6 +689,7 @@ function edit(name, mutate) {
   return { ok: result.ok, error: result.errors[0] || null };
 }
 
-module.exports = { load, watch, status, edit, templates, crewFigures, DIR,
+module.exports = { load, watch, status, edit, templates, crewFigures, power, powerDay, DIR,
                    resourceLogRows, resourceLogCsv, LOG_FILE,
+                   planStatus, savePlan, ensurePlan, reset, resetLocked, resetEpoch, PLAN_DIR, PLAN_FILES,
                    PLACEHOLDER, isPlaceholder, placeholderCue, placeholderPublic, placeholderFor };

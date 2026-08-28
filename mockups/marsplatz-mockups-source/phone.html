@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Marsplatz · phone</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  body { width: 430px; }
+  .wrap { padding: 10px 10px 0; }
+  .ticker { font-size: 12px; padding: 7px 9px; }
+  .masthead { grid-template-columns: auto 1fr auto; padding: 16px 4px 10px; align-items: end; }
+  .masthead .q { font-size: 22px; }
+  .wordmark .l1 { font-size: 24px; gap: 6px; }
+  .wordmark .l2 { font-size: 27px; }
+  .sol { font-size: 22px; }
+  .sol small { font-size: 9px; }
+  .panel { padding: 10px 10px 36px; min-height: 0; }
+  .panel > .cap { font-size: 15px; }
+  .grid { gap: 10px; }
+  .compose { grid-template-columns: 1fr; }
+  .well { min-height: 60px; font-size: 12px; }
+  .btn { width: 100%; text-align: center; }
+  .kv { grid-template-columns: 118px 1fr 58px; font-size: 10px; row-gap: 8px; }
+  .kv .val { text-align: right; }
+  .card { font-size: 11.5px; }
+  .picnav { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(7, 1fr); padding: 18px 8px 22px; text-align: center; }
+  .picnav span { font-size: 8px; text-transform: uppercase; letter-spacing: .04em; display: block; margin-top: 2px; }
+  .soltrack { display: flex; gap: 3px; margin: 12px 0 0; }
+  .soltrack span { flex: 1; border: 1px solid #777; text-align: center; font-size: 9px; padding: 3px 0; }
+  .soltrack span.now { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+  .soltrack span.past { background: #8f8f8f; border-color: #8f8f8f; }
+  .section-title { font-size: 14px; margin: 22px 4px 0; }
+  .section-note { font-size: 11px; margin: 0 4px; }
+</style></head>
+<body>
+<div class="dome-bg" id="dome"></div>
+<div class="wrap">
+  <div class="ticker"><b>Now:</b> SOL 07 · hand audit <span class="sep">·</span> <b>Window</b> 21:00</div>
+  <header class="masthead">
+    <div class="q">?</div>
+    <div class="wordmark"><div class="l1"><span id="dome-mark"></span>Mars Mission</div><div class="l2">Marsplatz</div></div>
+    <div class="sol"><small>15 – 27 Oct</small>SOL7/13</div>
+  </header>
+  <div class="grid">
+    <section class="panel">
+      <div class="callsign small">You are <b>CRATER-697</b> · CH-09</div>
+      <div class="well">Write to the crew. It crosses 226 million km and waits for the next window.</div>
+      <div class="chips"><span class="chip on">Question</span><span class="chip">Personal</span><span class="chip">Science</span><span class="chip">Food</span></div>
+      <span class="btn">Transmit → 12 min 35 s</span>
+      <div id="orbit" style="margin-top:8px"></div>
+      <div class="exch">
+        <div class="card"><span class="cs">DUNE-214</span> — Does the water taste different after the membrane swap?<div class="re">✧ SCIENCE OFFICER — Flatter. The first litres out of it taste of nothing at all.</div></div>
+      </div>
+      <span class="cap">Communications</span>
+    </section>
+    <section class="panel">
+      <div class="kv">
+        <span>Temperature</span><span class="bar" style="width:52%"></span><span class="val">21.4 °C</span>
+        <span>Humidity</span><span class="bar" style="width:38%"></span><span class="val">38 %</span>
+        <span>Carbon dioxide</span><span class="bar" style="width:66%"></span><span class="val">812 ppm</span>
+        <span>Potable water</span><span class="bar" style="width:58%"></span><span class="val">370 L</span>
+        <span>Oxygen reserve</span><span class="bar" style="width:75%"></span><span class="val">74 %</span>
+      </div>
+      <div class="soltrack"><span class="past">1</span><span class="past">2</span><span class="past">3</span><span class="past">4</span><span class="past">5</span><span class="past">6</span><span class="now">7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span></div>
+      <span class="cap">Data</span>
+    </section>
+  </div>
+  <div class="section-title">Habitat — Grundriss</div>
+  <div id="plan"></div>
+  <div class="section-note">M = Modul · A–C = Ringsektoren</div>
+  <div class="grid" style="margin-top:14px">
+    <section class="panel"><div class="body"><p class="small">Science officer · SOL 07</p><p>Full hand audit at the midpoint. Generation recovered to within 3 % of day one.</p></div><span class="cap arrow">Reports</span></section>
+    <section class="panel"><div class="body"><p class="small">Mood · last logged SOL 07</p>
+      <div class="moodrow"><span class="small">H1</span><span class="orb a"></span></div>
+      <div class="moodrow"><span class="small">H2</span><span class="orb b"></span></div>
+      <div class="moodrow"><span class="small">H3</span><span class="orb c"></span></div></div><span class="cap">Data last logged</span></section>
+  </div>
+  <div style="height:150px"></div>
+</div>
+<nav class="picnav" id="picnav"></nav>
+<script src="icons.js"></script>
+<script>
+  document.getElementById('dome').innerHTML = dome(430, 300, 5);
+  document.getElementById('dome-mark').innerHTML = icon('dome', 24);
+  document.getElementById('orbit').innerHTML = orbit(390, 110).replace('width="390" height="110"', 'width="100%" height="110"');
+  document.getElementById('plan').innerHTML = plan(400, false).replace(/font-size="(30|34)"/g, 'font-size="22"');
+  document.getElementById('picnav').innerHTML = [['dome','What'],['astro','Who'],['doc','Schedule'],['flask','Today'],['antenna','Messages'],['bunk','Crew log'],['bike','Control']]
+    .map(([i, l]) => `<a>${icon(i, 30)}<span>${l}</span></a>`).join('');
+</script>
+</body></html>

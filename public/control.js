@@ -93,27 +93,17 @@
 })();
 
 /* ------------------------------------------------------------------ moods */
-/* Mirrors src/lib/mood.js so the operator sets a number while reading the
+/* Mirrors src/lib/mood.js so the operator picks a face while reading the
    exact words the public will get. Keep the two in step. */
 (function () {
   'use strict';
-  var BANDS = {
-    calm_tense: ['settled, working without urgency', 'steady, minor irritation reported',
-      'watchful, holding tension in the body', 'strained, short with the others'],
-    energetic_exhausted: ['well rested, moving quickly', 'functional, pacing carefully',
-      'tired, tasks taking longer than planned', 'depleted, running on routine alone'],
-  };
-  function band(v) { return v < 25 ? 0 : v < 50 ? 1 : v < 75 ? 2 : 3; }
-  function paint(slider) {
-    var target = document.getElementById('read-' + slider.dataset.crew + '-' + slider.dataset.axis);
-    if (!target) return;
-    var list = BANDS[slider.dataset.axis];
-    if (!list) return;
-    target.textContent = '“' + list[band(Number(slider.value))] + '”';
-  }
-  document.querySelectorAll('.mood-slider').forEach(function (s) {
-    paint(s);
-    s.addEventListener('input', function () { paint(s); });
+  var BANDS = ['calm, at ease with the day', 'settled, working steadily',
+    'level \u2014 neither calm nor cross', 'tense, short with the others', 'angry, needing distance'];
+  document.querySelectorAll('.mood-faces input[type="radio"]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      var target = document.getElementById('read-' + r.dataset.crew + '-calm_tense');
+      if (target) target.textContent = '\u201c' + BANDS[Number(r.dataset.band)] + '\u201d';
+    });
   });
 })();
 

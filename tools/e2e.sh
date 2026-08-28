@@ -92,7 +92,7 @@ const sched = h.indexOf("CH-30 / DAILY MISSION"), meals = h.indexOf("CH-32 / DAI
 process.exit(sched > hab && meals > hab && inv > hab && h.indexOf("CH-36 / UPDATE") === -1 && h.indexOf("/ ANOMALY") === -1
   && h.indexOf("data-pane=\"crewlog\"") === -1 && h.indexOf("class=\"tpl\"") === -1 ? 0 : 1);' \
   && ok "the Habitat tab holds the schedule, the food plan and the stores; no Crew log tab, no template buttons anywhere" || bad "habitat tab contents wrong, or the crew log tab / template buttons are still there"
-[ "$(echo "$CTRL" | grep -c 'class="mood-slider"')" = "6" ] || bad "expected two sliders for each of three officers"
+[ "$(echo "$CTRL" | grep -c 'class="mood-face"')" = "15" ] || bad "expected five faces for each of three officers"
 [ "$(echo "$CTRL" | grep -c 'CH-50 / DAILY BLOG')" = "3" ] || bad "expected a Daily Blog box per officer"
 [ "$(echo "$CTRL" | grep -c 'class="block-title">Daily Blog<')" = "3" ] || bad "the blog box is not named Daily Blog"
 node -e '
@@ -123,7 +123,7 @@ echo "$MINE" | grep -q 'data-mine="1" data-pending="1"' && ok "it is marked as t
   || bad "own pending message not stamped data-pending"
 echo "$MINE" | grep -q 'REACHED MARS' && ok "its state is stamped on the card" || bad "no state on the sender's card"
 echo "$MINE" | grep -q 'id="feed-mine-count">1<' && ok "MY MESSAGES counts one waiting" || bad "no waiting count on MY MESSAGES"
-echo "$MINE" | grep -q 'id="feed-mine-note"' && ok "the sender is told it is visible only to them" || bad "no visible-only-to-you note"
+echo "$MINE" | grep -q 'id="feed-mine-note"' && bad "the visible-only-to-you note is back" || ok "no note under the board head"
 
 curl -s -b $A -X POST --data-urlencode "body=Rain. Not the idea of it, the sound." \
   -d "action=publish" -o /dev/null $B/control/$ID/reply
@@ -179,7 +179,7 @@ node -e '
 const d=require(process.env.CONTENT_DIR+"/notes.json");
 process.exit((d["2"]||[]).filter(n=>n.kind==="SCIENCE").length===1?0:1);' \
   && ok "the day's science findings are one note in notes.json" || bad "findings not written to file as one note"
-curl -s $B/ | grep -q "Baseline established" && ok "and are live on the site" || bad "findings not live"
+curl -s $B/at-a-glance | grep -q "Baseline established" && ok "and are live on their day in At a Glance" || bad "findings not live"
 curl -s -b $A -X POST -d "day=2" -d "kind=science" -d "crew_id=2" -d "back=science" \
   --data-urlencode "body=Baseline established across twelve samples. Batch B held over." -o /dev/null $B/control/report
 node -e '
@@ -190,7 +190,7 @@ curl -s -b $A "$B/control?tab=science&day=2" | grep -q 'action="/control/report"
 
 curl -s -b $A -X POST -d "day=2" -d "kind=health" -d "crew_id=3" -d "back=health" \
   --data-urlencode "body=All three sleeping through the period." -o /dev/null $B/control/report
-curl -s $B/ | grep -q "sleeping through" && ok "health activities file the same way" || bad "health report failed"
+curl -s $B/at-a-glance | grep -q "sleeping through" && ok "health activities file the same way" || bad "health report failed"
 
 curl -s -b $A -X POST -d "day=2" -d "q_water=555" -d "c_water=20" -o /dev/null $B/control/inventory
 node -e '
@@ -205,12 +205,11 @@ node -e '
 const d=require(process.env.CONTENT_DIR+"/logbook.json");
 process.exit(/mission control/.test((d["2"]||{})["HEALTH OFFICER"]||"")?0:1);' \
   && ok "a daily blog is written into logbook.json" || bad "blog not written to file"
-curl -s $B/ | grep -q "Blog written from mission control" && ok "and is live in the crew log" || bad "blog not live"
+curl -s $B/logbook | grep -q "Blog written from mission control" && ok "and is live in the crew log" || bad "blog not live"
 
 MOODID=$(curl -s -b $A $B/control | grep -oE 'action="/control/moods/[0-9]+"' | head -1 | grep -oE '[0-9]+')
-curl -s -b $A -X POST -d "calm_tense=64" -d "energetic_exhausted=58" -d "optimistic_uncertain=50" \
-  -d "connected_isolated=72" -d "activity=Sample analysis" -o /dev/null $B/control/moods/$MOODID
-curl -s $B/ | grep -q "watchful, holding tension" && ok "control can file a crew mood" || bad "mood not filed"
+curl -s -b $A -X POST -d "calm_tense=75" -d "activity=Sample analysis" -o /dev/null $B/control/moods/$MOODID
+curl -s $B/ | grep -q "tense, short with the others" && ok "control can file a crew mood" || bad "mood not filed"
 
 echo "── the record is readable"
 # a second exchange that is not deleted, so the record has one to hold
@@ -233,11 +232,47 @@ grep -q "Mission day 001" /tmp/record.md && grep -q "Mission day 013" /tmp/recor
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/archive/export.md)" = "302" ] \
   && ok "the readable record is control-only too" || bad "readable record is public"
 
+echo "── the record as one PDF"
+# pdftext: inflate every content stream and print the text it draws, so the
+# suite can check what the PDF says without a PDF library on the machine.
+pdftext() { node -e '
+const zlib = require("zlib"); const buf = require("fs").readFileSync(process.argv[1]);
+let i = 0, out = [];
+while ((i = buf.indexOf("stream\n", i)) !== -1) {
+  const start = i + 7, end = buf.indexOf("endstream", start); if (end < 0) break;
+  try { out.push(zlib.inflateSync(buf.subarray(start, end)).toString("latin1")); } catch (e) { /* not flate: an image */ }
+  i = end + 9;
+}
+// text is written as hex strings in WinAnsi, which is Latin-1 for everything this checks
+const text = out.join("\n").replace(/<([0-9a-f]+)> ?Tj/gi, (_, h) => " " + Buffer.from(h, "hex").toString("latin1") + " ");
+process.stdout.write(text);
+' "$1"; }
+curl -s -b $A -D /tmp/pdf.h $B/archive/export.pdf -o /tmp/record.pdf
+grep -qi "content-type: application/pdf" /tmp/pdf.h && head -c 5 /tmp/record.pdf | grep -q "%PDF-" && tail -c 8 /tmp/record.pdf | grep -q "%%EOF" \
+  && ok "the full record downloads as a PDF" || bad "no PDF record"
+[ "$(grep -ac '/Type /Page$\|/Type /Page ' /tmp/record.pdf)" -ge 13 ] && ok "it has a page for every day and more" || bad "PDF has too few pages"
+grep -aq "/Outlines" /tmp/record.pdf && ok "and bookmarks by section and day" || bad "PDF has no bookmarks"
+PDFTXT=$(pdftext /tmp/record.pdf)
+for needle in "Contents" "The mission" "Trends" "Daily usage" "Day 001" "Day 013" "The crew log" "The complete correspondence" "Media" "Audit trail" "Schedule" "Meals" "Inventory at the close of the day" "Crew states filed" "Exchanges" "Potable water"; do
+  echo "$PDFTXT" | grep -q "$needle" || bad "PDF record missing: $needle"
+done
+ok "the PDF holds the mission, the trends, every store's use, every day, the whole crew log, the correspondence, the media and the audit trail"
+echo "$PDFTXT" | grep -q "In colour, and always outdoors." && ok "the crew's reply is in the PDF" || bad "reply missing from the PDF"
+echo "$PDFTXT" | grep -q "Do you still dream in colour" && ok "and the message it answered" || bad "message missing from the PDF"
+echo "$PDFTXT" | grep -q "tense, short with the others" && ok "a filed state appears as its sentence" || bad "state missing from the PDF"
+[ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/archive/day/2/export.pdf)" = "200" ] \
+  && ok "a single day downloads as a PDF too" || bad "no per-day PDF"
+[ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/archive/day/99/export.pdf)" = "404" ] \
+  && ok "a day outside the run is refused" || bad "day 99 answered"
+[ "$(curl -s -o /dev/null -w '%{http_code}' $B/archive/export.pdf)" = "302" ] \
+  && ok "the PDF is control-only too" || bad "PDF record is public"
+curl -s -b $A $B/control | grep -q 'href="/archive/export.pdf"' && ok "mission control carries the download" || bad "no PDF button on control"
+
 echo "── crew entries are written from control"
 TODAY=$(curl -s $B/api/status | grep -oE '"missionDay":[0-9]+' | cut -d: -f2)
 curl -s -b $A -X POST -d "day=$TODAY" -d "designation=COMMUNICATION OFFICER" -d "back=comms" --data-urlencode \
   "body=The west wall condensation is worse than the model predicted." -o /dev/null $B/control/logbook
-curl -s $B/ | grep -q "west wall condensation" && ok "an entry reaches the public crew log" || bad "entry not published"
+curl -s $B/logbook | grep -q "west wall condensation" && ok "an entry reaches the public crew log" || bad "entry not published"
 curl -s -b $A "$B/control?day=$TODAY" | grep -q "west wall condensation" && ok "and is back in its box on control" || bad "entry not shown in control"
 curl -s -b $A -X POST -d "day=$TODAY" -d "designation=COMMUNICATION OFFICER" --data-urlencode "body=Revised after supper." -o /dev/null $B/control/logbook
 [ "$(curl -s -b $A $B/archive/day/$TODAY | grep -c 'Revised after supper')" = "1" ] \
@@ -248,9 +283,9 @@ curl -s $B/ | grep -q "Revised after supper" && bad "an empty save left the entr
 [ "$(curl -s -b $A -o /dev/null -w '%{redirect_url}' -X POST -d "day=3" -d "designation=SCIENCE OFFICER" -d "back=science" -d "body=Day three." $B/control/logbook)" = "$B/control?tab=science&day=3#work" ] \
   && ok "a save returns to the tab and day it came from" || bad "save landed somewhere else"
 
-curl -s -b $A -X POST -d "calm_tense=88" -d "energetic_exhausted=70" \
+curl -s -b $A -X POST -d "calm_tense=100" \
   -d "activity=Filter maintenance" -o /dev/null $B/control/moods/$MOODID
-curl -s $B/ | grep -q "strained, short with the others" && ok "state translated into public language" || bad "state not translated"
+curl -s $B/ | grep -q "angry, needing distance" && ok "state translated into public language" || bad "state not translated"
 [ "$(curl -s $B/ | grep -c 'calm_tense')" = "0" ] && ok "no raw mood values reach the public" || bad "raw values leaked"
 
 echo "── archive is control-only"
@@ -267,7 +302,7 @@ echo "── navigation"
 # The landing page has no top bar — its links live in the black footer.
 # Subpages keep the Mission / Messages / Crew log / About bar.
 NAV2=$(curl -s -b $A $B/archive | grep -oP '(?<=class="nav">).*?(?=</nav>)' | grep -oP '(?<=>)[A-Za-z ]+(?=</a>)' | tr '\n' ' ')
-[ "$NAV2" = "Mission Messages Crew log About " ] \
+[ "$NAV2" = "Mission Messages At a Glance Crew log About " ] \
   && ok "the archive's top bar points into the landing page" || bad "archive top bar is: $NAV2"
 FOOT=$(curl -s $B/)
 for l in "/#exchanges" "/logbook" "/#mission" "/#crew" "/#about"; do
@@ -288,16 +323,26 @@ echo "$LOGPAGE" | grep -q 'log-entry placeholder' || bad "/logbook shows no plac
 echo "$LOGPAGE" | grep -q "Day three." || bad "/logbook is missing the day-3 entry filed from control"
 echo "$FOOT" | grep -q 'href="/logbook"' || bad "the crew log panel does not open the log page"
 ok "the crew log is a page of its own: all thirteen days, placeholders where nothing is written yet, reached from the panel"
-for sec in write exchanges mission habitat crew crewlog about what who-we-are; do
+for sec in write exchanges mission habitat crew about what who-we-are; do
   echo "$FOOT" | grep -q "id=\"$sec\"" || bad "landing page has no #$sec section"
 done
-ok "the landing page carries every section: composer, board, mission, habitat, crew, crew log, about"
+ok "the landing page carries every section: composer, board, mission, habitat, crew, about"
+echo "$FOOT" | grep -q 'id="crewlog"' && bad "the crew log panel is still on the landing page" || ok "no crew log panel on the landing page — the log lives at /logbook and in At a Glance"
+echo "$FOOT" | grep -q 'id="media"' && bad "the media panel is still on the landing page" || ok "no media panel — the media lives at /media and in At a Glance"
+echo "$FOOT" | grep -q 'id="whole"' && bad "the whole-mission panel is still on the landing page" || ok "no whole-mission panel — the run day by day lives in At a Glance"
+echo "$FOOT" | grep -q 'class="ticker"' && echo "$FOOT" | grep -q 'id="tk-clock"' && ok "a ticker runs across the top: the habitat's clock and the current activity" || bad "no ticker on the landing page"
+echo "$FOOT" | grep -q 'id="tk-now"' && echo "$FOOT" | grep -q 'data-tasks=' && ok "the ticker says what the crew are currently doing and switches to the next task as its time comes" || bad "ticker has no current activity"
+echo "$FOOT" | grep -qF "fetch('/api/ticker'" && echo "$FOOT" | grep -qF "60 * 60 * 1000" && ok "and refreshes the schedule from the station every hour" || bad "ticker does not refresh hourly"
+TK=$(curl -s $B/api/ticker)
+echo "$TK" | grep -q '"tasks":\[' && echo "$TK" | grep -q '"label"' && echo "$TK" | grep -q '"detail"' && ok "/api/ticker hands the day's activities with their detail" || bad "/api/ticker broken"
+echo "$FOOT" | grep -q 'id="tk-hab"' && ok "and the node's current reading, refreshed on its cycle" || bad "ticker has no habitat reading"
 
-echo "── two-axis mood"
-[ "$(curl -s -b $A $B/control | grep -c 'class="mood-slider"')" = "6" ] \
-  && ok "one slider for mood and one for energy, per officer" || bad "wrong number of mood sliders"
-curl -s -b $A $B/control | grep -q ">Mood<" && curl -s -b $A $B/control | grep -q ">Energy<" \
-  && ok "the two axes are labelled mood and energy" || bad "axes not labelled"
+echo "── one mood scale, calm to angry"
+[ "$(curl -s -b $A $B/control | grep -c 'class="mood-face"')" = "15" ] \
+  && ok "one scale of five faces per officer, calm to angry" || bad "wrong number of mood faces"
+curl -s -b $A $B/control | grep -q ">CALM<" && curl -s -b $A $B/control | grep -q ">ANGRY<" \
+  && ok "the scale is labelled calm to angry" || bad "scale not labelled"
+curl -s -b $A $B/control | grep -q "What they are doing" && bad "the activity field is still on the state form" || ok "the state is the scale alone — no activity field"
 
 echo "── habitat on the mission page"
 # The habitat section is the Sensor-11 dashboard: the server polls the
@@ -374,7 +419,7 @@ echo "$PAGE" | grep -q 'class="masthead"' && ok "the masthead leads the page" ||
 echo "$PAGE" | grep -q 'class="wordmark">Mars<span class="bang">!</span>platz' && ok "the Mars!platz wordmark is on the masthead" || bad "no wordmark on the masthead"
 echo "$PAGE" | grep -q 'class="device composer-device' && ok "the composer is a device" || bad "no composer device"
 echo "$PAGE" | grep -q 'class="screen board"' && ok "the board is a screen" || bad "no board screen"
-echo "$PAGE" | grep -q 'MISSION DAY\|OPENS' && ok "the mission day is stamped on the masthead" || bad "no mission day on the masthead"
+echo "$PAGE" | grep -q 'class="run-dates"' && ok "the run and its day are stated under the wordmark" || bad "no run dates on the masthead"
 echo "$PAGE" | grep -q 'class="nav"' && bad "top navigation still on the landing page" \
   || ok "landing navigation lives in the footer"
 echo "$PAGE" | grep -q 'id="feed-filter"' && ok "the board carries its tag filters" || bad "no board filter"
@@ -500,7 +545,7 @@ const b = (d["3"] || []).find((m) => m.slot === "BREAKFAST");
 console.log(b ? b.water : "none");')
 curl -s -b $A -X POST -d "day=3" -d "BREAKFAST_name=EDITED BREAKFAST" -d "BREAKFAST_kcal=410" \
   -o /dev/null $B/control/meals
-curl -s $B/ | grep -q "EDITED BREAKFAST" \
+curl -s $B/at-a-glance | grep -q "EDITED BREAKFAST" \
   && ok "the health officer can edit the food plan" || bad "food plan edit did not apply"
 [ "$WATER_BEFORE" = "$(node -e '
 const d = require(process.env.CONTENT_DIR + "/meals.json");
@@ -530,14 +575,20 @@ curl -s $B/ | grep -q 'stroke-dasharray="2 3"' \
 
 echo "── editable content"
 curl -s $B/api/content | grep -q '"ok":true' && ok "content files loaded cleanly" || bad "content failed to load"
-curl -s $B/ | grep -q "Hatch seal and pressure hold" && ok "authored schedule is live" || bad "schedule missing"
-curl -s $B/ | grep -q "Rehydrated oats" && ok "authored meal plan is live" || bad "meals missing"
+curl -s $B/at-a-glance | grep -q "Hatch seal and pressure hold" && ok "authored schedule is live" || bad "schedule missing"
+curl -s $B/at-a-glance | grep -q "Rehydrated oats" && ok "authored meal plan is live" || bad "meals missing"
 curl -s $B/ | grep -q "PLACEHOLDER\|Cue:" && bad "the placeholder marker or a writer's cue reached the public station" || ok "placeholder slots are shown publicly by their first line only; the marker and the cues stay inside"
 curl -s -b $A -X POST -d "day=$((TODAY + 1))" -d "designation=SCIENCE OFFICER" -d "back=science" --data-urlencode "body=Written ahead of its day." -o /dev/null $B/control/logbook
 curl -s $B/logbook | grep -q "Written ahead of its day." && ok "an entry written for a day ahead is public at once — the log does not wait for the clock" || bad "an entry written ahead is not public"
-curl -s $B/ | grep -q "Written ahead of its day." && ok "and the station's crew panel shows it too" || bad "entry written ahead missing from the landing page"
+curl -s $B/at-a-glance | grep -q "Written ahead of its day." && ok "and its day in At a Glance shows it too" || bad "entry written ahead missing from At a Glance"
 for d in 1 7 13; do curl -s -b $A "$B/control?tab=health&day=$d" | grep -q "day $(printf %03d $d)" || bad "the Daily Blog cannot be opened for day $d"; done
-[ "$(curl -s -b $A "$B/control?tab=comms" | grep -o 'data-day="[0-9]*"' | sort -u | wc -l)" = "13" ] \
+CTRLPAGE=$(curl -s -b $A "$B/control?tab=comms")
+echo "$CTRLPAGE" | grep -q 'daypick-dates' && [ "$(echo "$CTRLPAGE" | grep -o 'title="Mission day 0[0-9][0-9]"' | sort -u | wc -l)" = "13" ] \
+  && ok "the day picker shows the run's actual dates, 15 to 27 October" || bad "day picker not dated"
+echo "$CTRLPAGE" | grep -q 'href="/">Public station' && bad "the Public station button is still on mission control" || ok "no Public station button on mission control"
+echo "$CTRLPAGE" | grep -q 'class="officer-stack"' && ok "an officer's blocks stack in one column, the blog first and full width" || bad "officer blocks are still in a grid"
+echo "$CTRLPAGE" | grep -q 'class="blog-box"' && grep -q "textarea.blog-box { min-height: 340px" public/station.css && ok "the blog boxes are tall enough to write in" || bad "blog boxes not enlarged"
+[ "$(echo "$CTRLPAGE" | grep -o 'data-day="[0-9]*"' | sort -u | wc -l)" = "13" ] \
   && ok "every officer tab offers all thirteen days of the run" || bad "the day picker does not offer thirteen days"
 curl -s -b $A -X POST -d "day=2" -d "designation=HEALTH OFFICER" -d "back=health" --data-urlencode "body=First full sleep period logged." -o /dev/null $B/control/logbook
 curl -s $B/logbook | grep -q "First full sleep period logged." && ok "writing over a placeholder publishes the entry for its day" || bad "written entry not public"
@@ -564,7 +615,7 @@ curl -s -b $A -F "day=$TODAY" -F "file=@/tmp/e2e-clip.mp4" -F "file=@/tmp/e2e-ph
 curl -s -b $A -H "X-Requested-With: fetch" -F "day=$TODAY" -F "file=@/tmp/e2e-bad.exe" $B/control/media/upload | grep -q '"ok":false' \
   && ok "a file type the archive does not keep is refused" || bad "an .exe was accepted"
 curl -s $B/media | grep -q "West wall at dawn" && ok "the photograph is on the public Media page" || bad "not on /media"
-curl -s $B/ | grep -q "West wall at dawn" && ok "and in the Media panel on the station" || bad "not on the landing page"
+curl -s $B/at-a-glance | grep -q "West wall at dawn" && ok "and on its day in At a Glance" || bad "not in At a Glance"
 curl -s $B/logbook | grep -q "West wall at dawn" && ok "and under its day on the crew log" || bad "not on /logbook"
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/media/$MID)" = "200" ] && ok "each item has a page of its own" || bad "item page missing"
 curl -s -o /tmp/e2e-dl.png "$B/media/file/$MID/e2e-photo.png?download" && cmp -s /tmp/e2e-dl.png /tmp/e2e-photo.png \
@@ -590,6 +641,9 @@ curl -s -b $A -X POST -o /dev/null $B/control/media/$MID/restore
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/media/$MID)" = "200" ] && ok "and it can be restored" || bad "restore failed"
 curl -s -b $A $B/archive/export.json | grep -q "$PSHA" && ok "the full record lists the media with hashes" || bad "media missing from the archive export"
 curl -s -b $A $B/archive/day/$TODAY/export.md | grep -q "Media sent out" && ok "and the readable record has a media section per day" || bad "media missing from the markdown"
+curl -s -b $A $B/archive/export.pdf -o /tmp/record2.pdf
+grep -aq "/Subtype /Image" /tmp/record2.pdf && ok "the PDF record carries the photograph itself" || bad "no image in the PDF record"
+pdftext /tmp/record2.pdf | grep -q "$PSHA" && ok "and lists it with its full hash" || bad "hash missing from the PDF media index"
 [ -f "$DATA_DIR/media/manifest.json" ] && node tools/verify-media.js "$DATA_DIR/media" >/dev/null && ok "manifest.json sits beside the files and tools/verify-media.js checks it" || bad "on-disk manifest or verify tool failed"
 # an entry with media attached, through the plain form (no script)
 curl -s -b $A -F "day=$((TODAY + 2))" -F "designation=HEALTH OFFICER" -F "back=health" -F "body=Entry with a photograph." -F "media_caption=Attached to the entry" -F "file=@/tmp/e2e-photo.png" -o /dev/null -w '%{redirect_url}' $B/control/logbook | grep -q "tab=health" \
@@ -597,6 +651,8 @@ curl -s -b $A -F "day=$((TODAY + 2))" -F "designation=HEALTH OFFICER" -F "back=h
 LOGX=$(curl -s $B/logbook)
 echo "$LOGX" | grep -q "Entry with a photograph." && echo "$LOGX" | grep -q "Attached to the entry" && ok "the entry and its media are public together" || bad "entry or its media missing from /logbook"
 echo "$LOGX" | grep -A12 "Entry with a photograph." | grep -q 'class="entry-figure' && ok "and the media is set into the entry as a figure" || bad "media not attached to the entry on the page"
+curl -s -b $A $B/archive/export.pdf -o /tmp/record3.pdf
+[ "$(pdftext /tmp/record3.pdf | grep -c "Entry with a photograph.")" -ge 2 ] && ok "the entry's text is in the PDF twice: in its day and in the whole crew log" || bad "blog text missing from the PDF"
 curl -s $B/ | grep -q "PLACEHOLDER" && bad "a placeholder marker reached the station" || ok "placeholder markers never reach the station"
 curl -s $B/ | grep -q "Potable water" && ok "inventory names come from the file" || bad "inventory names missing"
 
@@ -606,7 +662,7 @@ const d=JSON.parse(fs.readFileSync(p));
 d["1"][0].label="EDITED FROM THE FILE";
 fs.writeFileSync(p,JSON.stringify(d,null,2));'
 sleep 2
-curl -s $B/ | grep -q "EDITED FROM THE FILE" \
+curl -s $B/at-a-glance | grep -q "EDITED FROM THE FILE" \
   && ok "editing a file changes the site without a restart" || bad "file edit did not apply"
 
 node -e '
@@ -629,7 +685,7 @@ const d=JSON.parse(fs.readFileSync(p));
 d["4"]["SCIENCE OFFICER"]="EDITED IN THE FILE AFTERWARDS.";
 fs.writeFileSync(p,JSON.stringify(d,null,2));'
 sleep 2
-curl -s $B/ | grep -q "EDITED IN THE FILE AFTERWARDS" \
+curl -s $B/at-a-glance | grep -q "EDITED IN THE FILE AFTERWARDS" \
   && ok "a later file edit changes the same entry" || bad "file edit did not reach the entry"
 curl -s $B/ | grep -q "WRITTEN FROM CONTROL" && bad "the old text survived the file edit" || ok "there is one record, not two"
 
@@ -654,6 +710,14 @@ curl -s $B/resources/log.csv | grep -q ',carried,' && ok "a carried-forward day 
 [ -s "$CONTENT_DIR/resource-log.csv" ] && ok "resource-log.csv is written beside the content files" || bad "no resource-log.csv in content/"
 STORES=$(curl -s $B/ | grep -o 'store-[a-z]*' | sort -u | wc -l)
 [ "$STORES" = "9" ] && ok "every store is a series on the trend graph (9)" || bad "only $STORES stores in the trend spec"
+USES=$(curl -s $B/ | grep -o 'use-[a-z]*' | sort -u | wc -l)
+[ "$USES" = "9" ] && ok "and the daily use of every store (9)" || bad "only $USES daily-use series"
+MISSING=""
+for S in meal-kcal meal-water meal-power act-tasks act-messages act-exchanges act-entries act-media calories steps; do
+  curl -s $B/ | grep -q "id&quot;:&quot;$S&quot;" || MISSING="$MISSING $S"
+done
+[ -z "$MISSING" ] && ok "meals, crew figures and the day's activity are all on the graph" || bad "missing from the trend spec:$MISSING"
+curl -s $B/ | grep -q 'data-axis-run="1"' && curl -s $B/ | grep -q "data-axis-start=\"$MISSION_START\"" && ok "during the run the trend axis is the run, SOL 01 to 13" || bad "trend axis is not the run"
 
 echo "── sensors"
 curl -s -X POST -H "Authorization: Bearer ${SENSOR_TOKEN:-test-token}" -H "Content-Type: application/json" \
@@ -662,6 +726,63 @@ curl -s -X POST -H "Authorization: Bearer ${SENSOR_TOKEN:-test-token}" -H "Conte
 curl -s $B/api/sensors/latest | grep -q '"metric":"oxygen"' && ok "unknown metric auto-registered" || bad "oxygen not registered"
 [ "$(curl -s -X POST -H 'Authorization: Bearer wrong' -d '{}' -o /dev/null -w '%{http_code}' $B/api/sensors/ingest)" = "401" ] \
   && ok "ingest rejects a bad token" || bad "ingest auth failed"
+
+echo "── the readings log"
+[ "$(ls "$DATA_DIR"/readings/ingest/*/ 2>/dev/null | grep -c json)" -ge 1 ] && ok "every ingest is written as a JSON file the moment it arrives" || bad "no ingest file in the readings log"
+[ "$(ls "$DATA_DIR"/readings/resources/*/ 2>/dev/null | grep -c json)" -ge 1 ] && ok "the stores are snapshotted from the content files" || bad "no resources snapshot"
+[ "$(ls "$DATA_DIR"/readings/figures/*/ 2>/dev/null | grep -c json)" -ge 1 ] && ok "and so are the crew's figures" || bad "no figures snapshot"
+RS_BEFORE=$(ls "$DATA_DIR"/readings/resources/*/ | grep -c json)
+touch "$CONTENT_DIR/schedule.json"; sleep 3
+[ "$(ls "$DATA_DIR"/readings/resources/*/ | grep -c json)" = "$RS_BEFORE" ] && ok "an unchanged reload does not write the same snapshot again" || bad "duplicate resources snapshot"
+node -e '
+const fs = require("fs"), p = process.env.CONTENT_DIR + "/inventory-levels.json";
+const o = JSON.parse(fs.readFileSync(p, "utf8")); o["2"] = o["2"] || {}; o["2"].water = { quantity: 601, consumption: 39 }; fs.writeFileSync(p, JSON.stringify(o, null, 2));'
+sleep 3
+[ "$(ls "$DATA_DIR"/readings/resources/*/ | grep -c json)" -gt "$RS_BEFORE" ] && ok "a change to the stores writes a new snapshot" || bad "changed stores not snapshotted"
+grep -l '"quantity_at_close": 601' "$DATA_DIR"/readings/resources/*/*.json >/dev/null && ok "and the snapshot carries the new figure" || bad "snapshot does not carry the change"
+node -e '
+const log = require("./src/lib/readings-log");
+const f = log.list({ source: "ingest" }); const o = JSON.parse(require("fs").readFileSync(f[f.length - 1].path, "utf8"));
+process.exit(o.source === "ingest" && o.pulledAt && Array.isArray(o.readings) && o.readings.some((r) => r.metric === "oxygen") ? 0 : 1);
+' && ok "an ingest file holds the batch as it was posted, with the time it arrived" || bad "ingest file malformed"
+curl -s -b $A -o /tmp/readings.zip -w '%{http_code}' $B/archive/readings.zip | grep -q 200 && python3 -c '
+import zipfile, json, sys
+z = zipfile.ZipFile("/tmp/readings.zip"); z.testzip()
+names = z.namelist(); idx = json.loads(z.read("index.json"))
+sys.exit(0 if "index.json" in names and "README.txt" in names and any(n.startswith("ingest/") for n in names) and idx["counts"]["total"] == len(names) - 2 else 1)
+' && ok "the whole log downloads as one ZIP with an index, verified by Python" || bad "readings ZIP broken"
+[ "$(curl -s -o /dev/null -w '%{http_code}' $B/archive/readings.zip)" = "302" ] && ok "the log is control-only" || bad "readings log is public"
+curl -s -b $A $B/archive/readings.json | grep -q '"bySource"' && ok "and listed at /archive/readings.json" || bad "no readings listing"
+curl -s -b $A $B/archive | grep -q 'href="/archive/readings.zip"' && ok "the archive page carries the download" || bad "no readings download on the archive page"
+RL_BEFORE=$(find "$DATA_DIR/readings" -name '*.json' | wc -l)
+
+echo "── at a glance"
+GLA=$(curl -s $B/at-a-glance)
+[ "$(curl -s -o /dev/null -w '%{http_code}' $B/at-a-glance)" = "200" ] && ok "At a Glance is a public page" || bad "/at-a-glance broken"
+echo "$GLA" | grep -q 'id="day-1"' && echo "$GLA" | grep -q 'id="day-13"' && ok "it carries every day of the run, in day order" || bad "days missing from At a Glance"
+for block in "Blogs" "Exchanges with Earth" "Meals" "Consumption" "Habitat" "Schedule"; do
+  echo "$GLA" | grep -qi "$block" || bad "At a Glance missing: $block"
+done
+ok "each day holds the blogs, the exchanges, the schedule, the meals, the consumption and the habitat"
+echo "$GLA" | grep -q 'class="glance-tile"' && ok "the day's habitat is drawn as dashboard tiles, mean large with the day's range" || bad "no habitat tiles in At a Glance"
+echo "$GLA" | grep -q "In colour, and always outdoors." && ok "a published exchange is on it" || bad "exchange missing from At a Glance"
+echo "$GLA" | grep -q "PLACEHOLDER" && bad "a placeholder cue leaked to At a Glance" || ok "no placeholder cues leak"
+echo "$GLA" | grep -q "calm_tense" && bad "raw mood values leaked to At a Glance" || ok "crew condition appears as sentences, never numbers"
+U=$(echo "$GLA" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{console.log((s.match(/<table>/g)||[]).length-(s.match(/<div class="tw"><table>/g)||[]).length)})')
+[ "$U" = "0" ] && ok "every table on it scrolls instead of clipping" || bad "$U unwrapped tables on At a Glance"
+echo "$GLA" | grep -q 'class="booklet"' && echo "$GLA" | grep -q 'class="bk-page" id="day-1"' && ok "it is a booklet: one day per page, turned by scrolling sideways" || bad "no booklet structure"
+echo "$GLA" | grep -q 'id="bk-prev"' && echo "$GLA" | grep -q 'id="bk-next"' && echo "$GLA" | grep -q 'id="bk-counter"' && ok "with arrows either side and a page counter" || bad "booklet controls missing"
+grep -q "scroll-snap-type: x mandatory" public/station.css && ok "pages snap, so a swipe lands on a whole day" || bad "no scroll snap"
+echo "$GLA" | grep -qF 'day-(\d+)' && ok "a #day-n link opens the booklet on that day" || bad "hash landing broken"
+curl -s $B/ | grep -q 'class="glance-link" href="/at-a-glance"' && ok "the At a Glance button is on the mission dashboard" || bad "no At a Glance button on the landing page"
+node -e '
+const h = require("child_process").execSync("curl -s http://localhost:8080/").toString();
+process.exit(h.indexOf("glance-link") > -1 && h.indexOf("glance-link") < h.indexOf("id=\"habitat\"") ? 0 : 1);
+' && ok "and it sits above the Habitat panel" || bad "At a Glance is not above the Habitat"
+# the ticker's running line is in the page twice (that is how it loops); the
+# dashboard figures must not add a third
+[ "$(curl -s $B/ | grep -o 'One-way signal' | wc -l)" = "2" ] && ok "the one-way signal is off the dashboard figures — only the ticker names it" || bad "one-way signal still on the dashboard"
+curl -s $B/ | grep -q '>At a Glance<' && ok "and the footer navigation carries it" || bad "At a Glance missing from the nav"
 
 echo "── everything archived"
 curl -s -b $A $B/archive | grep -q "day by day" && ok "archive contents page lists the mission" || bad "no archive contents"
@@ -690,6 +811,62 @@ let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>{
 [ "$U" = "0" ] && ok "every table scrolls instead of clipping" || bad "$U unwrapped tables"
 grep -q "min-height: 44px" public/station.css && ok "touch targets meet 44px" || bad "touch targets too small"
 
+echo "── power consumed by category, and the stores as rings"
+LAND=$(curl -s $B/)
+echo "$LAND" | grep -q "Power consumed" && echo "$LAND" | grep -q 'class="pwr-row' \
+  && ok "the Habitat panel carries the day's power, a bar per category" || bad "no power tile on the landing page"
+echo "$LAND" | grep -q 'pwr-total' && ok "the trend spec carries a Power group — each category and the total, daily" || bad "power not in the trends"
+for c in Heating Food Lighting Electronics Other; do echo "$LAND" | grep -q "$c" || bad "power category missing from the landing page: $c"; done
+ok "all five shipped categories are drawn: heating, food, lighting, electronics, other"
+GLANCE=$(curl -s $B/at-a-glance)
+echo "$GLANCE" | grep -q "Power consumed" && ok "each day of the booklet carries its power figures" || bad "no power block in At a Glance"
+echo "$GLANCE" | grep -q 'gauges rounds' && echo "$GLANCE" | grep -q 'round-arc' \
+  && ok "and the stores as rings — the arc is what is left of what was carried in" || bad "no resource rings in At a Glance"
+curl -s -b $A "$B/control?tab=habitat" | grep -q 'name="name_heating"' && curl -s -b $A "$B/control?tab=habitat" | grep -q 'name="kwh_heating"' \
+  && ok "the Habitat tab has the power form: a name and an amount per category" || bad "no power form in mission control"
+# file a day and rename a category from mission control; both land in power.json and on the site
+curl -s -b $A -d "day=2" -d "name_heating=Heating" -d "kwh_heating=1.4" -d "name_food=Food" -d "kwh_food=0.6" \
+  -d "name_lighting=Lighting" -d "kwh_lighting=0.3" -d "name_electronics=Electronics" -d "kwh_electronics=0.5" \
+  -d "name_other=Greenhouse" -d "kwh_other=0.2" -o /dev/null $B/control/power
+node -e '
+const o = JSON.parse(require("fs").readFileSync(process.env.CONTENT_DIR + "/power.json", "utf8"));
+const d = o.days["2"] || {};
+process.exit(d.heating === 1.4 && d.other === 0.2 && o.categories.some((c) => c.key === "other" && c.label === "Greenhouse") ? 0 : 1);
+' && ok "saving writes content/power.json — the day's kWh and the renamed category" || bad "the power save did not reach the file"
+curl -s $B/at-a-glance | grep -q "Greenhouse" && ok "the rename reaches At a Glance" || bad "renamed category not shown"
+curl -s $B/ | grep -q "Greenhouse" && ok "and the landing page" || bad "renamed category not on the landing page"
+curl -s -b $A $B/archive/export.pdf -o /tmp/record-pwr.pdf
+PWRTXT=$(pdftext /tmp/record-pwr.pdf)
+echo "$PWRTXT" | grep -q "Power consumed" && echo "$PWRTXT" | grep -q "Greenhouse" \
+  && ok "the full record PDF carries the power figures, per day and in the trends" || bad "power missing from the PDF record"
+curl -s -b $A $B/archive/export.json | grep -q '"totalKwh"' && ok "and the JSON export carries each day's total kWh by category" || bad "power missing from export.json"
+curl -s -b $A $B/archive/export.md | grep -q "Power consumed" && ok "and the Markdown record" || bad "power missing from export.md"
+curl -s -b $A $B/archive/day/2 | grep -q "CH-35 / POWER" && ok "and the archive's day page" || bad "power missing from the archive day"
+
+echo "── the whole habitat on every At a Glance day"
+grep -q "'pres', 'bat', 'rssi'" src/server.js && grep -q "Node battery" src/views/pages/glance.js && grep -q "Signal.*dBm" src/views/pages/glance.js \
+  && ok "every node channel is summarised per day — battery and signal included" || bad "bat/rssi missing from the At a Glance summary"
+curl -s -b $A -d "day=2" -d "calories=5010" -d "steps=6420" -o /dev/null $B/control/crew-figures
+GLA2=$(curl -s $B/at-a-glance)
+echo "$GLA2" | grep -q "Calories consumed" && echo "$GLA2" | grep -q "Steps taken" && echo "$GLA2" | grep -q "crew total · counted that day" \
+  && ok "the day's calories and steps stand in the habitat tile bank, beside the sensors" || bad "crew figures missing from the At a Glance habitat"
+echo "$GLA2" | grep -q "5,010" && ok "with the figures as filed — day 2 carries 5,010 kcal" || bad "the filed figure is not shown"
+# every reading of the day, as data points across its 24 hours
+node -e '
+const a = require("./src/lib/archive"), db = require("./src/db").db;
+const start = Date.parse(a.windowFor(2).start);
+const ins = db.prepare("INSERT OR IGNORE INTO external_reading (t, co2, temp, sig) VALUES (?, ?, ?, ?)");
+for (let i = 0; i < 24; i++) ins.run(start + i * 3600000, 600 + i * 3, 21 + (i % 5) / 10, "glance-" + i);
+'
+GLA3=$(curl -s $B/at-a-glance)
+echo "$GLA3" | grep -q 'class="glance-chart"' && echo "$GLA3" | grep -q 'gc-dot' \
+  && ok "the day's readings are drawn whole — one chart per channel, each pull a data point" || bad "no per-day reading charts in At a Glance"
+echo "$GLA3" | grep -q 'CO₂: every reading of the day' && [ "$(echo "$GLA3" | grep -o 'gc-dot' | wc -l)" -ge 48 ] \
+  && ok "day 2 carries all 24 CO₂ and 24 temperature points across its 24 hours" || bad "the day's node readings are not all plotted"
+echo "$GLA3" | grep -q 'OXYGEN: every reading of the day' && ok "the station's own ingest is plotted the same way" || bad "ingest readings not plotted"
+echo "$GLA3" | grep -q '00:00' && echo "$GLA3" | grep -q '12:00' && ok "the axis is the day, gridded every six hours, habitat time" || bad "no day axis on the charts"
+echo "$GLA3" | grep -q 'id="today"' && bad "a rehearsal page is showing during the run" || ok "during the run there is no rehearsal page — the booklet is the record alone"
+
 echo "── mission phases"
 node -e '
 const m=require("./src/lib/mission"), db=require("./src/db").db;
@@ -706,6 +883,187 @@ for (const [iso,phase,day] of cases) {
 if (m.state(new Date("2026-10-27T22:59:00Z")).elapsed!=="T+012:23:59:00") { console.log("  clock drift"); bad++; }
 process.exit(bad);
 ' && ok "phase and T-clock exact across the 25 Oct DST change" || bad "phase or clock wrong"
+
+echo "── the rehearsal page, before the run"
+GLR=$(curl -s $B/at-a-glance)
+echo "$GLR" | grep -q 'id="today"' && ok "before the run the booklet opens on a rehearsal page — today's readings as a preview" || bad "no rehearsal page during pre-launch"
+echo "$GLR" | grep -q 'REHEARSAL · NOT THE RECORD' && echo "$GLR" | grep -q 'disappears on 15 October' \
+  && ok "and it says plainly it is not the record and goes on 15 October" || bad "the rehearsal page is not marked as a preview"
+echo "$GLR" | grep -q 'data-day="0"' && echo "$GLR" | grep -q '>NOW<' && ok "the day strip carries NOW ahead of D01–D13" || bad "no NOW link in the day strip"
+echo "$GLR" | node -e '
+let s = ""; process.stdin.on("data", (d) => s += d).on("end", () => {
+  const i = s.indexOf("id=\"today\"");
+  process.exit(i > -1 && s.indexOf("glance-chart", i) > -1 ? 0 : 1);
+});' && ok "and it carries today's pulled readings, point by point" || bad "no data on the rehearsal page"
+echo "$GLR" | node -e '
+let s = ""; process.stdin.on("data", (d) => s += d).on("end", () => {
+  const a = s.indexOf("id=\"today\""), b = s.indexOf("id=\"day-1\"");
+  if (a < 0 || b < a) process.exit(1);
+  const page = s.slice(a, b);
+  const need = ["Schedule", "Meals", "Consumption", "Power consumed", "gauges rounds", "Habitat"];
+  process.exit(need.every((x) => page.includes(x)) ? 0 : 1);
+});' && ok "the rehearsal page is a complete day page — schedule, meals, consumption rings, power and habitat, the real feel of SOL 001" || bad "the rehearsal page is missing day blocks"
+
+echo "── start again for 15 October"
+grep -q "copyFileSync" src/lib/content.js && bad "content.js still uses fs.copyFile, which fails with EPERM on a Docker bind mount from Windows" || ok "the plan is copied by read-and-write, so reset works on a mounted content/ folder"
+# a content file lost while the plan still has it comes back at start-up
+node -e '
+const fs = require("fs"), path = require("path");
+const dir = process.env.CONTENT_DIR, f = "crew-and-inventory.json";
+fs.unlinkSync(path.join(dir, f));
+require("./src/lib/content").ensurePlan();
+process.exit(fs.existsSync(path.join(dir, f)) ? 0 : 1);
+' && ok "a missing content file is restored from the plan at start-up" || bad "missing content file was not restored"
+# Last, because it wipes the station. The files in content/ are the plan;
+# the reset empties the blog slots, clears everything written live and
+# reloads the mission from the files — so a rehearsal leaves nothing behind
+# for 15 October. content/plan/ is a snapshot kept as a backup.
+[ "$(ls "$CONTENT_DIR/plan" 2>/dev/null | wc -l)" -ge 9 ] && ok "a snapshot of the files was saved at boot" || bad "no content/plan/ after boot"
+curl -s -b $A -F "designation=SCIENCE OFFICER" -F "day=3" -F "body=Rehearsal words that must not survive" -F "back=science" -o /dev/null $B/control/logbook
+curl -s $B/logbook | grep -q "Rehearsal words" && ok "a rehearsal entry is live before the reset" || bad "rehearsal entry not written"
+# the inventory file as edited now is what the reset reloads — not a stale copy
+node -e '
+const fs = require("fs"), p = process.env.CONTENT_DIR + "/inventory-levels.json", d = process.argv[1];
+const o = JSON.parse(fs.readFileSync(p, "utf8")); o[d] = o[d] || {}; o[d].water = { quantity: 555, consumption: 40 }; fs.writeFileSync(p, JSON.stringify(o, null, 2));' "$TODAY"
+sleep 2
+# readings the node reports from before the run are never stored
+node -e '
+const c = require("./src/lib/critical");
+const r = c.persist([{ t: c.floorMs() - 3600000, co2: 700, temp: 21, hum: 40, light: 1, pres: 1000, bat: 4, rssi: -70 },
+                     { t: c.floorMs() + 3600000, co2: 701, temp: 21, hum: 40, light: 1, pres: 1000, bat: 4, rssi: -70 }]);
+process.exit(r.before === 1 && r.stored === 1 ? 0 : 1);
+' && ok "the external node's readings from before the run are dropped; from the run on they are kept" || bad "readings before the run were stored"
+curl -s $B/api/habitat/data | grep -q '"floor":' && ok "the readings API names the instant readings count from" || bad "no floor in the habitat data"
+# a node that has gone quiet: everything it has is older than the floor, so the floor moves back and its last days are kept
+node -e '
+const c = require("./src/lib/critical"), db = require("./src/db").db;
+const newest = c.floorMs() - 2 * 86400000;
+const rows = []; for (let i = 0; i < 30; i++) rows.push({ t: newest - i * 3600000, co2: 500, temp: 20, hum: 40, light: 1, pres: 1000, bat: 4, rssi: -70 });
+rows.sort((a, b) => a.t - b.t);
+const r = c.persist(rows);
+process.exit(r.stored === 30 && c.floorMs() <= newest - c.DAYS_BEFORE * 86400000 + 1000 && c.rows(365).length >= 30 ? 0 : 1);
+' && ok "after a build, a node silent for longer than the floor still shows its last three days — the floor moves back rather than hide everything" || bad "a quiet node's readings were hidden by the floor"
+node -e '
+const c = require("./src/lib/critical");
+c.setFloor("test", "run");
+const f = c.floorMs();
+c.persist([{ t: f - 86400000, co2: 1, temp: 1, hum: 1, light: 1, pres: 1, bat: 1, rssi: 1 }]);
+const kept = c.floorMs() === f && c.rows(365).every((r) => r.t >= f);
+c.applyBuild("test-build-C");
+process.exit(kept ? 0 : 1);
+' && ok "but a floor set to the run never moves back — nothing from before 15 October is kept" || bad "the run floor moved"
+curl -s $B/api/habitat/data | grep -q '"nodeNewest":' && ok "the readings API reports the node's newest reading, so the page can say SIGNAL LOST" || bad "no nodeNewest in the habitat data"
+node -e '
+const c = require("./src/lib/critical");
+process.exit(c.anchorMs() === c.floorMs() && c.anchorMs() <= Date.now() ? 0 : 1);
+' && ok "the day the readings were started again is kept — after a build, the trend axis starts there before the run" || bad "no readings anchor"
+grep -q "data-axis-run" public/habitat.js && grep -q "win.run ? (s.planned" public/habitat.js && ok "before the run the graph carries the node from today on and no plan lines" || bad "pre-run axis not handled in habitat.js"
+grep -q "No current reading from the sensor node" public/habitat.js && grep -q "carries no readings for node" public/habitat.js && ok "the habitat panel explains empty tiles instead of showing dashes" || bad "no explanation for empty tiles"
+grep -q "function clearTiles" public/habitat.js && grep -q "!isCurrent()" public/habitat.js && grep -q "staleAfterMs: 30 \* 60 \* 1000" public/habitat.js && grep -q "newest >= dayStart()" public/habitat.js \
+  && ok "the tiles show today's readings only while the newest is under thirty minutes old — otherwise nothing" || bad "stale or yesterday's readings would be shown as live"
+curl -s $B/ | grep -q 'data-day-start="[0-9]' && ok "the page carries the venue's midnight, so today is the venue's today on every phone" || bad "no day start on the page"
+grep -q "CRITICAL_SENSOR_ID" docker-compose.yml && grep -q "READINGS_DAYS_BEFORE" docker-compose.yml && ok "the feed and readings settings in .env reach the container" || bad "compose does not pass the feed settings through"
+# a newly built image starts the readings from today (midnight at the venue); the same image again does not move them
+node -e '
+const c = require("./src/lib/critical"), db = require("./src/db").db;
+const moved = c.applyBuild("test-build-A");
+const f1 = c.floorMs(), today = f1 === c.todayStartMs() - c.DAYS_BEFORE * 86400000;
+const again = c.applyBuild("test-build-A");
+db.prepare("INSERT OR IGNORE INTO external_reading (t, co2, sig) VALUES (?, 1, ?)").run(f1 - 1000, "old");
+c.applyBuild("test-build-B");
+const dropped = db.prepare("SELECT COUNT(*) n FROM external_reading WHERE t < ?").get(c.floorMs()).n === 0;
+process.exit(moved && today && !again && dropped && c.floorMode() === "build" ? 0 : 1);
+' && ok "a new build starts the readings from today; the same build again leaves them; older readings go" || bad "build stamp did not move the readings floor as expected"
+# the lock: from 15 October the reset is refused, unless this is a rehearsal
+node -e '
+const c = require("./src/lib/content");
+const wasOverride = process.env.MISSION_OVERRIDE; delete process.env.MISSION_OVERRIDE;
+const locked = c.resetLocked({ phase: "ACTIVE" }) && c.resetLocked({ phase: "COMPLETE" }) && !c.resetLocked({ phase: "PRE_LAUNCH" });
+process.env.MISSION_OVERRIDE = wasOverride;
+const rehearsal = !c.resetLocked({ phase: "ACTIVE" });
+process.exit(locked && rehearsal ? 0 : 1);
+' && ok "the reset is locked from 15 October, and never during a rehearsal" || bad "reset lock wrong"
+curl -s -b $A $B/control | grep -q 'id="reset-open"' && curl -s -b $A $B/control | grep -q 'id="reset-dialog"' \
+  && ok "the reset button opens a dialog that asks for the word" || bad "no reset dialog"
+curl -s -b $A $B/control | grep -q 'name="confirm"' && ! curl -s -b $A $B/control | grep -q 'name="confirm" value="RESET"' \
+  && ok "the word is typed, never prefilled" || bad "RESET is prefilled"
+BEFORE=$(curl -s $B/api/status | grep -o '"total":[0-9]*' | head -1)
+curl -s -b $A -d "confirm=nope" -o /dev/null $B/control/reset
+[ "$(curl -s $B/api/status | grep -o '"total":[0-9]*' | head -1)" = "$BEFORE" ] && ok "reset without the word RESET does nothing" || bad "reset ran without confirmation"
+curl -s -b $A -d "confirm=RESET" -o /dev/null $B/control/reset
+curl -s $B/api/status | grep -q '"total":0' && ok "reset clears every message from Earth" || bad "messages survived the reset"
+curl -s $B/logbook | grep -q "Rehearsal words" && bad "the rehearsal entry survived the reset" || ok "the rehearsal entry is gone from the crew log"
+grep -q "Rehearsal words" "$CONTENT_DIR/logbook.json" && bad "the rehearsal entry survived in logbook.json" || ok "logbook.json holds no entry"
+[ "$(grep -c PLACEHOLDER "$CONTENT_DIR/logbook.json")" -ge 39 ] && ok "every blog slot is empty for the crew — 39 placeholders" || bad "placeholders missing after reset"
+curl -s -b $A "$B/control?tab=habitat" | grep -q "The station has been reset for 15 October" && ok "mission control reports the reset" || bad "no reset report"
+curl -s -b $A "$B/control?tab=habitat" | grep -q "Start again from 15 October" && ok "the reset panel is on the Habitat tab" || bad "no reset panel"
+curl -s -b $A -o /dev/null -w '%{http_code}' $B/control | grep -q 200 && ok "the sign-in survives the reset" || bad "signed out by the reset"
+curl -s $B/ | grep -q 'class="gauges' && ok "the inventory is rebuilt" || bad "no gauges after reset"
+curl -s $B/at-a-glance | grep -q "555" && ok "and read from inventory-levels.json as it is now — day $TODAY's page carries the edited figure" || bad "inventory did not come from the file"
+[ "$(curl -s $B/api/habitat/data | grep -o '"t":' | wc -l)" = "0" ] && ok "every habitat reading is gone — the node refills the last three days on its next poll" || bad "readings survived the reset"
+node -e '
+const c = require("./src/lib/critical");
+process.exit(c.floorMs() === c.runStartMs() && c.floorMode() === "run" ? 0 : 1);
+' && ok "after the reset the readings start on the first day of the run" || bad "reset did not move the readings floor to the run"
+curl -s $B/ | grep -q 'data-axis-run="1"' && ok "and the trend graph is the run from the reset on" || bad "trend axis not the run after reset"
+curl -s $B/api/habitat/data | grep -q '"epoch":"20' && ok "the readings API carries the reset epoch, so phones drop their cached rows" || bad "no epoch after reset"
+node -e '
+const db = require("./src/db").db;
+process.exit(db.prepare("SELECT COUNT(*) n FROM crew_mood").get().n === 0 ? 0 : 1);
+' && ok "every crew state is cleared — the crew begin with nothing filed" || bad "crew states survived the reset"
+node -e '
+const o = JSON.parse(require("fs").readFileSync(process.env.CONTENT_DIR + "/crew-figures.json", "utf8"));
+process.exit(Object.keys(o).some((k) => /^\d+$/.test(k)) ? 1 : 0);
+' && ok "the crew figures are emptied — calories and steps are filed daily from the run on" || bad "crew figures survived the reset"
+node -e '
+const o = JSON.parse(require("fs").readFileSync(process.env.CONTENT_DIR + "/power.json", "utf8"));
+process.exit(Object.keys(o.days || {}).length === 0
+  && o.categories.some((c) => c.key === "other" && c.label === "Greenhouse") ? 0 : 1);
+' && ok "the power days are emptied and the categories kept — each day's kWh is filed from the run on" || bad "power.json not reset as it should be"
+LAND=$(curl -s $B/)
+echo "$LAND" | grep -q 'planned&quot;:{&quot;' && bad "the trend graph still carries plan points after the reset" || ok "the trend graph carries no plan after the reset — every day ahead is null until it is filed"
+echo "$LAND" | grep -q "nothing recorded" && ok "the calories and steps tiles read nothing recorded until the first figures are filed" || bad "figure tiles not empty after reset"
+curl -s $B/ | grep -q "angry, needing distance" && bad "an old state is still public" || ok "no old state reaches the station"
+[ "$(find "$DATA_DIR/readings" -name '*.json' | wc -l)" -ge "$RL_BEFORE" ] && ok "the readings log survives the reset — nothing in it is ever deleted" || bad "the reset touched the readings log"
+
+echo "── after 27 October nothing is updated by automation"
+grep -q "2026-10-27T23:59:59+01:00" src/lib/critical.js \
+  && ok "the node is not polled after the end of 27 October 2026 — the run's last day" || bad "critical.js does not close the record on 27 October"
+grep -q "freezeDate: '2026-10-27'" public/habitat.js && grep -q "2026-10-27T23:59:59+01:00" public/habitat.js \
+  && ok "the habitat page stops asking for readings at the same moment" || bad "habitat.js freeze date is not 27 October"
+[ "$(grep -c 'critical.frozen()' src/server.js)" -ge 3 ] \
+  && ok "ingest, pruning and the rollup timer all check the closed record" || bad "server.js does not guard its automation on the freeze"
+grep -q "automation has ended" src/server.js && ok "the rollup timer shuts itself down once every day is sealed" || bad "the rollup timer never ends"
+
+# A closed record, end to end: a second station whose freeze is already past.
+DATA2=$(mktemp -d); CONT2=$(mktemp -d); cp content/*.json "$CONT2"/
+DATA_DIR="$DATA2" CONTENT_DIR="$CONT2" node src/db/seed.js > /dev/null 2>&1
+DATA_DIR="$DATA2" CONTENT_DIR="$CONT2" PORT=8090 CRITICAL_FREEZE_AT=2001-01-01T00:00:00Z \
+  MISSION_START=$(date -u -d '-20 days' +%F) MISSION_END=$(date -u -d '-8 days' +%F) \
+  node src/server.js > /tmp/srv-frozen.log 2>&1 &
+SRV2=$!
+sleep 3
+B2=http://localhost:8090
+[ "$(curl -s -X POST -H "Authorization: Bearer $SENSOR_TOKEN" -H 'Content-Type: application/json' \
+    -d '{"deviceId":"x","readings":[{"metric":"co2","value":500}]}' -o /dev/null -w '%{http_code}' $B2/api/sensors/ingest)" = "410" ] \
+  && ok "a reading sent after the close is refused (410), token or not" || bad "ingest still stores after the record closed"
+curl -s $B2/api/habitat/data | grep -q '"frozen":true' && ok "the readings API says the record is frozen" || bad "no frozen flag after the close"
+curl -s $B2/ | grep -q "Mission complete" && ! curl -s $B2/ | grep -q 'class="ticker"' \
+  && ok "after the run the landing page is the closed record — no ticker, nothing fetching" || bad "the landing page still carries the live ticker after the close"
+grep -q "data-over" src/views/pages/public.js && grep -q "d.phase === 'COMPLETE'" src/views/pages/public.js \
+  && ok "a page left open across the last midnight stops its own timers when the run ends under it" || bad "an open ticker would keep fetching forever after the run"
+[ "$(curl -s -o /dev/null -w '%{http_code}' $B2/logbook)" = "200" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' $B2/at-a-glance)" = "200" ] \
+  && ok "reading never stops — the pages keep serving the record" || bad "the record stopped serving"
+kill $SRV2 2>/dev/null; wait $SRV2 2>/dev/null
+DATA_DIR="$DATA2" CONTENT_DIR="$CONT2" CRITICAL_FREEZE_AT=2001-01-01T00:00:00Z node -e '
+const c = require("./src/lib/critical"), db = require("./src/db").db;
+db.prepare("INSERT OR IGNORE INTO external_reading (t, co2, sig) VALUES (?, 1, ?)").run(Date.parse("2000-06-01"), "run-era");
+const before = db.prepare("SELECT COUNT(*) n FROM external_reading").get().n;
+const moved = c.applyBuild("post-close-build");
+const after = db.prepare("SELECT COUNT(*) n FROM external_reading").get().n;
+process.exit(!moved && after === before ? 0 : 1);
+' && ok "a Docker image built after the close does not move the floor — the run's readings stay" || bad "a rebuild after the close touched the readings"
+rm -rf "$DATA2" "$CONT2"
 
 echo
 [ $FAIL -eq 0 ] && echo "ALL CHECKS PASSED" || echo "SOME CHECKS FAILED"

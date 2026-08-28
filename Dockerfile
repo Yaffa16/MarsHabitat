@@ -30,6 +30,10 @@ COPY package.json ./
 COPY src ./src
 COPY public ./public
 COPY tools ./tools
+# The build stamp: a station starting from a newly built image starts its
+# habitat readings again from today (src/lib/critical.js).
+# The stamp is taken after the sources, so it changes whenever they do.
+RUN date -u +%Y-%m-%dT%H:%M:%SZ > /app/BUILD
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 

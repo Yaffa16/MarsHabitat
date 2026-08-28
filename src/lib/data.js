@@ -321,6 +321,21 @@ function entryCounts() {
   };
 }
 
+/**
+ * What happened on each mission day, as counts: messages that came in from
+ * Earth, exchanges the crew answered and published, media the crew sent out.
+ * Keyed by mission day. Rejected traffic counts as a message that came in —
+ * it did — but not as an exchange.
+ */
+function dailyActivity() {
+  const out = {};
+  const bump = (n, k, v) => { (out[n] = out[n] || { messages: 0, exchanges: 0, media: 0 })[k] = v; };
+  for (const r of db.prepare('SELECT mission_day n, COUNT(*) c FROM message GROUP BY mission_day').all()) bump(r.n, 'messages', r.c);
+  for (const r of db.prepare("SELECT mission_day n, COUNT(*) c FROM message WHERE state = 'PUBLISHED' GROUP BY mission_day").all()) bump(r.n, 'exchanges', r.c);
+  for (const r of db.prepare('SELECT mission_day n, COUNT(*) c FROM media WHERE hidden = 0 GROUP BY mission_day').all()) bump(r.n, 'media', r.c);
+  return out;
+}
+
 const TAGS = ['QUESTION', 'PERSONAL', 'SCIENCE', 'EARTH', 'MARS', 'FOOD',
   'GOVERNANCE', 'GREETING', 'HUMOUR', 'OTHER'];
 
@@ -328,6 +343,6 @@ module.exports = {
   metrics, latest, history, evaluate, sensorPanels, dailyAverages,
   day, crewWithMood, moodHistory, moodSeries,
   entriesForDay, entriesByCrew, entry, logbook, logSlotsPublic, entryCounts,
-  settleTransits, published, board, inFlightFor, messagesFor, counts,
+  settleTransits, published, board, inFlightFor, messagesFor, counts, dailyActivity,
   TAGS, STALE_SECONDS,
 };

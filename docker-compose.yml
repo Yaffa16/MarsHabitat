@@ -33,17 +33,32 @@ services:
       MEDIA_MAX_MB: "${MEDIA_MAX_MB:-4096}"
       HOLD_CHANNEL_BEFORE_LAUNCH: "${HOLD_CHANNEL_BEFORE_LAUNCH:-false}"
       WATCH_CONTENT: "${WATCH_CONTENT:-true}"
+
+      # --- the habitat readings --------------------------------------------
+      # The external node (critical-sensors.de) and where the readings start;
+      # see README "Where the readings start". Set in .env.
+      CRITICAL_POLL: "${CRITICAL_POLL:-true}"
+      CRITICAL_URL: "${CRITICAL_URL:-https://critical-sensors.de/srv.php}"
+      CRITICAL_SENSOR_ID: "${CRITICAL_SENSOR_ID:-11}"
+      CRITICAL_POLL_MS: "${CRITICAL_POLL_MS:-1200000}"
+      READINGS_DAYS_BEFORE: "${READINGS_DAYS_BEFORE:-0}"
+      READINGS_FROM: "${READINGS_FROM:-}"
+      # Rehearsal only: moves the instant the record closes (the end of
+      # 27 October 2026, after which nothing is updated by automation).
+      CRITICAL_FREEZE_AT: "${CRITICAL_FREEZE_AT:-}"
     volumes:
       - station-data:/data
       # The mission content is mounted, not baked in: edit the files on your
       # machine and the running site updates within a couple of seconds.
       - ./content:/app/content
-      # The code itself (src/ and public/) is BAKED INTO THE IMAGE — after
-      # changing it, rebuild with:  docker compose up --build -d
-      # While actively working on the design, uncomment these two lines so a
-      # plain restart picks up code changes without a rebuild:
-      # - ./src:/app/src
-      # - ./public:/app/public
+      # The code (src/ and public/) is mounted from this folder as well, so an
+      # edit to a page script is live on the next reload and a change to the
+      # server is picked up by:  docker compose restart
+      # The image still carries a copy: comment these two lines out before
+      # the run and rebuild once (docker compose up --build -d) to ship the
+      # code baked in, with nothing on the venue machine to drift.
+      - ./src:/app/src
+      - ./public:/app/public
 
   # Optional. Feeds plausible habitat readings so the site can be demonstrated
   # or rehearsed before the real sensors are mounted:

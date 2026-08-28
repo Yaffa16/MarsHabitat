@@ -11,23 +11,27 @@
 
   /* ------------------------------------------------------------ config */
   var CFG = {
-    url: '/api/habitat/data?days=30',
     refreshMs: 20 * 60 * 1000,       // the node's transmit cycle
     rangeHours: 24,                  // window feeding the instrument tiles
-    spanDays: 15,                    // the trend graph: the last fifteen days, today at the right
+    // The trend graph: the run itself, 15 to 27 October, every day on the
+    // axis. The tile carries the dates (data-run-start / data-run-end), so a
+    // rehearsal gets its own; these are the fallback.
+    anchor: '2026-10-15',
     timeWeighted: true,
     gapAfterMs: 45 * 60 * 1000,
     dedupeWindowMs: 5 * 60 * 1000,
     localKey: 'mcs-habitat-rows',
     localMaxDays: 365,
-    staleAfterMs: 50 * 60 * 1000,
-    // The record closes the day after the run ends. From then on the graph
-    // stays on 14–28 October and the page stops asking for new readings.
-    // (The server stops polling the node on the same date — see src/lib/critical.js.)
-    freezeDate: '2026-10-28',
-    freezeMs: Date.parse('2026-10-28T23:59:59+01:00')   // end of that day, Berlin (winter time)
+    staleAfterMs: 30 * 60 * 1000,    // a reading counts as current for this long
+    // The record closes with the run. From the end of 27 October 2026 — the
+    // run's last day — the page stops asking for new readings and the graph
+    // stands still on the run. (The server stops polling the node at the
+    // same moment — see src/lib/critical.js.)
+    freezeDate: '2026-10-27',
+    freezeMs: Date.parse('2026-10-27T23:59:59+01:00')   // end of that day, Berlin (winter time)
   };
   function frozen() { return Date.now() > CFG.freezeMs; }
+  CFG.url = '/api/habitat/data?days=30';
 
   var css = getComputedStyle(document.documentElement);
   var ACCENT = (css.getPropertyValue('--orange') || '#ff6a00').trim() || '#ff6a00';
@@ -44,7 +48,7 @@
   var KEYS = ['co2', 'temp', 'hum', 'light', 'pres', 'bat', 'rssi'];
   var DAY = 86400000;
 
-  var state = { rows: [], lastReadAt: null, nextReadAt: Date.now(), inFlight: false, failure: null };
+  var state = { rows: [], lastReadAt: null, nextReadAt: Date.now(), inFlight: false, failure: null, polledAt: undefined, nodeRows: null, nodeNewest: null, floor: null, sensorId: null };
   var $ = function (id) { return document.getElementById(id); };
 
   /* ------------------------------------------------------- local store */
@@ -59,7 +63,7 @@
         return row;
       }).filter(function (r) { return Number.isFinite(r.t); });
       rows.sort(function (a, b) { return a.t - b.t; });
-      return { rows: rows, savedAt: obj.savedAt || null };
+      return { rows: rows, savedAt: obj.savedAt || null, stamp: obj.stamp };
     } catch (err) { return { rows: [], savedAt: null }; }
   }
   function saveLocal() {
@@ -70,7 +74,7 @@
         KEYS.forEach(function (k) { if (r[k] !== null && r[k] !== undefined) o[k] = r[k]; });
         return o;
       });
-      localStorage.setItem(CFG.localKey, JSON.stringify({ savedAt: Date.now(), rows: rows }));
+      localStorage.setItem(CFG.localKey, JSON.stringify({ savedAt: Date.now(), stamp: state.stamp, rows: rows }));
     } catch (err) { /* quota or private mode: the server keeps the real history */ }
   }
 
@@ -169,7 +173,7 @@
     $('co2Verdict').textContent = hotNow ? 'Over ' + ch.alertAbove + ' ppm' : 'Within limit';
     $('co2Verdict').classList.toggle('hot', hotNow);
     $('co2Sub').textContent = pts.length + ' readings · ' + Math.round(lo) + '–' + Math.round(hi) +
-      ' ppm in view · limit ' + ch.alertAbove + ' ppm';
+      ' ppm today · limit ' + ch.alertAbove + ' ppm';
   }
 
   /* ------------------------------------------------- tile 2: the ruler */
@@ -321,9 +325,16 @@
      right-hand end in its own colour, and hovering the name lifts the line.
      Days with nothing recorded are skipped and the line runs straight on to
      the next day that has one. */
+  // Sixteen solid colours, dark enough to read as text; past those, spread hues.
   var PALETTE = ['#ff6a1a', '#4f7bd9', '#8b6fd6', '#3aa66f', '#d94f7b', '#2aa7b8', '#c48a1c', '#6b7a8f',
-                 '#e0562e', '#3f5fbf', '#9c4dcc', '#2e8b57', '#b8336a', '#1f8fa3', '#a67c00', '#556677',
-                 '#ff8f5e', '#7aa2ff', '#b59cff', '#7ed09f', '#ff8fb1', '#7fd6e2', '#e0b45c', '#9aa7b8'];
+                 '#e0562e', '#3f5fbf', '#9c4dcc', '#2e8b57', '#b8336a', '#1f8fa3', '#a67c00', '#556677'];
+  /* A colour for any number of lines: the fixed palette first, then evenly
+     spread hues so the fortieth line is still telling apart from its neighbours. */
+  function colourAt(i) {
+    if (i < PALETTE.length) return PALETTE[i];
+    var k = i - PALETTE.length;
+    return 'hsl(' + Math.round((k * 137.508) % 360) + ',' + (k % 2 ? 62 : 48) + '%,' + (k % 3 ? 42 : 34) + '%)';
+  }
   /* Each channel with the scale it is drawn against — the instrument's own
      range, so a line that barely moves is drawn barely moving. */
   var TREND_CHANNELS = [
@@ -350,21 +361,29 @@
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
   function dayKey(ms) { var d = new Date(ms); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
 
-  /* The axis: the last CFG.spanDays days, ending on the venue's today. */
+  /* The axis. During and after the run it is the run, first day to last —
+     15 to 27 October, SOL 01 to 13. Before the run it starts on the day the
+     readings were last started again (the build, or the reset) and runs
+     thirteen days from there, so the node's readings are on the graph from
+     today. The tile carries the dates (data-axis-start / data-axis-end) and
+     whether the axis is the run (data-axis-run), so a rehearsal against
+     other dates gets its own. `today` is 1-based within the axis, 0 before it. */
   function dayWindow() {
     var tile = $('hbt-trends');
     if (!tile) return null;
-    // The venue's today — or the day the record closed, whichever is earlier.
     var today = tile.getAttribute('data-date') || dayKey(Date.now());
-    if (today > CFG.freezeDate) today = CFG.freezeDate;
-    var todayStart = new Date(today + 'T00:00:00');
-    var span = CFG.spanDays, days = [];
-    for (var i = span - 1; i >= 0; i--) {
-      var s = new Date(todayStart); s.setDate(todayStart.getDate() - i);
-      var e = new Date(s); e.setDate(s.getDate() + 1);
-      days.push({ start: s.getTime(), end: e.getTime() });
+    var first = tile.getAttribute('data-axis-start') || tile.getAttribute('data-run-start') || CFG.anchor;
+    var lastDay = tile.getAttribute('data-axis-end') || tile.getAttribute('data-run-end') || CFG.freezeDate;
+    var isRun = tile.getAttribute('data-axis-run') !== '0';
+    var days = [], todayIdx = 0, d = new Date(first + 'T00:00:00'), end = new Date(lastDay + 'T00:00:00');
+    for (var i = 0; d.getTime() <= end.getTime() && i < 60; i++) {
+      var e = new Date(d); e.setDate(e.getDate() + 1);
+      if (dayKey(d.getTime()) === today) todayIdx = i + 1;
+      days.push({ start: d.getTime(), end: e.getTime() });
+      d = e;
     }
-    return { days: days, today: span, total: span };
+    if (today > lastDay) todayIdx = days.length;   // the axis is behind us: everything on it has happened
+    return { days: days, today: todayIdx, total: days.length, first: days.length ? days[0].start : 0, run: isRun };
   }
 
   /* Monotone cubic (Fritsch–Carlson): smooth, and never overshoots a level. */
@@ -402,6 +421,9 @@
   function fmtVal(v, unit) { return fmtNum(v, unit) + (unit === '%' || !unit ? '' : ' ' + unit); }
   function fmtDate(ms) {
     return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' }).format(new Date(ms));
+  }
+  function fmtDateTime(ms) {
+    return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(ms));
   }
 
   /* One series: real values per day, and where each sits on the line's own
@@ -441,9 +463,16 @@
       // A point on every day from the first reading on. The node transmits
       // irregularly; a day it was silent carries the last value it did send,
       // marked as held so it is drawn as such and never mistaken for a read.
+      // The last value the node sent before the window opened is carried into
+      // it, so a node that has gone quiet still shows where it stood.
       var values = [], held = [], last = null, lastDay = null;
+      for (var ri = state.rows.length - 1; ri >= 0; ri--) {
+        var r0 = state.rows[ri];
+        if (r0.t < win.days[0].start && r0[ch.key] !== null && r0[ch.key] !== undefined) { last = Math.round(r0[ch.key] * 10) / 10; lastDay = -2; break; }
+      }
       days.forEach(function (d, i) {
         var v = d[ch.key];
+        if (i >= win.today) { values.push(null); held.push(null); return; }   // still ahead
         if (v === null || v === undefined) {
           values.push(last); held.push(last === null ? null : lastDay);
         } else {
@@ -451,13 +480,23 @@
           values.push(last); held.push(null);
         }
       });
-      out.push({ id: 'feed-' + ch.key, name: ch.name, unit: ch.unit, group: 'Habitat', domain: ch.domain, colour: PALETTE[ci++ % PALETTE.length],
+      out.push({ id: 'feed-' + ch.key, name: ch.name, unit: ch.unit, group: 'Habitat', domain: ch.domain, colour: colourAt(ci++),
         values: values, held: held });
     });
     var keys = win.days.map(function (d) { return dayKey(d.start); });
+    // The station's own series: what has happened, and — for anything
+    // prepared in advance — what is planned for the days ahead, marked so
+    // it is drawn dashed until the real figure replaces it.
     (spec.series || []).forEach(function (s) {
-      out.push({ id: s.id, name: s.name, unit: s.unit, group: s.group, scaleMax: s.scaleMax, domain: s.domain || null, colour: PALETTE[ci++ % PALETTE.length],
-        values: keys.map(function (k) { var v = (s.points || {})[k]; return v === undefined ? null : v; }) });
+      var values = [], held = [];
+      keys.forEach(function (k, i) {
+        var v = (s.points || {})[k], p = win.run ? (s.planned || {})[String(i + 1)] : undefined;
+        if (v !== undefined && v !== null) { values.push(v); held.push(null); }
+        else if (p !== undefined && p !== null) { values.push(p); held.push(-1); }
+        else { values.push(null); held.push(null); }
+      });
+      out.push({ id: s.id, name: s.name, unit: s.unit, group: s.group, scaleMax: s.scaleMax, domain: s.domain || null, colour: colourAt(ci++),
+        values: values, held: held });
     });
     return out.map(function (s) { return buildSeries(s, win); });
   }
@@ -465,14 +504,18 @@
   function narrow() { var h = $('hbt-tcharts'); return !!h && h.clientWidth > 0 && h.clientWidth < 700; }
   function drawAll(series, win) {
     // A phone gets a squarer drawing, so the graph is not a ribbon.
-    // The right margin holds a name at the end of every line.
-    var W = narrow() ? 640 : 1200, H = narrow() ? 400 : 360, padL = 40, padR = narrow() ? 96 : 150, padT = 16, padB = 30;
+    // The right margin holds a name at the end of every line, and the drawing
+    // grows taller with the number of lines so every name has a row of its own.
+    var visible = series.filter(function (s) { return !hidden[s.id] && s.lo !== null; }).length;
+    var padL = 40, padR = narrow() ? 130 : 190, padT = 16, padB = narrow() ? 30 : 40;
+    var rowH = narrow() ? 15 : 14;
+    var W = narrow() ? 640 : 1200, H = Math.max(narrow() ? 400 : 360, visible * rowH + padT + padB + 8);
     var labelFont = (narrow() ? 12 : 11) + 'px ui-monospace, Menlo, Consolas, monospace';
     var n = win.total;
     var x = function (i) { return padL + (n === 1 ? (W - padL - padR) / 2 : (i / (n - 1)) * (W - padL - padR)); };
     var y = function (p) { return padT + (H - padT - padB) * (1 - Math.min(100, Math.max(0, p)) / 100); };
 
-    var svg = svgRoot(W, H, { 'class': 'tchart-svg tone' + (narrow() ? ' narrow' : ''), role: 'img', 'aria-label': 'Every trend, the last ' + n + ' days' });
+    var svg = svgRoot(W, H, { 'class': 'tchart-svg tone' + (narrow() ? ' narrow' : ''), role: 'img', 'aria-label': win.run ? 'Every trend across the ' + n + ' days of the run' : 'The habitat over ' + n + ' days before the run' });
     var defs = el('defs', {});
     svg.appendChild(defs);
 
@@ -485,16 +528,29 @@
       svg.appendChild(t);
     });
     // today's column, faintly
-    svg.appendChild(el('rect', { x: (x(n - 1) - 10).toFixed(1), y: padT, width: 20, height: H - padT - padB, 'class': 'ttoday' }));
-    // dates along the foot: first, last, every third day between
-    var every = Math.max(2, Math.ceil(n / (narrow() ? 3 : 5)));
+    var onAxis = win.today >= 1 && win.today <= n;
+    if (onAxis) svg.appendChild(el('rect', { x: (x(win.today - 1) - 10).toFixed(1), y: padT, width: 20, height: H - padT - padB, 'class': 'ttoday' }));
+    // SOL 1–14 along the foot, the date in small type beneath each; today's
+    // in orange with a tag above it. A phone drops the dates to fit.
     for (var i = 0; i < n; i++) {
-      var show = i === 0 || i === n - 1 || (i % every === 0 && n - 1 - i >= every / 2 + (narrow() ? 1 : 0));
-      if (!show) continue;
-      var tx = el('text', { x: x(i).toFixed(1), y: H - 9, 'text-anchor': i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle',
-        'class': 'taxis-t' + (i + 1 === win.today ? ' today' : '') });
-      tx.textContent = i + 1 === win.today && !frozen() ? (narrow() ? 'Today' : 'Today · ' + fmtDate(win.days[i].start)) : fmtDate(win.days[i].start);
+      var isTodayCol = i + 1 === win.today && !frozen();
+      var anchor = i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle';
+      var tx = el('text', { x: x(i).toFixed(1), y: H - (narrow() ? 9 : 16), 'text-anchor': anchor,
+        'class': 'taxis-t' + (isTodayCol ? ' today' : ''), style: 'font-weight:600' });
+      tx.textContent = win.run ? 'SOL ' + (i + 1 < 10 ? '0' : '') + (i + 1) : fmtDate(win.days[i].start);
       svg.appendChild(tx);
+      if (!narrow() && win.run) {
+        var dx2 = el('text', { x: x(i).toFixed(1), y: H - 5, 'text-anchor': anchor,
+          'class': 'taxis-t' + (isTodayCol ? ' today' : ''), style: 'font-size:9px;opacity:.75' });
+        dx2.textContent = fmtDate(win.days[i].start);
+        svg.appendChild(dx2);
+      }
+      if (isTodayCol) {
+        var tag = el('text', { x: x(i).toFixed(1), y: H - (narrow() ? 20 : 27), 'text-anchor': anchor,
+          'class': 'taxis-t today', style: 'font-size:9px;letter-spacing:.08em' });
+        tag.textContent = 'TODAY';
+        svg.appendChild(tag);
+      }
     }
 
     var drawn = 0, labels = [];
@@ -521,13 +577,15 @@
         });
         r.forEach(function (pt) {
           var i = pt[2], isToday = i + 1 === win.today, heldFrom = s.held[i];
-          var c = el('circle', { cx: pt[0].toFixed(1), cy: pt[1].toFixed(1), r: (isToday ? 4.5 : 3) * (narrow() ? 1.4 : 1),
+          var dot = n > 40 ? 2.2 : 3;
+          var c = el('circle', { cx: pt[0].toFixed(1), cy: pt[1].toFixed(1), r: (isToday ? 4.5 : dot) * (narrow() ? 1.4 : 1),
             'class': 'tpt' + (isToday ? ' today' : '') + (heldFrom !== null ? ' held' : ''), stroke: s.colour,
             'stroke-dasharray': heldFrom !== null ? '2 2' : 'none',
             fill: isToday && heldFrom === null ? s.colour : 'var(--well)' });
           var t = document.createElementNS(NS, 'title');
           t.textContent = s.name + ' · ' + fmtDate(win.days[i].start) + ': ' + fmtVal(s.values[i], s.unit) +
-            (heldFrom !== null ? ' (no reading — held from ' + fmtDate(win.days[heldFrom].start) + ')' : '');
+            (heldFrom === -1 ? ' (planned)' : heldFrom === -2 ? ' (no reading today — the node\u2019s last value)'
+              : heldFrom !== null ? ' (no reading — held from ' + fmtDate(win.days[heldFrom].start) + ')' : '');
           c.appendChild(t);
           g.appendChild(c);
         });
@@ -563,11 +621,6 @@
       lg.addEventListener('mouseleave', function () { var h = $('hbt-tcharts'); if (h) h.removeAttribute('data-lift'); });
       svg.appendChild(lg);
     });
-    if (!drawn) {
-      var none = el('text', { x: (W / 2).toFixed(1), y: (H / 2).toFixed(1), 'text-anchor': 'middle', 'class': 'taxis-t' });
-      none.textContent = series.length ? 'EVERY LINE IS SWITCHED OFF — PRESS ONE IN THE LEGEND' : 'WAITING FOR THE FIRST READ FROM THE SENSOR NODE…';
-      svg.appendChild(none);
-    }
     return svg;
   }
 
@@ -611,23 +664,64 @@
           ? 'Showing the last good data, read ' + fmtAgo(Date.now() - (state.lastReadAt || Date.now())) + '.'
           : 'Nothing has been read yet.') + '</div>';
     }
-    if (state.lastReadAt && Date.now() - state.lastReadAt > CFG.staleAfterMs) {
-      return '<div class="note"><b>The node has gone quiet.</b> Last reading ' +
-        fmtAgo(Date.now() - state.lastReadAt) + '.</div>';
+    var newest = state.rows.length ? state.rows[state.rows.length - 1].t : null;
+    if (!state.rows.length) {
+      // Nothing to draw. Say which of the possible reasons it is, so nobody
+      // stands in front of empty dials wondering whether the page is broken.
+      if (state.polledAt === null) return '<div class="note"><b>Waiting for the station\'s first read of the sensor node.</b> It polls on start and every ' + Math.round(CFG.refreshMs / 60000) + ' minutes.</div>';
+      if (state.nodeRows === 0) return '<div class="note alert"><b>The sensor feed carries no readings for node ' + (state.sensorId || '?') + '.</b> Check CRITICAL_SENSOR_ID in .env — the node may be off, or registered under another id.</div>';
+      if (state.nodeNewest && state.floor && state.nodeNewest < state.floor) return '<div class="note alert"><b>No reading from the node since ' + fmtDateTime(state.nodeNewest) + '.</b> The station\'s readings start ' + fmtDateTime(state.floor) + '; nothing the node has sent falls after that.</div>';
+      return '<div class="note"><b>No readings yet.</b> The station\'s readings start ' + (state.floor ? fmtDateTime(state.floor) : 'now') + '; the node\'s next transmission will appear here.</div>';
+    }
+    if (newest && !isCurrent()) {
+      var why = newest < dayStart() ? 'No reading has arrived today.' : 'No reading has arrived in the last 30 minutes.';
+      return '<div class="note alert"><b>No current reading from the sensor node.</b> ' + why + ' Its last reading was ' + fmtDateTime(newest) + ' (' + fmtAgo(Date.now() - newest) + '). The tiles stay empty until it transmits again — earlier readings are on the trend graph.</div>';
     }
     return '';
   }
 
+  /* The tiles are the habitat now, or nothing. Put them back to their
+     empty state — a dash in every figure, no drawing — when there is no
+     current reading, so an old number is never left standing as if it were
+     live. The history stays on the trend graph, which is where history
+     belongs. */
+  function clearTiles() {
+    ['hbt-dial', 'hbt-ruler', 'hbt-level', 'hbt-spark'].forEach(function (id) { var h = $(id); if (h) h.innerHTML = ''; });
+    var set = function (id, html) { var e = $(id); if (e) { e.innerHTML = html; e.classList.remove('hot'); } };
+    set('co2Val', '—<em>ppm</em>'); set('co2Verdict', 'No current reading'); set('co2Sub', '');
+    set('tempVal', '—<em>°C</em>'); set('tempVerdict', 'No current reading');
+    set('humVal', '—<em>%</em>'); set('lightVal', '—<em>raw</em>');
+  }
+  /* The tiles are today: readings since midnight at the venue, and only
+     while the newest of them is less than thirty minutes old. Anything else
+     — nothing today, or nothing in the last half hour — shows nothing. */
+  function dayStart() {
+    var tile = $('hbt-trends');
+    var v = tile ? Number(tile.getAttribute('data-day-start')) : NaN;
+    if (Number.isFinite(v) && v > 0) return v;
+    var d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime();
+  }
+  function todayRows() {
+    var since = dayStart();
+    return state.rows.filter(function (r) { return r.t >= since; });
+  }
+  function isCurrent() {
+    var newest = state.rows.length ? state.rows[state.rows.length - 1].t : null;
+    return newest !== null && newest >= dayStart() && Date.now() - newest <= CFG.staleAfterMs;
+  }
+
   /* ---------------------------------------------------------- render */
   function render() {
-    var view = windowed(state.rows, CFG.rangeHours);
-    if (!view.length) {
-      $('hbt-empty').hidden = false; HOST.hidden = true;
+    var view = todayRows();
+    if (!view.length || !isCurrent()) {
+      // Nothing current: the tiles say so. The trend graph still draws
+      // whatever history there is.
+      clearTiles();
       $('hbt-notes').innerHTML = notesHTML();
       renderTrends();
       return;
     }
-    $('hbt-empty').hidden = true; HOST.hidden = false;
+    HOST.hidden = false;
     renderDial(view);
     renderRuler(view);
     renderLevel(view);
@@ -651,11 +745,22 @@
           KEYS.forEach(function (k) { row[k] = (r[k] === undefined ? null : r[k]); });
           return row;
         });
-        state.rows = mergeRows(state.rows, rows);
+        // The station is the record: a reset, or the start of the run, means
+        // whatever this browser remembered from before is not part of it.
+        var stamp = String(data.epoch || '') + '|' + String(data.floor || '');
+        if (state.stamp !== undefined && state.stamp !== stamp) state.rows = [];
+        state.stamp = stamp;
+        var floor = Number(data.floor) || -Infinity;
+        state.rows = mergeRows(state.rows, rows).filter(function (r) { return r.t >= floor; });
         // Prefer the server's own read time; it is the one polling the node.
         state.lastReadAt = data.rows && data.rows.length
           ? data.rows[data.rows.length - 1].t : (data.lastReadAt || state.lastReadAt);
         state.failure = data.lastError || null;
+        state.polledAt = data.lastReadAt || (data.lastError ? data.lastError.at : null) || null;
+        state.nodeRows = data.nodeRows === undefined ? null : data.nodeRows;
+        state.nodeNewest = data.nodeNewest || null;
+        state.floor = Number(data.floor) || null;
+        state.sensorId = data.sensorId || null;
         saveLocal();
         // After the record closes, this one read of what the station holds
         // is the last: nothing is asked for again.
@@ -684,6 +789,7 @@
   var stored = loadLocal();
   if (stored.rows.length) {
     state.rows = stored.rows;
+    state.stamp = stored.stamp;
     state.lastReadAt = stored.savedAt;
     render();
   }

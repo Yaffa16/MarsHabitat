@@ -1,0 +1,53 @@
+{
+  "_note": "Report templates. A template named \"Default\" is written straight into the empty box and is not offered as a button — it is simply what the form starts as. Any other template appears as a button the officer can press to swap the box's contents. A kind whose only entry is Default therefore shows no buttons at all, which is how the health report is set up. Use \\n for line breaks.",
+  "SCIENCE": [
+    {
+      "name": "Sample batch",
+      "body": "Batch: \nSamples collected: \nCollection point: \nMethod: \n\nObservations:\n- \n\nAnything unexpected:\n"
+    },
+    {
+      "name": "Measurement run",
+      "body": "Measuring: \nInstrument: \nReadings taken: \nRange observed: \n\nAgainst the model:\n\nConfidence in the figure:\n"
+    },
+    {
+      "name": "Greenhouse check",
+      "body": "Trays surveyed: \nGerminated: \nHarvest this cycle: \ng\nWater given: \nL\n\nCondition:\n\nNext action:\n"
+    },
+    {
+      "name": "System behaviour",
+      "body": "System: \nExpected: \nActual: \nDeviation: \n\nWhat I think is happening:\n\nWhat I would need to be sure:\n"
+    }
+  ],
+  "HEALTH": [
+    {
+      "name": "Default",
+      "body": "Workout session in the morning:\n\n\nWellbeing activity in the evening:\n\n\nOther reporting:\n"
+    }
+  ],
+  "UPDATE": [
+    {
+      "name": "End of day",
+      "body": "Tasks completed: \nTasks moved: \n\nWhat went well:\n\nWhat did not:\n\nCarried into tomorrow:\n"
+    },
+    {
+      "name": "Resource note",
+      "body": "Resource: \nRemaining: \nRate of use: \nDays left at this rate: \n\nDecision taken:\n"
+    }
+  ],
+  "ANOMALY": [
+    {
+      "name": "Anomaly report",
+      "body": "System: \nFirst noticed: \nSymptom: \nExpected behaviour: \n\nImmediate action taken:\n\nCause, if known:\n\nStill open:\n"
+    }
+  ],
+  "BLOG": [
+    {
+      "name": "Open prompts",
+      "body": "What happened today:\n\nWhat I did that I did not expect to be doing:\n\nWhat the habitat felt like:\n\nOne thing I noticed about the others:\n"
+    },
+    {
+      "name": "Short entry",
+      "body": "Today:\n\nOne thing worth keeping:\n"
+    }
+  ]
+}

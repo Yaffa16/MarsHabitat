@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Mission control</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  body { width: 1440px; min-height: 1240px; }
+  .head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; padding: 18px 8px 10px; }
+  .head .wm { font-size: 30px; font-weight: 700; line-height: .95; display: flex; gap: 10px; align-items: center; }
+  .head .wm b { display: block; text-transform: uppercase; font-size: 26px; letter-spacing: -.01em; }
+  .head .ctl { text-align: center; font-size: 34px; font-weight: 500; letter-spacing: .01em; text-transform: uppercase; }
+  .head .right { text-align: right; }
+  .head .right .btn { margin: 0 0 0 8px; }
+  .btn.out { background: none; color: var(--ink); border: 1.5px solid var(--ink); }
+  .btn.mag { background: none; color: var(--mag); border: 1.5px solid var(--mag); }
+  .tabs { display: flex; gap: 8px; margin: 14px 0 10px; }
+  .tab { border: 1.5px solid var(--ink); padding: 8px 16px; font-size: 14px; text-transform: uppercase; letter-spacing: .04em; display: flex; gap: 8px; align-items: center; }
+  .tab.on { background: var(--ink); color: var(--ground); }
+  .tab .n { background: var(--mag); color: #fff; padding: 1px 7px; border-radius: 10px; font-size: 12px; }
+  .cols { grid-template-columns: 3fr 2fr; }
+  .queue .card { padding: 12px; margin-bottom: 10px; }
+  .queue .card .msg { font-size: 15px; margin: 4px 0 10px; }
+  .queue .well { min-height: 60px; background: rgba(255,255,255,.18); }
+  .row { display: flex; gap: 10px; align-items: center; }
+  .row .ghost { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #444; text-decoration: underline; }
+  .daypick { display: flex; gap: 5px; margin: 8px 0 12px; }
+  .daypick span { flex: 1; border: 1px solid #777; text-align: center; font-size: 11px; padding: 4px 0; letter-spacing: .04em; }
+  .daypick span.on { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+  .slider { display: grid; grid-template-columns: 70px 1fr 70px; gap: 10px; align-items: center; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; margin-top: 12px; }
+  .slider .track { position: relative; height: 0; border-top: 3px dashed var(--mag); }
+  .slider .knob { position: absolute; top: -9px; width: 16px; height: 16px; border-radius: 50%; }
+  .officer { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .blog { border: 1px solid #9a9a9a; padding: 10px; font-size: 13px; line-height: 1.4; min-height: 130px; background: rgba(255,255,255,.12); }
+  .blog .plus { color: var(--mag); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; margin: 8px 0; text-align: center; border-top: 1px dashed var(--mag); padding-top: 4px; }
+  .foot { position: relative; z-index: 1; padding: 30px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: #444; }
+</style></head>
+<body>
+<div class="dome-bg" id="dome" style="opacity:.5"></div>
+<div class="wrap">
+  <div class="ticker"><b>Queue:</b> 4 messages awaiting the crew <span class="sep">·</span> <b>SOL 07</b> · 21:14 habitat time <span class="sep">·</span> <b>Next window</b> 21:00, one way 12 min 35 s</div>
+  <header class="head">
+    <div class="wm"><span id="dome-mark"></span><span>Mars Mission<b>Marsplatz</b></span></div>
+    <div class="ctl">Mission control</div>
+    <div class="right"><span class="btn out">Archive</span><span class="btn out">Download record</span><span class="btn mag">Reset to 15 October</span><span class="btn out">Sign out</span></div>
+  </header>
+
+  <div class="tabs"><span class="tab on">Messages <span class="n">4</span></span><span class="tab">Communication officer</span><span class="tab">Science officer</span><span class="tab">Health officer</span><span class="tab">Habitat</span></div>
+
+  <div class="grid cols">
+    <section class="panel queue" style="min-height:560px">
+      <div class="card"><span class="cs">ORBIT-051 · Ref 00044 · SOL 07 · 20:52 · Question</span><div class="msg">Do you dream about Earth, or about the habitat?</div>
+        <div class="well">Neither, most nights. When I do it is the greenhouse, and it is bigger than it is.</div>
+        <div class="row"><span class="btn" style="margin-top:8px">Send &amp; publish · Ctrl+Enter</span><span class="ghost">Save draft</span><span class="ghost">Reject</span></div></div>
+      <div class="card"><span class="cs">DUNE-214 · Ref 00043 · SOL 07 · 20:31 · Food</span><div class="msg">What did you eat today and who cooked?</div>
+        <div class="well" style="color:#777">Reply…</div>
+        <div class="row"><span class="btn" style="margin-top:8px">Send &amp; publish</span><span class="ghost">Save draft</span><span class="ghost">Reject</span></div></div>
+      <div class="card"><span class="cs">LOBE-118 · Ref 00042 · SOL 07 · 19:58 · Science</span><div class="msg">How much power did the dust actually cost you?</div>
+        <div class="well" style="color:#777">Reply…</div>
+        <div class="row"><span class="btn" style="margin-top:8px">Send &amp; publish</span><span class="ghost">Save draft</span><span class="ghost">Reject</span></div></div>
+      <span class="cap">Messages · awaiting reply</span>
+    </section>
+
+    <section class="panel" style="min-height:560px">
+      <p class="small">Mission day</p>
+      <div class="daypick"><span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span><span class="on">07</span><span>08</span><span>09</span><span>10</span><span>11</span><span>12</span><span>13</span></div>
+      <p class="small">Science officer · daily blog · SOL 07</p>
+      <div class="blog">Full hand audit at the midpoint. Generation recovered to within 3 % of day one; the log was two litres optimistic.
+        <div class="plus">+ text · + photo / video · + sound</div>
+        <div style="border:1px solid #999;height:70px;display:flex;align-items:center;justify-content:center;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#555">photo · hand-audit-sol07.jpg · 2.4 MB</div>
+        <div class="plus">+ text · + photo / video · + sound</div>
+      </div>
+      <p class="small" style="margin-top:16px">State · science officer</p>
+      <div class="slider"><span>Settled</span><span class="track"><span class="knob orb a" style="left:62%"></span></span><span style="text-align:right">Strained</span></div>
+      <div class="slider"><span>Rested</span><span class="track"><span class="knob orb b" style="left:40%"></span></span><span style="text-align:right">Spent</span></div>
+      <p class="small" style="margin-top:16px">Crew figures · SOL 07</p>
+      <div class="kv" style="grid-template-columns:120px 1fr 60px;margin-top:8px"><span>Calories</span><span class="bar" style="width:70%"></span><span style="text-align:right">2 140</span><span>Steps</span><span class="bar" style="width:45%"></span><span style="text-align:right">6 820</span></div>
+      <span class="cap">Science officer</span>
+    </section>
+  </div>
+</div>
+<div class="foot">One account · edits are live on the station within seconds · the record is the artwork</div>
+<script src="icons.js"></script>
+<script>
+  document.getElementById('dome').innerHTML = dome(1440, 420, 6);
+  document.getElementById('dome-mark').innerHTML = icon('dome', 40);
+</script>
+</body></html>

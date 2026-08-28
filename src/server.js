@@ -13,9 +13,13 @@ const P = require('./views/pages/public');
 const { composerBlock } = require('./views/pages/communicate');
 const control = require('./routes/control');
 const archive = require('./lib/archive');
+const recordPdf = require('./lib/record-pdf');
+const readingsLog = require('./lib/readings-log');
+const { writeZip } = require('./lib/zip');
 const content = require('./lib/content');
 const critical = require('./lib/critical');
 const AR = require('./views/pages/archive');
+const GL = require('./views/pages/glance');
 const LB = require('./views/pages/logbook');
 const mediaLib = require('./lib/media');
 
@@ -133,6 +137,8 @@ app.get('/', (req, res) => {
     recent: data.board(400, ctx.visitor ? ctx.visitor.id : null),
     latestEntries: data.entriesForDay(ctx.mission.clampedDay),
     crewFigures: content.crewFigures(),
+    // Power consumed by category, kWh per day, from content/power.json.
+    power: content.power(),
     // Daily averages of anything posted to /api/sensors/ingest, for the
     // trend charts, keyed by venue date.
     ingest: data.dailyAverages(40, (d) => missionLib.localDate(d, ctx.mission.timezone)),
@@ -161,6 +167,70 @@ app.get('/day/:n', (req, res) => res.redirect(301, '/#mission'));
 /* The crew log as a page of its own: every day of the run, every officer's
    slot — the entry where it is written, its placeholder where it is not,
    and the media that went with it. Public the moment it is written. */
+/* At a Glance: the whole mission, day by day, public. Built from the same
+   day records as the archive, shown through the public-safe view. */
+app.get('/at-a-glance', (req, res) => {
+  const ctx = req.ctx();
+  archive.rollupPending();
+  const records = Array.from({ length: ctx.mission.totalDays }, (_, i) => archive.dayRecord(i + 1));
+  // The external node's day, summarised per channel, so each page of the
+  // booklet carries the habitat as it was that day — every channel the node
+  // transmits, its own battery and signal strength included.
+  const KEYS = ['co2', 'temp', 'hum', 'light', 'pres', 'bat', 'rssi'];
+  const stmt = db.prepare(`SELECT ${KEYS.map((k) => `MIN(${k}) ${k}_lo, MAX(${k}) ${k}_hi, AVG(${k}) ${k}_av, COUNT(${k}) ${k}_n`).join(', ')}
+    FROM external_reading WHERE t >= ? AND t < ?`);
+  // And every reading of the day whole — each poll of the node and each
+  // batch the station's own devices posted, as data points across the day's
+  // 24 hours, so a day's page carries not the summary alone but the data.
+  const nodeRows = db.prepare(`SELECT t, ${KEYS.join(', ')} FROM external_reading WHERE t >= ? AND t < ? ORDER BY t`);
+  const ingestRows = db.prepare(`SELECT sr.metric, sr.value, sr.recorded_at, sm.label, sm.unit
+    FROM sensor_reading sr LEFT JOIN sensor_metric sm ON sm.metric = sr.metric
+    WHERE sr.recorded_at >= ? AND sr.recorded_at < ? ORDER BY sm.sort_order, sr.metric, sr.recorded_at`);
+  const dayData = (start, end) => {
+    const row = stmt.get(start, end) || {};
+    const node = KEYS.map((k) => ({ key: k, lo: row[`${k}_lo`], hi: row[`${k}_hi`], av: row[`${k}_av`], n: row[`${k}_n`] || 0 })).filter((x) => x.n > 0);
+    // One series per channel: every value the day held, with its instant.
+    const series = [];
+    const rows = nodeRows.all(start, end);
+    for (const k of KEYS) {
+      const pts = rows.filter((x) => x[k] != null).map((x) => ({ t: x.t, v: x[k] }));
+      if (pts.length) series.push({ key: k, points: pts });
+    }
+    for (const x of ingestRows.all(new Date(start).toISOString(), new Date(end).toISOString())) {
+      const t = Date.parse(x.recorded_at);
+      if (!Number.isFinite(t)) continue;
+      let s = series.find((y) => y.key === 'ingest-' + x.metric);
+      if (!s) { s = { key: 'ingest-' + x.metric, label: x.label || x.metric, unit: x.unit || '', points: [] }; series.push(s); }
+      s.points.push({ t, v: x.value });
+    }
+    return { node, series };
+  };
+  for (const r of records) {
+    const w = archive.windowFor(r.missionDay);
+    const start = Date.parse(w.start);
+    Object.assign(r, { dayStart: start }, dayData(start, Date.parse(w.end)));
+  }
+  // Before the run, the booklet opens on a rehearsal page — a complete day
+  // page, so the real feel of a filled one can be had weeks early: today's
+  // pulled readings for the habitat, the opening day's plan for the
+  // schedule, meals, consumption and power, whatever the crew have already
+  // written into SOL 001 (blogs, exchanges, media), and any states filed
+  // today. Clearly marked, not part of the record, gone on 15 October.
+  let rehearsal = null;
+  if (ctx.mission.phase === 'PRE_LAUNCH') {
+    const start = missionLib.venueMidnightUtc(ctx.mission.today, ctx.mission.timezone);
+    const end = start + 86400000;
+    const todayMoods = db.prepare(
+      `SELECT cm.*, c.designation FROM crew_mood cm JOIN crew c ON c.id = cm.crew_id
+       WHERE cm.effective_at >= ? AND cm.effective_at < ? AND cm.set_by != 'content' ORDER BY cm.effective_at`
+    ).all(new Date(start).toISOString(), new Date(end).toISOString());
+    const base = records[0] || {};
+    rehearsal = { ...base, date: ctx.mission.today, dayStart: start, ...dayData(start, end),
+      moods: todayMoods.length ? todayMoods : base.moods || [] };
+  }
+  res.send(GL.page(ctx, { records, rehearsal }));
+});
+
 app.get('/logbook', (req, res) => {
   const ctx = req.ctx();
   // All thirteen days, each with its three slots: the written entry, or the
@@ -215,6 +285,42 @@ app.get('/archive/day/:n/export.md', requireControl, (req, res, next) => {
   res.type('text/markdown; charset=utf-8')
      .attachment(`mars-station-day-${String(n).padStart(3, '0')}.md`)
      .send(archive.dayMarkdown(n));
+});
+
+/**
+ * The full record as one PDF: every exchange, every blog entry with its
+ * photographs in place, the schedules, meals and inventory, the states filed,
+ * the trend charts, the stores' daily use, the complete correspondence and
+ * the media index with hashes — the form the record is handed over in.
+ * Composed here without a browser or an image library (src/lib/pdf.js).
+ */
+app.get('/archive/export.pdf', requireControl, (req, res, next) => {
+  try {
+    const buf = recordPdf.fullRecord();
+    res.type('application/pdf')
+       .attachment(`mars-station-record-${new Date().toISOString().slice(0, 10)}.pdf`)
+       .send(buf);
+  } catch (e) { next(e); }
+});
+
+app.get('/archive/day/:n/export.pdf', requireControl, (req, res, next) => {
+  const n = Number(req.params.n);
+  if (!Number.isInteger(n) || n < 1 || n > req.ctx().mission.totalDays) return next();
+  try {
+    res.type('application/pdf')
+       .attachment(`mars-station-day-${String(n).padStart(3, '0')}.pdf`)
+       .send(recordPdf.dayRecord(n));
+  } catch (e) { next(e); }
+});
+
+/* The readings log — every reading ever pulled, one JSON file per pull — as
+   one ZIP, and as a listing. See src/lib/readings-log.js. */
+app.get('/archive/readings.zip', requireControl, (req, res) => {
+  const st = req.ctx().mission;
+  readingsLog.sendZip(res, { writeZip, mission: { name: st.name, start: st.start_date, end: st.end_date, timezone: st.timezone } });
+});
+app.get('/archive/readings.json', requireControl, (req, res) => {
+  res.json({ counts: readingsLog.counts(), files: readingsLog.list().map((f) => ({ path: f.name, source: f.source, day: f.day, bytes: f.size, writtenAt: f.mtime.toISOString() })) });
 });
 
 app.get('/archive/export.json', requireControl, (req, res) => {
@@ -371,6 +477,12 @@ function ingestAuth(req, res, next) {
 }
 
 app.post('/api/sensors/ingest', ingestAuth, (req, res) => {
+  // The record closed with the run: after the end of 27 October 2026 no
+  // reading is stored, whoever sends it. (CRITICAL_FREEZE_AT moves the
+  // instant for a rehearsal — see src/lib/critical.js.)
+  if (critical.frozen()) {
+    return res.status(410).json({ error: 'the record closed on 27 October 2026 — readings are no longer accepted' });
+  }
   const { deviceId, readings } = req.body || {};
   if (!deviceId || !Array.isArray(readings)) {
     return res.status(400).json({ error: 'expected { deviceId, readings: [{metric, value, unit}] }' });
@@ -397,6 +509,8 @@ app.post('/api/sensors/ingest', ingestAuth, (req, res) => {
     }
   });
   tx(readings);
+  readingsLog.record('ingest', { deviceId: String(deviceId).slice(0, 40), received: readings.length, stored,
+    readings: readings.map((r) => ({ metric: r.metric, value: r.value, unit: r.unit, recordedAt: r.recordedAt || null })) });
   res.json({ ok: true, stored });
 });
 
@@ -411,6 +525,17 @@ app.get('/api/sensors/latest', (req, res) => {
 app.get('/api/sensors/history', (req, res) => {
   const metric = String(req.query.metric || '');
   res.json(data.history(metric, Number(req.query.hours || 24), 500));
+});
+
+/* What the crew are currently doing: today's schedule, for the ticker's
+   hourly refresh. Public, tiny, no identifiers. */
+app.get('/api/ticker', (req, res) => {
+  const st = req.ctx().mission;
+  const today = st.phase === 'ACTIVE' ? data.day(st.clampedDay) : null;
+  res.json({
+    sol: st.clampedDay, totalDays: st.totalDays, phase: st.phase, venueTime: st.venueTime,
+    tasks: today ? today.tasks.map((t) => ({ time: t.time, label: t.label, detail: t.detail || '' })) : [],
+  });
 });
 
 app.get('/api/orbital', (req, res) => {
@@ -483,6 +608,13 @@ app.use((req, res) => {
    Visitors who never transmitted and have not been seen for a week are dropped.
    Anyone who sent a message is kept: the archive references their callsign. */
 function pruneVisitors() {
+  // After the record closes (end of 27 October 2026) nothing is changed by
+  // automation any more — stale callsigns included: the rows stay as the run
+  // left them. Only expired control sessions are still swept.
+  if (critical.frozen()) {
+    db.prepare('DELETE FROM admin_session WHERE expires_at < ?').run(now());
+    return;
+  }
   const cutoff = new Date(Date.now() - 7 * 86400000).toISOString();
   const r = db.prepare(
     `DELETE FROM visitor WHERE last_seen < ?
@@ -494,23 +626,48 @@ function pruneVisitors() {
 setInterval(pruneVisitors, 3600000).unref();
 pruneVisitors();
 
-/* Seal each mission day into the permanent record shortly after it ends. */
-setInterval(() => { try { archive.rollupPending(); } catch (e) { console.error('[MCS] rollup', e.message); } },
-  15 * 60000).unref();
-try { archive.rollupPending(); } catch (e) { console.error('[MCS] rollup', e.message); }
+/* Seal each mission day into the permanent record shortly after it ends.
+   Once the record has closed (end of 27 October 2026) and every day of the
+   run carries its seal, this is the last automated writer left — so it shuts
+   itself down: the one write it still makes after the close is the final
+   day's seal, the closing of the book, and then nothing writes again. */
+let rollupTimer = setInterval(rollupTick, 15 * 60000);
+rollupTimer.unref();
+function rollupTick() {
+  try {
+    archive.rollupPending();
+    if (critical.frozen() && rollupTimer) {
+      const days = missionLib.state().totalDays;
+      const sealed = db.prepare('SELECT COUNT(*) n FROM day_seal').get().n;
+      if (sealed >= days) {
+        clearInterval(rollupTimer); rollupTimer = null;
+        console.log('[MCS] the record is closed and every day is sealed — automation has ended');
+      }
+    }
+  } catch (e) { console.error('[MCS] rollup', e.message); }
+}
+rollupTick();
 
 /* The run's dates are fixed in src/lib/run.js, not in .env and not in
    whenever the database happened to be seeded. Bring the mission row into
    line first, so the content files are read against the real length. */
 try { missionLib.sync(); } catch (e) { console.error('[MCS] mission sync', e.message); }
 
+/* The plan — the files as they should be on 15 October — is kept in
+   content/plan/ so mission control can reset to it after a rehearsal. It is
+   made from the shipped files on first boot, and a content file that has
+   gone missing is put back from it, before the files are read. */
+content.ensurePlan();
+/* The readings log remembers its last snapshots, so a restart does not
+   write the same stores and figures again. */
+readingsLog.primeDedupe();
 /* The editable files in content/ are the source of truth for day content.
    Load them at boot and watch for edits so a save shows up on the site. */
 content.load();
 if (process.env.WATCH_CONTENT !== 'false') content.watch();
 
 /* Poll the external habitat sensor feed on its own transmit cycle. */
-if (process.env.CRITICAL_POLL !== 'false') critical.start();
+if (process.env.CRITICAL_POLL !== 'false') critical.start(); else critical.applyBuild(critical.buildStamp());
 
 const PORT = Number(process.env.PORT || 8080);
 const server = app.listen(PORT, '0.0.0.0', () => {

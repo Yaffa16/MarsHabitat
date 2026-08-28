@@ -43,5 +43,14 @@ else
     echo "synced $SRC → $DEST/media/ (every original, plus manifest.json)"
   fi
 fi
+# The readings log: every reading ever pulled, one JSON file per pull.
+if [ "${1:-}" = "--docker" ]; then
+  docker compose cp "$SERVICE:/data/readings" "$DEST/readings-$STAMP" 2>/dev/null \
+    && echo "wrote $DEST/readings-$STAMP/ (the readings log)" || echo "no readings log yet"
+else
+  SRC="${DATA_DIR:-./data}/readings"
+  if [ -d "$SRC" ]; then mkdir -p "$DEST/readings" && cp -R "$SRC/." "$DEST/readings/" && echo "synced $SRC → $DEST/readings/ (the readings log)"; fi
+fi
+
 echo "verify a copy any time:  node tools/verify-media.js $DEST/media"
 echo "keep at least one copy off the venue machine — the archive is the artwork."

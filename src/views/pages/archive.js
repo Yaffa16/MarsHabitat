@@ -20,7 +20,7 @@ function contents(ctx, { days, counts, entryCounts }) {
     asked to do, what they ate, what they had left, what they wrote, how the habitat behaved,
     and every message that crossed the gap. Nothing here expires.</p>
     <div class="actions"><a class="btn" href="/control">Back to messages</a>
-      <a class="btn" href="/archive/export.json">Download the full record</a></div>
+      <a class="btn" href="/archive/export.pdf">Download the full record (PDF)</a></div>
   </div>
 
   <div class="grid g4">
@@ -65,9 +65,23 @@ function contents(ctx, { days, counts, entryCounts }) {
       <p class="note">Schedules, meals, inventory, crew entries, crew states, habitat summaries
       and every published exchange with the real light-time it crossed. No account needed.</p>
       <p>
-        <a class="btn" href="/archive/export.md">Download the record (readable)</a>
+        <a class="btn" href="/archive/export.pdf">Download the full record (PDF)</a>
+        <a class="btn" href="/archive/export.md">As Markdown</a>
         <a class="btn" href="/archive/export.json">As JSON</a>
+        <a class="btn" href="/archive/readings.zip">The readings log (ZIP)</a>
       </p>
+      <p class="note">The readings log is every reading the station ever pulled or received — every poll of the
+      sensor node, every batch posted to the ingest endpoint, the stores and the crew's figures each time they
+      changed, each day's habitat summary — one JSON file per pull, written the moment it arrived and never
+      changed. It survives the reset. <code>index.json</code> inside lists every file.</p>
+      <p class="note">The PDF is the whole mission in one document: a contents page, the mission
+      and what was carried in, the trend charts across the run, every store's daily use, then
+      each day whole — schedule, meals, inventory, mission notes, the crew log with its
+      photographs in place and its video and sound listed, science findings and health
+      activities, every state filed, every exchange, what was sent out and the habitat
+      summary — followed by the complete correspondence including what was never published,
+      the media index with every file's SHA-256, and the audit trail. Bookmarked by section
+      and by day.</p>
       <p class="note">The readable copy is plain Markdown: every day with its schedule, meals,
       inventory, crew writing, states, exchanges and habitat summary, in order. It opens in any
       text editor and still makes sense with nothing to render it.</p>
@@ -97,7 +111,8 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
       ${hasPrev ? `<a class="btn" href="/archive/day/${r.missionDay - 1}">Day ${dd(r.missionDay - 1)}</a>` : ''}
       ${hasNext ? `<a class="btn" href="/archive/day/${r.missionDay + 1}">Day ${dd(r.missionDay + 1)}</a>` : ''}
       <a class="btn" href="/archive">Contents</a>
-      <a class="btn" href="/archive/day/${r.missionDay}/export.md">Download this day</a>
+      <a class="btn" href="/archive/day/${r.missionDay}/export.pdf">Download this day (PDF)</a>
+      <a class="btn" href="/archive/day/${r.missionDay}/export.md">As Markdown</a>
     </p>
   </div>
 
@@ -176,6 +191,14 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
         <td class="n">${i.quantity} ${esc(i.unit)}</td>
         <td class="n" style="color:var(--faint)">−${i.consumption}/day</td>
       </tr>`).join('')}</tbody></table></div>`, 'mars-side') : ''}
+
+    ${r.power && r.power.filed ? panel('CH-35 / POWER', `
+      ${eyebrow(`Power consumed · ${r.power.total.toFixed(2)} kWh`)}
+      <div class="tw"><table><tbody>${r.power.categories.map((c) => `<tr>
+        <th>${esc(c.label)}</th>
+        <td class="n">${c.kwh == null ? '—' : `${c.kwh.toFixed(2)} kWh`}</td>
+      </tr>`).join('')}
+      <tr><th>Day total</th><td class="n"><b>${r.power.total.toFixed(2)} kWh</b></td></tr></tbody></table></div>`, 'mars-side') : ''}
 
     ${r.moods.length ? panel('CH-12 / CREW STATES', `
       ${eyebrow('Filed that day, in full')}

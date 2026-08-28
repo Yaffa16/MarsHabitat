@@ -182,7 +182,7 @@ router.get('/', (req, res) => {
   }
 
   res.send(V.page(ctx, {
-    user: req.user, f: takeFlash(req), content: content.status(),
+    user: req.user, f: takeFlash(req), content: content.status(), plan: content.planStatus(), resetLocked: content.resetLocked(ctx.mission),
     show, tab: tabOf(req.query.tab), day, totalDays: ctx.mission.totalDays,
     tpl: allTemplates(),
     list, crew: data.crewWithMood(), counts: data.counts(),
@@ -192,6 +192,7 @@ router.get('/', (req, res) => {
       CASE slot WHEN 'BREAKFAST' THEN 1 WHEN 'LUNCH' THEN 2 WHEN 'DINNER' THEN 3 ELSE 4 END`).all(day),
     notes: notesFor(day),
     figures: content.crewFigures(),
+    power: content.power(),
     items: inventoryFor(day),
     // Every slot of the crew log, for the Crew log tab: each day, each officer.
     // Everything in the media archive, hidden items included, for the Media tab.
@@ -331,14 +332,15 @@ router.post('/moods/:id', (req, res) => {
   const member = db.prepare('SELECT * FROM crew WHERE id = ?').get(id);
   if (!member) return res.redirect('/control');
   const v = (k) => Math.max(0, Math.min(100, Number(req.body[k] ?? 50) || 0));
-  const activity = String(req.body.activity ?? member.activity);
+  // The form carries no activity field any more; what the crew are doing
+  // comes from the schedule (the ticker). Anything still posted is ignored.
+  const activity = '';
   db.prepare(
     `INSERT INTO crew_mood (crew_id, calm_tense, energetic_exhausted, optimistic_uncertain,
        connected_isolated, activity, status, effective_at, set_by)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(id, v('calm_tense'), v('energetic_exhausted'), 50, 50,
         activity, member.status, now(), req.user.username);
-  db.prepare('UPDATE crew SET activity = ? WHERE id = ?').run(activity, id);
   audit(req.user.username, 'CrewMood', id, 'file');
   setFlash(req, `State filed for ${member.designation}. The mission page has been updated.`);
   toTab(res, TAB_OF_OFFICER[member.designation] || 'comms', dayParam(req, ctx));
@@ -656,6 +658,74 @@ router.post('/inventory/clear', (req, res) => {
   audit(req.user.username, 'Inventory', day, 'clear');
   setFlash(req, r.ok ? `Day ${day} now carries forward automatically.` : `Cleared, but: ${r.error}`, !r.ok);
   toTab(res, 'habitat', day);
+});
+
+/* ================================================================== POWER */
+
+/**
+ * Power consumed that day, by category, in kWh — and the categories
+ * themselves: each row carries a name field beside its amount, so renaming
+ * "Other" to "Greenhouse" is the same save as filing the day's figures.
+ * Writes content/power.json, the same file edited by hand.
+ */
+router.post('/power', (req, res) => {
+  const ctx = req.ctx();
+  const day = dayParam(req, ctx);
+  const cats = content.power().categories;
+  const r = content.edit('power.json', (obj) => {
+    // The names, as the form has them now. An emptied name keeps the old one.
+    obj.categories = cats.map((c) => {
+      const name = String(req.body[`name_${c.key}`] ?? '').trim();
+      return { key: c.key, label: name || c.label };
+    });
+    obj.days = obj.days && typeof obj.days === 'object' ? obj.days : {};
+    const entry = {};
+    for (const c of cats) {
+      const v = String(req.body[`kwh_${c.key}`] ?? '').trim();
+      if (v === '') continue;              // blank records nothing, not zero
+      const n = Number(v);
+      if (Number.isFinite(n) && n >= 0) entry[c.key] = Math.round(n * 100) / 100;
+    }
+    if (Object.keys(entry).length) obj.days[String(day)] = entry;
+    else delete obj.days[String(day)];
+  });
+  audit(req.user.username, 'Power', day, 'update');
+  setFlash(req, r.ok ? `Day ${day} power figures saved.` : `Saved, but: ${r.error}`, !r.ok);
+  toTab(res, 'habitat', day);
+});
+
+/* ============================================================= START AGAIN */
+
+/* The plan is the content as it should be on 15 October. Save it after
+   editing the files; reset to it after a rehearsal. */
+router.post('/plan/save', (req, res) => {
+  const n = content.savePlan();
+  audit(req.user.username, 'plan', '1', 'save', `${n} files`);
+  setFlash(req, `Snapshot saved: ${n} content files copied to content/plan/.`);
+  toTab(res, 'habitat', dayParam(req, req.ctx()));
+});
+
+/* Destructive, so it takes the word RESET typed into the form, checked here
+   and not only in the browser. */
+router.post('/reset', (req, res) => {
+  const ctx = req.ctx();
+  if (String(req.body.confirm || '').trim().toUpperCase() !== 'RESET') {
+    setFlash(req, 'Nothing was reset — type RESET in the box to confirm.', true);
+    return toTab(res, 'habitat', dayParam(req, ctx));
+  }
+  if (content.resetLocked(ctx.mission)) {
+    setFlash(req, 'Nothing was reset — the run has begun, and the reset is locked from 15 October.', true);
+    return toTab(res, 'habitat', dayParam(req, ctx));
+  }
+  try {
+    const r = content.reset(req.user.username);
+    const gone = Object.entries(r.wiped).filter(([, n]) => n)
+      .map(([t, n]) => `${n} ${t.replace(/_/g, ' ')}`).join(', ');
+    setFlash(req, `The station has been reset for 15 October: ${r.slots} blog slots emptied, the mission reloaded from the files in content/; cleared ${gone || 'nothing'}.`);
+  } catch (e) {
+    setFlash(req, `Reset failed: ${e.message}`, true);
+  }
+  toTab(res, 'habitat', 1);
 });
 
 module.exports = router;

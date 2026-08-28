@@ -22,6 +22,7 @@ const esc = (s) => String(s ?? '')
 const NAV = [
   ['/', 'Mission'],
   ['/#exchanges', 'Messages'],
+  ['/at-a-glance', 'At a Glance'],
   ['/logbook', 'Crew log'],
   ['/#about', 'About'],
 ];
@@ -63,21 +64,12 @@ function rail(ctx, landing = false) {
   </div>`;
 }
 
-/** The landing page's readings: the same figures as the rail, as a row of
- *  small inset pills in the masthead. The theme switch sits at its end. */
+/* The masthead's right-hand side. The station's readings — link state, the
+   T-clock, the Earth–Mars gap, the visitor's callsign — used to sit here as
+   a row of pills; the rail at the head of the dashboard carries what is
+   needed, so only the theme switch remains. */
 function statusStrip(ctx) {
-  const g = ctx.geo;
-  const link = ctx.commsUp ? 'LINK NOMINAL' : 'LINK DEGRADED';
-  const m = ctx.mission;
-  const day = m.phase === 'PRE_LAUNCH'
-    ? `T−${String(m.countdown.days).padStart(3, '0')} · OPENS ${esc(m.startLabel).toUpperCase()}`
-    : `MISSION DAY <b>${String(m.clampedDay).padStart(2, '0')}/${String(m.totalDays).padStart(2, '0')}</b>`;
-  return `<div class="status" role="group" aria-label="Station readings">
-    <span class="status-cell link"><span class="dot ${ctx.commsUp ? 'ok' : 'warn'}"></span>${link}</span>
-    <span class="status-cell">${day}</span>
-    <span class="status-cell">EARTH–MARS <b>${g.distanceAu.toFixed(3)} au</b></span>
-    <span class="status-cell">ONE WAY <b>${orbital.formatLightTime(g.lightSeconds)}</b></span>
-    ${ctx.callsign ? `<span class="status-cell">YOU <b class="you">${esc(ctx.callsign)}</b></span>` : ''}
+  return `<div class="status" role="group" aria-label="Display">
     <form method="post" action="/theme" class="theme">
       <input type="hidden" name="to" value="${ctx.theme === 'dark' ? 'light' : 'dark'}">
       <button type="submit" title="Switch to ${ctx.theme === 'dark' ? 'light' : 'dark'} mode">
@@ -95,7 +87,7 @@ function nav(current) {
 
 /**
  * The masthead every public page opens with: the wordmark, one line under
- * it, the run named plainly, and the station's readings as a row of pills.
+ * it, the run named plainly, and the theme switch on the right.
  * On the landing page the wordmark is the title; on the inner pages it is
  * the way home. The inner pages then carry the same pill row as a nav.
  */
@@ -110,9 +102,9 @@ function masthead(ctx, { home = false } = {}) {
       <p class="tagline">Communication Station · <b>ZKM | Hertzlab</b> — ${pre
         ? 'the only way to reach the crew, once they are inside'
         : 'the only way to reach the crew'}</p>
-      <p class="run-dates"><b>${esc(m.runLabel)}</b> · ${m.totalDays} days in the habitat${pre
+      <p class="run-dates"><b>${esc(m.runLabel)}</b> · ${m.totalDays} sols in the habitat${pre
         ? ` · opens in ${m.daysUntilStart} day${m.daysUntilStart === 1 ? '' : 's'}`
-        : m.phase === 'ACTIVE' ? ` · day ${String(m.clampedDay).padStart(2, '0')} of ${m.totalDays}` : ''}</p>
+        : m.phase === 'ACTIVE' ? ` · SOL ${String(m.clampedDay).padStart(2, '0')} of ${m.totalDays}` : ''}</p>
     </div>
     ${statusStrip(ctx)}
   </header>`;
@@ -130,7 +122,7 @@ function foot(ctx) {
     <div class="foot-links">
       <a href="/#write">Write</a><a href="/#exchanges">Messages</a>
       <a href="/#mission">Daily mission</a><a href="/#habitat">Habitat</a>
-      <a href="/#crew">Crew</a><a href="/logbook">Crew log</a><a href="/#about">About</a>
+      <a href="/#crew">Crew</a><a href="/at-a-glance">At a Glance</a><a href="/logbook">Crew log</a><a href="/#about">About</a>
       <a href="/control">Mission control</a>
     </div>
     <div class="foot-base">

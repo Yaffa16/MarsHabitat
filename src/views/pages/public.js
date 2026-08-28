@@ -3,7 +3,8 @@ const L = require('../layout');
 const { esc, panel, eyebrow, orbitPlot, pipeline } = L;
 const mood = require('../../lib/mood');
 const orbital = require('../../lib/orbital');
-const { TAGS } = require('../../lib/data');
+const data = require('../../lib/data');
+const { TAGS } = data;
 const { composerBlock } = require('./communicate');
 const { entryCard } = require('./logbook');
 const { aboutSection } = require('./info');
@@ -116,6 +117,31 @@ function inventoryGauges(inventory, { compact = false, strip = false, cells = fa
       </div>
     </div>`;
   }).join('')}</div>`;
+}
+
+/**
+ * Power consumed inside the habitat, one day, split by category — heating,
+ * food, lighting, electronics, other, as content/power.json shapes them. A
+ * bar per category against the day's biggest draw, the figure at its end,
+ * the day's total underneath. A day nothing has been filed for says so
+ * rather than showing zeros: an uncounted day and a day of no draw are not
+ * the same thing.
+ */
+function powerBars(categories) {
+  const filed = categories.filter((c) => c.kwh != null);
+  if (!filed.length) {
+    return '<div class="empty" style="margin-top:10px">Nothing filed for this day — the crew count the day\'s power as it ends</div>';
+  }
+  const max = Math.max(...filed.map((c) => c.kwh), 0.001);
+  const total = filed.reduce((s, c) => s + c.kwh, 0);
+  return `<div class="pwr">
+    ${categories.map((c) => `<div class="pwr-row${c.kwh == null ? ' none' : ''}">
+      <span class="pwr-name">${esc(c.label)}</span>
+      <div class="pwr-track">${c.kwh == null ? '' : `<i style="width:${Math.max(2, (c.kwh / max) * 100).toFixed(1)}%"></i>`}</div>
+      <span class="pwr-val">${c.kwh == null ? '—' : c.kwh.toFixed(2)}</span>
+    </div>`).join('')}
+    <div class="pwr-total"><span>Day total</span><b>${total.toFixed(2)} kWh</b></div>
+  </div>`;
 }
 
 /**
@@ -272,7 +298,98 @@ function wholeMission(ctx, days, { openToday = true } = {}) {
   }).join('');
 }
 
+/**
+ * The ticker across the very top of the station: the habitat's clock and a
+ * slowly running line of what is happening in there right now — the current
+ * task from the day's schedule, the one after it, and the node's current
+ * readings. The line is rendered twice and scrolled by CSS so it runs
+ * continuously; a small script keeps the clock ticking, moves to the next
+ * task as its time comes, and refreshes the readings on the node's cycle.
+ * Under prefers-reduced-motion it stands still.
+ */
+function ticker(ctx, { today }) {
+  const m = ctx.mission;
+  const pre = m.phase === 'PRE_LAUNCH', over = m.phase === 'COMPLETE';
+  const tasks = (today && today.tasks ? today.tasks : []).map((t) => ({ time: t.time, label: t.label, detail: t.detail || '' }));
+  const hm = m.venueTime.slice(0, 5);
+  let nowTask = null, nextTask = null;
+  for (const t of tasks) { if (t.time <= hm) nowTask = t; else if (!nextTask) nextTask = t; }
+  const cells = [];
+  if (pre) cells.push(`<b>T−${m.countdown.days}d ${String(m.countdown.hours).padStart(2, '0')}:${String(m.countdown.minutes).padStart(2, '0')}</b> to occupation · opens ${esc(m.startLabel)}`);
+  else if (over) cells.push('<b>Mission complete</b> · the record stays');
+  else {
+    cells.push(`<b>SOL ${String(m.clampedDay).padStart(2, '0')}/${String(m.totalDays).padStart(2, '0')}</b>`);
+    const say = (t) => `${esc(t.time)} · ${esc(t.label)}${t.detail ? ` — ${esc(t.detail)}` : ''}`;
+    cells.push(`The crew are currently: <b id="tk-now">${nowTask ? say(nowTask) : 'off the schedule'}</b>`);
+    cells.push(`Next: <b id="tk-next">${nextTask ? say(nextTask) : 'nothing more today'}</b>`);
+  }
+  cells.push(`Habitat: <b id="tk-hab">awaiting reading</b>`);
+  cells.push(`One-way signal <b>${orbital.formatLightTime(ctx.geo.lightSeconds)}</b>`);
+  const line = cells.map((c) => `<span class="tk-cell">${c}</span>`).join('<span class="tk-sep">·</span>');
+  return `
+  <div class="ticker" role="marquee" aria-label="What is happening in the habitat"
+       data-tz="${esc(m.timezone)}" data-tasks="${esc(JSON.stringify(tasks))}"${over ? ' data-over="1"' : ''}>
+    <div class="tk-clock"><span class="tk-clock-label">HABITAT TIME</span> <b id="tk-clock">${esc(m.venueTime)}</b></div>
+    <div class="tk-window"><div class="tk-track" id="tk-track"><div class="tk-line">${line}</div><div class="tk-line" aria-hidden="true">${line}</div></div></div>
+  </div>
+  <script>
+  (function () {
+    var el = document.querySelector('.ticker');
+    if (!el) return;
+    var tz = el.getAttribute('data-tz') || 'Europe/Berlin';
+    function fmt(opts) { return new Intl.DateTimeFormat('en-GB', Object.assign({ timeZone: tz, hour12: false }, opts)).format(new Date()); }
+    var clock = document.getElementById('tk-clock');
+    function tick() { try { clock.textContent = fmt({ hour: '2-digit', minute: '2-digit', second: '2-digit' }); } catch (e) { /* keep the server's */ } }
+    setInterval(tick, 1000); tick();
+    // After the run nothing is updated by automation: the clock still ticks,
+    // but the schedule and the readings are never asked for again.
+    var over = el.getAttribute('data-over') === '1';
+    if (over) return;
+    var all = function (sel) { return [].slice.call(el.querySelectorAll(sel)); };
+    var tasks = [];
+    try { tasks = JSON.parse(el.getAttribute('data-tasks') || '[]'); } catch (e) { /* none */ }
+    function say(t) { return t.time + ' \u00b7 ' + t.label + (t.detail ? ' \u2014 ' + t.detail : ''); }
+    function retask() {
+      var at = fmt({ hour: '2-digit', minute: '2-digit' }), nowT = null, nextT = null;
+      tasks.forEach(function (t) { if (t.time <= at) nowT = t; else if (!nextT) nextT = t; });
+      all('[id="tk-now"]').forEach(function (n) { n.textContent = nowT ? say(nowT) : 'off the schedule'; });
+      all('[id="tk-next"]').forEach(function (n) { n.textContent = nextT ? say(nextT) : 'nothing more today'; });
+    }
+    var timers = [];
+    function stop() { timers.forEach(clearInterval); timers = []; }
+    retask(); timers.push(setInterval(retask, 30000));
+    // Every hour the schedule is fetched again, so a day edited in mission
+    // control — or midnight turning the page to a new day — reaches every
+    // open phone without a reload.
+    function refetch() {
+      fetch('/api/ticker', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+        if (d.phase === 'COMPLETE') { stop(); return; }   // the run has ended under this open page
+        if (Array.isArray(d.tasks)) { tasks = d.tasks; retask(); }
+      }).catch(function () { /* next hour */ });
+    }
+    timers.push(setInterval(refetch, 60 * 60 * 1000));
+    function reading() {
+      fetch('/api/habitat/data?days=1', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+        var rows = d.rows || [], last = rows[rows.length - 1];
+        var fresh = last && (Date.now() - last.t) <= 30 * 60 * 1000;
+        var text = 'no current reading';
+        if (fresh) {
+          var bits = [];
+          if (last.temp != null) bits.push(last.temp.toFixed(1) + ' \u00b0C');
+          if (last.hum != null) bits.push(Math.round(last.hum) + ' %');
+          if (last.co2 != null) bits.push('CO\u2082 ' + Math.round(last.co2) + ' ppm');
+          if (bits.length) text = bits.join(' \u00b7 ');
+        }
+        all('[id="tk-hab"]').forEach(function (n) { n.textContent = text; });
+      }).catch(function () { /* next cycle */ });
+    }
+    reading(); timers.push(setInterval(reading, 5 * 60 * 1000));
+  })();
+  </script>`;
+}
+
 function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = [], crewFigures = {},
+                        power = { categories: [], days: {} },
                         inFlight = null, error = null, draft = '',
                         allDays = [], logDays = [], entryCounts = { published: 0, days: 0 }, ingest = [],
                         media = [], mediaCounts = { total: 0, bytes: 0 }, mediaLookup = () => null }) {
@@ -288,7 +405,7 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
   /* The masthead: the wordmark, one line under it, the run, and the
      station's readings as a row of small pills on the right — shared with
      every other public page so they read as one station. */
-  const hero = L.masthead(ctx, { home: true });
+  const hero = ticker(ctx, { today }) + L.masthead(ctx, { home: true });
 
   /* The days of the run, spelled down the right-hand margin. */
   const dayRail = `<aside class="day-rail" aria-hidden="true">
@@ -297,7 +414,7 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
       const cls = pre ? '' : n === now ? 'now' : n < now ? 'past' : '';
       return `${i ? `<i class="${!pre && n <= now ? 'past' : ''}"></i>` : ''}<span class="${cls}">${String(n).padStart(2, '0')}</span>`;
     }).join('')}
-    <span class="day-rail-cap">${pre ? 'Days' : 'Mission day'}</span>
+    <span class="day-rail-cap">SOL</span>
   </aside>`;
 
   const body = `
@@ -335,8 +452,6 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
             <h2>Message Board</h2>
             <span class="live" id="feed-live" title="The board refreshes itself every few seconds">LIVE</span>
           </div>
-          <p class="feed-note" id="feed-mine-note" hidden>Messages still awaiting the crew are
-            visible only to you. They join the board once mission control has approved them.</p>
           <div class="scroller feed"><div class="cards" id="feed-cards">${boardCards(recent)}
             <div class="empty" id="feed-empty"${recent.length ? ' style="display:none"' : ''}
               data-none="Nothing transmitted yet — the first message could be yours"
@@ -359,7 +474,7 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
     ${dayRail}
   </div>
 
-  ${dashboard(ctx, { crew, today, counts, crewFigures, allDays, logDays, entryCounts, ingest, media, mediaCounts, mediaLookup })}
+  ${dashboard(ctx, { crew, today, counts, crewFigures, power, allDays, logDays, entryCounts, ingest, media, mediaCounts, mediaLookup })}
   `;
   return L.page({
     title: 'Mission', ctx, body, hero, hideNav: true, hideRail: true, bodyClass: 'landing',
@@ -474,7 +589,7 @@ const dpanel = ({ id, code, title, meta = '', span = 4, cls = '', href = null },
  * whole mission — laid out on one twelve-column grid, nothing hidden behind
  * a tab.
  */
-function dashboard(ctx, { crew, today, counts, crewFigures, allDays, logDays, entryCounts, ingest = [], media = [], mediaCounts = { total: 0, bytes: 0 }, mediaLookup = () => null }) {
+function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories: [], days: {} }, allDays, logDays, entryCounts, ingest = [], media = [], mediaCounts = { total: 0, bytes: 0 }, mediaLookup = () => null }) {
   const m = ctx.mission, g = ctx.geo;
   const pre = m.phase === 'PRE_LAUNCH';
   const slotName = { BREAKFAST: 'Breakfast', LUNCH: 'Lunch', DINNER: 'Dinner', RATION: 'Ration' };
@@ -484,42 +599,30 @@ function dashboard(ctx, { crew, today, counts, crewFigures, allDays, logDays, en
   /* ---- headline figures */
   const moods = crew.map((c) => mood.translate(c.mood));
   const strained = moods.filter((t) => t.load > 65).length;
-  const drawn = inventory.filter((i) => i.consumption > 0)
-    .map((i) => ({ ...i, daysLeft: i.quantity / i.consumption }))
-    .sort((a, b) => a.daysLeft - b.daysLeft);
-  const lowest = drawn[0];
   const tasks = today ? today.tasks : [];
   const done = tasks.filter((t) => t.status === 'DONE').length;
 
   const kpis = [
-    kpi({ label: 'Mission day', value: pre ? `T−${m.countdown.days}` : String(m.clampedDay).padStart(2, '0'),
-          unit: pre ? 'days' : `/ ${String(m.totalDays).padStart(2, '0')}`,
-          sub: pre ? `Opens ${esc(m.startLabel)}` : `${m.totalDays - m.clampedDay} day${m.totalDays - m.clampedDay === 1 ? '' : 's'} remaining` }),
-    kpi({ label: 'One-way signal', value: orbital.formatLightTime(g.lightSeconds),
-          sub: `${g.distanceAu.toFixed(3)} au · ${esc(g.trend.toLowerCase())}` }),
-    kpi({ label: 'Exchanges', value: String(counts.published), sub: `${counts.total} sent · ${counts.total - counts.published} in hand` }),
-    kpi({ label: 'Uplink', value: ctx.commsUp ? 'Nominal' : 'Degraded', state: ctx.commsUp ? 'ok' : 'warn',
-          sub: `<span class="dot ${ctx.commsUp ? 'ok' : 'warn'}"></span> CH-09 · ${ctx.commsUp ? 'holding' : 'unreachable'}` }),
+    kpi({ label: 'SOL', value: pre ? `T−${m.countdown.days}` : String(m.clampedDay).padStart(2, '0'),
+          unit: pre ? 'sols' : `/ ${String(m.totalDays).padStart(2, '0')}`,
+          sub: pre ? `Opens ${esc(m.startLabel)}` : `${m.totalDays - m.clampedDay} sol${m.totalDays - m.clampedDay === 1 ? '' : 's'} remaining` }),
     kpi({ label: 'Crew', value: String(crew.length),
           sub: strained ? `${strained} under strain` : 'all nominal', state: strained ? 'warn' : '' }),
-    kpi({ label: 'Tightest reserve', value: lowest ? (lowest.daysLeft < 99 ? lowest.daysLeft.toFixed(1) : '99+') : '—',
-          unit: lowest ? 'days' : '', sub: lowest ? esc(lowest.label) : 'no draw recorded',
-          state: lowest && lowest.warn_below > 0 && lowest.quantity <= lowest.warn_below ? 'warn' : '' }),
   ].join('');
 
   /* ---- the run as a strip */
-  const strip = `<div class="run-strip" aria-label="The days of the run">${
+  const strip = `<div class="run-strip" aria-label="The sols of the run">${
     Array.from({ length: m.totalDays }, (_, i) => {
       const n = i + 1;
       const cls = pre ? '' : n < m.clampedDay ? 'past' : n === m.clampedDay ? 'now' : '';
       const d = allDays.find((x) => x.missionDay === n);
-      return `<div class="${cls}"><span class="run-n">${String(n).padStart(2, '0')}</span><i></i>
+      return `<div class="${cls}"><span class="run-n">SOL ${String(n).padStart(2, '0')}</span><i></i>
         <span class="run-d">${d ? esc(shortDay(d.date)) : ''}</span></div>`;
     }).join('')}</div>`;
 
   /* ---- panels */
   const schedule = dpanel({ id: 'schedule', code: 'CH-30', title: 'Today’s Schedule',
-    meta: `Day ${day3} · ${done}/${tasks.length} done`, span: 4, cls: 'h-3 scroll' },
+    meta: `SOL ${day3} · ${done}/${tasks.length} done`, span: 4, cls: 'h-3 scroll' },
     tasks.length ? `<div class="rows">${tasks.map((t) => `
       <div class="row ${t.status === 'DONE' ? 'done' : ''} ${t.status === 'ACTIVE' ? 'active' : ''}">
         <div class="t">${esc(t.time)}</div>
@@ -538,22 +641,88 @@ function dashboard(ctx, { crew, today, counts, crewFigures, allDays, logDays, en
   const items = inventory.length ? inventory : ((allDays[0] || {}).inventory || []);
   const upTo = (n) => !pre && n <= m.clampedDay;
   const dateOf = (n) => (allDays[n - 1] || {}).date;
-  const byDay = (fn) => {
-    const points = {};
-    for (const n of dayN) { if (!upTo(n)) continue; const v = fn(n); if (v != null) points[dateOf(n)] = v; }
-    return points;
+  // Each series is two maps of venue date → value: `points`, the days that
+  // have happened, and — for anything prepared in advance — `planned`, the
+  // days still ahead, which the graph draws dashed until the real figure
+  // replaces them. Counts of what happened (messages, tasks done) have no
+  // planned side.
+  // `points` is keyed by venue date — the days that have happened. `planned`
+  // is keyed by SOL (mission day 1–13), for anything prepared in advance, so
+  // the graph can lay the run's plan over whichever fortnight it is showing;
+  // a real point on the same SOL takes its place. Counts of what happened
+  // (messages, tasks done) have no planned side.
+  const byDay = (fn, { ahead = false } = {}) => {
+    const points = {}, planned = {};
+    for (const n of dayN) {
+      const v = fn(n);
+      if (v == null) continue;
+      if (upTo(n)) points[dateOf(n)] = v;
+      if (ahead) planned[n] = v;
+    }
+    return { points, planned };
   };
   const rowOf = (n, key) => { const d = allDays[n - 1]; return d && d.inventory ? d.inventory.find((i) => i.key === key) : null; };
-  const level = (key) => byDay((n) => { const r = rowOf(n, key); return r ? r.quantity : null; });
+  const level = (key) => byDay((n) => { const r = rowOf(n, key); return r ? r.quantity : null; }, { ahead: true });
+  const use = (key) => byDay((n) => { const r = rowOf(n, key); return r ? r.consumption : null; }, { ahead: true });
+  // The day's meals, summed: what the plan cost in energy, water and power.
+  const mealSum = (field) => byDay((n) => { const d = allDays[n - 1]; return d && d.meals.length ? d.meals.reduce((s, x) => s + (x[field] || 0), 0) : null; }, { ahead: true });
+  const figure = (k) => byDay((n) => (crewFigures[String(n)] || {})[k] ?? null, { ahead: true });
+  // What happened each day: the schedule worked through, the traffic from
+  // Earth, what the crew wrote and sent out.
+  const act = data.dailyActivity();
+  const tasksDone = byDay((n) => { const d = allDays[n - 1]; return d && d.tasks.length ? d.tasks.filter((t) => t.status === 'DONE').length : null; });
+  const written = byDay((n) => { const d = logDays[n - 1]; return d ? d.written : null; });
+  const count = (k) => byDay((n) => (act[n] || {})[k] || 0);
+  /* The axis of the trend graph. During and after the run it is the run,
+     SOL 01 to 13 — and so it is before the run once Reset to 15 October has
+     been pressed. Until then, after a fresh build, it starts on the build
+     day and runs thirteen days from there, so what the node sends now is on
+     the graph from today. */
+  let axis = { start: m.start_date, end: m.end_date, run: true };
+  let fromBuild = false;
+  try { fromBuild = require('../../lib/critical').floorMode() === 'build'; } catch { /* the run */ }
+  if (pre && fromBuild) {
+    let anchor = m.today;
+    try { anchor = missionLib.localDate(new Date(require('../../lib/critical').anchorMs()), m.timezone); } catch { /* today */ }
+    if (anchor > m.today) anchor = m.today;
+    const end = new Date(Date.parse(anchor + 'T00:00:00Z') + 12 * 86400000).toISOString().slice(0, 10);
+    axis = { start: anchor, end: end < m.start_date ? end : m.start_date, run: false };
+    if (axis.end < axis.start) axis.end = axis.start;
+  }
   const trendSpec = {
     series: [
       ...ingest.map((c) => ({ id: 'ingest-' + c.metric, name: c.label, unit: c.unit, group: 'Habitat', domain: c.domain, points: c.points })),
       ...items.map((it) => ({ id: 'store-' + it.key, name: it.label, unit: it.unit, group: 'Resources',
-        scaleMax: it.start_quantity || it.quantity || 1, points: level(it.key) })),
-      { id: 'calories', name: 'Calories consumed', unit: 'kcal', group: 'Crew', points: byDay((n) => (crewFigures[String(n)] || {}).calories ?? null) },
-      { id: 'steps', name: 'Steps taken', unit: 'steps', group: 'Crew', points: byDay((n) => (crewFigures[String(n)] || {}).steps ?? null) },
+        scaleMax: it.start_quantity || it.quantity || 1, ...level(it.key) })),
+      ...items.map((it) => ({ id: 'use-' + it.key, name: it.label + ' use', unit: it.unit + '/day', group: 'Daily use', ...use(it.key) })),
+      ...power.categories.map((c) => ({ id: 'pwr-' + c.key, name: 'Power · ' + c.label, unit: 'kWh', group: 'Power',
+        ...byDay((n) => (power.days[String(n)] || {})[c.key] ?? null, { ahead: true }) })),
+      { id: 'pwr-total', name: 'Power · all categories', unit: 'kWh', group: 'Power',
+        ...byDay((n) => { const d = power.days[String(n)]; if (!d) return null;
+          const vals = power.categories.map((c) => d[c.key]).filter((v) => v != null);
+          return vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) * 100) / 100 : null; }, { ahead: true }) },
+      { id: 'meal-kcal', name: 'Meals energy', unit: 'kcal', group: 'Meals', ...mealSum('kcal') },
+      { id: 'meal-water', name: 'Meals water', unit: 'L', group: 'Meals', ...mealSum('water_litres') },
+      { id: 'meal-power', name: 'Meals power', unit: 'Wh', group: 'Meals', ...mealSum('energy_wh') },
+      { id: 'calories', name: 'Calories consumed', unit: 'kcal', group: 'Crew', ...figure('calories') },
+      { id: 'steps', name: 'Steps taken', unit: 'steps', group: 'Crew', ...figure('steps') },
+      { id: 'act-tasks', name: 'Tasks done', unit: '', group: 'Activity', ...tasksDone },
+      { id: 'act-messages', name: 'Messages from Earth', unit: '', group: 'Activity', ...count('messages') },
+      { id: 'act-exchanges', name: 'Exchanges published', unit: '', group: 'Activity', ...count('exchanges') },
+      { id: 'act-entries', name: 'Crew log entries', unit: '', group: 'Activity', ...written },
+      { id: 'act-media', name: 'Media sent out', unit: '', group: 'Activity', ...count('media') },
     ],
   };
+  // Once Reset to 15 October has been pressed (or the floor is pinned), the
+  // graph carries no plan: every day ahead is null and fills in as the crew
+  // file it. Only a fresh build, before the reset, still shows the dashed
+  // prepared lines — useful while the mission is being written.
+  if (!fromBuild) for (const s of trendSpec.series) s.planned = {};
+
+  // The day the power tile shows: today during the run, day 1's plan before it.
+  const pwrDay = pre ? 1 : m.clampedDay;
+  const pwrOf = power.days[String(pwrDay)] || {};
+  const powerToday = power.categories.map((c) => ({ ...c, kwh: pwrOf[c.key] ?? null }));
 
   const habitat = dpanel({ id: 'habitat', code: 'CH-01', title: 'Habitat', meta: 'Sensor node · measured live · figures and stores counted by the crew', span: 12, cls: 'compact' }, `
     <!-- The Sensor-11 dashboard. The station server polls the external feed and
@@ -604,17 +773,21 @@ function dashboard(ctx, { crew, today, counts, crewFigures, allDays, logDays, en
           <span class="sub">Carried in · never resupplied</span>
           ${inventoryGauges(inventory, { cells: true })}
         </section>
+        <section class="tile t-pwr">
+          <h3>Power consumed</h3>
+          <span class="sub">${pre ? 'Planned for day 01' : `Today · SOL ${String(m.clampedDay).padStart(2, '0')}`} · counted by the crew · kWh</span>
+          ${powerBars(powerToday)}
+        </section>
       </div>
       <div id="hbt-notes"></div>
-      <div class="empty" id="hbt-empty">Waiting for the first read from the sensor node…</div>
     </div>`);
 
   /* ---- every trend as a chart: the habitat's channels, each store, the
      crew's counts. habitat.js draws them from the spec above plus its own
      Sensor-11 rows, and redraws when the period selector changes. */
   const trends = dpanel({ id: 'trends', code: 'CH-40', title: 'Trends',
-    meta: 'The last 15 days on one graph · each line on its own scale, named at its end · today at the right', span: 12 }, `
-    <div class="trends" id="hbt-trends" data-date="${esc(m.today)}" data-spec="${esc(JSON.stringify(trendSpec))}">
+    span: 12 }, `
+    <div class="trends" id="hbt-trends" data-date="${esc(m.today)}" data-day-start="${missionLib.venueMidnightUtc(m.today, m.timezone)}" data-axis-start="${esc(axis.start)}" data-axis-end="${esc(axis.end)}" data-axis-run="${axis.run ? '1' : '0'}" data-spec="${esc(JSON.stringify(trendSpec))}">
       <div id="hbt-tcharts"></div>
     </div>`);
 
@@ -716,7 +889,13 @@ function dashboard(ctx, { crew, today, counts, crewFigures, allDays, logDays, en
     <div class="kpis">${kpis}</div>
     ${strip}
     <div class="dash-grid">
-      ${schedule}${galley}${crewPanel}${habitat}${trends}${log}${mediaPanel}${whole}
+      ${schedule}${galley}${crewPanel}
+      <a class="glance-link" href="/at-a-glance">
+        <span class="glance-link-title">At a Glance</span>
+        <span class="glance-link-sub">The whole mission, day by day — blogs, meals, consumption, habitat, crew condition and every exchange</span>
+        <span class="glance-link-arrow">-&gt;</span>
+      </a>
+      ${habitat}${trends}
     </div>
   </section>`;
 }
