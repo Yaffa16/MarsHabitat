@@ -226,7 +226,7 @@ whichever suits the moment and it is live on the station within seconds:
 | Power consumed, by category | `content/power.json`: `"5": { "heating": 1.1, "food": 0.5, "lighting": 0.35, "electronics": 0.45, "other": 0.1 }` — kWh per day. The `categories` list above the days is editable too: rename a label, add or remove one; the key is the stable name in the record | **Habitat** → Power, day picker on the day; the name fields rename the categories everywhere |
 | Today's schedule | `content/schedule.json`: per day, `{ "time": "06:45", "label": "…", "detail": "…" }`; task status (done, active, skipped) is marked on the tab as the day runs | **Habitat** → Schedule |
 | Meals | `content/meals.json`: per day, slots BREAKFAST / LUNCH / DINNER / RATION with `kcal`, `water`, `prep`, `energy` | **Habitat** → Food plan |
-| Mission notes | `content/notes.json`: per day, `{ "kind": "LOG" \| "ANOMALY" \| "BROADCAST", "body": "…" }` | `POST /control/updates` (the notes composer) |
+| Mission notes | `content/notes.json`: per day, `{ "kind": "LOG" \| "ANOMALY", "body": "…" }` | `POST /control/updates` (the notes composer) |
 | Blogs, findings, activities | written over the placeholders in `content/logbook.json` / `notes.json` | each officer's tab |
 
 **Before the run, At a Glance opens on a rehearsal page.** Marked `REHEARSAL · NOT THE RECORD`
@@ -254,7 +254,7 @@ the running station.
 | `inventory-levels.json` | What is left of each resource at the end of each day |
 | `power.json` | Power consumed per day in kWh, split by editable categories (heating, food, lighting, electronics, other as shipped) — drawn on the Habitat panel, in At a Glance, in the Trends and throughout the record |
 | `logbook.json` | The crew's diary entries, by day and crew member |
-| `notes.json` | Mission notes, science findings, health activities, anomalies and broadcasts |
+| `notes.json` | Mission notes, science findings, health activities and anomalies |
 | `sensors.json` | The monitored channels, with units, channel codes and thresholds |
 | `templates.json` | The prefilled text of the daily health activities (the `Default` entry under `HEALTH`) |
 

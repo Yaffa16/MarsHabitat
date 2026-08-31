@@ -129,27 +129,50 @@
   }
 
   /* -------------------------------------------------- tile 1: the dial */
+  /* The dial is a 24-hour cycle: the ring is the day, midnight at the top,
+     and each reading sits at its time-of-day angle — 06:00 to the right,
+     12:00 at the bottom, 18:00 to the left — with its value as the spoke's
+     length. The day fills the ring as it goes, so the daily rhythm of the
+     CO2 (sleep, work, visitors) reads directly off the clock face. */
   function renderDial(view) {
     var ch = chan('co2');
     var host = $('hbt-dial'); host.innerHTML = '';
     var S = 320, C = S / 2, R0 = 92, RMAX = 148;
-    var svg = svgRoot(S, S, { 'aria-label': 'CO2 readings around the window' });
+    var svg = svgRoot(S, S, { 'aria-label': 'CO2 readings over the 24-hour cycle, midnight at the top' });
+
+    // The clock face: the ring, a tick per hour, the quarters labelled.
+    svg.appendChild(el('circle', { cx: C, cy: C, r: R0 - 10, fill: 'none', stroke: HAIR, 'stroke-width': 1 }));
+    var day0 = dayStart(), DAY = 86400000;
+    var rad = function (frac) { return (-90 + 360 * frac) * Math.PI / 180; };
+    for (var h = 0; h < 24; h++) {
+      var a0 = rad(h / 24), q = h % 6 === 0;
+      svg.appendChild(el('line', {
+        x1: C + Math.cos(a0) * (R0 - 10), y1: C + Math.sin(a0) * (R0 - 10),
+        x2: C + Math.cos(a0) * (R0 - (q ? 18 : 14)), y2: C + Math.sin(a0) * (R0 - (q ? 18 : 14)),
+        stroke: HAIR, 'stroke-width': q ? 1.4 : 1
+      }));
+      if (q) {
+        var lx = C + Math.cos(a0) * (R0 - 28), ly = C + Math.sin(a0) * (R0 - 28);
+        var lbl = el('text', { x: lx, y: ly + 3, 'text-anchor': 'middle', fill: INK, opacity: '.45',
+          'font-family': 'ui-monospace, monospace', 'font-size': '9', 'letter-spacing': '.08em' });
+        lbl.textContent = (h < 10 ? '0' : '') + h;
+        svg.appendChild(lbl);
+      }
+    }
 
     var pts = view.filter(function (r) { return r.co2 !== null; });
     if (!pts.length) { host.appendChild(svg); return; }
-    if (pts.length > 96) {
-      var stride = Math.ceil(pts.length / 96);
+    if (pts.length > 144) {
+      var stride = Math.ceil(pts.length / 144);
       pts = pts.filter(function (_, i) { return i % stride === 0 || i === pts.length - 1; });
     }
     var vals = pts.map(function (p) { return p.co2; });
     var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
     var norm = function (v) { return hi === lo ? 0.45 : (v - lo) / (hi - lo); };
 
-    svg.appendChild(el('circle', { cx: C, cy: C, r: R0 - 10, fill: 'none', stroke: HAIR, 'stroke-width': 1 }));
-
-    var sweep = 344, start = -90;
     pts.forEach(function (p, i) {
-      var a = (start + (pts.length === 1 ? 0 : sweep * i / (pts.length - 1))) * Math.PI / 180;
+      // The reading's place on the clock: its time of day, midnight at the top.
+      var a = rad(Math.min(1, Math.max(0, (p.t - day0) / DAY)));
       var len = R0 + 8 + norm(p.co2) * (RMAX - R0 - 12);
       var hot = isHot(ch, p.co2);
       var col = hot ? ALERT : ACCENT;
@@ -172,8 +195,8 @@
     $('co2Val').classList.toggle('hot', hotNow);
     $('co2Verdict').textContent = hotNow ? 'Over ' + ch.alertAbove + ' ppm' : 'Within limit';
     $('co2Verdict').classList.toggle('hot', hotNow);
-    $('co2Sub').textContent = pts.length + ' readings · ' + Math.round(lo) + '–' + Math.round(hi) +
-      ' ppm today · limit ' + ch.alertAbove + ' ppm';
+    $('co2Sub').textContent = 'The ring is the day, midnight at the top · ' + pts.length + ' readings · ' +
+      Math.round(lo) + '–' + Math.round(hi) + ' ppm today · limit ' + ch.alertAbove + ' ppm';
   }
 
   /* ------------------------------------------------- tile 2: the ruler */

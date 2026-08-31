@@ -490,8 +490,15 @@ button:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; transform
 .transit .state { font-family: var(--mono); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--dim); }
 .transit .state b { color: var(--ink); font-weight: 700; }
 .transit .clock {
-  font-family: var(--mono); font-size: clamp(44px, 6vw, 72px); font-weight: 500;
+  font-family: var(--mono); font-size: clamp(34px, 5vw, 56px); font-weight: 500;
   line-height: 1; margin: 6px 0 18px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
+  max-width: 100%;
+}
+/* Size the clock against its own column, not the viewport, wherever
+   container queries exist — "T-00:11" then always fits the box. */
+@supports (font-size: 1cqi) {
+  .transit-read { container-type: inline-size; }
+  .transit .clock { font-size: clamp(30px, 19cqi, 64px); }
 }
 .transit.done .clock { color: var(--orange); }
 .honesty {
@@ -991,7 +998,7 @@ button.primary:active { transform: translateY(2px); }
    over it. */
 .dev-stage { position: relative; flex: 1 1 auto; display: flex; flex-direction: column; }
 .composer.ghost { visibility: hidden; pointer-events: none; }
-.dev-stage .transit-block { position: absolute; inset: 0; }
+.dev-stage .transit-block { position: absolute; inset: 0; overflow: hidden; }
 
 /* ---------------------------------------------------------------- crossing */
 /* The transmission as a dial: a dark screen behind glass, Earth at the foot,
@@ -1016,7 +1023,7 @@ button.primary:active { transform: translateY(2px); }
 .xdial-word { font-family: var(--mono); font-size: 10px; letter-spacing: 0.42em; fill: var(--orange); text-anchor: middle; text-transform: uppercase; }
 .transit.done .xdial-word { fill: #d9ecff; }
 .transit.done .xdial-trail { filter: none; }
-.transit-read { min-width: 0; }
+.transit-read { min-width: 0; overflow: hidden; }
 .transit .tbar { height: 8px; border-radius: 4px; background: var(--ground-2); box-shadow: var(--sh-inset); overflow: hidden; margin-bottom: 18px; }
 .transit .tbar i { display: block; height: 100%; width: 0; border-radius: 4px; background: linear-gradient(90deg, var(--orange-deep), var(--orange)); box-shadow: 0 0 10px rgba(255,106,26,.5); transition: width 200ms linear; }
 @media (max-width: 760px) { .transit-block { grid-template-columns: minmax(0, 1fr); gap: 22px; } .xdial { max-width: 300px; margin: 0 auto; } }
@@ -1523,13 +1530,27 @@ body.landing .foot { margin-top: 44px; margin-bottom: 44px; }
   .status { width: 100%; justify-content: flex-start; }
   .dev-stage .transit-block { position: static; }
   .dev-stage .composer.ghost { display: none; }
-  .device { padding: 62px 20px 24px; }
+  .device { padding: 48px 16px 18px; }
   .dev-knob { display: none; }
-  .dev-head { margin-top: -22px; }
-  .composer .msgbox textarea { min-height: 200px; padding: 18px 18px 34px; font-size: 16px; }
+  .dev-head { margin-top: -14px; }
+  /* The composer, compact: writing and the board sit together on a phone —
+     a comfortable box to type in, the tags one thumb-scrollable row, the
+     note short, TRANSMIT full width, and the Message Board directly under
+     it rather than a whole screen of scrolling away. */
+  .composer .msgbox textarea { min-height: 132px; padding: 16px 16px 32px; font-size: 16px; }
   .composer button.primary { width: 100%; justify-content: center; }
+  .composer .tagbar { margin-top: 14px; }
   .composer .tagbar .lbl { flex-basis: 100%; line-height: 1; }
+  .composer .tagbar .tags { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px;
+    padding-bottom: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .composer .tagbar .tags::-webkit-scrollbar { display: none; }
+  .composer .tagbar .tags label { flex: none; }
+  .composer hr { margin: 14px 0 12px; }
+  .composer .dev-foot { gap: 10px; }
+  .composer .dev-foot .note { font-size: 11px; line-height: 1.45; }
+  .portal-grid { gap: 10px; }
   .board { padding: 20px 18px 14px; }
+  .board .scroller { max-height: 62vh; }
   .dayplan { padding: 16px; }
   .dp-inner { padding: 14px 16px; }
 }

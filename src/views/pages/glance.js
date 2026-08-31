@@ -315,7 +315,7 @@ function page(ctx, { records, rehearsal = null }) {
     function indexOfDay(d) { for (var k = 0; k < pages.length; k++) if (dayOf(pages[k]) === d) return k; return 0; }
     function mark() {
       var i = current(), d = dayOf(pages[i]);
-      if (counter) counter.textContent = d === 0 ? 'REHEARSAL · TODAY, BEFORE THE RUN'
+      if (counter) counter.textContent = d === 0 ? 'REHEARSAL \u00b7 TODAY, BEFORE THE RUN'
         : 'SOL ' + String(d).padStart(3, '0') + ' / ' + String(${m.totalDays}).padStart(3, '0');
       if (strip) [].forEach.call(strip.children, function (a) { a.classList.toggle('on', Number(a.getAttribute('data-day')) === d); });
       if (history.replaceState) history.replaceState(null, '', d === 0 ? '#today' : '#day-' + d);

@@ -961,6 +961,8 @@ grep -q "data-axis-run" public/habitat.js && grep -q "win.run ? (s.planned" publ
 grep -q "No current reading from the sensor node" public/habitat.js && grep -q "carries no readings for node" public/habitat.js && ok "the habitat panel explains empty tiles instead of showing dashes" || bad "no explanation for empty tiles"
 grep -q "function clearTiles" public/habitat.js && grep -q "!isCurrent()" public/habitat.js && grep -q "staleAfterMs: 30 \* 60 \* 1000" public/habitat.js && grep -q "newest >= dayStart()" public/habitat.js \
   && ok "the tiles show today's readings only while the newest is under thirty minutes old — otherwise nothing" || bad "stale or yesterday's readings would be shown as live"
+grep -q "midnight at the top" public/habitat.js && grep -q "(p.t - day0) / DAY" public/habitat.js \
+  && ok "the CO₂ dial is a 24-hour cycle — each reading at its time-of-day angle, midnight at the top" || bad "the CO₂ dial is not on the 24-hour clock"
 curl -s $B/ | grep -q 'data-day-start="[0-9]' && ok "the page carries the venue's midnight, so today is the venue's today on every phone" || bad "no day start on the page"
 grep -q "CRITICAL_SENSOR_ID" docker-compose.yml && grep -q "READINGS_DAYS_BEFORE" docker-compose.yml && ok "the feed and readings settings in .env reach the container" || bad "compose does not pass the feed settings through"
 # a newly built image starts the readings from today (midnight at the venue); the same image again does not move them

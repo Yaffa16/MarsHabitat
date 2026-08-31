@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS day_note (
   id           INTEGER PRIMARY KEY,
   mission_day  INTEGER NOT NULL REFERENCES day(mission_day) ON DELETE CASCADE,
   body         TEXT NOT NULL,
-  kind         TEXT NOT NULL DEFAULT 'LOG',     -- LOG | ANOMALY | BROADCAST
+  kind         TEXT NOT NULL DEFAULT 'LOG',     -- LOG | ANOMALY
   posted_at    TEXT NOT NULL,
   published_at TEXT
 );

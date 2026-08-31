@@ -1023,7 +1023,7 @@ function archive(ctx, { messages, filters, stats }) {
     </div>
   </form>
 
-  ${messages.length ? `<div class="cards">${messages.map(messageCard).join('')}</div>`
+  ${messages.length ? `<div class="cards">${messages.map((m) => messageCard(m)).join('')}</div>`
     : '<div class="empty">No exchanges match these filters</div>'}`;
   return L.page({ title: 'Archive', ctx, body, current: '/archive' });
 }
