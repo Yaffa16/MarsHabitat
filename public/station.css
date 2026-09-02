@@ -12,6 +12,28 @@
    and colourblindness. Every stack is a system stack: nothing is fetched.
    ========================================================================== */
 
+/* ZKM Serendipity, self-hosted from public/fonts/ — nothing is fetched from
+   outside the station, so the venue can stay unplugged. Regular carries
+   100–500; Semibold stands in for everything bolder, so a `bold` never
+   renders as a synthetic double-stroke. */
+@font-face {
+  font-family: "ZKM Serendipity";
+  src: url("/fonts/ZKMSerendipity-Regular.woff2") format("woff2"),
+       url("/fonts/ZKMSerendipity-Regular.ttf") format("truetype");
+  font-weight: 100 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "ZKM Serendipity";
+  src: url("/fonts/ZKMSerendipity-Semibold.woff2") format("woff2"),
+       url("/fonts/ZKMSerendipity-Semibold.ttf") format("truetype");
+  font-weight: 600 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+
 :root {
   /* ground, slabs, wells, screens */
   --ground:      #e7e7e8;
@@ -65,12 +87,12 @@
   --ink-bright: var(--ink);
   --rule-bright: var(--rule-hard);
 
-  /* type: a heavy grotesque for the wordmark and headings, mono for every
-     code, label and value, a plain sans for reading. */
-  --display: "Helvetica Neue", Helvetica, Inter, "Segoe UI", Arial, sans-serif;
-  --mono: ui-monospace, "SF Mono", "JetBrains Mono", "IBM Plex Mono",
+  /* type: ZKM Serendipity everywhere — wordmark, headings, codes, labels,
+     values and reading prose alike — self-hosted, system stacks behind it. */
+  --display: "ZKM Serendipity", "Helvetica Neue", Helvetica, Inter, "Segoe UI", Arial, sans-serif;
+  --mono: "ZKM Serendipity", ui-monospace, "SF Mono", "JetBrains Mono", "IBM Plex Mono",
           "Cascadia Mono", Menlo, Consolas, monospace;
-  --sans: "Helvetica Neue", Helvetica, Inter, -apple-system, BlinkMacSystemFont,
+  --sans: "ZKM Serendipity", "Helvetica Neue", Helvetica, Inter, -apple-system, BlinkMacSystemFont,
           "Segoe UI", Roboto, Arial, sans-serif;
 
   --rail: 0px;
@@ -905,7 +927,7 @@ dialog.reset-dialog #reset-word { font-family: var(--mono); letter-spacing: 0.2e
 .composer .tagbar .lbl { font-size: 9px; color: var(--faint); margin-right: 8px; flex: none; }
 .composer .tagbar .tags { flex: 1 1 0; min-width: 0; }
 .composer hr { margin: 26px 0 22px; }
-.composer .dev-foot { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.composer .dev-foot { display: flex; align-items: center; justify-content: flex-end; gap: 20px; flex-wrap: wrap; }
 .composer .dev-foot .note { margin: 0; font-style: italic; }
 .composer button.primary { border-radius: 12px; padding: 16px 44px; font-size: 12.5px; letter-spacing: 0.24em; font-weight: 700; }
 button.primary:active { transform: translateY(2px); }
@@ -2145,3 +2167,30 @@ textarea.blog-box { min-height: 340px; font-size: 16px; line-height: 1.65; }
 .gc-line { fill: none; stroke: var(--ink); stroke-width: 1.4; stroke-linejoin: round; stroke-linecap: round; opacity: .55; }
 .gc-dot { fill: var(--orange); }
 @media (max-width: 760px) { .glance-charts { grid-template-columns: minmax(0, 1fr); } }
+
+/* ============================================================== ARCHIVE */
+/* The contents page: one card per download, so what each copy is and how to
+   take it read at a glance instead of from a wall of prose. */
+.dl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 6px; }
+.dl-card {
+  display: flex; flex-direction: column; gap: 8px; padding: 16px 16px 18px;
+  border-radius: 14px; background: var(--well); box-shadow: var(--sh-inset); min-width: 0;
+}
+.dl-card .fmt { font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--orange); }
+.dl-card h3 { margin: 0; font-size: 15.5px; letter-spacing: -0.01em; }
+.dl-card p { margin: 0 0 4px; font-size: 12.5px; color: var(--dim); flex: 1 1 auto; }
+.dl-card .btn { align-self: flex-start; }
+
+/* The day table: compact chip links per row, and days ahead kept quiet. */
+.daylist td { vertical-align: middle; }
+.day-links { display: inline-flex; gap: 5px; flex-wrap: wrap; }
+.day-links a {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+  font-weight: 600; padding: 5px 9px; border-radius: 8px; white-space: nowrap;
+  background: linear-gradient(180deg, var(--raise), var(--raise-2)); color: var(--ink);
+  box-shadow: var(--sh-raise-sm), inset 0 1px 0 var(--edge); text-decoration: none;
+}
+.day-links a:hover { color: var(--orange); }
+.ahead-row td { color: var(--faint); }
+.badge.ahead { color: var(--faint); border-style: dashed; }
+@media (max-width: 640px) { .dl-grid { grid-template-columns: minmax(0, 1fr); } .dl-card .btn { align-self: stretch; justify-content: center; } }

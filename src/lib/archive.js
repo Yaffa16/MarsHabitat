@@ -133,8 +133,9 @@ function index() {
         (SELECT COUNT(*) FROM message WHERE mission_day = ? AND state = 'PUBLISHED') messages,
         (SELECT COUNT(*) FROM task WHERE mission_day = ?) tasks,
         (SELECT COUNT(*) FROM meal WHERE mission_day = ?) meals,
-        (SELECT COUNT(*) FROM sensor_daily WHERE mission_day = ?) channels`
-    ).get(n, n, n, n, n);
+        (SELECT COUNT(*) FROM sensor_daily WHERE mission_day = ?) channels,
+        (SELECT COUNT(*) FROM media WHERE mission_day = ? AND hidden = 0) media`
+    ).get(n, n, n, n, n, n);
     out.push({
       missionDay: n, date: mission.dateForDay(n), ...c,
       isPast: n < st.missionDay, isToday: n === st.missionDay,

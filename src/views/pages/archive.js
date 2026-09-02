@@ -11,6 +11,23 @@ const dd = (n) => String(n).padStart(3, '0');
 /* ============================================================== CONTENTS */
 
 function contents(ctx, { days, counts, entryCounts }) {
+  const recorded = days.filter((d) => d.isPast || d.isToday);
+  const mediaTotal = days.reduce((s, d) => s + (d.media || 0), 0);
+
+  /* One download per card: what it is, what it is for, one button. */
+  const card = ({ fmt, title, blurb, href, label, primary }) => `
+    <div class="dl-card">
+      <div class="fmt">${esc(fmt)}</div>
+      <h3>${esc(title)}</h3>
+      <p>${esc(blurb)}</p>
+      <a class="btn${primary ? ' primary' : ''}" href="${href}" download>${esc(label)}</a>
+    </div>`;
+
+  const status = (d) => d.isToday ? '<span class="badge mars">Today</span>'
+    : !(d.isPast) ? '<span class="badge ahead">Ahead</span>'
+    : d.sealed ? '<span class="badge">Sealed</span>'
+    : '<span class="badge earth">Still open</span>';
+
   const body = `
   <div style="padding:30px 0 18px">
     <div class="eyebrow">Channel group 21 · Permanent record
@@ -19,75 +36,107 @@ function contents(ctx, { days, counts, entryCounts }) {
     <p class="lede">Everything this station has carried, kept day by day: what the crew were
     asked to do, what they ate, what they had left, what they wrote, how the habitat behaved,
     and every message that crossed the gap. Nothing here expires.</p>
-    <div class="actions"><a class="btn" href="/control">Back to messages</a>
-      <a class="btn" href="/archive/export.pdf">Download the full record (PDF)</a></div>
+    <div class="actions"><a class="btn" href="/control">Back to messages</a></div>
   </div>
 
   <div class="grid g4">
     ${[['Exchanges', counts.published], ['Crew entries', entryCounts.published],
-       ['Callsigns issued', counts.visitors], ['Days recorded', days.filter((d) => d.isPast || d.isToday).length]]
+       ['Callsigns issued', counts.visitors], ['Days recorded', recorded.length]]
       .map(([l, v]) => panel('', `<div class="readout"><div class="label">${l}</div>
         <div class="value">${v}</div></div>`)).join('')}
   </div>
 
+  ${panel('CH-21 / TAKE A COPY', `
+    ${eyebrow('Download the record')}
+    <div class="dl-grid">
+      ${card({ fmt: 'PDF · one document', title: 'The full record',
+        blurb: 'The whole mission, bookmarked by section and by day: schedules, meals, '
+          + 'inventory, the crew log with its photographs in place, every exchange, every '
+          + 'state filed, the correspondence in full and the audit trail.',
+        href: '/archive/export.pdf', label: 'Download PDF', primary: true })}
+      ${card({ fmt: 'Markdown · plain text', title: 'The readable copy',
+        blurb: 'Every day in order, as plain text. Opens in any editor, prints without a '
+          + 'stylesheet, and still makes sense with nothing left to render it.',
+        href: '/archive/export.md', label: 'Download .md' })}
+      ${card({ fmt: 'JSON · structured', title: 'The data copy',
+        blurb: 'The same record as one structured file, for machines: every day, every '
+          + 'exchange, and the media index with every file’s SHA-256.',
+        href: '/archive/export.json', label: 'Download .json' })}
+      ${card({ fmt: 'ZIP · raw readings', title: 'The readings log',
+        blurb: 'Every reading the station ever pulled or received, one JSON file per pull, '
+          + 'written the moment it arrived and never changed. It survives the reset.',
+        href: '/archive/readings.zip', label: 'Download ZIP' })}
+      ${card({ fmt: 'ZIP · originals', title: 'The media archive',
+        blurb: `Every photograph, video and sound file the crew sent out${mediaTotal
+          ? ` — ${mediaTotal} so far` : ''}, byte for byte as uploaded, with the manifest
+          and every file’s hash inside.`,
+        href: '/media/export.zip', label: 'Download ZIP' })}
+    </div>
+    <p class="note" style="margin-top:14px">A single day downloads from its row in the table
+    below, and from the top of its own page. Nothing here needs an account once saved:
+    every copy is complete in itself.</p>
+    <details class="fold">
+      <summary><span class="fold-title">What exactly is in each file</span></summary>
+      <div class="fold-body">
+        <p class="note">The PDF is the whole mission in one document: a contents page, the mission
+        and what was carried in, the trend charts across the run, every store's daily use, then
+        each day whole — schedule, meals, inventory, mission notes, the crew log with its
+        photographs in place and its video and sound listed, science findings and health
+        activities, every state filed, every exchange, what was sent out and the habitat
+        summary — followed by the complete correspondence including what was never published,
+        the media index with every file's SHA-256, and the audit trail. Bookmarked by section
+        and by day.</p>
+        <p class="note">The readable copy is plain Markdown: every day with its schedule, meals,
+        inventory, crew writing, states, exchanges and habitat summary, in order. It opens in any
+        text editor and still makes sense with nothing to render it.</p>
+        <p class="note">The readings log is every reading the station ever pulled or received — every poll of the
+        sensor node, every batch posted to the ingest endpoint, the stores and the crew's figures each time they
+        changed, each day's habitat summary — one JSON file per pull, written the moment it arrived and never
+        changed. It survives the reset. <code>index.json</code> inside lists every file.</p>
+        <p class="note">The media ZIP is stored, not compressed, and streamed as it goes, so the
+        whole mission is one download whatever it weighs. <code>manifest.json</code> and a
+        <code>README.txt</code> are inside; every file can be checked against its SHA-256.</p>
+      </div>
+    </details>`, 'mars-side')}
+
   ${panel('CH-21 / CONTENTS', `
     ${eyebrow('The mission, day by day')}
-    <div class="tw"><table>
-      <thead><tr><th>Day</th><th>Date</th><th>Schedule</th><th>Meals</th>
-        <th>Crew entries</th><th>Exchanges</th><th>Channels</th><th></th></tr></thead>
-      <tbody>${days.map((d) => `<tr${d.isToday ? ' style="box-shadow:inset 2px 0 0 var(--mars)"' : ''}>
+    <p class="note">Open a day to see it whole — or take just that day as a PDF or as
+    Markdown from its row. Days ahead join the record as they happen.</p>
+    <div class="tw"><table class="daylist">
+      <thead><tr><th>Day</th><th>Date</th><th>State</th>
+        <th>Crew entries</th><th>Exchanges</th><th>Media</th><th>Channels</th><th>Open · download</th></tr></thead>
+      <tbody>${days.map((d) => `<tr${d.isToday ? ' style="box-shadow:inset 2px 0 0 var(--mars)"' : ''}${
+          !(d.isPast || d.isToday) ? ' class="ahead-row"' : ''}>
         <td class="n">${dd(d.missionDay)}</td>
         <td>${esc(d.date)}</td>
-        <td class="n">${d.tasks || '—'}</td>
-        <td class="n">${d.meals || '—'}</td>
+        <td>${status(d)}</td>
         <td class="n">${d.entries || '—'}</td>
         <td class="n">${d.messages || '—'}</td>
+        <td class="n">${d.media || '—'}</td>
         <td class="n">${d.channels || '—'}</td>
-        <td>${d.isPast || d.isToday ? `<a href="/archive/day/${d.missionDay}">open</a>`
+        <td>${d.isPast || d.isToday ? `<span class="day-links">
+          <a href="/archive/day/${d.missionDay}">Open</a>
+          <a href="/archive/day/${d.missionDay}/export.pdf" download>PDF</a>
+          <a href="/archive/day/${d.missionDay}/export.md" download>MD</a>
+          ${d.media ? `<a href="/media/day/${d.missionDay}/export.zip" download>Media</a>` : ''}</span>`
           : '<span style="color:var(--faint)">not yet</span>'}</td>
       </tr>`).join('')}</tbody>
     </table></div>`)}
 
-  <div class="grid g2">
-    ${panel('CH-21 / BY CHANNEL', `
-      ${eyebrow('Jump into one strand')}
-      <p class="note">The same record, cut a different way.</p>
-      <p>
-        <a class="btn" href="/#exchanges">Every exchange</a>
-        <a class="btn" href="/logbook">Every crew entry</a>
-        <a class="btn" href="/media">Every photograph, video and recording</a>
-        <a class="btn" href="/media/export.zip">All media as one ZIP</a>
-        <a class="btn" href="/archive/messages">Search messages</a>
-        <a class="btn" href="/control">Mission control</a>
-      </p>`, 'earth-side')}
-    ${panel('CH-21 / TAKE A COPY', `
-      ${eyebrow('The whole mission, as one file')}
-      <p class="note">Schedules, meals, inventory, crew entries, crew states, habitat summaries
-      and every published exchange with the real light-time it crossed. No account needed.</p>
-      <p>
-        <a class="btn" href="/archive/export.pdf">Download the full record (PDF)</a>
-        <a class="btn" href="/archive/export.md">As Markdown</a>
-        <a class="btn" href="/archive/export.json">As JSON</a>
-        <a class="btn" href="/archive/readings.zip">The readings log (ZIP)</a>
-      </p>
-      <p class="note">The readings log is every reading the station ever pulled or received — every poll of the
-      sensor node, every batch posted to the ingest endpoint, the stores and the crew's figures each time they
-      changed, each day's habitat summary — one JSON file per pull, written the moment it arrived and never
-      changed. It survives the reset. <code>index.json</code> inside lists every file.</p>
-      <p class="note">The PDF is the whole mission in one document: a contents page, the mission
-      and what was carried in, the trend charts across the run, every store's daily use, then
-      each day whole — schedule, meals, inventory, mission notes, the crew log with its
-      photographs in place and its video and sound listed, science findings and health
-      activities, every state filed, every exchange, what was sent out and the habitat
-      summary — followed by the complete correspondence including what was never published,
-      the media index with every file's SHA-256, and the audit trail. Bookmarked by section
-      and by day.</p>
-      <p class="note">The readable copy is plain Markdown: every day with its schedule, meals,
-      inventory, crew writing, states, exchanges and habitat summary, in order. It opens in any
-      text editor and still makes sense with nothing to render it.</p>
-      <p class="note">This page and the download are not public. A visitor sees the exchange on
-      the mission page and the crew log; the complete record is yours.</p>`, 'mars-side')}
-  </div>`;
+  ${panel('CH-21 / BY CHANNEL', `
+    ${eyebrow('Jump into one strand')}
+    <p class="note">The same record, cut a different way.</p>
+    <div class="actions">
+      <a class="btn" href="/#exchanges">Every exchange</a>
+      <a class="btn" href="/archive/messages">Search messages</a>
+      <a class="btn" href="/logbook">Every crew entry</a>
+      <a class="btn" href="/media">Every photograph, video and recording</a>
+      <a class="btn" href="/at-a-glance">The mission at a glance</a>
+      <a class="btn" href="/control">Mission control</a>
+    </div>
+    <p class="note" style="margin-top:14px">This page and the downloads are not public. A visitor
+    sees the exchange on the mission page and the crew log; the complete record is yours.</p>`, 'earth-side')}`;
   return L.page({ title: 'Archive', ctx, body, current: '/archive' });
 }
 
@@ -107,13 +156,15 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
       <span><b>${r.messages.length}</b> exchanges published</span>
       <span><b>${r.traffic.sent}</b> messages sent from Earth</span>
     </div>
-    <p style="margin-top:20px">
-      ${hasPrev ? `<a class="btn" href="/archive/day/${r.missionDay - 1}">Day ${dd(r.missionDay - 1)}</a>` : ''}
-      ${hasNext ? `<a class="btn" href="/archive/day/${r.missionDay + 1}">Day ${dd(r.missionDay + 1)}</a>` : ''}
-      <a class="btn" href="/archive">Contents</a>
-      <a class="btn" href="/archive/day/${r.missionDay}/export.pdf">Download this day (PDF)</a>
-      <a class="btn" href="/archive/day/${r.missionDay}/export.md">As Markdown</a>
-    </p>
+    <div class="actions" style="margin-top:20px">
+      ${hasPrev ? `<a class="btn" href="/archive/day/${r.missionDay - 1}">← Day ${dd(r.missionDay - 1)}</a>` : ''}
+      ${hasNext ? `<a class="btn" href="/archive/day/${r.missionDay + 1}">Day ${dd(r.missionDay + 1)} →</a>` : ''}
+      <a class="btn" href="/archive">All days</a>
+      <span class="spacer"></span>
+      <a class="btn primary" href="/archive/day/${r.missionDay}/export.pdf" download>Download this day (PDF)</a>
+      <a class="btn" href="/archive/day/${r.missionDay}/export.md" download>As Markdown</a>
+      ${r.media && r.media.length ? `<a class="btn" href="/media/day/${r.missionDay}/export.zip" download>The day's media (ZIP)</a>` : ''}
+    </div>
   </div>
 
   ${r.entries.length ? panel('CH-50 / CREW LOG', `

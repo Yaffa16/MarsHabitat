@@ -78,11 +78,7 @@ const D = {
   'Tags · choose 3': ['Tags · wähle 3', 'Étiquettes · choisir 3'],
   'CHOOSE UP TO 3 TAGS': ['BIS ZU 3 TAGS WÄHLEN', 'JUSQU’À 3 ÉTIQUETTES'],
   'Transmit': ['Senden', 'Transmettre'],
-  'Messages are read by mission control before they reach the board. You will be able to send again once this one has arrived.':
-    ['Nachrichten werden von der Missionskontrolle gelesen, bevor sie das Board erreichen. Du kannst wieder senden, sobald diese angekommen ist.',
-     'Les messages sont lus par le contrôle de mission avant d’atteindre le tableau. Vous pourrez renvoyer dès que celui-ci sera arrivé.'],
-  'Write to the crew. They will read this': ['Schreib der Crew. Sie liest das in', 'Écrivez à l’équipage. Il lira ceci dans'],
-  'from now, if the relay holds.': ['ab jetzt, wenn das Relais hält.', 'à partir de maintenant, si le relais tient.'],
+  'Write to the crew.': ['Schreib der Crew.', 'Écrivez à l’équipage.'],
 
   // ---- the board
   'Message Board': ['Nachrichtenboard', 'Tableau des messages'],

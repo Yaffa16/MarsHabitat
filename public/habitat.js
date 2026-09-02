@@ -154,7 +154,7 @@
       if (q) {
         var lx = C + Math.cos(a0) * (R0 - 28), ly = C + Math.sin(a0) * (R0 - 28);
         var lbl = el('text', { x: lx, y: ly + 3, 'text-anchor': 'middle', fill: INK, opacity: '.45',
-          'font-family': 'ui-monospace, monospace', 'font-size': '9', 'letter-spacing': '.08em' });
+          'font-family': '"ZKM Serendipity", ui-monospace, monospace', 'font-size': '9', 'letter-spacing': '.08em' });
         lbl.textContent = (h < 10 ? '0' : '') + h;
         svg.appendChild(lbl);
       }

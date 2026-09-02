@@ -1,7 +1,6 @@
 'use strict';
 const L = require('../layout');
 const { esc, panel, eyebrow, orbitPlot, pipeline } = L;
-const mood = require('../../lib/mood');
 const orbital = require('../../lib/orbital');
 const data = require('../../lib/data');
 const { TAGS } = data;
@@ -465,9 +464,6 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
             class="chip-count" id="feed-mine-count"${pendingMine ? '' : ' hidden'}>${pendingMine}</span></button>
           ${TAGS.map((t) => `<button type="button" class="chip" data-filter="tag:${t}">${t}</button>`).join('')}
           </div>
-          <p class="feed-foot"${recent.length ? '' : ' hidden'}>
-            <span id="feed-counter">${counts.published} exchanges · ${counts.total} sent</span>
-            <span>Scroll ↓</span></p>
         </div>
       </div></div>
     </section>
@@ -597,8 +593,6 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
   const inventory = today ? today.inventory : [];
 
   /* ---- headline figures */
-  const moods = crew.map((c) => mood.translate(c.mood));
-  const strained = moods.filter((t) => t.load > 65).length;
   const tasks = today ? today.tasks : [];
   const done = tasks.filter((t) => t.status === 'DONE').length;
 
@@ -606,8 +600,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
     kpi({ label: 'SOL', value: pre ? `T−${m.countdown.days}` : String(m.clampedDay).padStart(2, '0'),
           unit: pre ? 'sols' : `/ ${String(m.totalDays).padStart(2, '0')}`,
           sub: pre ? `Opens ${esc(m.startLabel)}` : `${m.totalDays - m.clampedDay} sol${m.totalDays - m.clampedDay === 1 ? '' : 's'} remaining` }),
-    kpi({ label: 'Crew', value: String(crew.length),
-          sub: strained ? `${strained} under strain` : 'all nominal', state: strained ? 'warn' : '' }),
+    kpi({ label: 'Crew', value: String(crew.length), sub: 'officers' }),
   ].join('');
 
   /* ---- the run as a strip */
@@ -800,24 +793,13 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
         <span class="meal-figs">${x.kcal} kcal · ${x.water_litres} L · ${x.energy_wh} Wh</span>
       </div>`).join('')}</div>` : '<div class="empty">No meals filed for today</div>');
 
-  const crewPanel = dpanel({ id: 'crew', code: 'CH-12', title: 'Mood', meta: 'Filed by mission control · never quoted as numbers', span: 4, cls: 'h-3 scroll' },
-    `<div class="officers">${crew.map((c, i) => {
-      const t = moods[i];
-      return `<div class="officer">
+  const crewPanel = dpanel({ id: 'crew', code: 'CH-12', title: 'Crew', span: 4, cls: 'h-3 scroll' },
+    `<div class="officers">${crew.map((c) => `<div class="officer">
         <div class="officer-id">
           <b>${esc(c.designation)}</b>
           <span class="officer-role">${esc(c.role)}</span>
         </div>
-        <span class="badge ${t.load > 65 ? 'warn' : 'mars'}">${esc(t.condition)}</span>
-        <div class="officer-axes">${t.axes.map((a) => `
-          <div class="axis-mini" title="${esc(a.text)}">
-            <span>${esc(a.low)}</span>
-            <div class="bar"><i class="${a.value > 70 ? 'warn' : 'ok'}" style="width:${a.value}%"></i></div>
-            <span>${esc(a.high)}</span>
-          </div>`).join('')}</div>
-        <div class="officer-note">${t.axes.map((a) => esc(a.text)).join(' · ')}</div>
-      </div>`;
-    }).join('')}</div>`);
+      </div>`).join('')}</div>`);
 
   const log = dpanel({ id: 'crewlog', code: 'CH-50', title: 'Crew log', href: '/logbook',
     meta: `${entryCounts.published} of ${logDays.reduce((n, d) => n + d.entries.length, 0)} entries written · ${m.totalDays} days · written from inside`, span: 12, cls: 'h-3 linked' },
@@ -886,15 +868,15 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
         <b>${esc(m.elapsed)}</b>
       </div>
     </header>
+    <a class="glance-link" href="/at-a-glance">
+      <span class="glance-link-title">At a Glance</span>
+      <span class="glance-link-sub">The whole mission, day by day — blogs, meals, consumption, habitat, crew condition and every exchange</span>
+      <span class="glance-link-arrow">-&gt;</span>
+    </a>
     <div class="kpis">${kpis}</div>
     ${strip}
     <div class="dash-grid">
       ${schedule}${galley}${crewPanel}
-      <a class="glance-link" href="/at-a-glance">
-        <span class="glance-link-title">At a Glance</span>
-        <span class="glance-link-sub">The whole mission, day by day — blogs, meals, consumption, habitat, crew condition and every exchange</span>
-        <span class="glance-link-arrow">-&gt;</span>
-      </a>
       ${habitat}${trends}
     </div>
   </section>`;

@@ -150,7 +150,7 @@ curl -s $B/api/board | grep -q 'data-pending' && bad "another visitor's API view
 curl -s $B/ | grep -q 'class="cards"' && ok "exchanges render as a card grid" || bad "no card grid"
 curl -s $B/ | grep -q 'class="scroller feed"' \
   && ok "the message board scrolls beside the composer" || bad "no message-board column on the landing page"
-curl -s $B/ | grep -qP 'id="feed-counter">\d+ exchanges · \d+ sent' && ok "the board counts every exchange" || bad "no exchange count"
+curl -s $B/ | grep -q 'id="feed-counter"' && bad "the exchange count is back on the board" || ok "the board carries no exchange count"
 [ "$(curl -s -o /dev/null -w '%{redirect_url}' $B/messages)" = "$B/#exchanges" ] \
   && ok "/messages lands on the board" || bad "/messages redirect wrong"
 [ "$(curl -s -o /dev/null -w '%{redirect_url}' $B/board)" = "$B/#exchanges" ] \

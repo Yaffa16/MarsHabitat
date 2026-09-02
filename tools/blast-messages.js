@@ -36,7 +36,7 @@ const LINES = [
   'Did the crickets survive the night?',
   'What is for dinner on Mars?',
 ];
-const TAGS = ['QUESTION', 'PERSONAL', 'SCIENCE', 'EARTH', 'FOOD', 'HUMOUR'];
+const TAGS = ['QUESTION', 'PERSONAL', 'HUMOUR', 'SCIENCE', 'HABITAT'];
 
 function request(method, path, { cookie, body } = {}) {
   return new Promise((resolve, reject) => {

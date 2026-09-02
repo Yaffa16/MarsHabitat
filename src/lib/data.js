@@ -336,8 +336,7 @@ function dailyActivity() {
   return out;
 }
 
-const TAGS = ['QUESTION', 'PERSONAL', 'SCIENCE', 'EARTH', 'MARS', 'FOOD',
-  'GOVERNANCE', 'GREETING', 'HUMOUR', 'OTHER'];
+const TAGS = ['QUESTION', 'PERSONAL', 'HUMOUR', 'SCIENCE', 'HABITAT'];
 
 module.exports = {
   metrics, latest, history, evaluate, sensorPanels, dailyAverages,

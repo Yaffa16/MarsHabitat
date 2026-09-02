@@ -557,10 +557,10 @@ Orange is the only colour. It marks Mars, live state, and anything wanting actio
 still carried by **symbol** as well — filled centre is nominal, single bar is caution, crossed
 ring is out of range, empty ring is no signal — so it survives print and colourblindness.
 
-Type is a heavy grotesque for the wordmark and headings (`Helvetica Neue`, `Helvetica`,
-`Inter`) against monospace for every code, label and value, with the same sans for reading
-prose. All system stacks: nothing is fetched from a CDN, so the station looks right with the
-venue's network unplugged.
+Type is ZKM Serendipity throughout — the wordmark, headings, every code, label and value,
+and the reading prose — self-hosted from `public/fonts/` (Regular and Semibold, WOFF2 with
+TTF beside it), with system stacks behind it. Nothing is fetched from a CDN, so the station
+looks right with the venue's network unplugged.
 
 ## Monitoring channels
 

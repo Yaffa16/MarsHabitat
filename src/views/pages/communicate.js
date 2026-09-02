@@ -108,7 +108,7 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
     <label class="f msgfield"><span class="sr-only">Message</span>
       <div class="msgbox">
         <textarea ${ghost ? '' : `name="body" id="${uid('body')}" required`} maxlength="${MAX}"
-          placeholder="Write to the crew. They will read this ${orbital.formatLightTime(g.lightSeconds)} from now, if the relay holds.">${ghost ? '' : esc(draft || '')}</textarea>
+          placeholder="Write to the crew.">${ghost ? '' : esc(draft || '')}</textarea>
         <span class="counter" ${ghost ? '' : `id="${uid('count')}"`}>0 / ${MAX}</span>
       </div>
     </label>
@@ -121,8 +121,6 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
     </div>
     <hr>
     <div class="dev-foot">
-      <p class="note">Messages are read by mission control before they reach the board.
-      You will be able to send again once this one has arrived.</p>
       <button type="${ghost ? 'button' : 'submit'}" class="primary">Transmit</button>
     </div>
   </form>`;
