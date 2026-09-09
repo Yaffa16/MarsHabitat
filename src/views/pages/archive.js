@@ -63,7 +63,6 @@ function contents(ctx, { days, counts, entryCounts }) {
     <div class="dl-card">
       <div class="fmt">${esc(fmt)}</div>
       <h3>${esc(title)}</h3>
-      <p>${esc(blurb)}</p>
       <a class="btn${primary ? ' primary' : ''}" href="${href}" download>${esc(label)}</a>
     </div>`;
 
@@ -77,17 +76,6 @@ function contents(ctx, { days, counts, entryCounts }) {
     <div class="eyebrow">Channel group 21 · Permanent record
       <span class="brk">Mission control only</span></div>
     <h1>Archive</h1>
-    <p class="lede">Everything this station has carried, kept day by day: what the crew were
-    asked to do, what they ate, what they had left, what they wrote, how the habitat behaved,
-    and every message that crossed the gap. Nothing here expires.</p>
-    <div class="actions"><a class="btn" href="/control">Back to messages</a></div>
-  </div>
-
-  <div class="grid g4">
-    ${[['Exchanges', counts.published], ['Crew entries', entryCounts.published],
-       ['Callsigns issued', counts.visitors], ['Days recorded', recorded.length]]
-      .map(([l, v]) => panel('', `<div class="readout"><div class="label">${l}</div>
-        <div class="value">${v}</div></div>`)).join('')}
   </div>
 
   ${panel('CH-21 / TAKE A COPY', `
@@ -117,43 +105,10 @@ function contents(ctx, { days, counts, entryCounts }) {
           and every file’s hash inside.`,
         href: '/media/export.zip', label: 'Download ZIP' })}
     </div>
-    <p class="note" style="margin-top:14px">A single day downloads from its row in the table
-    below, and from the top of its own page. Nothing here needs an account once saved:
-    every copy is complete in itself.</p>
-    <details class="fold">
-      <summary><span class="fold-title">What exactly is in each file</span></summary>
-      <div class="fold-body">
-        <p class="note">The PDF is the whole mission in one document: a contents page, the mission
-        and what was carried in, the trend charts across the run, every store's daily use, then
-        each day whole — schedule, meals, inventory, mission notes, the crew log with its
-        photographs in place and its video and sound listed, science findings and health
-        activities, every state filed, every exchange, what was sent out and the habitat
-        summary — followed by the complete correspondence including what was never published,
-        the media index with every file's SHA-256, and the audit trail. Bookmarked by section
-        and by day.</p>
-        <p class="note">The readable copy is plain Markdown: every day with its schedule, meals,
-        inventory, crew writing, states, exchanges and habitat summary, in order. It opens in any
-        text editor and still makes sense with nothing to render it.</p>
-        <p class="note">The readings log is every reading the station ever pulled or received — every poll of the
-        sensor node (the readings it added; the node repeats its last thirty days each time), every poll of the habitat's own hardware exactly as Home Assistant answered it (whether or not
-        anything had changed), every batch posted to the ingest endpoint, the stores and the crew's figures each
-        time they changed, each day's habitat summary — one JSON file per pull, written the moment it arrived and
-        never changed. It survives the reset. <code>index.json</code> inside lists every file, and <code>csv/</code>
-        holds the same log as tables for a spreadsheet, also downloadable on their own:
-        <a href="/archive/readings/home-assistant.csv">home-assistant.csv</a> (one row per entity per poll),
-        <a href="/archive/readings/ingest.csv">ingest.csv</a> (one row per reading posted),
-        <a href="/archive/readings/node-polls.csv">node-polls.csv</a> (one row per poll of the node) and
-        <a href="/archive/readings/node.csv">node.csv</a> (one row per reading the node ever sent).</p>
-        <p class="note">The media ZIP is stored, not compressed, and streamed as it goes, so the
-        whole mission is one download whatever it weighs. <code>manifest.json</code> and a
-        <code>README.txt</code> are inside; every file can be checked against its SHA-256.</p>
-      </div>
-    </details>`, 'mars-side')}
+`, 'mars-side')}
 
   ${panel('CH-21 / CONTENTS', `
     ${eyebrow('The mission, day by day')}
-    <p class="note">Open a day to see it whole — or take just that day as a PDF or as
-    Markdown from its row. Days ahead join the record as they happen.</p>
     <div class="tw"><table class="daylist">
       <thead><tr><th>Day</th><th>Date</th><th>State</th>
         <th>Crew entries</th><th>Exchanges</th><th>Media</th><th>Channels</th><th>Open · download</th></tr></thead>
@@ -173,21 +128,7 @@ function contents(ctx, { days, counts, entryCounts }) {
           ${d.media ? `<a href="/media/day/${d.missionDay}/export.zip" download>Media</a>` : ''}</span>`
           : '<span style="color:var(--faint)">not yet</span>'}</td>
       </tr>`).join('')}</tbody>
-    </table></div>`)}
-
-  ${panel('CH-21 / BY CHANNEL', `
-    ${eyebrow('Jump into one strand')}
-    <p class="note">The same record, cut a different way.</p>
-    <div class="actions">
-      <a class="btn" href="/#exchanges">Every exchange</a>
-      <a class="btn" href="/archive/messages">Search messages</a>
-      <a class="btn" href="/logbook">Every crew entry</a>
-      <a class="btn" href="/media">Every photograph, video and recording</a>
-      <a class="btn" href="/at-a-glance">The mission at a glance</a>
-      <a class="btn" href="/control">Mission control</a>
-    </div>
-    <p class="note" style="margin-top:14px">This page and the downloads are not public. A visitor
-    sees the exchange on the mission page and the crew log; the complete record is yours.</p>`, 'earth-side')}`;
+    </table></div>`)}`;
   return L.page({ title: 'Archive', ctx, body, current: '/archive' });
 }
 

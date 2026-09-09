@@ -134,9 +134,12 @@ function inventoryFor(day) {
      WHERE il.mission_day = ? ORDER BY i.sort_order`).all(day).map((i) => ({
     ...i,
     set: Object.prototype.hasOwnProperty.call(overrides, i.key),
-    carried: (db.prepare(
-      `SELECT quantity q FROM inventory_level il JOIN inventory_item i ON i.id = il.item_id
-       WHERE i.key = ? AND il.mission_day = ?`).get(i.key, day - 1) || {}).q ?? null,
+    // available at the start of the day: yesterday's close, or on day 1 what was carried in
+    carried: day > 1
+      ? ((db.prepare(
+          `SELECT quantity q FROM inventory_level il JOIN inventory_item i ON i.id = il.item_id
+           WHERE i.key = ? AND il.mission_day = ?`).get(i.key, day - 1) || {}).q ?? null)
+      : ((content.inventoryStart && content.inventoryStart()[i.key]) ?? null),
   }));
 }
 
@@ -707,6 +710,13 @@ router.post('/plan/save', (req, res) => {
 
 /* Destructive, so it takes the word RESET typed into the form, checked here
    and not only in the browser. */
+/* The cloud gallery: read the folder again now, rather than on the next cycle. */
+router.post('/cloud/refresh', async (req, res) => {
+  await require('../lib/cloud').poll().catch(() => {});
+  if (req.get('x-requested-with') === 'fetch') return res.json(require('../lib/cloud').snapshot());
+  res.redirect('/control?tab=habitat#cloud');
+});
+
 router.post('/reset', (req, res) => {
   const ctx = req.ctx();
   if (String(req.body.confirm || '').trim().toUpperCase() !== 'RESET') {

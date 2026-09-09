@@ -315,7 +315,7 @@ function ticker(ctx, { today }) {
   let nowTask = null, nextTask = null;
   for (const t of tasks) { if (t.time <= hm) nowTask = t; else if (!nextTask) nextTask = t; }
   const cells = [];
-  if (pre) cells.push(`<b>T−${m.countdown.days}d ${String(m.countdown.hours).padStart(2, '0')}:${String(m.countdown.minutes).padStart(2, '0')}</b> ${T('to occupation')} · ${T('opens')} ${esc(m.startLabel)}`);
+  if (pre) cells.push(`<b id="tk-count">T−${m.countdown.days}d ${String(m.countdown.hours).padStart(2, '0')}:${String(m.countdown.minutes).padStart(2, '0')}:${String(m.countdown.seconds).padStart(2, '0')}</b> ${T('to occupation')} · ${T('opens')} ${esc(m.startLabel)}`);
   else if (over) cells.push(`<b>${T('Mission complete')}</b> · ${T('the record stays')}`);
   else {
     cells.push(`<b>SOL ${String(m.clampedDay).padStart(2, '0')}/${String(m.totalDays).padStart(2, '0')}</b>`);
@@ -328,7 +328,8 @@ function ticker(ctx, { today }) {
   const line = cells.map((c) => `<span class="tk-cell">${c}</span>`).join('<span class="tk-sep">·</span>');
   return `
   <div class="ticker" role="marquee" aria-label="${esc(T('What is happening in the habitat'))}"
-       data-tz="${esc(m.timezone)}" data-tasks="${esc(JSON.stringify(tasks))}"${over ? ' data-over="1"' : ''}>
+       data-tz="${esc(m.timezone)}" data-tasks="${esc(JSON.stringify(tasks))}"${over ? ' data-over="1"' : ''}
+       data-phase="${esc(m.phase)}" data-opens="${esc(m.opensAt)}" data-epoch="${esc(String(require('../../lib/content').resetEpoch() || ''))}">
     <div class="tk-clock"><span class="tk-clock-label">${T('HABITAT TIME')}</span> <b id="tk-clock">${esc(m.venueTime)}</b></div>
     <div class="tk-window"><div class="tk-track" id="tk-track"><div class="tk-line">${line}</div><div class="tk-line" aria-hidden="true">${line}</div></div></div>
   </div>
@@ -358,16 +359,50 @@ function ticker(ctx, { today }) {
     var timers = [];
     function stop() { timers.forEach(clearInterval); timers = []; }
     retask(); timers.push(setInterval(retask, 30000));
-    // Every hour the schedule is fetched again, so a day edited in mission
-    // control — or midnight turning the page to a new day — reaches every
-    // open phone without a reload.
-    function refetch() {
-      fetch('/api/ticker', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
-        if (d.phase === 'COMPLETE') { stop(); return; }   // the run has ended under this open page
-        if (Array.isArray(d.tasks)) { tasks = d.tasks; retask(); }
-      }).catch(function () { /* next hour */ });
+    // The ticker is always NOW. Before the run it counts down, to the second,
+    // to 00:00 at the venue on the first day; the moment that instant passes
+    // — or the station is reset, or its dates change under an open page —
+    // the page reloads itself once and comes back as the run: SOL 01, the
+    // day's schedule, the crew's current task. A page left open across
+    // midnight on 15 October turns into the run by itself.
+    var phase = el.getAttribute('data-phase') || '';
+    var epoch = el.getAttribute('data-epoch') || '';
+    var opens = Date.parse(el.getAttribute('data-opens') || '') || 0;
+    var reloading = false;
+    function turn() { if (reloading) return; reloading = true; stop(); setTimeout(function () { window.location.reload(); }, 1500); }
+    var count = document.querySelectorAll('[id="tk-count"]');
+    function countdown() {
+      if (!opens || !count.length) return;
+      var left = opens - Date.now();
+      // at zero the station is asked, not assumed: a phone's clock can run
+      // ahead, and the page must not reload itself in a loop
+      if (left <= 0) { for (var k = 0; k < count.length; k++) count[k].textContent = 'T\u22120d 00:00:00'; refetch(); return; }
+      var s = Math.floor(left / 1000), d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), mi = Math.floor(s % 3600 / 60), sec = s % 60;
+      var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+      var text = 'T\u2212' + d + 'd ' + pad(h) + ':' + pad(mi) + ':' + pad(sec);
+      for (var i = 0; i < count.length; i++) count[i].textContent = text;
     }
-    timers.push(setInterval(refetch, 60 * 60 * 1000));
+    if (phase === 'PRE_LAUNCH') { countdown(); timers.push(setInterval(countdown, 1000)); }
+    // The schedule is fetched again on a cycle, so a day edited in mission
+    // control — or midnight turning the page to a new day — reaches every
+    // open phone without a reload; and if the station's phase or epoch has
+    // moved (the run began, a reset, new dates), the page turns over.
+    var fetching = false;
+    function refetch() {
+      if (fetching || reloading) return; fetching = true;
+      fetch('/api/ticker', { cache: 'no-store' }).finally(function () { fetching = false; }).then(function (r) { return r.json(); }).then(function (d) {
+        if (d.phase === 'COMPLETE' && phase !== 'COMPLETE') { turn(); return; }   // the run has ended under this open page
+        if ((d.phase && d.phase !== phase) || (d.epoch && epoch && String(d.epoch) !== epoch)) { turn(); return; }
+        if (d.opensAt) opens = Date.parse(d.opensAt) || opens;
+        if (Array.isArray(d.tasks)) { tasks = d.tasks; retask(); }
+      }).catch(function () { /* next time */ });
+    }
+    // every five minutes; every ten seconds in the last minute before the run
+    timers.push(setInterval(function () {
+      var left = opens ? opens - Date.now() : Infinity;
+      if (left < 60000) refetch();
+    }, 10000));
+    timers.push(setInterval(refetch, 5 * 60 * 1000));
     function reading() {
       fetch('/api/habitat/data?days=1', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
         var rows = d.rows || [], last = rows[rows.length - 1];
@@ -393,7 +428,7 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
                         inFlight = null, error = null, draft = '',
                         allDays = [], logDays = [], entryCounts = { published: 0, days: 0 }, ingest = [],
                         media = [], mediaCounts = { total: 0, bytes: 0 }, mediaLookup = () => null,
-                        hardware = null, hardwareDaily = [] }) {
+                        hardware = null, hardwareDaily = [], cloud = null }) {
   const pre = ctx.mission.phase === 'PRE_LAUNCH', T = ctx.T;
   // This visitor's messages that mission control has not yet published. They
   // are in the page, but only surface under MY MESSAGES.
@@ -471,11 +506,11 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
     ${dayRail}
   </div>
 
-  ${dashboard(ctx, { crew, today, counts, crewFigures, power, allDays, logDays, entryCounts, ingest, media, mediaCounts, mediaLookup, hardware, hardwareDaily })}
+  ${dashboard(ctx, { crew, today, counts, crewFigures, power, allDays, logDays, entryCounts, ingest, media, mediaCounts, mediaLookup, hardware, hardwareDaily, cloud })}
   `;
   return L.page({
     title: 'Mission', ctx, body, hero, hideNav: true, hideRail: true, bodyClass: 'landing',
-    current: '/', scripts: ['/composer.js', '/board.js', '/habitat.js', '/hardware.js'],
+    current: '/', scripts: ['/composer.js', '/board.js', '/habitat.js', '/hardware.js'].concat(cloud ? ['/cloud.js'] : []),
   });
 }
 
@@ -635,7 +670,6 @@ function hwChart(hw, tz, T = same) {
       <text x="${railX}" y="${r.ty.toFixed(1)}" text-anchor="start" class="hw-name" fill="${r.colour}">${esc(r.s.label)}</text>
       <text x="${railX}" y="${(r.ty + 16).toFixed(1)}" text-anchor="start" class="hw-val" fill="${r.colour}">${hwNum(r.s.value, r.s.decimals)}${r.s.unit ? ' ' + esc(r.s.unit) : ''}</text>`).join('')}
   </svg>
-  <figcaption class="note">${T('The whole day, midnight to midnight, venue time — the axis numbered in hours, 00 to 24 — one point per hour (a gauge’s hour is its mean, a meter’s its last value), the dashed orange mark is now, and the running hour’s point moves with each read until the hour is done. Each line rides its own scale — its lowest to highest today — so a meter in watt-hours and a sensor in degrees share the day without sharing an axis. The label at the end of each line carries the current reading.')}</figcaption>
 </figure>`;
 }
 
@@ -688,7 +722,7 @@ const dpanel = ({ id, code, title, meta = '', span = 4, cls = '', href = null },
  * whole mission — laid out on one twelve-column grid, nothing hidden behind
  * a tab.
  */
-function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories: [], days: {} }, allDays, logDays, entryCounts, ingest = [], media = [], mediaCounts = { total: 0, bytes: 0 }, mediaLookup = () => null, hardware = null, hardwareDaily = [] }) {
+function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories: [], days: {} }, allDays, logDays, entryCounts, ingest = [], media = [], mediaCounts = { total: 0, bytes: 0 }, mediaLookup = () => null, hardware = null, hardwareDaily = [], cloud = null }) {
   const m = ctx.mission, g = ctx.geo, T = ctx.T;
   const pre = m.phase === 'PRE_LAUNCH';
   const slotName = { BREAKFAST: 'Breakfast', LUNCH: 'Lunch', DINNER: 'Dinner', RATION: 'Ration' };
@@ -882,7 +916,8 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
         </section>
       </div>
       <div id="hbt-notes"></div>
-    </div>`);
+    </div>
+    ${cloud ? `<div class="cloud-latest" id="cloud-latest" data-version="${esc(cloud.snapshot.version || '')}" data-poll="${(Number(cloud.snapshot.checkSeconds) || 20) * 1000}">${require('./media').cloudLatestInner(T, cloud)}</div>` : ''}`);
 
   /* ---- the habitat's own hardware, through Home Assistant: directly below
      the Habitat panel. Rendered only when the bridge is configured in .env;
@@ -996,11 +1031,18 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
         <b>${esc(m.elapsed)}</b>
       </div>
     </header>
-    <a class="glance-link" href="/at-a-glance">
-      <span class="glance-link-title">${T('At a Glance')}</span>
-      <span class="glance-link-sub">${T('The whole mission, day by day — blogs, meals, consumption, habitat, crew condition and every exchange')}</span>
-      <span class="glance-link-arrow">-&gt;</span>
-    </a>
+    <div class="dash-links">
+      <a class="glance-link" href="/at-a-glance">
+        <span class="glance-link-title">${T('At a Glance')}</span>
+        <span class="glance-link-sub">${T('The whole mission, day by day — blogs, meals, consumption, habitat, crew condition and every exchange')}</span>
+        <span class="glance-link-arrow">-&gt;</span>
+      </a>
+      <a class="glance-link media-link" href="/media">
+        <span class="glance-link-title">${T('Media')}</span>
+        <span class="glance-link-sub">${T('Photographs and video — the gallery, and everything the crew send out of the habitat')}</span>
+        <span class="glance-link-arrow">-&gt;</span>
+      </a>
+    </div>
     <div class="kpis">${kpis}</div>
     ${strip}
     <div class="dash-grid">

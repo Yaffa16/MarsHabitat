@@ -59,7 +59,7 @@ function crossingDial(T = same) {
     <line x1="${mars[0] - 44}" y1="${mars[1]}" x2="${mars[0] - 12}" y2="${mars[1]}" stroke="rgba(255,255,255,.2)" stroke-dasharray="2 3"/>
     <circle cx="${mars[0]}" cy="${mars[1]}" r="12" class="xdial-mars-halo" style="transform-origin:${mars[0]}px ${mars[1]}px"/>
     <circle cx="${mars[0]}" cy="${mars[1]}" r="9" class="xdial-mars"/>
-    <text x="${mars[0]}" y="${mars[1] - 20}" text-anchor="middle" class="xdial-label mars">${T('Mars')}</text>
+    <text x="${mars[0]}" y="${mars[1] - 20}" text-anchor="middle" class="xdial-label mars">MARS!platz</text>
     <circle cx="${earth[0]}" cy="${earth[1]}" r="7" class="xdial-earth"/>
     <text x="${earth[0]}" y="${earth[1] + 22}" text-anchor="middle" class="xdial-label">${T('Earth')}</text>
     <circle id="xpacket" cx="${earth[0]}" cy="${earth[1]}" r="5" class="xdial-packet"/>
@@ -146,14 +146,13 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
       </div>
 
       <div class="transit-read">
-        <div class="state"><span class="sr-only">${T('Message in transit')} · </span>${T('Sending')} · ${T('Earth')} → ${T('Mars')} ·
+        <div class="state"><span class="sr-only">${T('Message in transit')} · </span>${T('Sending')} · ${T('Earth')} → MARS!platz ·
           <b id="tpct">0%</b> ${T('of the crossing')}</div>
         <div class="clock" id="tclock">--:--</div>
         <div class="tbar"><i id="tbar" style="width:0%"></i></div>
         <div class="honesty">
-          ${T('Real crossing')} <b>${orbital.formatLightTime(inFlight.light_seconds)}</b>
-          ${T('at a distance of')} ${inFlight.distance_au.toFixed(3)} au — ${T('this dial compresses it.')}<br>
-          ${T('The wait you are having is shorter than the one the crew have.')}
+          ${T('The real message would take')} <b>${orbital.formatLightTime(inFlight.light_seconds)}</b>
+          ${T('at a distance of')} ${inFlight.distance_au.toFixed(3)} au.
           <span class="sr-only">${T('Arrives')} <span id="tarr">${esc(inFlight.arrival_at.slice(11, 19))} UTC</span></span>
         </div>
       </div>

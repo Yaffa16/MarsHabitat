@@ -157,6 +157,9 @@ app.get('/', (req, res) => {
     // The habitat's own hardware, polled through Home Assistant — drawn as a
     // panel of its own below the Habitat panel when the bridge is configured.
     hardware: homeAssistant.snapshot(24),
+    // The newest five from the cloud folder, for the Habitat panel; kept
+    // live by public/cloud.js on the frequency.
+    cloud: (() => { const c = require('./lib/cloud'); return c.configured() ? { title: c.CFG.title, items: c.gallery().slice(0, 6), snapshot: c.snapshot(), limit: 6 } : null; })(),
     // And its daily series for the Trends panel: one value per device per
     // venue day — a gauge's daily mean, a meter's daily added amount.
     hardwareDaily: homeAssistant.daily((d) => missionLib.localDate(d, ctx.mission.timezone)),
@@ -557,6 +560,7 @@ app.get('/api/ticker', (req, res) => {
   const today = st.phase === 'ACTIVE' ? data.day(st.clampedDay) : null;
   res.json({
     sol: st.clampedDay, totalDays: st.totalDays, phase: st.phase, venueTime: st.venueTime,
+    opensAt: st.opensAt, epoch: content.resetEpoch(),
     tasks: today ? today.tasks.map((t) => ({ time: t.time, label: t.label, detail: t.detail || '' })) : [],
   });
 });
@@ -625,6 +629,20 @@ app.get('/api/hardware', (req, res) => {
     pollMs: snap.pollMs,
     html: snap.configured && snap.sensors.length ? P.hardwareInner(snap, req.ctx().T) : '',
   });
+});
+
+/* The cloud gallery's state — is the bridge on, how many images, when it
+   last answered, what went wrong. No credentials, no paths beyond the folder. */
+app.get('/api/cloud', (req, res) => {
+  const cloud = require('./lib/cloud');
+  const snap = cloud.snapshot();
+  // the grid itself, rendered for the visitor's language, so the media page
+  // can swap it in the moment the folder changes — the same pattern as the board
+  const M = require('./views/pages/media');
+  const model = { title: cloud.CFG.title, items: cloud.gallery(), snapshot: snap, limit: 6 };
+  const html = snap.configured ? M.cloudGridInner(req.ctx().T, model) : '';
+  const latestHtml = snap.configured ? M.cloudLatestInner(req.ctx().T, model) : '';
+  res.set('Cache-Control', 'no-store').json({ ...snap, html, latestHtml });
 });
 
 app.get('/healthz', (req, res) => res.type('text').send('ok'));
@@ -719,6 +737,7 @@ if (process.env.CRITICAL_POLL !== 'false') critical.start(); else critical.apply
 /* Poll the habitat's own hardware through Home Assistant (src/lib/home-assistant.js).
    Off until HA_HOST and HA_API_TOKEN are set in .env; HA_POLL=false holds it off. */
 if (process.env.HA_POLL !== 'false') homeAssistant.start();
+if (process.env.CLOUD_POLL !== 'false') require('./lib/cloud').start();
 
 const PORT = Number(process.env.PORT || 8080);
 const server = app.listen(PORT, '0.0.0.0', () => {

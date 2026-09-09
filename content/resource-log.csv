@@ -8,7 +8,7 @@ mission_day,date,item,label,unit,quantity_at_close,daily_use,used_since_start,re
 1,2026-10-15,medical,Medical kits,kits,6,0,0,100,,filed,"Stowage count at the end of the first day, once everything was in the racks."
 1,2026-10-15,materials,Repair materials,kg,48,1.2,0,100,40,filed,"Stowage count at the end of the first day, once everything was in the racks."
 1,2026-10-15,seed,Germination trays,trays,8,0,0,100,,filed,"Stowage count at the end of the first day, once everything was in the racks."
-2,2026-10-16,water,Potable water,L,618,2,22,97,309,filed,Four trays seeded at greenhouse start-up.
+2,2026-10-16,water,Potable water,L,618,250,22,97,2.5,filed,Four trays seeded at greenhouse start-up.
 2,2026-10-16,food,Food rations,days,13,10,1,93,1.3,filed,Four trays seeded at greenhouse start-up.
 2,2026-10-16,oxygen,Oxygen reserve,%,92.4,3.6,5.6,94,25.7,carried,
 2,2026-10-16,scrubber,CO₂ scrubber cartridges,units,11.6,0.4,0.4,97,29,carried,
@@ -17,7 +17,7 @@ mission_day,date,item,label,unit,quantity_at_close,daily_use,used_since_start,re
 2,2026-10-16,medical,Medical kits,kits,6,0,0,100,,carried,
 2,2026-10-16,materials,Repair materials,kg,46.8,1.2,1.2,98,39,carried,
 2,2026-10-16,seed,Germination trays,trays,4.8,0,3.2,60,,filed,Four trays seeded at greenhouse start-up.
-3,2026-10-17,water,Potable water,L,616,2,24,96,308,carried,
+3,2026-10-17,water,Potable water,L,368,250,272,57,1.5,carried,
 3,2026-10-17,food,Food rations,days,3,10,11,21,0.3,carried,
 3,2026-10-17,oxygen,Oxygen reserve,%,88.8,3.6,9.2,91,24.7,carried,
 3,2026-10-17,scrubber,CO₂ scrubber cartridges,units,11.2,0.4,0.8,93,28,carried,
@@ -26,7 +26,7 @@ mission_day,date,item,label,unit,quantity_at_close,daily_use,used_since_start,re
 3,2026-10-17,medical,Medical kits,kits,6,0,0,100,,carried,
 3,2026-10-17,materials,Repair materials,kg,45.6,1.2,2.4,95,38,carried,
 3,2026-10-17,seed,Germination trays,trays,4.8,0,3.2,60,,carried,
-4,2026-10-18,water,Potable water,L,614,2,26,96,307,carried,
+4,2026-10-18,water,Potable water,L,118,250,522,18,0.5,carried,
 4,2026-10-18,food,Food rations,days,0,10,14,0,0,carried,
 4,2026-10-18,oxygen,Oxygen reserve,%,85.2,3.6,12.8,87,23.7,carried,
 4,2026-10-18,scrubber,CO₂ scrubber cartridges,units,10.8,0.4,1.2,90,27,carried,

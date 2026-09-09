@@ -82,7 +82,7 @@ function messageCard(m, crew, show) {
       ${tags.map((t) => `<span class="badge earth">${esc(t)}</span>`).join('')}
       ${stateBadge(m)}
       <span class="msg-meta">MSG ${String(m.id).padStart(5, '0')} · day ${dd(m.mission_day)} ·
-        ${esc(m.submitted_at.slice(11, 16))} UTC · crossed ${orbital.formatLightTime(m.light_seconds)}</span>
+        ${esc(m.submitted_at.slice(11, 16))} UTC</span>
     </div>
     <p class="quoted">${esc(m.body)}</p>
     ${m.state === 'REJECTED' ? `
@@ -93,8 +93,8 @@ function messageCard(m, crew, show) {
       </div>`
     : `
       <form method="post" action="/control/${m.id}/reply${q}" class="reply">
-        <textarea name="body" rows="2" required minlength="2" class="reply-box"
-          aria-label="Reply from the habitat"
+        <label class="reply-label" for="reply-${m.id}">Reply from the habitat</label>
+        <textarea name="body" id="reply-${m.id}" rows="4" required minlength="2" class="reply-box"
           placeholder="Answer as the crew. Ctrl+Enter sends and publishes.">${esc(m.response_body || '')}</textarea>
         <div class="reply-bar">
           <select name="crew_id" aria-label="Reply attributed to">
@@ -103,11 +103,10 @@ function messageCard(m, crew, show) {
           </select>
           <button name="action" value="publish" class="primary">${
             m.state === 'PUBLISHED' ? 'Update reply' : 'Reply & publish'}</button>
-          <button name="action" value="draft" class="ghost small">Save draft</button>
         </div>
       </form>
       <div class="msg-actions">
-        ${m.state === 'PUBLISHED' ? small('unpublish', 'Unpublish') : small('reject', 'Reject without replying')}
+        ${m.state === 'PUBLISHED' ? small('unpublish', 'Unpublish') : small('reject', 'Reject')}
         <div class="spacer"></div>
         ${small('delete', 'Delete', 'ghost danger', `Delete message ${dd(m.id)} permanently? This cannot be undone.`)}
       </div>`}
@@ -117,8 +116,8 @@ function messageCard(m, crew, show) {
 function queue({ list, crew, counts, show }) {
   const waiting = counts.pending + counts.awaitingResponse;
   const FILTERS = [
-    ['pending', 'Awaiting reply', waiting],
-    ['published', 'Published', counts.published],
+    ['pending', 'Awaiting reply', counts.pending],
+    ['published', 'Answered', counts.published],
     ['rejected', 'Rejected', counts.rejected || 0],
     ['all', 'Everything', counts.total],
   ];
@@ -147,7 +146,7 @@ function moodBlock(c, n = 2) {
   const t = mood.translate(c.mood);
   const current = c.mood ? mood.FACES.reduce((best, f) => (Math.abs(f.v - c.mood.calm_tense) < Math.abs(best.v - c.mood.calm_tense) ? f : best), mood.FACES[0]).v : null;
   return panel('CH-12 / MOOD', `
-    ${blockHead(n, 'Crew state', `${esc(c.designation)} · mood, calm to angry · shown on the station as a <b>sentence</b>, never a number`,
+    ${blockHead(n, 'Crew state', `${esc(c.designation)} · mood, calm to angry`,
       { live: !!c.mood, liveText: `Filed: ${esc(t.condition)}`, emptyText: 'Not filed yet' })}
     <form method="post" action="/control/moods/${c.id}">
       <div class="poles mood-poles"><span>${mood.AXES[0].low}</span><span>${mood.AXES[0].label}</span><span>${mood.AXES[0].high}</span></div>
@@ -160,8 +159,7 @@ function moodBlock(c, n = 2) {
       <div class="axis-read" id="read-${c.id}-calm_tense">${c.mood ? `“${esc(t.lines[0])}”` : ''}</div>
       <button class="primary">Publish</button>
     </form>
-    <p class="note" style="margin-top:10px">The public never sees the scale, only the
-    sentence under it.</p>`, 'mars-side officer-block');
+`, 'mars-side officer-block');
 }
 
 /** What the entry composer needs to know about the media already on an
@@ -199,8 +197,8 @@ function blockHead(n, title, sub, { live = null, liveText = 'Live', emptyText = 
 function blogBlock(c, tab, day, entry, n = 1) {
   const live = entry && !isPlaceholder(entry.body);
   return panel('CH-50 / DAILY BLOG', `
-    ${blockHead(n, 'Daily Blog', `${esc(c.designation)} · day ${dd(day)} · goes to the public <b>crew log</b>`,
-      { live, liveText: 'Live on the crew log', emptyText: 'Not written yet' })}
+    ${blockHead(n, 'Daily Blog', `${esc(c.designation)} · day ${dd(day)}`,
+      { live, liveText: 'Live', emptyText: 'Not written yet' })}
     <form method="post" action="/control/logbook" enctype="multipart/form-data" data-attach-media data-crew-id="${c.id}"
           data-media="${editorMedia(c.media, entry ? entry.body : '', c.otherBodies || [])}">
       <input type="hidden" name="day" value="${day}">
@@ -220,9 +218,9 @@ function reportBlock(c, kindKey, label, hint, day, tpl, tab, n = 2) {
   const live = !!(c.report && c.report.trim());
   const preset = (tpl || []).find((t) => String(t.name).toLowerCase() === 'default');
   return panel(`CH-36 / ${kindKey.toUpperCase()}`, `
-    ${blockHead(n, label, `${esc(c.designation)} · day ${dd(day)} · goes to the day's <b>mission notes</b>`,
-      { live, liveText: 'Live in the mission notes', emptyText: 'Not written yet' })}
-    <p class="note block-hint">${hint}</p>
+    ${blockHead(n, label, `${esc(c.designation)} · day ${dd(day)}`,
+      { live, liveText: 'Live', emptyText: 'Not written yet' })}
+    ${hint ? `<p class="note block-hint">${hint}</p>` : ''}
     <form method="post" action="/control/report" enctype="multipart/form-data" data-attach-media data-crew-id="${c.id}"
           data-media="${editorMedia(c.media, c.report || '', c.reportOtherBodies || [])}">
       <input type="hidden" name="day" value="${day}">
@@ -237,12 +235,12 @@ function reportBlock(c, kindKey, label, hint, day, tpl, tab, n = 2) {
     </form>`, 'mars-side officer-block');
 }
 
-/** The photographs / video / sound that go with an entry. */
+/** The photographs / video that go with an entry. */
 function attachRow() {
   // Without the composer (no script): a picker and a caption; files are set at the end of the text.
   return `<div class="attach">
     <label class="attach-pick"><input type="file" name="file" multiple accept="${esc(mediaLib.ACCEPT)}">
-      <b>＋ Photographs, video, sound</b><span class="attach-chosen">none chosen</span></label>
+      <b>＋ Photographs, video</b><span class="attach-chosen">none chosen</span></label>
     <input type="text" name="media_caption" maxlength="2000" placeholder="Caption for the files (optional)">
     <span class="attach-hint">Files are set at the end of the entry as lines like <code>[media:12]</code>; move a line to move the picture.</span>
     <div class="media-progress attach-progress" hidden></div>
@@ -253,8 +251,6 @@ function attachRow() {
 function scheduleBlock(day, tasks) {
   return panel('CH-30 / DAILY MISSION', `
     ${eyebrow(`Schedule · day ${dd(day)}`)}
-    <p class="note" style="margin-bottom:12px">Times are habitat-local. Saving rewrites this day
-    in <b>content/schedule.json</b> and sorts it into clock order.</p>
     <form method="post" action="/control/schedule">
       <input type="hidden" name="day" value="${day}">
       <div class="tw"><table>
@@ -284,7 +280,7 @@ function crewFiguresBlock(day, figures, n = 3) {
   const f = figures[String(day)] || {};
   const live = f.calories != null || f.steps != null;
   return panel('CH-13 / CREW FIGURES', `
-    ${blockHead(n, 'Crew figures', `All three officers · day ${dd(day)} · plotted on the station's <b>trends</b>`,
+    ${blockHead(n, 'Crew figures', `Day ${dd(day)}`,
       { live, liveText: 'Filed', emptyText: 'Not filed yet' })}
     <p class="note block-hint">Totals across all three of them. Saving writes <b>content/crew-figures.json</b>.
     Leave a field blank to record nothing for that day.</p>
@@ -310,8 +306,6 @@ function mealsBlock(day, meals) {
 
   return panel('CH-32 / DAILY FOOD PLAN', `
     ${eyebrow(`Galley · day ${dd(day)}`)}
-    <p class="note" style="margin-bottom:12px">Saving rewrites this day in
-    <b>content/meals.json</b>. A slot left without a name is not served that day.</p>
     <form method="post" action="/control/meals">
       <input type="hidden" name="day" value="${day}">
       <div class="grid g2">
@@ -344,32 +338,24 @@ function mealsBlock(day, meals) {
 function inventoryBlock(day, items) {
   return panel('CH-34 / INVENTORY', `
     ${eyebrow(`Levels at the end of day ${dd(day)}`)}
-    <p class="note" style="margin-bottom:12px">Only change what actually moved — every other
-    item carries forward on its own. A blank field means "carry forward". Writes
-    <b>content/inventory-levels.json</b>.</p>
     <form method="post" action="/control/inventory">
       <input type="hidden" name="day" value="${day}">
       <div class="tw"><table>
-        <thead><tr><th>Resource</th><th>Yesterday</th><th>Quantity</th><th>Use per day</th></tr></thead>
+        <thead><tr><th>Resource</th><th>Available amount</th><th>Amount used today</th><th>Amount left for future</th></tr></thead>
         <tbody>${items.map((i) => `<tr>
           <th>${esc(i.label)} <span style="color:var(--faint)">${esc(i.unit)}</span></th>
           <td class="n" style="color:var(--faint)">${i.carried == null ? '—' : i.carried}</td>
-          <td><input type="number" step="0.1" name="q_${esc(i.key)}" value="${i.set ? i.quantity : ''}"
-               placeholder="${i.quantity}"></td>
-          <td><input type="number" step="0.1" name="c_${esc(i.key)}" value="${i.set ? i.consumption : ''}"
+          <td><input type="number" step="0.1" min="0" name="c_${esc(i.key)}" value="${i.set ? i.consumption : ''}"
                placeholder="${i.consumption}"></td>
+          <td><input type="number" step="0.1" min="0" name="q_${esc(i.key)}" value="${i.set ? i.quantity : ''}"
+               placeholder="${i.quantity}"></td>
         </tr>`).join('')}</tbody>
       </table></div>
-      <label class="f" style="margin-top:14px"><span>Why (optional, kept in the file)</span>
-        <input type="text" name="why" placeholder="Water allowance cut after the loop shortfall"></label>
       <div class="actions">
         <button class="primary">Save levels for day ${dd(day)}</button>
         <div class="spacer"></div>
       </div>
-    </form>
-    <form method="post" action="/control/inventory/clear" class="actions">
-      <input type="hidden" name="day" value="${day}">
-      <button class="ghost small">Clear this day's override</button></form>`, 'mars-side');
+    </form>`, 'mars-side');
 }
 
 /**
@@ -383,10 +369,6 @@ function powerBlock(day, power) {
   const total = filed.reduce((s, c) => s + d[c.key], 0);
   return panel('CH-35 / POWER', `
     ${eyebrow(`Power consumed · day ${dd(day)}`)}
-    <p class="note" style="margin-bottom:12px">What drew on the batteries that day, in kWh, split
-    by category. The names are editable — a rename here renames the category on the station, in
-    At a Glance and in the record. A blank amount records nothing for that day, not zero. Saving
-    writes <b>content/power.json</b>.</p>
     <form method="post" action="/control/power">
       <input type="hidden" name="day" value="${day}">
       <div class="tw"><table>
@@ -407,6 +389,32 @@ function powerBlock(day, power) {
    blog slots, clears everything written live and reloads the mission from
    the files. content/plan/ is a snapshot of the files, kept as a backup and
    used to put back a file that has gone missing. */
+/** The cloud gallery's state, and a button to read the folder again now. */
+function cloudBlock() {
+  const s = require('../../lib/cloud').snapshot();
+  const when = (iso) => (iso ? iso.slice(0, 16).replace('T', ' ') + ' UTC' : '—');
+  return panel('CH-61 / CLOUD GALLERY', `
+    <div id="cloud"></div>
+    ${eyebrow('Gallery from the cloud')}
+    ${!s.configured
+      ? `<p class="note">Off. Set <b>CLOUD_USER</b> and <b>CLOUD_PASSWORD</b> (and <b>CLOUD_FOLDER</b>) in <b>.env</b> and recreate the
+         container (<code>docker compose up -d</code>); the station then reads the folder on <b>${esc(s.source)}</b> over WebDAV and shows
+         every image in it as a grid on <b>/media</b>. Or, on a machine where the folder is already mounted, set <b>CLOUD_DIR</b> to that
+         directory instead.</p>`
+      : `<div class="kv">
+          <dt>Source</dt><dd>${s.mode === 'dir' ? `mounted folder <b>${esc(s.folder)}</b>` : `${esc(s.source)} · folder <b>/${esc(s.folder === '/' ? '' : s.folder)}</b>`}</dd>
+          <dt>Images</dt><dd>${s.listed} listed · ${s.shown} on the grid${s.tooBig.length ? ` · ${s.tooBig.length} too large to copy` : ''}</dd>
+          <dt>Frequency</dt><dd>checked every <b>${s.checkSeconds} s</b> — CLOUD_CHECK_SECONDS in .env; an open /media refreshes on the same beat</dd>
+          <dt>Last read</dt><dd>${when(s.lastPollAt)}</dd>
+          ${s.lastError ? `<dt>Error</dt><dd><b>${esc(s.lastError.message)}</b> (${when(s.lastError.at)})</dd>` : ''}
+        </div>
+        <form method="post" action="/control/cloud/refresh" class="actions">
+          <button class="primary">Read the folder now</button>
+          <a class="btn" href="/media#gallery">Open the grid</a>
+          <span class="note">Read-only: nothing is ever written to the cloud. Copies live on the station's volume, so the grid stands without the network.</span>
+        </form>`}`, 'mars-side');
+}
+
 function resetBlock(day, plan, locked) {
   const when = plan.savedAt ? new Date(plan.savedAt).toLocaleString('en-GB', { timeZone: 'Europe/Berlin', dateStyle: 'medium', timeStyle: 'short' }) : null;
   return panel('CH-00 / START AGAIN', `
@@ -501,13 +509,11 @@ function page(ctx, model) {
     // Every officer's blocks in one column, full width, the blog first —
     // the writing gets the room, and nothing sits beside anything.
     comms: `
-      <p class="note tab-note">${esc(officers.comms.role)}.</p>
       <div class="officer-stack">
         ${blogBlock(officers.comms, 'comms', day, officers.comms.entry, 1)}
         ${moodBlock(officers.comms, 2)}
       </div>`,
     science: `
-      <p class="note tab-note">${esc(officers.science.role)}.</p>
       <div class="officer-stack">
         ${blogBlock(officers.science, 'science', day, officers.science.entry, 1)}
         ${reportBlock(officers.science, 'science', 'Daily science findings',
@@ -515,20 +521,18 @@ function page(ctx, model) {
         ${moodBlock(officers.science, 3)}
       </div>`,
     health: `
-      <p class="note tab-note">${esc(officers.health.role)}.</p>
       <div class="officer-stack">
         ${blogBlock(officers.health, 'health', day, officers.health.entry, 1)}
-        ${reportBlock(officers.health, 'health', 'Daily health activities',
-          'The morning workout, the evening wellbeing activity, and anything else worth recording. The form is prefilled; edit the default text in content/templates.json to change it.', day, tpl.HEALTH, 'health', 2)}
+        ${reportBlock(officers.health, 'health', 'Daily health activities', '', day, tpl.HEALTH, 'health', 2)}
         ${crewFiguresBlock(day, figures, 3)}
         ${moodBlock(officers.health, 4)}
       </div>`,
     habitat: `
-      <p class="note tab-note">The habitat itself: the day's schedule, the food, and what is left.</p>
       ${scheduleBlock(day, tasks)}
       ${mealsBlock(day, meals)}
       ${inventoryBlock(day, items)}
       ${powerBlock(day, power)}
+      ${cloudBlock()}
       ${resetBlock(day, plan, resetLocked)}`,
   };
 
@@ -562,7 +566,7 @@ function page(ctx, model) {
           k === 'messages' && counts.pending + counts.awaitingResponse
             ? `<b class="waiting">${counts.pending + counts.awaitingResponse}</b>` : ''}</a>`).join('')}
     </nav>
-    <div class="daypick-wrap"${tab === 'messages' ? ' hidden' : ''}><div class="sechead" style="margin-top:8px"><span class="secsub">Mission day · edits are live on the station within seconds</span></div>${dayPicker}</div>
+    <div class="daypick-wrap"${tab === 'messages' ? ' hidden' : ''}>${dayPicker}</div>
     ${TABS.map(([k]) => `<div class="tab-pane ${k === tab ? 'on' : ''}" data-pane="${k}" role="tabpanel"
       id="tab-${k}">${panes[k]}</div>`).join('')}
   </div>`;

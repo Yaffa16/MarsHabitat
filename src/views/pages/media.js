@@ -26,8 +26,8 @@ function tile(m, { linkTo = media.pageUrl(m) } = {}) {
 }
 
 /* ================================================================== ENTRY */
-/* A crew-log entry is a post: paragraphs of text with photographs, video
-   and sound set in between them. In the text a picture is a marker on its
+/* A crew-log entry is a post: paragraphs of text with photographs and video
+   set in between them. In the text a picture is a marker on its
    own line — [media:12] — put there by the editor where the cursor was when
    the file was attached, and movable like any other line. Anything attached
    to the entry but not placed in the text is shown after it, so nothing sent
@@ -102,45 +102,50 @@ function strip(items, opts) {
 
 /* ================================================================= GALLERY */
 
-function gallery(ctx, { days, counts, crew, filters }) {
-  const m = ctx.mission, T = ctx.T;
-  const chip = (label, href, on) => `<a class="chip${on ? ' active' : ''}" href="${href}">${label}</a>`;
-  const q = (kind, crewId) => '/media' + (kind || crewId ? '?' + [kind ? `kind=${kind}` : '', crewId ? `crew=${crewId}` : ''].filter(Boolean).join('&') : '');
-  const body = `
-  <div class="logpage-top">
-    <div class="eyebrow">${T('Channel group')} 60 · ${T('Media')} <span class="brk">${T('Out of the habitat')}</span></div>
-    <h1>${T('Media')}</h1>
-    <p class="lede">${T('What the crew send out: photographs, video, sound. Every file is the original as it left the habitat — nothing re-encoded, nothing resized — kept under its own checksum, and every one of them can be downloaded, singly or all at once.')} ${plural(T, counts.total, 'item', 'items')}${counts.total ? ` · ${plural(T, counts.images, 'photograph', 'photographs')} · ${plural(T, counts.videos, 'video', 'videos')} · ${plural(T, counts.audio, 'recording', 'recordings')} · ${fmtBytes(counts.bytes)}` : ''}.</p>
-    <div class="actions">
-      <a class="btn" href="/#media">${T('Back to the mission')}</a>
-      ${counts.total ? `<a class="btn primary" href="/media/export.zip">${T('Download everything')} · ZIP · ${fmtBytes(counts.bytes)}</a>
-      <a class="btn" href="/media/manifest.json">${T('Manifest · every file with its SHA-256')}</a>` : ''}
+/** The cloud folder as a grid: every image, newest first, each opening the
+ *  original. Drawn only when the bridge is configured; if the folder is
+ *  empty or the cloud has not answered yet, it says so rather than vanishing. */
+function cloudGrid(T, cloud) {
+  return `<section class="logpage-day media-day cloud-gallery" id="gallery" data-version="${esc(cloud.snapshot.version || '')}" data-poll="${(Number(cloud.snapshot.checkSeconds) || 20) * 1000}">${cloudGridInner(T, cloud)}</section>`;
+}
+
+/** The grid's inside — the head and the tiles — on its own so the page can
+ *  swap it in as the folder changes (public/cloud.js polls /api/cloud). */
+function cloudGridInner(T, cloud) {
+  const n = cloud.items.length, s = cloud.snapshot;
+  return `
+    <div class="log-day-head">
+      <span class="cs">${esc(T(cloud.title))}</span>
+      <span>${n ? plural(T, n, 'photograph', 'photographs') : T('no photographs yet')} · ${T('checked every')} ${s.checkSeconds} s</span>
+      ${s.lastError && !n ? `<span class="count">${T('the cloud could not be reached')}</span>` : ''}
     </div>
-  </div>
+    ${n ? `<div class="mgrid cloud-grid">${cloud.items.map((x) => `<a class="mtile kind-image" href="${x.url}" title="${esc(x.name)}" target="_blank" rel="noopener">
+      <span class="mtile-visual"><img src="${x.thumb}" alt="${esc(x.name)}" loading="lazy" decoding="async"></span></a>`).join('')}</div>`
+    : `<div class="empty" style="padding:28px">${T('Nothing in the folder yet')}.</div>`}`;
+}
 
-  <div class="feed-filter log-filter logpage-filter" role="group" aria-label="${esc(T('Filter the media'))}">
-    ${chip(T('ALL'), q(null, filters.crewId), !filters.kind)}
-    ${chip(T('PHOTOGRAPHS'), q('image', filters.crewId), filters.kind === 'image')}
-    ${chip(T('VIDEO'), q('video', filters.crewId), filters.kind === 'video')}
-    ${chip(T('SOUND'), q('audio', filters.crewId), filters.kind === 'audio')}
-    ${chip(T('DOCUMENTS'), q('document', filters.crewId), filters.kind === 'document')}
-    <span class="chip-gap"></span>
-    ${chip(T('ALL CREW'), q(filters.kind, null), !filters.crewId)}
-    ${crew.map((c) => chip(esc(c.designation), q(filters.kind, c.id), filters.crewId === c.id)).join('')}
-  </div>
+/** The newest few from the cloud folder, as a strip — the Habitat panel on
+ *  the landing page carries it, kept live by public/cloud.js. */
+function cloudLatestInner(T, cloud) {
+  const items = cloud.items.slice(0, cloud.limit || 6), s = cloud.snapshot;
+  return `<div class="cloud-latest-head">
+      <span class="lbl">${T('Live images from the Habitat')}</span>
+      <span class="sub">${T('checked every')} ${s.checkSeconds} s${s.lastError && !items.length ? ` · ${T('the cloud could not be reached')}` : ''} · <a href="/media#gallery">${T('all photographs')} →</a></span>
+    </div>
+    ${items.length ? `<div class="mstrip cloud-strip">${items.map((x) => `<a class="mtile kind-image" href="${x.url}" title="${esc(x.name)}" target="_blank" rel="noopener">
+      <span class="mtile-visual"><img src="${x.thumb}" alt="${esc(x.name)}" loading="lazy" decoding="async"></span></a>`).join('')}</div>`
+    : `<div class="empty" style="padding:18px">${T('Nothing in the folder yet')}.</div>`}`;
+}
 
-  ${days.length ? `<div class="logpage-days">${days.map((d) => `
-    <section class="logpage-day media-day" id="day-${d.missionDay}">
-      <div class="log-day-head">
-        <span class="cs">${T('Day')} ${dd(d.missionDay)}</span><span>${esc(missionLib.shortDay(d.date))}</span>
-        ${!(m.phase === 'PRE_LAUNCH') && d.missionDay === m.clampedDay ? `<span class="now">${T('Today')}</span>` : ''}
-        <span class="count">${plural(T, d.items.length, 'item', 'items')} · <a href="/media/day/${d.missionDay}/export.zip">${T('download the day')}</a></span>
-      </div>
-      <div class="mgrid">${d.items.map((x) => tile(x)).join('')}</div>
-    </section>`).join('')}</div>`
-  : `<div class="empty" style="padding:40px">${T('Nothing has been sent out yet')}${m.phase === 'PRE_LAUNCH' ? ` — ${T('the habitat is occupied from')} ${esc(m.startLabel)}` : ''}.</div>`}`;
+function gallery(ctx, { cloud = null }) {
+  const T = ctx.T;
+  // /media is the cloud gallery and nothing else: what the crew send out of
+  // the habitat is shown where it belongs — in their entries on the crew
+  // log, in At a Glance and on each item's own page.
+  const body = cloud ? cloudGrid(T, cloud)
+    : `<div class="empty" style="padding:40px;margin-top:26px">${T('The gallery is not connected yet')}.</div>`;
 
-  return L.page({ title: 'Media', ctx, body, current: '/media',
+  return L.page({ title: 'Media', ctx, body, current: '/media', scripts: cloud ? ['/cloud.js'] : [],
     hero: L.masthead(ctx) + L.pageNav('/media', T), hideRail: true, hideNav: true, bodyClass: 'landing inner' });
 }
 
@@ -167,7 +172,6 @@ function item(ctx, { item: m, date, prev, next, position }) {
     <h1>${esc(m.caption || m.filename)}</h1>
     <p class="lede">${m.designation ? esc(m.designation) : T('Habitat')} · ${esc(T(m.kind))} · ${fmtBytes(m.bytes)}${m.width && m.height ? ` · ${m.width}×${m.height}` : ''}${m.duration_s ? ` · ${fmtDur(m.duration_s)}` : ''}${m.taken_at ? ` · ${T('made')} ${esc(m.taken_at)}` : ''}</p>
     <div class="actions">
-      <a class="btn primary" href="${media.fileUrl(m)}?download" download="${esc(m.filename)}">${T('Download the original')} · ${esc(m.filename)}</a>
       <a class="btn" href="/media#day-${m.mission_day}">${T('All media')}</a>
       <a class="btn" href="/logbook#day-${m.mission_day}">${T('That day’s log')}</a>
       ${prev ? `<a class="btn" href="${media.pageUrl(prev)}">← ${T('Previous')}</a>` : ''}
@@ -187,4 +191,4 @@ function item(ctx, { item: m, date, prev, next, position }) {
     hero: L.masthead(ctx) + L.pageNav('/media', T), hideRail: true, hideNav: true, bodyClass: 'landing inner' });
 }
 
-module.exports = { gallery, item, tile, strip, figure, entryHtml, entryText, entryMarkdown, fmtBytes };
+module.exports = { gallery, item, tile, strip, figure, entryHtml, entryText, entryMarkdown, fmtBytes, cloudGridInner, cloudLatestInner };

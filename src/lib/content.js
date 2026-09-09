@@ -201,8 +201,15 @@ function load({ quiet = false } = {}) {
         for (const it of items) {
           const o = override[it.key];
           if (o && typeof o === 'object') {
-            if (o.quantity != null) state[it.key].quantity = Number(o.quantity);
-            if (o.consumption != null) state[it.key].consumption = Number(o.consumption);
+            // The day's row is: available (what was there at the start),
+            // used today, left at the close. Filing either of the last two
+            // gives the other: left = available − used, used = available − left.
+            const available = state[it.key].quantity;
+            const hasQ = o.quantity != null, hasC = o.consumption != null;
+            if (hasC) state[it.key].consumption = Number(o.consumption);
+            if (hasQ) state[it.key].quantity = Number(o.quantity);
+            else if (hasC && n > 1) state[it.key].quantity = Math.max(0, +(available - Number(o.consumption)).toFixed(2));
+            if (hasQ && !hasC && n > 1) state[it.key].consumption = Math.max(0, +(available - Number(o.quantity)).toFixed(2));
           } else if (n > 1) {
             state[it.key].quantity = Math.max(0,
               +(state[it.key].quantity - state[it.key].consumption).toFixed(2));
@@ -244,8 +251,11 @@ function load({ quiet = false } = {}) {
 
     /* ------------------------------------------------------------ notes */
     if (notes) {
-      for (const n of dayKeys(notes)) {
-        if (n > total) { skipped.push(`notes.json day ${n}`); continue; }
+      for (const n of dayKeys(notes)) if (n > total) skipped.push(`notes.json day ${n}`);
+      // The file is the notes: every day of the run is rewritten from it, a
+      // day the file no longer mentions included — otherwise a note taken
+      // out of the file (or left from an older one) would stay on the station.
+      for (let n = 1; n <= total; n++) {
         db.prepare("DELETE FROM day_note WHERE mission_day = ? AND posted_at LIKE '%'").run(n);
         (notes[String(n)] || []).forEach((note) => {
           if (!note.body) return;
@@ -537,6 +547,16 @@ function reset(actor = 'control') {
 }
 
 /** When the last reset happened — the browser drops its cached readings when this changes. */
+/** What was carried in, per store key — from crew-and-inventory.json. */
+function inventoryStart() {
+  try {
+    const j = JSON.parse(fs.readFileSync(path.join(DIR, 'crew-and-inventory.json'), 'utf8'));
+    const out = {};
+    for (const it of (j.inventory || [])) if (it && it.key) out[it.key] = it.start ?? null;
+    return out;
+  } catch { return {}; }
+}
+
 function resetEpoch() {
   const r = db.prepare("SELECT MAX(created_at) t FROM audit WHERE action = 'reset'").get();
   return r && r.t ? r.t : null;
@@ -697,5 +717,5 @@ function edit(name, mutate) {
 
 module.exports = { load, watch, status, edit, templates, crewFigures, power, powerDay, DIR,
                    resourceLogRows, resourceLogCsv, LOG_FILE,
-                   planStatus, savePlan, ensurePlan, reset, resetLocked, resetEpoch, PLAN_DIR, PLAN_FILES,
+                   planStatus, savePlan, ensurePlan, reset, resetLocked, resetEpoch, inventoryStart, PLAN_DIR, PLAN_FILES,
                    PLACEHOLDER, isPlaceholder, placeholderCue, placeholderPublic, placeholderFor };

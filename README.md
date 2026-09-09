@@ -94,7 +94,7 @@ which is mission control's, sits behind the same login.
 | Mission control | `/control` | Five tabs: **Messages** (the reply queue) first, then one per officer, and the habitat — which ends with the plan and the reset |
 | At a Glance | `/at-a-glance` | **A booklet: one day per page, turned by scrolling or swiping sideways** — arrows either side, ← → on a keyboard, a day strip to jump, a `#day-n` link opens on that day. Each page: each day's crew log with its photographs, the exchanges published, the schedule as run, the meals and their cost, the consumption of every store, the habitat summary, the crew's condition as sentences, the mission notes and the media. Days ahead show the plan, and each page scrolls on its own like a page being read. Opened from the button under the mission dashboard, and from the navigation |
 | Crew log | `/logbook` | All thirteen days in order, each officer's entry where written and its placeholder where not — a day strip to jump by, a chip per voice. Opened from the Crew log panel on the station, and from the nav |
-| Media | `/media` | Everything the crew send out — photographs, video, sound — by day, with filters; `/media/:id` one item; `/media/export.zip` everything as one ZIP; `/media/manifest.json` every file with its SHA-256 |
+| Media | `/media` | Everything the crew send out — photographs and video — by day, with filters; `/media/:id` one item; `/media/export.zip` everything as one ZIP; `/media/manifest.json` every file with its SHA-256 |
 | Archive | `/archive` | **Mission control only.** Day-by-day permanent record; `/archive/day/:n`, `/archive/messages`, **`/archive/export.pdf`** (the whole mission as one document), `/archive/export.md`, `/archive/export.json`, **`/archive/readings.zip`** (every reading ever pulled) |
 
 Every address the public subpages used to have (`/messages`, `/crew`, `/day`, `/schedule`,
@@ -143,7 +143,7 @@ changes, so a reply published from control appears on every open phone without a
 activities are one note of that kind in `notes.json`, rewritten on each save; saving an
 inventory level writes `inventory-levels.json`; writing a blog writes `logbook.json`. The
 findings and the activities are written in the same composer as the blog, beside it on the
-officer's tab, and take photographs, video and sound the same way; a picture placed in a
+officer's tab, and take photographs and video the same way; a picture placed in a
 report stays with the report. The interface and the files are edits to the same thing rather than two copies
 of it, so you can work whichever way suits the moment and never reconcile anything.
 
@@ -287,18 +287,19 @@ mission control. Write over it — in the officer's **Daily Blog** on their tab,
 day, or in the file — and it is live on the crew log for that day the moment it is saved. Save it empty (or press **Clear**) and the placeholder comes back. **Any day can be
 written at any time** — before the mission opens, days ahead, days past — and it is public the
 moment it is saved; the log does not wait for the clock. **An entry is a post**, and it is
-written as one: every blog box in mission control is a composer that shows the entry as it
-will be read — a column of paragraphs and pictures with a rule between every two carrying
-**＋ text · ＋ photo / video · ＋ sound**. Press the one you want where it belongs (or drop a
-file onto the entry) and it goes in there, uploads on the spot with a progress bar, shows its
-preview in place, and can be captioned or moved up or down without leaving the box. **✕ on a
-picture deletes it** from the entry and from the station — the blog, the Media page, the
-downloads — at once; the file itself is kept in the archive volume as *withdrawn*. Underneath,
-the editor keeps the same plain text the
-station stores — paragraphs with `[media:12]` lines — in sync in the form, so the file in
-`content/` stays readable and editable by hand, and without JavaScript the box is still a
-textarea with a file picker. The files go into the media archive under that officer and day, so
-they are also in the gallery, the exports and the ZIP. Full guide in `content/README.md`.
+written as one: every blog box in mission control is a composer laid out like a classic
+post editor — a toolbar across the top with **Photo / video** on the left and
+**Visual | Text** on the right, one sheet under it, the word count in the foot. The sheet is
+one document: the text flows, Enter starts a new paragraph, and a photograph or a film goes
+in where the cursor is (press the toolbar button, or drop a file onto the sheet). It uploads
+on the spot with a progress bar, shows its preview in the flow, takes a caption under itself,
+and **✕ deletes it** from the entry and from the station — the blog, the Media page, the
+downloads — at once (Backspace against it asks the same); the file itself is kept in the
+archive volume as *withdrawn*. The **Text** tab shows the same plain text the station stores —
+paragraphs with `[media:12]` lines — for editing by hand, so the file in `content/` stays
+readable, and without JavaScript the box is still a textarea with a file picker. The files go
+into the media archive under that officer and day, so they are also in the gallery, the
+exports and the ZIP. Full guide in `content/README.md`.
 
 ## Who writes what
 
@@ -320,9 +321,8 @@ archive; the seed removes any others.
 
 ## Media out of the habitat
 
-The crew send photographs, video and sound out from inside their blog entries: in the
-officer's **Daily Blog** in mission control, press ＋ photo / video or ＋ sound where it belongs
-in the entry. Each file goes up on its own request with a progress bar, and
+The crew send photographs and video out from inside their blog entries: in the
+officer's **Daily Blog** in mission control, press **Photo / video** on the composer's toolbar. Each file goes up on its own request with a progress bar, and
 the browser makes a small preview first — a downscaled JPEG for a photograph, a captured frame
 for a video — so the gallery has thumbnails without the server ever touching the original.
 Without JavaScript the same form still works as a plain upload.
@@ -360,12 +360,54 @@ the file is kept.
 - Files are served with `Accept-Ranges` so video seeks, and cached as immutable — the address
   never changes what it returns.
 
-Accepted: jpg, png, gif, webp, avif, heic, tif · mp4, m4v, mov, webm, mkv · mp3, m4a, aac, wav,
-ogg, flac · pdf, txt, md, csv, json. Anything else is refused rather than stored as a mystery.
+Accepted: jpg, png, gif, webp, avif, heic, tif · mp4, m4v, mov, webm, mkv · pdf, txt, md, csv,
+json. Sound files are not accepted; anything not listed is refused rather than stored as a
+mystery.
 `MEDIA_MAX_MB` (default 4096) caps a single file. A format the visitor's browser cannot play in
 the page (HEIC, some MOV) is still whole and downloadable — the page says so.
 
 `bash tools/backup.sh` copies the media folder along with the database.
+
+## Photographs from the cloud
+
+Photographs kept on the ZKM cloud (`cloud.zkm.de`, a Nextcloud) are shown as a grid on
+**`/media`** — that page is the gallery and nothing else. The station server signs in with
+the display account over **WebDAV**, checks the folder for new images on a set **frequency**
+(`CLOUD_CHECK_SECONDS`, 20 seconds by default), follows its subfolders, and keeps a copy of every image on the `station-data` volume under `/data/cloud`
+(beside a `manifest.json`), together with the preview Nextcloud renders for it. The browser
+only ever talks to the station — `/media/cloud/<id>` is the copy, `/media/cloud/<id>/thumb`
+the preview — so the grid stands with the cloud slow, the sign-in changed or the venue
+network unplugged, and the credentials never leave the server. It is **read-only**: nothing
+is ever written to the cloud. A file removed from the folder leaves the grid on the next read.
+
+Everything is in **`.env`**: `CLOUD_URL` (default `https://cloud.zkm.de`), `CLOUD_USER` and
+`CLOUD_PASSWORD` (the display account), `CLOUD_FOLDER` (a path inside that account —
+empty for its root), `CLOUD_TITLE` (the heading, default *Gallery*), **`CLOUD_CHECK_SECONDS`**
+(the frequency — how often the folder is checked, and how often an open `/media` asks the
+station for the grid; a picture put in the folder is on every open page within about that
+long, with no reload, the same way the board updates) and `CLOUD_POLL=false` to hold the
+bridge off. Without user and password the
+bridge is off and the section is not on the page. Files over `CLOUD_MAX_MB` (default 60) are
+listed but not copied. Mission control's **Habitat** tab ends with the bridge's state — how
+many images, when the folder was last read, what went wrong — and a **Read the folder now**
+button; `/api/cloud` says the same without credentials.
+
+**On the landing page** the Habitat panel ends with the six most recently **added** to the
+folder as a row — *Live images from the Habitat* — with a link to all of them, kept live on
+the same frequency. "Most recently added" means when the file arrived in the folder (Nextcloud
+numbers every file as it arrives; in a mounted folder, the file's change time), not the date
+the picture itself carries — a phone's photograph taken yesterday and uploaded now is the
+newest. The grid on `/media` is in the same order.
+
+**Or from a mounted folder.** On a machine where the cloud folder is already mounted the
+way ZKM's IT sets it up (`davfs2`, an fstab line for
+`https://cloud.zkm.de/remote.php/dav/files/system_displays/marsplatz`, a `.davfs2/secrets`
+entry), set **`CLOUD_DIR`** to that directory instead of user and password, and the station
+reads the images from it — same listing, same copies on the volume, same grid; only no
+previews, so the grid draws the originals scaled down. Under Docker the mount has to reach
+the container: add `- /path/to/your/mountpoint:/cloud:ro` under the station's `volumes:` in
+`docker-compose.yml` and set `CLOUD_DIR=/cloud`. The two ways are the same protocol and the
+same account; WebDAV from the station itself needs nothing installed and is the simpler one.
 
 ## Where the readings start
 
@@ -730,7 +772,7 @@ a label, a unit, a channel code and thresholds.
 
 ## The mission page
 
-The landing page opens on the **Mars!platz** wordmark on the grey ground, one line beneath it,
+The landing page opens on the **MARS!platz** wordmark on the grey ground, one line beneath it,
 and the station's readings as a row of pills on the right; there is no photograph and no black
 rail. (`public/hero.jpg` is no longer referenced and can be deleted.) Below the wordmark, About ·
 What this is · Who we are sit as a row of three folds, closed until asked. The landing page
@@ -741,10 +783,18 @@ Across the very top runs **the ticker**: an orange cell with the habitat's clock
 ticking), then a continuously running line — the SOL, **what the crew are currently doing**
 (the schedule task whose time it is, with its detail — "14:00 · Maintenance — West panel seal,
 third attempt" — switching to the next as its time comes), what is next, the node's current
-reading (or *no current reading*), and the one-way signal time. Every hour it fetches the
-day's schedule again from `/api/ticker`, so an edit made in mission control — or midnight
+reading (or *no current reading*), and the one-way signal time. Every five minutes it fetches
+the day's schedule again from `/api/ticker`, so an edit made in mission control — or midnight
 turning to a new day — reaches every open phone without a reload. It scrolls like a wire
 ticker, holds while hovered, and stands still under reduced motion.
+
+**The ticker is always now.** Before 15 October it counts down, to the second, to 00:00 at
+the venue on the first day. The moment that instant passes — and likewise when **Reset to 15
+October** is pressed, or the station's dates change under an open page — the page reloads
+itself once and comes back as the run: SOL 01, the day's schedule, the crew's current task. A
+phone left open across midnight on 15 October turns into the run by itself; nobody has to
+refresh anything. (The page never trusts its own clock for this: at zero it asks the
+station, so a phone running fast cannot reload in a loop.)
 
 Below that the page is two things. **The landing fold**: the composer device and the
 message-board screen beside it. **The mission dashboard**: everything else, on the lower band,

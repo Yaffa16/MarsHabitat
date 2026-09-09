@@ -129,15 +129,13 @@ function masthead(ctx, { home = false } = {}) {
   const T = ctx.T || same;
   const m = ctx.mission;
   const pre = m.phase === 'PRE_LAUNCH';
-  const mark = `Mars<span class="bang">!</span>platz`;
+  const mark = `MARS<span class="bang">!</span>platz`;
   const n = m.daysUntilStart;
   return `
   <header class="masthead">
     <div>
       <h1 class="wordmark">${home ? mark : `<a href="/" title="${esc(T('Back to the station'))}">${mark}</a>`}</h1>
-      <p class="tagline">${T('Communication Station')} · <b>ZKM | Hertzlab</b> — ${pre
-        ? T('the only way to reach the crew, once they are inside')
-        : T('the only way to reach the crew')}</p>
+      <p class="tagline">${T('Communication Station')} · <b>ZKM | Hertzlab</b></p>
       <p class="run-dates"><b>${esc(m.runLabel)}</b> · ${m.totalDays} ${T('sols in the habitat')}${pre
         ? ` · ${T('opens in')} ${n} ${T(n === 1 ? 'day' : 'days')}`
         : m.phase === 'ACTIVE' ? ` · SOL ${String(m.clampedDay).padStart(2, '0')} ${T('of')} ${m.totalDays}` : ''}</p>
@@ -158,8 +156,7 @@ function foot(ctx, T = ctx.T || same) {
     <div class="foot-links">
       <a href="/#write">${T('Write')}</a><a href="/#exchanges">${T('Messages')}</a>
       <a href="/#mission">${T('Daily mission')}</a><a href="/#habitat">${T('Habitat')}</a>
-      <a href="/#crew">${T('Crew')}</a><a href="/at-a-glance">${T('At a Glance')}</a><a href="/logbook">${T('Crew log')}</a><a href="/#about">${T('About')}</a>
-      <a href="/control">${T('Mission control')}</a>
+      <a href="/#crew">${T('Crew')}</a><a href="/at-a-glance">${T('At a Glance')}</a><a href="/#about">${T('About')}</a>
     </div>
     <div class="foot-base">
       <span class="foot-brand">ZKM | HERTZLAB — MARS</span>

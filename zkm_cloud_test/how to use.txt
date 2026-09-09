@@ -1,0 +1,2 @@
+ node upload-to-cloud.js 6.jpg
+ node remove-from-cloud.js 1.png 2.jp

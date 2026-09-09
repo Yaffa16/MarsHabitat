@@ -144,6 +144,8 @@ const D = {
 
   'Today’s Schedule': ['Heutiger Tagesplan', 'Programme du jour'],
   'No schedule filed for today': ['Für heute kein Plan erfasst', 'Aucun programme saisi pour aujourd’hui'],
+  'Photographs and video — the gallery, and everything the crew send out of the habitat':
+    ['Fotografien und Video — die Galerie und alles, was die Crew aus dem Habitat sendet', 'Photographies et vidéo — la galerie, et tout ce que l’équipage envoie depuis l’habitat'],
   'The whole mission, day by day — blogs, meals, consumption, habitat, crew condition and every exchange':
     ['Die ganze Mission, Tag für Tag — Blogs, Mahlzeiten, Verbrauch, Habitat, Verfassung der Crew und jeder Austausch',
      'Toute la mission, jour par jour — blogs, repas, consommation, habitat, état de l’équipage et chaque échange'],
@@ -304,6 +306,8 @@ const D = {
   'Sending': ['Sendet', 'Envoi'],
   'Message in transit': ['Nachricht unterwegs', 'Message en transit'],
   'Real crossing': ['Echte Laufzeit', 'Traversée réelle'],
+  'Mars Habitat': ['Mars-Habitat', 'Habitat martien'],
+  'The real message would take': ['Die echte Nachricht bräuchte', 'Le vrai message mettrait'],
   'at a distance of': ['bei', 'à'],
   'this dial compresses it.': ['diese Anzeige verkürzt sie.', 'ce cadran la comprime.'],
   'The wait you are having is shorter than the one the crew have.': ['Dein Warten ist kürzer als das der Crew.', 'Votre attente est plus courte que celle de l’équipage.'],
@@ -580,10 +584,19 @@ const D = {
 
   // ---- the media pages
   'Out of the habitat': ['Aus dem Habitat', 'Sorti de l’habitat'],
-  'What the crew send out: photographs, video, sound. Every file is the original as it left the habitat — nothing re-encoded, nothing resized — kept under its own checksum, and every one of them can be downloaded, singly or all at once.':
-    ['Was die Crew hinausschickt: Fotografien, Video, Ton. Jede Datei ist das Original, wie es das Habitat verlassen hat — nichts neu kodiert, nichts verkleinert —, unter eigener Prüfsumme aufbewahrt, und jede davon lässt sich herunterladen, einzeln oder alle auf einmal.',
-     'Ce que l’équipage envoie : photographies, vidéo, son. Chaque fichier est l’original tel qu’il a quitté l’habitat — rien de réencodé, rien de redimensionné —, conservé sous sa propre somme de contrôle, et chacun peut être téléchargé, seul ou tous à la fois.'],
+  'What the crew send out: photographs and video. Every file is the original as it left the habitat — nothing re-encoded, nothing resized — kept under its own checksum, and every one of them can be downloaded, singly or all at once.':
+    ['Was die Crew hinausschickt: Fotografien und Video. Jede Datei ist das Original, wie es das Habitat verlassen hat — nichts neu kodiert, nichts verkleinert —, unter eigener Prüfsumme aufbewahrt, und jede davon lässt sich herunterladen, einzeln oder alle auf einmal.',
+     'Ce que l’équipage envoie : photographies et vidéo. Chaque fichier est l’original tel qu’il a quitté l’habitat — rien de réencodé, rien de redimensionné —, conservé sous sa propre somme de contrôle, et chacun peut être téléchargé, seul ou tous à la fois.'],
   'photograph': ['Fotografie', 'photographie'],
+  'Gallery': ['Galerie', 'Galerie'],
+  'The gallery is not connected yet': ['Die Galerie ist noch nicht verbunden', 'La galerie n’est pas encore connectée'],
+  'no photographs yet': ['noch keine Fotografien', 'pas encore de photographies'],
+  'as of': ['Stand', 'au'],
+  'checked every': ['geprüft alle', 'vérifié toutes les'],
+  'Live images from the Habitat': ['Live-Bilder aus dem Habitat', 'Images en direct de l’habitat'],
+  'all photographs': ['alle Fotografien', 'toutes les photographies'],
+  'the cloud could not be reached': ['die Cloud war nicht erreichbar', 'le cloud n’a pas pu être joint'],
+  'Nothing in the folder yet': ['Noch nichts im Ordner', 'Rien dans le dossier pour l’instant'],
   'photographs': ['Fotografien', 'photographies'],
   'video': ['Video', 'vidéo'],
   'videos': ['Videos', 'vidéos'],

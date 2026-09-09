@@ -10,6 +10,7 @@ export SENSOR_TOKEN=${SENSOR_TOKEN:-test-token}
 # its own database in a temp directory, so running the tests never touches
 # the station's real data.
 export CRITICAL_POLL=${CRITICAL_POLL:-false}   # keep the suite off the network
+export CLOUD_POLL=false HA_POLL=${HA_POLL:-false}
 export MISSION_OVERRIDE=true    # a rehearsal: the real dates are fixed in src/lib/run.js
 export MISSION_START=${MISSION_START:-$(date -u -d '-4 days' +%F)}
 export MISSION_END=${MISSION_END:-$(date -u -d '+8 days' +%F)}
@@ -66,6 +67,8 @@ echo "── mission control is one page"
 CTRL=$(curl -s -b $A $B/control)
 echo "$CTRL" | grep -q 'id="queue"' && ok "the message queue is on the page" || bad "no queue"
 echo "$CTRL" | grep -q 'class="filters"' && ok "message views filter in place" || bad "no filter bar"
+echo "$CTRL" | grep -q 'crossed ' && bad "the light-time is still on the queue cards" || ok "queue cards carry no light-time"
+echo "$CTRL" | grep -q 'Save draft' && bad "Save draft is still offered" || ok "no Save draft button"
 node -e '
 const h = require("child_process").execSync("curl -s -b /tmp/admin.jar http://localhost:8080/control").toString();
 const q = h.indexOf("id=\"queue\""), m = h.indexOf("data-pane=\"messages\""), c = h.indexOf("data-pane=\"comms\"");
@@ -195,6 +198,22 @@ curl -s -b $A -X POST -d "day=2" -d "kind=health" -d "crew_id=3" -d "back=health
 curl -s $B/at-a-glance | grep -q "sleeping through" && ok "health activities file the same way" || bad "health report failed"
 
 curl -s -b $A -X POST -d "day=2" -d "q_water=555" -d "c_water=20" -o /dev/null $B/control/inventory
+# the inventory row is available · used today · left: filing one of the last two gives the other
+curl -s -b $A -X POST -d "day=3" -d "c_water=30" -o /dev/null $B/control/inventory; sleep 2
+node -e '
+const db = require("./src/db").db;
+const r = db.prepare("SELECT il.quantity, il.consumption FROM inventory_level il JOIN inventory_item i ON i.id = il.item_id WHERE i.key = ? AND il.mission_day = 3").get("water");
+process.exit(r && Math.abs(r.quantity - (555 - 30)) < 0.01 && r.consumption === 30 ? 0 : 1);
+' && ok "filing only the amount used today leaves available − used for the future" || bad "used-today alone does not derive what is left"
+curl -s -b $A -X POST -d "day=4" -d "q_water=500" -o /dev/null $B/control/inventory; sleep 2
+node -e '
+const db = require("./src/db").db;
+const r = db.prepare("SELECT il.quantity, il.consumption FROM inventory_level il JOIN inventory_item i ON i.id = il.item_id WHERE i.key = ? AND il.mission_day = 4").get("water");
+process.exit(r && r.quantity === 500 && Math.abs(r.consumption - 25) < 0.01 ? 0 : 1);
+' && ok "filing only what is left derives the amount used today" || bad "left alone does not derive used today"
+curl -s -b $A "$B/control?tab=habitat&day=1" | grep -q "Available amount" && ok "the inventory columns read Available · Used today · Left for future" || bad "inventory columns not relabelled"
+curl -s -b $A -X POST -d "day=3" -d "c_water=" -d "q_water=" -o /dev/null $B/control/inventory
+curl -s -b $A -X POST -d "day=4" -d "c_water=" -d "q_water=" -o /dev/null $B/control/inventory; sleep 2
 node -e '
 const d=require(process.env.CONTENT_DIR+"/inventory-levels.json");
 process.exit(d["2"] && d["2"].water && d["2"].water.quantity===555?0:1);' \
@@ -307,7 +326,7 @@ NAV2=$(curl -s -b $A $B/archive | grep -oP '(?<=class="nav">).*?(?=</nav>)' | gr
 [ "$NAV2" = "Mission Messages At a Glance Crew log About " ] \
   && ok "the archive's top bar points into the landing page" || bad "archive top bar is: $NAV2"
 FOOT=$(curl -s $B/)
-for l in "/#exchanges" "/logbook" "/#mission" "/#crew" "/#about"; do
+for l in "/#exchanges" "/#mission" "/#crew" "/#about" "/at-a-glance" "/media"; do
   echo "$FOOT" | grep -q "href=\"$l\"" || bad "landing page missing link: $l"
 done
 ok "the landing footer carries the navigation"
@@ -323,7 +342,7 @@ echo "$LOGPAGE" | grep -q "id=\"day-$((TODAY + 1))\"" || bad "/logbook does not 
 [ "$(echo "$LOGPAGE" | grep -c 'class="log-day logpage-day"')" = "13" ] || bad "/logbook does not carry all thirteen days"
 echo "$LOGPAGE" | grep -q 'log-entry placeholder' || bad "/logbook shows no placeholder slots"
 echo "$LOGPAGE" | grep -q "Day three." || bad "/logbook is missing the day-3 entry filed from control"
-echo "$FOOT" | grep -q 'href="/logbook"' || bad "the crew log panel does not open the log page"
+echo "$FOOT" | grep -q 'href="/control"' && bad "the footer still offers mission control to visitors" || ok "no mission-control or crew-log buttons in the footer bar"
 ok "the crew log is a page of its own: all thirteen days, placeholders where nothing is written yet, reached from the panel"
 for sec in write exchanges mission habitat crew about what who-we-are; do
   echo "$FOOT" | grep -q "id=\"$sec\"" || bad "landing page has no #$sec section"
@@ -334,7 +353,7 @@ echo "$FOOT" | grep -q 'id="media"' && bad "the media panel is still on the land
 echo "$FOOT" | grep -q 'id="whole"' && bad "the whole-mission panel is still on the landing page" || ok "no whole-mission panel — the run day by day lives in At a Glance"
 echo "$FOOT" | grep -q 'class="ticker"' && echo "$FOOT" | grep -q 'id="tk-clock"' && ok "a ticker runs across the top: the habitat's clock and the current activity" || bad "no ticker on the landing page"
 echo "$FOOT" | grep -q 'id="tk-now"' && echo "$FOOT" | grep -q 'data-tasks=' && ok "the ticker says what the crew are currently doing and switches to the next task as its time comes" || bad "ticker has no current activity"
-echo "$FOOT" | grep -qF "fetch('/api/ticker'" && echo "$FOOT" | grep -qF "60 * 60 * 1000" && ok "and refreshes the schedule from the station every hour" || bad "ticker does not refresh hourly"
+echo "$FOOT" | grep -qF "fetch('/api/ticker'" && echo "$FOOT" | grep -qF "5 * 60 * 1000" && ok "and refreshes the schedule from the station every five minutes" || bad "ticker does not refresh on a cycle"
 TK=$(curl -s $B/api/ticker)
 echo "$TK" | grep -q '"tasks":\[' && echo "$TK" | grep -q '"label"' && echo "$TK" | grep -q '"detail"' && ok "/api/ticker hands the day's activities with their detail" || bad "/api/ticker broken"
 echo "$FOOT" | grep -q 'id="tk-hab"' && ok "and the node's current reading, refreshed on its cycle" || bad "ticker has no habitat reading"
@@ -418,7 +437,7 @@ done
 echo "$PAGE" | grep -q 'id="habitat"' || bad "no habitat panel on the dashboard"
 ok "portal and board are headed; the habitat is a panel of the dashboard"
 echo "$PAGE" | grep -q 'class="masthead"' && ok "the masthead leads the page" || bad "no masthead"
-echo "$PAGE" | grep -q 'class="wordmark">Mars<span class="bang">!</span>platz' && ok "the Mars!platz wordmark is on the masthead" || bad "no wordmark on the masthead"
+echo "$PAGE" | grep -q 'class="wordmark">MARS<span class="bang">!</span>platz' && ok "the Mars!platz wordmark is on the masthead" || bad "no wordmark on the masthead"
 echo "$PAGE" | grep -q 'class="device composer-device' && ok "the composer is a device" || bad "no composer device"
 echo "$PAGE" | grep -q 'class="screen board"' && ok "the board is a screen" || bad "no board screen"
 echo "$PAGE" | grep -q 'class="run-dates"' && ok "the run and its day are stated under the wordmark" || bad "no run dates on the masthead"
@@ -481,7 +500,7 @@ echo "$DE" | grep -q ">Senden<" && ok "the transmit button reads in German" || b
 echo "$DE" | grep -q 'value="de" class="on" aria-current="true"' && ok "the switch marks DE as current" || bad "DE not marked current"
 echo "$DE" | grep -q 'window.MCS_T=' && echo "$DE" | grep -q '"Message Board":"Nachrichtenboard"' \
   && ok "the page carries the German table for its scripts" || bad "no MCS_T table for the page scripts"
-echo "$DE" | grep -q 'class="wordmark">Mars<span class="bang">!</span>platz' && ok "the wordmark is not translated" || bad "wordmark changed"
+echo "$DE" | grep -q 'class="wordmark">MARS<span class="bang">!</span>platz' && ok "the wordmark is not translated" || bad "wordmark changed"
 echo "$DE" | grep -q "ZKM | Hertzlab" && ok "ZKM | Hertzlab stays as written" || bad "ZKM | Hertzlab changed"
 curl -s -b $LJ -c $LJ -X POST -d "to=fr" -o /dev/null $B/lang
 FR=$(curl -s -b $LJ $B/)
@@ -676,7 +695,7 @@ curl -s -b $A -F "day=$TODAY" -F "file=@/tmp/e2e-clip.mp4" -F "file=@/tmp/e2e-ph
   && ok "a plain form post carries several files and returns to an officer's tab" || bad "plain multipart upload failed"
 curl -s -b $A -H "X-Requested-With: fetch" -F "day=$TODAY" -F "file=@/tmp/e2e-bad.exe" $B/control/media/upload | grep -q '"ok":false' \
   && ok "a file type the archive does not keep is refused" || bad "an .exe was accepted"
-curl -s $B/media | grep -q "West wall at dawn" && ok "the photograph is on the public Media page" || bad "not on /media"
+curl -s $B/media | grep -q "West wall at dawn" && bad "the crew's media leak onto /media — that page is the cloud gallery only" || ok "the crew's photograph is not on /media (that page is the cloud gallery only)"
 curl -s $B/at-a-glance | grep -q "West wall at dawn" && ok "and on its day in At a Glance" || bad "not in At a Glance"
 curl -s $B/logbook | grep -q "West wall at dawn" && ok "and under its day on the crew log" || bad "not on /logbook"
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/media/$MID)" = "200" ] && ok "each item has a page of its own" || bad "item page missing"
@@ -826,6 +845,64 @@ curl -s -b $A $B/archive/readings.json | grep -q '"bySource"' && ok "and listed 
 curl -s -b $A $B/archive | grep -q 'href="/archive/readings.zip"' && ok "the archive page carries the download" || bad "no readings download on the archive page"
 RL_BEFORE=$(find "$DATA_DIR/readings" -name '*.json' | wc -l)
 
+echo "── notes mirror the file"
+node -e '
+const fs = require("fs"), p = process.env.CONTENT_DIR + "/notes.json";
+const d = JSON.parse(fs.readFileSync(p)); d["1"] = [{ kind: "BROADCAST", body: "STALE NOTE FOR DAY ONE" }];
+fs.writeFileSync(p, JSON.stringify(d, null, 2));'
+sleep 3
+curl -s $B/at-a-glance | grep -q "STALE NOTE FOR DAY ONE" && ok "a note added to notes.json is on At a Glance" || bad "note not loaded"
+node -e '
+const fs = require("fs"), p = process.env.CONTENT_DIR + "/notes.json";
+const d = JSON.parse(fs.readFileSync(p)); delete d["1"];
+fs.writeFileSync(p, JSON.stringify(d, null, 2));'
+sleep 3
+curl -s $B/at-a-glance | grep -q "STALE NOTE FOR DAY ONE" && bad "a day taken out of notes.json keeps its old notes on the station" || ok "a day taken out of notes.json loses its notes on the station too — the file is the notes"
+
+echo "── the ticker is now"
+curl -s $B/api/ticker | grep -q '"opensAt":"' && ok "/api/ticker says when the run opens, so an open page can count down to it" || bad "no opensAt on /api/ticker"
+curl -s $B/ | grep -q 'data-opens="' && curl -s $B/ | grep -q 'data-phase="' && ok "the ticker carries the phase and the opening instant, and turns the page over when they move" || bad "ticker lacks phase/opens"
+grep -q "window.location.reload" src/views/pages/public.js && grep -q "d.phase !== phase" src/views/pages/public.js && ok "a page left open into 15 October (or across a reset) reloads itself into the run" || bad "no turn-over on phase change"
+
+echo "── the page scripts"
+for f in public/habitat.js public/board.js public/composer.js public/hardware.js public/cloud.js; do node --check $f || bad "$f does not parse"; done
+# the translation helper must not share a name with any inner variable: a
+# `var t = …` inside a drawing function shadows it and "t is not a function"
+# takes the whole Trends panel down
+node -e '
+const s = require("fs").readFileSync("public/habitat.js", "utf8");
+const helper = /var (\w+) = window\.t \|\|/.exec(s); if (!helper) process.exit(0);
+const inner = new RegExp("\\bvar " + helper[1] + " = (?!window\\.t)");
+process.exit(inner.test(s) ? 1 : 0);
+' && ok "habitat.js keeps its translation helper clear of the drawing code (Trends draws)" || bad "habitat.js shadows its translation helper — Trends would be empty"
+
+echo "── the cloud gallery"
+curl -s $B/api/cloud | grep -q '"configured":false' && ok "the cloud bridge is off when CLOUD_POLL=false — no credentials, no folder" || bad "cloud bridge on in the suite"
+curl -s $B/media | grep -q 'cloud-gallery' && bad "the gallery section shows without the bridge" || ok "no gallery section on /media until the bridge is configured"
+curl -s $B/api/cloud | grep -q 'CLOUD_PASSWORD\|system_displays' && bad "the cloud status leaks credentials" || ok "the cloud status carries no credentials"
+[ "$(curl -s -o /dev/null -w '%{http_code}' $B/media/cloud/0123456789abcdef)" = "404" ] && ok "an unknown cloud image is a 404" || bad "unknown cloud image not refused"
+node -e '
+const c = require("./src/lib/cloud"); const s = c.snapshot();
+process.exit(!s.configured && typeof c.gallery === "function" && c.gallery().length === 0 ? 0 : 1);
+' && ok "the bridge module loads and answers empty when off" || bad "cloud module broken"
+grep -q "CLOUD_USER" docker-compose.yml && grep -q "CLOUD_PASSWORD" .env.example && ok "the cloud settings reach the container from .env" || bad "compose does not pass the cloud settings through"
+mkdir -p /tmp/e2e-cloud/sub && cp /tmp/e2e-photo.png /tmp/e2e-cloud/a.png && cp /tmp/e2e-photo.png /tmp/e2e-cloud/sub/b.png && echo x > /tmp/e2e-cloud/notes.txt
+CLOUD_POLL=true CLOUD_DIR=/tmp/e2e-cloud DATA_DIR=$(mktemp -d) node -e '
+const c = require("./src/lib/cloud");
+c.poll().then(() => { const g = c.gallery(); const s = c.snapshot();
+  process.exit(s.mode === "dir" && g.length === 2 && g.every((x) => /^\/media\/cloud\/[0-9a-f]{16}$/.test(x.url)) && require("fs").existsSync(c.filePath(c.get(g[0].id))) ? 0 : 1); });
+' && ok "a mounted folder (CLOUD_DIR) is read like the cloud — images copied, subfolders followed, other files skipped" || bad "CLOUD_DIR mode broken"
+grep -q "CLOUD_DIR" docker-compose.yml && ok "and CLOUD_DIR reaches the container" || bad "CLOUD_DIR not passed through"
+CLOUD_POLL=true CLOUD_DIR=/tmp/e2e-cloud CLOUD_CHECK_SECONDS=7 DATA_DIR=$(mktemp -d) node -e '
+const c = require("./src/lib/cloud"); const s = c.snapshot();
+process.exit(s.checkSeconds === 7 && typeof s.version === "string" ? 0 : 1);
+' && ok "the frequency is one number, CLOUD_CHECK_SECONDS, and the grid carries a version stamp" || bad "frequency setting not honoured"
+grep -q 'data-version' src/views/pages/media.js && grep -q "fetch('/api/cloud'" public/cloud.js && grep -q "CLOUD_CHECK_SECONDS" docker-compose.yml \
+  && ok "an open /media polls /api/cloud on that beat and swaps the grid in as the folder changes" || bad "live gallery wiring missing"
+grep -q 'id="cloud-latest"' src/views/pages/public.js && grep -q "cloud-latest" public/cloud.js && grep -q "slice(0, 6)" src/server.js && grep -q "Live images from the Habitat" src/views/pages/media.js \
+  && ok "the Habitat panel carries Live images from the Habitat — the newest six from the cloud, on the same live beat" || bad "live-images strip missing"
+curl -s $B/ | grep -q 'cloud-latest' && bad "the latest strip shows without the bridge" || ok "no latest strip on the landing page until the bridge is configured"
+
 echo "── at a glance"
 GLA=$(curl -s $B/at-a-glance)
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/at-a-glance)" = "200" ] && ok "At a Glance is a public page" || bad "/at-a-glance broken"
@@ -845,6 +922,7 @@ echo "$GLA" | grep -q 'id="bk-prev"' && echo "$GLA" | grep -q 'id="bk-next"' && 
 grep -q "scroll-snap-type: x mandatory" public/station.css && ok "pages snap, so a swipe lands on a whole day" || bad "no scroll snap"
 echo "$GLA" | grep -qF 'day-(\d+)' && ok "a #day-n link opens the booklet on that day" || bad "hash landing broken"
 curl -s $B/ | grep -q 'class="glance-link" href="/at-a-glance"' && ok "the At a Glance button is on the mission dashboard" || bad "no At a Glance button on the landing page"
+curl -s $B/ | grep -q 'class="glance-link media-link" href="/media"' && ok "and the Media button beside it" || bad "no Media button on the mission dashboard"
 node -e '
 const h = require("child_process").execSync("curl -s http://localhost:8080/").toString();
 process.exit(h.indexOf("glance-link") > -1 && h.indexOf("glance-link") < h.indexOf("id=\"habitat\"") ? 0 : 1);

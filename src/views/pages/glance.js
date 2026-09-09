@@ -271,7 +271,6 @@ function page(ctx, { records, rehearsal = null }) {
   <div style="padding:30px 0 10px">
     <div class="eyebrow">${T('Channel group')} 30 · ${T('The whole mission, day by day')}</div>
     <h1>${T('At a Glance')}</h1>
-    <p class="lede">${T("A booklet of the run: one day per page. Scroll or swipe sideways — or use the arrows — to turn to the next day. Each page holds everything its day held: the crew's blog, the exchanges with Earth, the schedule, the meals, the consumption, the habitat and the crew's condition. Days ahead show the plan.")}</p>
     <nav class="filters daypick" id="bk-strip" aria-label="${esc(T('Jump to a day'))}">${
       (rehearsal ? `<a href="#today" data-day="0" class="${openOn === 0 ? 'on' : ''}" title="${esc(T('Today, before the run — a rehearsal preview'))}">${T('NOW')}</a>` : '')
     }${records.map((r) =>

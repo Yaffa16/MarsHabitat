@@ -47,6 +47,21 @@ services:
       # 27 October 2026, after which nothing is updated by automation).
       CRITICAL_FREEZE_AT: "${CRITICAL_FREEZE_AT:-}"
 
+      # --- the cloud gallery (WebDAV) ----------------------------------------
+      # Credentials for the display account on the ZKM cloud come from .env
+      # and stay out of the repository; the folder is a path inside it.
+      CLOUD_URL: "${CLOUD_URL:-https://cloud.zkm.de}"
+      CLOUD_USER: "${CLOUD_USER:-}"
+      CLOUD_PASSWORD: "${CLOUD_PASSWORD:-}"
+      CLOUD_FOLDER: "${CLOUD_FOLDER:-}"
+      CLOUD_TITLE: "${CLOUD_TITLE:-Gallery}"
+      CLOUD_CHECK_SECONDS: "${CLOUD_CHECK_SECONDS:-20}"
+      CLOUD_POLL: "${CLOUD_POLL:-true}"
+      # If the folder is mounted on the host instead (davfs2), add a volume
+      # below, e.g.  - /path/to/your/mountpoint:/cloud:ro  and set
+      # CLOUD_DIR=/cloud in .env; user and password are then not needed.
+      CLOUD_DIR: "${CLOUD_DIR:-}"
+
       # --- the habitat's own hardware (Home Assistant) -----------------------
       # Host, port and token come from .env and stay out of the repository;
       # which sensors are read lives in content/home-assistant.json. Without

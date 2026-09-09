@@ -52,7 +52,8 @@
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); send.click(); }
     });
     // The box grows with the reply instead of scrolling inside two lines.
-    var grow = function () { box.style.height = 'auto'; box.style.height = Math.min(320, box.scrollHeight + 2) + 'px'; };
+    // never below four lines (the stylesheet's min-height holds too), never above 400px
+    var grow = function () { box.style.height = 'auto'; box.style.height = Math.max(112, Math.min(400, box.scrollHeight + 2)) + 'px'; };
     box.addEventListener('input', grow);
     grow();
   });

@@ -8,9 +8,9 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const media = require('../lib/media');
+const cloud = require('../lib/cloud');
 const { writeZip } = require('../lib/zip');
 const missionLib = require('../lib/mission');
-const data = require('../lib/data');
 const M = require('../views/pages/media');
 
 const router = express.Router();
@@ -19,12 +19,23 @@ const router = express.Router();
 
 router.get('/', (req, res) => {
   const ctx = req.ctx();
-  const kind = ['image', 'video', 'audio', 'document'].includes(req.query.kind) ? req.query.kind : null;
-  const crewId = Number(req.query.crew) || null;
   res.send(M.gallery(ctx, {
-    days: media.byDay({ kind, crewId }).map((d) => ({ ...d, date: missionLib.dateForDay(d.missionDay) })),
-    counts: media.counts(), crew: data.crewWithMood(), filters: { kind, crewId },
+    cloud: cloud.configured() ? { title: cloud.CFG.title, items: cloud.gallery(), snapshot: cloud.snapshot() } : null,
   }));
+});
+
+/* The cloud gallery's copies — the original as it is on the cloud, and the
+   preview Nextcloud rendered — served from the station's own volume, so no
+   browser ever needs the cloud or its credentials. */
+router.get('/cloud/:id([0-9a-f]{16})', (req, res, next) => {
+  const it = cloud.get(req.params.id); if (!it) return next();
+  const p = cloud.filePath(it); if (!fs.existsSync(p)) return next();
+  res.set('Cache-Control', 'public, max-age=3600').type(it.mime || 'application/octet-stream').sendFile(p);
+});
+router.get('/cloud/:id([0-9a-f]{16})/thumb', (req, res, next) => {
+  const it = cloud.get(req.params.id); if (!it) return next();
+  const p = cloud.thumbPath(it); if (!fs.existsSync(p)) return res.redirect(`/media/cloud/${it.id}`);
+  res.set('Cache-Control', 'public, max-age=3600').type('image/jpeg').sendFile(p);
 });
 
 router.get('/manifest.json', (req, res) => {

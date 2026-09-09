@@ -375,7 +375,7 @@ function cover(L, G) {
   const pdf = L.pdf, p = L.page;
   pdf.rect(p, M.left, 150, CW, 4, { fill: ORANGE });
   pdf.text(p, M.left, 200, 'ZKM | Hertzlab', { size: 10, color: GREY });
-  pdf.text(p, M.left, 250, 'Mars!platz', { font: 'bold', size: 42 });
+  pdf.text(p, M.left, 250, 'MARS!platz', { font: 'bold', size: 42 });
   pdf.text(p, M.left, 282, 'Communication Station', { font: 'bold', size: 20, color: ORANGE });
   pdf.text(p, M.left, 330, 'The complete mission record', { size: 16 });
   pdf.text(p, M.left, 350, st.name, { size: 11, color: GREY });
