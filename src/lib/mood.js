@@ -5,6 +5,12 @@
  * the only place where that value becomes language. Keeping the mapping in
  * one file means the tone of the whole crew section can be retuned without
  * touching any template.
+ *
+ * The language is English, the mission's working language, and that is
+ * what mission control and the archive show. The public pages put the
+ * condition word and the sentence through the visitor's `T` — every band
+ * below has its German and French in src/lib/i18n.js, so a band reworded
+ * here needs its entry there reworded too.
  */
 
 /**

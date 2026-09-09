@@ -8,6 +8,9 @@
 
   var HOST = document.getElementById('hbt-bento');
   if (!HOST) return;
+  /* The visitor's language: the page head carries the dictionary for it
+     (window.MCS_T, from src/lib/i18n.js); t() reads it, English otherwise. */
+  var t = window.t || function (s) { return s; };
 
   /* ------------------------------------------------------------ config */
   var CFG = {
@@ -41,9 +44,9 @@
 
   var CHANNELS = [
     { key: 'co2', name: 'CO₂', unit: 'ppm', decimals: 0, domain: [0, 2000], step: 500, alertAbove: 800 },
-    { key: 'temp', name: 'Temperature', unit: '°C', decimals: 1, domain: [0, 40], step: 10 },
-    { key: 'hum', name: 'Humidity', unit: '%RH', decimals: 0, domain: [0, 100], step: 25 },
-    { key: 'light', name: 'Light', unit: 'raw', decimals: 0, domain: [0, 1000], step: 250 }
+    { key: 'temp', name: t('Temperature'), unit: '°C', decimals: 1, domain: [0, 40], step: 10 },
+    { key: 'hum', name: t('Humidity'), unit: '%RH', decimals: 0, domain: [0, 100], step: 25 },
+    { key: 'light', name: t('Light'), unit: 'raw', decimals: 0, domain: [0, 1000], step: 250 }
   ];
   var KEYS = ['co2', 'temp', 'hum', 'light', 'pres', 'bat', 'rssi'];
   var DAY = 86400000;
@@ -122,10 +125,10 @@
   }
   function fmtAgo(ms) {
     var s = Math.max(0, Math.round(ms / 1000));
-    if (s < 60) return s + 's ago';
+    if (s < 60) return s + 's ' + t('ago');
     var m = Math.round(s / 60);
-    if (m < 60) return m + ' min ago';
-    return Math.floor(m / 60) + 'h ' + (m % 60) + 'm ago';
+    if (m < 60) return m + ' min ' + t('ago');
+    return Math.floor(m / 60) + 'h ' + (m % 60) + 'm ' + t('ago');
   }
 
   /* -------------------------------------------------- tile 1: the dial */
@@ -193,10 +196,10 @@
     var hotNow = isHot(ch, last);
     $('co2Val').innerHTML = last.toFixed(0) + '<em>ppm</em>';
     $('co2Val').classList.toggle('hot', hotNow);
-    $('co2Verdict').textContent = hotNow ? 'Over ' + ch.alertAbove + ' ppm' : 'Within limit';
+    $('co2Verdict').textContent = hotNow ? t('Over') + ' ' + ch.alertAbove + ' ppm' : t('Within limit');
     $('co2Verdict').classList.toggle('hot', hotNow);
-    $('co2Sub').textContent = 'The ring is the day, midnight at the top · ' + pts.length + ' readings · ' +
-      Math.round(lo) + '–' + Math.round(hi) + ' ppm today · limit ' + ch.alertAbove + ' ppm';
+    $('co2Sub').textContent = t('The ring is the day, midnight at the top') + ' \u00b7 ' + pts.length + ' ' + t('readings') + ' \u00b7 ' +
+      Math.round(lo) + '\u2013' + Math.round(hi) + ' ppm ' + t('today') + ' \u00b7 ' + t('limit') + ' ' + ch.alertAbove + ' ppm';
   }
 
   /* ------------------------------------------------- tile 2: the ruler */
@@ -242,7 +245,7 @@
       $('tempVal').innerHTML = val.toFixed(ch.decimals) + '<em>°C</em>';
       var all = pts.map(function (p) { return p.temp; });
       $('tempVerdict').textContent = Math.min.apply(null, all).toFixed(1) + '–' +
-        Math.max.apply(null, all).toFixed(1) + ' in view';
+        Math.max.apply(null, all).toFixed(1) + ' ' + t('in view');
     }
   }
 
@@ -362,12 +365,12 @@
      range, so a line that barely moves is drawn barely moving. */
   var TREND_CHANNELS = [
     { key: 'co2', name: 'CO₂', unit: 'ppm', domain: [0, 2000] },
-    { key: 'temp', name: 'Temperature', unit: '°C', domain: [0, 40] },
-    { key: 'hum', name: 'Humidity', unit: '%RH', domain: [0, 100] },
-    { key: 'light', name: 'Light', unit: 'raw', domain: [0, 1000] },
-    { key: 'pres', name: 'Air pressure', unit: 'hPa', domain: [950, 1050] },
-    { key: 'bat', name: 'Node battery', unit: 'V', domain: [3, 4.5] },
-    { key: 'rssi', name: 'Node signal', unit: 'dBm', domain: [-100, -30] }
+    { key: 'temp', name: t('Temperature'), unit: '°C', domain: [0, 40] },
+    { key: 'hum', name: t('Humidity'), unit: '%RH', domain: [0, 100] },
+    { key: 'light', name: t('Light'), unit: 'raw', domain: [0, 1000] },
+    { key: 'pres', name: t('Air pressure'), unit: 'hPa', domain: [950, 1050] },
+    { key: 'bat', name: t('Node battery'), unit: 'V', domain: [3, 4.5] },
+    { key: 'rssi', name: t('Node signal'), unit: 'dBm', domain: [-100, -30] }
   ];
   function niceMax(v) {
     if (!(v > 0)) return 1;
@@ -571,7 +574,7 @@
       if (isTodayCol) {
         var tag = el('text', { x: x(i).toFixed(1), y: H - (narrow() ? 20 : 27), 'text-anchor': anchor,
           'class': 'taxis-t today', style: 'font-size:9px;letter-spacing:.08em' });
-        tag.textContent = 'TODAY';
+        tag.textContent = t('TODAY');
         svg.appendChild(tag);
       }
     }
@@ -678,27 +681,27 @@
   /* ----------------------------------------------------------- notes */
   function notesHTML() {
     if (frozen()) {
-      return '<div class="note"><b>The record closed on ' + fmtDate(Date.parse(CFG.freezeDate + 'T12:00:00')) + '.</b> ' +
-        (state.lastReadAt ? 'Last reading ' + fmtDate(state.lastReadAt) + '. ' : '') + 'Nothing is updated after that.</div>';
+      return '<div class="note"><b>' + t('The record closed on') + ' ' + fmtDate(Date.parse(CFG.freezeDate + 'T12:00:00')) + '.</b> ' +
+        (state.lastReadAt ? t('Last reading') + ' ' + fmtDate(state.lastReadAt) + '. ' : '') + t('Nothing is updated after that.') + '</div>';
     }
     if (state.failure) {
-      return '<div class="note alert"><b>Could not reach the sensor feed.</b> ' +
+      return '<div class="note alert"><b>' + t('Could not reach the sensor feed.') + '</b> ' +
         (state.rows.length
-          ? 'Showing the last good data, read ' + fmtAgo(Date.now() - (state.lastReadAt || Date.now())) + '.'
-          : 'Nothing has been read yet.') + '</div>';
+          ? t('Showing the last good data, read') + ' ' + fmtAgo(Date.now() - (state.lastReadAt || Date.now())) + '.'
+          : t('Nothing has been read yet.')) + '</div>';
     }
     var newest = state.rows.length ? state.rows[state.rows.length - 1].t : null;
     if (!state.rows.length) {
       // Nothing to draw. Say which of the possible reasons it is, so nobody
       // stands in front of empty dials wondering whether the page is broken.
-      if (state.polledAt === null) return '<div class="note"><b>Waiting for the station\'s first read of the sensor node.</b> It polls on start and every ' + Math.round(CFG.refreshMs / 60000) + ' minutes.</div>';
+      if (state.polledAt === null) return '<div class="note"><b>' + t('Waiting for the station\u2019s first read of the sensor node.') + '</b> ' + t('It polls on start and every') + ' ' + Math.round(CFG.refreshMs / 60000) + ' ' + t('minutes') + '.</div>';
       if (state.nodeRows === 0) return '<div class="note alert"><b>The sensor feed carries no readings for node ' + (state.sensorId || '?') + '.</b> Check CRITICAL_SENSOR_ID in .env — the node may be off, or registered under another id.</div>';
       if (state.nodeNewest && state.floor && state.nodeNewest < state.floor) return '<div class="note alert"><b>No reading from the node since ' + fmtDateTime(state.nodeNewest) + '.</b> The station\'s readings start ' + fmtDateTime(state.floor) + '; nothing the node has sent falls after that.</div>';
-      return '<div class="note"><b>No readings yet.</b> The station\'s readings start ' + (state.floor ? fmtDateTime(state.floor) : 'now') + '; the node\'s next transmission will appear here.</div>';
+      return '<div class="note"><b>' + t('No readings yet.') + '</b> ' + t('The station\u2019s readings start') + ' ' + (state.floor ? fmtDateTime(state.floor) : t('now')) + '; ' + t('the node\u2019s next transmission will appear here.') + '</div>';
     }
     if (newest && !isCurrent()) {
-      var why = newest < dayStart() ? 'No reading has arrived today.' : 'No reading has arrived in the last 30 minutes.';
-      return '<div class="note alert"><b>No current reading from the sensor node.</b> ' + why + ' Its last reading was ' + fmtDateTime(newest) + ' (' + fmtAgo(Date.now() - newest) + '). The tiles stay empty until it transmits again — earlier readings are on the trend graph.</div>';
+      var why = newest < dayStart() ? t('No reading has arrived today.') : t('No reading has arrived in the last 30 minutes.');
+      return '<div class="note alert"><b>' + t('No current reading from the sensor node.') + '</b> ' + why + ' ' + t('Its last reading was') + ' ' + fmtDateTime(newest) + ' (' + fmtAgo(Date.now() - newest) + '). ' + t('The tiles stay empty until it transmits again — earlier readings are on the trend graph.') + '</div>';
     }
     return '';
   }
@@ -711,8 +714,8 @@
   function clearTiles() {
     ['hbt-dial', 'hbt-ruler', 'hbt-level', 'hbt-spark'].forEach(function (id) { var h = $(id); if (h) h.innerHTML = ''; });
     var set = function (id, html) { var e = $(id); if (e) { e.innerHTML = html; e.classList.remove('hot'); } };
-    set('co2Val', '—<em>ppm</em>'); set('co2Verdict', 'No current reading'); set('co2Sub', '');
-    set('tempVal', '—<em>°C</em>'); set('tempVerdict', 'No current reading');
+    set('co2Val', '—<em>ppm</em>'); set('co2Verdict', t('No current reading')); set('co2Sub', '');
+    set('tempVal', '—<em>°C</em>'); set('tempVerdict', t('No current reading'));
     set('humVal', '—<em>%</em>'); set('lightVal', '—<em>raw</em>');
   }
   /* The tiles are today: readings since midnight at the venue, and only

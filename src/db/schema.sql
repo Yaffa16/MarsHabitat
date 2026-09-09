@@ -271,3 +271,16 @@ CREATE TABLE IF NOT EXISTS media (
 );
 CREATE INDEX IF NOT EXISTS idx_media_day ON media(mission_day, hidden, sort_order, id);
 CREATE INDEX IF NOT EXISTS idx_media_sha ON media(sha256);
+
+-- The habitat's own hardware, read through Home Assistant (src/lib/home-assistant.js).
+-- One row per state change per entity; the poller inserts, nothing rewrites.
+CREATE TABLE IF NOT EXISTS ha_reading (
+  id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  entity  TEXT NOT NULL,                -- the entity id, without the "sensor." prefix
+  t       INTEGER NOT NULL,             -- epoch ms, the instant HA stamped the state
+  value   REAL,                         -- the state as a number; NULL when it is not one
+  state   TEXT NOT NULL,               -- the state exactly as HA reported it
+  unit    TEXT,                         -- unit_of_measurement at the time of reading
+  UNIQUE (entity, t)
+);
+CREATE INDEX IF NOT EXISTS idx_ha_entity_t ON ha_reading(entity, t);

@@ -52,9 +52,14 @@ function rollup(missionDay) {
     }
   });
   tx();
-  if (rows.length) {
+  // The day's summary in the readings log carries the hardware beside the
+  // channels, so the log's daily record holds the whole habitat.
+  const hardware = require('./home-assistant').daySummary({ start, end });
+  if (rows.length || hardware.length) {
     require('./readings-log').record('daily', { missionDay, window: { start, end }, sealed: over,
-      channels: rows.map((r) => ({ metric: r.metric, low: r.lo, high: r.hi, mean: r.av, samples: r.n })) }, { dedupe: true });
+      channels: rows.map((r) => ({ metric: r.metric, low: r.lo, high: r.hi, mean: r.av, samples: r.n })),
+      hardware: hardware.map((h) => ({ device: h.label, entity: `sensor.${h.id}`, unit: h.unit,
+        low: h.low, high: h.high, mean: h.mean, addedToday: h.added, samples: h.samples })) }, { dedupe: true });
   }
   return rows.length;
 }
@@ -111,14 +116,77 @@ function dayRecord(missionDay) {
   const sealed = db.prepare('SELECT * FROM day_seal WHERE mission_day = ?').get(missionDay);
   const media = mediaLib.list({ day: missionDay });
 
+  // The habitat's own hardware, through Home Assistant: the day's low, high,
+  // mean and samples per device, and what the day added for a meter. Read
+  // straight from ha_reading, which is never pruned.
+  const hardware = require('./home-assistant').daySummary({ start, end });
+
+  /* ---- the day over its 24 hours, for the archive's charts -------------
+     Every reading pulled that day — the station's own channels (the ingest
+     API), the external node's feed and the hardware through Home Assistant —
+     bucketed to one point per hour, keyed 1–24 (position = hour mark 00–23).
+     And the two-point day: each store's level at open and close, and the
+     calories from zero to the day's total. */
+  const winA = Date.parse(start), winB = Date.parse(end);
+  const bucketize = (list) => {
+    const b = new Map();
+    for (const [t, v] of list) {
+      const h = Math.min(23, Math.max(0, Math.floor((t - winA) / 3600000)));
+      const x = b.get(h) || { s: 0, n: 0 };
+      x.s += v; x.n += 1; b.set(h, x);
+    }
+    const points = {};
+    for (const [h, x] of [...b].sort((p, q) => p[0] - q[0])) points[h + 1] = Math.round((x.s / x.n) * 100) / 100;
+    return points;
+  };
+  // The station's own channels, from the ingest API.
+  const ingestRows = db.prepare(
+    `SELECT metric, recorded_at, value FROM sensor_reading
+     WHERE recorded_at >= ? AND recorded_at < ? AND value IS NOT NULL ORDER BY recorded_at`).all(start, end);
+  const metricMeta = new Map(db.prepare('SELECT metric, label, unit, channel FROM sensor_metric').all()
+    .map((m) => [m.metric, m]));
+  const byMetric = new Map();
+  for (const r of ingestRows) {
+    if (!byMetric.has(r.metric)) byMetric.set(r.metric, []);
+    byMetric.get(r.metric).push([Date.parse(r.recorded_at), r.value]);
+  }
+  const habitatHours = [...byMetric].map(([metric, list]) => {
+    const m = metricMeta.get(metric) || {};
+    return { id: metric, channel: m.channel || null, label: m.label || metric, unit: m.unit || '', points: bucketize(list) };
+  }).filter((c) => Object.keys(c.points).length);
+  // The external node's feed.
+  const EXT_KEYS = [['co2', 'CO₂ · node', 'ppm'], ['temp', 'Temperature · node', '°C'],
+    ['hum', 'Humidity · node', '%'], ['pres', 'Pressure · node', 'hPa'],
+    ['light', 'Light · node', 'raw'], ['bat', 'Node battery', 'V']];
+  let externalHours = [];
+  try {
+    const ext = db.prepare('SELECT * FROM external_reading WHERE t >= ? AND t < ? ORDER BY t').all(winA, winB);
+    externalHours = EXT_KEYS.map(([k, label, unit]) => ({
+      id: 'ext-' + k, label, unit,
+      points: bucketize(ext.filter((r) => r[k] != null).map((r) => [r.t, r[k]])),
+    })).filter((c) => Object.keys(c.points).length);
+  } catch { /* the node's table is created by critical.js on first use */ }
+  // The hardware, hour by hour.
+  const hardwareHours = require('./home-assistant').hourly({ start, end });
+  // The two-point day: open (yesterday's close — the close plus the day's
+  // use) and close, per store; calories from zero to the day's total.
+  const resourcesDay = day ? day.inventory.map((i) => ({
+    key: i.key, label: i.label, unit: i.unit,
+    open: Math.round((i.quantity + (i.consumption || 0)) * 100) / 100,
+    close: i.quantity,
+  })) : [];
+  const figDay = (require('./content').crewFigures() || {})[String(missionDay)] || null;
+  const caloriesDay = figDay && figDay.calories != null ? { open: 0, close: figDay.calories } : null;
+
   // Power consumed that day, by category — from content/power.json, counted
   // daily by the crew like the calories and steps.
   const power = require('./content').powerDay(missionDay);
 
   return {
     missionDay, date: mission.dateForDay(missionDay), day,
-    habitat, entries, moods, messages, traffic, media, power, sealed: !!sealed,
-    isEmpty: !day && !entries.length && !messages.length && !habitat.length && !media.length,
+    habitat, hardware, entries, moods, messages, traffic, media, power, sealed: !!sealed,
+    habitatHours, externalHours, hardwareHours, resourcesDay, caloriesDay,
+    isEmpty: !day && !entries.length && !messages.length && !habitat.length && !hardware.length && !media.length,
   };
 }
 
@@ -179,6 +247,9 @@ function fullExport() {
         habitat: r.habitat.map((h) => ({
           metric: h.metric, unit: h.unit, min: h.min_value, max: h.max_value,
           avg: h.avg_value, samples: h.samples })),
+        hardware: r.hardware.map((h) => ({
+          device: h.label, entity: `sensor.${h.id}`, kind: h.kind, unit: h.unit,
+          min: h.low, max: h.high, avg: h.mean, addedToday: h.added, samples: h.samples })),
         exchanges: r.messages.map((m) => ({
           callsign: m.callsign, tags: (m.tags || '').split(',').filter(Boolean),
           message: m.body, response: m.response_body, respondedBy: m.responder,
@@ -312,6 +383,16 @@ function dayMarkdown(missionDay) {
     for (const h of r.habitat) {
       const f = (v) => (v == null ? '—' : v.toFixed(1));
       out.push(`| ${h.label || h.metric} | ${f(h.min_value)} | ${f(h.max_value)} | ${f(h.avg_value)} ${h.unit || ''} | ${h.samples} |`);
+    }
+    out.push('');
+  }
+
+  if (r.hardware.length) {
+    out.push('### Habitat hardware', '');
+    out.push('| Device | Low | High | Mean | Added today | Samples |', '| --- | --- | --- | --- | --- | --- |');
+    for (const h of r.hardware) {
+      const f = (v) => (v == null ? '—' : String(Math.round(v * 100) / 100));
+      out.push(`| ${h.label} | ${f(h.low)} | ${f(h.high)} | ${f(h.mean)} ${h.unit} | ${h.added == null ? '—' : `${f(h.added)} ${h.unit}`} | ${h.samples} |`);
     }
     out.push('');
   }

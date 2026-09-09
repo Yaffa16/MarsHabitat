@@ -211,6 +211,7 @@ const nearTwin = db.prepare(
  *  dashboard, applied against the whole stored history. */
 const persist = db.transaction((rows) => {
   let stored = 0, dropped = 0, before = 0;
+  const fresh = [];   // the rows this poll actually added
   let floor = floorMs();
   // A floor that would hide everything the node has ever sent is no use to
   // anyone standing in front of the dashboard. If the node's newest reading
@@ -230,11 +231,11 @@ const persist = db.transaction((rows) => {
       dropped++; continue;
     }
     const r = insert.run(row.t, ...KEYS.map((k) => row[k]), sig);
-    if (r.changes) stored++; else dropped++;
+    if (r.changes) { stored++; fresh.push(row); } else dropped++;
   }
   db.prepare('DELETE FROM external_reading WHERE t < ?')
     .run(Math.max(Date.now() - CFG.maxDays * 86400000, floor));
-  return { stored, dropped, before };
+  return { stored, dropped, before, fresh };
 });
 
 /* ----------------------------------------------------------------- polling */
@@ -252,11 +253,16 @@ async function poll() {
       const data = parseTolerant(await fetchOnce(target, CFG.attemptTimeoutMs));
       if (!Array.isArray(data)) throw new Error('payload is not an array');
       const rows = shape(data);
-      const { stored, dropped, before } = persist(rows);
+      const { stored, dropped, before, fresh } = persist(rows);
+      // The node answers with its whole last thirty days every time; the
+      // log keeps only what this poll added — the readings not already
+      // held — with the counts of what was received and set aside, so a
+      // file is the update, not a copy of the feed.
       require('./readings-log').record('node', {
         url: CFG.base, sensorId: CFG.sensorId, floor: floorMs(),
         received: rows.length, stored, dropped, before,
-        readings: rows.map((r) => ({ at: new Date(r.t).toISOString(), t: r.t, ...Object.fromEntries(KEYS.map((k) => [k, r[k]])) })),
+        newest: rows.length ? new Date(rows[rows.length - 1].t).toISOString() : null,
+        readings: fresh.map((r) => ({ at: new Date(r.t).toISOString(), t: r.t, ...Object.fromEntries(KEYS.map((k) => [k, r[k]])) })),
       });
       status.lastReadAt = Date.now();
       status.lastError = null;

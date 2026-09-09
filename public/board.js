@@ -17,6 +17,9 @@
    station. */
 (function () {
   'use strict';
+  /* The visitor's language: t() reads the table the page carries in its
+     head (window.MCS_T, from src/lib/i18n.js) and falls back to English. */
+  var t = window.t || function (s) { return s; };
 
   var feed = document.getElementById('feed');
   var bar = document.getElementById('feed-filter');
@@ -116,8 +119,8 @@
       mineCount.textContent = String(data.pendingMine);
       mineCount.hidden = !data.pendingMine;
     }
-    if (allLink) allLink.textContent = 'All ' + data.published + ' exchanges';
-    if (counter) counter.textContent = data.published + ' exchanges · ' + data.total + ' sent';
+    if (allLink) allLink.textContent = t('All') + ' ' + data.published + ' ' + t('exchanges');
+    if (counter) counter.textContent = data.published + ' ' + t('exchanges') + ' \u00b7 ' + data.total + ' ' + t('sent');
   }
 
   function poll() {
@@ -132,11 +135,11 @@
           version = data.version;
         }
         wait = BASE_MS;
-        if (live) { live.classList.remove('stale'); live.textContent = 'LIVE'; }
+        if (live) { live.classList.remove('stale'); live.textContent = t('LIVE'); }
       })
       .catch(function () {
         wait = Math.min(MAX_MS, wait * 2);
-        if (live) { live.classList.add('stale'); live.textContent = 'RECONNECTING'; }
+        if (live) { live.classList.add('stale'); live.textContent = t('RECONNECTING'); }
       })
       .then(schedule);
   }

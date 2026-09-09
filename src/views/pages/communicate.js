@@ -8,13 +8,15 @@ const MAX = Number(process.env.MESSAGE_MAX_CHARS || 500);
 // The channel is open by default before the run so the station can be used and
 // shown in full. Set this to hold it shut until the crew are actually inside.
 const HOLD_BEFORE_LAUNCH = process.env.HOLD_CHANNEL_BEFORE_LAUNCH === 'true';
+const same = (s) => s;
 
-function stateLabel(s) {
-  return { PENDING_APPROVAL: 'Waiting to be read in the habitat',
-           APPROVED: 'Read and cleared for the board',
-           REJECTED: 'Not carried forward',
-           PUBLISHED: 'Published with a reply',
-           ARRIVED: 'Arrived at Mars' }[s] || s.replace(/_/g, ' ');
+function stateLabel(s, T = same) {
+  const label = { PENDING_APPROVAL: 'Waiting to be read in the habitat',
+                  APPROVED: 'Read and cleared for the board',
+                  REJECTED: 'Not carried forward',
+                  PUBLISHED: 'Published with a reply',
+                  ARRIVED: 'Arrived at Mars' }[s];
+  return label ? T(label) : T(s.replace(/_/g, ' '));
 }
 
 /**
@@ -23,7 +25,7 @@ function stateLabel(s) {
  * arc. Static here; composer.js runs the packet along #xroute and lengthens
  * #xtrail behind it.
  */
-function crossingDial() {
+function crossingDial(T = same) {
   const S = 320, C = 160;
   const earth = [80, 232], mars = [236, 106];
   const route = `M${earth[0]},${earth[1]} Q 96,112 ${mars[0]},${mars[1]}`;
@@ -35,7 +37,7 @@ function crossingDial() {
   }
   const screws = [[C, 22], [C + 138, C], [C, C + 138], [22, C]]
     .map(([x, y]) => `<circle cx="${x}" cy="${y}" r="4" class="xdial-screw"/>`).join('');
-  return `<svg class="xdial" viewBox="0 0 ${S} ${S}" role="img" aria-label="The message crossing from Earth to Mars">
+  return `<svg class="xdial" viewBox="0 0 ${S} ${S}" role="img" aria-label="${esc(T('The message crossing from Earth to Mars'))}">
     <defs>
       <radialGradient id="bezelGrad" cx="50%" cy="30%" r="80%">
         <stop offset="0" stop-color="#3a3a40"/><stop offset="1" stop-color="#151518"/>
@@ -57,11 +59,11 @@ function crossingDial() {
     <line x1="${mars[0] - 44}" y1="${mars[1]}" x2="${mars[0] - 12}" y2="${mars[1]}" stroke="rgba(255,255,255,.2)" stroke-dasharray="2 3"/>
     <circle cx="${mars[0]}" cy="${mars[1]}" r="12" class="xdial-mars-halo" style="transform-origin:${mars[0]}px ${mars[1]}px"/>
     <circle cx="${mars[0]}" cy="${mars[1]}" r="9" class="xdial-mars"/>
-    <text x="${mars[0]}" y="${mars[1] - 20}" text-anchor="middle" class="xdial-label mars">Mars</text>
+    <text x="${mars[0]}" y="${mars[1] - 20}" text-anchor="middle" class="xdial-label mars">${T('Mars')}</text>
     <circle cx="${earth[0]}" cy="${earth[1]}" r="7" class="xdial-earth"/>
-    <text x="${earth[0]}" y="${earth[1] + 22}" text-anchor="middle" class="xdial-label">Earth</text>
+    <text x="${earth[0]}" y="${earth[1] + 22}" text-anchor="middle" class="xdial-label">${T('Earth')}</text>
     <circle id="xpacket" cx="${earth[0]}" cy="${earth[1]}" r="5" class="xdial-packet"/>
-    <text x="${C}" y="${C + 122}" class="xdial-word" id="xword">Sending</text>
+    <text x="${C}" y="${C + 122}" class="xdial-word" id="xword">${T('Sending')}</text>
   </svg>`;
 }
 
@@ -76,25 +78,26 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
   const uid = (base) => base + idSuffix;
   const phase = ctx.mission.phase;
   const g = ctx.geo;
+  const T = ctx.T || same;
 
   // After the run the channel always closes -- there is nobody left to read
   // anything. Before it, closing is optional.
   const closed = (phase === 'COMPLETE' || (phase === 'PRE_LAUNCH' && HOLD_BEFORE_LAUNCH)) ? `
     <div class="transit closed" style="text-align:left">
-      <div class="state">CHANNEL CLOSED</div>
+      <div class="state">${T('CHANNEL CLOSED')}</div>
       ${phase === 'PRE_LAUNCH' ? `
         <div class="clock" id="countdown" data-opens="${esc(ctx.mission.opensAt)}">T−${String(ctx.mission.countdown.days).padStart(3, '0')}:${String(ctx.mission.countdown.hours).padStart(2, '0')}:${String(ctx.mission.countdown.minutes).padStart(2, '0')}:${String(ctx.mission.countdown.seconds).padStart(2, '0')}</div>
-        <p class="note" style="margin-top:12px">There is nobody in the habitat to read this yet.
-        The channel opens on ${esc(ctx.mission.start_date)} at 00:00 ${esc(ctx.mission.timezone)},
-        and stays open for ${ctx.mission.totalDays} days.</p>
-        <p><a class="btn" href="#what">How it will work</a></p>`
+        <p class="note" style="margin-top:12px">${T('There is nobody in the habitat to read this yet.')}
+        ${T('The channel opens on')} ${esc(ctx.mission.start_date)} ${T('at')} 00:00 ${esc(ctx.mission.timezone)},
+        ${T('and stays open for')} ${ctx.mission.totalDays} ${T(ctx.mission.totalDays === 1 ? 'day' : 'days')}.</p>
+        <p><a class="btn" href="#what">${T('How it will work')}</a></p>`
       : `
-        <p class="note" style="margin-top:12px">The crew left the habitat on
-        ${esc(ctx.mission.end_date)}. Nothing sent now would reach anyone.</p>
-        <p><a class="btn" href="/archive">Read what was sent</a></p>`}
+        <p class="note" style="margin-top:12px">${T('The crew left the habitat on')}
+        ${esc(ctx.mission.end_date)}. ${T('Nothing sent now would reach anyone.')}</p>
+        <p><a class="btn" href="/archive">${T('Read what was sent')}</a></p>`}
       <div class="honesty">
-        YOUR CALLSIGN <b>${esc(ctx.callsign)}</b> IS STILL RESERVED.<br>
-        IT WILL BE WAITING IF YOU COME BACK.
+        ${T('YOUR CALLSIGN')} <b>${esc(ctx.callsign)}</b> ${T('IS STILL RESERVED.')}<br>
+        ${T('IT WILL BE WAITING IF YOU COME BACK.')}
       </div>
     </div>` : null;
 
@@ -105,23 +108,23 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
   const formHtml = (ghost = false) => `
   <form ${ghost ? 'class="composer ghost" inert aria-hidden="true"' :
     `method="post" action="/communicate" id="${uid('composer')}" class="composer"`}>
-    <label class="f msgfield"><span class="sr-only">Message</span>
+    <label class="f msgfield"><span class="sr-only">${T('Message')}</span>
       <div class="msgbox">
         <textarea ${ghost ? '' : `name="body" id="${uid('body')}" required`} maxlength="${MAX}"
-          placeholder="Write to the crew.">${ghost ? '' : esc(draft || '')}</textarea>
+          placeholder="${esc(T('Write to the crew.'))}">${ghost ? '' : esc(draft || '')}</textarea>
         <span class="counter" ${ghost ? '' : `id="${uid('count')}"`}>0 / ${MAX}</span>
       </div>
     </label>
     <div class="tagbar">
-      <span class="lbl">Tags · choose 3</span>
-      <span class="counter tags-note">CHOOSE UP TO 3 TAGS</span>
+      <span class="lbl">${T('Tags · choose 3')}</span>
+      <span class="counter tags-note">${T('CHOOSE UP TO 3 TAGS')}</span>
       <div class="tags" ${ghost ? '' : `id="${uid('tags')}"`}>
-        ${TAGS.map((t) => `<label><input type="checkbox" ${ghost ? '' : 'name="tags"'} value="${t}"><span>${t}</span></label>`).join('')}
+        ${TAGS.map((t) => `<label><input type="checkbox" ${ghost ? '' : 'name="tags"'} value="${t}"><span>${T(t)}</span></label>`).join('')}
       </div>
     </div>
     <hr>
     <div class="dev-foot">
-      <button type="${ghost ? 'button' : 'submit'}" class="primary">Transmit</button>
+      <button type="${ghost ? 'button' : 'submit'}" class="primary">${T('Transmit')}</button>
     </div>
   </form>`;
   const form = formHtml(false);
@@ -139,19 +142,19 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
            them. composer.js moves the packet along #xroute and draws the
            trail behind it. -->
       <div class="xdial-wrap" aria-hidden="true">
-        ${crossingDial()}
+        ${crossingDial(T)}
       </div>
 
       <div class="transit-read">
-        <div class="state"><span class="sr-only">Message in transit · </span>Sending · Earth → Mars ·
-          <b id="tpct">0%</b> of the crossing</div>
+        <div class="state"><span class="sr-only">${T('Message in transit')} · </span>${T('Sending')} · ${T('Earth')} → ${T('Mars')} ·
+          <b id="tpct">0%</b> ${T('of the crossing')}</div>
         <div class="clock" id="tclock">--:--</div>
         <div class="tbar"><i id="tbar" style="width:0%"></i></div>
         <div class="honesty">
-          Real crossing <b>${orbital.formatLightTime(inFlight.light_seconds)}</b>
-          at ${inFlight.distance_au.toFixed(3)} au — this dial compresses it.<br>
-          The wait you are having is shorter than the one the crew have.
-          <span class="sr-only">Arrives <span id="tarr">${esc(inFlight.arrival_at.slice(11, 19))} UTC</span></span>
+          ${T('Real crossing')} <b>${orbital.formatLightTime(inFlight.light_seconds)}</b>
+          ${T('at a distance of')} ${inFlight.distance_au.toFixed(3)} au — ${T('this dial compresses it.')}<br>
+          ${T('The wait you are having is shorter than the one the crew have.')}
+          <span class="sr-only">${T('Arrives')} <span id="tarr">${esc(inFlight.arrival_at.slice(11, 19))} UTC</span></span>
         </div>
       </div>
     </div>
@@ -159,7 +162,7 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
 
   if (closed) return closed;
   if (inFlight) return transitBlock;
-  return (error ? `<div class="flash err">${esc(error)}</div>` : '') + form;
+  return (error ? `<div class="flash err">${esc(T(error))}</div>` : '') + form;
 }
 
 function compose(ctx, { inFlight, mine, error, draft }) {

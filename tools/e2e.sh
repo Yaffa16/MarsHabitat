@@ -94,7 +94,9 @@ process.exit(sched > hab && meals > hab && inv > hab && h.indexOf("CH-36 / UPDAT
   && ok "the Habitat tab holds the schedule, the food plan and the stores; no Crew log tab, no template buttons anywhere" || bad "habitat tab contents wrong, or the crew log tab / template buttons are still there"
 [ "$(echo "$CTRL" | grep -c 'class="mood-face"')" = "15" ] || bad "expected five faces for each of three officers"
 [ "$(echo "$CTRL" | grep -c 'CH-50 / DAILY BLOG')" = "3" ] || bad "expected a Daily Blog box per officer"
-[ "$(echo "$CTRL" | grep -c 'class="block-title">Daily Blog<')" = "3" ] || bad "the blog box is not named Daily Blog"
+[ "$(echo "$CTRL" | grep -c '</span>Daily Blog</h2>')" = "3" ] || bad "the blog box is not named Daily Blog"
+[ "$(echo "$CTRL" | grep -c 'class="block-head"')" -ge 8 ] && ok "every block on the officer tabs opens with the same numbered head" || bad "officer blocks lack the shared head"
+echo "$CTRL" | grep -q 'class="block-state ' && ok "each block says whether anything is live yet" || bad "no live/empty state on the officer blocks"
 node -e '
 const h = require("child_process").execSync("curl -s -b /tmp/admin.jar http://localhost:8080/control").toString();
 for (const t of ["science", "health"]) {
@@ -457,6 +459,66 @@ curl -s -b $T $B/ | grep -q 'data-theme="dark"' && ok "dark mode applies" || bad
 curl -s -b $T $B/control/login | grep -q 'data-theme="dark"' && ok "theme persists across pages" || bad "theme did not persist"
 grep -q 'data-theme="dark"' public/station.css && ok "dark palette defined in one place" || bad "no dark palette"
 
+echo "── three languages"
+# The station's own dictionary (src/lib/i18n.js), switched by DE · EN · FR
+# beside the theme switch and kept in a cookie: no third-party script, works
+# with the network unplugged. What the crew and visitors wrote, and the day
+# content in content/, stay as written; mission control and the archive stay
+# English whatever the cookie says.
+LJ=/tmp/lang.jar; rm -f $LJ
+LP=$(curl -s -c $LJ $B/)
+echo "$LP" | grep -q '<html lang="en"' && ok "English is the default" || bad "no lang attribute, or not English by default"
+[ "$(echo "$LP" | grep -o 'action="/lang"' | wc -l)" -ge 1 ] && echo "$LP" | grep -q 'name="to" value="de"' \
+  && echo "$LP" | grep -q 'name="to" value="en"' && echo "$LP" | grep -q 'name="to" value="fr"' \
+  && ok "the DE · EN · FR switch is on the landing page" || bad "no three-button language switch"
+echo "$LP" | grep -q 'value="en" class="on" aria-current="true"' && ok "the current language is marked" || bad "current language not marked"
+curl -s -b $LJ -c $LJ -X POST -d "to=de" -o /dev/null $B/lang
+grep -q "mcs_lang.*de" $LJ && ok "POST /lang sets the mcs_lang cookie" || bad "no mcs_lang cookie after POST /lang"
+DE=$(curl -s -b $LJ $B/)
+echo "$DE" | grep -q '<html lang="de"' && ok "the page declares German" || bad "html lang is not de"
+echo "$DE" | grep -q "Nachrichtenboard" && ok "the board heading reads in German" || bad "board heading not translated"
+echo "$DE" | grep -q ">Senden<" && ok "the transmit button reads in German" || bad "transmit button not translated"
+echo "$DE" | grep -q 'value="de" class="on" aria-current="true"' && ok "the switch marks DE as current" || bad "DE not marked current"
+echo "$DE" | grep -q 'window.MCS_T=' && echo "$DE" | grep -q '"Message Board":"Nachrichtenboard"' \
+  && ok "the page carries the German table for its scripts" || bad "no MCS_T table for the page scripts"
+echo "$DE" | grep -q 'class="wordmark">Mars<span class="bang">!</span>platz' && ok "the wordmark is not translated" || bad "wordmark changed"
+echo "$DE" | grep -q "ZKM | Hertzlab" && ok "ZKM | Hertzlab stays as written" || bad "ZKM | Hertzlab changed"
+curl -s -b $LJ -c $LJ -X POST -d "to=fr" -o /dev/null $B/lang
+FR=$(curl -s -b $LJ $B/)
+echo "$FR" | grep -q '<html lang="fr"' && echo "$FR" | grep -q "Tableau des messages" \
+  && ok "French: lang attribute and board heading" || bad "French did not apply"
+curl -s -b $LJ -c $LJ -X POST -d "to=xx" -o /dev/null $B/lang
+curl -s -b $LJ $B/ | grep -q '<html lang="en"' && ok "an unknown language falls back to English" || bad "unknown language did not fall back"
+curl -s -b $LJ -c $LJ -X POST -d "to=de" -o /dev/null $B/lang
+LOG=$(curl -s -b $LJ $B/logbook)
+echo "$LOG" | grep -q '<html lang="de"' && ok "the crew log page is in German" || bad "crew log page not German"
+echo "$LOG" | grep -q "to be written at the end of this day" && ok "the crew's placeholder text stays untranslated" || bad "logbook content was translated or lost"
+echo "$LOG" | grep -q "COMMUNICATION OFFICER" && ok "crew designations stay as written" || bad "designation translated"
+GL=$(curl -s -b $LJ $B/at-a-glance)
+echo "$GL" | grep -q '<html lang="de"' && echo "$GL" | grep -q "Tagesplan" && ok "At a Glance chrome is in German" || bad "At a Glance not German"
+echo "$GL" | grep -qE '<span class="dot (ok|warn)"></span> VERBINDUNG (NOMINAL|GESTÖRT)' && ok "the rail's link state reads in German" || bad "rail not translated"
+echo "$GL" | grep -qE "Hatch seal and pressure hold|Systems handover" && ok "task labels from content/schedule.json stay untranslated" || bad "schedule content was translated or lost"
+CL=$(curl -s -b $LJ $B/control/login)
+echo "$CL" | grep -q '<html lang="en"' && ! echo "$CL" | grep -q "Missionskontrolle" && ! echo "$CL" | grep -q 'action="/lang"' \
+  && ok "mission control stays English, with no language switch" || bad "mission control was translated"
+# the same visitor's German cookie plus the control session: the archive stays English
+curl -s -b $A -c $A -X POST -d "to=de" -o /dev/null $B/lang
+AR=$(curl -s -b $A $B/archive)
+echo "$AR" | grep -q '<html lang="en"' && echo "$AR" | grep -q "Mission control" && ! echo "$AR" | grep -q "Missionskontrolle" \
+  && ok "the archive stays English with the German cookie" || bad "the archive was translated"
+curl -s -b $A $B/control | grep -q '<html lang="en"' && ! curl -s -b $A $B/control | grep -q "VERBINDUNG" \
+  && ok "mission control's rail stays English" || bad "control rail translated"
+curl -s -b $A -c $A -X POST -d "to=en" -o /dev/null $B/lang
+API=$(curl -s -b $LJ $B/api/board)
+echo "$API" | grep -qE "VERÖFFENTLICHT|BEANTWORTET" && ok "/api/board renders the card chrome in the visitor's language" || bad "/api/board cards not German"
+echo "$API" | grep -q "Rain. Not the idea of it\|Do you still dream in colour\|In colour, and always outdoors" \
+  && ok "what was written stays as written on the board" || bad "board content changed"
+for u in / /logbook /at-a-glance /media /control/login /nowhere; do
+  curl -s -b $LJ $B$u | grep -qi "gtranslate" && bad "gtranslate still referenced on $u"
+done
+grep -rqi "gtranslate\|notranslate\|gt-wrap" src public && bad "gtranslate remnants in src/ or public/" || ok "no gtranslate anywhere"
+curl -s -b $LJ $B/nowhere | grep -q "Kein solcher Kanal" && ok "the 404 page reads in German" || bad "404 not translated"
+
 echo "── label aesthetic"
 grep -q "repeating-linear-gradient" public/station.css && ok "hatch and barcode rules defined" || bad "no hatch primitives"
 grep -q "\-\-orange:" public/station.css && ok "single accent colour token" || bad "no orange token"
@@ -749,8 +811,16 @@ curl -s -b $A -o /tmp/readings.zip -w '%{http_code}' $B/archive/readings.zip | g
 import zipfile, json, sys
 z = zipfile.ZipFile("/tmp/readings.zip"); z.testzip()
 names = z.namelist(); idx = json.loads(z.read("index.json"))
-sys.exit(0 if "index.json" in names and "README.txt" in names and any(n.startswith("ingest/") for n in names) and idx["counts"]["total"] == len(names) - 2 else 1)
-' && ok "the whole log downloads as one ZIP with an index, verified by Python" || bad "readings ZIP broken"
+tables = idx.get("tables", [])
+sys.exit(0 if "index.json" in names and "README.txt" in names and any(n.startswith("ingest/") for n in names) and all(t in names for t in tables) and "csv/ingest.csv" in tables and idx["counts"]["total"] == len(names) - 2 - len(tables) else 1)
+' && ok "the whole log downloads as one ZIP with an index and its CSV tables, verified by Python" || bad "readings ZIP broken"
+curl -s -b $A $B/archive/readings/ingest.csv | python3 -c '
+import csv, sys
+rows = list(csv.reader(sys.stdin))
+sys.exit(0 if rows and rows[0][:3] == ["pulledAt", "deviceId", "metric"] and any(r[2] == "oxygen" and r[3] == "20.9" for r in rows[1:]) else 1)
+' && ok "the ingest log downloads as one CSV row per reading posted" || bad "ingest CSV wrong"
+[ "$(curl -s -o /dev/null -w '%{http_code}' $B/archive/readings/ingest.csv)" = "302" ] && ok "the CSV tables are control-only" || bad "readings CSV is public"
+[ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/archive/readings/nonsense.csv)" = "404" ] && ok "an unknown table is a 404" || bad "unknown CSV table not refused"
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/archive/readings.zip)" = "302" ] && ok "the log is control-only" || bad "readings log is public"
 curl -s -b $A $B/archive/readings.json | grep -q '"bySource"' && ok "and listed at /archive/readings.json" || bad "no readings listing"
 curl -s -b $A $B/archive | grep -q 'href="/archive/readings.zip"' && ok "the archive page carries the download" || bad "no readings download on the archive page"

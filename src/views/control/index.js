@@ -143,13 +143,13 @@ function queue({ list, crew, counts, show }) {
 /* ============================================================= DAY CONTENT */
 
 /** The mood scale for one officer: five faces, calm to angry. */
-function moodBlock(c) {
+function moodBlock(c, n = 2) {
   const t = mood.translate(c.mood);
   const current = c.mood ? mood.FACES.reduce((best, f) => (Math.abs(f.v - c.mood.calm_tense) < Math.abs(best.v - c.mood.calm_tense) ? f : best), mood.FACES[0]).v : null;
   return panel('CH-12 / MOOD', `
-    ${eyebrow(`${c.designation} · state`)}
-    <span class="badge">${esc(t.condition)}</span>
-    <form method="post" action="/control/moods/${c.id}" style="margin-top:14px">
+    ${blockHead(n, 'Crew state', `${esc(c.designation)} · mood, calm to angry · shown on the station as a <b>sentence</b>, never a number`,
+      { live: !!c.mood, liveText: `Filed: ${esc(t.condition)}`, emptyText: 'Not filed yet' })}
+    <form method="post" action="/control/moods/${c.id}">
       <div class="poles mood-poles"><span>${mood.AXES[0].low}</span><span>${mood.AXES[0].label}</span><span>${mood.AXES[0].high}</span></div>
       <div class="mood-faces" role="radiogroup" aria-label="Mood, calm to angry">
         ${mood.FACES.map((f, i) => `<label class="mood-face" title="${esc(f.name)} — ${esc(mood.AXES[0].bands[i])}">
@@ -161,7 +161,7 @@ function moodBlock(c) {
       <button class="primary">Publish</button>
     </form>
     <p class="note" style="margin-top:10px">The public never sees the scale, only the
-    sentence under it.</p>`, 'mars-side');
+    sentence under it.</p>`, 'mars-side officer-block');
 }
 
 /** What the entry composer needs to know about the media already on an
@@ -180,12 +180,27 @@ const editorMedia = (list, body = '', otherBodies = []) => {
     caption: m.caption, filename: m.filename }))));
 };
 
+/** The head every block on an officer's tab opens with: a number and a
+ *  title in one size, a line saying whose and which day and where it goes,
+ *  and on the right whether anything is live yet. One shape for the blog,
+ *  the findings, the figures and the state, so the tab reads as a list of
+ *  things to do rather than a stack of look-alike boxes. */
+function blockHead(n, title, sub, { live = null, liveText = 'Live', emptyText = 'Nothing filed' } = {}) {
+  return `<div class="block-head">
+    <div>
+      <h2 class="block-title"><span class="block-n">${n}</span>${esc(title)}</h2>
+      <p class="block-sub">${sub}</p>
+    </div>
+    ${live === null ? '' : `<span class="block-state ${live ? 'live' : ''}">${live ? liveText : emptyText}</span>`}
+  </div>`;
+}
+
 /** That officer's Daily Blog for the chosen day, as a composer in place. */
-function blogBlock(c, tab, day, entry) {
+function blogBlock(c, tab, day, entry, n = 1) {
   const live = entry && !isPlaceholder(entry.body);
   return panel('CH-50 / DAILY BLOG', `
-    <h2 class="block-title">Daily Blog</h2>
-    ${eyebrow(`${c.designation} · day ${dd(day)}`)}
+    ${blockHead(n, 'Daily Blog', `${esc(c.designation)} · day ${dd(day)} · goes to the public <b>crew log</b>`,
+      { live, liveText: 'Live on the crew log', emptyText: 'Not written yet' })}
     <form method="post" action="/control/logbook" enctype="multipart/form-data" data-attach-media data-crew-id="${c.id}"
           data-media="${editorMedia(c.media, entry ? entry.body : '', c.otherBodies || [])}">
       <input type="hidden" name="day" value="${day}">
@@ -196,17 +211,18 @@ function blogBlock(c, tab, day, entry) {
       ${attachRow()}
       <div class="actions"><button class="primary">Publish</button>
         ${live ? '<button type="submit" class="ghost" name="action" value="clear" title="Take it down and put the placeholder back">Clear</button>' : ''}
-        <span class="note">${live ? 'Live on the public crew log.' : 'Goes straight to the crew log the moment it is saved — any day, mission started or not.'}</span></div>
-    </form>`, 'mars-side');
+        <span class="note">${live ? 'Saving replaces what is live.' : 'Public the moment it is saved — any day, mission started or not.'}</span></div>
+    </form>`, 'mars-side officer-block');
 }
 
 /** An officer's daily report — science findings, health activities — as the same composer. */
-function reportBlock(c, kindKey, label, hint, day, tpl, tab) {
+function reportBlock(c, kindKey, label, hint, day, tpl, tab, n = 2) {
   const live = !!(c.report && c.report.trim());
   const preset = (tpl || []).find((t) => String(t.name).toLowerCase() === 'default');
   return panel(`CH-36 / ${kindKey.toUpperCase()}`, `
-    ${eyebrow(`${label} · day ${dd(day)}`)}
-    <p class="note" style="margin-bottom:10px">${hint}</p>
+    ${blockHead(n, label, `${esc(c.designation)} · day ${dd(day)} · goes to the day's <b>mission notes</b>`,
+      { live, liveText: 'Live in the mission notes', emptyText: 'Not written yet' })}
+    <p class="note block-hint">${hint}</p>
     <form method="post" action="/control/report" enctype="multipart/form-data" data-attach-media data-crew-id="${c.id}"
           data-media="${editorMedia(c.media, c.report || '', c.reportOtherBodies || [])}">
       <input type="hidden" name="day" value="${day}">
@@ -217,8 +233,8 @@ function reportBlock(c, kindKey, label, hint, day, tpl, tab) {
       ${attachRow()}
       <div class="actions"><button class="primary">Publish</button>
         ${live ? '<button type="submit" class="ghost" name="action" value="clear" title="Take it down">Clear</button>' : ''}
-        <span class="note">${live ? 'Live on the station, in the day’s mission notes.' : 'Appears in the day’s mission notes the moment it is saved.'}</span></div>
-    </form>`, 'mars-side');
+        <span class="note">${live ? 'Saving replaces what is live.' : 'Public the moment it is saved.'}</span></div>
+    </form>`, 'mars-side officer-block');
 }
 
 /** The photographs / video / sound that go with an entry. */
@@ -264,13 +280,14 @@ function scheduleBlock(day, tasks) {
 }
 
 /** Calories and steps, the only habitat figures counted by a person. */
-function crewFiguresBlock(day, figures) {
+function crewFiguresBlock(day, figures, n = 3) {
   const f = figures[String(day)] || {};
+  const live = f.calories != null || f.steps != null;
   return panel('CH-13 / CREW FIGURES', `
-    ${eyebrow(`Crew totals · day ${dd(day)}`)}
-    <p class="note" style="margin-bottom:12px">Totals across all three of them, plotted on the
-    landing page. Saving writes <b>content/crew-figures.json</b>. Leave a field blank to record
-    nothing for that day.</p>
+    ${blockHead(n, 'Crew figures', `All three officers · day ${dd(day)} · plotted on the station's <b>trends</b>`,
+      { live, liveText: 'Filed', emptyText: 'Not filed yet' })}
+    <p class="note block-hint">Totals across all three of them. Saving writes <b>content/crew-figures.json</b>.
+    Leave a field blank to record nothing for that day.</p>
     <form method="post" action="/control/crew-figures">
       <input type="hidden" name="day" value="${day}">
       <div class="grid g2" style="gap:0 12px">
@@ -282,7 +299,7 @@ function crewFiguresBlock(day, figures) {
             placeholder="steps inside the habitat"></label>
       </div>
       <div class="actions"><button class="primary">Publish</button></div>
-    </form>`, 'mars-side');
+    </form>`, 'mars-side officer-block');
 }
 
 function mealsBlock(day, meals) {
@@ -486,25 +503,25 @@ function page(ctx, model) {
     comms: `
       <p class="note tab-note">${esc(officers.comms.role)}.</p>
       <div class="officer-stack">
-        ${blogBlock(officers.comms, 'comms', day, officers.comms.entry)}
-        ${moodBlock(officers.comms)}
+        ${blogBlock(officers.comms, 'comms', day, officers.comms.entry, 1)}
+        ${moodBlock(officers.comms, 2)}
       </div>`,
     science: `
       <p class="note tab-note">${esc(officers.science.role)}.</p>
       <div class="officer-stack">
-        ${blogBlock(officers.science, 'science', day, officers.science.entry)}
+        ${blogBlock(officers.science, 'science', day, officers.science.entry, 1)}
         ${reportBlock(officers.science, 'science', 'Daily science findings',
-          'Samples, measurements, the greenhouse, anything the habitat did that was worth recording.', day, tpl.SCIENCE, 'science')}
-        ${moodBlock(officers.science)}
+          'Samples, measurements, the greenhouse, anything the habitat did that was worth recording.', day, tpl.SCIENCE, 'science', 2)}
+        ${moodBlock(officers.science, 3)}
       </div>`,
     health: `
       <p class="note tab-note">${esc(officers.health.role)}.</p>
       <div class="officer-stack">
-        ${blogBlock(officers.health, 'health', day, officers.health.entry)}
+        ${blogBlock(officers.health, 'health', day, officers.health.entry, 1)}
         ${reportBlock(officers.health, 'health', 'Daily health activities',
-          'The morning workout, the evening wellbeing activity, and anything else worth recording. The form is prefilled; edit the default text in content/templates.json to change it.', day, tpl.HEALTH, 'health')}
-        ${crewFiguresBlock(day, figures)}
-        ${moodBlock(officers.health)}
+          'The morning workout, the evening wellbeing activity, and anything else worth recording. The form is prefilled; edit the default text in content/templates.json to change it.', day, tpl.HEALTH, 'health', 2)}
+        ${crewFiguresBlock(day, figures, 3)}
+        ${moodBlock(officers.health, 4)}
       </div>`,
     habitat: `
       <p class="note tab-note">The habitat itself: the day's schedule, the food, and what is left.</p>

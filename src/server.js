@@ -18,10 +18,12 @@ const readingsLog = require('./lib/readings-log');
 const { writeZip } = require('./lib/zip');
 const content = require('./lib/content');
 const critical = require('./lib/critical');
+const homeAssistant = require('./lib/home-assistant');
 const AR = require('./views/pages/archive');
 const GL = require('./views/pages/glance');
 const LB = require('./views/pages/logbook');
 const mediaLib = require('./lib/media');
+const i18n = require('./lib/i18n');
 
 const app = express();
 app.set('trust proxy', true);
@@ -56,8 +58,13 @@ app.use((req, res, next) => {
     const visitor = internal ? null : callsign.identify(req, res);
     const newest = db.prepare('SELECT MAX(recorded_at) m FROM sensor_reading').get().m;
     const commsUp = newest ? (Date.now() - Date.parse(newest)) / 1000 < data.STALE_SECONDS : false;
+    // The visitor's language, from the cookie — and T, which puts any
+    // interface string into it. Mission control and the archive ignore both.
+    const lang = i18n.pick(req);
     cached = {
       theme: req.cookies.mcs_theme === 'dark' ? 'dark' : 'light',
+      lang,
+      T: i18n.of(lang),
       logo: logo(),
       geo: geometry(),
       mission: missionLib.state(),
@@ -147,6 +154,12 @@ app.get('/', (req, res) => {
     // The newest media out of the habitat, for the Media panel; and a way for
     // an entry to find a picture placed in its text by id.
     media: mediaLib.list({ limit: 12 }), mediaCounts: mediaLib.counts(), mediaLookup: mediaLib.get,
+    // The habitat's own hardware, polled through Home Assistant — drawn as a
+    // panel of its own below the Habitat panel when the bridge is configured.
+    hardware: homeAssistant.snapshot(24),
+    // And its daily series for the Trends panel: one value per device per
+    // venue day — a gauge's daily mean, a meter's daily added amount.
+    hardwareDaily: homeAssistant.daily((d) => missionLib.localDate(d, ctx.mission.timezone)),
   }));
 });
 
@@ -319,6 +332,16 @@ app.get('/archive/readings.zip', requireControl, (req, res) => {
   const st = req.ctx().mission;
   readingsLog.sendZip(res, { writeZip, mission: { name: st.name, start: st.start_date, end: st.end_date, timezone: st.timezone } });
 });
+/* The same log as flat tables: one CSV per source, built from the files on
+   request. Also inside the ZIP under csv/. */
+app.get('/archive/readings/:name.csv', requireControl, (req, res, next) => {
+  const body = readingsLog.csv(req.params.name);
+  if (body === null) return next();
+  res.type('text/csv; charset=utf-8')
+     .set('Cache-Control', 'no-store')
+     .attachment(`mars-station-readings-${req.params.name}-${new Date().toISOString().slice(0, 10)}.csv`)
+     .send(body);
+});
 app.get('/archive/readings.json', requireControl, (req, res) => {
   res.json({ counts: readingsLog.counts(), files: readingsLog.list().map((f) => ({ path: f.name, source: f.source, day: f.day, bytes: f.size, writtenAt: f.mtime.toISOString() })) });
 });
@@ -407,7 +430,7 @@ app.get('/api/board', (req, res) => {
   res.set('Cache-Control', 'no-store').json({
     version: P.boardVersion(recent),
     phase: ctx.mission.phase,
-    cards: P.boardCards(recent),
+    cards: P.boardCards(recent, ctx.T),
     count: recent.length,
     pendingMine: recent.filter((m) => m.mine && m.pending).length,
     total: counts.total,
@@ -433,7 +456,7 @@ app.post('/communicate', (req, res) => {
     return composeView(req, res, { error: 'Write something before transmitting.', draft: body });
   }
   if (body.length > MAX_CHARS) {
-    return composeView(req, res, { error: `Messages are limited to ${MAX_CHARS} characters.`, draft: body.slice(0, MAX_CHARS) });
+    return composeView(req, res, { error: `${ctx.T('Messages are limited to')} ${MAX_CHARS} ${ctx.T('characters.')}`, draft: body.slice(0, MAX_CHARS) });
   }
 
   // Rate limit by visitor and by IP hash: the cookie alone is trivially cleared.
@@ -559,6 +582,15 @@ app.post('/theme', (req, res) => {
   res.redirect(req.get('referer') || '/');
 });
 
+/* The language switch: the same shape as the theme — a cookie, a redirect
+   back to where the visitor was. Anything but de/en/fr falls back to English. */
+app.post('/lang', (req, res) => {
+  const to = i18n.LANGS.includes(req.body.to) ? req.body.to : 'en';
+  res.cookie('mcs_lang', to, { httpOnly: false, sameSite: 'lax', maxAge: 365 * 86400000,
+    secure: process.env.SECURE_COOKIES === 'true' });
+  res.redirect(req.get('referer') || '/');
+});
+
 /* The stores' daily use — every item on every day of the run — as one CSV.
    The same table is written to content/resource-log.csv on every load. */
 app.get('/resources/log.csv', (req, res) => {
@@ -581,6 +613,20 @@ app.get('/api/habitat/data', (req, res) => {
   res.json(critical.snapshot(days));
 });
 
+/* The habitat's own hardware, read through Home Assistant. The server polls
+   and stores (src/lib/home-assistant.js); the browser reads this — rendered
+   panel HTML plus a change mark, the same pattern as /api/board — so the
+   token and the Home Assistant address never leave the server. */
+app.get('/api/hardware', (req, res) => {
+  const snap = homeAssistant.snapshot(24);
+  res.set('Cache-Control', 'no-store').json({
+    version: homeAssistant.version(snap),
+    frozen: snap.frozen,
+    pollMs: snap.pollMs,
+    html: snap.configured && snap.sensors.length ? P.hardwareInner(snap, req.ctx().T) : '',
+  });
+});
+
 app.get('/healthz', (req, res) => res.type('text').send('ok'));
 
 /* ===================================================================== MEDIA */
@@ -595,12 +641,13 @@ app.use('/control', control);
 
 app.use((req, res) => {
   const ctx = req.ctx();
+  const T = ctx.T;
   res.status(404).send(require('./views/layout').page({
     title: 'No such channel', ctx, current: '',
     body: `<div style="padding:60px 0"><div class="eyebrow">404</div>
-      <h1>No such channel</h1>
-      <p class="lede">Nothing is transmitting on this address.</p>
-      <p><a class="btn" href="/">Return to mission</a></p></div>`,
+      <h1>${T('No such channel')}</h1>
+      <p class="lede">${T('Nothing is transmitting on this address.')}</p>
+      <p><a class="btn" href="/">${T('Return to mission')}</a></p></div>`,
   }));
 });
 
@@ -668,6 +715,10 @@ if (process.env.WATCH_CONTENT !== 'false') content.watch();
 
 /* Poll the external habitat sensor feed on its own transmit cycle. */
 if (process.env.CRITICAL_POLL !== 'false') critical.start(); else critical.applyBuild(critical.buildStamp());
+
+/* Poll the habitat's own hardware through Home Assistant (src/lib/home-assistant.js).
+   Off until HA_HOST and HA_API_TOKEN are set in .env; HA_POLL=false holds it off. */
+if (process.env.HA_POLL !== 'false') homeAssistant.start();
 
 const PORT = Number(process.env.PORT || 8080);
 const server = app.listen(PORT, '0.0.0.0', () => {

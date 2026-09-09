@@ -62,20 +62,19 @@ function logSection({ days, crew, counts }) {
  * day and counts what is written on it.
  */
 function logPage(ctx, { days, crew, counts, mediaLookup = () => null }) {
-  const m = ctx.mission;
+  const m = ctx.mission, T = ctx.T;
   const pre = m.phase === 'PRE_LAUNCH';
   const slots = counts.slots || days.reduce((n, d) => n + d.entries.length, 0);
   const body = `
   <div class="logpage-top">
-    <div class="eyebrow">Channel group 50 · Crew log <span class="brk">Written from inside</span></div>
-    <h1>Crew log</h1>
-    <p class="lede">At the end of each day the three officers each write an entry from inside
-    the habitat. Nobody edits them on the way out. ${counts.published} of ${slots} entries written${
-      pre ? ` — the habitat is occupied from ${esc(m.startLabel)}; the grey slots show where each day's entries will go` : ''}.</p>
-    <div class="actions"><a class="btn" href="/#crewlog">Back to the mission</a></div>
+    <div class="eyebrow">${T('Channel group')} 50 · ${T('Crew log')} <span class="brk">${T('Written from inside')}</span></div>
+    <h1>${T('Crew log')}</h1>
+    <p class="lede">${T('At the end of each day the three officers each write an entry from inside the habitat. Nobody edits them on the way out.')} ${counts.published} ${T('of')} ${slots} ${T('entries written')}${
+      pre ? ` — ${T('the habitat is occupied from')} ${esc(m.startLabel)}; ${T('the grey slots show where each day’s entries will go')}` : ''}.</p>
+    <div class="actions"><a class="btn" href="/#crewlog">${T('Back to the mission')}</a></div>
   </div>
 
-  <div class="logpage-strip" aria-label="Jump to a day">
+  <div class="logpage-strip" aria-label="${esc(T('Jump to a day'))}">
     ${days.map((d) => {
       const n = d.missionDay;
       const cls = pre ? 'quiet' : n < m.clampedDay ? 'past' : n === m.clampedDay ? 'now' : 'quiet';
@@ -83,8 +82,8 @@ function logPage(ctx, { days, crew, counts, mediaLookup = () => null }) {
     }).join('')}
   </div>
 
-  <div class="feed-filter log-filter logpage-filter" id="log-filter" role="group" aria-label="Filter the crew log">
-    <button type="button" class="chip active" data-crew="">ALL CREW</button>
+  <div class="feed-filter log-filter logpage-filter" id="log-filter" role="group" aria-label="${esc(T('Filter the crew log'))}">
+    <button type="button" class="chip active" data-crew="">${T('ALL CREW')}</button>
     ${crew.map((c) => `<button type="button" class="chip" data-crew="${c.id}">${esc(c.designation)}</button>`).join('')}
   </div>
 
@@ -92,29 +91,29 @@ function logPage(ctx, { days, crew, counts, mediaLookup = () => null }) {
     ${days.map((d) => `
     <section class="log-day logpage-day" id="day-${d.missionDay}" data-day="${d.missionDay}">
       <div class="log-day-head">
-        <span class="cs">Day ${dayLabel(d.missionDay)}</span>
+        <span class="cs">${T('Day')} ${dayLabel(d.missionDay)}</span>
         <span>${esc(missionLib.dayLabel(d.date))}</span>
-        ${!pre && d.missionDay === m.clampedDay ? '<span class="now">Today</span>' : ''}
-        <span class="count">${d.written}/${d.entries.length} written</span>
+        ${!pre && d.missionDay === m.clampedDay ? `<span class="now">${T('Today')}</span>` : ''}
+        <span class="count">${d.written}/${d.entries.length} ${T('written')}</span>
       </div>
       ${d.entries.map((e) => `
       <article class="card log-entry${e.placeholder ? ' placeholder' : ''}" id="e${e.id}" data-crew="${e.crew_id}">
         <div class="card-top"><span class="cs">${esc(e.designation)}</span><span class="card-day">${
-          e.placeholder ? 'placeholder' : esc(e.role)}</span></div>
+          e.placeholder ? T('placeholder') : esc(e.role)}</span></div>
         ${e.placeholder ? `<div class="card-body" style="white-space:pre-line">${esc(e.body)}</div>${
-            e.media && e.media.length ? `<div class="card-body entry-post">${MV.entryHtml('', e.media, { lookup: mediaLookup })}</div>` : ''}`
-          : `<div class="card-body entry-post">${MV.entryHtml(e.body, e.media || [], { lookup: mediaLookup })}</div>`}
+            e.media && e.media.length ? `<div class="card-body entry-post">${MV.entryHtml('', e.media, { lookup: mediaLookup, T })}</div>` : ''}`
+          : `<div class="card-body entry-post">${MV.entryHtml(e.body, e.media || [], { lookup: mediaLookup, T })}</div>`}
       </article>`).join('')}
       ${d.media && d.media.length ? `<div class="logpage-media">
-        <div class="logpage-media-head"><span>From the habitat that day · ${d.media.length}</span>
-          <a href="/media#day-${d.missionDay}">all media</a> · <a href="/media/day/${d.missionDay}/export.zip">download the day</a></div>
+        <div class="logpage-media-head"><span>${T('From the habitat that day')} · ${d.media.length}</span>
+          <a href="/media#day-${d.missionDay}">${T('all media')}</a> · <a href="/media/day/${d.missionDay}/export.zip">${T('download the day')}</a></div>
         ${MV.strip(d.media)}</div>` : ''}
     </section>`).join('')}
   </div>
-  <div class="empty" id="log-empty" style="display:none">Nothing written by them yet</div>`;
+  <div class="empty" id="log-empty" style="display:none">${T('Nothing written by them yet')}</div>`;
 
   return L.page({ title: 'Crew log', ctx, body, current: '/logbook', scripts: ['/board.js'],
-    hero: L.masthead(ctx) + L.pageNav('/logbook'), hideRail: true, hideNav: true, bodyClass: 'landing inner' });
+    hero: L.masthead(ctx) + L.pageNav('/logbook', T), hideRail: true, hideNav: true, bodyClass: 'landing inner' });
 }
 
 module.exports = { entryCard, logSection, logPage };

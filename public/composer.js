@@ -9,6 +9,9 @@
    form posts normally and the server redirects, as it always did. */
 (function () {
   'use strict';
+  /* The visitor's language, from the table in the page head (see
+     src/lib/i18n.js); English when there is none. */
+  var t = window.t || function (s) { return s; };
 
   var device = document.querySelector('.composer-device');
   var stage = document.getElementById('dev-body');
@@ -108,25 +111,25 @@
 
   /* ------------------------------------------------------------- transit view */
   function bindTransit(root) {
-    var t = root.querySelector('.transit-block');
-    if (device) device.classList.toggle('sending', !!t);
-    if (!t) return;
+    var block = root.querySelector('.transit-block');
+    if (device) device.classList.toggle('sending', !!block);
+    if (!block) return;
 
-    var arrival = Date.parse(t.dataset.arrival);
-    var departure = Date.parse(t.dataset.departure);
+    var arrival = Date.parse(block.dataset.arrival);
+    var departure = Date.parse(block.dataset.departure);
     var span = Math.max(1, arrival - departure);
-    var clock = t.querySelector('#tclock');
-    var bar = t.querySelector('#tbar');
-    var pct = t.querySelector('#tpct');
-    var word = t.querySelector('#xword');
+    var clock = block.querySelector('#tclock');
+    var bar = block.querySelector('#tbar');
+    var pct = block.querySelector('#tpct');
+    var word = block.querySelector('#xword');
     var orbitPacket = document.getElementById('orbit-packet');
     var chord = document.getElementById('orbit-chord');
 
     /* The dial: the packet rides the route, the trail is the route drawn as
        far as the packet has come. */
-    var route = t.querySelector('#xroute');
-    var trail = t.querySelector('#xtrail');
-    var packet = t.querySelector('#xpacket');
+    var route = block.querySelector('#xroute');
+    var trail = block.querySelector('#xtrail');
+    var packet = block.querySelector('#xpacket');
     var routeLen = 0;
     if (route && route.getTotalLength) {
       routeLen = route.getTotalLength();
@@ -146,24 +149,24 @@
     }
 
     function arrived() {
-      if (clock) clock.textContent = 'ARRIVED';
+      if (clock) clock.textContent = t('ARRIVED');
       if (bar) bar.style.width = '100%';
       if (pct) pct.textContent = '100%';
       place(1);
-      if (word) word.textContent = 'Arrived';
-      t.classList.add('done');
-      var state = t.querySelector('.state');
-      if (state) state.textContent = 'Delivered · awaiting review';
+      if (word) word.textContent = t('Arrived');
+      block.classList.add('done');
+      var state = block.querySelector('.state');
+      if (state) state.textContent = t('Delivered · awaiting review');
       // Hold on ARRIVED for a moment, then bring the composer back with the
       // real server-side state — in place, without a reload.
       setTimeout(function () {
-        if (!t.isConnected) return;
+        if (!block.isConnected) return;
         if (stage && window.fetch) refresh(); else window.location.reload();
       }, 2600);
     }
 
     function tick() {
-      if (!t.isConnected) return;
+      if (!block.isConnected) return;
       var now = Date.now();
       var left = arrival - now;
       if (left <= 0) { arrived(); return; }

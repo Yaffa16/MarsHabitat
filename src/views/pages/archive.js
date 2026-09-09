@@ -8,6 +8,50 @@ const mediaLookup = require('../../lib/media').get;
 
 const dd = (n) => String(n).padStart(3, '0');
 
+/* The day over its 24 hours: one line per series, each on its own scale,
+   hourly gridlines 00–24 (venue time), every point drawn, named at its end
+   in its own colour. Points are keyed 1–25 (position 1 = 00:00, 25 = 24:00);
+   the same shape the archive's day record carries. */
+const HOUR_PALETTE = ['#ff6a1a', '#4f7bd9', '#8b6fd6', '#3aa66f', '#d94f7b', '#2aa7b8', '#c48a1c', '#6b7a8f',
+  '#e0562e', '#3f5fbf', '#9c4dcc', '#2e8b57', '#b8336a', '#1f8fa3', '#a67c00', '#556677'];
+function hourChart(seriesList, { caption = '' } = {}) {
+  const W = 1000, padL = 12, padR = 210, padT = 14, padB = 30;
+  const drawnIn = (seriesList || []).filter((s) => Object.keys(s.points || {}).length);
+  if (!drawnIn.length) return '';
+  const H = Math.max(240, drawnIn.length * 32 + padT + padB + 40);
+  const iw = W - padL - padR, ih = H - padT - padB;
+  const sx = (pos) => padL + ((pos - 1) / 24) * iw;
+  const drawn = drawnIn.map((s, i) => {
+    const entries = Object.entries(s.points).map(([p, v]) => [Number(p), v]).sort((a, b) => a[0] - b[0]);
+    const vals = entries.map((e) => e[1]);
+    let lo = Math.min(...vals), hi = Math.max(...vals);
+    if (hi - lo < 1e-9) { hi += 0.5; lo -= 0.5; }
+    const sy = (v) => padT + ih - ((v - lo) / (hi - lo)) * ih;
+    const d = entries.map(([p, v], k) => `${k ? 'L' : 'M'}${sx(p).toFixed(1)},${sy(v).toFixed(1)}`).join('');
+    const [, ev] = entries[entries.length - 1];
+    return { s, colour: HOUR_PALETTE[i % HOUR_PALETTE.length], d,
+      dots: entries.map(([p, v]) => [sx(p), sy(v)]),
+      ex: sx(entries[entries.length - 1][0]), ey: sy(ev), last: ev };
+  });
+  const rows = [...drawn].sort((a, b) => a.ey - b.ey);
+  let prev = -Infinity;
+  for (const r of rows) { r.ty = Math.max(r.ey, prev + 30, padT + 8); prev = r.ty; }
+  const over = rows.length ? rows[rows.length - 1].ty + 12 - (H - padB) : 0;
+  if (over > 0) for (const r of rows) r.ty -= over;
+  const railX = W - padR + 14;
+  const fmt = (v) => v.toLocaleString('en-GB', { maximumFractionDigits: 2 });
+  return `<figure class="hw-chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(caption || 'The day, hour by hour, 00 to 24 venue time')}">
+    ${Array.from({ length: 13 }, (_, k) => { const xx = sx(1 + k * 2); return `<line x1="${xx.toFixed(1)}" y1="${padT}" x2="${xx.toFixed(1)}" y2="${H - padB}" stroke="var(--rule)" stroke-width="1"${(k * 2) % 6 ? ' opacity="0.45"' : ''}/>
+      <text x="${xx.toFixed(1)}" y="${H - padB + 15}" text-anchor="${k === 0 ? 'start' : k === 12 ? 'end' : 'middle'}" class="hw-ax"${(k * 2) % 6 ? ' opacity="0.6"' : ''}>${String(k * 2).padStart(2, '0')}</text>`; }).join('')}
+    <line x1="${padL}" y1="${H - padB}" x2="${W - padR + 4}" y2="${H - padB}" stroke="var(--rule-hard)" stroke-width="1"/>
+    ${drawn.map((r) => `<path d="${r.d}" class="hw-line" stroke="${r.colour}"><title>${esc(r.s.label)}</title></path>
+      ${r.dots.map(([dx, dy]) => `<circle cx="${dx.toFixed(1)}" cy="${dy.toFixed(1)}" r="2.5" fill="${r.colour}" stroke="var(--well)" stroke-width="1"/>`).join('')}`).join('')}
+    ${rows.map((r) => `${Math.abs(r.ty - r.ey) > 2 || railX - r.ex > 8 ? `<line x1="${r.ex.toFixed(1)}" y1="${r.ey.toFixed(1)}" x2="${(railX - 4).toFixed(1)}" y2="${r.ty.toFixed(1)}" stroke="${r.colour}" stroke-width="1" stroke-dasharray="2 3" opacity="0.7"/>` : ''}
+      <text x="${railX}" y="${r.ty.toFixed(1)}" text-anchor="start" class="hw-name" fill="${r.colour}">${esc(r.s.label)}</text>
+      <text x="${railX}" y="${(r.ty + 14).toFixed(1)}" text-anchor="start" class="hw-val" fill="${r.colour}">${fmt(r.last)}${r.s.unit ? ' ' + esc(r.s.unit) : ''}</text>`).join('')}
+  </svg>${caption ? `<figcaption class="note">${esc(caption)}</figcaption>` : ''}</figure>`;
+}
+
 /* ============================================================== CONTENTS */
 
 function contents(ctx, { days, counts, entryCounts }) {
@@ -63,8 +107,9 @@ function contents(ctx, { days, counts, entryCounts }) {
           + 'exchange, and the media index with every file’s SHA-256.',
         href: '/archive/export.json', label: 'Download .json' })}
       ${card({ fmt: 'ZIP · raw readings', title: 'The readings log',
-        blurb: 'Every reading the station ever pulled or received, one JSON file per pull, '
-          + 'written the moment it arrived and never changed. It survives the reset.',
+        blurb: 'Every reading the station ever pulled or received — every poll, changed or '
+          + 'not — one JSON file per pull, written the moment it arrived and never changed, '
+          + 'with the same log as CSV tables inside. It survives the reset.',
         href: '/archive/readings.zip', label: 'Download ZIP' })}
       ${card({ fmt: 'ZIP · originals', title: 'The media archive',
         blurb: `Every photograph, video and sound file the crew sent out${mediaTotal
@@ -90,9 +135,15 @@ function contents(ctx, { days, counts, entryCounts }) {
         inventory, crew writing, states, exchanges and habitat summary, in order. It opens in any
         text editor and still makes sense with nothing to render it.</p>
         <p class="note">The readings log is every reading the station ever pulled or received — every poll of the
-        sensor node, every batch posted to the ingest endpoint, the stores and the crew's figures each time they
-        changed, each day's habitat summary — one JSON file per pull, written the moment it arrived and never
-        changed. It survives the reset. <code>index.json</code> inside lists every file.</p>
+        sensor node (the readings it added; the node repeats its last thirty days each time), every poll of the habitat's own hardware exactly as Home Assistant answered it (whether or not
+        anything had changed), every batch posted to the ingest endpoint, the stores and the crew's figures each
+        time they changed, each day's habitat summary — one JSON file per pull, written the moment it arrived and
+        never changed. It survives the reset. <code>index.json</code> inside lists every file, and <code>csv/</code>
+        holds the same log as tables for a spreadsheet, also downloadable on their own:
+        <a href="/archive/readings/home-assistant.csv">home-assistant.csv</a> (one row per entity per poll),
+        <a href="/archive/readings/ingest.csv">ingest.csv</a> (one row per reading posted),
+        <a href="/archive/readings/node-polls.csv">node-polls.csv</a> (one row per poll of the node) and
+        <a href="/archive/readings/node.csv">node.csv</a> (one row per reading the node ever sent).</p>
         <p class="note">The media ZIP is stored, not compressed, and streamed as it goes, so the
         whole mission is one download whatever it weighs. <code>manifest.json</code> and a
         <code>README.txt</code> are inside; every file can be checked against its SHA-256.</p>
@@ -219,7 +270,32 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
           <td class="n">${h.avg_value == null ? '—' : h.avg_value.toFixed(1)} ${esc(h.unit || '')}</td>
           <td class="n">${h.samples}</td>
         </tr>`).join('')}</tbody>
-      </table></div>`, 'mars-side') : ''}
+      </table></div>
+      ${hourChart([...(r.habitatHours || []), ...(r.externalHours || [])],
+        { caption: 'The habitat over the day — every channel pulled that day, one point per hour, 00 to 24 venue time, each line on its own scale.' })}`, 'mars-side') : ''}
+
+    ${(r.hardware || []).length ? panel('CH-02 / HARDWARE', `
+      ${eyebrow('The habitat’s own hardware · through Home Assistant')}
+      <div class="tw"><table>
+        <thead><tr><th>Device</th><th>Low</th><th>High</th><th>Mean</th><th>Added today</th><th>Samples</th></tr></thead>
+        <tbody>${r.hardware.map((h) => { const f = (v) => (v == null ? '—' : String(Math.round(v * 100) / 100)); return `<tr>
+          <th>${esc(h.label)}</th>
+          <td class="n">${f(h.low)}</td>
+          <td class="n">${f(h.high)}</td>
+          <td class="n">${f(h.mean)} ${esc(h.unit)}</td>
+          <td class="n">${h.added == null ? '—' : `${f(h.added)} ${esc(h.unit)}`}</td>
+          <td class="n">${h.samples}</td>
+        </tr>`; }).join('')}</tbody>
+      </table></div>
+      ${hourChart(r.hardwareHours || [],
+        { caption: 'The hardware over the day — one point per hour, a gauge’s hour as its mean, a meter as its level, 00 to 24 venue time.' })}`, 'mars-side') : ''}
+
+    ${((r.resourcesDay || []).length || r.caloriesDay) ? panel('CH-31 / OVER THE DAY', `
+      ${eyebrow('Two points per line: the start of the day and its close')}
+      ${hourChart([
+        ...(r.resourcesDay || []).map((s) => ({ label: s.label, unit: s.unit, points: { 1: s.open, 25: s.close } })),
+        ...(r.caloriesDay ? [{ label: 'Calories consumed', unit: 'kcal', points: { 1: r.caloriesDay.open, 25: r.caloriesDay.close } }] : []),
+      ], { caption: 'Each store from what it held at the start of the day to its close; calories from zero to the day’s total. Each line on its own scale.' })}`, 'mars-side') : ''}
   </div>
 
   ${r.day && r.day.meals.length ? panel('CH-32 / GALLEY', `

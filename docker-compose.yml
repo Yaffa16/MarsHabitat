@@ -46,6 +46,16 @@ services:
       # Rehearsal only: moves the instant the record closes (the end of
       # 27 October 2026, after which nothing is updated by automation).
       CRITICAL_FREEZE_AT: "${CRITICAL_FREEZE_AT:-}"
+
+      # --- the habitat's own hardware (Home Assistant) -----------------------
+      # Host, port and token come from .env and stay out of the repository;
+      # which sensors are read lives in content/home-assistant.json. Without
+      # host and token the bridge is off and the panel stays off the page.
+      HA_HOST: "${HA_HOST:-}"
+      HA_PORT: "${HA_PORT:-80}"
+      HA_API_TOKEN: "${HA_API_TOKEN:-}"
+      HA_POLL_MS: "${HA_POLL_MS:-1200000}"
+      HA_POLL: "${HA_POLL:-true}"
     volumes:
       - station-data:/data
       # The mission content is mounted, not baked in: edit the files on your

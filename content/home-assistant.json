@@ -1,0 +1,19 @@
+{
+  "_note": "The habitat's own hardware, read through Home Assistant. Each entry is one entity to poll and show on the station's Habitat hardware panel: id is the entity id without the 'sensor.' prefix, label is what the station shows, unit is a fallback when Home Assistant does not name one, kind is 'gauge' (reads as it is) or 'counter' (only ever rises, like an energy meter — the tile then also says what today has added), decimals is how the value is printed. Add a sensor here and it is on the station within a minute — no restart, no redeploy. WHERE Home Assistant is and the API token live in .env (HA_HOST, HA_PORT, HA_API_TOKEN), never in this repository.",
+  "sensors": [
+    {
+      "id": "sonoff_temperatur_temperature_1",
+      "label": "Cricket Terrarium Temperature",
+      "unit": "°C",
+      "kind": "gauge",
+      "decimals": 1
+    },
+    {
+      "id": "shelly_steckdose_2_energie",
+      "label": "Socket energy · Shelly plug",
+      "unit": "Wh",
+      "kind": "counter",
+      "decimals": 1
+    }
+  ]
+}

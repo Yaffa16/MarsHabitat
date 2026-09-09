@@ -223,7 +223,7 @@ class Layout {
    * { name, color, points: {day: v}, planned: {day: v} } — points solid,
    * planned dashed. `band` draws a min–max wash behind a series.
    */
-  chart({ title, unit = '', series, totalDays, today, domain = null, w = CW, h = 120, x = M.left, band = null, legend = true }) {
+  chart({ title, unit = '', series, totalDays, today, domain = null, w = CW, h = 120, x = M.left, band = null, legend = true, xStep = 1, xLabel = null }) {
     const padL = 34, padR = 10, padT = 18, padB = 18;
     const legendH = legend && series.length > 1 ? 12 : 0;
     this.need(h + legendH + 8);
@@ -250,9 +250,9 @@ class Layout {
       if (t > 0 && t < 1) this.pdf.line(this.page, px, yy, px + pw, yy, { color: RULE, width: 0.3, dash: [1, 2] });
       this.pdf.text(this.page, px - 4, yy + 2.5, fmtNum(Math.abs(v) >= 100 ? Math.round(v) : v, 1), { size: 6.5, color: GREY, align: 'right' });
     }
-    for (let d = 1; d <= totalDays; d++) {
+    for (let d = 1; d <= totalDays; d += xStep) {
       const xx = X(d);
-      this.pdf.text(this.page, xx, py + ph + 10, dd(d), { size: 6.5, color: d === today ? INK : GREY, align: 'center' });
+      this.pdf.text(this.page, xx, py + ph + 10, xLabel ? xLabel(d) : dd(d), { size: 6.5, color: d === today ? INK : GREY, align: 'center' });
       if (d === today) this.pdf.line(this.page, xx, py, xx, py + ph, { color: ORANGE, width: 0.6, dash: [2, 2] });
     }
     if (band) {
@@ -515,6 +515,31 @@ function trendsSection(L, G) {
     for (const r of external) { const n = dayOf(new Date(r.t).toISOString(), st); if (n < 1 || n > total) continue; for (const [k] of keys) { if (r[k] == null) continue; (acc[k] = acc[k] || {})[n] = acc[k][n] || { s: 0, c: 0 }; acc[k][n].s += r[k]; acc[k][n].c++; } }
     pairs(keys.filter(([k]) => acc[k]).map(([k, name, unit]) => { const points = {}; for (const [n, v] of Object.entries(acc[k])) points[n] = Math.round((v.s / v.c) * 100) / 100; return chartSpec({ title: name, unit, series: [{ name, points, planned: {} }] }); }));
   }
+  // The habitat's own hardware, through Home Assistant: one point per day —
+  // a gauge's daily mean with its low–high band, a meter's daily added amount.
+  {
+    const haLib = require('./home-assistant');
+    const perDay = {};
+    for (let n = 1; n <= total; n++) {
+      if (!upTo(n)) continue;
+      for (const h of haLib.daySummary(archive.windowFor(n))) {
+        const p = (perDay[h.id] = perDay[h.id] || { label: h.label, unit: h.unit, kind: h.kind, points: {}, band: {} });
+        const v = h.kind === 'counter' ? (h.added != null ? h.added : null) : h.mean;
+        if (v == null) continue;
+        p.points[n] = Math.round(v * 100) / 100;
+        if (h.kind !== 'counter') p.band[n] = [h.low, h.high];
+      }
+    }
+    const charts = Object.values(perDay).filter((p) => Object.keys(p.points).length).map((p) => chartSpec({
+      title: p.label, unit: p.kind === 'counter' ? `${p.unit || ''}/day` : (p.unit || ''),
+      series: [{ name: p.label, points: p.points, planned: {} }],
+      band: p.kind === 'counter' ? undefined : p.band }));
+    if (charts.length) {
+      L.h2('Habitat — the hardware (Home Assistant)');
+      L.para('One point per day: a gauge\'s daily mean with the day\'s low–high range washed behind it; a meter\'s daily added amount. From the devices the station polls through Home Assistant.', { color: GREY, size: 8.5 });
+      pairs(charts);
+    }
+  }
   L.h2('Crew states');
   L.para('The last state filed for each officer on each day. 0 is calm, 100 is angry. These numbers are never shown on the public station — only the sentence each maps to — and appear here because this is mission control\'s record.', { color: GREY, size: 8.5 });
   const lastOfDay = (crewId, key) => { const points = {}; for (const m of moods) { if (m.crew_id !== crewId) continue; const n = dayOf(m.effective_at, st); if (n >= 1 && n <= total) points[n] = m[key]; } return points; };
@@ -624,6 +649,38 @@ function daySection(L, G, r, { asChapter = true } = {}) {
     L.h2('Habitat');
     L.table([{ label: 'Channel', w: 0.6, font: 'mono' }, { label: 'Metric', w: 1.6 }, { label: 'Low', w: 0.7, align: 'right' }, { label: 'High', w: 0.7, align: 'right' }, { label: 'Mean', w: 0.7, align: 'right' }, { label: 'Unit', w: 0.6 }, { label: 'Samples', w: 0.7, align: 'right' }, { label: 'Sealed', w: 0.8 }],
       r.habitat.map((h) => [h.channel || '—', h.label || h.metric, fmtNum(h.min_value), fmtNum(h.max_value), fmtNum(h.avg_value), h.unit || '', h.samples, h.sealed_at ? localHM(h.sealed_at, st) : 'open']));
+  }
+  if ((r.hardware || []).length) {
+    L.h2('Habitat hardware');
+    L.table([{ label: 'Device', w: 2, font: 'bold' }, { label: 'Low', w: 0.7, align: 'right' }, { label: 'High', w: 0.7, align: 'right' }, { label: 'Mean', w: 0.7, align: 'right' }, { label: 'Added today', w: 0.9, align: 'right' }, { label: 'Unit', w: 0.6 }, { label: 'Samples', w: 0.7, align: 'right' }],
+      r.hardware.map((h) => [h.label, fmtNum(h.low), fmtNum(h.high), fmtNum(h.mean), h.added == null ? '—' : fmtNum(h.added), h.unit || '', h.samples]));
+  }
+  /* The day over its 24 hours: every reading pulled that day — the station's
+     channels, the external node and the hardware — one point per hour on an
+     00–24 axis; then the two-point day, each store from open to close and
+     the calories from zero to the day's total. */
+  {
+    const HOURS = { totalDays: 25, today: -1, h: 104, xStep: 2, xLabel: (p) => String(p - 1).padStart(2, '0') };
+    const two = (a, b) => { for (let i = 0; i < a.length; i += 2) L.chartPair(a[i], a[i + 1]); void b; };
+    const hourCharts = [
+      ...(r.habitatHours || []).map((c) => ({ ...HOURS, title: `${c.channel ? c.channel + ' · ' : ''}${c.label}`, unit: c.unit || '', series: [{ name: c.label, points: c.points, planned: {} }] })),
+      ...(r.externalHours || []).map((c) => ({ ...HOURS, title: c.label, unit: c.unit || '', series: [{ name: c.label, points: c.points, planned: {} }] })),
+      ...(r.hardwareHours || []).map((c) => ({ ...HOURS, title: c.label, unit: c.unit || '', series: [{ name: c.label, points: c.points, planned: {} }] })),
+    ];
+    if (hourCharts.length) {
+      L.h2('The day, hour by hour');
+      L.para('Every reading pulled that day — the station\'s own channels, the external node and the habitat hardware — one point per hour, 00 to 24 venue time. A gauge\'s hour is its mean; a meter shows its level.', { color: GREY, size: 8.5 });
+      two(hourCharts);
+    }
+    const twoPoint = [
+      ...(r.resourcesDay || []).map((s) => ({ ...HOURS, title: `${s.label} — open to close`, unit: s.unit || '', series: [{ name: s.label, points: { 1: s.open, 25: s.close }, planned: {} }] })),
+      ...(r.caloriesDay ? [{ ...HOURS, title: 'Calories consumed — open to close', unit: 'kcal', series: [{ name: 'calories', points: { 1: r.caloriesDay.open, 25: r.caloriesDay.close }, planned: {} }] }] : []),
+    ];
+    if (twoPoint.length) {
+      L.h2('Resources over the day');
+      L.para('Two points per line: what the store held at the start of the day and at its close; the calories run from zero to the day\'s total.', { color: GREY, size: 8.5 });
+      two(twoPoint);
+    }
   }
 }
 

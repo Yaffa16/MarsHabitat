@@ -430,6 +430,73 @@ shown as a condition of the habitat, not hidden.
 Other endpoints: `/api/sensors/latest`, `/api/sensors/history?metric=temperature&hours=24`,
 `/api/orbital`, `/api/status`, `/healthz`.
 
+## The habitat's own hardware (Home Assistant)
+
+The real devices inside the habitat — a smart plug's energy meter, a temperature sensor,
+more as they are installed — hang off a Home Assistant instance on the venue network. The
+station server polls its REST API and draws them on the landing page as **Habitat
+hardware**, a panel directly below the Habitat panel: one tile per device with the current
+reading, when it last changed and its last 24 hours as a sparkline, and beneath the tiles
+one combined chart with every device on the same day — each line on its own scale, named at
+its end in its own colour, exactly as the Trends panel does it. The panel refreshes itself
+on the poll cycle without a reload; without JavaScript the server-rendered panel stands.
+
+Three things will change, and none of them is code:
+
+- **Where Home Assistant is and how to authenticate** — `HA_HOST`, `HA_PORT` and
+  `HA_API_TOKEN` in **`.env`**, and only there; the address and the long-lived token never
+  enter the repository. Without host and token the bridge is off and the panel is simply
+  not on the page.
+- **Which sensors are read** — **`content/home-assistant.json`**, one entry per entity:
+  the id (without the `sensor.` prefix), the label the station shows, a fallback unit, a
+  `kind` (`gauge` reads as it is; `counter` only ever rises, like an energy meter, and its
+  tile also says what today has added) and the decimals to print. The file is re-read on
+  every poll, so adding a device is an edit and it is on the station within a minute — no
+  restart, no redeploy.
+- **How often** — `HA_POLL_MS` (default 60000); `HA_POLL=false` holds the bridge off
+  without removing the credentials.
+
+The browser never talks to Home Assistant: the server polls, stores every state change in
+its own database (`ha_reading`), backfills the drawn day from HA's history endpoint after a
+restart, and serves the rendered panel at `/api/hardware` — so the history accumulates,
+survives restarts, and keeps serving if Home Assistant goes quiet (the panel then says so
+rather than standing on stale numbers as if they were live). An entity that is not in the
+feed is named on its tile rather than silently blank, and `unavailable`/`unknown` states
+are never stored as readings.
+
+The hardware follows the same disciplines as every other reading: nothing stamped before
+the **readings floor** is stored or shown, **Reset to 15 October** clears the readings so
+the run starts clean, **every poll is written to the readings log** — changed or not,
+answered or not, each entity exactly as Home Assistant returned it with its attributes and
+both timestamps, and every row the history backfill fetched (`home-assistant/` in the ZIP)
+— and from the end of 27 October 2026 Home Assistant is not polled again — the record is
+closed, and the panel stands as the run left it. The database keeps one row per state
+change, which is what the panel draws; the log keeps every pull.
+
+## Everything pulled is kept
+
+Every reading the station pulls or receives is written to disk the moment it arrives, as
+one JSON file per pull, and never rewritten or deleted — not by the reset, not by the
+database's own trimming, not by anything. `src/lib/readings-log.js`, on the `station-data`
+volume beside the database and the media, under `readings/<source>/<day>/<time>.json`:
+
+| Source | One file per |
+|---|---|
+| `node/` | every poll of the external sensor node — the readings that poll added (the node repeats its whole last thirty days each time; only what the station did not already hold is written), with the counts of what came back, what was a duplicate and what was before the floor; a failed poll is a file too, with the error |
+| `home-assistant/` | every poll of the habitat's hardware — every entity as returned, whether or not it changed, plus history rows fetched |
+| `ingest/` | every batch posted to `/api/sensors/ingest`, as posted |
+| `resources/`, `figures/` | the stores and the crew's figures, each time they change |
+| `daily/` | each day's habitat summary as it is sealed |
+
+All of it downloads from mission control: **`/archive/readings.zip`** is the whole log with
+`index.json` and a `README.txt`, and inside it `csv/` holds the same log flattened for a
+spreadsheet — `home-assistant.csv` (one row per entity per poll), `ingest.csv` (one row per
+reading posted), `node-polls.csv` (one row per poll of the node) and `node.csv` (one row per
+reading the node ever sent, with the poll that brought it in). Each
+table is also on its own at **`/archive/readings/<name>.csv`**, and `/archive/readings.json`
+lists every file. The tables are built from the JSON files on request and add nothing the
+files do not hold.
+
 ---
 
 ## Communication is the point
@@ -557,10 +624,13 @@ Orange is the only colour. It marks Mars, live state, and anything wanting actio
 still carried by **symbol** as well — filled centre is nominal, single bar is caution, crossed
 ring is out of range, empty ring is no signal — so it survives print and colourblindness.
 
-Type is ZKM Serendipity throughout — the wordmark, headings, every code, label and value,
-and the reading prose — self-hosted from `public/fonts/` (Regular and Semibold, WOFF2 with
-TTF beside it), with system stacks behind it. Nothing is fetched from a CDN, so the station
-looks right with the venue's network unplugged.
+Type is ZKM Serendipity throughout the station — the wordmark, headings, every code, label
+and value, and the reading prose — self-hosted from `public/fonts/` (Regular and Semibold,
+WOFF2 with TTF beside it), with system stacks behind it. **Mission control is set in Open
+Sans** instead (Regular, Bold and their italics, in the same folder): `body.control`
+redefines the three font stacks, so every face on that page follows and nothing else does.
+Nothing is fetched from a CDN, so the station looks right with the venue's network
+unplugged.
 
 ## Monitoring channels
 
@@ -716,6 +786,45 @@ appears at the top right of the mission page, capped by height so a wide mark an
 both sit correctly. Nothing is hard-coded; swapping the file swaps the mark. A placeholder is
 in there now — replace it with the real one.
 
+## Three languages
+
+The public station reads in **German, English and French**, switched by the small
+**DE · EN · FR** control beside the theme switch — in the masthead on the landing page,
+the crew log and the media page, and in the rail on At a Glance. The choice is kept in a
+cookie (`mcs_lang`, a year, like the theme), resolved on the server, and applied to the
+whole page before it is sent: `<html lang="…">`, every label, every sentence of the
+reading matter. Nothing is fetched and no third-party script is involved — the
+translation is the station's own, so it works with the network unplugged like everything
+else here.
+
+**Every word is controlled in one file: `src/lib/i18n.js`.** English is the source: the
+views are written in English, and the dictionary `D` in that file carries the German and
+French for each string, keyed by the exact English —
+
+```js
+'Message Board': ['Nachrichtenboard', 'Tableau des messages'],
+```
+
+To change a translation, edit its row. To add one, find the English string as it appears
+in the view (punctuation, case and typographic apostrophes included — the lookup is
+verbatim) and add a row in the matching section. A string with no row simply stays
+English; a missing entry can never blank a page. Strings that are built from parts — a
+count and a noun, a number and a unit — are listed as their parts (`day` / `days`,
+`of`, `opens in`). The page scripts (the board's counters, the composer's transit
+words, the habitat tiles, the ticker) read the same dictionary through a small table the
+page carries in its head, `window.MCS_T`, and a one-line `t()`.
+
+What is translated is the station's own interface: the chrome, the ticker, the composer,
+the board's stamps and filters, the dashboard, At a Glance, the crew log and media
+pages, the About texts, the crew's condition sentences from `src/lib/mood.js`. What is
+**not** translated is the work itself: what the crew write, what visitors send and the
+replies, captions, and the day content authored in `content/` — task labels, meal names,
+resource names, notes, crew designations and roles. Callsigns, channel codes, units, the
+wordmark and `ZKM | Hertzlab` stay as they are. **Mission control and the archive are
+never translated**, whatever the cookie says: English is the mission's working language
+and the record — the pages, the PDF, the Markdown, the exports, the readings log — is
+kept as written.
+
 ## Light and dark
 
 Light is the default, matching the reference. The toggle is the last pill in the masthead
@@ -855,6 +964,7 @@ src/
   db/seed.js             idempotent seed: mission, crew, days, sensors, admin
   lib/orbital.js         Earth/Mars positions, distance, light time
   lib/mission.js         mission day, T+ clock, venue timezone
+  lib/i18n.js            the three languages: every German and French word, keyed by its English
   lib/mood.js            the only place slider values become language
   lib/data.js            queries, sensor evaluation, transit settlement
   lib/callsign.js        visitor identity

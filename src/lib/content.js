@@ -506,7 +506,7 @@ function reset(actor = 'control') {
   const wipe = db.transaction(() => {
     for (const t of ['response', 'message', 'visitor', 'crew_entry', 'crew_mood', 'media',
                      'sensor_reading', 'sensor_daily', 'day_seal', 'day_note', 'task', 'meal', 'inventory_level',
-                     'external_reading']) {
+                     'external_reading', 'ha_reading']) {
       wiped[t] = db.prepare(`DELETE FROM ${t}`).run().changes;
     }
     db.prepare("UPDATE day SET status = 'DRAFT', updated_at = ?, updated_by = 'reset'").run(now());
@@ -520,6 +520,12 @@ function reset(actor = 'control') {
     critical.setFloor('reset', 'run');
     if (process.env.CRITICAL_POLL !== 'false') setTimeout(() => critical.poll().catch(() => {}), 500);
   } catch (e) { console.warn('[content] readings floor not moved:', e.message); }
+  // The habitat's own hardware starts again with the run too.
+  try {
+    const ha = require('./home-assistant');
+    ha.clear();
+    if (process.env.HA_POLL !== 'false') setTimeout(() => ha.poll().catch(() => {}), 500);
+  } catch (e) { console.warn('[content] hardware readings not cleared:', e.message); }
 
   // 3. the files back into the database
   const loaded = load();

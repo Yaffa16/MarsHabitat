@@ -32,6 +32,12 @@
   font-style: normal;
   font-display: swap;
 }
+/* Mission control is set in Open Sans — a plain working face for someone at a
+   desk in the dark — self-hosted like Serendipity. The station keeps its own. */
+@font-face { font-family: "Open Sans"; src: url("/fonts/OpenSans-Regular.woff2") format("woff2"), url("/fonts/OpenSans-Regular.ttf") format("truetype"); font-weight: 100 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Open Sans"; src: url("/fonts/OpenSans-Bold.woff2") format("woff2"), url("/fonts/OpenSans-Bold.ttf") format("truetype"); font-weight: 600 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "Open Sans"; src: url("/fonts/OpenSans-Italic.woff2") format("woff2"), url("/fonts/OpenSans-Italic.ttf") format("truetype"); font-weight: 100 500; font-style: italic; font-display: swap; }
+@font-face { font-family: "Open Sans"; src: url("/fonts/OpenSans-BoldItalic.woff2") format("woff2"), url("/fonts/OpenSans-BoldItalic.ttf") format("truetype"); font-weight: 600 900; font-style: italic; font-display: swap; }
 
 
 :root {
@@ -240,6 +246,18 @@ a:hover { border-bottom-color: var(--orange); color: var(--orange); }
 .rail-cell.theme button:hover { background: rgba(255,255,255,0.08); box-shadow: none; transform: none; }
 .theme-mark { width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid currentColor;
   background: linear-gradient(90deg, currentColor 50%, transparent 50%); }
+
+/* The language switch: DE · EN · FR, three small buttons in one form,
+   drawn as the theme switch's twin — a rail cell on the inner pages, a
+   pill in the masthead. The current language stands in orange. */
+.rail-cell.lang { padding: 0; gap: 0; }
+.rail-cell.lang button {
+  border: 0; background: none; color: inherit; height: 100%; padding: 0 9px; min-width: 0;
+  border-radius: 0; font-size: 9.5px; letter-spacing: 0.16em; box-shadow: none; transform: none;
+  font-family: var(--mono); text-transform: uppercase; cursor: pointer;
+}
+.rail-cell.lang button:hover { background: rgba(255,255,255,0.08); box-shadow: none; transform: none; }
+.rail-cell.lang button.on { color: var(--orange); font-weight: 700; }
 
 /* =============================================================== NAVIGATION */
 .nav {
@@ -831,6 +849,22 @@ dialog.reset-dialog #reset-word { font-family: var(--mono); letter-spacing: 0.2e
 .status-cell .you { color: var(--orange); }
 .status form { margin: 0; display: inline-flex; }
 .status .theme button { min-height: 30px; padding: 0 12px; font-size: 9px; border-radius: 20px; gap: 8px; }
+/* The language switch as one pill holding three buttons — the theme
+   switch's twin: the same raised slab, the same type, the current language
+   in orange. */
+.status .lang {
+  display: inline-flex; align-items: stretch; min-height: 30px; padding: 0 4px;
+  border-radius: 20px; background: linear-gradient(180deg, var(--raise), var(--raise-2));
+  box-shadow: var(--sh-raise-sm), inset 0 1px 0 var(--edge);
+}
+.status .lang button {
+  min-height: 0; padding: 0 8px; border: 0; border-radius: 20px; background: none; box-shadow: none; transform: none;
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--dim); cursor: pointer;
+}
+.status .lang button:hover, .status .lang button:active { color: var(--ink); background: none; box-shadow: none; transform: none; }
+.status .lang button.on { color: var(--orange); font-weight: 700; }
+.status .lang button:focus-visible { outline: 2px solid var(--orange); outline-offset: -2px; }
 
 /* ------------------------------------------------------------------ portal */
 /* The composer device on the left, the board screen on the right, the
@@ -1786,8 +1820,14 @@ a.chip { text-decoration: none; }
    waiting. Everything else the station does in colour, control does in grey. */
 body.control {
   --c-bg: #f3f3f2; --c-panel: #ffffff; --c-line: #d9d9d6; --c-line-soft: #ebebe8; --c-text: #161616; --c-muted: #666; --c-faint: #9a9a97;
-  background: var(--c-bg); color: var(--c-text); font-size: 15px;
+  /* Every face on this page is Open Sans: the three font stacks are
+     redefined here, so headings, labels, codes and reading matter all follow. */
+  --display: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --sans: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background: var(--c-bg); color: var(--c-text); font-size: 15px; font-family: var(--sans);
 }
+body.control input, body.control select, body.control textarea, body.control button { font-family: var(--sans); }
 body.control .shell { max-width: 1240px; }
 /* surfaces: no gradients, no shadows */
 body.control .panel, body.control .slab, body.control .card, body.control .msg, body.control .quoted,
@@ -1943,6 +1983,8 @@ body.control .rail-cell.theme button { font-size: 10px; }
   /* the rail loses its optional readings before it needs to scroll */
   .rail-cell.opt { display: none; }
   body:not(.control) .status .theme button, body:not(.control) .status-cell { min-height: 36px; }
+  body:not(.control) .status .lang { min-height: 36px; }
+  body:not(.control) .status .lang button { min-height: 36px; }
   body:not(.control) .chip, body:not(.control) .feed-filter .chip, body:not(.control) .log-filter .chip,
   body:not(.control) .filters a, body:not(.control) .tags label, body:not(.control) .tag-pick label {
     min-height: 40px; padding: 9px 14px; font-size: 10.5px; display: inline-flex; align-items: center;
@@ -1951,6 +1993,7 @@ body.control .rail-cell.theme button { font-size: 10px; }
   body:not(.control) .mday-head .count a, body:not(.control) .log-day-head a { display: inline-block; padding: 10px 4px; margin: -10px 0; }
   body:not(.control) .btn, body:not(.control) button { min-height: 44px; }
   body:not(.control) .rail-cell.theme button { min-height: 0; height: 100%; min-width: 44px; }
+  body:not(.control) .rail-cell.lang button { min-height: 0; height: 100%; min-width: 36px; }
   body:not(.control) .ed-gap button, body:not(.control) .ed-tools button { min-height: 40px; }
   body:not(.control) .tlegend .tchip { min-height: 36px; padding: 6px 12px; }
   body:not(.control) .tlegend-group { font-size: 10px; }
@@ -2024,7 +2067,7 @@ body.landing.inner .foot { margin-top: 44px; margin-bottom: 44px; }
 
 /* At a Glance: the button under the mission dashboard, and the day sections. */
 .glance-link {
-  display: flex; align-items: center; gap: 16px; margin-top: 18px; padding: 20px 24px;
+  display: flex; align-items: center; gap: 16px; margin: 18px 0 22px; padding: 20px 24px;
   border-radius: var(--r-lg); background: linear-gradient(180deg, var(--raise), var(--raise-2));
   box-shadow: var(--sh-raise), inset 0 1px 0 var(--edge); text-decoration: none; color: var(--ink);
   transition: transform .12s ease, box-shadow .12s ease;
@@ -2121,9 +2164,33 @@ textarea.blog-box { min-height: 340px; font-size: 16px; line-height: 1.65; }
 .daypick-dates a { white-space: nowrap; }
 @media (max-width: 760px) { textarea.blog-box { min-height: 280px; } }
 
-/* The blog composer gets the room to write: taller text blocks, a taller well. */
-.officer-stack .ed-blocks { min-height: 300px; }
-.officer-stack .ed-text { min-height: 96px; font-size: 16px; line-height: 1.65; }
+/* The officer's tab: numbered blocks, one shape each. A head with the number,
+   the title, whose and which day and where it goes, and on the right whether
+   anything is live yet; then the writing sheet — the composer on its own
+   pale ground with a border, so the entry is visibly one thing; then the
+   Publish row. No empty well: the sheet is exactly as tall as what is in it,
+   and the first paragraph box is tall enough to invite writing. */
+.officer-stack { gap: 22px; }
+.officer-stack .officer-block { padding: 22px 24px 20px; }
+.block-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--c-line-soft, var(--rule)); }
+.block-head .block-title { display: flex; align-items: center; gap: 10px; margin: 0 0 3px; font-size: 20px; }
+.block-n { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--c-text, var(--ink)); color: #fff; font-size: 13px; font-weight: 700; flex: none; }
+.block-sub { margin: 0; font-size: 13px; color: var(--c-muted, var(--dim)); }
+.block-sub b { color: var(--c-text, var(--ink)); font-weight: 600; }
+.block-state { flex: none; align-self: center; padding: 5px 11px; border-radius: 20px; border: 1px solid var(--c-line, var(--rule)); font-size: 12px; color: var(--c-muted, var(--dim)); white-space: nowrap; }
+.block-state.live { border-color: var(--orange); color: var(--orange); font-weight: 600; }
+.block-state.live::before { content: "●"; margin-right: 6px; font-size: 9px; vertical-align: 1px; }
+.block-hint { margin: 0 0 12px; }
+.officer-stack .ed { padding: 12px 12px 4px; border-radius: 8px; background: #fafaf9; border: 1px solid var(--c-line, var(--rule)); }
+.officer-stack .ed-blocks { min-height: 0; }
+.officer-stack .ed-block-text .ed-text { background: #fff; font-size: 16px; line-height: 1.65; }
+.officer-stack .ed-block:first-child .ed-text { min-height: 150px; }
+.officer-stack .actions { margin-top: 14px; }
+@media (max-width: 760px) {
+  .block-head { flex-direction: column; gap: 8px; }
+  .block-state { align-self: flex-start; }
+  .officer-stack .officer-block { padding: 16px 14px 14px; }
+}
 .dash-grid .glance-link { grid-column: 1 / -1; margin-top: 0; }
 
 /* At a Glance: the day's habitat as tiles, like the dashboard. */
@@ -2194,3 +2261,23 @@ textarea.blog-box { min-height: 340px; font-size: 16px; line-height: 1.65; }
 .ahead-row td { color: var(--faint); }
 .badge.ahead { color: var(--faint); border-style: dashed; }
 @media (max-width: 640px) { .dl-grid { grid-template-columns: minmax(0, 1fr); } .dl-card .btn { align-self: stretch; justify-content: center; } }
+
+/* ==================================================== HABITAT HARDWARE */
+/* The habitat's own devices, read through Home Assistant: a row of tiles
+   (current value, a 24-hour sparkline) and one combined chart, every line
+   on its own scale, named at its end in its own colour like the Trends. */
+.dpanel .hbt .hw-bento { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.t-hw h3 { display: flex; align-items: center; gap: 7px; }
+.hw-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+.t-hw .fig-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.t-hw .fig-spark { flex: 1 1 auto; min-width: 0; height: 36px; }
+.hw-down { color: var(--orange); display: flex; align-items: center; gap: 6px; margin: 0 0 10px; }
+.hw-chart { margin: 10px 0 0; padding: 12px 14px 10px; border-radius: 10px; background: var(--well); box-shadow: var(--sh-inset); }
+.hw-chart svg { display: block; width: 100%; height: auto; }
+.hw-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; opacity: 0.85; }
+.hw-line:hover { stroke-width: 3; opacity: 1; }
+.hw-ax { font-family: var(--mono); font-size: 10px; fill: var(--dim); }
+.hw-name { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.02em; }
+.hw-val { font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: 0.02em; }
+.hw-chart figcaption { margin-top: 8px; }
+@media (max-width: 640px) { .dpanel .hbt .hw-bento { grid-template-columns: minmax(0, 1fr); } }
