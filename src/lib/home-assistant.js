@@ -76,6 +76,11 @@ function sensors() {
         // meter), so the tile also says what today has added.
         kind: s.kind === 'counter' ? 'counter' : 'gauge',
         decimals: Number.isFinite(Number(s.decimals)) ? Number(s.decimals) : 1,
+        // An optional fixed Y range for the chart it is drawn on, [lo, hi];
+        // the chart's axis grows to hold it. Temperature charts default to
+        // 0–30, energy charts to 0–300 (src/views/pages/public.js).
+        range: Array.isArray(s.range) && s.range.length === 2 && s.range.every((n) => Number.isFinite(Number(n)))
+          && Number(s.range[1]) > Number(s.range[0]) ? [Number(s.range[0]), Number(s.range[1])] : null,
       }));
     cfgCache = { mtimeMs: st.mtimeMs, sensors: list, error: null };
     console.log(`[home-assistant] ${list.length} sensor${list.length === 1 ? '' : 's'} configured in content/home-assistant.json`);
@@ -335,13 +340,17 @@ function snapshot(hours = 24) {
       const b = buckets.get(h);
       return [dayStart + h * 3600000, s.kind === 'counter' ? b.last : b.sum / b.n];
     });
-    let today = null;
-    if (s.kind === 'counter' && cur && cur.value != null) {
-      const base = firstSince.get(s.id, dayStart);
-      if (base && base.value != null && cur.value >= base.value) today = cur.value - base.value;
+    // A counter's baseline: its first reading of the day. The tile's "today
+    // added" and the energy chart (drawn as what has been added since
+    // midnight, from zero) both measure from it.
+    let today = null, base = null;
+    if (s.kind === 'counter') {
+      const b = firstSince.get(s.id, dayStart);
+      if (b && b.value != null) base = b.value;
+      if (cur && cur.value != null && base != null && cur.value >= base) today = cur.value - base;
     }
     return {
-      id: s.id, label: s.label, kind: s.kind, decimals: s.decimals,
+      id: s.id, label: s.label, kind: s.kind, decimals: s.decimals, range: s.range || null,
       unit: (cur && cur.unit) || s.unit || '',
       value: cur ? cur.value : null,
       state: cur ? cur.state : null,
@@ -349,6 +358,7 @@ function snapshot(hours = 24) {
       missing: !!(live && live.missing),
       error: live && live.error && !live.missing ? true : false,
       today,
+      base,
       points: hourly,
     };
   });

@@ -597,9 +597,10 @@ function trendRow({ name, scale, values, lo, hi, unit, today, fmt = (v) => Strin
 
 /**
  * The habitat's own hardware, read through Home Assistant — a panel of its
- * own directly below the Habitat panel: one combined chart with every
- * device on the same day, midnight to midnight at the venue — each line
- * named at its end with the current reading. The server polls and stores
+ * own directly below the Habitat panel: one chart per kind of quantity
+ * (temperature, energy, …), every device of that kind a line on the same
+ * day, midnight to midnight at the venue, on one proper axis in its unit —
+ * each line named at its end with the current reading. The server polls and stores
  * (src/lib/home-assistant.js) and renders this; /public/hardware.js
  * re-fetches the rendered panel from /api/hardware and swaps it in place,
  * so a new sensor added to content/home-assistant.json is on every open
@@ -621,56 +622,135 @@ const hwClock = (t, tz) => {
 const hwNum = (v, dec = 1) => v == null ? '—'
   : v.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: dec });
 
-/** Every device on one day — midnight to midnight at the venue. One axis —
- *  time; each line rides its own scale (lowest to highest of the day, the
- *  same device as the Trends panel), named at its right-hand end in its own
- *  colour with the current reading. A thin mark stands on the current time. */
-function hwChart(hw, tz, T = same) {
-  const W = 1000, H = 280, padL = 12, padR = 210, padT = 16, padB = 34;
+/**
+ * Which graph a device belongs on. Devices are grouped by what they
+ * measure, and each group is one chart with a real Y axis in that unit:
+ * temperatures together, energy meters together, anything else by its
+ * unit. A counter (an energy meter, which only rises) is drawn as what it
+ * has added since midnight — so the energy axis starts at zero and reads
+ * as today's consumption, the same figure the tile calls "today".
+ */
+function hwGroupOf(s) {
+  const u = String(s.unit || '').trim();
+  // `range` is the fixed Y axis of the chart. A device can carry its own
+  // `range: [lo, hi]` in content/home-assistant.json, which widens the
+  // chart's axis to hold it; a group with no range at all fits the data.
+  if (/^(°\s*[cf]|k)$/i.test(u)) return { key: 'temperature', title: 'Temperature', unit: u, zero: false, range: [0, 30] };
+  if (s.kind === 'counter' || /^(m?wh|kwh|mwh)$/i.test(u)) return { key: 'energy', title: 'Energy', unit: u, zero: true, range: [0, 300] };
+  if (/^(m?w|kw)$/i.test(u)) return { key: 'power', title: 'Power', unit: u, zero: true, range: null };
+  return { key: 'unit:' + u.toLowerCase(), title: u || 'Other', unit: u, zero: false, range: null };
+}
+
+/** Ticks on a fixed axis: about `n` round steps between exact bounds. */
+function hwFixedTicks(lo, hi, n = 5) {
+  const raw = (hi - lo) / n;
+  const p = Math.pow(10, Math.floor(Math.log10(raw)));
+  const m = raw / p;
+  const step = (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p;
+  const ticks = [];
+  for (let v = Math.ceil(lo / step) * step; v <= hi + step / 1e6; v += step) ticks.push(Math.round(v / step) * step);
+  if (ticks[0] !== lo) ticks.unshift(lo);
+  if (ticks[ticks.length - 1] !== hi) ticks.push(hi);
+  const dec = Math.max(0, -Math.floor(Math.log10(step)));
+  return { lo, hi, ticks, dec };
+}
+
+/** Round axis bounds and ticks — steps of 1, 2, 5 × 10ⁿ, about `n` of them,
+ *  the bounds pushed out to the nearest step so every reading sits inside. */
+function hwTicks(lo, hi, n = 4, fromZero = false) {
+  if (fromZero) lo = Math.min(0, lo);
+  if (!(hi > lo)) { hi = lo + (Math.abs(lo) || 1) * 0.1; lo = fromZero ? 0 : lo - (Math.abs(lo) || 1) * 0.1; }
+  const raw = (hi - lo) / n;
+  const p = Math.pow(10, Math.floor(Math.log10(raw)));
+  const m = raw / p;
+  const step = (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p;
+  const a = Math.floor(lo / step) * step, b = Math.ceil(hi / step) * step;
+  const ticks = [];
+  for (let v = a; v <= b + step / 2; v += step) ticks.push(Math.round(v / step) * step);
+  const dec = Math.max(0, -Math.floor(Math.log10(step)));
+  return { lo: a, hi: b === a ? a + step : b, ticks, dec };
+}
+
+/**
+ * One group of devices on one day — midnight to midnight at the venue.
+ * Time along the bottom; the group's unit up the left on a proper scale,
+ * shared by every line on the chart, with gridlines on the round values.
+ * Each line is named at its right-hand end in its own colour with the
+ * current reading. A thin mark stands on the current time.
+ */
+function hwChart(hw, group, members, tz, T = same) {
+  // Half the panel wide: the charts stand side by side, so the names and
+  // readings go in a legend beneath the plot rather than at the line ends.
+  const W = 500, H = 250, padL = 50, padR = 18, padT = 22, padB = 30;
   const iw = W - padL - padR, ih = H - padT - padB;
   const span = Math.max(1, hw.now - hw.since);
   const sx = (t) => padL + ((t - hw.since) / span) * iw;
-  const series = [];
-  (hw.sensors || []).forEach((s, i) => {
-    if (!s.points || !s.points.length) return;
-    const vals = s.points.map((p) => p[1]);
-    let lo = Math.min(...vals), hi = Math.max(...vals);
-    if (hi - lo < 1e-9) { hi += 0.5; lo -= 0.5; }
-    const sy = (v) => padT + ih - ((v - lo) / (hi - lo)) * ih;
-    const d = s.points.map((p, k) => `${k ? 'L' : 'M'}${sx(p[0]).toFixed(1)},${sy(p[1]).toFixed(1)}`).join('');
+  // A counter is drawn from its first reading of the day, so the axis is
+  // what today has added; a gauge is drawn as it is.
+  const val = (s, v) => s.kind === 'counter' && s.base != null ? Math.max(0, v - s.base) : v;
+  const drawn = members.filter((m) => m.s.points && m.s.points.length);
+  if (!drawn.length) return '';
+  const all = drawn.flatMap((m) => m.s.points.map((p) => val(m.s, p[1])));
+  // The axis: the fixed range of the group (widened by any device's own
+  // range from the file), or, with no range set, round bounds round the data.
+  const ranges = members.map((m) => m.s.range).filter(Boolean).concat(group.range ? [group.range] : []);
+  const ax = ranges.length
+    ? hwFixedTicks(Math.min(...ranges.map((r) => r[0])), Math.max(...ranges.map((r) => r[1])))
+    : hwTicks(Math.min(...all), Math.max(...all), 4, group.zero);
+  // A reading outside a fixed axis is held at its edge rather than drawn off the chart.
+  const clamp = (v) => Math.min(ax.hi, Math.max(ax.lo, v));
+  const sy = (v) => padT + ih - ((clamp(v) - ax.lo) / (ax.hi - ax.lo)) * ih;
+  const series = drawn.map((m) => {
+    const { s, colour } = m;
+    const d = s.points.map((p, k) => `${k ? 'L' : 'M'}${sx(p[0]).toFixed(1)},${sy(val(s, p[1])).toFixed(1)}`).join('');
     // Every hourly value is a visible point on the line.
-    const dots = s.points.map((p) => [sx(p[0]), sy(p[1])]);
+    const dots = s.points.map((p) => [sx(p[0]), sy(val(s, p[1]))]);
     const [et, ev] = s.points[s.points.length - 1];
-    series.push({ s, colour: hwColour(i), d, dots, ex: sx(et), ey: sy(ev) });
+    return { s, colour, d, dots, ex: sx(et), ey: sy(val(s, ev)) };
   });
-  if (!series.length) return '';
-  // The time axis: every hour of the day, 00 to 24, a gridline and a label
-  // each — the six-hour marks drawn stronger. The first and last labels
-  // anchor inward so nothing clips at the edges.
+  // The time axis: every hour of the day, 00 to 24, a gridline each and a
+  // label on the three-hour marks — the six-hour marks drawn stronger. The
+  // first and last labels anchor inward so nothing clips at the edges.
   const ticks = Array.from({ length: 25 }, (_, k) => ({ t: hw.since + k * 3600000, k }));
-  // Line-end labels pushed apart so none overlap, as on the Trends panel.
-  // Two lines each — the name, the current reading beneath it.
-  const rows = [...series].sort((a, b) => a.ey - b.ey);
-  let prev = -Infinity;
-  for (const r of rows) { r.ty = Math.max(r.ey, prev + 34, padT + 10); prev = r.ty; }
-  const over = rows.length ? rows[rows.length - 1].ty + 14 - (H - padB) : 0;
-  if (over > 0) for (const r of rows) r.ty -= over;
-  const railX = W - padR + 14;
-  return `<figure class="hw-chart">
-  <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(T('Every hardware device today, midnight to midnight venue time, one line each, each on its own scale.'))}">
-    ${ticks.map(({ t, k }) => `<line x1="${sx(t).toFixed(1)}" y1="${padT}" x2="${sx(t).toFixed(1)}" y2="${H - padB}" stroke="var(--rule)" stroke-width="1"${k % 6 ? ' opacity="0.45"' : ''}/>
-      <text x="${sx(t).toFixed(1)}" y="${H - padB + 16}" text-anchor="${k === 0 ? 'start' : k === ticks.length - 1 ? 'end' : 'middle'}" class="hw-ax"${k % 6 ? ' opacity="0.6"' : ''}>${String(k).padStart(2, '0')}</text>`).join('')}
+  const unit = group.unit ? esc(group.unit) : '';
+  const yLabel = (v) => v.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: ax.dec });
+  const reading = (s) => s.kind === 'counter' && s.today != null
+    ? `+${hwNum(s.today, s.decimals)}${s.unit ? ' ' + esc(s.unit) : ''} ${T('today')} · ${hwNum(s.value, s.decimals)}${s.unit ? ' ' + esc(s.unit) : ''}`
+    : `${hwNum(s.value, s.decimals)}${s.unit ? ' ' + esc(s.unit) : ''}`;
+  return `<figure class="hw-chart hw-${esc(group.key.replace(/[^a-z0-9]+/gi, '-'))}">
+  <figcaption class="hw-title"><b>${esc(T(group.title))}</b>${unit ? ` <span class="hw-unit">${unit}${group.zero ? ` · ${T('added since midnight')}` : ''}</span>` : ''}</figcaption>
+  <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(T(group.title))} — ${esc(T('today, midnight to midnight venue time, one line per device, on one scale in'))} ${unit || '—'}">
+    ${ax.ticks.map((v) => `<line x1="${padL}" y1="${sy(v).toFixed(1)}" x2="${W - padR}" y2="${sy(v).toFixed(1)}" stroke="var(--rule)" stroke-width="1"/>
+      <text x="${padL - 7}" y="${(sy(v) + 3.5).toFixed(1)}" text-anchor="end" class="hw-ax">${yLabel(v)}</text>`).join('')}
+    ${ticks.map(({ t, k }) => `<line x1="${sx(t).toFixed(1)}" y1="${padT}" x2="${sx(t).toFixed(1)}" y2="${H - padB}" stroke="var(--rule)" stroke-width="1"${k % 6 ? ' opacity="0.45"' : ''}/>${
+      k % 3 ? '' : `<text x="${sx(t).toFixed(1)}" y="${H - padB + 15}" text-anchor="${k === 0 ? 'start' : k === ticks.length - 1 ? 'end' : 'middle'}" class="hw-ax"${k % 6 ? ' opacity="0.6"' : ''}>${String(k).padStart(2, '0')}</text>`}`).join('')}
     ${hw.liveNow && hw.liveNow > hw.since && hw.liveNow < hw.now ? `<line x1="${sx(hw.liveNow).toFixed(1)}" y1="${padT}" x2="${sx(hw.liveNow).toFixed(1)}" y2="${H - padB}" stroke="#ff6a1a" stroke-width="1" stroke-dasharray="2 4" opacity="0.6"><title>${T('now')} · ${hwClock(hw.liveNow, tz)}</title></line>` : ''}
-    <line x1="${padL}" y1="${H - padB}" x2="${W - padR + 4}" y2="${H - padB}" stroke="var(--rule-hard)" stroke-width="1"/>
+    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H - padB}" stroke="var(--rule-hard)" stroke-width="1"/>
+    <line x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}" stroke="var(--rule-hard)" stroke-width="1"/>
+    ${unit ? `<text x="${padL - 7}" y="${padT - 9}" text-anchor="end" class="hw-ax">${unit}</text>` : ''}
     ${series.map((r) => `<path d="${r.d}" class="hw-line" stroke="${r.colour}"><title>${esc(r.s.label)}</title></path>
-      ${r.dots.map(([dx, dy]) => `<circle cx="${dx.toFixed(1)}" cy="${dy.toFixed(1)}" r="2.5" fill="${r.colour}" stroke="var(--well)" stroke-width="1"/>`).join('')}`).join('')}
-    ${rows.map((r) => `
-      <circle cx="${r.ex.toFixed(1)}" cy="${r.ey.toFixed(1)}" r="3.5" fill="${r.colour}" stroke="var(--well)" stroke-width="1.5"/>
-      ${Math.abs(r.ty - r.ey) > 2 || railX - r.ex > 8 ? `<line x1="${r.ex.toFixed(1)}" y1="${r.ey.toFixed(1)}" x2="${(railX - 4).toFixed(1)}" y2="${r.ty.toFixed(1)}" stroke="${r.colour}" stroke-width="1" stroke-dasharray="2 3" opacity="0.7"/>` : ''}
-      <text x="${railX}" y="${r.ty.toFixed(1)}" text-anchor="start" class="hw-name" fill="${r.colour}">${esc(r.s.label)}</text>
-      <text x="${railX}" y="${(r.ty + 16).toFixed(1)}" text-anchor="start" class="hw-val" fill="${r.colour}">${hwNum(r.s.value, r.s.decimals)}${r.s.unit ? ' ' + esc(r.s.unit) : ''}</text>`).join('')}
+      ${r.dots.map(([dx, dy]) => `<circle cx="${dx.toFixed(1)}" cy="${dy.toFixed(1)}" r="2.5" fill="${r.colour}" stroke="var(--well)" stroke-width="1"/>`).join('')}
+      <circle cx="${r.ex.toFixed(1)}" cy="${r.ey.toFixed(1)}" r="3.5" fill="${r.colour}" stroke="var(--well)" stroke-width="1.5"/>`).join('')}
   </svg>
+  <ul class="hw-legend">${series.map((r) => `
+    <li><i style="background:${r.colour}"></i><span class="hw-name" style="color:${r.colour}">${esc(r.s.label)}</span><span class="hw-val" style="color:${r.colour}">${reading(r.s)}</span></li>`).join('')}
+  </ul>
 </figure>`;
+}
+
+/** The devices sorted onto their charts, in the order they first appear in
+ *  content/home-assistant.json; a device keeps its colour by its position
+ *  in that list, whichever chart it lands on. */
+function hwCharts(hw, tz, T = same) {
+  const groups = new Map();
+  (hw.sensors || []).forEach((s, i) => {
+    const g = hwGroupOf(s);
+    let e = groups.get(g.key);
+    if (!e) groups.set(g.key, e = { group: g, members: [] });
+    e.members.push({ s, colour: hwColour(i) });
+  });
+  const charts = [...groups.values()].map((e) => hwChart(hw, e.group, e.members, tz, T)).filter(Boolean);
+  return charts.length ? `<div class="hw-charts">${charts.join('')}</div>` : '';
 }
 
 /**
@@ -681,11 +761,13 @@ function hwChart(hw, tz, T = same) {
 function hardwareInner(hw, T = same) {
   const tz = hwTz();
   const list = hw.sensors || [];
-  // The chart is the panel: no tiles, one combined day chart, every device a
-  // line named at its end with the current reading. The diagnostics the
-  // tiles used to carry (a sensor not in the feed) become a note above it.
+  // The charts are the panel: no tiles, one day chart per kind of quantity
+  // (temperature, energy, …), each on a proper axis in its unit, every
+  // device a line named at its end with the current reading. The
+  // diagnostics the tiles used to carry (a sensor not in the feed) become a
+  // note above them.
   const missing = list.filter((s) => s.missing);
-  const chart = hwChart(hw, tz, T);
+  const chart = hwCharts(hw, tz, T);
   return `
     ${hw.down ? `<p class="note hw-down">${L.sym('warn')} ${T('Home Assistant could not be reached on the last poll')}${
       hw.lastPollAt ? ` ${T('at')} ${hwClock(hw.lastPollAt, tz)}` : ''} — ${T('these are the last readings stored.')}</p>` : ''}
@@ -705,11 +787,12 @@ const kpi = ({ label, value, unit, sub, state }) => `
   </div>`;
 
 /** A dashboard panel: code, title and meta in the head, the content beneath. */
-const dpanel = ({ id, code, title, meta = '', span = 4, cls = '', href = null }, inner) => `
+const dpanel = ({ id, code, title, meta = '', span = 4, cls = '', href = null, live = null }, inner) => `
   <section class="dpanel span-${span} ${cls}"${id ? ` id="${id}"` : ''}>
     <header class="dpanel-head">
       <div class="dpanel-title"><span class="dpanel-code">${esc(code)}</span><h3>${
-        href ? `<a href="${href}">${esc(title)} <span class="dpanel-arrow" aria-hidden="true">→</span></a>` : esc(title)}</h3></div>
+        href ? `<a href="${href}">${esc(title)} <span class="dpanel-arrow" aria-hidden="true">→</span></a>` : esc(title)}</h3>${
+        live ? `<span class="cloud-live" title="${esc(live)}"><i></i>LIVE</span>` : ''}</div>
       ${meta ? `<span class="dpanel-meta">${meta}</span>` : ''}
     </header>
     <div class="dpanel-body">${inner}</div>
@@ -860,7 +943,8 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
   const pwrOf = power.days[String(pwrDay)] || {};
   const powerToday = power.categories.map((c) => ({ ...c, kwh: pwrOf[c.key] ?? null }));
 
-  const habitat = dpanel({ id: 'habitat', code: 'CH-01', title: T('Habitat'), meta: T('Sensor node · measured live · figures and stores counted by the crew'), span: 12, cls: 'compact' }, `
+  const habitat = dpanel({ id: 'habitat', code: 'CH-01', title: T('Habitat'), meta: T('Sensor node · measured live · figures and stores counted by the crew'), span: 12, cls: 'compact',
+    live: T('The readings refresh by themselves as the sensors report') }, `
     <!-- The Sensor-11 dashboard. The station server polls the external feed and
          stores every reading in its own database; /public/habitat.js draws these
          tiles from /api/habitat/data and refreshes on the node's cycle. -->
@@ -923,8 +1007,8 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
      the Habitat panel. Rendered only when the bridge is configured in .env;
      /public/hardware.js keeps it live from /api/hardware. */
   const hardwarePanel = hardware && hardware.configured && (hardware.sensors || []).length
-    ? dpanel({ id: 'hardware', code: 'CH-02', title: T('Habitat hardware'),
-        meta: `Home Assistant · ${hardware.sensors.length} ${T(hardware.sensors.length === 1 ? 'device' : 'devices')} · ${T('read by the station every')} ${hardware.pollMs >= 120000 ? `${Math.round(hardware.pollMs / 60000)} min` : `${Math.round(hardware.pollMs / 1000)} s`} · ${T('one point per hour')} · ${T('nothing leaves the venue')}`,
+    ? dpanel({ id: 'hardware', code: 'CH-02', title: T('Habitat hardware'), live: T('The readings refresh by themselves as the sensors report'),
+        meta: `Home Assistant · ${hardware.sensors.length} ${T(hardware.sensors.length === 1 ? 'device' : 'devices')} · ${T('read by the station every')} ${hardware.pollMs >= 120000 ? `${Math.round(hardware.pollMs / 60000)} min` : `${Math.round(hardware.pollMs / 1000)} s`} · ${T('one point per hour')} · ${T('one chart per quantity')} · ${T('nothing leaves the venue')}`,
         span: 12, cls: 'compact' },
       `<div class="hbt hw"><div id="hw-live" data-poll="${hardware.pollMs}" data-version="${esc(require('../../lib/home-assistant').version(hardware))}">${hardwareInner(hardware, T)}</div></div>`)
     : '';

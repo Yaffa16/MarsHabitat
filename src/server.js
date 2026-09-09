@@ -646,8 +646,8 @@ app.get('/api/cloud', (req, res) => {
 });
 
 /* The habitat hardware's last 24 hours as plain JSON — every stored reading
-   per device and the hourly points — for tools/hardware-24h.js and anything
-   else that wants the numbers rather than the panel. `?hours=` reaches back
+   per device and the hourly points — for any outside tool that wants the
+   numbers rather than the panel. `?hours=` reaches back
    further, up to a week. */
 app.get('/api/hardware/readings', (req, res) => {
   const hours = Math.min(168, Math.max(1, Number(req.query.hours || 24)));
