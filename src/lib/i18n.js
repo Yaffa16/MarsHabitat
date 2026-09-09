@@ -593,6 +593,7 @@ const D = {
   'no photographs yet': ['noch keine Fotografien', 'pas encore de photographies'],
   'as of': ['Stand', 'au'],
   'checked every': ['geprüft alle', 'vérifié toutes les'],
+  'Updates by itself as pictures arrive': ['Aktualisiert sich von selbst, sobald Bilder ankommen', 'Se met à jour tout seul à l’arrivée des images'],
   'Live images from the Habitat': ['Live-Bilder aus dem Habitat', 'Images en direct de l’habitat'],
   'all photographs': ['alle Fotografien', 'toutes les photographies'],
   'the cloud could not be reached': ['die Cloud war nicht erreichbar', 'le cloud n’a pas pu être joint'],

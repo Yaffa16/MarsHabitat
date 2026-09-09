@@ -864,6 +864,10 @@ curl -s $B/api/ticker | grep -q '"opensAt":"' && ok "/api/ticker says when the r
 curl -s $B/ | grep -q 'data-opens="' && curl -s $B/ | grep -q 'data-phase="' && ok "the ticker carries the phase and the opening instant, and turns the page over when they move" || bad "ticker lacks phase/opens"
 grep -q "window.location.reload" src/views/pages/public.js && grep -q "d.phase !== phase" src/views/pages/public.js && ok "a page left open into 15 October (or across a reset) reloads itself into the run" || bad "no turn-over on phase change"
 
+echo "── the hardware readings endpoint"
+curl -s "$B/api/hardware/readings" | grep -q '"sensors":\[' && ok "/api/hardware/readings hands out the devices' readings as JSON" || bad "no hardware readings endpoint"
+curl -s "$B/api/hardware/readings?hours=48" | grep -q '"since":"' && ok "and reaches back as far as asked" || bad "hours parameter ignored"
+
 echo "── the page scripts"
 for f in public/habitat.js public/board.js public/composer.js public/hardware.js public/cloud.js; do node --check $f || bad "$f does not parse"; done
 # the translation helper must not share a name with any inner variable: a

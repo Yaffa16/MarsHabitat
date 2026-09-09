@@ -2101,7 +2101,19 @@ body.landing.inner .cloud-gallery:first-child { margin-top: 26px; }
 .cloud-strip .mtile-visual, .cloud-grid .mtile-visual { aspect-ratio: 16 / 9; background: var(--well); }
 .cloud-strip .mtile-visual img, .cloud-grid .mtile-visual img { width: 100%; height: 100%; object-fit: cover; }
 .cloud-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+/* LIVE, top right of the gallery head: an orange dot that breathes */
+.cloud-live { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--orange); font-family: var(--mono); font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--orange); white-space: nowrap; }
+.cloud-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 0 0 rgba(255,106,0,.5); animation: cloud-pulse 1.8s ease-out infinite; }
+@keyframes cloud-pulse { 0% { box-shadow: 0 0 0 0 rgba(255,106,0,.55); } 70% { box-shadow: 0 0 0 7px rgba(255,106,0,0); } 100% { box-shadow: 0 0 0 0 rgba(255,106,0,0); } }
+.cloud-gallery .log-day-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.cloud-latest-head .sub .cloud-live { margin-left: 10px; }
+@media (prefers-reduced-motion: reduce) { .cloud-live i { animation: none; } }
 .cloud-strip .mtile { flex: 0 0 240px; }
+/* tiles arrive and leave softly, and slide to their new place */
+.cloud-strip .mtile, .cloud-grid .mtile { transition: opacity .28s ease, transform .28s ease; }
+.cloud-strip .mtile.is-arriving, .cloud-grid .mtile.is-arriving { opacity: 0; transform: translateY(6px); }
+.cloud-strip .mtile.is-leaving, .cloud-grid .mtile.is-leaving { opacity: 0; transform: scale(.96); pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .cloud-strip .mtile, .cloud-grid .mtile { transition: none; } }
 @media (min-width: 1180px) { .cloud-strip { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); overflow: visible; } .cloud-strip .mtile { flex: none; } }
 @media (max-width: 760px) { .cloud-strip .mtile { flex-basis: 200px; } }
 .dash-links { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 18px 0 22px; }

@@ -118,8 +118,9 @@ function cloudGridInner(T, cloud) {
       <span class="cs">${esc(T(cloud.title))}</span>
       <span>${n ? plural(T, n, 'photograph', 'photographs') : T('no photographs yet')} · ${T('checked every')} ${s.checkSeconds} s</span>
       ${s.lastError && !n ? `<span class="count">${T('the cloud could not be reached')}</span>` : ''}
+      <span class="cloud-live" title="${esc(T('Updates by itself as pictures arrive'))}"><i></i>${T('LIVE')}</span>
     </div>
-    ${n ? `<div class="mgrid cloud-grid">${cloud.items.map((x) => `<a class="mtile kind-image" href="${x.url}" title="${esc(x.name)}" target="_blank" rel="noopener">
+    ${n ? `<div class="mgrid cloud-grid">${cloud.items.map((x) => `<a class="mtile kind-image" href="${x.url}" data-id="${x.id}" title="${esc(x.name)}" target="_blank" rel="noopener">
       <span class="mtile-visual"><img src="${x.thumb}" alt="${esc(x.name)}" loading="lazy" decoding="async"></span></a>`).join('')}</div>`
     : `<div class="empty" style="padding:28px">${T('Nothing in the folder yet')}.</div>`}`;
 }
@@ -130,9 +131,9 @@ function cloudLatestInner(T, cloud) {
   const items = cloud.items.slice(0, cloud.limit || 6), s = cloud.snapshot;
   return `<div class="cloud-latest-head">
       <span class="lbl">${T('Live images from the Habitat')}</span>
-      <span class="sub">${T('checked every')} ${s.checkSeconds} s${s.lastError && !items.length ? ` · ${T('the cloud could not be reached')}` : ''} · <a href="/media#gallery">${T('all photographs')} →</a></span>
+      <span class="sub">${T('checked every')} ${s.checkSeconds} s${s.lastError && !items.length ? ` · ${T('the cloud could not be reached')}` : ''} <span class="cloud-live" title="${esc(T('Updates by itself as pictures arrive'))}"><i></i>${T('LIVE')}</span></span>
     </div>
-    ${items.length ? `<div class="mstrip cloud-strip">${items.map((x) => `<a class="mtile kind-image" href="${x.url}" title="${esc(x.name)}" target="_blank" rel="noopener">
+    ${items.length ? `<div class="mstrip cloud-strip">${items.map((x) => `<a class="mtile kind-image" href="${x.url}" data-id="${x.id}" title="${esc(x.name)}" target="_blank" rel="noopener">
       <span class="mtile-visual"><img src="${x.thumb}" alt="${esc(x.name)}" loading="lazy" decoding="async"></span></a>`).join('')}</div>`
     : `<div class="empty" style="padding:18px">${T('Nothing in the folder yet')}.</div>`}`;
 }

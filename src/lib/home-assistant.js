@@ -281,6 +281,25 @@ const firstSince = db.prepare(
  * browser: per sensor the current reading, its last day of history, and —
  * for a counter — what today has added.
  */
+/** Every stored reading of every device in the last `hours` — the raw rows,
+ *  as the station has them, plus the hourly points the panel draws. For
+ *  /api/hardware/readings and the little script that prints the day. */
+function readings(hours = 24) {
+  const snap = snapshot(hours);
+  const since = Math.max(Date.now() - hours * 3600000, floorMs());
+  return {
+    configured: snap.configured, frozen: snap.frozen, lastPollAt: snap.lastPollAt ? new Date(snap.lastPollAt).toISOString() : null,
+    since: new Date(since).toISOString(), until: new Date().toISOString(),
+    sensors: snap.sensors.map((s) => ({
+      id: s.id, label: s.label, unit: s.unit, kind: s.kind, decimals: s.decimals,
+      current: s.value != null ? { value: s.value, at: s.t ? new Date(s.t).toISOString() : null } : null,
+      today: s.today,
+      hourly: s.points.map(([t, v]) => ({ at: new Date(t).toISOString(), value: v })),
+      readings: windowRows.all(s.id, since).map((r) => ({ at: new Date(r.t).toISOString(), value: r.value })),
+    })),
+  };
+}
+
 function snapshot(hours = 24) {
   const list = sensors();
   const liveEnd = Math.min(Date.now(), Number.isFinite(CFG.freezeAt) ? CFG.freezeAt : Infinity);
@@ -441,4 +460,4 @@ function version(snap) {
     + (snap.down ? '|down' : '') + (snap.frozen ? '|frozen' : '');
 }
 
-module.exports = { start, poll, snapshot, daily, daySummary, hourly, version, clear, sensors, configured, frozen, CFG };
+module.exports = { start, poll, snapshot, readings, daily, daySummary, hourly, version, clear, sensors, configured, frozen, CFG };

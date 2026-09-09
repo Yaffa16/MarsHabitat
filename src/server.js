@@ -645,6 +645,15 @@ app.get('/api/cloud', (req, res) => {
   res.set('Cache-Control', 'no-store').json({ ...snap, html, latestHtml });
 });
 
+/* The habitat hardware's last 24 hours as plain JSON — every stored reading
+   per device and the hourly points — for tools/hardware-24h.js and anything
+   else that wants the numbers rather than the panel. `?hours=` reaches back
+   further, up to a week. */
+app.get('/api/hardware/readings', (req, res) => {
+  const hours = Math.min(168, Math.max(1, Number(req.query.hours || 24)));
+  res.set('Cache-Control', 'no-store').json(homeAssistant.readings(hours));
+});
+
 app.get('/healthz', (req, res) => res.type('text').send('ok'));
 
 /* ===================================================================== MEDIA */
