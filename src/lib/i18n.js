@@ -417,6 +417,14 @@ const D = {
   'Download everything': ['Alles herunterladen', 'Tout télécharger'],
   'Nothing has been sent out of the habitat yet': ['Aus dem Habitat wurde noch nichts gesendet', 'Rien n’est encore sorti de l’habitat'],
   'occupied from': ['bewohnt ab', 'occupé à partir du'],
+  // the three daily blogs under the trend graph (src/views/pages/public.js)
+  'Daily Science Findings': ['Tägliche wissenschaftliche Befunde', 'Observations scientifiques quotidiennes'],
+  'Daily Health Blog': ['Täglicher Gesundheitsblog', 'Blog santé quotidien'],
+  'Commander Blog': ['Commander-Blog', 'Blog du commandement'],
+  // each is followed by the day it speaks of: "… for SOL 005"
+  'No science findings yet for': ['Noch keine wissenschaftlichen Befunde für', 'Pas encore d’observations scientifiques pour'],
+  'No health blog yet for': ['Noch kein Gesundheitsblog für', 'Pas encore de blog santé pour'],
+  'No commander blog yet for': ['Noch kein Commander-Blog für', 'Pas encore de blog du commandement pour'],
   'No schedule filed yet': ['Noch kein Plan erfasst', 'Aucun programme saisi pour l’instant'],
 
   // ---- crew condition (src/lib/mood.js)
@@ -642,6 +650,74 @@ const D = {
   'SENT': ['GESENDET', 'ENVOYÉ'],
   'CAPTION': ['BILDUNTERSCHRIFT', 'LÉGENDE'],
   'Mission day': ['Missionstag', 'Jour de mission'],
+
+  // ---- the habitat dome (src/views/pages/dome.js)
+  'what is inside, and what it is doing now': ['was drinnen ist, und was es gerade tut', 'ce qu’il y a dedans, et ce que cela fait maintenant'],
+  'The figures refresh by themselves': ['Die Zahlen aktualisieren sich von selbst', 'Les chiffres se rafraîchissent d’eux-mêmes'],
+  'The habitat as a dome, with what is inside it': ['Das Habitat als Kuppel, mit dem, was darin ist', 'L’habitat en dôme, avec ce qu’il contient'],
+  'HABITAT ONE': ['HABITAT EINS', 'HABITAT UN'],
+  'press a hexagon to open its panel': ['ein Sechseck drücken, um sein Feld zu öffnen', 'appuyer sur un hexagone pour ouvrir son panneau'],
+  'Science lab': ['Wissenschaftslabor', 'Laboratoire scientifique'],
+  'Plants': ['Pflanzen', 'Plantes'],
+  'Uplink': ['Uplink', 'Liaison montante'],
+  'Stores': ['Vorräte', 'Réserves'],
+  'Up next': ['Als Nächstes', 'Ensuite'],
+  'Day 01 opens with': ['Tag 01 beginnt mit', 'Le jour 01 s’ouvre sur'],
+  'Hatch not yet sealed': ['Luke noch nicht verschlossen', 'Écoutille pas encore scellée'],
+  'Off the schedule': ['Ausserhalb des Plans', 'Hors programme'],
+  'AS REPORTED': ['WIE GEMELDET', 'TEL QUE RAPPORTÉ'],
+  'no state': ['kein Zustand', 'aucun état'],
+  'exchanges published': ['Austausche veröffentlicht', 'échanges publiés'],
+  'messages sent': ['Nachrichten gesendet', 'messages envoyés'],
+  'so far': ['bisher', 'jusqu’ici'],
+  'not yet counted': ['noch nicht gezählt', 'pas encore compté'],
+
+  'Water recycling': ['Wasserrecycling', 'Recyclage de l’eau'],
+  'The uplink. Every message written on this station crosses the distance to the habitat and waits for the communication officer, who reads it and answers from inside; the reply comes back to the board on every open phone. The real light-time between Earth and Mars is shown beside the composer.': [
+    'Der Uplink. Jede auf dieser Station geschriebene Nachricht überquert die Distanz zum Habitat und wartet auf die Kommunikationsoffizierin, die sie von innen liest und beantwortet; die Antwort kommt auf jedem geöffneten Telefon zurück aufs Board. Die reale Lichtlaufzeit zwischen Erde und Mars steht neben dem Composer.',
+    'La liaison. Chaque message écrit sur cette station traverse la distance jusqu’à l’habitat et attend l’officier de communication, qui le lit et y répond depuis l’intérieur ; la réponse revient sur le tableau de chaque téléphone ouvert. Le vrai temps-lumière entre la Terre et Mars est affiché à côté du composeur.'],
+  'Hydroponics': ['Hydroponik', 'Hydroponie'],
+  'Communication': ['Kommunikation', 'Communication'],
+  'Nap pod': ['Schlafkapsel', 'Capsule de repos'],
+  'Power generator': ['Stromgenerator', 'Générateur électrique'],
+  'press a part of the habitat to see what is happening in it': ['einen Teil des Habitats drücken, um zu sehen, was darin geschieht', 'appuyer sur une partie de l’habitat pour voir ce qui s’y passe'],
+  'The parts of the habitat': ['Die Teile des Habitats', 'Les parties de l’habitat'],
+  'Open its panel on the dashboard': ['Sein Feld auf dem Dashboard öffnen', 'Ouvrir son panneau sur le tableau de bord'],
+  'Now': ['Jetzt', 'Maintenant'],
+  'Hatch not yet sealed.': ['Luke noch nicht verschlossen.', 'Écoutille pas encore scellée.'],
+  'Off the schedule.': ['Ausserhalb des Plans.', 'Hors programme.'],
+  'no state filed': ['kein Zustand erfasst', 'aucun état saisi'],
+  'under a day at this draw': ['weniger als ein Tag bei diesem Verbrauch', 'moins d’un jour à ce rythme'],
+  'day left at this draw': ['Tag übrig bei diesem Verbrauch', 'jour restant à ce rythme'],
+  'days left at this draw': ['Tage übrig bei diesem Verbrauch', 'jours restants à ce rythme'],
+  'No inventory filed for today.': ['Für heute kein Bestand erfasst.', 'Aucun inventaire saisi pour aujourd’hui.'],
+  'Today’s power has not been counted yet.': ['Der heutige Stromverbrauch ist noch nicht gezählt.', 'L’énergie d’aujourd’hui n’a pas encore été comptée.'],
+  'steps today': ['Schritte heute', 'pas aujourd’hui'],
+  'steps not yet counted': ['Schritte noch nicht gezählt', 'pas non encore comptés'],
+  'Latest exchange': ['Letzter Austausch', 'Dernier échange'],
+  'The loop runs whenever there is grey water to pass; the crew count the tank at the end of the day.': ['Der Kreislauf läuft, sobald Grauwasser anfällt; die Crew zählt den Tank am Ende des Tages.', 'La boucle tourne dès qu’il y a des eaux grises à traiter ; l’équipage compte le réservoir en fin de journée.'],
+  'First harvest planned for SOL 10.': ['Erste Ernte geplant für SOL 10.', 'Première récolte prévue pour SOL 10.'],
+  'Three officers live sealed inside the habitat for the thirteen days of the run: a communication officer who relays every message from Earth, a science officer who runs the experiments and watches the habitat’s systems, and a health officer who keeps the crew fit and the life support in order. They write a daily blog and file their condition from inside.': [
+    'Drei Offiziere leben die dreizehn Tage des Laufs abgeschlossen im Habitat: eine Kommunikationsoffizierin, die jede Nachricht von der Erde weiterleitet, ein Wissenschaftsoffizier, der die Experimente durchführt und die Systeme des Habitats beobachtet, und ein Gesundheitsoffizier, der die Crew fit und die Lebenserhaltung in Ordnung hält. Sie schreiben täglich einen Blog und melden ihren Zustand von innen.',
+    'Trois officiers vivent enfermés dans l’habitat pendant les treize jours de la mission : un officier de communication qui relaie chaque message de la Terre, un officier scientifique qui mène les expériences et surveille les systèmes de l’habitat, et un officier de santé qui garde l’équipage en forme et le support de vie en ordre. Ils écrivent un blog quotidien et déclarent leur état depuis l’intérieur.'],
+  'The science bench: the habitat’s own experiments — samples, cultures, readings — and the daily science findings the science officer writes up. The sensor node beside it measures temperature, humidity, carbon dioxide and more every twenty minutes.': [
+    'Der Laborplatz: die Experimente des Habitats – Proben, Kulturen, Messungen – und die täglichen wissenschaftlichen Befunde, die der Wissenschaftsoffizier festhält. Der Sensorknoten daneben misst alle zwanzig Minuten Temperatur, Luftfeuchte, Kohlendioxid und mehr.',
+    'La paillasse scientifique : les expériences de l’habitat – échantillons, cultures, mesures – et les résultats scientifiques quotidiens que rédige l’officier scientifique. Le nœud de capteurs à côté mesure toutes les vingt minutes la température, l’humidité, le dioxyde de carbone et plus.'],
+  'Nothing is thrown away. Used water passes through a planted filter bed, a screw press and a settling funnel and comes back as water for the plants and the crew. This loop decides how long the stores last.': [
+    'Nichts wird weggeworfen. Gebrauchtes Wasser durchläuft ein bepflanztes Filterbeet, eine Schneckenpresse und einen Absetztrichter und kommt als Wasser für die Pflanzen und die Crew zurück. Dieser Kreislauf entscheidet, wie lange die Vorräte reichen.',
+    'Rien n’est jeté. L’eau usée traverse un lit filtrant planté, une presse à vis et un entonnoir de décantation, puis revient comme eau pour les plantes et l’équipage. Cette boucle décide de la durée des réserves.'],
+  'Three shelves of plants grown without soil, their roots in nutrient-rich water — the habitat’s fresh food and part of its air. What grows here is counted with the food rations.': [
+    'Drei Regale mit Pflanzen, die ohne Erde wachsen, die Wurzeln in nährstoffreichem Wasser – die frische Nahrung des Habitats und ein Teil seiner Luft. Was hier wächst, wird mit den Essensrationen gezählt.',
+    'Trois étagères de plantes cultivées sans sol, les racines dans une eau riche en nutriments – la nourriture fraîche de l’habitat et une part de son air. Ce qui pousse ici est compté avec les rations.'],
+  'Everything in the habitat runs on what the crew can make and store. Heating, the galley, lighting and electronics draw on one battery, and the crew count the kilowatt-hours by category every day.': [
+    'Alles im Habitat läuft mit dem, was die Crew erzeugen und speichern kann. Heizung, Küche, Licht und Elektronik hängen an einer Batterie, und die Crew zählt die Kilowattstunden täglich nach Kategorie.',
+    'Tout dans l’habitat fonctionne avec ce que l’équipage peut produire et stocker. Chauffage, cuisine, éclairage et électronique puisent dans une seule batterie, et l’équipage compte chaque jour les kilowattheures par catégorie.'],
+  'One enclosed pod for rest. The crew sleep in shifts so that someone is always awake for a communication window, and the air in the pod during the sleep period is the reading watched most closely.': [
+    'Eine geschlossene Kapsel zum Ausruhen. Die Crew schläft in Schichten, damit immer jemand für ein Kommunikationsfenster wach ist, und die Luft in der Kapsel während der Schlafphase ist der am genauesten beobachtete Messwert.',
+    'Une capsule fermée pour le repos. L’équipage dort par roulement pour que quelqu’un soit toujours éveillé pour une fenêtre de communication, et l’air de la capsule pendant le sommeil est la mesure la plus surveillée.'],
+  'A bicycle generator: pedalling charges the battery. The health officer’s workout is also the habitat’s power plant — the steps and the kilowatt-hours are the same effort.': [
+    'Ein Fahrradgenerator: Treten lädt die Batterie. Das Training des Gesundheitsoffiziers ist zugleich das Kraftwerk des Habitats – die Schritte und die Kilowattstunden sind dieselbe Anstrengung.',
+    'Un générateur à vélo : pédaler charge la batterie. L’entraînement de l’officier de santé est aussi la centrale de l’habitat – les pas et les kilowattheures sont le même effort.'],
 
   // ---- the habitat tiles (public/habitat.js)
   'No current reading': ['Kein aktueller Messwert', 'Aucune mesure actuelle'],

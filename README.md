@@ -90,7 +90,7 @@ which is mission control's, sits behind the same login.
 
 | Page | Route | Holds |
 |---|---|---|
-| The station | `/` | **The ticker** across the top — the habitat's clock and a running line of the current activity, the next one and the node's reading · composer and orbital plot · the live message board · the mission dashboard (schedule, meal, mood, habitat, resources, trends) · **about** (the project, how the station behaves, who we are). The crew log, the media and the whole mission day by day live on their own pages (`/logbook`, `/media`, `/at-a-glance`) |
+| The station | `/` | **The ticker** across the top — the habitat's clock and a running line of the current activity, the next one and the node's reading · composer and orbital plot · the live message board · the mission dashboard (schedule, meal, mood, habitat, resources, trends, and below the trends **the three daily blogs** — Daily Science Findings, Daily Health Blog, Commander Blog) · **about** (the project, how the station behaves, who we are). The crew log, the media and the whole mission day by day live on their own pages (`/logbook`, `/media`, `/at-a-glance`) |
 | Mission control | `/control` | Five tabs: **Messages** (the reply queue) first, then one per officer, and the habitat — which ends with the plan and the reset |
 | At a Glance | `/at-a-glance` | **A booklet: one day per page, turned by scrolling or swiping sideways** — arrows either side, ← → on a keyboard, a day strip to jump, a `#day-n` link opens on that day. Each page: each day's crew log with its photographs, the exchanges published, the schedule as run, the meals and their cost, the consumption of every store, the habitat summary, the crew's condition as sentences, the mission notes and the media. Days ahead show the plan, and each page scrolls on its own like a page being read. Opened from the button under the mission dashboard, and from the navigation |
 | Crew log | `/logbook` | All thirteen days in order, each officer's entry where written and its placeholder where not — a day strip to jump by, a chip per voice. Opened from the Crew log panel on the station, and from the nav |
@@ -213,6 +213,42 @@ The stores' daily use is also written as a table: **`content/resource-log.csv`**
 item per day of the run (quantity at close, daily use, used since what was carried in, days
 left at that draw, whether the day was filed or carried forward), rewritten on every content
 load and downloadable at `/resources/log.csv`.
+
+## The three daily blogs
+
+Directly **below the Trends graph** the landing page carries three panels side by side (one
+under another on a phone):
+
+| Panel | What it shows | Written in mission control |
+|---|---|---|
+| **Daily Science Findings** (`#blog-science`) | the day's science findings — the `SCIENCE` note in `content/notes.json` | **Science officer** → Daily science findings |
+| **Daily Health Blog** (`#blog-health`) | the day's health activities — the `HEALTH` note in `content/notes.json` | **Health officer** → Daily health activities |
+| **Commander Blog** (`#blog-commander`) | the communication officer's **Daily Blog** — their entry in `content/logbook.json` | **Communication officer** → Daily Blog |
+
+**The Commander Blog is the communication officer's blog**, under the name the station gives
+it; nothing else about that officer is renamed, and it is still written on their tab.
+
+**Each panel shows the current day's post, and only that.** The day is the one the schedule
+and the meal panels above it are showing — today's SOL during the run, SOL 01 before it — and
+it is named in the panel's head (`SOL 005 · Mon 19 Oct`). Yesterday's post is not here: earlier
+days are on the crew log (`/logbook`) and in At a Glance. Until the day's post is written the
+panel says so (*No science findings yet for SOL 005*), and with nothing written the three make
+one low row. The same rule as everywhere else decides what is public: a post is on the station
+the moment it is saved; a placeholder never is, and a post cleared in mission control leaves
+its panel at once. Like the schedule and the meal, a panel is drawn when the page is loaded —
+a page left open across midnight shows the new day on its next load.
+
+**The post is read where it stands, by scrolling — there is nothing to click into and back
+out of.** A panel is as tall as its post, up to a limit, and from there the post scrolls inside
+the panel: the scroller carries the orange bar of the message board, the text fades out at its
+foot while there is more below, and once it has the focus the arrow keys, Page Down and End
+move it; at its end the page carries on scrolling. A panel's title is not a link, and a
+photograph in a post is shown in the post rather than linked to its media page, so nothing in
+a panel leads off the landing page. Photographs and video placed in a post are shown in it.
+
+The panel titles and their empty lines are in `src/lib/i18n.js` like every other word (German
+*Commander-Blog*, French *Blog du commandement*); the markup is in `dashboard()` in
+`src/views/pages/public.js`, the styles under *The three daily blogs* in `public/station.css`.
 
 ## Editing the day's values during the run
 
@@ -540,6 +576,41 @@ lists every file. The tables are built from the JSON files on request and add no
 files do not hold.
 
 ---
+
+## The habitat, as a picture
+
+Between the About row and the composer sits **the habitat dome** — a screen set into a pale slab,
+as the board is, but this screen is a sky: by day a grained sunrise from periwinkle at the top
+through lavender and peach to Mars orange at the floor; by night (the dark theme) the night,
+black and starred at the top, down through indigo to a band of gold and red at the horizon. The
+dome stands on it as translucent white glass — whiter at the apex than at the floor, the sky
+showing faintly through, a fine wireframe of facets that carry a whisper of shade, a soft
+shadow beneath — with a hexagon set into it for each system
+inside — the crew, the science lab, the water recycling loop, the hydroponic shelves
+(*Hydroponics*), the communication uplink, the power store, the nap pod and the bicycle
+(*Power generator*) — each named on a
+leader line beside the dome with its channel code, as every panel of the station is. The
+pictograms are traced from the mission's own icon set (`src/views/pages/dome-icons.json`). A
+hexagon turns orange under the hand, together with its name; a hexagon under the pointer stands still so it can be pressed, and pressing it (or its name, or on a
+phone the chip beneath the picture) opens a pop-up — headed by the hexagon itself — that says what that part of the habitat is
+and, in an orange **Now** line, what is happening in it at this minute: the task on the
+schedule, each officer's condition as words, the water and food stores and their days left, the
+latest exchange, today's kWh by category, the steps pedalled. The sentences are asked for again
+every twenty seconds from **`/api/dome`**, so a reply published from mission control or a figure
+filed on a tab reaches every open pop-up without a reload.
+**The hexagons float about the whole interior.** Each has a destination somewhere inside the
+shell — chosen evenly by height, so the top of the dome is visited as often as the wide floor,
+and away from where the others are heading — and glides towards it on a slow spring; arriving,
+it picks another. Two that would sit on each other on the screen ease apart. Each is projected
+with the dome's own camera and comes forward or recedes a little with depth. Its label follows:
+the leader is redrawn every frame, the name slides along its column to stay level with the
+hexagon, the names on a side keep clear of one another, and when a hexagon crosses to the other
+half of the dome its name crosses too, fading out on one side and in on the other. Everything
+stands still under `prefers-reduced-motion`, and without JavaScript the hexagons stand where
+the server placed them. `src/views/pages/dome.js` holds the
+geometry (a frequency-3 icosahedral dome, front faces only, computed once at start), the hexagons and their
+positions, the still text of each pop-up (`ABOUT`), and the one function that writes the
+live sentences for both the page and the API.
 
 ## Communication is the point
 
@@ -1026,6 +1097,7 @@ src/
   routes/control.js      all admin write paths
   routes/media.js        the public media pages and downloads
   views/                 server-rendered templates
+  views/pages/dome.js    the habitat dome: geometry, hexagons, callouts, and /api/dome's figures
 public/                  stylesheet + the page scripts (board, composer, habitat, media, entry editor)
 tools/                   sensor simulator, backup script, media verifier, end-to-end test
 ```

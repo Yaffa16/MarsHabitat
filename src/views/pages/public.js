@@ -7,6 +7,7 @@ const { TAGS } = data;
 const { composerBlock } = require('./communicate');
 const { entryCard } = require('./logbook');
 const { aboutSection } = require('./info');
+const { habitatDome } = require('./dome');
 const MV = require('./media');
 const mediaGet = require('../../lib/media').get;
 const moodLib = require('../../lib/mood');
@@ -454,6 +455,7 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
 
   const body = `
   ${aboutSection(ctx, { crew })}
+  ${habitatDome(ctx, { today, crew, recent, power, counts, crewFigures })}
   <div class="portal-grid" id="write">
     <aside class="portal-letters" aria-hidden="true">${'MARSPLATZ'.split('').map((c) => `<span>${c}</span>`).join('')}</aside>
     <div class="portal-main">
@@ -1022,6 +1024,47 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
       <div id="hbt-tcharts"></div>
     </div>`);
 
+  /* ---- the three daily blogs, directly below the trend graph: the science
+     officer's Daily Science Findings, the health officer's Daily Health Blog
+     (the day's health activities) and the Commander Blog — which is the
+     communication officer's Daily Blog, under the name the station gives it.
+     All three are written in mission control (the Science, Health and
+     Communication officer tabs) and are public the moment they are saved, as
+     everywhere else on the station.
+
+     Each panel shows the CURRENT DAY's post and nothing else — the day the
+     schedule and the meal panels above are showing: today's SOL during the
+     run, SOL 01 before it. Earlier days are on the crew log and in At a
+     Glance, not here. The post is read where it stands, by scrolling inside
+     its panel: a panel's title is not a link and a photograph in a post is
+     shown, not linked — nothing in a panel leads off the page, so there is
+     nothing to click into and back out of. */
+  const blogDay = m.clampedDay;
+  const blogDate = (allDays[blogDay - 1] || {}).date || m.today;
+  // A post is its rendered body; one that comes out empty — a picture since
+  // withdrawn and nothing else — is left out rather than shown as a blank card.
+  const post = (body, attached) => MV.entryHtml(body, attached, { lookup: mediaLookup, T, link: false });
+  const reportToday = (kind) => ((allDays[blogDay - 1] || {}).notes || [])
+    .filter((n) => n.kind === kind).map((n) => post(n.body, [])).filter(Boolean);
+  const commander = crew.find((c) => /COMM/i.test(c.designation)) || crew[0] || null;
+  const commanderToday = commander ? ((logDays[blogDay - 1] || {}).entries || [])
+    .filter((e) => e.crew_id === commander.id && !e.placeholder).map((e) => post(e.body, e.media || [])).filter(Boolean) : [];
+  // A panel is as tall as the post in it, up to a limit, and scrolls from
+  // there (.h-4 and .blog-scroll in the stylesheet) — so with nothing written
+  // yet the three make a low row rather than a wall of empty boxes.
+  const blogPanel = ({ id, code, title, posts, empty }) => dpanel({ id, code, title, span: 4, cls: 'h-4 blogp',
+      meta: `SOL ${day3} · ${esc(shortDay(blogDate))}` },
+    // No whitespace inside the card body: it renders with pre-line.
+    posts.length ? `<div class="blog-scroll" tabindex="0" role="region" aria-label="${esc(title)}">${
+      posts.map((html) => `<div class="card log-entry"><div class="card-body entry-post">${html}</div></div>`).join('')}</div>`
+    : `<div class="empty">${T(empty)} SOL ${day3}${pre ? ` — ${T('occupied from')} ${esc(m.startLabel)}` : ''}</div>`);
+  const blogScience = blogPanel({ id: 'blog-science', code: 'CH-51', title: T('Daily Science Findings'),
+    posts: reportToday('SCIENCE'), empty: 'No science findings yet for' });
+  const blogHealth = blogPanel({ id: 'blog-health', code: 'CH-52', title: T('Daily Health Blog'),
+    posts: reportToday('HEALTH'), empty: 'No health blog yet for' });
+  const blogCommander = blogPanel({ id: 'blog-commander', code: 'CH-53', title: T('Commander Blog'),
+    posts: commanderToday, empty: 'No commander blog yet for' });
+
   const galley = dpanel({ id: 'galley', code: 'CH-32', title: T('Meal'), meta: today && today.meals.length
       ? `${today.kcalPlanned} kcal · ${today.waterPlanned.toFixed(1)} L · ${today.energyPlanned} Wh` : '', span: 4, cls: 'h-3 scroll' },
     today && today.meals.length ? `<div class="meals">${today.meals.map((x) => `
@@ -1132,6 +1175,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
     <div class="dash-grid">
       ${schedule}${galley}${crewPanel}
       ${habitat}${hardwarePanel}${trends}
+      ${blogScience}${blogHealth}${blogCommander}
     </div>
   </section>`;
 }

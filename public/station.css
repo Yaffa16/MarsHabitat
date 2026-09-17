@@ -1375,6 +1375,54 @@ body.landing .foot { margin-top: 44px; margin-bottom: 44px; }
 .log-entry .card-day { text-transform: uppercase; }
 .log-entry .card-body { padding: 5px 12px 9px; font-size: 12px; line-height: 1.45; white-space: pre-line; }
 
+/* The three daily blogs under the trend graph — Daily Science Findings, Daily
+   Health Blog, Commander Blog. Each panel shows the current day's post and
+   nothing else. It is as tall as that post, up to a limit, and the post
+   scrolls inside the panel from there. The three share a row, so they stand
+   at the height of the fullest. */
+.dpanel.h-4 { max-height: 540px; }
+.blogp .dpanel-body { display: flex; flex-direction: column; min-height: 0; }
+/* a long title (the German one is) keeps its line: the code never wraps, the
+   day beside it gives way first, and only then is the title cut short */
+.blogp .dpanel-code { white-space: nowrap; flex: none; }
+.blogp .dpanel-title { flex-shrink: 0; max-width: 100%; }
+.blogp .dpanel-title h3 { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* The post is read where it stands, by scrolling: nothing in a panel is a
+   link, so there is nothing to click into and back out of. The scroller says
+   that it scrolls — the orange bar of the message board, and the text fading
+   out at the foot while there is more below — and it takes the keyboard.
+   Two pixels at the sides keep the card's edge from being clipped. */
+.blog-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin: 0 -2px; padding: 2px 6px 0 2px; scrollbar-width: thin; scrollbar-color: var(--orange) transparent; outline: none; }
+.blog-scroll::-webkit-scrollbar { width: 8px; }
+.blog-scroll::-webkit-scrollbar-track { background: transparent; }
+.blog-scroll::-webkit-scrollbar-thumb { background: var(--orange); border-radius: 6px; }
+.blog-scroll:focus-visible { outline: 2px solid var(--orange); outline-offset: -2px; border-radius: 6px; }
+/* the fade is a mask on the scroller itself, so it takes whatever ground the
+   panel has, light or dark, and shows nothing when the whole post fits */
+.blog-scroll { -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 26px), transparent); mask-image: linear-gradient(180deg, #000 calc(100% - 26px), transparent); }
+.blog-scroll > :last-child { margin-bottom: 26px; }   /* the fade falls on this, never on the end of the post */
+.blogp .log-entry { margin: 0 0 6px; }
+.blogp .log-entry .card-body { padding: 11px 13px 12px; font-size: 13px; line-height: 1.55; }
+/* a picture keeps to the text's measure, however wide the panel gets — and
+   is shown, not linked: it does not open another page */
+.blogp .entry-figure { margin: 10px 0; border-radius: 8px; max-width: 500px; }
+/* nothing written for the day yet: a low dashed well — which fills the panel
+   when a neighbour in the same row has a post and the row is tall */
+.blogp .dpanel-body > .empty { flex: 1 1 auto; min-height: 90px; display: flex; align-items: center; justify-content: center; text-align: center; }
+@media (max-width: 1100px) and (min-width: 701px) {
+  /* two to a row at this width: the third takes the whole row rather than half */
+  #blog-commander { grid-column: span 6; }
+}
+@media (max-width: 700px) {
+  /* on a phone the limit is most of the screen */
+  .dpanel.h-4 { max-height: 74vh; max-height: 74dvh; }
+  .blog-scroll { -webkit-overflow-scrolling: touch; }
+}
+@media print {
+  .dpanel.h-4 { max-height: none; }
+  .blog-scroll { overflow: visible; -webkit-mask-image: none; mask-image: none; }
+}
+
 /* The whole mission as thirteen day cards, one per day of the run */
 .days-strip { display: grid; grid-template-columns: repeat(13, minmax(0, 1fr)); gap: 6px; align-items: start; }
 .dcard { border-radius: 10px; background: var(--well); box-shadow: var(--sh-inset); min-width: 0; }
@@ -2386,3 +2434,143 @@ textarea.ed-source:focus { outline: 0; }
 .hw-legend i { width: 8px; height: 8px; border-radius: 50%; flex: none; align-self: center; }
 .hw-legend .hw-val { margin-left: auto; white-space: nowrap; }
 @media (max-width: 640px) { .dpanel .hbt .hw-bento { grid-template-columns: minmax(0, 1fr); } }
+
+/* ------------------------------------------------------------- the dome
+   The habitat as a picture, between the About row and the composer: a
+   screen set into a pale slab, as the board is — but this screen is a sky,
+   a grained gradient — by day a sunrise, periwinkle through lavender and
+   peach to Mars orange at the floor; by night the night, black and starred
+   at the top down through indigo to a band of gold and red at the horizon.
+   The dome stands on it as translucent white glass, a fine wireframe of
+   facets, a soft shadow beneath. Each system inside is a small
+   pale key that floats about the whole interior, named on a leader line in
+   the station's type with its channel code; under the hand a key turns
+   orange. */
+:root {
+  /* the sky behind the dome: by day the sunrise, by night the night */
+  --dome-sky:       linear-gradient(180deg, #7d8ed2 0%, #a3a5d6 22%, #c9b8d4 40%, #efc3aa 60%, #ff9a5c 82%, #ff7a33 100%);
+  --dome-stars:     0;
+  /* the pearl inside the shell */
+  --dome-pearl-1:   #ffffff;
+  --dome-pearl-2:   #f6f6f7;
+  --dome-pearl-3:   #e9e9ec;
+  --dome-line:      rgba(21, 21, 23, 0.16);
+  --dome-hex:       #ffffff;
+  --dome-hex-edge:  rgba(21, 21, 23, 0.34);
+  --dome-hex-ink:   #151517;
+  /* the names, on the sky */
+  --dome-text:      #151517;
+  --dome-code:      rgba(21, 21, 23, 0.62);
+  --dome-lead:      rgba(21, 21, 23, 0.34);
+  --dome-hot:       #ffffff;
+  --dome-chip:      rgba(255, 255, 255, 0.55);
+  --dome-chip-edge: rgba(21, 21, 23, 0.18);
+}
+:root[data-theme="dark"] {
+  --dome-sky:       linear-gradient(180deg, #050508 0%, #0a0b1e 26%, #22245c 48%, #4a4a6e 62%, #b98a2a 72%, #f0a020 78%, #e8641c 89%, #b83115 100%);
+  --dome-stars:     1;
+  --dome-text:      #f2f2ef;
+  --dome-code:      rgba(242, 242, 239, 0.62);
+  --dome-lead:      rgba(160, 160, 170, 0.78);   /* reads on the night and on the pearl alike */
+  --dome-hot:       var(--orange);
+  --dome-chip:      rgba(0, 0, 0, 0.28);
+  --dome-chip-edge: rgba(255, 255, 255, 0.22);
+}
+
+.dome-panel {
+  margin: 0 0 var(--gutter); padding: 16px 18px 18px;
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, var(--raise), var(--raise-2));
+  box-shadow: var(--sh-raise-lg), inset 0 1px 0 var(--edge);
+}
+.dome-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 12px; }
+.dome-title { display: flex; align-items: baseline; gap: 10px; }
+.dome-title h2 { margin: 0; font-family: var(--display); font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.dome-meta { font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
+
+/* the sky: the gradient, and a film of grain laid over it */
+.dome-screen {
+  position: relative; padding: 22px 22px 16px; overflow: hidden; isolation: isolate;
+  border-radius: var(--r-lg); color: var(--dome-text);
+  background: var(--dome-sky);
+  box-shadow: var(--sh-screen);
+}
+.dome-screen::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+  background-size: 240px 240px; opacity: 0.22; mix-blend-mode: overlay;
+}
+.dome-screen::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: var(--dome-stars);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='900' height='900'><circle cx='291' cy='136' r='0.6' fill='white' fill-opacity='0.4'/><circle cx='482' cy='329' r='0.6' fill='white' fill-opacity='0.94'/><circle cx='193' cy='77' r='1.3' fill='white' fill-opacity='0.4'/><circle cx='82' cy='382' r='0.7' fill='white' fill-opacity='0.97'/><circle cx='568' cy='525' r='0.6' fill='white' fill-opacity='0.73'/><circle cx='357' cy='879' r='0.6' fill='white' fill-opacity='0.71'/><circle cx='120' cy='377' r='2.0' fill='white' fill-opacity='0.43'/><circle cx='278' cy='735' r='0.8' fill='white' fill-opacity='0.42'/><circle cx='514' cy='169' r='0.7' fill='white' fill-opacity='0.71'/><circle cx='57' cy='54' r='0.9' fill='white' fill-opacity='0.67'/><circle cx='479' cy='700' r='1.6' fill='white' fill-opacity='0.73'/><circle cx='408' cy='270' r='0.8' fill='white' fill-opacity='0.8'/><circle cx='220' cy='517' r='2.0' fill='white' fill-opacity='0.67'/><circle cx='309' cy='404' r='0.7' fill='white' fill-opacity='0.43'/><circle cx='376' cy='681' r='0.8' fill='white' fill-opacity='0.96'/><circle cx='380' cy='866' r='0.7' fill='white' fill-opacity='0.85'/><circle cx='516' cy='788' r='1.1' fill='white' fill-opacity='0.57'/><circle cx='315' cy='447' r='1.6' fill='white' fill-opacity='0.39'/><circle cx='84' cy='243' r='0.7' fill='white' fill-opacity='0.39'/><circle cx='631' cy='582' r='1.6' fill='white' fill-opacity='0.53'/><circle cx='347' cy='602' r='0.6' fill='white' fill-opacity='0.96'/><circle cx='320' cy='550' r='1.6' fill='white' fill-opacity='0.39'/><circle cx='691' cy='116' r='0.9' fill='white' fill-opacity='0.61'/><circle cx='825' cy='447' r='0.8' fill='white' fill-opacity='0.64'/><circle cx='494' cy='795' r='1.3' fill='white' fill-opacity='0.91'/><circle cx='251' cy='374' r='1.1' fill='white' fill-opacity='0.79'/><circle cx='342' cy='208' r='0.7' fill='white' fill-opacity='0.46'/><circle cx='209' cy='210' r='1.6' fill='white' fill-opacity='0.89'/><circle cx='164' cy='254' r='0.8' fill='white' fill-opacity='0.62'/><circle cx='332' cy='510' r='0.8' fill='white' fill-opacity='0.8'/><circle cx='464' cy='556' r='0.6' fill='white' fill-opacity='0.65'/><circle cx='784' cy='857' r='2.0' fill='white' fill-opacity='0.61'/><circle cx='359' cy='93' r='1.3' fill='white' fill-opacity='0.39'/><circle cx='61' cy='188' r='0.8' fill='white' fill-opacity='0.42'/><circle cx='541' cy='92' r='0.8' fill='white' fill-opacity='0.7'/><circle cx='854' cy='552' r='0.7' fill='white' fill-opacity='0.92'/><circle cx='553' cy='134' r='1.0' fill='white' fill-opacity='0.97'/><circle cx='542' cy='427' r='0.7' fill='white' fill-opacity='0.9'/><circle cx='894' cy='419' r='1.6' fill='white' fill-opacity='0.55'/><circle cx='130' cy='675' r='1.0' fill='white' fill-opacity='0.66'/><circle cx='623' cy='465' r='0.9' fill='white' fill-opacity='0.97'/><circle cx='475' cy='132' r='2.0' fill='white' fill-opacity='0.94'/><circle cx='682' cy='268' r='0.7' fill='white' fill-opacity='0.8'/><circle cx='235' cy='330' r='0.8' fill='white' fill-opacity='0.58'/><circle cx='201' cy='487' r='2.0' fill='white' fill-opacity='0.56'/><circle cx='201' cy='730' r='0.9' fill='white' fill-opacity='0.87'/><circle cx='736' cy='666' r='0.9' fill='white' fill-opacity='0.48'/><circle cx='444' cy='658' r='0.6' fill='white' fill-opacity='0.86'/><circle cx='425' cy='174' r='1.1' fill='white' fill-opacity='0.64'/><circle cx='843' cy='889' r='1.1' fill='white' fill-opacity='0.4'/><circle cx='92' cy='423' r='1.1' fill='white' fill-opacity='0.48'/><circle cx='562' cy='810' r='0.6' fill='white' fill-opacity='0.66'/><circle cx='588' cy='720' r='0.7' fill='white' fill-opacity='0.89'/><circle cx='108' cy='350' r='0.9' fill='white' fill-opacity='0.66'/><circle cx='161' cy='710' r='1.1' fill='white' fill-opacity='0.41'/><circle cx='852' cy='650' r='1.6' fill='white' fill-opacity='0.61'/><circle cx='852' cy='652' r='0.8' fill='white' fill-opacity='1.0'/><circle cx='25' cy='532' r='1.6' fill='white' fill-opacity='0.87'/><circle cx='132' cy='744' r='1.6' fill='white' fill-opacity='0.78'/><circle cx='315' cy='494' r='0.8' fill='white' fill-opacity='0.36'/><circle cx='719' cy='654' r='0.7' fill='white' fill-opacity='0.69'/><circle cx='840' cy='390' r='0.9' fill='white' fill-opacity='0.89'/><circle cx='190' cy='227' r='1.0' fill='white' fill-opacity='0.68'/><circle cx='687' cy='293' r='2.0' fill='white' fill-opacity='0.62'/><circle cx='118' cy='819' r='1.1' fill='white' fill-opacity='0.93'/><circle cx='596' cy='734' r='2.0' fill='white' fill-opacity='0.62'/><circle cx='826' cy='451' r='2.0' fill='white' fill-opacity='0.45'/><circle cx='459' cy='786' r='0.8' fill='white' fill-opacity='0.75'/><circle cx='698' cy='135' r='0.8' fill='white' fill-opacity='0.66'/><circle cx='653' cy='501' r='1.1' fill='white' fill-opacity='0.79'/></svg>");
+  background-size: 900px 900px;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,0.7) 40%, transparent 68%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,0.7) 40%, transparent 68%);
+}
+.dome-stage { position: relative; z-index: 1; width: 100%; aspect-ratio: 1000 / 550; }
+.dome-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
+
+/* the drawing: translucent white glass inside the shell — a pearl, whiter
+   at the apex than at the floor, through which the sky shows faintly; the
+   facets a whisper of shade where the light does not reach, fine lines
+   between */
+#dome-pearl .s1 { stop-color: var(--dome-pearl-1); stop-opacity: 0.80; }
+#dome-pearl .s2 { stop-color: var(--dome-pearl-2); stop-opacity: 0.70; }
+#dome-pearl .s3 { stop-color: var(--dome-pearl-3); stop-opacity: 0.62; }
+.dome-faces polygon { stroke: var(--dome-line); stroke-width: 0.9; stroke-linejoin: round; }
+/* the keys: small pale hexagons floating in the shell, orange under the hand */
+.dome-hex { cursor: pointer; outline: none; }
+.dome-hex-body { transform-box: fill-box; transform-origin: center; transition: transform 180ms cubic-bezier(.2,.8,.2,1); }
+.dome-hex polygon {
+  fill: var(--dome-hex); stroke: var(--dome-hex-edge); stroke-width: 1; stroke-linejoin: round;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.28));
+  transition: fill 150ms, stroke 150ms;
+}
+.dome-ic path { fill: var(--dome-hex-ink); transition: fill 150ms; }
+.dome-hex:hover polygon, .dome-hex.lit polygon, .dome-hex:focus-visible polygon { fill: var(--orange); stroke: var(--orange-deep); }
+.dome-hex:hover .dome-ic path, .dome-hex.lit .dome-ic path, .dome-hex:focus-visible .dome-ic path { fill: #fff; }
+.dome-hex:hover .dome-hex-body, .dome-hex.lit .dome-hex-body, .dome-hex:focus-visible .dome-hex-body { transform: scale(1.14); }
+.dome-hex:focus-visible polygon { stroke: #fff; stroke-width: 2; }
+
+/* the names: channel code in the small mono, the name in the display face,
+   on a leader that leaves the far end of the name and ends at the key —
+   all in ink, which reads on every band of the sky */
+.dome-label { cursor: pointer; outline: none; }
+.dome-label .dome-code { font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.2em; font-weight: 700; fill: var(--dome-code); transition: fill 150ms; }
+.dome-label .dome-name { font-family: var(--display); font-size: 15px; font-weight: 600; letter-spacing: 0.005em; fill: var(--dome-text); transition: fill 150ms; }
+.dome-lead { fill: none; stroke: var(--dome-lead); stroke-width: 1; stroke-linejoin: round; transition: stroke 150ms; }
+.dome-lead-dot { fill: var(--dome-lead); transition: fill 150ms; }
+.dome-label:hover .dome-name, .dome-label.lit .dome-name, .dome-label:focus-visible .dome-name,
+.dome-label:hover .dome-code, .dome-label.lit .dome-code { fill: var(--dome-hot); }
+.dome-label:hover .dome-lead, .dome-label.lit .dome-lead, .dome-label:focus-visible .dome-lead { stroke: var(--dome-hot); }
+.dome-label:hover .dome-lead-dot, .dome-label.lit .dome-lead-dot { fill: var(--dome-hot); }
+
+/* the same names as chips beneath the picture — the labels on a phone */
+.dome-legend { display: none; position: relative; z-index: 1; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.dome-legend .chip { color: var(--dome-text); background: var(--dome-chip); border-color: var(--dome-chip-edge); }
+.dome-legend .chip-code { font-family: var(--mono); font-size: 8px; letter-spacing: 0.16em; color: var(--dome-code); margin-right: 7px; }
+
+/* the pop-ups: what a part of the habitat is, and what is happening in it —
+   the hexagon itself at the head, as it stands in the dome */
+.dome-mark { flex: none; width: 52px; height: 52px; overflow: visible; }
+.dome-mark polygon { fill: var(--dome-hex); stroke: var(--dome-hex-edge); stroke-width: 1; stroke-linejoin: round; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.22)); }
+.dome-mark .dome-ic path { fill: var(--dome-hex-ink); }
+.dome-code-chip { color: var(--orange); font-weight: 700; }
+.dome-popup .popup-body p { margin: 0 0 14px; font-size: 15px; line-height: 1.55; }
+.dome-popup .popup-body p:last-child { margin-bottom: 0; }
+.dome-popup .dome-now {
+  padding: 12px 14px; border-radius: var(--r-sm); background: var(--orange-soft);
+  border-left: 3px solid var(--orange); font-weight: 600;
+}
+.dome-popup .dome-now-k { font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--orange); margin-right: 6px; }
+
+@media (max-width: 760px) {
+  .dome-panel { padding: 12px 12px 14px; }
+  .dome-screen { padding: 14px 10px 12px; }
+  .dome-hex-body { transform: scale(1.5); }
+  .dome-hex:hover .dome-hex-body, .dome-hex.lit .dome-hex-body { transform: scale(1.65); }
+  .dome-labels, .dome-meta { display: none; }
+  .dome-legend { display: flex; }
+}
+@media (prefers-reduced-motion: reduce) { .dome-hex-body, .dome-hex polygon { transition: none; } }
+@media print { .dome-screen { background: #fff; box-shadow: none; } .dome-screen::before, .dome-screen::after { display: none; } .dome-popup { display: none; } }

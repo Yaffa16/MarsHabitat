@@ -565,6 +565,22 @@ app.get('/api/ticker', (req, res) => {
   });
 });
 
+/* The figures in the habitat dome's callouts — what the crew are doing, the
+   latest exchange, their condition, the stores, the day's power — as the
+   landing page's dome refreshes them. Same function as renders the page. */
+app.get('/api/dome', (req, res) => {
+  const ctx = req.ctx();
+  res.set('Cache-Control', 'no-store');
+  res.json(require('./views/pages/dome').figures(ctx, {
+    today: data.day(ctx.mission.clampedDay),
+    crew: data.crewWithMood(),
+    recent: data.published(20),
+    power: content.power(),
+    counts: data.counts(),
+    crewFigures: content.crewFigures(),
+  }));
+});
+
 app.get('/api/orbital', (req, res) => {
   const g = geometry();
   res.json({

@@ -31,6 +31,9 @@ rm -f $V $A $T
 FAIL=0
 ok()  { printf "  \033[32m✓\033[0m %s\n" "$1"; }
 bad() { printf "  \033[31m✗\033[0m %s\n" "$1"; FAIL=1; }
+# One panel of the landing page's dashboard, by its id — from its opening tag
+# to the end of its section — so a check can look inside that panel alone.
+panel() { curl -s $B/ | node -e 'let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const i = s.indexOf("id=\"" + process.argv[1] + "\""); process.stdout.write(i < 0 ? "" : s.slice(i, s.indexOf("</section>", i))); });' "$1"; }
 
 echo "── visitor identity"
 CS=$(curl -s -c $V -b $V $B/ | grep -oE '[A-Z]+-[0-9]{3}' | head -1)
@@ -43,6 +46,27 @@ const h = require("child_process").execSync("curl -s http://localhost:8080/").to
 const c = h.indexOf("id=\"composer\""), s = h.indexOf("CH-01");
 process.exit(c > -1 && (s < 0 || c < s) ? 0 : 1);
 ' && ok "composer precedes the habitat data" || bad "communication is not the lead element"
+
+echo "── the habitat dome"
+node -e '
+const h = require("child_process").execSync("curl -s http://localhost:8080/").toString();
+const a = h.indexOf("id=\"about\""), d = h.indexOf("id=\"habitat-dome\""), w = h.indexOf("id=\"write\"");
+process.exit(a > -1 && d > a && w > d ? 0 : 1);
+' && ok "the dome sits between the About row and the composer" || bad "dome out of place"
+DOME=$(curl -s $B/)
+[ "$(echo "$DOME" | grep -o 'class="dome-hex"' | wc -l)" -ge 8 ] && ok "eight hexagons in the dome — crew, lab, recycling, hydroponics, communication, power, nap pod, power generator" || bad "hexagons missing"
+for H in crew science recycling aeroponics comms power nappod generator; do echo "$DOME" | grep -q "id=\"dome-$H\"" || bad "no pop-up for $H"; done; ok "every hexagon has its pop-up"
+echo "$DOME" | grep -q 'class="dome-label" data-hex="power"' && ok "every hexagon is named on a leader line" || bad "dome labels missing"
+echo "$DOME" | grep -q '<text class="dome-name"[^>]*>Hydroponics</text>' && echo "$DOME" | grep -q '<text class="dome-name"[^>]*>Power generator</text>' && ! echo "$DOME" | grep -q '>Aeroponics<\|>Generator<' && ok "the shelves are named Hydroponics and the bicycle Power generator" || bad "dome names: expected Hydroponics and Power generator"
+echo "$DOME" | grep -q 'id="dome-comms"' && echo "$DOME" | grep -q 'href="#exchanges" data-close' && ok "the pop-ups link into the dashboard" || bad "dome links missing"
+curl -s $B/api/dome | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
+  const f = JSON.parse(s);
+  process.exit(["crew", "science", "recycling", "aeroponics", "comms", "power", "nappod", "generator"].every((k) => f[k] && typeof f[k].text === "string") ? 0 : 1);
+});' && ok "/api/dome returns every hexagon's figure" || bad "/api/dome incomplete"
+curl -s $B/api/dome | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { process.exit(/[0-9]/.test(JSON.parse(s).crew.text) ? 1 : 0); });
+' && ok "the crew's condition reaches the dome as words, never as numbers" || bad "a number in the crew callout"
 
 curl -s -b $V -c $V -X POST --data-urlencode \
   "body=What is the first thing you miss about Earth?" -d "tags=QUESTION" -o /dev/null $B/communicate
@@ -185,6 +209,13 @@ const d=require(process.env.CONTENT_DIR+"/notes.json");
 process.exit((d["2"]||[]).filter(n=>n.kind==="SCIENCE").length===1?0:1);' \
   && ok "the day's science findings are one note in notes.json" || bad "findings not written to file as one note"
 curl -s $B/at-a-glance | grep -q "Baseline established" && ok "and are live on their day in At a Glance" || bad "findings not live"
+# the landing page's three blog panels carry the current day's post, and only that
+TODAY=$(curl -s $B/api/status | grep -oE '"missionDay":[0-9]+' | cut -d: -f2)
+panel blog-science | grep -q "Baseline established" && bad "another day's findings are on the landing page" || ok "another day's findings stay off the landing page — Daily Science Findings shows the current day only"
+curl -s -b $A -X POST -d "day=$TODAY" -d "kind=science" -d "crew_id=2" -d "back=science" \
+  --data-urlencode "body=Culture count up a third since yesterday." -o /dev/null $B/control/report
+panel blog-science | grep -q "Culture count up a third" && ok "today's findings are the Daily Science Findings, below the trend graph" || bad "today's findings not in the Daily Science Findings panel"
+panel blog-science | grep -q "SOL $(printf '%03d' $TODAY)" && ok "and the panel names the day it shows" || bad "the science panel does not name its day"
 curl -s -b $A -X POST -d "day=2" -d "kind=science" -d "crew_id=2" -d "back=science" \
   --data-urlencode "body=Baseline established across twelve samples. Batch B held over." -o /dev/null $B/control/report
 node -e '
@@ -196,6 +227,17 @@ curl -s -b $A "$B/control?tab=science&day=2" | grep -q 'action="/control/report"
 curl -s -b $A -X POST -d "day=2" -d "kind=health" -d "crew_id=3" -d "back=health" \
   --data-urlencode "body=All three sleeping through the period." -o /dev/null $B/control/report
 curl -s $B/at-a-glance | grep -q "sleeping through" && ok "health activities file the same way" || bad "health report failed"
+curl -s -b $A -X POST -d "day=$TODAY" -d "kind=health" -d "crew_id=3" -d "back=health" \
+  --data-urlencode "body=Pulse and sleep logged for all three." -o /dev/null $B/control/report
+HB=$(panel blog-health)
+echo "$HB" | grep -q "Pulse and sleep logged" && ! echo "$HB" | grep -q "sleeping through" \
+  && ok "today's health activities are the Daily Health Blog — another day's are not there" || bad "the Daily Health Blog does not show today's activities alone"
+panel blog-science | grep -q "Pulse and sleep logged" && bad "the health report leaked into the science panel" || ok "each report stays in its own panel"
+# cleared again, so the day is as it was for the checks that follow — and the panels say so at once
+curl -s -b $A -X POST -d "day=$TODAY" -d "kind=science" -d "crew_id=2" -d "back=science" -d "action=clear" -d "body=x" -o /dev/null $B/control/report
+curl -s -b $A -X POST -d "day=$TODAY" -d "kind=health" -d "crew_id=3" -d "back=health" -d "action=clear" -d "body=x" -o /dev/null $B/control/report
+panel blog-science | grep -q "No science findings yet for SOL" && panel blog-health | grep -q "No health blog yet for SOL" \
+  && ok "a report cleared in mission control leaves its panel at once, and the panel says nothing is written for the day" || bad "a cleared report is still in its panel"
 
 curl -s -b $A -X POST -d "day=2" -d "q_water=555" -d "c_water=20" -o /dev/null $B/control/inventory
 # the inventory row is available · used today · left: filing one of the last two gives the other
@@ -294,6 +336,8 @@ TODAY=$(curl -s $B/api/status | grep -oE '"missionDay":[0-9]+' | cut -d: -f2)
 curl -s -b $A -X POST -d "day=$TODAY" -d "designation=COMMUNICATION OFFICER" -d "back=comms" --data-urlencode \
   "body=The west wall condensation is worse than the model predicted." -o /dev/null $B/control/logbook
 curl -s $B/logbook | grep -q "west wall condensation" && ok "an entry reaches the public crew log" || bad "entry not published"
+panel blog-commander | grep -q "west wall condensation" && ok "the communication officer's Daily Blog is the Commander Blog on the landing page" || bad "entry not in the Commander Blog panel"
+panel blog-commander | grep -q "SOL $(printf '%03d' $TODAY)" && ok "and the panel names the day it shows" || bad "the Commander Blog does not name its day"
 curl -s -b $A "$B/control?day=$TODAY" | grep -q "west wall condensation" && ok "and is back in its box on control" || bad "entry not shown in control"
 curl -s -b $A -X POST -d "day=$TODAY" -d "designation=COMMUNICATION OFFICER" --data-urlencode "body=Revised after supper." -o /dev/null $B/control/logbook
 [ "$(curl -s -b $A $B/archive/day/$TODAY | grep -c 'Revised after supper')" = "1" ] \
@@ -301,6 +345,9 @@ curl -s -b $A -X POST -d "day=$TODAY" -d "designation=COMMUNICATION OFFICER" --d
 curl -s $B/ | grep -q "west wall condensation" && bad "old text still on the site" || ok "the old text is gone"
 curl -s -b $A -X POST -d "day=$TODAY" -d "designation=COMMUNICATION OFFICER" -d "body=" -o /dev/null $B/control/logbook
 curl -s $B/ | grep -q "Revised after supper" && bad "an empty save left the entry standing" || ok "an empty save removes the entry"
+CB=$(panel blog-commander)
+echo "$CB" | grep -q "to be written at the end of this day" && bad "a placeholder reached the Commander Blog" || ok "placeholders stay out of the Commander Blog"
+echo "$CB" | grep -q "No commander blog yet for SOL" && ok "with today's entry cleared the Commander Blog says nothing is written for the day" || bad "no empty line in the Commander Blog"
 [ "$(curl -s -b $A -o /dev/null -w '%{redirect_url}' -X POST -d "day=3" -d "designation=SCIENCE OFFICER" -d "back=science" -d "body=Day three." $B/control/logbook)" = "$B/control?tab=science&day=3#work" ] \
   && ok "a save returns to the tab and day it came from" || bad "save landed somewhere else"
 
@@ -450,6 +497,14 @@ curl -s -b $V2 $B/ | grep -q 'data-mine="1"' \
 echo "$PAGE" | grep -q 'class="dash-grid"' && ok "the mission dashboard lays everything out in one grid" || bad "no dashboard grid"
 echo "$PAGE" | grep -q 'class="kpis"' && ok "the dashboard leads with its headline figures" || bad "no headline figures"
 echo "$PAGE" | grep -q 'id="hbt-bento"' && ok "the habitat dashboard shell is on the page" || bad "no habitat dashboard"
+node -e '
+const h = require("child_process").execSync("curl -s http://localhost:8080/", { maxBuffer: 1 << 26 }).toString();
+const at = (id) => h.indexOf("id=\"" + id + "\"");
+const t = at("trends"), s = at("blog-science"), e = at("blog-health"), c = at("blog-commander");
+process.exit(t > -1 && s > t && e > s && c > e ? 0 : 1);
+' && ok "below the trend graph: Daily Science Findings, Daily Health Blog, Commander Blog, in that order" || bad "the three blogs are not below the trend graph in order"
+echo "$PAGE" | grep -q "Daily Science Findings" && echo "$PAGE" | grep -q "Daily Health Blog" && echo "$PAGE" | grep -q "Commander Blog" \
+  && ok "the three blog panels are headed" || bad "a blog panel heading is missing"
 echo "$PAGE" | grep -q '/habitat.js' && ok "the habitat renderer is loaded" || bad "habitat.js not loaded"
 echo "$PAGE" | grep -q "Habitat occupation begins" && bad "countdown panel still present" \
   || ok "the countdown panel is gone"
@@ -497,6 +552,8 @@ DE=$(curl -s -b $LJ $B/)
 echo "$DE" | grep -q '<html lang="de"' && ok "the page declares German" || bad "html lang is not de"
 echo "$DE" | grep -q "Nachrichtenboard" && ok "the board heading reads in German" || bad "board heading not translated"
 echo "$DE" | grep -q ">Senden<" && ok "the transmit button reads in German" || bad "transmit button not translated"
+echo "$DE" | grep -q "Täglicher Gesundheitsblog" && echo "$DE" | grep -q "Commander-Blog" && echo "$DE" | grep -q "Hydroponik" && echo "$DE" | grep -q "Stromgenerator" \
+  && ok "the blog panels and the renamed dome parts read in German" || bad "blog panels or dome names not translated"
 echo "$DE" | grep -q 'value="de" class="on" aria-current="true"' && ok "the switch marks DE as current" || bad "DE not marked current"
 echo "$DE" | grep -q 'window.MCS_T=' && echo "$DE" | grep -q '"Message Board":"Nachrichtenboard"' \
   && ok "the page carries the German table for its scripts" || bad "no MCS_T table for the page scripts"
@@ -732,6 +789,18 @@ curl -s -b $A -F "day=$((TODAY + 2))" -F "designation=HEALTH OFFICER" -F "back=h
 LOGX=$(curl -s $B/logbook)
 echo "$LOGX" | grep -q "Entry with a photograph." && echo "$LOGX" | grep -q "Attached to the entry" && ok "the entry and its media are public together" || bad "entry or its media missing from /logbook"
 echo "$LOGX" | grep -A12 "Entry with a photograph." | grep -q 'class="entry-figure' && ok "and the media is set into the entry as a figure" || bad "media not attached to the entry on the page"
+# the blogs under the trend graph are read in place: they scroll, and nothing in them is a link
+curl -s -b $A -F "day=$((TODAY + 1))" -F "designation=COMMUNICATION OFFICER" -F "back=comms" -F "body=Commander post written for tomorrow." -o /dev/null $B/control/logbook
+curl -s -b $A -F "day=$TODAY" -F "designation=COMMUNICATION OFFICER" -F "back=comms" -F "body=Commander post with a photograph." -F "file=@/tmp/e2e-photo.png" -o /dev/null $B/control/logbook
+CB=$(panel blog-commander)
+echo "$CB" | grep -q "Commander post with a photograph." && echo "$CB" | grep -q '<figure class="entry-figure kind-image"[^>]*><img ' \
+  && ok "a photograph stands in today's post in the Commander Blog, shown rather than linked" || bad "photo missing from the Commander Blog, or wrapped in a link"
+echo "$CB" | grep -q "Commander post written for tomorrow" && bad "a post for another day is in the Commander Blog" || ok "the Commander Blog shows the current day's post only"
+echo "$CB" | grep -q 'class="blog-scroll"' && [ "$(echo "$CB" | grep -o 'class="card log-entry"' | wc -l)" = "1" ] && ok "one post, in a scroller inside the panel" || bad "the Commander Blog is not one post in a scroller"
+for P in blog-science blog-health blog-commander; do panel $P | grep -q '<a ' && bad "$P has a link that leads off the page"; done; ok "nothing in the three blog panels is a link — they are read in place, not clicked out of"
+curl -s $B/logbook | grep -q "Commander post written for tomorrow" && ok "the other days' posts are on the crew log, where they were" || bad "tomorrow's post missing from the crew log"
+curl -s -b $A -X POST -d "day=$TODAY" -d "designation=COMMUNICATION OFFICER" -d "action=clear" -d "body=x" -o /dev/null $B/control/logbook
+curl -s -b $A -X POST -d "day=$((TODAY + 1))" -d "designation=COMMUNICATION OFFICER" -d "action=clear" -d "body=x" -o /dev/null $B/control/logbook
 curl -s -b $A $B/archive/export.pdf -o /tmp/record3.pdf
 [ "$(pdftext /tmp/record3.pdf | grep -c "Entry with a photograph.")" -ge 2 ] && ok "the entry's text is in the PDF twice: in its day and in the whole crew log" || bad "blog text missing from the PDF"
 curl -s $B/ | grep -q "PLACEHOLDER" && bad "a placeholder marker reached the station" || ok "placeholder markers never reach the station"
