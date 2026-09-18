@@ -99,7 +99,7 @@ function project([x, y, z]) {
 
 /** The dome as SVG: the front faces of the shell, each filled by how the
  *  light falls on it, over the translucent pearl. */
-function domeSvgInner() {
+function domeSvgInner(aura = false) {
   const tris = dome(4);
   const c = Math.cos(TILT), sn = Math.sin(TILT);
   const view = [0, c, sn];                       // towards the viewer
@@ -143,11 +143,45 @@ function domeSvgInner() {
       </radialGradient>
     </defs>
     <ellipse class="dome-floor" cx="${CX}" cy="${CY + 8}" rx="${(R * 1.3).toFixed(0)}" ry="${(ry * 1.5).toFixed(0)}" fill="url(#dome-floor)"/>
+    ${aura ? auraLayers() : ''}
     <path class="dome-shell" d="${outline}" fill="url(#dome-pearl)"/>
     <g class="dome-faces">${faces.map((f) => `<polygon points="${f.pts}" style="fill:rgba(21,21,23,${f.alpha})"/>`).join('')}</g>
+    ${aura ? `<g class="dome-mesh" transform="translate(${CX - R} ${CY - R}) scale(${(R / 350).toFixed(5)})">${MESH}</g>` : ''}
 `;
 }
-const DOME_SVG = domeSvgInner();
+/* The aura layout's dome, as the mock-up drew it: a flat half-disc filled with
+   colour — sky blue at the crown, lilac, pink, then the orange of the ground,
+   a red glow low in the middle — under the white glass of the shell, with
+   the mock-up's few great-circle lines for a wireframe (the mesh is in the
+   mock-up's 700 × 350 box and is scaled onto the dome). All of it is clipped
+   to the half-disc and drawn only when the page asks for `pods`. */
+const MESH = '<path d="M350 0 L175 47 L47 175 L0 350"/><path d="M350 0 L525 47 L653 175 L700 350"/><path d="M175 47 L350 118 L525 47"/>'
+  + '<path d="M47 175 L210 222 L350 118 L490 222 L653 175"/><path d="M175 47 L210 222 L120 350"/><path d="M525 47 L490 222 L580 350"/>'
+  + '<path d="M210 222 L350 262 L490 222"/><path d="M350 118 L350 262 L350 350"/><path d="M47 175 L120 350 L210 222"/>'
+  + '<path d="M653 175 L580 350 L490 222"/><path d="M120 350 L350 262 L580 350"/>';
+function auraLayers() {
+  const k = R / 350;                                   // the mock-up's box → the dome
+  const half = `M${CX - R} ${CY} A${R} ${R} 0 0 1 ${CX + R} ${CY} Z`;
+  const orb = { cx: CX, cy: CY, r: R + 2 };            // the mock-up's orb, centred on the dome's base and reaching its rim
+  const glow = { cx: CX - R + 430 * k, cy: CY - R + 380 * k, r: 260 * k };
+  return `<defs>
+      <clipPath id="dome-half"><path d="${half}"/></clipPath>
+      <linearGradient id="dome-aura-base" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#abd6f1"/><stop offset=".2" stop-color="#c9a9de"/><stop offset=".35" stop-color="#ef86b8"/><stop offset=".5" stop-color="#ff8d3e"/><stop offset="1" stop-color="#ff8d3e"/></linearGradient>
+      <radialGradient id="dome-aura-sky" cx=".5" cy=".06" r=".32"><stop offset="0" stop-color="#a9dcf6"/><stop offset="1" stop-color="#a9dcf6" stop-opacity="0"/></radialGradient>
+      <radialGradient id="dome-aura-rose" cx=".3" cy=".4" r=".38"><stop offset="0" stop-color="#f27fc6"/><stop offset="1" stop-color="#f27fc6" stop-opacity="0"/></radialGradient>
+      <radialGradient id="dome-aura-gold" cx=".84" cy=".36" r=".3"><stop offset="0" stop-color="#ffc04a"/><stop offset="1" stop-color="#ffc04a" stop-opacity="0"/></radialGradient>
+      <radialGradient id="dome-aura-mars" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ff3a00"/><stop offset=".42" stop-color="#ff3a00" stop-opacity=".8"/><stop offset=".7" stop-color="#ff3a00" stop-opacity="0"/></radialGradient>
+      <filter id="dome-aura-blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="${(34 * k).toFixed(1)}"/></filter>
+    </defs>
+    <g class="dome-aura" clip-path="url(#dome-half)">
+      <circle class="dome-orb" cx="${orb.cx}" cy="${orb.cy}" r="${orb.r.toFixed(1)}" fill="url(#dome-aura-base)"/>
+      <circle class="dome-orb" cx="${orb.cx}" cy="${orb.cy}" r="${orb.r.toFixed(1)}" fill="url(#dome-aura-sky)"/>
+      <circle class="dome-orb" cx="${orb.cx}" cy="${orb.cy}" r="${orb.r.toFixed(1)}" fill="url(#dome-aura-rose)"/>
+      <circle class="dome-orb" cx="${orb.cx}" cy="${orb.cy}" r="${orb.r.toFixed(1)}" fill="url(#dome-aura-gold)"/>
+      <circle class="dome-orb dome-orb-glow" cx="${glow.cx.toFixed(1)}" cy="${glow.cy.toFixed(1)}" r="${glow.r.toFixed(1)}" fill="url(#dome-aura-mars)" filter="url(#dome-aura-blur)"/>
+    </g>`;
+}
+const DOME_SVG = domeSvgInner(false), DOME_SVG_AURA = domeSvgInner(true);
 
 /* ------------------------------------------------------------ the hexagons
    Each is a system inside the habitat: where it stands (in the dome's own
@@ -241,8 +275,26 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
 /* ------------------------------------------------------------- the markup */
 const S = 27;   // half-width of a hexagon in the drawing's units
 
+/* The parts as round keys with line icons (the aura layout, public/aura.css):
+   24 × 24 strokes, drawn in place of the hexagon and its pictogram when the
+   page asks for `pods`. The station's own look keeps the hexagons. */
+const LINE_ICONS = {
+  comms: '<path d="M12 20v-8"/><circle cx="12" cy="10" r="2"/><path d="M7.5 14.5a6.5 6.5 0 0 1 0-9"/><path d="M16.5 5.5a6.5 6.5 0 0 1 0 9"/><path d="M9 20h6"/>',
+  crew: '<circle cx="9" cy="8" r="3"/><path d="M3 19a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2a5 5 0 0 1 5 4.8"/>',
+  power: '<path d="M13 3L5 14h6l-1 7 8-11h-6l1-7z"/>',
+  generator: '<circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l4-8h5l3 8"/><path d="M10 8l3.5 8"/><path d="M9 6h3"/>',
+  science: '<path d="M9 3h6"/><path d="M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/>',
+  recycling: '<path d="M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11z"/><path d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/>',
+  aeroponics: '<path d="M12 21v-9"/><path d="M12 12c0-4-3-6-7-6 0 4 3 6 7 6z"/><path d="M12 14c0-3.5 2.5-5.5 7-5.5 0 3.5-2.5 5.5-7 5.5z"/><path d="M8 21h8"/>',
+  nappod: '<rect x="3" y="8" width="18" height="9" rx="4.5"/><path d="M7 12.5h5"/><path d="M5 17v2"/><path d="M19 17v2"/>',
+};
+// the key's face and its icon, about the origin; the icon box is 24 units, a shade under the key's radius
+const podBody = (id) => `<circle class="dome-pod" r="${S}"/>
+        <g class="dome-ic dome-ic-line" transform="translate(-12 -12)">${LINE_ICONS[id]}</g>`;
+
 /** The hexagon with its pictogram, on its own — for the pop-up's head. */
-function hexMark(h) {
+function hexMark(h, pods = false) {
+  if (pods) return `<svg class="dome-mark" viewBox="${-S - 3} ${-S - 3} ${2 * S + 6} ${2 * S + 6}" aria-hidden="true">${podBody(h.id)}</svg>`;
   const pts = Array.from({ length: 6 }, (_, i) => {
     const a = Math.PI / 3 * i + Math.PI / 6;
     return `${(S * Math.cos(a)).toFixed(1)},${(S * Math.sin(a)).toFixed(1)}`;
@@ -256,7 +308,7 @@ function hexMark(h) {
     </svg>`;
 }
 
-function hexSvg(h, T) {
+function hexSvg(h, T, pods = false) {
   const p = project(h.at);
   const pts = Array.from({ length: 6 }, (_, i) => {
     const a = Math.PI / 3 * i + Math.PI / 6;
@@ -270,12 +322,17 @@ function hexSvg(h, T) {
   const ox = -ic.w * sc / 2, oy = -ic.h * sc / 2;
   // Drawn about its own origin and placed by the transform, which the page
   // script rewrites as the hexagon drifts; without the script it stands here.
+  // The name on a tag beneath the hexagon, carried with it as it floats
+  // (the aura stylesheet shows it and hides the leader labels; the station
+  // stylesheet does the reverse). The tag's width is estimated from the name.
+  const tag = T(h.label), tw = Math.round(tag.length * 6.4 + 20);
   return `<g class="dome-hex" data-hex="${h.id}" data-at="${h.at.join(',')}" transform="translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="dome-${h.id}">
       <title>${esc(T(h.label))}</title>
-      <g class="dome-hex-body">
+      <g class="dome-hex-body">${pods ? podBody(h.id) : `
         <polygon points="${pts}"/>
-        <g class="dome-ic" transform="translate(${ox.toFixed(1)} ${oy.toFixed(1)}) scale(${sc.toFixed(4)}) translate(0 ${ic.h}) scale(0.1 -0.1)"><path d="${ic.d}"/></g>
+        <g class="dome-ic" transform="translate(${ox.toFixed(1)} ${oy.toFixed(1)}) scale(${sc.toFixed(4)}) translate(0 ${ic.h}) scale(0.1 -0.1)"><path d="${ic.d}"/></g>`}
       </g>
+      <g class="dome-tag" aria-hidden="true"><rect x="${(-tw / 2).toFixed(1)}" y="${S + 6}" width="${tw}" height="22" rx="11"/><text x="0" y="${S + 21}" text-anchor="middle">${esc(tag)}</text></g>
     </g>`;
 }
 
@@ -322,10 +379,11 @@ const ABOUT = {
 function habitatDome(ctx, args) {
   const T = ctx.T;
   const f = figures(ctx, args);
+  const pods = !!args.pods;   // round keys with line icons (the aura layout) instead of the hexagons
   const popup = (h) => `
     <dialog class="popup dome-popup" id="dome-${h.id}" aria-labelledby="dome-${h.id}-title">
       <div class="popup-head">
-        ${hexMark(h)}
+        ${hexMark(h, pods)}
         <div><span class="fold-title" id="dome-${h.id}-title">${esc(T(h.label))}</span><span class="fold-sub"><span class="dome-code-chip">${esc(h.code)}</span> · <span data-field="stamp">${esc(f.stamp)}</span></span></div>
         <button type="button" class="popup-close" data-close aria-label="${esc(T('Close'))}">×</button>
       </div>
@@ -339,46 +397,108 @@ function habitatDome(ctx, args) {
   <section class="dome-panel" id="habitat-dome" aria-label="${esc(T('The habitat'))}">
     <header class="dome-head">
       <div class="dome-title"><span class="dpanel-code">CH-00</span><h2>${T('The habitat')}</h2></div>
-      <span class="dome-meta">HABITAT ONE · R75-2 · ${T('press a part of the habitat to see what is happening in it')}</span>
+      <span class="dome-meta">HABITAT ONE · R75-2<span class="dome-meta-hint"> · ${T('press a part of the habitat to see what is happening in it')}</span></span>
     </header>
     <div class="dome-screen">
       <div class="dome-stage">
         <svg class="dome-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(T('The habitat as a dome, with what is inside it'))}">
-          ${DOME_SVG}
+          ${pods ? DOME_SVG_AURA : DOME_SVG}
           <g class="dome-labels">${HEXES.map((h) => labelSvg(h, T)).join('')}</g>
-          <g class="dome-hexes">${HEXES.map((h) => hexSvg(h, T)).join('')}</g>
+          <g class="dome-hexes">${HEXES.map((h) => hexSvg(h, T, pods)).join('')}</g>
         </svg>
       </div>
       <div class="dome-legend" role="group" aria-label="${esc(T('The parts of the habitat'))}">${HEXES.map((h) => `
         <button type="button" class="chip" data-hex="${h.id}"><span class="chip-code">${esc(h.code)}</span>${esc(T(h.label))}</button>`).join('')}</div>
     </div>
+    <p class="dome-caption" aria-hidden="true">${T('press a part of the habitat to see what is happening in it')}</p>
     ${HEXES.map(popup).join('')}
     <script>
     (function () {
       var root = document.getElementById('habitat-dome'); if (!root) return;
       function dialogOf(id) { var d = document.getElementById('dome-' + id); return d && d.tagName === 'DIALOG' ? d : null; }
-      function open(id) {
+      var by = {}, from = {};                            // how each pop-up was opened ('hand' or 'key'board), and from which element
+      function open(id, how, el) {
         var d = dialogOf(id); if (!d || d.open) return;
+        by[id] = how || 'hand'; from[id] = el || null;
         if (typeof d.showModal === 'function') d.showModal(); else d.setAttribute('open', '');
         d.querySelector('.popup-body').scrollTop = 0;
+        place(d, from[id]);
+        lit(id, true);                                   // the key stays lit and still while its pop-up is open
       }
-      // A hexagon, its label or its chip opens the pop-up; hovering one
-      // lifts the other two.
-      // A hexagon, its label or its chip opens the pop-up; hovering one
-      // lifts the other two, and holds the hexagon still under the hand.
+      // With room kept above the picture (the aura layout), the pop-up
+      // stands there, over the page's own ground; otherwise it is centred.
+      function place(d, el) {
+        var screen = root.querySelector('.dome-screen'), room = parseFloat(getComputedStyle(root).getPropertyValue('--pop-room')) || 0;
+        if (!screen || !room) { beside(d, el); return; }
+        var r = screen.getBoundingClientRect(), head = root.querySelector('.dome-head'), hb = head ? head.getBoundingClientRect() : r;
+        var hp = head ? parseFloat(getComputedStyle(head).paddingLeft) || 0 : 0;
+        var w = Math.max(280, hb.width - 2 * hp), hl = hb.left + hp;         // the heading's line, from its first word to its last
+        d.style.width = w + 'px';                                             // the width first: the height follows from it
+        var h = d.getBoundingClientRect().height;
+        // The dome's apex on the screen: the drawing is centred in its box and
+        // scaled by the box's height (the box may be wider than the drawing).
+        var svg = root.querySelector('.dome-svg'), vb = (svg.getAttribute('viewBox') || '').trim().split(/[ ,]+/).map(Number), sr = svg.getBoundingClientRect();
+        var scale = vb.length === 4 && vb[3] ? sr.height / vb[3] : 1;
+        var apexX = sr.left + sr.width / 2, apexY = vb.length === 4 ? sr.top + (CY - R - vb[1]) * scale : r.top;
+        var top = apexY - 10 - h, left = head ? hl : apexX - w / 2;
+        if (top < 8) top = 8;
+        d.style.left = Math.max(8, left) + 'px'; d.style.top = top + 'px';
+      }
+      // On a phone (no room kept above the picture) the pop-up opens beside
+      // the key that was pressed: under it when the screen has room there,
+      // above it otherwise, the width of the screen less a margin; with no
+      // key to go by (the keyboard, a chip already gone) it is centred.
+      function beside(d, el) {
+        d.style.top = ''; d.style.left = ''; d.style.width = ''; d.style.margin = '';
+        if (!el || !el.getBoundingClientRect) return;
+        var k = el.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight, m = 8;
+        if (!k.width && !k.height) return;
+        var w = Math.min(vw - 2 * m, 560); d.style.width = w + 'px'; d.style.margin = '0';
+        var h = d.getBoundingClientRect().height;
+        var top = k.bottom + 10;                                      // under the key
+        if (top + h > vh - m) top = k.top - 10 - h;                   // or above it
+        if (top < m) top = Math.max(m, Math.min(vh - m - h, k.bottom + 10));   // or as near as the screen allows
+        var left = Math.max(m, Math.min(vw - m - w, k.left + k.width / 2 - w / 2));
+        d.style.left = left + 'px'; d.style.top = top + 'px';
+      }
+      // A hexagon, its label or its chip opens the pop-up. One rule for its
+      // colour: a key is lit (and held still) while the hand is over it,
+      // while it has keyboard focus, or while its pop-up is open — and
+      // returns to the picture the moment none of those is true. Being
+      // focused by a click alone does not count (:focus-visible), so the key
+      // never stays lit after the pop-up has gone.
       var held = {};
+      function lit(id, on) { held[id] = !!on; root.querySelectorAll('[data-hex="' + id + '"]').forEach(function (x) { x.classList.toggle('lit', !!on); }); }
+      function is(x, sel) { try { return x.matches(sel); } catch (e) { return sel === ':focus-visible' ? x === document.activeElement : false; } }
+      function settle(id) {
+        var d = dialogOf(id), any = !!(d && d.open);
+        if (!any) root.querySelectorAll('[data-hex="' + id + '"]').forEach(function (x) { if (is(x, ':hover') || is(x, ':focus-visible')) any = true; });
+        lit(id, any);
+      }
       root.querySelectorAll('[data-hex]').forEach(function (n) {
         var id = n.getAttribute('data-hex');
-        n.addEventListener('click', function () { open(id); });
-        n.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(id); } });
-        var on = function () { held[id] = true; root.querySelectorAll('[data-hex="' + id + '"]').forEach(function (x) { x.classList.add('lit'); }); };
-        var off = function () { held[id] = false; root.querySelectorAll('[data-hex="' + id + '"]').forEach(function (x) { x.classList.remove('lit'); }); };
-        n.addEventListener('mouseenter', on); n.addEventListener('mouseleave', off);
-        n.addEventListener('focus', on); n.addEventListener('blur', off);
+        n.addEventListener('click', function () { open(id, 'hand', n); });
+        n.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(id, 'key', n); } });
+        n.addEventListener('mouseenter', function () { lit(id, true); });
+        n.addEventListener('mouseleave', function () { settle(id); });
+        n.addEventListener('focus', function () { if (is(n, ':focus-visible')) lit(id, true); });
+        n.addEventListener('blur', function () { settle(id); });
       });
       root.querySelectorAll('dialog.dome-popup').forEach(function (d) {
+        var id = d.id.replace(/^dome-/, '');
         d.querySelectorAll('[data-close]').forEach(function (b) { b.addEventListener('click', function () { d.close(); }); });
         d.addEventListener('click', function (e) { if (e.target === d) d.close(); });
+        // Closed: the key follows the hand again. The browser hands focus back
+        // to the key; when the pop-up was opened by hand that focus means
+        // nothing to the eye, so it is dropped — a keyboard user keeps it.
+        // (The hover state settles a moment after the top layer clears.)
+        d.addEventListener('close', function () {
+          var drop = function () {
+            if (by[id] !== 'key') { var a = document.activeElement; if (a && a.getAttribute && a.getAttribute('data-hex') === id) a.blur(); }
+            settle(id);
+          };
+          drop(); setTimeout(drop, 0); setTimeout(drop, 150);
+        });
       });
       // The sentences follow the station: every 20 seconds the figures are
       // asked for again and the pop-ups rewritten in place.
@@ -407,8 +527,15 @@ function habitatDome(ctx, args) {
       var CX = ${CX}, CY = ${CY}, R = ${R}, TILT = ${TILT}, W = ${W}, H = ${H}, S = ${S};
       var cs = Math.cos(TILT), sn = Math.sin(TILT);
       function project(x, y, z) { return { x: CX + x * R, y: CY - (z * cs - y * sn) * R, d: y * cs + z * sn }; }
-      var LIM = 0.84, ZMIN = 0.14;
+      // The aura layout (public/aura.css, --dome-crop) draws the dome flat, as
+      // the mock-up did: the keys then move in the half-disc itself, at no
+      // depth, and keep a little further from the rim and the base so that a
+      // key — and its name, where the names are shown — stays inside the
+      // glass, whole, on a phone as on a wide screen.
+      var tagged = !!parseFloat(getComputedStyle(root).getPropertyValue('--dome-crop'));
+      var LIM = tagged ? 0.78 : 0.84, ZMIN = tagged ? 0.2 : 0.14;
       function inside(x, y, z) {
+        if (tagged) y = 0;
         var r = Math.sqrt(x * x + y * y + z * z);
         if (r > LIM) { x *= LIM / r; y *= LIM / r; z *= LIM / r; }
         if (z < ZMIN) z = ZMIN;
@@ -425,6 +552,7 @@ function habitatDome(ctx, args) {
         // a little towards the rim so they spread across it.
         var z = ZMIN + Math.pow(Math.random(), 0.72) * (LIM * 0.94 - ZMIN);
         var rr = Math.sqrt(Math.max(0, LIM * LIM * 0.94 - z * z)) * Math.pow(Math.random(), 0.65);
+        if (tagged) return [rr * (Math.random() < 0.5 ? -1 : 1), 0, z];   // flat: left or right of the middle
         var a = Math.random() * Math.PI * 2;
         return [rr * Math.cos(a), rr * Math.sin(a), z];
       }
@@ -447,6 +575,7 @@ function habitatDome(ctx, args) {
       var hexes = null;
       hexes = [].map.call(root.querySelectorAll('.dome-hex'), function (n, i) {
         var at = n.getAttribute('data-at').split(',').map(Number);
+        if (tagged) at[1] = 0;
         var lab = root.querySelector('.dome-label[data-hex="' + n.getAttribute('data-hex') + '"]');
         return { n: n, pos: at.slice(), vel: [0, 0, 0], to: null, until: 14 + Math.random() * 12, lab: lab,
           lead: lab && lab.querySelector('.dome-lead'), dot: lab && lab.querySelector('.dome-lead-dot'),
@@ -457,6 +586,16 @@ function habitatDome(ctx, args) {
       hexes.forEach(function (h) { h.to = somewhere(h); });
       var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       var minGap = 52, top = 0.10 * H, bottom = 0.92 * H, last = null, clock = 0;
+      function discs(h, p) {
+        var sc = h.s || 1;
+        if (h.tw == null) { var tr = h.n.querySelector('.dome-tag rect'); h.tw = tr && getComputedStyle(tr.parentNode).display !== 'none' ? +tr.getAttribute('width') : 0; }   // no room kept for a name that is not shown (phones)
+        var out = [{ x: p.x, y: p.y, r: S * sc + (h.tw ? 4 : 10) }];                                                                   // without a name beneath, a little more air around the disc
+        if (h.tw) {
+          var th = 22 * sc, ty = p.y + (S + 8) * sc + th / 2, tw = h.tw * sc, m = Math.max(1, Math.ceil((tw - th) / 16));
+          for (var i = 0; i <= m; i++) out.push({ x: p.x - tw / 2 + th / 2 + (tw - th) * (i / m), y: ty, r: th / 2 + 3 });
+        }
+        return out;
+      }
       function placeLabel(h) {
         var right = h.side === 'right';
         var tx = right ? 0.97 * W : 0.03 * W;
@@ -479,17 +618,45 @@ function habitatDome(ctx, args) {
           h.until -= dt;
           if (dist < 0.05 || h.until <= 0) { h.to = somewhere(h); h.until = 18 + Math.random() * 14; }
           for (var k = 0; k < 3; k++) h.vel[k] += (d[k] * 0.30 - h.vel[k] * 1.1) * dt;
+          if (tagged) h.vel[1] = 0;
         });
         // Two hexagons that would sit on each other on the screen ease apart.
-        for (var i = 0; i < hexes.length; i++) for (var j = i + 1; j < hexes.length; j++) {
-          var a = hexes[i], b = hexes[j];
-          var pa = project(a.pos[0], a.pos[1], a.pos[2]), pb = project(b.pos[0], b.pos[1], b.pos[2]);
-          var dx = pb.x - pa.x, dy = pb.y - pa.y, dd = Math.sqrt(dx * dx + dy * dy) || 1, room = S * 2.6;
-          if (dd < room) {
-            var push = (room - dd) / room * 0.35 * dt, ux = dx / dd, uy = dy / dd;
-            // Screen x is dome x; screen y is mostly dome z (up), so push there.
-            a.vel[0] -= ux * push; a.vel[2] += uy * push;
-            b.vel[0] += ux * push; b.vel[2] -= uy * push;
+        if (!tagged) {
+          for (var i = 0; i < hexes.length; i++) for (var j = i + 1; j < hexes.length; j++) {
+            var a = hexes[i], b = hexes[j];
+            var pa = project(a.pos[0], a.pos[1], a.pos[2]), pb = project(b.pos[0], b.pos[1], b.pos[2]);
+            var dx = pb.x - pa.x, dy = pb.y - pa.y, dd = Math.sqrt(dx * dx + dy * dy) || 1, room = S * 2.6;
+            if (dd < room) {
+              var push = (room - dd) / room * 0.35 * dt, ux = dx / dd, uy = dy / dd;
+              // Screen x is dome x; screen y is mostly dome z (up), so push there.
+              a.vel[0] -= ux * push; a.vel[2] += uy * push;
+              b.vel[0] += ux * push; b.vel[2] -= uy * push;
+            }
+          }
+        } else {
+          // With names on tags (the aura layout), as the mock-up did it: every
+          // key is a handful of discs — one for the icon, a row of small ones
+          // along its name — and discs of different keys that come close push
+          // apart, hard when they touch, gently before. Then whatever overlap
+          // is still left is undone outright, so two keys never sit on each
+          // other; a key under the hand stays put and the other gives way.
+          for (var i = 0; i < hexes.length; i++) for (var j = i + 1; j < hexes.length; j++) {
+            var a = hexes[i], b = hexes[j], pa = project(a.pos[0], a.pos[1], a.pos[2]), pb = project(b.pos[0], b.pos[1], b.pos[2]);
+            var da = discs(a, pa), db = discs(b, pb), fx = 0, fy = 0, sx = 0, sy = 0, sn = 0;
+            for (var u = 0; u < da.length; u++) for (var v = 0; v < db.length; v++) {
+              var dx = db[v].x - da[u].x, dy = db[v].y - da[u].y, dd = Math.sqrt(dx * dx + dy * dy) || 0.01, touch = da[u].r + db[v].r, reach = touch + 12;
+              if (dd >= reach) continue;
+              var push = (reach - dd) / reach * (dd < touch ? 2.4 : 0.5);   // units/s² on the screen's axes
+              fx -= dx / dd * push; fy -= dy / dd * push;
+              if (dd < touch) { sx += dx / dd * (touch - dd); sy += dy / dd * (touch - dd); sn++; }
+            }
+            if (fx || fy) { a.vel[0] += fx * dt; a.vel[2] -= fy * dt; b.vel[0] -= fx * dt; b.vel[2] += fy * dt; }
+            if (sn) {                                                        // the overlap that remains, undone now
+              var ax = sx / sn / R, ay = sy / sn / R, ha = held[a.n.getAttribute('data-hex')], hb = held[b.n.getAttribute('data-hex')];
+              var wa = ha && !hb ? 0 : hb && !ha ? 1 : 0.5, wb = 1 - wa;
+              a.pos = inside(a.pos[0] - ax * wa, a.pos[1], a.pos[2] + ay * wa);
+              b.pos = inside(b.pos[0] + ax * wb, b.pos[1], b.pos[2] - ay * wb);
+            }
           }
         }
         hexes.forEach(function (h) {
@@ -534,7 +701,11 @@ function habitatDome(ctx, args) {
       // On a phone the drawing is cropped to the dome itself; the labels
       // are the chips beneath it.
       var svg = root.querySelector('.dome-svg'), full = svg.getAttribute('viewBox');
-      function fit() { svg.setAttribute('viewBox', window.innerWidth <= 760 ? '${(CX - R - 30)} ${Math.round(CY - R * Math.cos(TILT)) - 40} ${(2 * R + 60)} ${Math.round(R * Math.cos(TILT) + R * 0.5) + 60}' : full); }
+      // The aura layout (public/aura.css) names the parts on tags under the
+      // hexagons and keeps no labels at the sides, so it shows the dome
+      // alone, close up; it says so through --dome-crop on the panel.
+      var aura = function () { return !!parseFloat(getComputedStyle(root).getPropertyValue('--dome-crop')); };
+      function fit() { svg.setAttribute('viewBox', aura() ? '${CX - R - 10} ${CY - R - 10} ${2 * R + 20} ${R + 10}' : window.innerWidth <= 760 ? '${(CX - R - 30)} ${Math.round(CY - R * Math.cos(TILT)) - 40} ${(2 * R + 60)} ${Math.round(R * Math.cos(TILT) + R * 0.5) + 60}' : full); }
       fit(); window.addEventListener('resize', fit);
     })();
     </script>

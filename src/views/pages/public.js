@@ -308,9 +308,13 @@ function wholeMission(ctx, days, { openToday = true } = {}) {
  * task as its time comes, and refreshes the readings on the node's cycle.
  * Under prefers-reduced-motion it stands still.
  */
-function ticker(ctx, { today }) {
+function ticker(ctx, { today, links = false } = {}) {
   const m = ctx.mission, T = ctx.T;
   const pre = m.phase === 'PRE_LAUNCH', over = m.phase === 'COMPLETE';
+  // On the inner pages (layout.js draws the ticker there too) the day's
+  // schedule is read here, and the menu's rows are links to the landing
+  // page's pop-ups, which open from the hash.
+  if (today === undefined) today = m.phase === 'ACTIVE' ? data.day(m.clampedDay) : null;
   const tasks = (today && today.tasks ? today.tasks : []).map((t) => ({ time: t.time, label: t.label, detail: t.detail || '' }));
   const hm = m.venueTime.slice(0, 5);
   let nowTask = null, nextTask = null;
@@ -327,13 +331,46 @@ function ticker(ctx, { today }) {
   cells.push(`${T('Habitat:')} <b id="tk-hab">${T('awaiting reading')}</b>`);
   cells.push(`${T('One-way signal')} <b>${orbital.formatLightTime(ctx.geo.lightSeconds)}</b>`);
   const line = cells.map((c) => `<span class="tk-cell">${c}</span>`).join('<span class="tk-sep">·</span>');
+  /* The three-lines menu at the ticker's left end drops the reading matter
+     — About, What this is, Who we are — as a short list; a row opens the
+     same pop-up the About buttons open (info.js binds .fold-btn[data-popup]),
+     so the texts live in one place. The theme and language switches sit at
+     the ticker's right end. */
+  const menu = `
+    <button type="button" class="tk-menu" id="tk-menu" aria-expanded="false" aria-controls="tk-dropdown" aria-label="${esc(T('About, What this is, Who we are'))}"><span class="bars" aria-hidden="true"><i></i><i></i><i></i></span></button>
+    <div class="tk-dropdown" id="tk-dropdown" hidden>
+      ${[['about-project', 'About', 'The habitat, the distance, the archive'], ['what', 'What this is', 'How the station behaves, in plain terms'], ['who-we-are', 'Who we are', 'Crew, company, production credits']]
+        .map(([id, title, sub]) => links
+          ? `<a class="tk-row" href="/#${id}"><span class="fold-title">${esc(T(title))}</span><span class="fold-sub">${esc(T(sub))}</span></a>`
+          : `<button type="button" class="fold-btn tk-row" data-popup="${id}" aria-haspopup="dialog" aria-controls="${id}"><span class="fold-title">${esc(T(title))}</span><span class="fold-sub">${esc(T(sub))}</span></button>`).join('')}
+    </div>`;
   return `
   <div class="ticker" role="marquee" aria-label="${esc(T('What is happening in the habitat'))}"
        data-tz="${esc(m.timezone)}" data-tasks="${esc(JSON.stringify(tasks))}"${over ? ' data-over="1"' : ''}
        data-phase="${esc(m.phase)}" data-opens="${esc(m.opensAt)}" data-epoch="${esc(String(require('../../lib/content').resetEpoch() || ''))}">
+    ${menu}
     <div class="tk-clock"><span class="tk-clock-label">${T('HABITAT TIME')}</span> <b id="tk-clock">${esc(m.venueTime)}</b></div>
     <div class="tk-window"><div class="tk-track" id="tk-track"><div class="tk-line">${line}</div><div class="tk-line" aria-hidden="true">${line}</div></div></div>
+    <div class="tk-right">${L.statusStrip(ctx)}</div>
   </div>
+  <script>
+  (function () {
+    var b = document.getElementById('tk-menu'), d = document.getElementById('tk-dropdown');
+    if (!b || !d) return;
+    function set(open) { d.hidden = !open; b.setAttribute('aria-expanded', open ? 'true' : 'false'); }
+    b.addEventListener('click', function () { set(d.hidden); });
+    d.querySelectorAll('.tk-row').forEach(function (r) { r.addEventListener('click', function () { set(false); }); });
+    document.addEventListener('click', function (e) { if (!d.hidden && !d.contains(e.target) && e.target !== b && !b.contains(e.target)) set(false); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !d.hidden) { set(false); b.focus(); } });
+  })();
+  (function () {
+    // the language drop-down (layout.js draws it in the status strip): a press elsewhere, or Escape, closes it again
+    var menus = [].slice.call(document.querySelectorAll('details.lang-menu'));
+    if (!menus.length) return;
+    document.addEventListener('click', function (e) { menus.forEach(function (m) { if (m.open && !m.contains(e.target)) m.removeAttribute('open'); }); });
+    document.addEventListener('keydown', function (e) { if (e.key !== 'Escape') return; menus.forEach(function (m) { if (m.open) { m.removeAttribute('open'); var s = m.querySelector('summary'); if (s) s.focus(); } }); });
+  })();
+  </script>
   <script>
   (function () {
     var el = document.querySelector('.ticker');
@@ -441,7 +478,10 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
   /* The masthead: the wordmark, one line under it, the run, and the
      station's readings as a row of small pills on the right — shared with
      every other public page so they read as one station. */
-  const hero = ticker(ctx, { today }) + L.masthead(ctx, { home: true });
+  const hero = ticker(ctx, { today });
+  const lead = T('MARS is a durational performance. Three officers live sealed inside the habitat for the thirteen days of the run; visitors to the exhibition can see the habitat from outside. What they cannot do is walk in and talk to the people inside it. Here a message has to travel. You watch it go. You wait.');
+  const cta = `<a class="btn primary masthead-btn" href="#write">${T('Write to the crew')} <span aria-hidden="true">↓</span></a>`;
+  const masthead = L.masthead(ctx, { home: true, status: true, lead, cta });   // the strip is drawn in the ticker on wide screens; aura.css shows this one on phones
 
   /* The days of the run, spelled down the right-hand margin. */
   const dayRail = `<aside class="day-rail" aria-hidden="true">
@@ -455,8 +495,11 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
 
   const body = `
   ${aboutSection(ctx, { crew })}
-  ${habitatDome(ctx, { today, crew, recent, power, counts, crewFigures })}
-  <div class="portal-grid" id="write">
+  <div class="hero-grid">
+    ${masthead}
+    ${habitatDome(ctx, { today, crew, recent, power, counts, crewFigures, pods: true })}
+  </div>
+  <div class="portal-grid" id="write" data-stop>
     <aside class="portal-letters" aria-hidden="true">${'MARSPLATZ'.split('').map((c) => `<span>${c}</span>`).join('')}</aside>
     <div class="portal-main">
       <h2 class="sr-only">${T('Communication Portal')}</h2>
@@ -464,6 +507,7 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
            row of vents, then the operator's callsign and the channel. While
            a message is crossing, the form gives way to the dial. -->
       <section class="device composer-device${inFlight ? ' sending' : ''}" aria-label="${esc(T('Composer'))}">
+        <h2 class="dev-title">${T('Write to the crew')}</h2>
         <span class="dev-led" aria-hidden="true"></span>
         <span class="dev-grip" aria-hidden="true"></span>
         <span class="dev-knob" aria-hidden="true"></span>
@@ -512,7 +556,8 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
   `;
   return L.page({
     title: 'Mission', ctx, body, hero, hideNav: true, hideRail: true, bodyClass: 'landing',
-    current: '/', scripts: ['/composer.js', '/board.js', '/habitat.js', '/hardware.js'].concat(cloud ? ['/cloud.js'] : []),
+    current: '/', scripts: ['/composer.js', '/board.js', '/habitat.js', '/hardware.js', '/section-scroll.js', '/fold.js'].concat(cloud ? ['/cloud.js'] : []),
+    styles: ['/aura.css'],
   });
 }
 
@@ -789,15 +834,20 @@ const kpi = ({ label, value, unit, sub, state }) => `
   </div>`;
 
 /** A dashboard panel: code, title and meta in the head, the content beneath. */
-const dpanel = ({ id, code, title, meta = '', span = 4, cls = '', href = null, live = null }, inner) => `
-  <section class="dpanel span-${span} ${cls}"${id ? ` id="${id}"` : ''}>
+/* The button that folds a section away and opens it again (public/fold.js):
+   the same on every heading that has one, its label says what a press does. */
+const foldToggle = (T, key, controls) => `<button type="button" class="fold-toggle" data-fold="${key}" aria-expanded="true"${controls ? ` aria-controls="${controls}"` : ''}><span class="fold-when-open">${T('Collapse')}</span><span class="fold-when-shut">${T('Expand')}</span><i class="fold-chev" aria-hidden="true"></i></button>`;
+
+const dpanel = ({ id, code, title, meta = '', span = 4, cls = '', href = null, live = null, stop = false, fold = null }, inner) => `
+  <section class="dpanel span-${span} ${cls}"${id ? ` id="${id}"` : ''}${stop ? ' data-stop' : ''}>
     <header class="dpanel-head">
       <div class="dpanel-title"><span class="dpanel-code">${esc(code)}</span><h3>${
         href ? `<a href="${href}">${esc(title)} <span class="dpanel-arrow" aria-hidden="true">→</span></a>` : esc(title)}</h3>${
-        live ? `<span class="cloud-live" title="${esc(live)}"><i></i>LIVE</span>` : ''}</div>
+        live ? `<span class="cloud-live" title="${esc(live)}"><i></i>LIVE</span>` : ''}${
+        fold ? foldToggle(fold, id, `${id}-body`) : ''}</div>
       ${meta ? `<span class="dpanel-meta">${meta}</span>` : ''}
     </header>
-    <div class="dpanel-body">${inner}</div>
+    <div class="dpanel-body"${fold ? ` id="${id}-body"` : ''}>${inner}</div>
   </section>`;
 
 /**
@@ -945,7 +995,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
   const pwrOf = power.days[String(pwrDay)] || {};
   const powerToday = power.categories.map((c) => ({ ...c, kwh: pwrOf[c.key] ?? null }));
 
-  const habitat = dpanel({ id: 'habitat', code: 'CH-01', title: T('Habitat'), meta: T('Sensor node · measured live · figures and stores counted by the crew'), span: 12, cls: 'compact',
+  const habitat = dpanel({ id: 'habitat', code: 'CH-01', title: T('Habitat'), meta: T('Sensor node · measured live · figures and stores counted by the crew'), span: 12, cls: 'compact', stop: true, fold: T,
     live: T('The readings refresh by themselves as the sensors report') }, `
     <!-- The Sensor-11 dashboard. The station server polls the external feed and
          stores every reading in its own database; /public/habitat.js draws these
@@ -1011,7 +1061,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
   const hardwarePanel = hardware && hardware.configured && (hardware.sensors || []).length
     ? dpanel({ id: 'hardware', code: 'CH-02', title: T('Habitat hardware'), live: T('The readings refresh by themselves as the sensors report'),
         meta: `Home Assistant · ${hardware.sensors.length} ${T(hardware.sensors.length === 1 ? 'device' : 'devices')} · ${T('read by the station every')} ${hardware.pollMs >= 120000 ? `${Math.round(hardware.pollMs / 60000)} min` : `${Math.round(hardware.pollMs / 1000)} s`} · ${T('one point per hour')} · ${T('one chart per quantity')} · ${T('nothing leaves the venue')}`,
-        span: 12, cls: 'compact' },
+        span: 12, cls: 'compact', stop: true, fold: T },
       `<div class="hbt hw"><div id="hw-live" data-poll="${hardware.pollMs}" data-version="${esc(require('../../lib/home-assistant').version(hardware))}">${hardwareInner(hardware, T)}</div></div>`)
     : '';
 
@@ -1019,7 +1069,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
      crew's counts. habitat.js draws them from the spec above plus its own
      Sensor-11 rows, and redraws when the period selector changes. */
   const trends = dpanel({ id: 'trends', code: 'CH-40', title: T('Trends'),
-    span: 12 }, `
+    span: 12, stop: true, fold: T }, `
     <div class="trends" id="hbt-trends" data-date="${esc(m.today)}" data-day-start="${missionLib.venueMidnightUtc(m.today, m.timezone)}" data-axis-start="${esc(axis.start)}" data-axis-end="${esc(axis.end)}" data-axis-run="${axis.run ? '1' : '0'}" data-spec="${esc(JSON.stringify(trendSpec))}">
       <div id="hbt-tcharts"></div>
     </div>`);
@@ -1081,7 +1131,11 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
       meta: T('Condition as reported · never as numbers'), span: 4, cls: 'h-3 scroll' },
     `<div class="officers">${crew.map((c) => {
       const t = moodLib.translate(c.mood);
+      // The face mission control filed — the nearest of its five, calm to
+      // angry — stands beside the name (a blank face while nothing is filed).
+      const face = c.mood ? moodLib.FACES.reduce((best, f) => (Math.abs(f.v - c.mood.calm_tense) < Math.abs(best.v - c.mood.calm_tense) ? f : best), moodLib.FACES[0]) : null;
       return `<div class="officer">
+        <span class="officer-face band-${face ? moodLib.FACES.indexOf(face) : 'none'}" aria-hidden="true">${face ? moodLib.faceSvg(face) : moodLib.faceSvg({ mouth: 'M11 20 h10', eyes: 'dot' })}</span>
         <div class="officer-id">
           <b>${esc(c.designation)}</b>
           <span class="officer-role">${esc(c.role)}</span>
@@ -1148,9 +1202,9 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
 
   return `
   <section class="dash" id="mission">
-    <header class="dash-head">
+    <header class="dash-head" data-stop>
       <div>
-        <h2 class="bigsec">${T('Mission dashboard')}</h2>
+        <h2 class="bigsec">${T('Mission dashboard')} ${foldToggle(T, 'dash')}</h2>
         <p class="dash-sub">${esc(m.name)} · ${esc(m.runLabel)} · ${dayWord(T, m.totalDays)} · ${esc(m.timezone)}</p>
       </div>
       <div class="dash-clock">
@@ -1175,7 +1229,11 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
     <div class="dash-grid">
       ${schedule}${galley}${crewPanel}
       ${habitat}${hardwarePanel}${trends}
-      ${blogScience}${blogHealth}${blogCommander}
+      <div class="dash-subhead span-12" data-stop>
+        <div><h2 class="bigsec">${T('Daily Blog')} ${foldToggle(T, 'blogs')}</h2><p class="dash-sub">${T('Commander · Health · Science')}</p></div>
+        <span class="dash-sub">SOL ${day3} · ${esc(shortDay(blogDate))}</span>
+      </div>
+      ${blogCommander}${blogHealth}${blogScience}
     </div>
   </section>`;
 }
@@ -1325,5 +1383,5 @@ function single(ctx, { message }) {
 
 module.exports = {
   mission, complete, inventoryGauges, boardCards, boardVersion, archive, single, messageCard,
-  hardwareInner,
+  hardwareInner, ticker,
 };

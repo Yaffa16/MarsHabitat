@@ -104,12 +104,20 @@ function rail(ctx, landing = false, T = ctx.T || same) {
 /* The masthead's right-hand side. The station's readings — link state, the
    T-clock, the Earth–Mars gap, the visitor's callsign — used to sit here as
    a row of pills; the rail at the head of the dashboard carries what is
-   needed, so only the theme switch and the language switch remain. */
+   needed, so only the theme switch and the language switch remain.
+   The language switch is a drop-down: the current language shows on top;
+   a press lists the others beneath it, one under the other (public/aura.css
+   draws it; the ticker's script closes it on a press elsewhere). Inside is
+   the same form the rail carries, so switching works as it always has. */
 function statusStrip(ctx) {
   const T = ctx.T || same;
+  const cur = ctx.lang || 'en';
   return `<div class="status" role="group" aria-label="${esc(T('Display'))}">
     ${themeSwitch(ctx, 'theme', T)}
-    ${langSwitch(ctx, 'lang', T)}
+    <details class="lang-menu">
+      <summary class="lang-cur" title="${esc(T('Language'))}"><span lang="${cur}">${cur.toUpperCase()}</span><i class="lang-chev" aria-hidden="true"></i></summary>
+      ${langSwitch(ctx, 'lang', T)}
+    </details>
   </div>`;
 }
 
@@ -125,7 +133,7 @@ function nav(current, T = same) {
  * On the landing page the wordmark is the title; on the inner pages it is
  * the way home. The inner pages then carry the same pill row as a nav.
  */
-function masthead(ctx, { home = false } = {}) {
+function masthead(ctx, { home = false, status = true, lead = '', cta = '' } = {}) {
   const T = ctx.T || same;
   const m = ctx.mission;
   const pre = m.phase === 'PRE_LAUNCH';
@@ -138,9 +146,10 @@ function masthead(ctx, { home = false } = {}) {
       <p class="tagline">${T('Communication Station')} · <b>ZKM | Hertzlab</b></p>
       <p class="run-dates"><b>${esc(m.runLabel)}</b> · ${m.totalDays} ${T('sols in the habitat')}${pre
         ? ` · ${T('opens in')} ${n} ${T(n === 1 ? 'day' : 'days')}`
-        : m.phase === 'ACTIVE' ? ` · SOL ${String(m.clampedDay).padStart(2, '0')} ${T('of')} ${m.totalDays}` : ''}</p>
+        : m.phase === 'ACTIVE' ? ` · SOL ${String(m.clampedDay).padStart(2, '0')} ${T('of')} ${m.totalDays}` : ''}</p>${
+        lead ? `\n      <p class="lead">${lead}</p>` : ''}${cta ? `\n      <p class="masthead-cta">${cta}</p>` : ''}
     </div>
-    ${statusStrip(ctx)}
+    ${status ? statusStrip(ctx) : ''}
   </header>`;
 }
 
@@ -151,8 +160,9 @@ function pageNav(current, T = same) {
   ).join('')}</nav>`;
 }
 
-function foot(ctx, T = ctx.T || same) {
-  return `<div class="foot">
+function foot(ctx, T = ctx.T || same, landing = false) {
+  return `<div class="foot">${landing ? `
+    <div class="foot-brand-block"><span class="foot-wordmark">MARS<span class="bang">!</span>platz</span><span class="foot-tag">${T('Communication Station')} · ZKM | Hertzlab</span></div>` : ''}
     <div class="foot-links">
       <a href="/#write">${T('Write')}</a><a href="/#exchanges">${T('Messages')}</a>
       <a href="/#mission">${T('Daily mission')}</a><a href="/#habitat">${T('Habitat')}</a>
@@ -181,13 +191,28 @@ function clientTable(lang) {
  * pages whose links live in the footer instead (the landing page, per the
  * MARS!PLATZ layout).
  */
-function page({ title, ctx, body, current, bodyClass = '', head = '', scripts = [],
+function page({ title, ctx, body, current, bodyClass = '', head = '', scripts = [], styles = [],
                 hero = '', hideNav = false, hideRail = false }) {
   const control = bodyClass.includes('control') || bodyClass.includes('habitat');
   // Mission control and the archive stay English whatever the cookie says.
   const translate = !control && !String(current || '').startsWith('/archive');
   const T = translate ? (ctx.T || same) : same;
   const lang = translate ? (ctx.lang || 'en') : 'en';
+  // Every public page wears the same dress (public/aura.css) and the same
+  // chrome: the pages drawn for the older rail-and-nav layout take the inner
+  // pages' hero — the wordmark, the switches and the pill nav — instead.
+  const aura = !control;
+  if (aura && !styles.includes('/aura.css')) styles = ['/aura.css'].concat(styles);
+  if (aura && !bodyClass.includes('landing')) {
+    bodyClass = `${bodyClass} landing inner`.trim();
+    hideRail = true; hideNav = true;
+  }
+  if (aura && bodyClass.includes('inner')) {
+    // The inner pages' chrome is the landing page's: the ticker (its menu
+    // rows link to the landing page's pop-ups) and the wordmark as the way
+    // home. The foot carries the links between the pages.
+    hero = require('./pages/public').ticker(ctx, { links: true }) + masthead(ctx);
+  }
   return `<!doctype html>
 <html lang="${lang}" data-theme="${ctx.theme === 'dark' ? 'dark' : 'light'}"><head>
 <meta charset="utf-8">
@@ -195,7 +220,7 @@ function page({ title, ctx, body, current, bodyClass = '', head = '', scripts = 
 <meta name="color-scheme" content="light dark">
 <title>${esc(T(title))} — ${T('Mars Communication Station')}</title>
 <meta name="description" content="${esc(T('A live communication interface between an Earth-based audience and the crew of the MARS habitat.'))}">
-<link rel="stylesheet" href="/station.css?v=${ASSET_V}">
+<link rel="stylesheet" href="/station.css?v=${ASSET_V}">${styles.map((s) => `\n<link rel="stylesheet" href="${s}?v=${ASSET_V}">`).join('')}
 ${translate ? clientTable(lang) : ''}
 ${head}
 </head><body class="${bodyClass}">
@@ -203,7 +228,7 @@ ${hero}
 ${hideRail ? '' : rail(ctx, bodyClass.includes('landing'), T)}
 ${control || hideNav ? '' : nav(current, T)}
 <main class="shell">${body}</main>
-${control ? '' : foot(ctx, T)}
+${control ? '' : foot(ctx, T, aura)}
 ${scripts.map((s) => `<script src="${s}?v=${ASSET_V}" defer></script>`).join('')}
 </body></html>`;
 }

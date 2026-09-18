@@ -35,11 +35,11 @@ const CFG = {
   password: (process.env.CLOUD_PASSWORD || '').trim(),
   folder: (process.env.CLOUD_FOLDER || '').trim().replace(/^\/+|\/+$/g, ''),
   // The frequency: how often the folder is checked for new images, in
-  // seconds. One number in .env — CLOUD_CHECK_SECONDS, 20 by default — that
-  // sets both the station's read of the folder (one small PROPFIND) and how
-  // often an open /media asks the station for the grid, so a picture put in
-  // the folder is on every open page within about that long.
-  checkSeconds: Math.max(5, Number(process.env.CLOUD_CHECK_SECONDS || (Number(process.env.CLOUD_POLL_MS) ? Number(process.env.CLOUD_POLL_MS) / 1000 : 20))),
+  // seconds. One number in .env — CLOUD_CHECK_SECONDS, 1200 (twenty minutes)
+  // by default — that sets both the station's read of the folder (one small
+  // PROPFIND) and how often an open /media asks the station for the grid, so
+  // a picture put in the folder is on every open page within about that long.
+  checkSeconds: Math.max(5, Number(process.env.CLOUD_CHECK_SECONDS || (Number(process.env.CLOUD_POLL_MS) ? Number(process.env.CLOUD_POLL_MS) / 1000 : 1200))),
   timeoutMs: Number(process.env.CLOUD_TIMEOUT_MS || 20000),
   maxBytes: Number(process.env.CLOUD_MAX_MB || 60) * 1048576,
   maxFiles: Number(process.env.CLOUD_MAX_FILES || 500),

@@ -14,6 +14,9 @@ const plural = (T, n, one, many) => `${n} ${T(n === 1 ? one : many)}`;
 
 /** One item as a tile: its preview, nothing written under it. The caption
  *  (never the filename) is the tooltip and the alt text. */
+/** The cadence as people say it: seconds under two minutes, minutes from there. */
+const every = (sec) => (sec >= 120 && sec % 60 === 0 ? `${sec / 60} min` : `${sec} s`);
+
 function tile(m, { linkTo = media.pageUrl(m) } = {}) {
   const thumb = media.thumbUrl(m);
   const alt = esc(m.caption || `${m.kind}, day ${dd(m.mission_day)}`);
@@ -116,7 +119,7 @@ function cloudGridInner(T, cloud) {
   return `
     <div class="log-day-head">
       <span class="cs">${esc(T(cloud.title))}</span>
-      <span>${n ? plural(T, n, 'photograph', 'photographs') : T('no photographs yet')} · ${T('checked every')} ${s.checkSeconds} s</span>
+      <span>${n ? plural(T, n, 'photograph', 'photographs') : T('no photographs yet')} · ${T('checked every')} ${every(s.checkSeconds)}</span>
       ${s.lastError && !n ? `<span class="count">${T('the cloud could not be reached')}</span>` : ''}
       <span class="cloud-live" title="${esc(T('Updates by itself as pictures arrive'))}"><i></i>${T('LIVE')}</span>
     </div>
@@ -131,7 +134,7 @@ function cloudLatestInner(T, cloud) {
   const items = cloud.items.slice(0, cloud.limit || 6), s = cloud.snapshot;
   return `<div class="cloud-latest-head">
       <span class="lbl">${T('Live images from the Habitat')}</span>
-      <span class="sub">${T('checked every')} ${s.checkSeconds} s${s.lastError && !items.length ? ` · ${T('the cloud could not be reached')}` : ''} <span class="cloud-live" title="${esc(T('Updates by itself as pictures arrive'))}"><i></i>${T('LIVE')}</span></span>
+      <span class="sub">${T('checked every')} ${every(s.checkSeconds)}${s.lastError && !items.length ? ` · ${T('the cloud could not be reached')}` : ''} <span class="cloud-live" title="${esc(T('Updates by itself as pictures arrive'))}"><i></i>${T('LIVE')}</span></span>
     </div>
     ${items.length ? `<div class="mstrip cloud-strip">${items.map((x) => `<a class="mtile kind-image" href="${x.url}" data-id="${x.id}" title="${esc(x.name)}" target="_blank" rel="noopener">
       <span class="mtile-visual"><img src="${x.thumb}" alt="${esc(x.name)}" loading="lazy" decoding="async"></span></a>`).join('')}</div>`

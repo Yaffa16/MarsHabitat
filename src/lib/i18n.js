@@ -427,6 +427,17 @@ const D = {
   'No commander blog yet for': ['Noch kein Commander-Blog für', 'Pas encore de blog du commandement pour'],
   'No schedule filed yet': ['Noch kein Plan erfasst', 'Aucun programme saisi pour l’instant'],
 
+  // ---- the landing page's aura layout: the composer's heading, the blogs' heading, the menu, the lead
+  'Write to the crew': ['Schreib der Crew', 'Écrivez à l’équipage'],
+  'Daily Blog': ['Tagesblog', 'Blog du jour'],
+  'Collapse': ['Einklappen', 'Replier'],
+  'Expand': ['Ausklappen', 'Déplier'],
+  'Commander · Health · Science': ['Commander · Gesundheit · Wissenschaft', 'Commandement · Santé · Science'],
+  'About, What this is, Who we are': ['Über, Worum es geht, Wer wir sind', 'À propos, De quoi il s’agit, Qui nous sommes'],
+  'MARS is a durational performance. Three officers live sealed inside the habitat for the thirteen days of the run; visitors to the exhibition can see the habitat from outside. What they cannot do is walk in and talk to the people inside it. Here a message has to travel. You watch it go. You wait.':
+    ['MARS ist eine Durational Performance. Drei Offiziere leben die dreizehn Tage des Laufs abgeschlossen im Habitat; die Besucher der Ausstellung können das Habitat von außen sehen. Was sie nicht können, ist hineingehen und mit den Menschen darin sprechen. Hier muss eine Nachricht reisen. Man sieht sie gehen. Man wartet.',
+     'MARS est une performance de longue durée. Trois officiers vivent enfermés dans l’habitat pendant les treize jours de la mission ; les visiteurs de l’exposition peuvent voir l’habitat de l’extérieur. Ce qu’ils ne peuvent pas faire, c’est y entrer et parler aux personnes qui s’y trouvent. Ici, un message doit voyager. On le regarde partir. On attend.'],
+
   // ---- crew condition (src/lib/mood.js)
   'CALM': ['RUHIG', 'CALME'],
   'SETTLED': ['GEFASST', 'POSÉ'],
