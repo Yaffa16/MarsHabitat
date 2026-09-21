@@ -1,17 +1,15 @@
 /* MARS!platz — folding the big sections away and opening them again.
  *
  * Each heading that can fold carries a button (.fold-toggle[data-fold]):
- *   dash      the Mission dashboard — its links, figures, the strip of days and the day's three panels
- *   habitat   the Habitat panel's body            hardware   the hardware panel's body
- *   trends    the Trends panel's body             blogs      the three blogs
+ *   dash      the Mission dashboard — its live images, its links, its figures and the strip of days
+ * (The panels themselves live in the stack of folders — public/folder.js — one open at a time.)
  * A press hides that section's body and turns the button into "Expand"; the next press brings it back.
  * The heading itself stays where it is, so the page keeps its order and the wheel still lands on it.
  * Nothing is remembered between visits: every page opens with everything shown.
  */
 (function () {
   var MEMBERS = {
-    dash: '.dash-links, .kpis, .run-strip, #schedule, #galley, #crew',
-    blogs: '#blog-commander, #blog-health, #blog-science',
+    dash: '.dash > .cloud-latest, .dash-links, .kpis, .run-strip',
   };
   function members(key, btn) {
     if (MEMBERS[key]) return [].slice.call(document.querySelectorAll(MEMBERS[key]));

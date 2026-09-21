@@ -457,7 +457,17 @@ function habitatDome(ctx, args) {
         var h = d.getBoundingClientRect().height;
         var top = k.bottom + 10;                                      // under the key
         if (top + h > vh - m) top = k.top - 10 - h;                   // or above it
-        if (top < m) top = Math.max(m, Math.min(vh - m - h, k.bottom + 10));   // or as near as the screen allows
+        if (top < m) {
+          // neither fits (a phone held sideways): beside the key, to whichever side has more room, as wide as that room allows, level with it
+          var roomR = vw - m - (k.right + 10), roomL = k.left - 10 - m, right = roomR >= roomL, room = Math.min(w, right ? roomR : roomL);
+          if (room >= 280) {
+            d.style.width = room + 'px'; h = d.getBoundingClientRect().height;
+            d.style.left = (right ? k.right + 10 : k.left - 10 - room) + 'px';
+            d.style.top = Math.max(m, Math.min(vh - m - h, k.top + k.height / 2 - h / 2)) + 'px';
+            return;
+          }
+          top = Math.max(m, Math.min(vh - m - h, k.bottom + 10));   // or as near as the screen allows
+        }
         var left = Math.max(m, Math.min(vw - m - w, k.left + k.width / 2 - w / 2));
         d.style.left = left + 'px'; d.style.top = top + 'px';
       }

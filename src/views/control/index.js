@@ -275,25 +275,31 @@ function scheduleBlock(day, tasks) {
     </form>`, 'mars-side');
 }
 
-/** Calories and steps, the only habitat figures counted by a person. */
-function crewFiguresBlock(day, figures, n = 3) {
-  const f = figures[String(day)] || {};
-  const live = f.calories != null || f.steps != null;
+/** Calories and steps, the only habitat figures counted by a person — one
+ *  line per officer; the crew's totals are the sums, worked out on save. */
+function crewFiguresBlock(day, figures, crew, n = 3) {
+  const f = figures[String(day)] || {}, per = f.crew || {};
+  const live = f.calories != null || f.steps != null || Object.keys(per).length > 0;
+  const short = (d) => String(d || '').replace(/\s*OFFICER$/i, '').trim();
+  const fmt = (v) => (v == null ? '—' : Number(v).toLocaleString('en-GB'));
   return panel('CH-13 / CREW FIGURES', `
     ${blockHead(n, 'Crew figures', `Day ${dd(day)}`,
       { live, liveText: 'Filed', emptyText: 'Not filed yet' })}
-    <p class="note block-hint">Totals across all three of them. Saving writes <b>content/crew-figures.json</b>.
-    Leave a field blank to record nothing for that day.</p>
+    <p class="note block-hint">One line per officer. Saving writes <b>content/crew-figures.json</b>; the crew's totals are the sums.
+    Leave a field blank to record nothing for that officer that day.</p>
     <form method="post" action="/control/crew-figures">
       <input type="hidden" name="day" value="${day}">
-      <div class="grid g2" style="gap:0 12px">
-        <label class="f"><span>Calories consumed</span>
-          <input type="number" min="0" name="calories" value="${f.calories ?? ''}"
-            placeholder="kcal across the crew"></label>
-        <label class="f"><span>Steps taken</span>
-          <input type="number" min="0" name="steps" value="${f.steps ?? ''}"
-            placeholder="steps inside the habitat"></label>
-      </div>
+      ${crew.map((c) => { const v = per[c.designation] || {}; return `
+      <div class="fig-officer">
+        <span class="fig-officer-name" style="display:block;margin:10px 0 2px;font-size:12px;font-weight:700;letter-spacing:.08em">${esc(short(c.designation))}</span>
+        <div class="grid g2" style="gap:0 12px">
+          <label class="f"><span>Calories consumed</span>
+            <input type="number" min="0" name="calories_${c.id}" value="${v.calories ?? ''}" placeholder="kcal"></label>
+          <label class="f"><span>Steps taken</span>
+            <input type="number" min="0" name="steps_${c.id}" value="${v.steps ?? ''}" placeholder="steps"></label>
+        </div>
+      </div>`; }).join('')}
+      <p class="note">Crew total on record for this day: <b>${fmt(f.calories)}</b> kcal · <b>${fmt(f.steps)}</b> steps${Object.keys(per).length ? '' : f.calories != null || f.steps != null ? ' — filed as a total, before the officers were counted separately' : ''}.</p>
       <div class="actions"><button class="primary">Publish</button></div>
     </form>`, 'mars-side officer-block');
 }
@@ -524,7 +530,7 @@ function page(ctx, model) {
       <div class="officer-stack">
         ${blogBlock(officers.health, 'health', day, officers.health.entry, 1)}
         ${reportBlock(officers.health, 'health', 'Daily health activities', '', day, tpl.HEALTH, 'health', 2)}
-        ${crewFiguresBlock(day, figures, 3)}
+        ${crewFiguresBlock(day, figures, crew, 3)}
         ${moodBlock(officers.health, 4)}
       </div>`,
     habitat: `

@@ -493,7 +493,7 @@ function reset(actor = 'control') {
   // of each day — like the blog they start empty and fill in as the run goes.
   const cf = path.join(DIR, 'crew-figures.json');
   fs.writeFileSync(cf, JSON.stringify({
-    _note: 'Calories consumed and steps taken, as crew totals per day. Emptied by the reset: the health officer files each day\'s figures on the Health tab of mission control (or write them here as "1": { "calories": 5010, "steps": 6420 }), and each day appears on the station the moment it is saved.',
+    _note: 'Calories consumed and steps taken, per officer and per day. Emptied by the reset: the health officer files each day\'s figures on the Health tab of mission control (or write them here as "1": { "crew": { "COMMUNICATION OFFICER": { "calories": 1720, "steps": 2200 }, "SCIENCE OFFICER": { … }, "HEALTH OFFICER": { … } }, "calories": 5010, "steps": 6420 } — the two totals being the sums), and each day appears on the station the moment it is saved.',
   }, null, 2) + '\n');
 
   // Power is a daily count too: the categories stay as they are shaped, the

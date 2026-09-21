@@ -577,14 +577,33 @@ router.post('/crew-figures', (req, res) => {
     const n = Number(v);
     return Number.isFinite(n) && n >= 0 ? Math.round(n) : null;
   };
-  const calories = val('calories');
-  const steps = val('steps');
-
-  const r = content.edit('crew-figures.json', (obj) => {
-    if (calories == null && steps == null) { delete obj[String(day)]; return; }
-    const entry = {};
+  // One line per officer (calories_<id>, steps_<id>); the crew's totals are
+  // the sums of what was filed. The older form's two totals (calories,
+  // steps) are still accepted when no officer's field came with the request.
+  const crew = db.prepare('SELECT id, designation FROM crew ORDER BY sort_order, id').all();
+  const perOfficer = crew.some((c) => `calories_${c.id}` in req.body || `steps_${c.id}` in req.body);
+  const entry = {};
+  if (perOfficer) {
+    const per = {};
+    let calories = null, steps = null;
+    for (const c of crew) {
+      const cal = val(`calories_${c.id}`), st = val(`steps_${c.id}`);
+      if (cal == null && st == null) continue;
+      per[c.designation] = {};
+      if (cal != null) { per[c.designation].calories = cal; calories = (calories || 0) + cal; }
+      if (st != null) { per[c.designation].steps = st; steps = (steps || 0) + st; }
+    }
+    if (Object.keys(per).length) entry.crew = per;
     if (calories != null) entry.calories = calories;
     if (steps != null) entry.steps = steps;
+  } else {
+    const calories = val('calories'), steps = val('steps');
+    if (calories != null) entry.calories = calories;
+    if (steps != null) entry.steps = steps;
+  }
+
+  const r = content.edit('crew-figures.json', (obj) => {
+    if (!Object.keys(entry).length) { delete obj[String(day)]; return; }
     obj[String(day)] = entry;
   });
   audit(req.user.username, 'CrewFigures', day, 'edit');

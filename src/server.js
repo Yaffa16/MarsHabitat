@@ -656,8 +656,9 @@ app.get('/api/cloud', (req, res) => {
   // can swap it in the moment the folder changes — the same pattern as the board
   const M = require('./views/pages/media');
   const model = { title: cloud.CFG.title, items: cloud.gallery(), snapshot: snap, limit: 6 };
-  const html = snap.configured ? M.cloudGridInner(req.ctx().T, model) : '';
-  const latestHtml = snap.configured ? M.cloudLatestInner(req.ctx().T, model) : '';
+  const opts = { tz: req.ctx().mission.timezone };      // for a file whose name carries no time: its own date, in the venue's time
+  const html = snap.configured ? M.cloudGridInner(req.ctx().T, model, opts) : '';
+  const latestHtml = snap.configured ? M.cloudLatestInner(req.ctx().T, model, opts) : '';
   res.set('Cache-Control', 'no-store').json({ ...snap, html, latestHtml });
 });
 

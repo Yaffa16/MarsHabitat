@@ -59,7 +59,7 @@ const IMAGE = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'i
 /* ------------------------------------------------------------------ state */
 
 let items = [];              // the folder as last listed, images only, in order
-const status = { lastPollAt: null, lastError: null, listed: 0, cached: 0, polling: false, folder: fromDir() ? CFG.dir : (CFG.folder || '/') };
+const status = { lastPollAt: null, lastError: null, listed: 0, shown: 0, cached: 0, polling: false, pollingSince: null, folder: fromDir() ? CFG.dir : (CFG.folder || '/') };
 let timer = null;
 
 function loadManifest() {
@@ -79,11 +79,21 @@ const auth = () => 'Basic ' + Buffer.from(`${CFG.user}:${CFG.password}`).toStrin
 const davRoot = () => `${CFG.url}/remote.php/dav/files/${encodeURIComponent(CFG.user)}/`;
 const encodePath = (p) => p.split('/').map(encodeURIComponent).join('/');
 
-async function request(url, opts = {}) {
+/** One request, answered whole — status and body — within a time limit that
+ *  covers the transfer from first byte to last. A cloud that answers the
+ *  headers and then stalls used to leave the body read hanging for ever,
+ *  and with it the poll, and with that the whole bridge: nothing new would
+ *  reach the pages until the station was restarted. Now a stalled transfer
+ *  is cut, the poll goes on, and the file is tried again on the next read. */
+async function fetchAll(url, opts = {}, ms = CFG.timeoutMs) {
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), CFG.timeoutMs);
+  const t = setTimeout(() => ctrl.abort(), ms);
   try {
-    return await fetch(url, { ...opts, signal: ctrl.signal, headers: { Authorization: auth(), ...(opts.headers || {}) } });
+    const res = await fetch(url, { ...opts, signal: ctrl.signal, headers: { Authorization: auth(), ...(opts.headers || {}) } });
+    const body = Buffer.from(await res.arrayBuffer());
+    return { status: res.status, ok: res.ok, body };
+  } catch (e) {
+    throw new Error(e.name === 'AbortError' ? `no answer within ${Math.round(ms / 1000)} s` : e.message || String(e));
   } finally { clearTimeout(t); }
 }
 
@@ -92,7 +102,7 @@ const unxml = (s) => String(s || '').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
 /** One PROPFIND at depth 1: the entries directly inside a folder. */
 async function list(folder) {
   const url = davRoot() + (folder ? encodePath(folder) + '/' : '');
-  const res = await request(url, {
+  const res = await fetchAll(url, {
     method: 'PROPFIND',
     headers: { Depth: '1', 'Content-Type': 'application/xml; charset=utf-8' },
     body: '<?xml version="1.0"?><d:propfind xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns"><d:prop>'
@@ -102,7 +112,7 @@ async function list(folder) {
   if (res.status === 401 || res.status === 403) throw new Error(`the cloud refused the sign-in (HTTP ${res.status}) — check CLOUD_USER and CLOUD_PASSWORD`);
   if (res.status === 404) throw new Error(`folder not found on the cloud: /${folder || ''} — check CLOUD_FOLDER`);
   if (res.status !== 207) throw new Error(`the cloud answered HTTP ${res.status} to the folder listing`);
-  const xml = await res.text();
+  const xml = res.body.toString('utf8');
   const out = [];
   const basePath = new URL(url).pathname.replace(/\/+$/, '');
   for (const block of xml.split(/<\/d:response>/i).slice(0, -1)) {
@@ -139,14 +149,19 @@ function listDir() {
       found.push({ name: relPath, path: relPath, local: p, size: st.size, modified: st.mtime.toUTCString(),
         etag: `${st.size}-${Math.round(st.mtimeMs)}`, fileId: null, mime: IMAGE[ext], ext,
         added: Math.round(st.ctimeMs) });   // when it landed in the folder, whatever date the picture itself carries
-      if (found.length >= CFG.maxFiles) return;
     }
   };
   walk(CFG.dir, '', 0);
   return found;
 }
 
-/** The whole folder, subfolders followed, images only. */
+/** The whole folder, subfolders followed, images only — every one of them.
+ *  The cap (CLOUD_MAX_FILES) is applied after the sort, in poll(), so it
+ *  keeps the NEWEST files. It used to cut the listing where it stood, and a
+ *  folder lists in name order: with pictures named by the clock
+ *  (2026_09_18-17-15.png), the first five hundred are the OLDEST, and once
+ *  the folder held more than that, nothing newer ever reached the page —
+ *  the gallery stood still at whatever the five-hundredth file was. */
 async function listImages() {
   if (fromDir()) return listDir();
   const found = [];
@@ -156,7 +171,6 @@ async function listImages() {
       const ext = path.posix.extname(e.name).slice(1).toLowerCase();
       if (!IMAGE[ext] && !/^image\//.test(e.mime)) continue;
       found.push({ ...e, ext: IMAGE[ext] ? ext : 'jpg', mime: IMAGE[ext] || e.mime });
-      if (found.length >= CFG.maxFiles) return;
     }
   };
   await walk(CFG.folder, 0);
@@ -170,9 +184,10 @@ const filePath = (it) => path.join(DIR, `${it.id}.${it.ext}`);
 const thumbPath = (it) => path.join(DIR, `${it.id}.thumb.jpg`);
 
 async function download(url, dest) {
-  const res = await request(url);
+  // a picture may be large and the link slow: six times the listing's limit, two minutes by default
+  const res = await fetchAll(url, {}, CFG.timeoutMs * 6);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const buf = Buffer.from(await res.arrayBuffer());
+  const buf = res.body;
   fs.mkdirSync(DIR, { recursive: true });
   fs.writeFileSync(dest + '.part', buf);
   fs.renameSync(dest + '.part', dest);
@@ -206,13 +221,26 @@ async function cacheThumb(it) {
 
 /* ---------------------------------------------------------------- polling */
 
+/* One read of the folder at a time. A read that is still running when the
+   next is due is left to finish — a first read after a long gap may have
+   hundreds of pictures to copy — unless it has been running for an hour,
+   longer than any read can take now that every transfer has its time limit:
+   then it is treated as lost and a fresh read begins, and if the lost one
+   does come back later it is discarded (the sequence number), so it can
+   never overwrite a newer listing with an older one. */
+const STUCK_MS = 60 * 60 * 1000;
+let pollSeq = 0;
+
 async function poll() {
-  if (!configured() || status.polling) return;
-  status.polling = true;
+  if (!configured()) return;
+  if (status.polling && Date.now() - (status.pollingSince || 0) < STUCK_MS) return;
+  if (status.polling) console.warn('[cloud] the previous read of the folder never finished — starting a fresh one');
+  const seq = ++pollSeq;
+  status.polling = true; status.pollingSince = Date.now();
   try {
     const listed = await listImages();
     const before = new Map(items.map((i) => [i.id, i]));
-    const next = listed.map((e) => {
+    let next = listed.map((e) => {
       const id = idOf(e.path);
       const prev = before.get(id) || {};
       return { id, path: e.path, name: e.name, size: e.size, modified: e.modified, etag: e.etag, fileId: e.fileId, mime: e.mime, ext: e.ext, local: e.local || null,
@@ -229,20 +257,25 @@ async function poll() {
     next.sort(CFG.sort === 'name'
       ? (a, b) => a.path.localeCompare(b.path, undefined, { numeric: true })
       : (a, b) => (b.added - a.added) || (b.seenAt - a.seenAt) || (when(b) - when(a)) || b.path.localeCompare(a.path, undefined, { numeric: true }));
+    // the cap keeps the newest (by name, the last in name order): the folder may hold thousands, the page shows this many
+    if (next.length > CFG.maxFiles) next = CFG.sort === 'name' ? next.slice(-CFG.maxFiles) : next.slice(0, CFG.maxFiles);
     let cached = 0;
     for (const it of next) {
+      if (seq !== pollSeq) return;                                           // a fresh read has taken over: this one is lost
       try { if (await cacheFile(it)) cached++; } catch (e) { it.error = `copy: ${e.message}`; }
       await cacheThumb(it);
     }
+    if (seq !== pollSeq) return;
     items = next;
-    status.listed = next.length; status.cached = cached;
+    status.listed = listed.length; status.shown = next.length; status.cached = cached;
     status.lastPollAt = Date.now(); status.lastError = null;
     saveManifest();
-    console.log(`[cloud] ${next.length} image${next.length === 1 ? '' : 's'} in ${fromDir() ? CFG.dir : `/${CFG.folder || ''} on ${CFG.url}`}, ${cached} cached`);
+    console.log(`[cloud] ${listed.length} image${listed.length === 1 ? '' : 's'} in ${fromDir() ? CFG.dir : `/${CFG.folder || ''} on ${CFG.url}`}${next.length < listed.length ? `, the newest ${next.length} kept` : ''}, ${cached} cached`);
   } catch (e) {
+    if (seq !== pollSeq) return;
     status.lastError = { at: Date.now(), message: e.message || String(e) };
     console.warn('[cloud]', e.message || e);
-  } finally { status.polling = false; }
+  } finally { if (seq === pollSeq) { status.polling = false; status.pollingSince = null; } }
 }
 
 function start() {
@@ -257,20 +290,39 @@ function start() {
 
 /* ------------------------------------------------------------------- read */
 
-/** The grid: every image, in order, with where the station serves it from. */
+/** The moment a picture was made, read from its name. The habitat's camera
+ *  names every file by the clock at the venue — year_month_day-hour-minute,
+ *  as in 2026_09_18-17-15.png (seconds may follow: 2026_09_18-17-15-30.png)
+ *  — so the name IS the time the picture was taken, in the venue's own time,
+ *  with nothing to convert. A name of any other shape gives null, and the
+ *  page falls back to the file's own date (`modified`). */
+const NAMED_WHEN = /(?:^|[^0-9])(\d{4})_(\d{2})_(\d{2})-(\d{2})-(\d{2})(?:-(\d{2}))?(?![0-9])/;
+function takenFromName(name) {
+  const m = NAMED_WHEN.exec(path.posix.basename(String(name || '')));
+  if (!m) return null;
+  const month = +m[2], day = +m[3], hour = +m[4], minute = +m[5], second = m[6] == null ? null : +m[6];
+  if (month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59 || (second != null && second > 59)) return null;
+  return { date: `${m[1]}-${m[2]}-${m[3]}`, time: `${m[4]}:${m[5]}`, iso: `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}${second == null ? '' : `:${m[6]}`}` };
+}
+
+/** The grid: every image, in order, with where the station serves it from
+ *  and when it was taken (see takenFromName). */
 function gallery() {
   return items.filter((it) => !it.tooBig && fs.existsSync(filePath(it))).map((it) => ({
-    id: it.id, name: it.name, path: it.path, size: it.size, modified: it.modified, added: it.added, mime: it.mime,
+    id: it.id, name: it.name, path: it.path, size: it.size, modified: it.modified, added: it.added, mime: it.mime, taken: takenFromName(it.name),
     url: `/media/cloud/${it.id}`, thumb: fs.existsSync(thumbPath(it)) ? `/media/cloud/${it.id}/thumb` : `/media/cloud/${it.id}`,
   }));
 }
 const get = (id) => items.find((it) => it.id === id) || null;
 
-/** A stamp that changes whenever the grid would: which images, in which
- *  order, which of them are copied and previewed. */
+/** A stamp that changes whenever the page would: which images, in which
+ *  order, which of them are copied and previewed — and when the folder was
+ *  last read, or last failed to be, since the pages say so in their head
+ *  line and keep it current on the same beat. */
 function version() {
   const h = crypto.createHash('sha1');
   for (const it of items) h.update(`${it.id}|${it.etag}|${it.cachedEtag || ''}|${it.thumbEtag || ''}|${it.tooBig ? 1 : 0};`);
+  h.update(`@${status.lastPollAt ? Math.floor(status.lastPollAt / 60000) : 0}|${status.lastError ? Math.floor(status.lastError.at / 60000) : 0}`);
   return h.digest('hex').slice(0, 12);
 }
 
@@ -282,4 +334,4 @@ function snapshot() {
     tooBig: items.filter((i) => i.tooBig).map((i) => i.path) };
 }
 
-module.exports = { CFG, DIR, configured, start, poll, gallery, get, filePath, thumbPath, snapshot };
+module.exports = { CFG, DIR, configured, start, poll, gallery, get, filePath, thumbPath, snapshot, takenFromName };

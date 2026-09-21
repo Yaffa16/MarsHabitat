@@ -36,6 +36,7 @@ COPY tools ./tools
 RUN date -u +%Y-%m-%dT%H:%M:%SZ > /app/BUILD
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+COPY --chown=node:node content ./content
 
 USER node
 VOLUME ["/data"]

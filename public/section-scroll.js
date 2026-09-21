@@ -1,15 +1,15 @@
 /* MARS!platz — the landing page scrolls section by section.
  *
  * The stops are the elements marked data-stop, in reading order — the
- * Communication Portal (#write), the Mission dashboard's heading, the
- * Habitat panel, the Habitat hardware panel, the Daily Blog heading — and
- * the top of the page is always the first. Loaded on the landing page only
+ * Communication Portal (#write), the Mission dashboard's heading, the stack
+ * of folders that holds the dashboard's panels — and the top of the page is
+ * always the first. Loaded on the landing page only
  * (src/views/pages/public.js); without it the page scrolls as it always did.
  *
  * One turn of the wheel, one trackpad swipe, Page Down or the arrow keys carries the page to the next stop — heading to
  * heading, always (the stylesheet sizes every section to the window, see --u in aura.css); past the last stop a turn
  * shows the page's foot. Below 760 px (phones) the page keeps its ordinary scroll.
- * A box that scrolls on its own (a panel's list, the board, a blog, a dialog, the textarea) takes the wheel only once the
+ * A box that scrolls on its own (a panel's list, the open folder, the board, a blog, a dialog, the textarea) takes the wheel only once the
  * pointer has actually been moved onto it since the page last turned — a pointer that merely happens to rest over such a
  * box after a turn does not stop the next turn. Wheel units are normalised (Firefox reports lines, not pixels), a notch of
  * a mouse wheel always counts as a fresh turn, and a trackpad's stream of small ticks counts once — until it pauses,
@@ -47,7 +47,7 @@
     tick();
   }
   function ownScroll(target, dy) {                                                  // a scrolling box under the pointer that can still move that way
-    var box = target && target.closest ? target.closest('[data-own-scroll], .scroller, .blog-scroll, .log-scroll, .popup-body, .dpanel.scroll .dpanel-body, textarea') : null;
+    var box = target && target.closest ? target.closest('[data-own-scroll], .scroller, .blog-scroll, .log-scroll, .popup-body, .dpanel.scroll .dpanel-body, .folder-body, textarea') : null;
     if (!box || box.scrollHeight <= box.clientHeight + 1) return false;
     if (!armed && !box.closest('dialog, textarea')) return false;                   // the pointer only happens to rest here: the page turns
     return dy > 0 ? box.scrollTop + box.clientHeight < box.scrollHeight - 1 : box.scrollTop > 0;

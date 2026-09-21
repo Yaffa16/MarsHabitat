@@ -480,7 +480,11 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
      every other public page so they read as one station. */
   const hero = ticker(ctx, { today });
   const lead = T('MARS is a durational performance. Three officers live sealed inside the habitat for the thirteen days of the run; visitors to the exhibition can see the habitat from outside. What they cannot do is walk in and talk to the people inside it. Here a message has to travel. You watch it go. You wait.');
-  const cta = `<a class="btn primary masthead-btn" href="#write">${T('Write to the crew')} <span aria-hidden="true">↓</span></a>`;
+  // Two doors under the lead: the composer (the orange button) and, beside
+  // it, the Mission dashboard further down the page (#mission, where the
+  // foot's "Daily mission" also leads).
+  const cta = `<a class="btn primary masthead-btn" href="#write">${T('Write to the crew')} <span aria-hidden="true">↓</span></a>
+      <a class="btn masthead-btn masthead-btn-live" href="#mission"><i class="live-dot" aria-hidden="true"></i>${T('Live Mission Dashboard')} <span aria-hidden="true">↓</span></a>`;
   const masthead = L.masthead(ctx, { home: true, status: true, lead, cta });   // the strip is drawn in the ticker on wide screens; aura.css shows this one on phones
 
   /* The days of the run, spelled down the right-hand margin. */
@@ -499,10 +503,24 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
     ${masthead}
     ${habitatDome(ctx, { today, crew, recent, power, counts, crewFigures, pods: true })}
   </div>
-  <div class="portal-grid" id="write" data-stop>
+  <section class="portal" id="write" data-stop>
+  <!-- The portal's heading, in the dress of the dashboard's: the channel's
+       code, the title, the line beneath; at the right the one-way light-time
+       a message is about to cross, where the dashboard shows the elapsed. -->
+  <header class="portal-head">
+    <div>
+      <span class="dash-code">CH-09</span>
+      <h2 class="bigsec">${T('Send a message to the Crew')}</h2>
+      <p class="dash-sub">${T('Communication Portal')} · ${T('Uplink')} · ${esc(ctx.mission.name)} · ${ctx.geo.distanceAu.toFixed(3)} au</p>
+    </div>
+    <div class="dash-clock">
+      <span class="dash-clock-label">${T('One-way signal')}</span>
+      <b>${esc(orbital.formatLightTime(ctx.geo.lightSeconds))}</b>
+    </div>
+  </header>
+  <div class="portal-grid">
     <aside class="portal-letters" aria-hidden="true">${'MARSPLATZ'.split('').map((c) => `<span>${c}</span>`).join('')}</aside>
     <div class="portal-main">
-      <h2 class="sr-only">${T('Communication Portal')}</h2>
       <!-- The composer as a device: an LED, the ribbed grip, a knob and a
            row of vents, then the operator's callsign and the channel. While
            a message is crossing, the form gives way to the dial. -->
@@ -551,12 +569,13 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
     </section>
     ${dayRail}
   </div>
+  </section>
 
   ${dashboard(ctx, { crew, today, counts, crewFigures, power, allDays, logDays, entryCounts, ingest, media, mediaCounts, mediaLookup, hardware, hardwareDaily, cloud })}
   `;
   return L.page({
     title: 'Mission', ctx, body, hero, hideNav: true, hideRail: true, bodyClass: 'landing',
-    current: '/', scripts: ['/composer.js', '/board.js', '/habitat.js', '/hardware.js', '/section-scroll.js', '/fold.js'].concat(cloud ? ['/cloud.js'] : []),
+    current: '/', scripts: ['/composer.js', '/board.js', '/habitat.js', '/hardware.js', '/section-scroll.js', '/fold.js', '/folder.js'].concat(cloud ? ['/cloud.js'] : []),
     styles: ['/aura.css'],
   });
 }
@@ -564,18 +583,30 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
 
 
 /**
- * A crew figure as a small tile: today's value, the mission average, and the
- * thirteen days as a sparkline. Lives inside the habitat bento beside the sensor
- * tiles rather than as a chart of its own.
+ * A crew figure as a small tile — calories consumed, steps taken: the day's
+ * figure for every officer, one under the other, the crew's total beneath it
+ * with the thirteen days as a sparkline, and the average. Lives inside the
+ * habitat bento beside the sensor tiles rather than as a chart of its own.
+ * The health officer files the figures per officer on the Health tab
+ * (content/crew-figures.json, a day as
+ *   "5": { "crew": { "SCIENCE OFFICER": { "calories": 1480, "steps": 2010 }, … }, "calories": 4420, "steps": 5960 }
+ * — the totals are the sums); a day filed only as a total shows the total
+ * and a dash for each officer.
  */
-function figureTile(figures, mission, { key, label, unit, colour, fmt, T = same }) {
+function figureTile(figures, mission, { key, label, unit, colour, fmt, T = same, crew = [] }) {
   const days = Array.from({ length: mission.totalDays }, (_, i) => i + 1);
-  const values = days.map((n) => (figures[String(n)] || {})[key] ?? null);
+  const dayOf = (n) => figures[String(n)] || {};
+  const perOf = (d, c) => ((d.crew || {})[c.designation] || {})[key] ?? null;
+  const filed = (d) => d[key] != null || crew.some((c) => perOf(d, c) != null);
+  const values = days.map((n) => dayOf(n)[key] ?? null);
   const present = values.filter((v) => v != null);
-  const today = values[mission.clampedDay - 1];
-  const latest = [...values].reverse().find((v) => v != null);
+  const n0 = mission.clampedDay;
+  // the day shown: today when filed, else the last day that was
+  const shownDay = filed(dayOf(n0)) ? n0 : ([...days].reverse().find((n) => filed(dayOf(n))) || null);
+  const d = shownDay ? dayOf(shownDay) : {};
+  const total = d[key] ?? null;
   const mean = present.length ? Math.round(present.reduce((a, b) => a + b, 0) / present.length) : null;
-  const W = 160, H = 36, pad = 4;
+  const W = 160, H = 26, pad = 3;
   const hi = present.length ? Math.max(...present) : 1, lo = present.length ? Math.min(...present) : 0;
   const x = (i) => pad + (days.length === 1 ? (W - 2 * pad) / 2 : (i / (days.length - 1)) * (W - 2 * pad));
   const y = (v) => hi === lo ? H / 2 : pad + (H - 2 * pad) - ((v - lo) / (hi - lo)) * (H - 2 * pad);
@@ -588,18 +619,18 @@ function figureTile(figures, mission, { key, label, unit, colour, fmt, T = same 
       fill="none" stroke="${colour}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`).join('')}
     ${values.map((v, i) => v == null
       ? `<line x1="${x(i).toFixed(1)}" y1="${pad}" x2="${x(i).toFixed(1)}" y2="${H - pad}" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3" opacity="0.35"/>`
-      : `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${days[i] === mission.clampedDay ? 3.5 : 2}"
-          fill="${days[i] === mission.clampedDay ? colour : 'var(--well)'}" stroke="${colour}" stroke-width="${days[i] === mission.clampedDay ? 2 : 1.5}">
+      : `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${days[i] === n0 ? 3 : 1.8}"
+          fill="${days[i] === n0 ? colour : 'var(--well)'}" stroke="${colour}" stroke-width="${days[i] === n0 ? 2 : 1.5}">
           <title>${T('Day')} ${String(days[i]).padStart(3, '0')}: ${v.toLocaleString('en-GB')} ${unit}</title></circle>`).join('')}
   </svg>` : '';
-  const shown = today ?? latest;
-  return `<section class="tile t-fig t-${key}" role="img" aria-label="${esc(T(label))}: ${shown != null ? fmt(shown) + ' ' + unit : T('nothing recorded')} ${T('today')}">
+  // the officer's name as the station writes it: COMMUNICATION, SCIENCE, HEALTH
+  const who = (c) => T(String(c.designation || '').replace(/\s*OFFICER$/i, '').trim());
+  const rows = crew.map((c) => { const v = perOf(d, c); return `<div class="fig-r"><span class="fig-who">${esc(who(c))}</span><span class="fig-v">${v != null ? fmt(v) : '—'}<em>${esc(unit)}</em></span></div>`; }).join('');
+  return `<section class="tile t-fig t-${key}" role="group" aria-label="${esc(T(label))}${total != null ? `: ${fmt(total)} ${esc(unit)} ${T('crew total')}` : ''}">
     <h3>${T(label)}</h3>
-    <span class="sub">${today != null ? `${T('Day')} ${String(mission.clampedDay).padStart(3, '0')}` : latest != null ? T('Last recorded') : T('Counted by the crew')}</span>
-    <div class="fig-row">
-      <div class="big">${shown != null ? fmt(shown) : '—'}<em>${esc(unit)}</em></div>
-      ${spark}
-    </div>
+    <span class="sub">${shownDay === n0 ? `${T('Day')} ${String(n0).padStart(3, '0')}` : shownDay ? `${T('Last recorded')} · ${T('Day')} ${String(shownDay).padStart(3, '0')}` : T('Counted by the crew')}</span>
+    <div class="fig-rows">${rows}</div>
+    <div class="fig-foot"><span class="fig-total">${total != null ? `${fmt(total)} ${esc(unit)} · ${T('crew total')}` : T('nothing recorded')}</span>${spark}</div>
     <div class="verdict">${mean != null ? `${fmt(mean)} ${esc(unit)} ${T('a day on average')} · ${present.length} ${T('of')} ${dayWord(T, days.length)}` : T('Nothing recorded yet')}</div>
   </section>`;
 }
@@ -850,6 +881,34 @@ const dpanel = ({ id, code, title, meta = '', span = 4, cls = '', href = null, l
     <div class="dpanel-body"${fold ? ` id="${id}-body"` : ''}>${inner}</div>
   </section>`;
 
+/* The dashboard's panels as one stack of folders: three rows of tabs — the
+   habitat's three panels at the back (Habitat, Habitat hardware, Trends),
+   the day's three before them (Today's Schedule, Today's Meal, Crew Moods),
+   the three blogs in front — on a glass panel like every other on the page,
+   and beneath the tabs the folder that is in front, showing its panel. The
+   page opens on the first tab of the first row, the Habitat. A press on a
+   tab brings that folder to the front (public/folder.js); the panels keep
+   their ids, so every link into them — #habitat, #crew, #galley, #schedule
+   from the dome's keys and the foot — still lands on them: the script opens
+   the right folder and brings the stack into view. Without the script the
+   first folder stands open and the tabs do nothing. `rows` is a list of
+   rows, each a list of tabs; an empty slot (a panel the station is not
+   showing, such as the hardware without its bridge) is left out of its row. */
+const folder = (T, rows, { id = 'day-folder', label = '' } = {}) => {
+  rows = rows.map((row) => row.filter(Boolean)).filter((row) => row.length);
+  const tabs = rows.flat();
+  const tab = (t, i) => `<button type="button" class="ftab${i === 0 ? ' is-front' : ''}" role="tab" id="ftab-${t.id}" aria-controls="fpage-${t.id}" aria-selected="${i === 0 ? 'true' : 'false'}"${i === 0 ? '' : ' tabindex="-1"'} data-folder="${t.id}"><span class="ftab-n">${esc(t.code)}</span><span class="ftab-l">${esc(t.label)}</span></button>`;
+  return `
+  <section class="folder span-12" id="${id}" data-stop aria-label="${esc(label)}">
+    <div class="folder-tabs" role="tablist" aria-label="${esc(label)}">${rows.map((row, r) => `
+      <div class="frow r${r + 1} n${row.length}${r === rows.length - 1 ? ' front' : ''}">${row.map((t) => tab(t, tabs.indexOf(t))).join('')}</div>`).join('')}
+    </div>
+    <div class="folder-body">${tabs.map((t, i) => `
+      <div class="fpage" role="tabpanel" id="fpage-${t.id}" aria-labelledby="ftab-${t.id}" data-folder="${t.id}"${i === 0 ? '' : ' hidden'}>${t.html}</div>`).join('')}
+    </div>
+  </section>`;
+};
+
 /**
  * Everything below the landing fold, in one view: a row of headline figures,
  * the run as a strip of days, then the day's schedule, the habitat, the
@@ -995,7 +1054,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
   const pwrOf = power.days[String(pwrDay)] || {};
   const powerToday = power.categories.map((c) => ({ ...c, kwh: pwrOf[c.key] ?? null }));
 
-  const habitat = dpanel({ id: 'habitat', code: 'CH-01', title: T('Habitat'), meta: T('Sensor node · measured live · figures and stores counted by the crew'), span: 12, cls: 'compact', stop: true, fold: T,
+  const habitat = dpanel({ id: 'habitat', code: 'CH-01', title: T('Habitat'), meta: T('Sensor node · measured live · figures and stores counted by the crew'), span: 12, cls: 'compact',
     live: T('The readings refresh by themselves as the sensors report') }, `
     <!-- The Sensor-11 dashboard. The station server polls the external feed and
          stores every reading in its own database; /public/habitat.js draws these
@@ -1036,8 +1095,8 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
           <div class="big" id="lightVal" style="margin-top:12px">—<em>raw</em></div>
           <div id="hbt-spark"></div>
         </section>
-        ${figureTile(crewFigures, m, { key: 'calories', label: 'Calories consumed', unit: 'kcal', colour: 'var(--orange)', fmt: (v) => v.toLocaleString('en-GB'), T })}
-        ${figureTile(crewFigures, m, { key: 'steps', label: 'Steps taken', unit: T('steps'), colour: 'var(--ink)', fmt: (v) => v.toLocaleString('en-GB'), T })}
+        ${figureTile(crewFigures, m, { key: 'calories', label: 'Calories consumed', unit: 'kcal', colour: 'var(--orange)', fmt: (v) => v.toLocaleString('en-GB'), T, crew })}
+        ${figureTile(crewFigures, m, { key: 'steps', label: 'Steps taken', unit: T('steps'), colour: 'var(--ink)', fmt: (v) => v.toLocaleString('en-GB'), T, crew })}
       </div>
       <div class="bento aux">
         <section class="tile t-res">
@@ -1052,16 +1111,21 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
         </section>
       </div>
       <div id="hbt-notes"></div>
-    </div>
-    ${cloud ? `<div class="cloud-latest" id="cloud-latest" data-version="${esc(cloud.snapshot.version || '')}" data-poll="${(Number(cloud.snapshot.checkSeconds) || 20) * 1000}">${require('./media').cloudLatestInner(T, cloud)}</div>` : ''}`);
+    </div>`);
 
-  /* ---- the habitat's own hardware, through Home Assistant: directly below
-     the Habitat panel. Rendered only when the bridge is configured in .env;
+  /* ---- the newest stills out of the cloud folder, as a strip of their own at
+     the head of the dashboard — under its heading, above the two doors (At a
+     Glance, Media) — kept live by /public/cloud.js on the folder's cadence. */
+  const cloudStrip = cloud ? `<div class="cloud-latest" id="cloud-latest" data-version="${esc(cloud.snapshot.version || '')}" data-poll="${(Number(cloud.snapshot.checkSeconds) || 20) * 1000}">${require('./media').cloudLatestInner(T, cloud, { tz: m.timezone })}</div>` : '';
+
+  /* ---- the habitat's own hardware, through Home Assistant: the folder
+     beside the Habitat's. Rendered only when the bridge is configured in
+     .env — without it the folder is left out and its row has two tabs;
      /public/hardware.js keeps it live from /api/hardware. */
   const hardwarePanel = hardware && hardware.configured && (hardware.sensors || []).length
     ? dpanel({ id: 'hardware', code: 'CH-02', title: T('Habitat hardware'), live: T('The readings refresh by themselves as the sensors report'),
         meta: `Home Assistant · ${hardware.sensors.length} ${T(hardware.sensors.length === 1 ? 'device' : 'devices')} · ${T('read by the station every')} ${hardware.pollMs >= 120000 ? `${Math.round(hardware.pollMs / 60000)} min` : `${Math.round(hardware.pollMs / 1000)} s`} · ${T('one point per hour')} · ${T('one chart per quantity')} · ${T('nothing leaves the venue')}`,
-        span: 12, cls: 'compact', stop: true, fold: T },
+        span: 12, cls: 'compact' },
       `<div class="hbt hw"><div id="hw-live" data-poll="${hardware.pollMs}" data-version="${esc(require('../../lib/home-assistant').version(hardware))}">${hardwareInner(hardware, T)}</div></div>`)
     : '';
 
@@ -1069,12 +1133,12 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
      crew's counts. habitat.js draws them from the spec above plus its own
      Sensor-11 rows, and redraws when the period selector changes. */
   const trends = dpanel({ id: 'trends', code: 'CH-40', title: T('Trends'),
-    span: 12, stop: true, fold: T }, `
+    span: 12 }, `
     <div class="trends" id="hbt-trends" data-date="${esc(m.today)}" data-day-start="${missionLib.venueMidnightUtc(m.today, m.timezone)}" data-axis-start="${esc(axis.start)}" data-axis-end="${esc(axis.end)}" data-axis-run="${axis.run ? '1' : '0'}" data-spec="${esc(JSON.stringify(trendSpec))}">
       <div id="hbt-tcharts"></div>
     </div>`);
 
-  /* ---- the three daily blogs, directly below the trend graph: the science
+  /* ---- the three daily blogs, the front row of the stack of folders: the science
      officer's Daily Science Findings, the health officer's Daily Health Blog
      (the day's health activities) and the Commander Blog — which is the
      communication officer's Daily Blog, under the name the station gives it.
@@ -1115,7 +1179,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
   const blogCommander = blogPanel({ id: 'blog-commander', code: 'CH-53', title: T('Commander Blog'),
     posts: commanderToday, empty: 'No commander blog yet for' });
 
-  const galley = dpanel({ id: 'galley', code: 'CH-32', title: T('Meal'), meta: today && today.meals.length
+  const galley = dpanel({ id: 'galley', code: 'CH-32', title: T('Today’s Meal'), meta: today && today.meals.length
       ? `${today.kcalPlanned} kcal · ${today.waterPlanned.toFixed(1)} L · ${today.energyPlanned} Wh` : '', span: 4, cls: 'h-3 scroll' },
     today && today.meals.length ? `<div class="meals">${today.meals.map((x) => `
       <div class="meal">
@@ -1127,7 +1191,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
   // Each officer with their current condition — the latest state filed from
   // mission control, translated to language in src/lib/mood.js. The slider
   // number itself is never published; only the word and the sentence.
-  const crewPanel = dpanel({ id: 'crew', code: 'CH-12', title: T('Crew'),
+  const crewPanel = dpanel({ id: 'crew', code: 'CH-12', title: T('Crew Moods'),
       meta: T('Condition as reported · never as numbers'), span: 4, cls: 'h-3 scroll' },
     `<div class="officers">${crew.map((c) => {
       const t = moodLib.translate(c.mood);
@@ -1204,6 +1268,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
   <section class="dash" id="mission">
     <header class="dash-head" data-stop>
       <div>
+        <span class="dash-code">CH-00</span>
         <h2 class="bigsec">${T('Mission dashboard')} ${foldToggle(T, 'dash')}</h2>
         <p class="dash-sub">${esc(m.name)} · ${esc(m.runLabel)} · ${dayWord(T, m.totalDays)} · ${esc(m.timezone)}</p>
       </div>
@@ -1212,6 +1277,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
         <b>${esc(m.elapsed)}</b>
       </div>
     </header>
+    ${cloudStrip}
     <div class="dash-links">
       <a class="glance-link" href="/at-a-glance">
         <span class="glance-link-title">${T('At a Glance')}</span>
@@ -1227,13 +1293,17 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
     <div class="kpis">${kpis}</div>
     ${strip}
     <div class="dash-grid">
-      ${schedule}${galley}${crewPanel}
-      ${habitat}${hardwarePanel}${trends}
-      <div class="dash-subhead span-12" data-stop>
-        <div><h2 class="bigsec">${T('Daily Blog')} ${foldToggle(T, 'blogs')}</h2><p class="dash-sub">${T('Commander · Health · Science')}</p></div>
-        <span class="dash-sub">SOL ${day3} · ${esc(shortDay(blogDate))}</span>
-      </div>
-      ${blogCommander}${blogHealth}${blogScience}
+      ${folder(T, [
+        [ { id: 'habitat', code: 'CH-01', label: T('Habitat'), html: habitat },
+          hardwarePanel ? { id: 'hardware', code: 'CH-02', label: T('Habitat hardware'), html: hardwarePanel } : null,
+          { id: 'trends', code: 'CH-40', label: T('Trends'), html: trends } ],
+        [ { id: 'schedule', code: 'CH-30', label: T('Today’s Schedule'), html: schedule },
+          { id: 'galley', code: 'CH-32', label: T('Today’s Meal'), html: galley },
+          { id: 'crew', code: 'CH-12', label: T('Crew Moods'), html: crewPanel } ],
+        [ { id: 'blog-commander', code: 'CH-53', label: T('Commander Blog'), html: blogCommander },
+          { id: 'blog-health', code: 'CH-52', label: T('Daily Health Blog'), html: blogHealth },
+          { id: 'blog-science', code: 'CH-51', label: T('Daily Science Findings'), html: blogScience } ],
+      ], { label: `${T('Mission dashboard')} · SOL ${day3} · ${shortDay(blogDate)}` })}
     </div>
   </section>`;
 }

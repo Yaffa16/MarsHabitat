@@ -105,39 +105,81 @@ function strip(items, opts) {
 
 /* ================================================================= GALLERY */
 
+/** A moment as a clock reading in the venue's time — "14:20" — for the head
+ *  line that says when the folder was last read. */
+function hm(iso, tz = 'Europe/Berlin') {
+  const d = new Date(iso || NaN);
+  if (Number.isNaN(d.getTime())) return '';
+  try { return new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d); }
+  catch { return d.toISOString().slice(11, 16); }
+}
+/** The head line's tail: when the folder was last read, and — when the
+ *  latest read failed — that the cloud could not be reached, with the time.
+ *  A failed read leaves the pictures already copied on the page, so without
+ *  this a stalled bridge would look exactly like a quiet folder. */
+function checkedLine(T, s, tz) {
+  const last = s.lastPollAt ? ` · ${T('last at')} ${hm(s.lastPollAt, tz)}` : '';
+  const failed = s.lastError ? `<span class="count cloud-fail">${T('the cloud could not be reached')}${s.lastError.at ? ` (${hm(s.lastError.at, tz)})` : ''}</span>` : '';
+  return { last, failed };
+}
+
+/** When a cloud picture was taken, written under it as "18.09.2026 · 17:15"
+ *  — the form the board uses for its dates. The moment comes from the file's
+ *  name (src/lib/cloud.js reads year_month_day-hour-minute out of it, the
+ *  venue's own clock, nothing to convert); a file named any other way shows
+ *  its own date instead, in the venue's time. */
+function cloudWhen(x, tz = 'Europe/Berlin') {
+  if (x.taken) return { text: `${x.taken.date.slice(8, 10)}.${x.taken.date.slice(5, 7)}.${x.taken.date.slice(0, 4)} · ${x.taken.time}`, iso: x.taken.iso };
+  const d = new Date(x.modified || NaN);
+  if (Number.isNaN(d.getTime())) return null;
+  try {
+    const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+      .formatToParts(d).filter((q) => q.type !== 'literal').map((q) => [q.type, q.value]));
+    return { text: `${p.day}.${p.month}.${p.year} · ${p.hour === '24' ? '00' : p.hour}:${p.minute}`, iso: d.toISOString() };
+  } catch { return null; }
+}
+
+/** One picture from the cloud folder as a tile: the preview, and under it the
+ *  date and the time it was taken. */
+function cloudTile(x, tz) {
+  const when = cloudWhen(x, tz);
+  return `<a class="mtile kind-image" href="${x.url}" data-id="${x.id}" title="${esc(x.name)}" target="_blank" rel="noopener">
+      <span class="mtile-visual"><img src="${x.thumb}" alt="${esc(x.name)}" loading="lazy" decoding="async"></span>${
+      when ? `<span class="mtile-text mtile-stamp"><time class="mtile-when" datetime="${esc(when.iso)}">${esc(when.text)}</time></span>` : ''}</a>`;
+}
+
 /** The cloud folder as a grid: every image, newest first, each opening the
  *  original. Drawn only when the bridge is configured; if the folder is
  *  empty or the cloud has not answered yet, it says so rather than vanishing. */
-function cloudGrid(T, cloud) {
-  return `<section class="logpage-day media-day cloud-gallery" id="gallery" data-version="${esc(cloud.snapshot.version || '')}" data-poll="${(Number(cloud.snapshot.checkSeconds) || 20) * 1000}">${cloudGridInner(T, cloud)}</section>`;
+function cloudGrid(T, cloud, opts) {
+  return `<section class="logpage-day media-day cloud-gallery" id="gallery" data-version="${esc(cloud.snapshot.version || '')}" data-poll="${(Number(cloud.snapshot.checkSeconds) || 20) * 1000}">${cloudGridInner(T, cloud, opts)}</section>`;
 }
 
 /** The grid's inside — the head and the tiles — on its own so the page can
- *  swap it in as the folder changes (public/cloud.js polls /api/cloud). */
-function cloudGridInner(T, cloud) {
-  const n = cloud.items.length, s = cloud.snapshot;
+ *  swap it in as the folder changes (public/cloud.js polls /api/cloud).
+ *  `tz` is the venue's time zone, for a file whose name carries no time. */
+function cloudGridInner(T, cloud, { tz } = {}) {
+  const n = cloud.items.length, s = cloud.snapshot, line = checkedLine(T, s, tz);
   return `
     <div class="log-day-head">
       <span class="cs">${esc(T(cloud.title))}</span>
-      <span>${n ? plural(T, n, 'photograph', 'photographs') : T('no photographs yet')} · ${T('checked every')} ${every(s.checkSeconds)}</span>
-      ${s.lastError && !n ? `<span class="count">${T('the cloud could not be reached')}</span>` : ''}
+      <span>${n ? plural(T, n, 'photograph', 'photographs') : T('no photographs yet')} · ${T('checked every')} ${every(s.checkSeconds)}${line.last}</span>
+      ${line.failed}
       <span class="cloud-live" title="${esc(T('Updates by itself as pictures arrive'))}"><i></i>${T('LIVE')}</span>
     </div>
-    ${n ? `<div class="mgrid cloud-grid">${cloud.items.map((x) => `<a class="mtile kind-image" href="${x.url}" data-id="${x.id}" title="${esc(x.name)}" target="_blank" rel="noopener">
-      <span class="mtile-visual"><img src="${x.thumb}" alt="${esc(x.name)}" loading="lazy" decoding="async"></span></a>`).join('')}</div>`
+    ${n ? `<div class="mgrid cloud-grid">${cloud.items.map((x) => cloudTile(x, tz)).join('')}</div>`
     : `<div class="empty" style="padding:28px">${T('Nothing in the folder yet')}.</div>`}`;
 }
 
 /** The newest few from the cloud folder, as a strip — the Habitat panel on
  *  the landing page carries it, kept live by public/cloud.js. */
-function cloudLatestInner(T, cloud) {
-  const items = cloud.items.slice(0, cloud.limit || 6), s = cloud.snapshot;
+function cloudLatestInner(T, cloud, { tz } = {}) {
+  const items = cloud.items.slice(0, cloud.limit || 6), s = cloud.snapshot, line = checkedLine(T, s, tz);
   return `<div class="cloud-latest-head">
       <span class="lbl">${T('Live images from the Habitat')}</span>
-      <span class="sub">${T('checked every')} ${every(s.checkSeconds)}${s.lastError && !items.length ? ` · ${T('the cloud could not be reached')}` : ''} <span class="cloud-live" title="${esc(T('Updates by itself as pictures arrive'))}"><i></i>${T('LIVE')}</span></span>
+      <span class="sub">${T('checked every')} ${every(s.checkSeconds)}${line.last} <span class="cloud-live" title="${esc(T('Updates by itself as pictures arrive'))}"><i></i>${T('LIVE')}</span>${line.failed}</span>
     </div>
-    ${items.length ? `<div class="mstrip cloud-strip">${items.map((x) => `<a class="mtile kind-image" href="${x.url}" data-id="${x.id}" title="${esc(x.name)}" target="_blank" rel="noopener">
-      <span class="mtile-visual"><img src="${x.thumb}" alt="${esc(x.name)}" loading="lazy" decoding="async"></span></a>`).join('')}</div>`
+    ${items.length ? `<div class="mstrip cloud-strip">${items.map((x) => cloudTile(x, tz)).join('')}</div>`
     : `<div class="empty" style="padding:18px">${T('Nothing in the folder yet')}.</div>`}`;
 }
 
@@ -146,7 +188,7 @@ function gallery(ctx, { cloud = null }) {
   // /media is the cloud gallery and nothing else: what the crew send out of
   // the habitat is shown where it belongs — in their entries on the crew
   // log, in At a Glance and on each item's own page.
-  const body = cloud ? cloudGrid(T, cloud)
+  const body = cloud ? cloudGrid(T, cloud, { tz: ctx.mission && ctx.mission.timezone })
     : `<div class="empty" style="padding:40px;margin-top:26px">${T('The gallery is not connected yet')}.</div>`;
 
   return L.page({ title: 'Media', ctx, body, current: '/media', scripts: cloud ? ['/cloud.js'] : [],

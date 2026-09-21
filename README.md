@@ -118,7 +118,7 @@ page load. Everything editable lives here.
 | **Messages** | The reply queue: awaiting reply · published · rejected · everything |
 | **Communication officer** | The **Daily Blog** at the top, then the officer's state |
 | **Science officer** | The **Daily Blog** at the top, then the daily science findings (a post of their own), then the state |
-| **Health officer** | The **Daily Blog** at the top, then the daily health activities (a post of their own), **crew figures** (calories and steps), and the state |
+| **Health officer** | The **Daily Blog** at the top, then the daily health activities (a post of their own), **crew figures** (calories and steps, one line per officer), and the state |
 | **Habitat** | The daily schedule, the daily food plan, the inventory levels, and the day's power figures (with the category names, editable in place) |
 
 Every composer is the same: paragraphs and pictures in a column, a ＋ between every two, no
@@ -158,7 +158,7 @@ can trigger it by accident. Then it starts the station again for the run:
 - **every blog slot is emptied** — `logbook.json` becomes one placeholder per day and officer,
   for the crew to fill in during the mission;
 - **the crew's figures are emptied** — `crew-figures.json` loses its days; the health officer
-  files each day's calories and steps on the Health tab as the run goes;
+  files each day's calories and steps, per officer, on the Health tab as the run goes;
 - **the power figures are emptied** — `power.json` loses its days and keeps its categories;
   each day's kWh by category is filed on the Habitat tab as the run goes;
 - **every message, reply and callsign from Earth is cleared** — the correspondence is logged
@@ -216,8 +216,8 @@ load and downloadable at `/resources/log.csv`.
 
 ## The three daily blogs
 
-Directly **below the Trends graph** the landing page carries three panels side by side (one
-under another on a phone):
+The **front row of the stack of folders** on the landing page holds three panels, one folder
+each (see *The mission page*):
 
 | Panel | What it shows | Written in mission control |
 |---|---|---|
@@ -229,14 +229,14 @@ under another on a phone):
 it; nothing else about that officer is renamed, and it is still written on their tab.
 
 **Each panel shows the current day's post, and only that.** The day is the one the schedule
-and the meal panels above it are showing — today's SOL during the run, SOL 01 before it — and
-it is named in the panel's head (`SOL 005 · Mon 19 Oct`). Yesterday's post is not here: earlier
-days are on the crew log (`/logbook`) and in At a Glance. Until the day's post is written the
-panel says so (*No science findings yet for SOL 005*), and with nothing written the three make
-one low row. The same rule as everywhere else decides what is public: a post is on the station
-the moment it is saved; a placeholder never is, and a post cleared in mission control leaves
-its panel at once. Like the schedule and the meal, a panel is drawn when the page is loaded —
-a page left open across midnight shows the new day on its next load.
+and the meal folders are showing — today's SOL during the run, SOL 01 before it — and it is
+named in the panel's head (`SOL 005 · Mon 19 Oct`). Yesterday's post is not here: earlier days
+are on the crew log (`/logbook`) and in At a Glance. Until the day's post is written the panel
+says so (*No science findings yet for SOL 005*). The same rule as everywhere else decides what
+is public: a post is on the station the moment it is saved; a placeholder never is, and a post
+cleared in mission control leaves its panel at once. Like the schedule and the meal, a panel is
+drawn when the page is loaded — a page left open across midnight shows the new day on its next
+load.
 
 **The post is read where it stands, by scrolling — there is nothing to click into and back
 out of.** A panel is as tall as its post, up to a limit, and from there the post scrolls inside
@@ -258,7 +258,7 @@ whichever suits the moment and it is live on the station within seconds:
 | What | The file | The tab in mission control |
 |---|---|---|
 | Resources — what is left of each store | `content/inventory-levels.json`: per day, per store, `{ "quantity": 618, "consumption": 46 }`. Only write the stores that changed; the rest carry forward at their daily draw | **Habitat** → Inventory levels, with the day picker on the day |
-| Calories and steps | `content/crew-figures.json`: `"5": { "calories": 5010, "steps": 6420 }` | **Health officer** → Crew figures, day picker on the day |
+| Calories and steps | `content/crew-figures.json`: per day, one entry per officer under `crew`, keyed by designation, and the crew's totals as the sums — `"5": { "crew": { "COMMUNICATION OFFICER": { "calories": 1720, "steps": 2200 }, "SCIENCE OFFICER": { … }, "HEALTH OFFICER": { … } }, "calories": 5010, "steps": 6420 }`. A day written with the totals alone still shows, as a total. The Habitat panel shows each officer's figure with the crew's total beneath; At a Glance and the record carry the totals | **Health officer** → Crew figures, day picker on the day |
 | Power consumed, by category | `content/power.json`: `"5": { "heating": 1.1, "food": 0.5, "lighting": 0.35, "electronics": 0.45, "other": 0.1 }` — kWh per day. The `categories` list above the days is editable too: rename a label, add or remove one; the key is the stable name in the record | **Habitat** → Power, day picker on the day; the name fields rename the categories everywhere |
 | Today's schedule | `content/schedule.json`: per day, `{ "time": "06:45", "label": "…", "detail": "…" }`; task status (done, active, skipped) is marked on the tab as the day runs | **Habitat** → Schedule |
 | Meals | `content/meals.json`: per day, slots BREAKFAST / LUNCH / DINNER / RATION with `kcal`, `water`, `prep`, `energy` | **Habitat** → Food plan |
@@ -409,7 +409,7 @@ the page (HEIC, some MOV) is still whole and downloadable — the page says so.
 Photographs kept on the ZKM cloud (`cloud.zkm.de`, a Nextcloud) are shown as a grid on
 **`/media`** — that page is the gallery and nothing else. The station server signs in with
 the display account over **WebDAV**, checks the folder for new images on a set **frequency**
-(`CLOUD_CHECK_SECONDS`, 20 seconds by default), follows its subfolders, and keeps a copy of every image on the `station-data` volume under `/data/cloud`
+(`CLOUD_CHECK_SECONDS`, twenty minutes by default), follows its subfolders, and keeps a copy of every image it shows on the `station-data` volume under `/data/cloud`
 (beside a `manifest.json`), together with the preview Nextcloud renders for it. The browser
 only ever talks to the station — `/media/cloud/<id>` is the copy, `/media/cloud/<id>/thumb`
 the preview — so the grid stands with the cloud slow, the sign-in changed or the venue
@@ -424,13 +424,20 @@ station for the grid; a picture put in the folder is on every open page within a
 long, with no reload, the same way the board updates) and `CLOUD_POLL=false` to hold the
 bridge off. Without user and password the
 bridge is off and the section is not on the page. Files over `CLOUD_MAX_MB` (default 60) are
-listed but not copied. Mission control's **Habitat** tab ends with the bridge's state — how
-many images, when the folder was last read, what went wrong — and a **Read the folder now**
-button; `/api/cloud` says the same without credentials.
+listed but not copied. The pages carry the **newest `CLOUD_MAX_FILES`** pictures (default 500 —
+a week of one every twenty minutes); whatever the folder holds beyond them stays in the folder
+and is simply not shown. Every transfer has a time limit, so a cloud that stalls mid-picture
+costs one read, not the bridge: the read moves on, and the picture is tried again next time.
+Both gallery heads say when the folder was last read — *checked every 20 min · last at 14:20*
+— and, when the latest read failed, that the cloud could not be reached and when, so a
+bridge that has gone quiet never looks like a folder that has. Mission control's **Habitat**
+tab ends with the bridge's state — how many images, when the folder was last read, what went
+wrong — and a **Read the folder now** button; `/api/cloud` says the same without credentials.
 
-**On the landing page** the Habitat panel ends with the six most recently **added** to the
-folder as a row — *Live images from the Habitat* — with a link to all of them, kept live on
-the same frequency. "Most recently added" means when the file arrived in the folder (Nextcloud
+**On the landing page** the Mission dashboard opens with the six most recently **added** to
+the folder as a strip of its own — *Live images from the Habitat*, a glass card under the
+dashboard's heading, above the At a Glance and Media doors — kept live on the same frequency
+(`#cloud-latest`, `cloudLatestInner()` in `src/views/pages/media.js`). "Most recently added" means when the file arrived in the folder (Nextcloud
 numbers every file as it arrives; in a mounted folder, the file's change time), not the date
 the picture itself carries — a phone's photograph taken yesterday and uploaded now is the
 newest. The grid on `/media` is in the same order.
@@ -513,7 +520,7 @@ Other endpoints: `/api/sensors/latest`, `/api/sensors/history?metric=temperature
 The real devices inside the habitat — a smart plug's energy meter, a temperature sensor,
 more as they are installed — hang off a Home Assistant instance on the venue network. The
 station server polls its REST API and draws them on the landing page as **Habitat
-hardware**, a panel directly below the Habitat panel: one tile per device with the current
+hardware**, the folder beside the Habitat's in the stack: one tile per device with the current
 reading, when it last changed and its last 24 hours as a sparkline, and beneath the tiles
 one combined chart with every device on the same day — each line on its own scale, named at
 its end in its own colour, exactly as the Trends panel does it. The panel refreshes itself
@@ -867,11 +874,27 @@ phone left open across midnight on 15 October turns into the run by itself; nobo
 refresh anything. (The page never trusts its own clock for this: at zero it asks the
 station, so a phone running fast cannot reload in a loop.)
 
-Below that the page is two things. **The landing fold**: the composer device and the
-message-board screen beside it. **The mission dashboard**: everything else, on the lower band,
-in one view — a row of headline figures, the run as a strip of thirteen days, then Today's Schedule ·
-Meal · Mood, the Habitat with its sensor tiles, the resource rings and the trend charts, then
-the crew log and the whole mission. Nothing sits behind a tab.
+Under the lead stand two buttons: the orange **Write to the crew**, which leads to the
+composer (`#write`), and beside it — under it where the column is narrow — a glass **Live
+Mission Dashboard** with the live dot, which leads to the dashboard (`#mission`, where the
+foot's *Daily mission* also goes); both land their section's heading where the wheel does.
+
+Below that the page is two things. **The landing fold**: a heading in the dashboard's dress —
+the channel's code `CH-09`, **Send a message to the Crew**, a line beneath, and at the right
+the one-way light-time a message is about to cross — then the composer device and the
+message-board screen beside it, the three centred in the window. **The mission dashboard**
+(`CH-00`): the strip of live images from the habitat, the two doors (At a Glance, Media), a row
+of headline figures, the run as a strip of thirteen days, then the dashboard's panels as
+**one stack of nine folders**, three rows of tabs on one glass panel — at the back the
+**Habitat** (the sensor tiles, the crew's figures, the resource rings and the power bars), the
+**Habitat hardware** and the **Trends**; before them **Today's Schedule**, **Today's Meal** and
+**Crew Moods**; in front the three blogs. The page opens on the Habitat. A press on a tab
+brings that folder to the front (its tab turns cobalt), the arrow keys walk the tabs, and a
+link into a panel — `/#habitat`, `/#crew`, `/#galley`, `/#schedule`, the dome's keys, the foot
+— opens its folder and brings the stack into view (`folder()` in `src/views/pages/public.js`,
+`public/folder.js`, the styles under *the stack of folders* in `public/aura.css`). The open
+folder is as tall as its panel; on a desk it is never taller than the window leaves under the
+tabs, and a panel that needs more scrolls inside; on a phone the page scrolls as one.
 
 During pre-launch the readings show the countdown in place of the mission day and the day rail
 and strip carry no marker.
