@@ -11,8 +11,8 @@ node src/db/seed.js
 if [ -z "${SENSOR_TOKEN:-}" ]; then
   echo "[MCS] warning: SENSOR_TOKEN is not set — the ingest endpoint will reject every device."
 fi
-if [ "${ADMIN_PASSWORD:-change-this-passphrase}" = "change-this-passphrase" ]; then
-  echo "[MCS] warning: ADMIN_PASSWORD is still the default. Change it before the run opens."
+if [ -z "${CONTROL_PASSWORD:-${ADMIN_PASSWORD:-}}" ] || [ "${CONTROL_PASSWORD:-${ADMIN_PASSWORD:-}}" = "change-this-passphrase" ]; then
+  echo "[MCS] warning: no CONTROL_PASSWORD set — mission control uses the default passphrase. Set it in .env before the run opens."
 fi
 
 exec "$@"

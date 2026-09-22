@@ -575,7 +575,7 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
   `;
   return L.page({
     title: 'Mission', ctx, body, hero, hideNav: true, hideRail: true, bodyClass: 'landing',
-    current: '/', scripts: ['/composer.js', '/board.js', '/habitat.js', '/hardware.js', '/section-scroll.js', '/fold.js', '/folder.js'].concat(cloud ? ['/cloud.js'] : []),
+    current: '/', scripts: ['/composer.js', '/board.js', '/habitat.js', '/hardware.js', '/section-scroll.js', '/folder.js'].concat(cloud ? ['/cloud.js'] : []),
     styles: ['/aura.css'],
   });
 }
@@ -860,24 +860,19 @@ function hardwareInner(hw, T = same) {
  *  its unit, the line beneath — set small, in one row under the heading. */
 const kpi = ({ label, value, unit, sub, state }) => `
   <span class="dash-fig${state ? ` ${state}` : ''}">
-    <span class="dash-fig-k">${esc(label)}</span><b>${value}${unit ? `<em>${esc(unit)}</em>` : ''}</b><span class="dash-fig-s">${sub}</span>
+    <span class="dash-fig-k">${esc(label)}</span><b>${value}${unit ? `<em>${esc(unit)}</em>` : ''}</b>${sub ? `<span class="dash-fig-s">${sub}</span>` : ''}
   </span>`;
 
 /** A dashboard panel: code, title and meta in the head, the content beneath. */
-/* The button that folds a section away and opens it again (public/fold.js):
-   the same on every heading that has one, its label says what a press does. */
-const foldToggle = (T, key, controls) => `<button type="button" class="fold-toggle" data-fold="${key}" aria-expanded="true"${controls ? ` aria-controls="${controls}"` : ''}><span class="fold-when-open">${T('Collapse')}</span><span class="fold-when-shut">${T('Expand')}</span><i class="fold-chev" aria-hidden="true"></i></button>`;
-
-const dpanel = ({ id, code, title, meta = '', span = 4, cls = '', href = null, live = null, stop = false, fold = null }, inner) => `
+const dpanel = ({ id, code, title, meta = '', span = 4, cls = '', href = null, live = null, stop = false }, inner) => `
   <section class="dpanel span-${span} ${cls}"${id ? ` id="${id}"` : ''}${stop ? ' data-stop' : ''}>
     <header class="dpanel-head">
       <div class="dpanel-title"><span class="dpanel-code">${esc(code)}</span><h3>${
         href ? `<a href="${href}">${esc(title)} <span class="dpanel-arrow" aria-hidden="true">→</span></a>` : esc(title)}</h3>${
-        live ? `<span class="cloud-live" title="${esc(live)}"><i></i>LIVE</span>` : ''}${
-        fold ? foldToggle(fold, id, `${id}-body`) : ''}</div>
+        live ? `<span class="cloud-live" title="${esc(live)}"><i></i>LIVE</span>` : ''}</div>
       ${meta ? `<span class="dpanel-meta">${meta}</span>` : ''}
     </header>
-    <div class="dpanel-body"${fold ? ` id="${id}-body"` : ''}>${inner}</div>
+    <div class="dpanel-body">${inner}</div>
   </section>`;
 
 /* The dashboard's panels behind one index: three rows of keys — the habitat's
@@ -947,7 +942,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
   const kpis = [
     kpi({ label: 'SOL', value: pre ? `T−${m.countdown.days}` : String(m.clampedDay).padStart(2, '0'),
           unit: pre ? 'sols' : `/ ${String(m.totalDays).padStart(2, '0')}`,
-          sub: pre ? `${T('Opens')} ${esc(m.startLabel)}` : `${sols} ${T(sols === 1 ? 'sol remaining' : 'sols remaining')}` }),
+          sub: pre ? '' : `${sols} ${T(sols === 1 ? 'sol remaining' : 'sols remaining')}` }),
     kpi({ label: T('Crew'), value: String(crew.length), sub: T('officers') }),
   ].join('');
 
@@ -1285,26 +1280,20 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
     <header class="dash-head" data-stop>
       <div>
         <span class="dash-code">CH-00</span>
-        <h2 class="bigsec">${T('Mission dashboard')} ${foldToggle(T, 'dash')}</h2>
+        <h2 class="bigsec">${T('Mission dashboard')}</h2>
         <p class="dash-sub">${esc(m.name)} · ${esc(m.runLabel)} · ${dayWord(T, m.totalDays)} · ${esc(m.timezone)}</p>
         <p class="dash-figs">${kpis}</p>
-      </div>
-      <div class="dash-clock">
-        <span class="dash-clock-label">${T(pre ? 'Countdown' : 'Elapsed')}</span>
-        <b>${esc(m.elapsed)}</b>
       </div>
     </header>
     ${cloudStrip}
     <!-- the two doors and, beside them, the run as a strip of sols -->
     <div class="dash-links">
-      <a class="glance-link" href="/at-a-glance">
+      <a class="glance-link" href="/at-a-glance" title="${esc(T('The whole mission, day by day — blogs, meals, consumption, habitat, crew condition and every exchange'))}">
         <span class="glance-link-title">${T('At a Glance')}</span>
-        <span class="glance-link-sub">${T('The whole mission, day by day — blogs, meals, consumption, habitat, crew condition and every exchange')}</span>
         <span class="glance-link-arrow">-&gt;</span>
       </a>
-      <a class="glance-link media-link" href="/media">
+      <a class="glance-link media-link" href="/media" title="${esc(T('Photographs and video — the gallery, and everything the crew send out of the habitat'))}">
         <span class="glance-link-title">${T('Media')}</span>
-        <span class="glance-link-sub">${T('Photographs and video — the gallery, and everything the crew send out of the habitat')}</span>
         <span class="glance-link-arrow">-&gt;</span>
       </a>
       ${strip}

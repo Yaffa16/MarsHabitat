@@ -14,7 +14,8 @@ export CLOUD_POLL=false HA_POLL=${HA_POLL:-false}
 export MISSION_OVERRIDE=true    # a rehearsal: the real dates are fixed in src/lib/run.js
 export MISSION_START=${MISSION_START:-$(date -u -d '-4 days' +%F)}
 export MISSION_END=${MISSION_END:-$(date -u -d '+8 days' +%F)}
-export ADMIN_PASSWORD=${ADMIN_PASSWORD:-control123}
+export CONTROL_PASSWORD=${CONTROL_PASSWORD:-${ADMIN_PASSWORD:-control123}}
+export CONTROL_USER=${CONTROL_USER:-${ADMIN_USER:-control}}
 export DATA_DIR=$(mktemp -d)
 export CONTENT_DIR=$(mktemp -d)
 cp content/*.json "$CONTENT_DIR"/
@@ -80,7 +81,7 @@ sleep 4
 curl -s $B/api/status | grep -q '"pending":1' && ok "arrived and queued for review" || bad "did not settle to pending"
 
 echo "── one login"
-curl -s -c $A -X POST -d "username=control" -d "password=${ADMIN_PASSWORD:-control123}" -o /dev/null $B/control/login
+curl -s -c $A -X POST -d "username=${CONTROL_USER}" -d "password=${CONTROL_PASSWORD}" -o /dev/null $B/control/login
 curl -s -b $A $B/control | grep -q "Awaiting reply" && ok "control signed in" || bad "sign-in failed"
 [ "$(curl -s -X POST -d 'username=captain' -d 'password=cap-pass' -o /dev/null -w '%{http_code}' $B/control/login)" = "401" ] \
   && ok "no second account exists" || bad "another login still works"
@@ -522,8 +523,8 @@ curl -s $B/ | grep -q "COMMUNICATION OFFICER" && curl -s $B/ | grep -q "HEALTH O
 curl -s $B/ | grep -q "CAPTAIN" && bad "the captain is still in the crew" || ok "no captain left over"
 curl -s $B/ | grep -q 'class="logo"' && bad "the mark is back in the top right" \
   || ok "no mark in the top right of the mission page"
-[ -f .env ] && grep -q "^ADMIN_PASSWORD=" .env && ok ".env is present with the account in it" || bad "no .env"
-node -e 'require("./src/lib/env"); process.exit(process.env.ADMIN_USER?0:1)' \
+[ -f .env ] && grep -q "^CONTROL_PASSWORD=\|^ADMIN_PASSWORD=" .env && ok ".env is present with the account in it" || bad "no .env"
+node -e 'require("./src/lib/env"); process.exit((process.env.CONTROL_USER||process.env.ADMIN_USER)?0:1)' \
   && ok ".env loads for a plain node run, not just Docker" || bad ".env not loaded"
 
 echo "── light mode"

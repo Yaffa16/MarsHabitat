@@ -171,13 +171,16 @@ function cloudGridInner(T, cloud, { tz } = {}) {
     : `<div class="empty" style="padding:28px">${T('Nothing in the folder yet')}.</div>`}`;
 }
 
-/** The newest few from the cloud folder, as a strip — the Habitat panel on
- *  the landing page carries it, kept live by public/cloud.js. */
+/** The newest few from the cloud folder, as a strip — the head of the
+ *  landing page's dashboard carries it, kept live by public/cloud.js. Its
+ *  head is the LIVE badge alone (the label is for screen readers; when the
+ *  folder was checked is the badge's tooltip), and the orange line when the
+ *  last read failed. */
 function cloudLatestInner(T, cloud, { tz } = {}) {
   const items = cloud.items.slice(0, cloud.limit || 6), s = cloud.snapshot, line = checkedLine(T, s, tz);
   return `<div class="cloud-latest-head">
-      <span class="lbl">${T('Live images from the Habitat')}</span>
-      <span class="sub">${T('checked every')} ${every(s.checkSeconds)}${line.last} <span class="cloud-live" title="${esc(T('Updates by itself as pictures arrive'))}"><i></i>${T('LIVE')}</span>${line.failed}</span>
+      <span class="lbl sr-only">${T('Live images from the Habitat')}</span>
+      <span class="sub"><span class="cloud-live" title="${esc(T('Live images from the Habitat'))} · ${esc(T('checked every'))} ${every(s.checkSeconds)}${esc(line.last)} · ${esc(T('Updates by itself as pictures arrive'))}"><i></i>${T('LIVE')}</span>${line.failed}</span>
     </div>
     ${items.length ? `<div class="mstrip cloud-strip">${items.map((x) => cloudTile(x, tz)).join('')}</div>`
     : `<div class="empty" style="padding:18px">${T('Nothing in the folder yet')}.</div>`}`;

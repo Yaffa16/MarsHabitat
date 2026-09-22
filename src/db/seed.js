@@ -12,6 +12,12 @@ const makeHash = (pw) => {
   const salt = crypto.randomBytes(8).toString('hex');
   return salt + ':' + crypto.scryptSync(pw, salt, 32).toString('hex');
 };
+const verifyHash = (pw, stored) => {
+  const [salt, key] = String(stored || '').split(':');
+  if (!salt || !key) return false;
+  const got = crypto.scryptSync(pw, salt, 32), want = Buffer.from(key, 'hex');
+  return want.length === got.length && crypto.timingSafeEqual(got, want);
+};
 
 const todayISO = new Date().toISOString().slice(0, 10);
 const plusDays = (iso, n) => new Date(Date.parse(iso + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10);
@@ -57,13 +63,24 @@ for (let n = 1; n <= totalDays; n++) {
 }
 
 /* ------------------------------------------------------------------ admin */
-const user = process.env.ADMIN_USER || 'control';
-const pass = process.env.ADMIN_PASSWORD || 'change-this-passphrase';
+// The one account, from .env: CONTROL_USER and CONTROL_PASSWORD (the older
+// names ADMIN_USER and ADMIN_PASSWORD still work). The account is whatever
+// the file says at every start: it is created when missing, and its
+// password is brought into line when the file names a different one — so a
+// password changed in .env is the password after the next start. When no
+// password is set at all the account is created once with the placeholder
+// and, if it already exists, left exactly as it is.
+const user = (process.env.CONTROL_USER || process.env.ADMIN_USER || 'control').trim();
+const configuredPass = (process.env.CONTROL_PASSWORD || process.env.ADMIN_PASSWORD || '').trim();
+const pass = configuredPass || 'change-this-passphrase';
 const existing = db.prepare('SELECT * FROM admin_user WHERE username = ?').get(user);
 if (!existing) {
   db.prepare('INSERT INTO admin_user (username, password_hash, role, created_at) VALUES (?, ?, \'CONTROL\', ?)')
     .run(user, makeHash(pass), now());
   console.log(`[seed] admin user "${user}" created`);
+} else if (configuredPass && !verifyHash(configuredPass, existing.password_hash)) {
+  db.prepare('UPDATE admin_user SET password_hash = ? WHERE id = ?').run(makeHash(configuredPass), existing.id);
+  console.log(`[seed] admin user "${user}": password set from .env`);
 }
 
 // There is exactly one account. It signs in to mission control and to the

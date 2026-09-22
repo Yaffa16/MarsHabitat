@@ -19,8 +19,13 @@ services:
       TZ: "Europe/Berlin"
 
       # --- access ----------------------------------------------------------
+      # The one account that opens mission control (/control) and the habitat
+      # terminal (/log): CONTROL_USER and CONTROL_PASSWORD in .env. The older
+      # names ADMIN_USER / ADMIN_PASSWORD are still read when those are absent.
+      CONTROL_USER: "${CONTROL_USER:-}"
+      CONTROL_PASSWORD: "${CONTROL_PASSWORD:-}"
       ADMIN_USER: "${ADMIN_USER:-control}"
-      ADMIN_PASSWORD: "${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:-}"
       SENSOR_TOKEN: "${SENSOR_TOKEN:?set SENSOR_TOKEN in .env}"
       IP_SALT: "${IP_SALT:-change-me}"
       SECURE_COOKIES: "${SECURE_COOKIES:-false}"

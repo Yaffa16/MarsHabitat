@@ -353,7 +353,12 @@ appears under each officer in the Crew section. The slider numbers are never pub
 the sentence each one maps to.
 
 **There is exactly one account.** It signs in to mission control at `/control` and opens the
-archive; the seed removes any others.
+archive; the seed removes any others. Its name and password are `CONTROL_USER` and
+`CONTROL_PASSWORD` in `.env` (the older names `ADMIN_USER` / `ADMIN_PASSWORD` still work), and
+the account follows the file at every start: it is created when missing, and a password
+changed in `.env` is the password after the next start — so on a server, edit `.env` and
+redeploy. With no password set at all the account is created once with the placeholder and
+otherwise left as it is.
 
 ## Media out of the habitat
 
@@ -435,9 +440,10 @@ tab ends with the bridge's state — how many images, when the folder was last r
 wrong — and a **Read the folder now** button; `/api/cloud` says the same without credentials.
 
 **On the landing page** the Mission dashboard opens with the six most recently **added** to
-the folder as a strip of its own — *Live images from the Habitat*, a glass card under the
-dashboard's heading, above the At a Glance and Media doors — kept live on the same frequency
-(`#cloud-latest`, `cloudLatestInner()` in `src/views/pages/media.js`). "Most recently added" means when the file arrived in the folder (Nextcloud
+the folder as a strip of its own — a glass card under the dashboard's heading, above the At a
+Glance and Media doors, carrying the LIVE badge and the pictures and nothing else (when the
+folder was last read is the badge's tooltip; a failed read is still said, in orange) — kept
+live on the same frequency (`#cloud-latest`, `cloudLatestInner()` in `src/views/pages/media.js`). "Most recently added" means when the file arrived in the folder (Nextcloud
 numbers every file as it arrives; in a mounted folder, the file's change time), not the date
 the picture itself carries — a phone's photograph taken yesterday and uploaded now is the
 newest. The grid on `/media` is in the same order.
@@ -852,8 +858,9 @@ a label, a unit, a channel code and thresholds.
 
 The landing page opens on the **MARS!platz** wordmark on the grey ground, one line beneath it,
 and the station's readings as a row of pills on the right; there is no photograph and no black
-rail. (`public/hero.jpg` is no longer referenced and can be deleted.) Below the wordmark, About ·
-What this is · Who we are sit as a row of three folds, closed until asked. The landing page
+rail. (`public/hero.jpg` is no longer referenced and can be deleted.) About · What this is ·
+Who we are open from the ticker's menu as reading dialogs on solid paper (nothing of the page
+shows through the text; the dome's small pop-ups keep their glass). The landing page
 carries no top bar; its navigation lives in the dark footer slab. Subpages keep the status rail
 and **Mission · Messages · Crew log · About**.
 
@@ -884,8 +891,9 @@ the channel's code `CH-09`, **Send a message to the Crew**, a line beneath, and 
 the one-way light-time a message is about to cross — then the composer device and the
 message-board screen beside it, the three centred in the window. **The mission dashboard**
 (`CH-00`): under its heading, small, the headline figures — the sol (the countdown before the
-run) and the crew; then the strip of live images from the habitat; then one row of the two
-doors (At a Glance, Media) with the run as a strip of thirteen sols beside them; then the
+run) and the crew; then the strip of live images from the habitat — the LIVE badge and the
+six newest pictures, nothing else; then one row of the two doors (At a Glance and Media, two
+small pills side by side) with the run as a strip of thirteen sols beside them; then the
 dashboard's nine panels behind **one index** on the head of one glass panel: three tracks of
 equal width, each named at its left and holding three keys — *Habitat*: the **Habitat** (the
 sensor tiles, the crew's figures, the resource rings and the power bars), the **Habitat
@@ -1068,7 +1076,7 @@ computed, 0.37272 au actual). The station keeps working if the venue loses its c
    every start, so a container seeded for an earlier plan comes right the moment it is
    restarted, and a stale `MISSION_START` line in `.env` is ignored (the log says so). Content
    written for days beyond the run is left out with a warning rather than refused.
-2. Change `ADMIN_PASSWORD`, `SENSOR_TOKEN` and `IP_SALT`.
+2. Set `CONTROL_PASSWORD`, `SENSOR_TOKEN` and `IP_SALT`.
 3. Set `SECURE_COOKIES=true` if serving over HTTPS.
 4. Replace the placeholder credits in `src/views/pages/info.js` (`CREDITS`, production and
    contact blocks on `/who-we-are`).
