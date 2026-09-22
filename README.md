@@ -883,18 +883,22 @@ Below that the page is two things. **The landing fold**: a heading in the dashbo
 the channel's code `CH-09`, **Send a message to the Crew**, a line beneath, and at the right
 the one-way light-time a message is about to cross — then the composer device and the
 message-board screen beside it, the three centred in the window. **The mission dashboard**
-(`CH-00`): the strip of live images from the habitat, the two doors (At a Glance, Media), a row
-of headline figures, the run as a strip of thirteen days, then the dashboard's panels as
-**one stack of nine folders**, three rows of tabs on one glass panel — at the back the
-**Habitat** (the sensor tiles, the crew's figures, the resource rings and the power bars), the
-**Habitat hardware** and the **Trends**; before them **Today's Schedule**, **Today's Meal** and
-**Crew Moods**; in front the three blogs. The page opens on the Habitat. A press on a tab
-brings that folder to the front (its tab turns cobalt), the arrow keys walk the tabs, and a
-link into a panel — `/#habitat`, `/#crew`, `/#galley`, `/#schedule`, the dome's keys, the foot
-— opens its folder and brings the stack into view (`folder()` in `src/views/pages/public.js`,
-`public/folder.js`, the styles under *the stack of folders* in `public/aura.css`). The open
-folder is as tall as its panel; on a desk it is never taller than the window leaves under the
-tabs, and a panel that needs more scrolls inside; on a phone the page scrolls as one.
+(`CH-00`): under its heading, small, the headline figures — the sol (the countdown before the
+run) and the crew; then the strip of live images from the habitat; then one row of the two
+doors (At a Glance, Media) with the run as a strip of thirteen sols beside them; then the
+dashboard's nine panels behind **one index** on the head of one glass panel: three tracks of
+equal width, each named at its left and holding three keys — *Habitat*: the **Habitat** (the
+sensor tiles, the crew's figures, the resource rings and the power bars), the **Habitat
+hardware** and the **Trends**; *Today*: **Today's Schedule**, **Today's Meal** and **Crew
+Moods**; *Blogs*: the three blogs. Every key carries a line icon in the hand of the dome's
+keys, its channel code and its name. The page opens on the Habitat. A press on a key opens
+that folder beneath the index (the key turns cobalt, and the name of its track with it), the
+arrow keys walk the keys, and a link into a panel — `/#habitat`, `/#crew`, `/#galley`,
+`/#schedule`, the dome's keys, the foot — opens its folder and brings the index into view
+(`folder()` in `src/views/pages/public.js`, `public/folder.js`, the styles under *the index of
+folders* in `public/aura.css`). The open folder is as tall as its panel; on a desk it is never
+taller than the window leaves under the index, and a panel that needs more scrolls inside; on
+a phone the page scrolls as one.
 
 During pre-launch the readings show the countdown in place of the mission day and the day rail
 and strip carry no marker.

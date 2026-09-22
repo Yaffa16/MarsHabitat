@@ -1,7 +1,7 @@
 /* MARS!platz — folding the big sections away and opening them again.
  *
  * Each heading that can fold carries a button (.fold-toggle[data-fold]):
- *   dash      the Mission dashboard — its live images, its links, its figures and the strip of days
+ *   dash      the Mission dashboard — its live images, its two doors and the strip of days
  * (The panels themselves live in the stack of folders — public/folder.js — one open at a time.)
  * A press hides that section's body and turns the button into "Expand"; the next press brings it back.
  * The heading itself stays where it is, so the page keeps its order and the wheel still lands on it.
@@ -9,7 +9,7 @@
  */
 (function () {
   var MEMBERS = {
-    dash: '.dash > .cloud-latest, .dash-links, .kpis, .run-strip',
+    dash: '.dash > .cloud-latest, .dash-links',
   };
   function members(key, btn) {
     if (MEMBERS[key]) return [].slice.call(document.querySelectorAll(MEMBERS[key]));

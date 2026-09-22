@@ -7,7 +7,7 @@ const { TAGS } = data;
 const { composerBlock } = require('./communicate');
 const { entryCard } = require('./logbook');
 const { aboutSection } = require('./info');
-const { habitatDome } = require('./dome');
+const { habitatDome, LINE_ICONS } = require('./dome');
 const MV = require('./media');
 const mediaGet = require('../../lib/media').get;
 const moodLib = require('../../lib/mood');
@@ -856,13 +856,12 @@ function hardwareInner(hw, T = same) {
 
 /* =============================================================== DASHBOARD */
 
-/** One stat tile of the KPI row. */
+/** One headline figure of the dashboard's head — its label, the figure with
+ *  its unit, the line beneath — set small, in one row under the heading. */
 const kpi = ({ label, value, unit, sub, state }) => `
-  <div class="kpi${state ? ` ${state}` : ''}">
-    <div class="kpi-label">${esc(label)}</div>
-    <div class="kpi-value">${value}${unit ? `<em>${esc(unit)}</em>` : ''}</div>
-    <div class="kpi-sub">${sub}</div>
-  </div>`;
+  <span class="dash-fig${state ? ` ${state}` : ''}">
+    <span class="dash-fig-k">${esc(label)}</span><b>${value}${unit ? `<em>${esc(unit)}</em>` : ''}</b><span class="dash-fig-s">${sub}</span>
+  </span>`;
 
 /** A dashboard panel: code, title and meta in the head, the content beneath. */
 /* The button that folds a section away and opens it again (public/fold.js):
@@ -881,27 +880,44 @@ const dpanel = ({ id, code, title, meta = '', span = 4, cls = '', href = null, l
     <div class="dpanel-body"${fold ? ` id="${id}-body"` : ''}>${inner}</div>
   </section>`;
 
-/* The dashboard's panels as one stack of folders: three rows of tabs — the
-   habitat's three panels at the back (Habitat, Habitat hardware, Trends),
-   the day's three before them (Today's Schedule, Today's Meal, Crew Moods),
-   the three blogs in front — on a glass panel like every other on the page,
-   and beneath the tabs the folder that is in front, showing its panel. The
-   page opens on the first tab of the first row, the Habitat. A press on a
-   tab brings that folder to the front (public/folder.js); the panels keep
-   their ids, so every link into them — #habitat, #crew, #galley, #schedule
-   from the dome's keys and the foot — still lands on them: the script opens
-   the right folder and brings the stack into view. Without the script the
-   first folder stands open and the tabs do nothing. `rows` is a list of
-   rows, each a list of tabs; an empty slot (a panel the station is not
-   showing, such as the hardware without its bridge) is left out of its row. */
+/* The dashboard's panels behind one index: three rows of keys — the habitat's
+   (Habitat, Habitat hardware, Trends), the day's (Today's Schedule, Today's
+   Meal, Crew Moods), the blogs' — each row a track with its name at the left,
+   all three of one width, on the head of one glass panel; beneath them the
+   folder that is open, showing its panel. The page opens on the first key of
+   the first row, the Habitat. A press on a key brings that folder to the front
+   (public/folder.js); the panels keep their ids, so every link into them —
+   #habitat, #crew, #galley, #schedule from the dome's keys and the foot —
+   still lands on them: the script opens the right folder and brings the index
+   into view. Without the script the first folder stands open and the keys do
+   nothing. `rows` is a list of rows, each `{ label, tabs }`; an empty slot (a
+   panel the station is not showing, such as the hardware without its bridge)
+   is left out of its row. */
+/* Each tab's pictogram: 24 × 24 line icons in the dress of the dome's keys
+   (src/views/pages/dome.js, LINE_ICONS) — the crew's and the science flask
+   are the keys' own, so a key on the dome and the folder it leads to share
+   a sign; the rest are drawn here in the same hand. */
+const TAB_ICONS = {
+  habitat: '<path d="M4 17a8 8 0 0 1 16 0"/><path d="M3 17h18"/><path d="M12 9v8"/><path d="M6.5 12.5h11"/>',                       // the dome, its base line, a rib and a ring
+  hardware: '<rect x="7" y="7" width="10" height="10" rx="2"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><path d="M10 10h4v4h-4z"/>',      // a chip with its pins
+  trends: '<path d="M3 17l5-6 4 3 5-8 4 5"/><path d="M3 21h18"/>',                                                                  // a line rising across the days
+  schedule: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',                                                          // the clock
+  galley: '<path d="M7 3v18"/><path d="M5 3v5a2 2 0 0 0 4 0V3"/><path d="M17 3c-2 1.5-3 4-3 7a2 2 0 0 0 2 2h1v9"/>',                   // fork and knife
+  crew: LINE_ICONS.crew,
+  'blog-commander': '<path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M13.5 6.5l3 3"/>',                                               // the pen
+  'blog-health': '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/><path d="M8 12h2l1.5-2.5 2 5L15 12h1.5"/>',   // the heart, a pulse across it
+  'blog-science': LINE_ICONS.science,
+};
+const tabIcon = (id) => TAB_ICONS[id] ? `<svg class="ftab-ic" viewBox="0 0 24 24" aria-hidden="true">${TAB_ICONS[id]}</svg>` : '';
+
 const folder = (T, rows, { id = 'day-folder', label = '' } = {}) => {
-  rows = rows.map((row) => row.filter(Boolean)).filter((row) => row.length);
-  const tabs = rows.flat();
-  const tab = (t, i) => `<button type="button" class="ftab${i === 0 ? ' is-front' : ''}" role="tab" id="ftab-${t.id}" aria-controls="fpage-${t.id}" aria-selected="${i === 0 ? 'true' : 'false'}"${i === 0 ? '' : ' tabindex="-1"'} data-folder="${t.id}"><span class="ftab-n">${esc(t.code)}</span><span class="ftab-l">${esc(t.label)}</span></button>`;
+  rows = rows.map((row) => ({ label: row.label, tabs: row.tabs.filter(Boolean) })).filter((row) => row.tabs.length);
+  const tabs = rows.flatMap((row) => row.tabs);
+  const tab = (t, i) => `<button type="button" class="ftab${i === 0 ? ' is-front' : ''}" role="tab" id="ftab-${t.id}" aria-controls="fpage-${t.id}" aria-selected="${i === 0 ? 'true' : 'false'}"${i === 0 ? '' : ' tabindex="-1"'} data-folder="${t.id}">${tabIcon(t.id)}<span class="ftab-n">${esc(t.code)}</span><span class="ftab-l">${esc(t.label)}</span></button>`;
   return `
   <section class="folder span-12" id="${id}" data-stop aria-label="${esc(label)}">
-    <div class="folder-tabs" role="tablist" aria-label="${esc(label)}">${rows.map((row, r) => `
-      <div class="frow r${r + 1} n${row.length}${r === rows.length - 1 ? ' front' : ''}">${row.map((t) => tab(t, tabs.indexOf(t))).join('')}</div>`).join('')}
+    <div class="folder-tabs" role="tablist" aria-label="${esc(label)}">${rows.map((row) => `
+      <div class="frow n${row.tabs.length}"><span class="frow-k" aria-hidden="true">${esc(row.label)}</span>${row.tabs.map((t) => tab(t, tabs.indexOf(t))).join('')}</div>`).join('')}
     </div>
     <div class="folder-body">${tabs.map((t, i) => `
       <div class="fpage" role="tabpanel" id="fpage-${t.id}" aria-labelledby="ftab-${t.id}" data-folder="${t.id}"${i === 0 ? '' : ' hidden'}>${t.html}</div>`).join('')}
@@ -1271,6 +1287,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
         <span class="dash-code">CH-00</span>
         <h2 class="bigsec">${T('Mission dashboard')} ${foldToggle(T, 'dash')}</h2>
         <p class="dash-sub">${esc(m.name)} · ${esc(m.runLabel)} · ${dayWord(T, m.totalDays)} · ${esc(m.timezone)}</p>
+        <p class="dash-figs">${kpis}</p>
       </div>
       <div class="dash-clock">
         <span class="dash-clock-label">${T(pre ? 'Countdown' : 'Elapsed')}</span>
@@ -1278,6 +1295,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
       </div>
     </header>
     ${cloudStrip}
+    <!-- the two doors and, beside them, the run as a strip of sols -->
     <div class="dash-links">
       <a class="glance-link" href="/at-a-glance">
         <span class="glance-link-title">${T('At a Glance')}</span>
@@ -1289,20 +1307,22 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
         <span class="glance-link-sub">${T('Photographs and video — the gallery, and everything the crew send out of the habitat')}</span>
         <span class="glance-link-arrow">-&gt;</span>
       </a>
+      ${strip}
     </div>
-    <div class="kpis">${kpis}</div>
-    ${strip}
     <div class="dash-grid">
       ${folder(T, [
-        [ { id: 'habitat', code: 'CH-01', label: T('Habitat'), html: habitat },
+        { label: T('Habitat'), tabs: [
+          { id: 'habitat', code: 'CH-01', label: T('Habitat'), html: habitat },
           hardwarePanel ? { id: 'hardware', code: 'CH-02', label: T('Habitat hardware'), html: hardwarePanel } : null,
-          { id: 'trends', code: 'CH-40', label: T('Trends'), html: trends } ],
-        [ { id: 'schedule', code: 'CH-30', label: T('Today’s Schedule'), html: schedule },
+          { id: 'trends', code: 'CH-40', label: T('Trends'), html: trends } ] },
+        { label: T('Today'), tabs: [
+          { id: 'schedule', code: 'CH-30', label: T('Today’s Schedule'), html: schedule },
           { id: 'galley', code: 'CH-32', label: T('Today’s Meal'), html: galley },
-          { id: 'crew', code: 'CH-12', label: T('Crew Moods'), html: crewPanel } ],
-        [ { id: 'blog-commander', code: 'CH-53', label: T('Commander Blog'), html: blogCommander },
+          { id: 'crew', code: 'CH-12', label: T('Crew Moods'), html: crewPanel } ] },
+        { label: T('Blogs'), tabs: [
+          { id: 'blog-commander', code: 'CH-53', label: T('Commander Blog'), html: blogCommander },
           { id: 'blog-health', code: 'CH-52', label: T('Daily Health Blog'), html: blogHealth },
-          { id: 'blog-science', code: 'CH-51', label: T('Daily Science Findings'), html: blogScience } ],
+          { id: 'blog-science', code: 'CH-51', label: T('Daily Science Findings'), html: blogScience } ] },
       ], { label: `${T('Mission dashboard')} · SOL ${day3} · ${shortDay(blogDate)}` })}
     </div>
   </section>`;
