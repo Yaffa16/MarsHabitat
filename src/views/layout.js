@@ -160,17 +160,60 @@ function pageNav(current, T = same) {
   ).join('')}</nav>`;
 }
 
+/* The bottom bar a phone gets (public/aura.css shows it under 760 px in
+   portrait and nowhere else): five keys under the thumb — Home (the landing
+   page), Dashboard (/dashboard), Write (the orange key, the station's one
+   action — the messages page, /messages, its composer open), Media, and More,
+   which opens the ticker's menu as a sheet (public/tabbar.js). */
+const TAB_ICONS = {
+  home: '<path d="M3.5 11.5L12 4l8.5 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-6h4v6"/>',                                    // a house
+  dashboard: '<rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/>',
+  write: '<path d="M3 11l18-8-8 18-2-8z"/><path d="M11 13l10-10"/>',
+  media: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+};
+function tabbar(current, T = same) {
+  const landing = current === '/';
+  const tab = (key, href, label, extra = '') => `<a class="tab tab-${key}${extra}" data-tab="${key}" href="${href}"><svg class="tab-ic" viewBox="0 0 24 24" aria-hidden="true">${TAB_ICONS[key]}</svg><span>${T(label)}</span></a>`;
+  return `<nav class="tabbar" aria-label="${esc(T('The station, page by page'))}">
+    ${tab('home', '/', 'Home', landing ? ' is-on' : '')}
+    ${tab('dashboard', '/dashboard', 'Dashboard', current === '/dashboard' ? ' is-on' : '')}
+    ${tab('write', '/messages#write', 'Write', current === '/messages' ? ' is-on' : '')}
+    ${tab('media', '/media', 'Media', current === '/media' ? ' is-on' : '')}
+    <button type="button" class="tab tab-more${!landing && !['/media', '/messages', '/dashboard'].includes(current) ? ' is-on' : ''}" data-tab="more" aria-haspopup="menu" aria-controls="tk-dropdown" aria-expanded="false"><svg class="tab-ic" viewBox="0 0 24 24" aria-hidden="true">${TAB_ICONS.more}</svg><span>${T('About')}</span></button>
+  </nav>`;
+}
+
+/* The cookie question, asked once on first contact (server.js, /consent):
+   the facts of the station's one cookie in a few small lines, and Accept or
+   Reject. A form, so it works without a script; the answer sends the visitor
+   back to the page. */
+function consent(current, T = same) {
+  return `<aside class="consent" id="consent" role="dialog" aria-labelledby="consent-title" aria-describedby="consent-text">
+    <form method="post" action="/consent">
+      <input type="hidden" name="back" value="${esc(current || '/')}">
+      <h2 id="consent-title">${T('Cookies')}</h2>
+      <p id="consent-text">${T('One cookie: your callsign (e.g. BASALT-625), so you find your messages when you come back. Theme and language are kept the same way. No account, no tracking, nothing passed on. Reject: nothing is kept beyond this visit.')}</p>
+      <div class="consent-keys">
+        <button type="submit" name="choice" value="yes" class="btn primary">${T('Accept')}</button>
+        <button type="submit" name="choice" value="no" class="btn">${T('Reject')}</button>
+      </div>
+    </form>
+  </aside>`;
+}
+
+/* The foot: the wordmark (on the station page), two keys — the privacy
+   statement and ZKM, both on zkm.de — and the line that names the house.
+   The pages themselves are reached from the bar of keys, the ticker's menu
+   and the doors above; nothing else is listed here. */
 function foot(ctx, T = ctx.T || same, landing = false) {
   return `<div class="foot">${landing ? `
-    <div class="foot-brand-block"><span class="foot-wordmark">MARS<span class="bang">!</span>platz</span><span class="foot-tag">${T('Communication Station')} · ZKM | Hertzlab</span></div>` : ''}
+    <div class="foot-brand-block"><span class="foot-wordmark">MARS<span class="bang">!</span>platz</span></div>` : ''}
     <div class="foot-links">
-      <a href="/#write">${T('Write')}</a><a href="/#exchanges">${T('Messages')}</a>
-      <a href="/#mission">${T('Daily mission')}</a><a href="/#habitat">${T('Habitat')}</a>
-      <a href="/#crew">${T('Crew')}</a><a href="/at-a-glance">${T('At a Glance')}</a><a href="/#about">${T('About')}</a>
+      <a href="https://zkm.de/en/privacy-statement">${T('Privacy policy')}</a><a href="https://zkm.de/">ZKM</a>
     </div>
     <div class="foot-base">
       <span class="foot-brand">ZKM | HERTZLAB — MARS</span>
-      <span>${T('SIGNAL DELAY')} ${orbital.formatLightTime(ctx.geo.lightSeconds)} ${T('ONE WAY')}</span>
     </div>
   </div>`;
 }
@@ -215,8 +258,8 @@ function page({ title, ctx, body, current, bodyClass = '', head = '', scripts = 
   }
   return `<!doctype html>
 <html lang="${lang}" data-theme="${ctx.theme === 'dark' ? 'dark' : 'light'}"><head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">${aura ? '\n<script>document.documentElement.className += " js"</script>' : ''}
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <title>${esc(T(title))} — ${T('Mars Communication Station')}</title>
 <meta name="description" content="${esc(T('A live communication interface between an Earth-based audience and the crew of the MARS habitat.'))}">
@@ -229,7 +272,9 @@ ${hideRail ? '' : rail(ctx, bodyClass.includes('landing'), T)}
 ${control || hideNav ? '' : nav(current, T)}
 <main class="shell">${body}</main>
 ${control ? '' : foot(ctx, T, aura)}
-${scripts.map((s) => `<script src="${s}?v=${ASSET_V}" defer></script>`).join('')}
+${aura && ctx.consent === null ? consent(current, T) : ''}
+${control ? '' : tabbar(current, T)}
+${scripts.concat(control ? [] : ['/tabbar.js']).map((s) => `<script src="${s}?v=${ASSET_V}" defer></script>`).join('')}
 </body></html>`;
 }
 
@@ -267,7 +312,7 @@ const readout = ({ label, value, unit, sub, state }) => `
  * two circles, two markers, one dashed chord. Its only job is to make the
  * gap legible and to give the transmission animation a track to run along.
  */
-function orbitPlot(geo, { size = 460, id = 'orbit', T = same } = {}) {
+function orbitPlot(geo, { size = 460, id = 'orbit', T = same, light = true } = {}) {   // light: the one-way signal in the caption (the dashboard leaves it to the messages page)
   const c = size / 2;
   const rEarth = size * 0.215;
   const rMars = size * 0.345;
@@ -345,7 +390,7 @@ function orbitPlot(geo, { size = 460, id = 'orbit', T = same } = {}) {
   <div class="orbit-caption">
     <div><span class="k">${T('Separation')}</span><span class="v">${geo.distanceAu.toFixed(3)} au</span></div>
     <div><span class="k">${T('Distance')}</span><span class="v">${(geo.distanceKm / 1e6).toFixed(1)} M km</span></div>
-    <div><span class="k">${T('One-way signal')}</span><span class="v">${orbital.formatLightTime(geo.lightSeconds)}</span></div>
+    ${light ? `<div><span class="k">${T('One-way signal')}</span><span class="v">${orbital.formatLightTime(geo.lightSeconds)}</span></div>` : ''}
     <div><span class="k">${T('Geometry')}</span><span class="v">${T(geo.trend)} · ${geo.separationDeg.toFixed(0)}°</span></div>
   </div>
 </div>`;

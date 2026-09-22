@@ -91,6 +91,8 @@ which is mission control's, sits behind the same login.
 | Page | Route | Holds |
 |---|---|---|
 | The station | `/` | **The ticker** across the top — the habitat's clock and a running line of the current activity, the next one and the node's reading · composer and orbital plot · the live message board · the mission dashboard (schedule, meal, mood, habitat, resources, trends, and below the trends **the three daily blogs** — Daily Science Findings, Daily Health Blog, Commander Blog) · **about** (the project, how the station behaves, who we are). The crew log, the media and the whole mission day by day live on their own pages (`/logbook`, `/media`, `/at-a-glance`) |
+| Dashboard | `/dashboard` | The mission dashboard on a page of its own — the same section the station page carries on a desk: the head, the live images, the two doors, the strip of sols and the nine panels behind their index. Drawn for a phone first; the phone's bar of keys leads here with **Dashboard**, and on a phone the station page keeps only the habitat and the doors |
+| Messages | `/messages` | The portal on a page of its own — the composer and the live message board, the same pieces the station page shows on a desk. Drawn for a phone first: the exchanges flow with the page, the composer is a dock at the foot of the screen; the phone's bar of keys leads here with **Write**, and on a phone the station page keeps only the doors |
 | Mission control | `/control` | Five tabs: **Messages** (the reply queue) first, then one per officer, and the habitat — which ends with the plan and the reset |
 | At a Glance | `/at-a-glance` | **A booklet: one day per page, turned by scrolling or swiping sideways** — arrows either side, ← → on a keyboard, a day strip to jump, a `#day-n` link opens on that day. Each page: each day's crew log with its photographs, the exchanges published, the schedule as run, the meals and their cost, the consumption of every store, the habitat summary, the crew's condition as sentences, the mission notes and the media. Days ahead show the plan, and each page scrolls on its own like a page being read. Opened from the button under the mission dashboard, and from the navigation |
 | Crew log | `/logbook` | All thirteen days in order, each officer's entry where written and its placeholder where not — a day strip to jump by, a chip per voice. Opened from the Crew log panel on the station, and from the nav |
@@ -721,6 +723,83 @@ not an afterthought:
 - there is a print stylesheet, because the archive is the artwork and somebody will
   eventually want it on paper
 
+**A phone held upright** (up to 760 px across, more than 520 px tall) gets its own chrome on
+the public pages, drawn from the same markup — nothing is served twice, and the desk and a
+phone held sideways are untouched (the block at the end of `public/aura.css`):
+
+- the ticker becomes a **top bar that stays**: the wordmark, the sol as a pill with the live
+  dot (the countdown before the run), the habitat's clock, the theme and language switches,
+  and the running line as a second row beneath them. Its three-lines button is hidden; what
+  it opened is reached from the bar at the foot. Anything a link brings into view — the
+  portal, the dashboard, a folder, a day of the booklet or of the log — lands under the bar
+  (`scroll-padding-top` on the root), and `public/folder.js` places the index under it.
+- a **bar of five keys fixed at the foot** — Home, Dashboard, Write, Media, About — with
+  Write raised in orange (`tabbar()` in `src/views/layout.js`, `public/tabbar.js`). Each key
+  is a page and the lit key names the page you are on. **About** opens
+  the ticker's menu as a sheet from the foot — About, What this is, Who we are, each with
+  its sign; the reading pop-ups open as sheets too.
+- the station page keeps the wordmark, the lead, the **two doors** — Write to the crew and
+  Live Mission Dashboard, side by side in one row under the lead, each a pill of two lines
+  — the habitat, and then the foot: nothing else. The masthead's rows stand a little closer
+  than on a desk (the wordmark 50 px, the lead at 1.45 lines), so that on a 360 × 744 screen
+  — a common phone with the browser's own bar showing — the doors and the whole habitat are
+  on the first screen above the keys.
+- the **dashboard is a page of its own, `/dashboard`** (`dashboardPage()` in
+  `src/views/pages/public.js`, built from the same data as the station page): the bar's
+  Dashboard key, the second door and the dome's keys all lead there
+  (`public/tabbar.js`), a link into a panel — `/dashboard#galley` — opening its folder.
+  Its index is **two rows of tabs**: a segmented control of the three tracks (Habitat ·
+  Today · Blogs) and, beneath it, that track's three folders as underlined tabs; both stay
+  under the top bar while the open folder scrolls beneath them. No key is more than two
+  taps away.
+- the portal's head puts the one-way signal small at the right of the title, so the
+  composer's Transmit key is on the portal's first screen.
+- the portal — the composer and the board — is a **page of its own, `/messages`**
+  (`messages()` in `src/views/pages/public.js`): the station page drops it and its first
+  door and the bar's Write key lead there (`public/tabbar.js`). On that page the board is the page: its filter chips stick
+  under the top bar in one sideways row, the exchanges flow beneath — twenty of the current
+  view at a time, a **Show more** key beneath them bringing the next twenty
+  (`public/board.js`) — and the composer is a **pop-up over the foot of the screen**, above
+  the bar of keys: `/messages#write` (every Write door) opens the page with it out, the bar's
+  Write key shows and hides it, a touch on the page beside it — or Escape — hides it. It is
+  plainly a surface of its own: solid paper (no glass) with a rule of Mars along its top edge
+  and a shadow upward, the list dimmed a little behind it while it is out (the dimming is
+  drawn inside the shell, `.shell::before`, where the pop-up lives — every child of the body
+  is a layer of its own, so drawn on the body it would lie over the pop-up as well, in the
+  round shape of the body's glow). The page ends with the last message: it carries no foot
+  here, so the list scrolls up to just above the pop-up and no further. It holds the title,
+  the operator's callsign, a writing box the whole width of the pop-up — seven lines deep to
+  begin with, growing with the text to nine; while the keyboard is up, as deep as fits between
+  the top bar and the keyboard — beneath it the five tags whole in one line, small enough to
+  fit in every language (a tag longer than its room is cut short rather than the row) — every
+  tag the visitor sees, in the composer, the board's filter, a card's small print and the
+  archive, is written with a `#` in front, `#QUESTION` — and
+  under them **Transmit** in the middle, an orange pill, dim until there is something to send.
+  While a message is being written the
+  list behind the pop-up is blurred away (the one blur a phone draws, and only then); during
+  the crossing it clears again, so the message can be seen arriving under MY MESSAGES.
+  **While the phone's keyboard is up** the bar of keys steps
+  aside and the pop-up sits on the keyboard's upper edge, so what is typed is in view: a
+  phone's keyboard covers the lower part of the page without shrinking it, and only the
+  visible part (`window.visualViewport`) says where its edge is — `tabbar.js` reads that, never
+  the focus, so that a touch on Transmit while the keyboard is up finds the button where it
+  was; the keyboard folded away, the keys return under the pop-up. A press on Transmit brings
+  the board's head into view, where the message just sent appears under MY MESSAGES while the
+  pop-up shows the crossing on a small dial — at the size the pop-up had when Transmit was
+  pressed (`tabbar.js` holds the stage at that height, the crossing centred in it), so nothing
+  jumps; the fresh form afterwards has its own size again. Without JavaScript the pop-up
+  simply stands there.
+- the page's side margin is 16 px rather than the desk's proportional gutter.
+- **the paper dress** (the last block of `public/aura.css`): the same design drawn without what
+  costs a phone the most. The surfaces are opaque paper instead of blurred glass — a backdrop
+  blur is redrawn every frame, and eight of them shared one screen — the film grain is not
+  blended over the screen, the habitat's keys carry a stroke instead of an SVG filter, every
+  panel has one short shadow instead of three, the running line is clipped instead of masked,
+  and the exchange cards and the foot far below the screen are neither laid out nor painted
+  until they come near (`content-visibility`). What the page scrolls under — the top bar, the
+  chips row, the bar of keys — is opaque paper, so nothing ghosts through it. Same layout,
+  type, cobalt and Mars; a wider screen and a phone held sideways keep the glass.
+
 ## Visual language
 
 A soft instrument. A pale grey ground lit from above; the things you touch are raised off it as
@@ -744,6 +823,15 @@ The parts are working parts, not decoration:
   switch — are a row of small inset pills under the wordmark.
 - **Channel tags** still stamp every panel with the data channel it renders, now as a small
   grey code in the corner.
+- **The foot** (`foot()` in `src/views/layout.js`) carries the wordmark, two keys — *Privacy
+  policy*, to zkm.de/en/privacy-statement, and *ZKM*, to zkm.de — and the house's name,
+  nothing else; the pages are reached from the bar of keys, the ticker's menu and the doors.
+  On a phone held upright it is a low band the width of the page: the wordmark and the house
+  at the left, the two keys one above the other at the right.
+- **The one-way signal time is read where a message is written** — the messages page's head,
+  the composer's crossing, the `/communicate` fallback — and nowhere else: the ticker, the
+  foot, the About panel and the mission-complete page leave it out (the About text still
+  explains the compressed crossing in a sentence).
 - **Empty states** are dashed wells rather than crossed boxes.
 
 Orange is the only colour. It marks Mars, live state, and anything wanting action. Status is
@@ -868,7 +956,7 @@ Across the very top runs **the ticker**: an orange cell with the habitat's clock
 ticking), then a continuously running line — the SOL, **what the crew are currently doing**
 (the schedule task whose time it is, with its detail — "14:00 · Maintenance — West panel seal,
 third attempt" — switching to the next as its time comes), what is next, the node's current
-reading (or *no current reading*), and the one-way signal time. Every five minutes it fetches
+reading (or *no current reading*). Every five minutes it fetches
 the day's schedule again from `/api/ticker`, so an edit made in mission control — or midnight
 turning to a new day — reaches every open phone without a reload. It scrolls like a wire
 ticker, holds while hovered, and stands still under reduced motion.
@@ -883,8 +971,8 @@ station, so a phone running fast cannot reload in a loop.)
 
 Under the lead stand two buttons: the orange **Write to the crew**, which leads to the
 composer (`#write`), and beside it — under it where the column is narrow — a glass **Live
-Mission Dashboard** with the live dot, which leads to the dashboard (`#mission`, where the
-foot's *Daily mission* also goes); both land their section's heading where the wheel does.
+Mission Dashboard** with the live dot, which leads to the dashboard (`#mission`); both land
+their section's heading where the wheel does.
 
 Below that the page is two things. **The landing fold**: a heading in the dashboard's dress —
 the channel's code `CH-09`, **Send a message to the Crew**, a line beneath, and at the right
@@ -906,7 +994,8 @@ arrow keys walk the keys, and a link into a panel — `/#habitat`, `/#crew`, `/#
 (`folder()` in `src/views/pages/public.js`, `public/folder.js`, the styles under *the index of
 folders* in `public/aura.css`). The open folder is as tall as its panel; on a desk it is never
 taller than the window leaves under the index, and a panel that needs more scrolls inside; on
-a phone the page scrolls as one.
+a phone the page scrolls as one, and a phone held upright shows the index as two rows of tabs
+(see *Mobile and desktop*).
 
 During pre-launch the readings show the countdown in place of the mission day and the day rail
 and strip carry no marker.
@@ -917,6 +1006,14 @@ The board beside the composer holds the whole correspondence: every published ex
 scrollable field, with tag chips that filter it — press `PERSONAL` and the field shows only
 those — and a **MY MESSAGES** chip that shows your own, including the ones still waiting on the
 crew. The counts are live.
+
+Each exchange is one card (`messageCard()` in `src/views/pages/public.js`, the styles under
+*the exchanges* in `public/aura.css`): the visitor's message in a shaded box, with one line of
+small print over it — its tags, the callsign, `Earth`, the day and time it was sent — and the
+`Ref` number at the right; beneath the box **CREW ANSWER** and the crew's reply, large, with
+the officer, the habitat and the time the reply left Mars in small print under it. A message not
+yet answered shows its state (`IN TRANSIT`, `REACHED MARS`) where the answer will stand. The
+same card serves the last exchanges on the closing page.
 
 There is exactly one place to write on the public station, at the top of the mission page. A
 second composer beside the exchange was one box too many: it invited a reply to a message you
@@ -931,8 +1028,9 @@ tablet, one on a phone.
 
 Each card is a label. The callsign is stamped in orange like a lot number, the message is the
 content, the reply sits beneath it on an orange wash, and the foot carries the reference data:
-the real light-time it crossed, the distance in au, and a `Ref 00042` permalink. The same card
-is used on the landing page, in the archive and in the crew logbook, so one component defines
+the real light-time it crossed, the distance in au, and a `Ref 00042` permalink. (The public
+board and the closing page dress the same data as quoted posts instead — see *The board*.) The
+same card is used in the archive and in the crew logbook, so one component defines
 what an exchange looks like everywhere.
 
 ## The logo
@@ -947,7 +1045,8 @@ in there now — replace it with the real one.
 The public station reads in **German, English and French**, switched by the small
 **DE · EN · FR** control beside the theme switch — in the masthead on the landing page,
 the crew log and the media page, and in the rail on At a Glance. The choice is kept in a
-cookie (`mcs_lang`, a year, like the theme), resolved on the server, and applied to the
+cookie (`mcs_lang`, a year once the cookie question is accepted, otherwise for the visit — like
+the theme), resolved on the server, and applied to the
 whole page before it is sent: `<html lang="…">`, every label, every sentence of the
 reading matter. Nothing is fetched and no third-party script is involved — the
 translation is the station's own, so it works with the network unplugged like everything
@@ -1095,6 +1194,25 @@ computed, 0.37272 au actual). The station keeps working if the venue loses its c
 Stored: callsign, message text, tags, timestamps, and a truncated one-way hash of the IP
 address used only for rate limiting. No analytics, no external requests, no tracking. The
 SQLite database and the media the crew send out live in the `station-data` volume at `/data`.
+
+**Callsigns and cookies.** A visitor is a random token in one cookie (`mcs_id`, HttpOnly)
+tied to a callsign — a word from the station's vocabulary and a number, `BASALT-625` — and
+nothing else: no account, no name. The same browser gets the same callsign back for as long
+as the cookie lasts; a cleared browser, private window or second device is a new visitor.
+Unused callsigns are pruned after seven days. The station asks before setting it: on first
+contact every public page carries the **cookie question** (`consent()` in
+`src/views/layout.js`, `POST /consent`), a small card — the facts of the cookie in four
+short lines of small type, nothing more — with Accept and Reject. Until it is answered a page view sets no cookie at all and the composer
+shows *Callsign on sending* in place of the callsign. **Accept** stores the answer
+(`mcs_consent`, a year) and the next page view mints the callsign for a year; the theme and
+language cookies last a year as well. **Reject** stores the answer, drops whatever the browser
+held, and keeps nothing beyond the visit: reading needs no cookie; sending a message mints a
+callsign — the message has to carry one — in a cookie without an expiry, gone when the browser
+closes, and the device's head takes the callsign up from the composer fragment
+(`data-callsign`, `public/composer.js`); the theme and language switches work the same way,
+for the visit only. Either answer sends the visitor back to the page they were on, through
+the same door — `/messages#write` stays `/messages#write`, the pop-up out (`public/tabbar.js`
+fills the form's `back` field with the address, hash included, which only the browser knows).
 
 Back it up with the script, which uses SQLite's own backup API — a plain `cp` of a live
 WAL database can produce a corrupt copy:

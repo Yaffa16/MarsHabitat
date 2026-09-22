@@ -48,7 +48,6 @@ const D = {
   'Light': ['Licht', 'Lumière'],
   'Switch to light mode': ['Zum hellen Modus wechseln', 'Passer en mode clair'],
   'Switch to dark mode': ['Zum dunklen Modus wechseln', 'Passer en mode sombre'],
-  'SIGNAL DELAY': ['SIGNALLAUFZEIT', 'DÉLAI DU SIGNAL'],
   'Back to the station': ['Zurück zur Station', 'Retour à la station'],
   'Language': ['Sprache', 'Langue'],
 
@@ -434,6 +433,27 @@ const D = {
   // ---- the landing page's aura layout: the composer's heading, the blogs' heading, the menu, the lead
   'Write to the crew': ['Schreib der Crew', 'Écrivez à l’équipage'],
   'Live Mission Dashboard': ['Missions-Dashboard live', 'Tableau de bord de mission en direct'],
+  'Dashboard': ['Dashboard', 'Tableau de bord'],
+  'More': ['Mehr', 'Plus'],
+  'Everything else on the station': ['Alles Weitere auf der Station', 'Tout le reste de la station'],
+  'Show more': ['Mehr anzeigen', 'Afficher plus'],
+  'Crew answer': ['Antwort der Crew', 'Réponse de l’équipage'],
+  'Home': ['Start', 'Accueil'],
+  'Cookies': ['Cookies', 'Cookies'],
+  'One cookie: your callsign (e.g. BASALT-625), so you find your messages when you come back. Theme and language are kept the same way. No account, no tracking, nothing passed on. Reject: nothing is kept beyond this visit.':
+    ['Ein Cookie: dein Rufzeichen (z. B. BASALT-625), damit du deine Nachrichten wiederfindest, wenn du zurückkommst. Thema und Sprache werden genauso gemerkt. Kein Konto, kein Tracking, nichts wird weitergegeben. Ablehnen: nichts bleibt über diesen Besuch hinaus.',
+     'Un cookie : votre indicatif (p. ex. BASALT-625), pour retrouver vos messages à votre retour. Thème et langue sont gardés de la même manière. Pas de compte, pas de pistage, rien n’est transmis. Refuser : rien n’est conservé au-delà de cette visite.'],
+  'Accept': ['Akzeptieren', 'Accepter'],
+  'Privacy policy': ['Datenschutz', 'Politique de confidentialité'],
+  'Reject': ['Ablehnen', 'Refuser'],
+  'Callsign on sending': ['Rufzeichen beim Senden', 'Indicatif à l’envoi'],
+  'You will get a callsign': ['Du bekommst ein Rufzeichen', 'Vous recevrez un indicatif'],
+  'The station assigns you one — a word and a number, such as BASALT-625 — the moment you accept its cookie, or the moment you first send.':
+    ['Die Station weist dir eines zu — ein Wort und eine Zahl, etwa BASALT-625 —, sobald du ihren Cookie akzeptierst oder zum ersten Mal sendest.',
+     'La station vous en attribue un — un mot et un nombre, comme BASALT-625 — dès que vous acceptez son cookie ou que vous envoyez pour la première fois.'],
+  'Latest from the crew': ['Das Neueste von der Crew', 'Le dernier mot de l’équipage'],
+  'At a glance': ['Auf einen Blick', 'En un coup d’œil'],
+  'The station, page by page': ['Die Station, Seite für Seite', 'La station, page par page'],
   'Send a message to the Crew': ['Schick der Crew eine Nachricht', 'Envoyez un message à l’équipage'],
   'Daily Blog': ['Tagesblog', 'Blog du jour'],
   'Collapse': ['Einklappen', 'Replier'],
@@ -515,9 +535,9 @@ const D = {
      'sur le tableau. Tous les messages ne sont pas retenus, et c’est une vraie décision éditoriale, pas un filtre anti-spam.'],
   'The delay is compressed, and we say so': ['Die Verzögerung ist verkürzt, und wir sagen es', 'Le délai est comprimé, et nous le disons'],
   'At this moment a radio signal takes': ['In diesem Moment braucht ein Funksignal', 'En ce moment, un signal radio met'],
-  'to reach Mars, and the same again to come back. The station shows you that figure constantly — it is in the rail at the top. But the animated crossing you watch after pressing transmit runs in about ten seconds. Pretending otherwise would make the piece a lie about physics rather than a piece about distance. The real number is stored with your message and travels with it into the archive.':
-    ['bis zum Mars, und noch einmal so lang zurück. Die Station zeigt dir diese Zahl ständig — sie steht in der Leiste oben. Aber die animierte Strecke, die du nach dem Senden siehst, läuft in etwa zehn Sekunden ab. So zu tun, als wäre es anders, machte aus dem Werk eine Lüge über Physik statt eines Werks über Distanz. Die echte Zahl wird mit deiner Nachricht gespeichert und reist mit ihr ins Archiv.',
-     'pour atteindre Mars, et autant pour revenir. La station vous montre ce chiffre en permanence — il est dans la barre en haut. Mais la traversée animée que vous regardez après avoir appuyé sur transmettre dure une dizaine de secondes. Prétendre le contraire ferait de l’œuvre un mensonge sur la physique plutôt qu’une œuvre sur la distance. Le vrai chiffre est enregistré avec votre message et voyage avec lui jusque dans l’archive.'],
+  'to reach Mars, and the same again to come back. The station shows you that figure where you write. But the animated crossing you watch after pressing transmit runs in about ten seconds. Pretending otherwise would make the piece a lie about physics rather than a piece about distance. The real number is stored with your message and travels with it into the archive.':
+    ['bis zum Mars, und noch einmal so lang zurück. Die Station zeigt dir diese Zahl dort, wo du schreibst. Aber die animierte Strecke, die du nach dem Senden siehst, läuft in etwa zehn Sekunden ab. So zu tun, als wäre es anders, machte aus dem Werk eine Lüge über Physik statt eines Werks über Distanz. Die echte Zahl wird mit deiner Nachricht gespeichert und reist mit ihr ins Archiv.',
+     'pour atteindre Mars, et autant pour revenir. La station vous montre ce chiffre là où vous écrivez. Mais la traversée animée que vous regardez après avoir appuyé sur transmettre dure une dizaine de secondes. Prétendre le contraire ferait de l’œuvre un mensonge sur la physique plutôt qu’une œuvre sur la distance. Le vrai chiffre est enregistré avec votre message et voyage avec lui jusque dans l’archive.'],
   'Where the habitat readings come from': ['Woher die Habitat-Messwerte kommen', 'D’où viennent les mesures de l’habitat'],
   'Temperature, humidity and the other channels in the Habitat section are measured by a sensor node in the physical performance space. When the node stops reporting, the dashboard says so rather than freezing on its last value.':
     ['Temperatur, Luftfeuchte und die anderen Kanäle im Abschnitt Habitat werden von einem Sensorknoten im physischen Aufführungsraum gemessen. Wenn der Knoten nicht mehr meldet, sagt das Dashboard das, statt auf seinem letzten Wert einzufrieren.',

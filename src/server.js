@@ -53,9 +53,13 @@ app.use((req, res, next) => {
   // req.path has had its mount prefix stripped and '/control/login' reads as
   // '/login', which used to mint a visitor callsign for mission control.
   const internal = req.path.startsWith('/control');
+  // The station's one cookie of its own — the callsign — is set only once the
+  // visitor has accepted it (mcs_consent, asked on first contact) or sends a
+  // message; until then a page view identifies nobody.
+  const consent = req.cookies.mcs_consent === 'yes' ? 'yes' : req.cookies.mcs_consent === 'no' ? 'no' : null;
   req.ctx = () => {
     if (cached) return cached;
-    const visitor = internal ? null : callsign.identify(req, res);
+    const visitor = internal ? null : callsign.identify(req, res, { create: consent === 'yes', persist: consent === 'yes' });
     const newest = db.prepare('SELECT MAX(recorded_at) m FROM sensor_reading').get().m;
     const commsUp = newest ? (Date.now() - Date.parse(newest)) / 1000 < data.STALE_SECONDS : false;
     // The visitor's language, from the cookie — and T, which puts any
@@ -70,11 +74,35 @@ app.use((req, res, next) => {
       mission: missionLib.state(),
       callsign: visitor ? visitor.callsign : null,
       visitor,
+      consent,
       commsUp,
     };
     return cached;
   };
+  // The visitor as a writer: the one they are, or one minted now for the
+  // message — for the visit only unless they accepted the cookie.
+  req.writer = () => {
+    const ctx = req.ctx();
+    if (!ctx.visitor) {
+      ctx.visitor = callsign.identify(req, res, { create: true, persist: consent === 'yes' });
+      ctx.callsign = ctx.visitor.callsign;
+    }
+    return ctx.visitor;
+  };
   next();
+});
+
+/* The cookie question, answered: yes keeps the callsign (and the theme and
+   language) for a year; no keeps nothing beyond the visit and drops whatever
+   the browser held. Either answer is itself remembered, so the question is
+   asked once. */
+app.post('/consent', (req, res) => {
+  const yes = req.body.choice === 'yes';
+  res.cookie('mcs_consent', yes ? 'yes' : 'no', { httpOnly: true, sameSite: 'lax', maxAge: 365 * 86400000,
+    secure: process.env.SECURE_COOKIES === 'true' });
+  if (!yes) { res.clearCookie('mcs_id'); res.clearCookie('mcs_theme'); res.clearCookie('mcs_lang'); }
+  const back = String(req.body.back || '');
+  res.redirect(/^\/[^/\\]*$/.test(back) ? back : '/');
 });
 
 /**
@@ -100,14 +128,11 @@ const hashIp = (ip) => crypto.createHash('sha256')
 
 /* ============================================================ PUBLIC PAGES */
 
-app.get('/', (req, res) => {
-  const ctx = req.ctx();
-  if (ctx.mission.phase === 'COMPLETE') {
-    return res.send(P.complete(ctx, { counts: data.counts(), recent: data.published(3) }));
-  }
-  // Two public things exist: this page and mission control. Everything a
-  // visitor can read — the board, the crew, the crew log, the whole schedule,
-  // the about text — is a section of this page.
+/* What the mission page and the dashboard page are built from: the crew
+   with their latest entries, every day of the run, the day's schedule, the
+   readings, the media, the hardware and the cloud folder. Read here once for
+   both, so the two pages cannot drift apart. */
+function stationData(ctx) {
   // The crew's diary is drafted ahead in content/logbook.json. Days that have
   // not happened yet stay out of public view until they do.
   // The latest entry each officer has written, whatever its day: the log
@@ -131,7 +156,7 @@ app.get('/', (req, res) => {
       inventory: d ? d.inventory : [],
     });
   }
-  res.send(P.mission(ctx, {
+  return {
     sensors: data.sensorPanels(),
     crew,
     allDays,
@@ -139,9 +164,6 @@ app.get('/', (req, res) => {
     entryCounts: { published: logDays.reduce((n, d) => n + d.written, 0), days: logDays.filter((d) => d.written).length },
     today: data.day(ctx.mission.clampedDay),
     counts: data.counts(),
-    // Published exchanges for everyone; this visitor's own messages as well,
-    // whatever state they are in, so a sender can always find what they sent.
-    recent: data.board(400, ctx.visitor ? ctx.visitor.id : null),
     latestEntries: data.entriesForDay(ctx.mission.clampedDay),
     crewFigures: content.crewFigures(),
     // Power consumed by category, kWh per day, from content/power.json.
@@ -149,8 +171,6 @@ app.get('/', (req, res) => {
     // Daily averages of anything posted to /api/sensors/ingest, for the
     // trend charts, keyed by venue date.
     ingest: data.dailyAverages(40, (d) => missionLib.localDate(d, ctx.mission.timezone)),
-    inFlight: ctx.visitor ? data.inFlightFor(ctx.visitor.id) : null,
-    error: req.query.err ? String(req.query.err).slice(0, 160) : null,
     // The newest media out of the habitat, for the Media panel; and a way for
     // an entry to find a picture placed in its text by id.
     media: mediaLib.list({ limit: 12 }), mediaCounts: mediaLib.counts(), mediaLookup: mediaLib.get,
@@ -163,15 +183,56 @@ app.get('/', (req, res) => {
     // And its daily series for the Trends panel: one value per device per
     // venue day — a gauge's daily mean, a meter's daily added amount.
     hardwareDaily: homeAssistant.daily((d) => missionLib.localDate(d, ctx.mission.timezone)),
+  };
+}
+
+app.get('/', (req, res) => {
+  const ctx = req.ctx();
+  if (ctx.mission.phase === 'COMPLETE') {
+    return res.send(P.complete(ctx, { counts: data.counts(), recent: data.published(3) }));
+  }
+  // Two public things exist: this page and mission control. Everything a
+  // visitor can read — the board, the crew, the crew log, the whole schedule,
+  // the about text — is a section of this page (a phone held upright gets the
+  // messages and the dashboard as pages of their own, from the same data).
+  res.send(P.mission(ctx, {
+    ...stationData(ctx),
+    // Published exchanges for everyone; this visitor's own messages as well,
+    // whatever state they are in, so a sender can always find what they sent.
+    recent: data.board(400, ctx.visitor ? ctx.visitor.id : null),
+    inFlight: ctx.visitor ? data.inFlightFor(ctx.visitor.id) : null,
+    error: req.query.err ? String(req.query.err).slice(0, 160) : null,
   }));
 });
 
-/* The station has two pages: this one and mission control. Every address a
-   public subpage used to have now points at its section on the landing page,
+/* The dashboard page: the mission dashboard — the nine panels behind their
+   index, the live images, the doors — on a page of its own, for a phone first
+   (the bar's Dashboard key leads here). The same pieces as the mission page. */
+app.get('/dashboard', (req, res) => {
+  const ctx = req.ctx();
+  if (ctx.mission.phase === 'COMPLETE') return res.redirect('/');
+  res.send(P.dashboardPage(ctx, stationData(ctx)));
+});
+
+/* The messages page: the portal — the board and the composer — on a page of
+   its own, drawn for a phone first; the bar of keys there leads to it. The
+   same data as the mission page's portal, rendered by the same pieces. */
+app.get('/messages', (req, res) => {
+  const ctx = req.ctx();
+  res.send(P.messages(ctx, {
+    recent: data.board(400, ctx.visitor ? ctx.visitor.id : null),
+    inFlight: ctx.visitor ? data.inFlightFor(ctx.visitor.id) : null,
+    error: req.query.err ? String(req.query.err).slice(0, 160) : null,
+  }));
+});
+
+/* The station has few pages: this one, the messages page, the media page,
+   At a Glance, the crew log and mission control. Every other address a
+   public subpage used to have points at its section on the landing page,
    so old links, bookmarks and printed material still land somewhere. */
 const SECTION = {
   '/habitat': '#habitat', '/crew': '#crew',
-  '/day': '#mission', '/schedule': '#mission', '/messages': '#exchanges',
+  '/day': '#mission', '/schedule': '#mission',
   '/board': '#exchanges', '/communicate': '#write',
   '/what': '#what', '/about': '#about', '/who-we-are': '#who-we-are',
 };
@@ -410,7 +471,9 @@ function composerFragment(req, res, extra = {}) {
 function composeView(req, res, extra = {}) {
   if (isLive(req)) return composerFragment(req, res, extra);
   const q = extra.error ? `?err=${encodeURIComponent(extra.error)}` : '';
-  res.redirect(`/${q}#write`);
+  // a plain post from the messages page goes back to the messages page
+  const back = /\/messages(?:[?#]|$)/.test(req.get('referer') || '') ? '/messages' : '/';
+  res.redirect(`${back}${q}#write`);
 }
 
 /* The composer as it stands for this visitor — what a reload would show.
@@ -443,7 +506,7 @@ app.get('/api/board', (req, res) => {
 
 app.post('/communicate', (req, res) => {
   const ctx = req.ctx();
-  const visitor = ctx.visitor;
+  const visitor = req.writer();
 
   // Enforced server-side so a closed channel cannot be walked around by
   // posting the form directly. After the run it is always shut.
@@ -595,9 +658,13 @@ app.get('/api/status', (req, res) => {
   res.json({ missionDay: m.missionDay, phase: m.phase, elapsed: m.elapsed, counts: data.counts() });
 });
 
+/* The theme and language switches keep their choice in a cookie — for a year
+   once the visitor has accepted the station's cookies, for the visit only
+   until then. */
+const keep = (req) => (req.cookies.mcs_consent === 'yes' ? 365 * 86400000 : undefined);
 app.post('/theme', (req, res) => {
   const to = req.body.to === 'dark' ? 'dark' : 'light';
-  res.cookie('mcs_theme', to, { httpOnly: false, sameSite: 'lax', maxAge: 365 * 86400000,
+  res.cookie('mcs_theme', to, { httpOnly: false, sameSite: 'lax', maxAge: keep(req),
     secure: process.env.SECURE_COOKIES === 'true' });
   res.redirect(req.get('referer') || '/');
 });
@@ -606,7 +673,7 @@ app.post('/theme', (req, res) => {
    back to where the visitor was. Anything but de/en/fr falls back to English. */
 app.post('/lang', (req, res) => {
   const to = i18n.LANGS.includes(req.body.to) ? req.body.to : 'en';
-  res.cookie('mcs_lang', to, { httpOnly: false, sameSite: 'lax', maxAge: 365 * 86400000,
+  res.cookie('mcs_lang', to, { httpOnly: false, sameSite: 'lax', maxAge: keep(req),
     secure: process.env.SECURE_COOKIES === 'true' });
   res.redirect(req.get('referer') || '/');
 });

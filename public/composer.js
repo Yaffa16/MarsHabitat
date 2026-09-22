@@ -74,11 +74,19 @@
       });
   }
 
-  /* Replace what the device shows and bind whatever arrived. */
+  /* Replace what the device shows and bind whatever arrived. A visitor who had
+     no callsign when the page was drawn gets one with their first message: the
+     fragment carries it (data-callsign), and the device's head takes it up. */
   function swap(html) {
     if (transitTimer) { cancelAnimationFrame(transitTimer); transitTimer = null; }
     stage.innerHTML = html;
     init(stage);
+    var tagged = stage.querySelector('[data-callsign]');
+    var chip = device && device.querySelector('.dev-chip');
+    if (tagged && chip && tagged.getAttribute('data-callsign')) {
+      chip.textContent = tagged.getAttribute('data-callsign');
+      chip.classList.remove('dev-chip-later');
+    }
   }
 
   function refresh() {

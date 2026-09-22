@@ -14,7 +14,13 @@
    in the room without a reload. The filter you chose and your scroll position
    are kept. Polling pauses while the tab is hidden and backs off when the
    network is down; the LIVE mark in the foot dims while it cannot reach the
-   station. */
+   station.
+
+   On a phone held upright the board flows with the page instead of scrolling
+   inside its own box (aura.css), so it shows twenty exchanges of the current
+   view at a time and a Show more key beneath them brings the next twenty;
+   a change of filter starts again from the first twenty. Wider screens list
+   every card, as before. */
 (function () {
   'use strict';
   /* The visitor's language: t() reads the table the page carries in its
@@ -79,6 +85,27 @@
     if (note) note.hidden = !anyPending;
     bar.hidden = cards.length === 0;
     if (foot) foot.hidden = cards.length === 0;
+    page();
+  }
+
+  /* ------------------------------------------------- a phone: twenty at a time */
+  var PAGE = 20, limit = PAGE;
+  var more = document.getElementById('feed-more');
+  var upright = window.matchMedia ? window.matchMedia('(max-width: 760px) and (min-height: 521px)') : null;
+  function page() {
+    var cap = upright && upright.matches ? limit : Infinity;
+    var listed = cards.filter(function (c) { return c.classList.contains('is-listed'); });
+    listed.forEach(function (c, i) { c.classList.toggle('is-more', i >= cap); });
+    if (more) {
+      var left = listed.length - Math.min(cap, listed.length);
+      more.hidden = left <= 0;
+      more.textContent = t('Show more') + ' \u00b7 ' + left;
+    }
+  }
+  if (more) more.addEventListener('click', function () { limit += PAGE; page(); });
+  if (upright) {
+    var onUpright = function () { limit = PAGE; page(); };
+    if (upright.addEventListener) upright.addEventListener('change', onUpright); else if (upright.addListener) upright.addListener(onUpright);
   }
 
   bar.addEventListener('click', function (e) {
@@ -89,6 +116,7 @@
     });
     btn.classList.add('active');
     filter = btn.getAttribute('data-filter') || '';
+    limit = PAGE;
     apply();
     if (scroller) scroller.scrollTop = 0;
   });
@@ -125,7 +153,9 @@
 
   function poll() {
     clearTimeout(timer);
-    if (document.hidden || !url || !window.fetch) { schedule(); return; }
+    // no fetch while the tab is hidden, or while the board itself is not shown (a phone held upright keeps the
+    // landing page's portal off the screen — the messages page carries it; see aura.css)
+    if (document.hidden || !url || !window.fetch || feed.offsetParent === null) { schedule(); return; }
     fetch(url, { cache: 'no-store', credentials: 'same-origin' })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (data) {
@@ -170,6 +200,7 @@
           Array.prototype.forEach.call(bar.querySelectorAll('button'), function (b) { b.classList.remove('active'); });
           btn.classList.add('active');
           filter = which;
+          limit = PAGE;
           apply();
           if (scroller) scroller.scrollTop = 0;
         }

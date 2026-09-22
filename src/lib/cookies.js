@@ -1,5 +1,5 @@
 'use strict';
-/** Tiny cookie middleware. Two cookies are all this station needs. */
+/** Tiny cookie middleware. A handful of cookies are all this station needs. */
 module.exports = function cookies(req, res, next) {
   req.cookies = {};
   const header = req.headers.cookie;
@@ -13,7 +13,7 @@ module.exports = function cookies(req, res, next) {
   }
   res.cookie = (name, value, opts = {}) => {
     const bits = [`${name}=${encodeURIComponent(value)}`, `Path=${opts.path || '/'}`];
-    if (opts.maxAge) bits.push(`Max-Age=${Math.floor(opts.maxAge / 1000)}`);
+    if (opts.maxAge !== undefined && opts.maxAge !== null) bits.push(`Max-Age=${Math.floor(opts.maxAge / 1000)}`);   // none: for the visit only; 0: gone
     if (opts.httpOnly !== false) bits.push('HttpOnly');
     if (opts.secure) bits.push('Secure');
     bits.push(`SameSite=${opts.sameSite || 'Lax'}`);

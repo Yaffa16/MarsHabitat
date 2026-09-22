@@ -95,19 +95,22 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
         <p class="note" style="margin-top:12px">${T('The crew left the habitat on')}
         ${esc(ctx.mission.end_date)}. ${T('Nothing sent now would reach anyone.')}</p>
         <p><a class="btn" href="/archive">${T('Read what was sent')}</a></p>`}
-      <div class="honesty">
+      ${ctx.callsign ? `<div class="honesty">
         ${T('YOUR CALLSIGN')} <b>${esc(ctx.callsign)}</b> ${T('IS STILL RESERVED.')}<br>
         ${T('IT WILL BE WAITING IF YOU COME BACK.')}
-      </div>
+      </div>` : ''}
     </div>` : null;
 
   // `ghost` renders the same form without ids or a destination, invisible
   // and inert, purely to hold the device at the size it has while writing:
   // the transit view is laid over it, so pressing transmit changes what the
   // box shows and nothing about the box.
+  // data-callsign: the visitor's callsign as the station knows it now — a
+  // visitor who had none when the page was drawn gets one with their first
+  // message, and composer.js writes it into the device's head from here.
   const formHtml = (ghost = false) => `
   <form ${ghost ? 'class="composer ghost" inert aria-hidden="true"' :
-    `method="post" action="/communicate" id="${uid('composer')}" class="composer"`}>
+    `method="post" action="/communicate" id="${uid('composer')}" class="composer" data-callsign="${esc(ctx.callsign || '')}"`}>
     <label class="f msgfield"><span class="sr-only">${T('Message')}</span>
       <div class="msgbox">
         <textarea ${ghost ? '' : `name="body" id="${uid('body')}" required`} maxlength="${MAX}"
@@ -119,7 +122,7 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
       <span class="lbl">${T('Tags · choose 3')}</span>
       <span class="counter tags-note">${T('CHOOSE UP TO 3 TAGS')}</span>
       <div class="tags" ${ghost ? '' : `id="${uid('tags')}"`}>
-        ${TAGS.map((t) => `<label><input type="checkbox" ${ghost ? '' : 'name="tags"'} value="${t}"><span>${T(t)}</span></label>`).join('')}
+        ${TAGS.map((t) => `<label><input type="checkbox" ${ghost ? '' : 'name="tags"'} value="${t}"><span>#${T(t)}</span></label>`).join('')}
       </div>
     </div>
     <hr>
@@ -132,7 +135,7 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
   const transitBlock = inFlight ? `
     <div class="dev-stage">
     ${formHtml(true)}
-    <div class="transit transit-block"
+    <div class="transit transit-block" data-callsign="${esc(ctx.callsign || '')}"
          data-arrival="${esc(inFlight.arrival_at)}"
          data-departure="${esc(inFlight.submitted_at)}"
          data-light="${inFlight.light_seconds}">

@@ -363,6 +363,18 @@ body.landing .dev-title { margin: 0 0 14px; font-size: 23.5px; line-height: 1.1;
 body.landing .dev-head { margin: 0 0 14px; gap: 10px; font-family: var(--display); font-size: 11px; letter-spacing: .16em; color: var(--cobalt); font-weight: 500; }
 body.landing .dev-chip { font-family: var(--display); font-size: 12px; letter-spacing: .16em; font-weight: 600; color: var(--paper); background: var(--ink); border-radius: 999px; padding: 7px 13px; box-shadow: none; }
 body.landing .dev-chan { color: var(--dim); }
+body.landing .dev-chip.dev-chip-later { background: transparent; color: var(--dim); border: 1px dashed rgba(var(--cobalt-rgb),.45); font-weight: 500; }   /* no callsign yet: one comes with the first message */
+
+/* the cookie question (layout.js, consent()): a card at the foot of the window until it is answered — on a desk at the
+   right, on a phone (below) a sheet above the bar of keys */
+body.landing .consent { position: fixed; right: max(16px, var(--gutter)); bottom: 20px; z-index: 45; width: min(340px, calc(100vw - 32px)); padding: 13px 16px 12px; border-radius: 18px; background: var(--glass-solid); border: 1px solid var(--glass-edge); box-shadow: 0 24px 60px -24px rgba(15,21,64,.45), 0 2px 6px rgba(30,40,120,.08); color: var(--ink); }
+:root[data-theme="dark"] body.landing .consent { background: var(--glass-solid); box-shadow: 0 24px 60px -24px rgba(0,0,0,.7); }
+body.landing .consent h2 { margin: 0 0 3px; font-family: var(--display); font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink); }
+body.landing .consent p { margin: 0 0 10px; font-family: var(--display); font-size: 12px; line-height: 1.45; color: var(--dim); }
+body.landing .consent-keys { display: flex; gap: 8px; }
+body.landing .consent-keys .btn { flex: 1 1 0; min-height: 36px; padding: 0 12px; font-size: 10.5px; letter-spacing: .14em; }
+body.landing .consent-keys .btn:not(.primary) { background: rgba(255,255,255,.5); color: var(--cobalt); border: 1px solid rgba(var(--cobalt-rgb),.45); box-shadow: none; }
+:root[data-theme="dark"] body.landing .consent-keys .btn:not(.primary) { background: rgba(255,255,255,.06); color: #e6e6ec; border-color: rgba(255,255,255,.3); }
 body.landing .composer .msgbox textarea { min-height: 190px; padding: 18px 20px 34px; border-radius: 18px; background: var(--well); border: 1px solid rgba(var(--cobalt-rgb),.18); box-shadow: var(--sh-inset); font-family: var(--display); font-size: 16px; color: var(--ink); }
 body.landing .composer .msgbox textarea::placeholder { color: var(--faint); }
 body.landing .composer .msgbox .counter { font-family: var(--display); font-size: 11px; letter-spacing: .12em; color: var(--dim); right: 16px; bottom: 12px; }
@@ -393,17 +405,38 @@ body.landing .board-head { padding-bottom: 14px; border-bottom: 1px solid var(--
 body.landing .board-head h2 { font-size: 23.5px; font-weight: 600; letter-spacing: -.015em; color: var(--ink); }
 body.landing .board .live { font-family: var(--display); font-size: 11px; letter-spacing: .16em; color: var(--mars-ink); }
 body.landing .board .live::before { background: var(--mars); box-shadow: 0 0 10px 2px rgba(255,90,31,.7); }
-body.landing .board .card { border-bottom: 1px solid var(--hair); padding: 16px 0 14px; }
-body.landing .board .card[data-mine] { padding-left: 16px; }                         /* room between the orange rule of one's own message and its text */
-body.landing .board .card .cs { font-family: var(--display); font-size: 11px; letter-spacing: .16em; color: var(--cobalt); font-weight: 600; }
-body.landing .board .card .card-state { font-family: var(--display); font-size: 11px; letter-spacing: .16em; color: var(--dim); }
-body.landing .board .card .card-state.warn { color: var(--mars-ink); }
-body.landing .board .card .card-when { font-family: var(--display); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin-top: 4px; }
-body.landing .board .card .card-body { font-family: var(--display); font-size: 16.5px; line-height: 1.45; color: var(--ink); padding: 8px 0 0; }
-body.landing .board .card .card-reply { margin: 6px 0 0; }
-body.landing .board .card .card-reply .who { display: none; }
-body.landing .board .card .card-reply p { font-family: var(--display); font-size: 14.5px; line-height: 1.5; color: var(--mars-ink); padding-left: 22px; position: relative; }
-body.landing .board .card .card-reply p::before { content: "→"; position: absolute; left: 0; top: 0; }
+/* the exchanges (messageCard in src/views/pages/public.js): a card per exchange — the visitor's message in a shaded box, a
+   line of small print over it (its tags, the callsign, Earth, the time it was sent; the reference number at the right);
+   beneath the box CREW ANSWER and the crew's reply, large, with the officer, the habitat and the time it left Mars in small
+   print under it. A message not yet answered shows its state where the answer will stand. On the board (the mission page,
+   the messages page) and, after the run, among the last exchanges on the closing page. */
+body.landing .card.xc { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 16px; border-radius: 20px; background: rgba(255,255,255,.72); border: 1px solid rgba(var(--cobalt-rgb),.1); box-shadow: 0 10px 30px -20px rgba(15,21,64,.35); overflow: visible; }
+:root[data-theme="dark"] body.landing .card.xc { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.1); box-shadow: none; }
+body.landing .card.xc .card-post { padding: 12px 14px 14px; border-radius: 14px; background: rgba(var(--cobalt-rgb),.07); }
+:root[data-theme="dark"] body.landing .card.xc .card-post { background: rgba(255,255,255,.06); }
+body.landing .card.xc .card-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 0; margin: 0 0 8px; font-family: var(--display); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+body.landing .card.xc .card-meta { flex: 1 1 auto; min-width: 0; line-height: 1.55; }
+body.landing .card.xc .card-meta .cs { font-family: inherit; font-size: inherit; letter-spacing: inherit; color: var(--ink); font-weight: 600; }
+body.landing .card.xc .card-ref { flex: none; color: var(--faint); }
+body.landing .card.xc .card-body { padding: 0; font-family: var(--display); font-size: 17px; line-height: 1.45; color: var(--ink); }
+body.landing .card.xc .card-reply { margin: 0; padding: 0 2px; background: transparent; }
+body.landing .card.xc .card-reply .who { display: block; margin: 0 0 6px; font-family: var(--display); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; font-weight: 600; color: var(--mars-ink); }
+body.landing .card.xc .card-reply p { margin: 0; padding: 0; font-family: var(--display); font-size: 21px; line-height: 1.3; font-weight: 600; letter-spacing: -.01em; color: var(--ink); position: static; }
+body.landing .card.xc .card-reply p::before { content: none; }
+body.landing .card.xc .card-reply-meta { margin: 8px 0 0; font-family: var(--display); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); line-height: 1.55; }
+body.landing .card.xc .card-state-line { padding: 0 2px; }
+body.landing .card.xc .badge.new, body.landing .card.xc .card-state { display: inline-block; margin: 0; padding: 4px 9px; border-radius: 999px; border: 1px solid currentColor; font-family: var(--display); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; font-weight: 500; color: var(--dim); background: transparent; box-shadow: none; }
+body.landing .card.xc .badge.new { margin-left: 8px; align-self: center; }
+body.landing .card.xc .card-state.warn, body.landing .card.xc .card-state.mars, body.landing .card.xc .card-state.ok, body.landing .card.xc .badge.new { color: var(--mars-ink); }
+body.landing .card.xc .card-state.earth { color: var(--cobalt); }
+body.landing .card.xc .card-day, body.landing .card.xc .card-sent, body.landing .card.xc .card-when, body.landing .card.xc .tagrow, body.landing .card.xc .card-foot { display: none; }
+/* on the board: one card under the other, the viewer's own with a rule of Mars at the left */
+body.landing .board .card { border-bottom: 0; margin: 0 0 12px; padding: 14px 16px 16px; }
+body.landing .board .card[data-mine] { box-shadow: inset 3px 0 0 var(--mars), 0 10px 30px -20px rgba(15,21,64,.35); padding-left: 19px; }
+:root[data-theme="dark"] body.landing .board .card[data-mine] { box-shadow: inset 3px 0 0 var(--mars); }
+body.landing .board .card .badge.new { display: none; }
+body.landing .feed-more { display: none; }
+body.landing .feed .card.is-more { display: none; }
 body.landing .board .badge.new { display: none; }
 body.landing .board-group { font-family: var(--display); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); padding: 12px 0 4px; }
 body.landing .board .feed-filter { border-top: 1px solid var(--hair); padding-top: 16px; gap: 6px; }
@@ -631,6 +664,10 @@ body.landing .folder {
   border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); border-radius: var(--r-lg); color: var(--ink);
 }
 body.landing .folder-tabs { display: grid; gap: 8px; padding: 16px 20px 14px; border-bottom: 1px solid var(--hair); }
+body.landing .frows { display: grid; gap: 8px; }
+/* what only a phone gets (the block at the end of this file): the top bar's wordmark and sol, the menu's head, signs and page
+   rows, the peek tiles under the doors, the groups above the index, the bottom bar */
+body.landing .tk-brand, body.landing .tk-sol, body.landing .tk-sheet-head, body.landing .tk-ic, body.landing .tk-row-phone, body.landing .peek, body.landing .fgroups, body.landing .tabbar, body.landing .masthead-btn.masthead-btn-page { display: none; }
 body.landing .frow { display: grid; grid-template-columns: 96px repeat(3, minmax(0, 1fr)); gap: 6px; align-items: stretch; padding: 4px; border-radius: 16px; background: rgba(var(--cobalt-rgb),.06); }
 :root[data-theme="dark"] body.landing .frow { background: rgba(255,255,255,.05); }
 body.landing .frow.n2 { grid-template-columns: 96px repeat(2, minmax(0, 1fr)); }                                        /* a row of two (the hardware without its bridge) */
@@ -754,6 +791,8 @@ body.landing.inner .logpage-top { padding: 28px 32px; }
 body.landing.inner .card { background: var(--tile); border: 1px solid rgba(var(--cobalt-rgb),.12); box-shadow: none; border-radius: 18px; }
 body.landing.inner .card:hover { transform: none; box-shadow: none; }
 body.landing.inner .card .card-reply { background: rgba(255,90,31,.08); }
+body.landing.inner .card.xc .card-reply { background: transparent; }                      /* an exchange keeps its own shape here too */
+body.landing.inner .card.xc .cs { color: var(--ink); }
 body.landing.inner .empty { border-color: var(--hair); color: var(--dim); font-family: var(--display); letter-spacing: .14em; text-transform: uppercase; font-size: 10.5px; }
 
 /* the day strips (Crew log, At a Glance) and the filters: pills, the current one filled */
@@ -877,6 +916,7 @@ body.landing .dpanel-code { white-space: nowrap; }
      the name beneath; the open folder as tall as its panel — the page is one scroll on a phone, the folder scrolls with it */
   body.landing .folder { border-radius: 26px; }
   body.landing .folder-tabs { gap: 10px; padding: 12px 12px 12px; }
+  body.landing .frows { gap: 10px; }
   body.landing .frow { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 3px; border-radius: 14px; }
   body.landing .frow.n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   body.landing .frow.n1 { grid-template-columns: minmax(0, 1fr); }
@@ -895,9 +935,311 @@ body.landing .dpanel-code { white-space: nowrap; }
   body.landing .foot-wordmark { font-size: 44px; }
 }
 
+/* ====================================================================== a phone, held upright: the mobile design */
+/* The same station, laid out for a thumb: a sticky top bar (the wordmark, the sol, the habitat's clock, the switches) with the
+   running line beneath it; the peek tiles under the two doors; the index of folders as two rows of tabs — the groups as a segmented
+   control, the group's three folders as underlined tabs — that stick under the top bar while the panel scrolls; and a bar of five
+   keys fixed at the foot of the screen — Habitat, Dashboard, Write, Media, More — More opening the menu as a sheet. Sideways (a
+   short window) none of this applies: the ticker keeps its menu button and the index its three rows. */
+@media (max-width: 760px) and (min-height: 521px) {
+  :root { --gutter: 16px; }                                                                            /* the phone's margin: the content edge to edge but for a thumb's width */
+  body.landing { padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
+  /* the top bar */
+  body.landing .ticker { position: sticky; top: 0; z-index: 40; height: auto; min-height: 0; flex-wrap: wrap; align-items: center; padding: 0 12px; gap: 0 6px; background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  /* the glass is a layer under the bar's contents rather than the bar's own — a blur on the bar itself would pin the menu's sheet
+     (position: fixed, below) to the bar instead of the screen */
+  body.landing .ticker::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--glass-soft); -webkit-backdrop-filter: blur(26px) saturate(1.35); backdrop-filter: blur(26px) saturate(1.35); }
+  :root[data-theme="dark"] body.landing .ticker { background: transparent; }
+  /* what a link or a key brings into view lands under the bar, not behind it — the portal, the dashboard, a day of the booklet or
+     of the log: the room is the window's (a page of the booklet is inside a second scroller, whose own margin the window ignores) */
+  html { scroll-padding-top: 92px; }
+  body.landing .portal, body.landing #write, body.landing .dash, body.landing .folder, body.landing .logpage-day { scroll-margin-top: 0; }
+  body.landing .tk-menu { display: none; }                                                             /* its list opens from the bar's More key */
+  body.landing .tk-brand { display: inline-block; flex: none; font-family: var(--display); font-size: 17px; font-weight: 600; letter-spacing: -.03em; text-transform: none; color: var(--ink); text-decoration: none; line-height: 52px; border: 0; }
+  body.landing .tk-brand .bang { color: var(--mars); }
+  body.landing .tk-sol { display: inline-flex; align-items: center; gap: 6px; flex: none; min-height: 28px; padding: 0 9px; border-radius: 999px; border: 1px solid var(--mars); color: var(--mars-ink); font-size: 9.5px; letter-spacing: .12em; font-weight: 600; text-transform: uppercase; }
+  body.landing .tk-sol i { width: 6px; height: 6px; border-radius: 50%; background: var(--mars); box-shadow: 0 0 8px 2px rgba(255,90,31,.7); animation: live 2.4s ease-in-out infinite; }
+  body.landing .tk-clock { margin-left: auto; padding: 0 6px; }
+  body.landing .tk-right { flex: none; }
+  body.landing .tk-window { flex: 1 0 100%; order: 10; min-width: 0; height: 30px; margin: 0 -12px; padding: 0 12px; box-sizing: border-box; display: flex; align-items: center; border-top: 1px solid var(--glass-edge); }
+  /* the menu as a sheet over the page, above the bar, with the pages the bar does not carry */
+  body.landing .tk-dropdown { position: fixed; left: 0; right: 0; top: auto; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); width: 100%; max-height: 72vh; overflow: auto; margin: 0; padding: 12px 16px 16px; border-radius: 26px 26px 0 0; border: 0; background: #f7f8fc; box-shadow: 0 0 0 100vmax rgba(15,21,64,.28), 0 -30px 60px -30px rgba(0,0,0,.4); z-index: 55; }
+  :root[data-theme="dark"] body.landing .tk-dropdown { background: #1d1d22; box-shadow: 0 0 0 100vmax rgba(0,0,0,.55), 0 -30px 60px -30px rgba(0,0,0,.6); }
+  body.landing .tk-dropdown::before { content: ""; display: block; width: 40px; height: 5px; border-radius: 3px; background: var(--hair); margin: 0 auto 12px; }
+  body.landing .tk-sheet-head { display: flex; flex-direction: column; gap: 3px; padding: 0 4px 12px; text-transform: none; letter-spacing: 0; }
+  body.landing .tk-sheet-head b { font-family: var(--display); font-size: 19px; font-weight: 600; letter-spacing: -.02em; color: var(--ink); }
+  body.landing .tk-sheet-head span { font-family: var(--display); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+  /* a row: its sign, its name over its line, a chevron */
+  body.landing .tk-row, body.landing .tk-row-phone { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; column-gap: 12px; row-gap: 2px; padding: 11px 14px 11px 12px; border-radius: 14px; background: var(--tile); border: 1px solid rgba(var(--cobalt-rgb),.12); margin: 0 0 6px; text-decoration: none; }
+  body.landing .tk-row .tk-ic { display: block; grid-column: 1; grid-row: 1 / span 2; width: 22px; height: 22px; fill: none; stroke: var(--cobalt); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  body.landing .tk-row .fold-title { grid-column: 2; font-size: 15px; line-height: 1.2; }
+  body.landing .tk-row .fold-sub { grid-column: 2; margin-left: 0; text-align: left; font-size: 9.5px; line-height: 1.3; }
+  body.landing .tk-row::after { content: ""; grid-column: 3; grid-row: 1 / span 2; width: 8px; height: 8px; border-right: 1.6px solid var(--faint); border-bottom: 1.6px solid var(--faint); transform: rotate(-45deg); }
+  /* the reading pages — About, What this is, Who we are — as sheets too */
+  body.landing dialog.popup:not(.dome-popup) { position: fixed; left: 0; right: 0; top: auto; bottom: 0; width: 100%; max-width: none; max-height: 92vh; margin: 0; border-radius: 26px 26px 0 0; }
+  /* the portal's head: the words at the left, the one-way signal small at the right, so the composer's Transmit key is on the
+     first screen of the portal */
+  body.landing .portal-head { flex-wrap: nowrap; align-items: flex-end; gap: 12px; margin: 0 0 14px; }
+  body.landing .portal-head > div { flex: 1 1 auto; min-width: 0; }
+  body.landing .portal-head .bigsec { font-size: 27px; }
+  body.landing .portal-head .dash-clock { flex: none; align-items: flex-end; text-align: right; padding-bottom: 3px; }
+  body.landing .portal-head .dash-clock-label { font-size: 9px; letter-spacing: .14em; }
+  body.landing .portal-head .dash-clock b { font-size: 19px; }
+  /* the board flows with the page — no box of its own to scroll — with its chips at the head in one sideways row; twenty
+     exchanges at a time, a Show more key beneath them (board.js) */
+  body.landing .screen.board { padding: 18px 16px 10px; }
+  body.landing .board-head { order: -2; }
+  body.landing .board .feed-filter { order: -1; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; border-top: 0; border-bottom: 1px solid var(--hair); margin: 0 -16px; padding: 12px 16px; -webkit-overflow-scrolling: touch; }
+  body.landing .board .feed-filter::-webkit-scrollbar { display: none; }
+  body.landing .board .feed-filter .chip { flex: none; }
+  body.landing .board .scroller { max-height: none; overflow: visible; margin: 0; }
+  body.landing .board .card { padding: 12px 14px 14px; }
+  body.landing .board .card[data-mine] { padding-left: 17px; }
+  body.landing .card.xc .card-post { padding: 11px 12px 12px; }
+  body.landing .card.xc .card-body { font-size: 16.5px; }
+  body.landing .card.xc .card-reply p { font-size: 20px; }
+  body.landing .feed-more { display: block; width: 100%; min-height: 46px; margin: 14px 0 6px; border: 1px solid rgba(var(--cobalt-rgb),.35); border-radius: 999px; background: rgba(255,255,255,.55); color: var(--cobalt); font-family: var(--display); font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; cursor: pointer; box-shadow: none; }
+  :root[data-theme="dark"] body.landing .feed-more { background: rgba(255,255,255,.06); color: #e6e6ec; border-color: rgba(255,255,255,.3); }
+  body.landing .feed-more[hidden] { display: none; }
+  /* the portal — the composer and the board — and the dashboard are pages of their own here, /messages and /dashboard:
+     the landing page drops both and its two doors lead there (tabbar.js turns the foot's and the dome's doors the same
+     way); the doors stand under the lead, before the habitat, so both are on the first screen above the bar of keys */
+  body.landing:not(.inner) .portal, body.landing:not(.inner) .dash { display: none; }
+  body.landing .masthead-btn.masthead-btn-page { display: inline-flex; }
+  body.landing .masthead-btn[href="#write"], body.landing .masthead-btn[href="#mission"] { display: none; }
+  body.landing .masthead-cta { order: 5; margin: 16px 0 0; flex-direction: row; flex-wrap: nowrap; align-items: stretch; gap: 10px; }   /* the two doors side by side */
+  body.landing .masthead-btn.masthead-btn-page { flex: 1 1 0; width: auto; min-width: 0; max-width: none; min-height: 56px; padding: 8px 12px; gap: 8px; font-size: 11.5px; letter-spacing: .12em; line-height: 1.25; text-align: center; }
+  body.landing .masthead-btn.masthead-btn-page > span { display: none; }                                        /* no room for the arrow; the pill is the door */
+  html[lang="fr"] body.landing .masthead-btn.masthead-btn-page { font-size: 10.5px; letter-spacing: .08em; }   /* its long French name */
+  body.landing .dome-panel { order: 6; margin: 14px 0 0; }
+  /* the first screen holds the habitat whole above the bar of keys: the masthead's rows a little closer than on a wider screen */
+  body.landing:not(.inner) .hero-grid { margin-top: 14px; }
+  body.landing:not(.inner) .wordmark { font-size: 50px; }
+  body.landing:not(.inner) .tagline { margin-top: 14px; }
+  body.landing:not(.inner) .run-dates { margin-top: 10px; }
+  body.landing:not(.inner) .masthead .lead { margin-top: 14px; line-height: 1.45; }
+  body.landing:not(.inner) .dome-head { margin: 6px 0 8px; }
+  /* the foot as a low band the width of the page: the wordmark and the house at the left, the two keys one above the other
+     at the right, and no more height than they need */
+  body.landing .foot { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "brand keys" "base keys"; align-items: center; column-gap: 12px; row-gap: 8px; margin: 40px auto 36px; padding: 20px 18px 18px 22px; min-height: 0; border-radius: 28px;
+    background: radial-gradient(ellipse 260px 130px at 40px 100%, rgba(255,122,0,.85) 0, rgba(255,122,0,.3) 55%, rgba(255,122,0,0) 100%), radial-gradient(ellipse 240px 140px at calc(100% - 60px) 70%, rgba(68,101,107,.9) 0, rgba(68,101,107,0) 100%), #0d0302; }   /* the dark band with its two lights, the whole way down */
+  body.landing .foot-brand-block { grid-area: brand; align-self: end; }
+  body.landing .foot .foot-links { grid-area: keys; position: static; flex-direction: column; align-items: flex-end; justify-content: center; gap: 8px; margin: 0; }
+  body.landing .foot .foot-base { grid-area: base; align-self: start; font-size: 9.5px; letter-spacing: .14em; }
+  body.landing .foot .foot-base, body.landing .foot .foot-brand { color: rgba(255,255,255,.72); }
+  body.landing .foot-wordmark { font-size: 32px; }
+  /* the dashboard page: the top bar names the station; the dashboard's own head is the page's */
+  body.landing.dashboard .masthead { display: none; }
+  body.landing.dashboard .shell { padding-top: 14px; }
+  body.landing.dashboard .dash { padding-top: 4px; }
+  /* the messages page: the board is the page — its chips stuck under the top bar, the exchanges flowing beneath — and the
+     composer is a pop-up over the foot of the screen, above the bar of keys: the bar's Write key shows and hides it, a touch on
+     the page beside it hides it (tabbar.js; without the script it simply stands there) */
+  body.landing.messages .masthead { display: none; }                                                  /* the top bar names the station */
+  body.landing.messages .shell { padding-top: 14px; }
+  body.landing.messages .portal { display: block; min-height: 0; }
+  body.landing.messages .portal-head { margin: 0 0 8px; }
+  body.landing.messages .portal-grid { display: block; }
+  body.landing.messages .portal-main { position: fixed; left: 0; right: 0; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); z-index: 25; margin: 0; transition: transform .3s cubic-bezier(.2,.8,.2,1), visibility 0s linear 0s; }
+  html.js body.landing.messages .portal-main:not(.is-open) { transform: translateY(calc(100% + 100px)); visibility: hidden; transition: transform .24s ease-in, visibility 0s linear .24s; }
+  body.landing.messages { padding-bottom: calc(66px + 260px + env(safe-area-inset-bottom, 0px)); }                 /* room under the list for the pop-up */
+  html.js body.landing.messages:not(.dock-open) { padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
+  html.js body.landing.messages.dock-open { padding-bottom: calc(66px + var(--dock-h, 260px) + env(safe-area-inset-bottom, 0px)); }
+  body.landing.messages .screen.board { padding: 0; background: none; border: 0; box-shadow: none; border-radius: 0; }
+  body.landing.messages .board-head { padding: 6px 0 8px; border: 0; }
+  body.landing.messages .board-head h2 { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); font-weight: 500; }
+  body.landing.messages .board .feed-filter { position: sticky; top: 83px; z-index: 5; margin: 0 -16px; padding: 10px 16px 12px; border-bottom: 1px solid var(--hair); background: var(--glass-soft); -webkit-backdrop-filter: blur(20px) saturate(1.35); backdrop-filter: blur(20px) saturate(1.35); }
+  body.landing.messages .board .cards { padding-top: 12px; }
+  body.landing.messages .feed-more { margin: 4px 0 0; }
+  /* the pop-up: the title, the operator, the writing box with Transmit beside it, the tags in one sideways row beneath —
+     a surface of its own, plainly apart from the list: solid paper with a rule of Mars along its top edge, a shadow upward,
+     and the list dimmed a little behind it while it is out */
+  body.landing.messages .device { padding: 16px 20px 18px; border-radius: 28px 28px 0 0; border: 0; border-top: 3px solid var(--mars); background: #fff; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: 0 -26px 52px -22px rgba(15,21,64,.55), 0 -1px 0 rgba(15,21,64,.06); }
+  :root[data-theme="dark"] body.landing.messages .device { background: #232329; box-shadow: 0 -26px 52px -22px rgba(0,0,0,.8); }
+  /* the dimming is drawn inside the shell (every child of the body is a layer of its own, z-index 1, and the pop-up lives in
+     the shell's): there it lies over the list and under the pop-up, the top bar and the keys — drawn on the body it would
+     take the body's own glow's round shape and lie over the pop-up as well */
+  html.js body.landing.messages.dock-open .shell::before { content: ""; position: fixed; inset: 0; z-index: 24; pointer-events: none; background: rgba(15,21,64,.1); }
+  :root[data-theme="dark"] html.js body.landing.messages.dock-open .shell::before { background: rgba(0,0,0,.35); }
+  /* while a message is being written the list behind is blurred away (the one blur a phone draws, and only then); during
+     the crossing it clears, so the message can be seen arriving under MY MESSAGES (tabbar.js sets body.crossing) */
+  html.js body.landing.messages.dock-open:not(.crossing) .shell::before { background: rgba(247,248,252,.55); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  :root[data-theme="dark"] html.js body.landing.messages.dock-open:not(.crossing) .shell::before { background: rgba(24,24,28,.6); }
+  /* the page ends with the last message: no foot here (the keys and More lead everywhere it did), so the list scrolls up to
+     just above the pop-up and no further */
+  body.landing.messages .foot { display: none; }
+  body.landing.messages .dev-title { display: block; margin: 0 0 10px; font-size: 21px; line-height: 1.1; }
+  body.landing.messages .dev-head { margin: 0 0 12px; gap: 10px; font-size: 12px; }
+  body.landing.messages .dev-chip { font-size: 13px; padding: 5px 12px; }
+  /* the form: the writing box the whole width and seven lines deep to begin with (less while the keyboard is up, so the
+     pop-up stays above it — tabbar.js, grow), the tags in one line beneath, all of them, small enough to fit, and
+     Transmit under them in the middle — an orange pill, waiting dim until there is something to send */
+  body.landing.messages .composer-device .dev-body > form.composer { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "msg" "tags" "send"; gap: 12px; align-items: center; }
+  body.landing.messages .composer-device form.composer .msgfield { grid-area: msg; }
+  body.landing.messages .composer-device form.composer .msgbox textarea { box-sizing: border-box; min-height: 216px; max-height: 320px; padding: 15px 17px 15px; font-size: 18px; line-height: 1.4; border-radius: 20px; }
+  body.landing.messages.kb .composer-device form.composer .msgbox textarea { min-height: 120px; }                     /* the script sets what fits above the keyboard */
+  body.landing.messages .composer .msgbox .counter { right: 15px; bottom: 8px; font-size: 10px; }
+  body.landing.messages .composer .dev-foot { grid-area: send; margin: 0; justify-content: center; }
+  body.landing.messages .composer button.primary { width: auto; min-width: 200px; height: 54px; min-height: 0; padding: 0 34px; border-radius: 999px; font-size: 12px; letter-spacing: .18em; box-shadow: 0 0 0 4px rgba(255,90,31,.18), 0 14px 28px -12px rgba(255,70,0,.8); transition: opacity .2s, box-shadow .2s, transform .15s; }
+  body.landing.messages .composer button.primary:hover { transform: none; }
+  body.landing.messages .composer button.primary:active { transform: scale(.94); }
+  body.landing.messages form.composer:invalid button.primary { opacity: .45; box-shadow: none; }                  /* nothing to send yet */
+  body.landing.messages .composer hr { display: none; }
+  body.landing.messages .composer .tagbar { grid-area: tags; min-width: 0; margin: 0; flex-direction: row; align-items: center; gap: 0; }
+  body.landing.messages .composer .tagbar .lbl { display: none; }
+  body.landing.messages .composer .tags { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; justify-content: space-between; overflow: visible; gap: 4px; padding: 0; }
+  body.landing.messages .composer .tags label { flex: 0 1 auto; min-width: 0; justify-content: center; min-height: 40px; padding: 0 7px; font-size: 9px; letter-spacing: .03em; white-space: nowrap; }
+  body.landing.messages .composer .tags label span { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; }   /* a tag longer than its room is cut short rather than the row */
+  body.landing.messages .flash.err { margin: 0 0 10px; }
+  /* the keyboard is up (tabbar.js sets body.kb from the visible part of the page, which the keyboard shortens): the bar of
+     keys steps aside and the pop-up sits on the keyboard's upper edge (its bottom set by the script), so what is typed is in view */
+  body.landing.messages.kb .tabbar { display: none; }
+  body.landing.messages.kb .portal-main { bottom: 0; transition: none; }
+  /* the crossing, in the pop-up: the dial small at the left, its readings beside it — in the room the form had (tabbar.js
+     holds the stage at the form's height while the crossing shows, so the pop-up keeps its size) */
+  body.landing.messages #dev-body.is-held { display: grid; align-content: center; }
+  body.landing.messages .transit-block { grid-template-columns: 96px minmax(0, 1fr); grid-template-rows: auto; gap: 14px; align-items: center; }
+  body.landing.messages .xdial { max-width: 96px; margin: 0; }
+  body.landing.messages .transit .state { font-size: 10px; letter-spacing: .12em; }
+  body.landing.messages .transit .clock { margin: 4px 0 6px; font-size: 26px; }
+  body.landing.messages .transit .tbar { height: 4px; margin-bottom: 6px; }
+  body.landing.messages .transit .honesty { margin-top: 4px; font-size: 9.5px; letter-spacing: .08em; }
+  body.landing.messages .transit.closed { padding: 4px 0; }
+  /* the cookie question as a sheet above the bar of keys */
+  body.landing .consent { left: 0; right: 0; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); width: auto; max-height: 72vh; overflow: auto; padding: 12px 16px 12px; border-radius: 20px 20px 0 0; border-bottom: 0; box-shadow: 0 -20px 44px -24px rgba(15,21,64,.4); }
+  body.landing .consent-keys .btn { min-height: 40px; }
+  /* the peek tiles: the sol, the signal, the crew's latest line — under the doors, before the portal */
+  body.landing .peek { display: grid; gap: 10px; margin: -6px 0 26px; }
+  body.landing .peek-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  body.landing .peek-tile { display: flex; flex-direction: column; gap: 4px; padding: 14px 14px 12px; border-radius: 20px; background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); color: var(--ink); text-decoration: none; }
+  body.landing .peek-k { font-family: var(--display); font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--cobalt); font-weight: 500; }
+  body.landing .peek-v { font-family: var(--display); font-size: 24px; font-weight: 600; letter-spacing: -.03em; line-height: 1; color: var(--ink); }
+  body.landing .peek-v em { font-style: normal; font-size: 11px; color: var(--dim); font-weight: 400; letter-spacing: 0; margin-left: 4px; }
+  body.landing .peek-s { font-family: var(--display); font-size: 11px; color: var(--dim); }
+  body.landing .peek-latest { flex-direction: row; align-items: center; gap: 12px; }
+  body.landing .peek-latest .live-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--mars); box-shadow: 0 0 10px 2px rgba(255,90,31,.7); animation: live 2.4s ease-in-out infinite; }
+  body.landing .peek-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  body.landing .peek-t { font-family: var(--display); font-size: 13px; font-weight: 500; line-height: 1.35; color: var(--ink); }
+  body.landing .peek-arrow { color: var(--mars); font-size: 16px; flex: none; }
+  /* the index as tabs: the groups as a segmented control, the group's folders as underlined tabs, stuck under the top bar */
+  body.landing .folder { overflow: visible; }
+  body.landing .folder-tabs { position: sticky; top: 83px; z-index: 5; display: block; padding: 8px 8px 0; background: var(--glass); -webkit-backdrop-filter: blur(26px) saturate(1.35); backdrop-filter: blur(26px) saturate(1.35); border-radius: 26px 26px 0 0; border-bottom: 1px solid var(--hair); }
+  body.landing .fgroups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 14px; background: rgba(var(--cobalt-rgb),.06); }
+  :root[data-theme="dark"] body.landing .fgroups { background: rgba(255,255,255,.05); }
+  body.landing .fgroup { min-height: 36px; border: 0; background: transparent; border-radius: 10px; padding: 0 4px; font-family: var(--display); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; font-weight: 500; color: var(--dim); cursor: pointer; box-shadow: none; transform: none; }
+  body.landing .fgroup.is-cur { background: var(--cobalt-fill); color: #fff; }
+  body.landing .frows { display: block; }
+  body.landing .frow { display: none; }
+  body.landing .frow.is-cur { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; padding: 0; margin: 2px 0 0; background: none; border-radius: 0; }
+  body.landing .frow.n2.is-cur { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body.landing .frow.n1.is-cur { grid-template-columns: minmax(0, 1fr); }
+  body.landing .frow-k { display: none; }
+  body.landing .ftab { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; min-height: 64px; padding: 8px 4px 10px; border-radius: 0; background: transparent; position: relative; color: var(--dim); }
+  body.landing .frow .ftab:hover { background: transparent; }
+  body.landing .ftab .ftab-ic { width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.7; }
+  body.landing .ftab .ftab-n { font-size: 8.5px; letter-spacing: .14em; color: var(--mars-ink); }
+  body.landing .ftab .ftab-l { flex: none; width: 100%; font-size: 11.5px; line-height: 1.15; text-align: center; white-space: normal; overflow: visible; color: var(--ink); -webkit-hyphens: auto; hyphens: auto; }
+  body.landing .folder .frow .ftab.is-front, body.landing .folder .frow .ftab.is-front:hover, :root[data-theme="dark"] body.landing .folder .frow .ftab.is-front, :root[data-theme="dark"] body.landing .folder .frow .ftab.is-front:hover { background: transparent; color: var(--cobalt); box-shadow: none; }
+  body.landing .folder .frow .ftab.is-front .ftab-l { color: var(--cobalt); }
+  body.landing .folder .frow .ftab.is-front .ftab-ic, :root[data-theme="dark"] body.landing .folder .frow .ftab.is-front .ftab-ic { stroke: var(--cobalt); }
+  body.landing .folder .frow .ftab.is-front .ftab-n { color: var(--mars-ink); }
+  body.landing .folder .frow .ftab.is-front::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 3px; border-radius: 2px; background: var(--cobalt-fill); }
+  body.landing .folder-body { padding: 14px 12px 18px; }
+  /* the bar of five keys at the foot of the screen */
+  body.landing .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: 6px 6px calc(8px + env(safe-area-inset-bottom, 0px)); background: rgba(255,255,255,.8); -webkit-backdrop-filter: blur(24px) saturate(1.4); backdrop-filter: blur(24px) saturate(1.4); border-top: 1px solid var(--glass-edge); }
+  :root[data-theme="dark"] body.landing .tabbar { background: rgba(24,24,28,.88); }
+  body.landing .tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 52px; margin: 0; padding: 0; border: 0; border-radius: 14px; background: none; box-shadow: none; transform: none; color: var(--dim); font-family: var(--display); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; font-weight: 500; text-decoration: none; cursor: pointer; }
+  body.landing .tab-ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  body.landing .tab.is-on, body.landing .tab.is-open { color: var(--cobalt); }
+  body.landing .tab span { white-space: nowrap; }
+  html[lang="fr"] body.landing .tab span { font-size: 8px; letter-spacing: .04em; }                     /* "Tableau de bord" on one line */
+  body.landing .tab-write .tab-ic { width: 46px; height: 46px; padding: 12px; box-sizing: border-box; border-radius: 999px; background: linear-gradient(180deg, #ff8a3d, #ff5a1f); stroke: #0f1540; box-shadow: 0 14px 28px -12px rgba(255,70,0,.8); margin-top: -20px; }
+  body.landing .tab-write span { color: var(--mars-ink); }
+  body.landing .tab-write[aria-expanded="true"] .tab-ic { box-shadow: 0 0 0 4px rgba(255,90,31,.22), 0 14px 28px -12px rgba(255,70,0,.8); }   /* the pop-up is out */
+}
+/* narrower phones: the bar's first row keeps to one line with everything a little smaller; the narrowest do without the
+   sol pill (the peek tile carries the sol) */
+@media (max-width: 400px) and (min-height: 521px) {
+  body.landing.messages .composer .tags label { font-size: 8.5px; letter-spacing: .02em; padding: 0 6px; }   /* the five tags, WISSENSCHAFT among them, in one line */
+  body.landing .tk-brand { font-size: 16px; }
+  body.landing .tk-sol { font-size: 9px; padding: 0 7px; gap: 5px; }
+  body.landing .tk-clock { padding: 0 4px; }
+  body.landing .tk-clock b { font-size: 11px; letter-spacing: .06em; }
+}
+@media (max-width: 349px) and (min-height: 521px) {
+  body.landing .tk-sol { display: none; }
+}
+
 /* a phone held sideways: wide but short — the portal's two cards side by side, the habitat no taller than the screen */
 @media (max-height: 520px) and (min-width: 700px) {
   body.landing .portal-grid { grid-template-columns: 340px minmax(0, 1fr); gap: 14px; }
   body.landing .dome-stage { max-width: 560px; margin: 0 auto; }
   body.landing .dome-caption::before { margin-left: 0; margin-right: 0; }
+}
+
+/* ---------------------------------------------------- the paper dress: a phone held upright
+   The same design, drawn without what costs a phone the most. Same layout, type, cobalt and Mars; the surfaces are paper,
+   not glass: nothing is blurred through (a backdrop blur is redrawn every frame, and eight of them share one screen), no
+   film is blended over the whole screen, no SVG filter (drawn on the processor), one short shadow per panel instead of
+   three, the running line clipped instead of masked, and the cards far below the screen neither laid out nor painted
+   until they come near. A wider screen, and a phone held sideways, keep the glass. */
+@media (max-width: 760px) and (min-height: 521px) {
+  :root {
+    --paper-2: #f7f8fc;                                                                  /* the panels' paper */
+    --glass: var(--paper-2); --glass-soft: rgba(255,255,255,.96); --glass-solid: var(--paper-2);
+    --glass-edge: rgba(47,69,232,.14);
+    --glass-shadow: 0 6px 18px -12px rgba(15,21,64,.35);                                 /* one short shadow, not three */
+    --sh-raise: var(--glass-shadow); --sh-raise-lg: var(--glass-shadow);
+    --tile: #ffffff; --raise: #fbfbfd; --raise-2: #f3f4f9; --well: #ffffff;
+  }
+  :root[data-theme="dark"] {
+    --paper-2: #1f1f24;
+    --glass: var(--paper-2); --glass-soft: rgba(24,24,28,.96); --glass-solid: var(--paper-2);
+    --glass-edge: rgba(255,255,255,.12);
+    --glass-shadow: 0 6px 18px -12px rgba(0,0,0,.6);
+    --tile: #26262c; --raise: #26262c; --raise-2: #202025; --well: #17171b;
+  }
+  /* 1 · no film over the screen */
+  html:has(body.landing)::after, :root[data-theme="dark"]:has(body.landing)::after { display: none; }
+  /* 2 · paper, not glass: nothing blurs what is behind it */
+  .dpanel, .device, .screen.board, .glance-link, .kpi, .run-strip, .dome-popup, dialog.popup, .tk-dropdown,
+  body.landing .cloud-latest, body.landing .folder, body.landing .folder-tabs, body.landing .ticker::before, body.landing .tabbar,
+  body.landing.messages .board .feed-filter, body.landing.messages .device, body.landing .peek-tile,
+  body.landing.inner .logpage-top, body.landing.inner .logpage-day, body.landing.inner .log-day, body.landing.inner .dl-card,
+  body.landing.inner .mview, body.landing.inner .panel, body.landing.inner .slab {
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+  /* what the page scrolls under — the top bar, the chips row, the bar of keys — is opaque paper: the last few per cent of
+     glass let the text beneath ghost through */
+  body.landing .ticker::before { background: var(--paper-2); }
+  body.landing .folder-tabs { background: var(--paper-2); }
+  body.landing .tabbar { background: var(--paper-2); border-top-color: var(--hair); }
+  :root[data-theme="dark"] body.landing .tabbar { background: var(--paper-2); }
+  body.landing.messages .board .feed-filter { background: var(--paper-2); }
+  body.landing .tk-dropdown { box-shadow: 0 0 0 100vmax rgba(15,21,64,.28), 0 -8px 24px -18px rgba(0,0,0,.4); }
+  body.landing dialog.popup::backdrop { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(15,21,64,.3); }
+  body.landing .card.xc { background: #fff; box-shadow: none; border-color: var(--hair); }
+  :root[data-theme="dark"] body.landing .card.xc { background: var(--tile); }
+  body.landing .board .card[data-mine] { box-shadow: inset 3px 0 0 var(--mars); }
+  body.landing .masthead-btn { box-shadow: 0 8px 20px -12px rgba(255,70,0,.7); }
+  body.landing .masthead-btn.masthead-btn-live { box-shadow: none; background: #fff; }
+  :root[data-theme="dark"] body.landing .masthead-btn.masthead-btn-live { background: var(--tile); }
+  body.landing .tab-write .tab-ic { box-shadow: 0 6px 14px -8px rgba(255,70,0,.8); }
+  /* 3 · the habitat's keys: a stroke instead of a filtered shadow (an SVG filter is drawn on the processor, every time) */
+  body.landing .dome-hex polygon, body.landing .dome-pod, :root[data-theme="dark"] body.landing .dome-pod { filter: none; }
+  body.landing .dome-pod { stroke: rgba(var(--cobalt-rgb),.35); stroke-width: 1.5; }
+  :root[data-theme="dark"] body.landing .dome-pod { stroke: rgba(255,255,255,.28); }
+  /* 4 · the running line: clipped, with two painted fades, instead of a mask that moves with it */
+  body.landing .tk-window { -webkit-mask-image: none; mask-image: none; position: relative; overflow: hidden; }
+  body.landing .tk-window::before, body.landing .tk-window::after { content: ""; position: absolute; top: 0; bottom: 0; width: 22px; z-index: 1; pointer-events: none; }
+  body.landing .tk-window::before { left: 0; background: linear-gradient(90deg, #fff, rgba(255,255,255,0)); }
+  body.landing .tk-window::after { right: 0; background: linear-gradient(270deg, #fff, rgba(255,255,255,0)); }
+  :root[data-theme="dark"] body.landing .tk-window::before { background: linear-gradient(90deg, #1a1a1e, rgba(26,26,30,0)); }
+  :root[data-theme="dark"] body.landing .tk-window::after { background: linear-gradient(270deg, #1a1a1e, rgba(26,26,30,0)); }
+  /* 5 · the cards and the foot far below the screen are neither laid out nor painted until they come near
+        (the dashboard's panels are left alone: their scripts measure them as they load) */
+  body.landing .card.xc { content-visibility: auto; contain-intrinsic-size: auto 320px; }
+  body.landing .foot { content-visibility: auto; contain-intrinsic-size: auto 420px; }
+  /* 6 · the live dots keep their pulse (opacity only) with a small static halo */
+  body.landing .live-dot, body.landing .cloud-live i, body.landing .tk-sol i, body.landing .peek-latest .live-dot, body.landing .board .live::before { box-shadow: 0 0 0 3px rgba(255,90,31,.18); }
 }

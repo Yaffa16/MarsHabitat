@@ -44,7 +44,7 @@ function complete(ctx, { counts, recent }) {
   </div>
 
   <div class="grid g-hero">
-    ${orbitPlot(ctx.geo, { T })}
+    ${orbitPlot(ctx.geo, { T, light: false })}
     ${panel('CH-21 / RECORD', `
       ${eyebrow(T('What the station carried'))}
       <dl class="kv">
@@ -300,6 +300,126 @@ function wholeMission(ctx, days, { openToday = true } = {}) {
 }
 
 /**
+ * The composer as a device: an LED, the ribbed grip, a knob and a row of
+ * vents, then the operator's callsign and the channel. While a message is
+ * crossing, the form gives way to the dial (composerBlock, composer.js).
+ * Drawn on the mission page and on the messages page alike.
+ */
+function composerDevice(ctx, { inFlight = null, error = null, draft = '' } = {}) {
+  const T = ctx.T;
+  return `<section class="device composer-device${inFlight ? ' sending' : ''}" aria-label="${esc(T('Composer'))}">
+        <h2 class="dev-title">${T('Write to the crew')}</h2>
+        <span class="dev-led" aria-hidden="true"></span>
+        <span class="dev-grip" aria-hidden="true"></span>
+        <span class="dev-knob" aria-hidden="true"></span>
+        <span class="dev-vents" aria-hidden="true"></span>
+        <div class="dev-head">
+          <span>${T('Operator')}</span>
+          ${ctx.callsign ? `<span class="dev-chip" title="${esc(T('Your callsign for this visit — no account, no name'))}">${esc(ctx.callsign)}</span>`
+            : `<span class="dev-chip dev-chip-later" title="${esc(T('Your callsign for this visit — no account, no name'))}">${T('Callsign on sending')}</span>`}
+          <span class="dev-chan">CH-09 · Uplink</span>
+        </div>
+        <div class="dev-body" id="dev-body">${composerBlock(ctx, { inFlight, error, draft })}</div>
+      </section>`;
+}
+
+/**
+ * The board, live: board.js polls /api/board and swaps the cards in place,
+ * so a reply published from mission control, or another visitor's exchange,
+ * appears without anyone reloading. The full structure is always rendered,
+ * even when empty, so the first card can arrive into it. `recent` holds
+ * everyone's published exchanges and this visitor's own messages, whatever
+ * their state. Drawn on the mission page and on the messages page alike.
+ */
+function boardScreen(ctx, { recent = [] } = {}) {
+  const T = ctx.T;
+  // This visitor's messages that mission control has not yet published. They
+  // are in the page, but only surface under MY MESSAGES.
+  const pendingMine = recent.filter((m) => m.mine && m.pending).length;
+  const openOnMine = false;   // ALL opens first; the viewer's own messages head it
+  return `<div class="feed-wrap"><div class="feed-scroll" id="feed" data-poll="/api/board"
+          data-version="${boardVersion(recent)}">
+        <div class="screen board">
+          <div class="board-head">
+            <h2>${T('Message Board')}</h2>
+            <span class="live" id="feed-live" title="${esc(T('The board refreshes itself every few seconds'))}">${T('LIVE')}</span>
+          </div>
+          <div class="scroller feed"><div class="cards" id="feed-cards">${boardCards(recent, T)}
+            <div class="empty" id="feed-empty"${recent.length ? ' style="display:none"' : ''}
+              data-none="${esc(T('Nothing transmitted yet — the first message could be yours'))}"
+              data-filtered="${esc(T('No messages match this filter'))}">${
+              T(recent.length ? 'No messages match this filter' : 'Nothing transmitted yet — the first message could be yours')}</div>
+          </div><button type="button" class="feed-more" id="feed-more" hidden>${T('Show more')}</button></div>
+          <div class="feed-filter" id="feed-filter" role="group" aria-label="${esc(T('Filter the board'))}"${
+          recent.length ? '' : ' hidden'}>
+          <button type="button" class="chip${openOnMine ? '' : ' active'}" data-filter="">${T('ALL')}</button>
+          <button type="button" class="chip mine${openOnMine ? ' active' : ''}" data-filter="mine">${T('MY MESSAGES')} <span
+            class="chip-count" id="feed-mine-count"${pendingMine ? '' : ' hidden'}>${pendingMine}</span></button>
+          ${TAGS.map((t) => `<button type="button" class="chip" data-filter="tag:${t}">#${T(t)}</button>`).join('')}
+          </div>
+        </div>
+      </div></div>`;
+}
+
+/**
+ * The dashboard page, /dashboard: the mission dashboard — the nine panels
+ * behind their index, the live images, the doors — on a page of its own, the
+ * same section the mission page carries. Drawn for a phone first, where the
+ * mission page keeps only the habitat and the doors (aura.css) and the bar's
+ * Dashboard key leads here; on a wider screen it is an inner page like the
+ * media page.
+ */
+function dashboardPage(ctx, d) {
+  const body = dashboard(ctx, {
+    crew: d.crew, today: d.today, counts: d.counts, crewFigures: d.crewFigures, power: d.power, allDays: d.allDays,
+    logDays: d.logDays, entryCounts: d.entryCounts, ingest: d.ingest, media: d.media, mediaCounts: d.mediaCounts,
+    mediaLookup: d.mediaLookup, hardware: d.hardware, hardwareDaily: d.hardwareDaily, cloud: d.cloud,
+  });
+  return L.page({
+    title: 'Mission dashboard', ctx, body, hideNav: true, hideRail: true, bodyClass: 'landing inner dashboard',
+    current: '/dashboard', scripts: ['/habitat.js', '/hardware.js', '/folder.js'].concat(d.cloud ? ['/cloud.js'] : []),
+    styles: ['/aura.css'],
+  });
+}
+
+/**
+ * The messages page, /messages: the portal on a page of its own — the board
+ * and the composer as the mission page has them, without the rest. Drawn for
+ * a phone first: there the exchanges flow with the page and the composer is a
+ * pop-up over the foot of the screen, above the bar of keys, that the bar's
+ * Write key shows and hides (aura.css, tabbar.js); the bar's Write key and
+ * the mission page's doors lead here, /messages#write opening it with the
+ * composer shown. On a wider screen it is an inner page like the media page,
+ * the two side by side as on the mission page.
+ */
+function messages(ctx, { recent = [], inFlight = null, error = null, draft = '' } = {}) {
+  const T = ctx.T;
+  const body = `
+  <section class="portal portal-page" id="write">
+  <header class="portal-head">
+    <div>
+      <span class="dash-code">CH-09</span>
+      <h2 class="bigsec">${T('Messages')}</h2>
+      <p class="dash-sub">${T('Communication Portal')} · ${T('Uplink')} · ${esc(ctx.mission.name)} · ${ctx.geo.distanceAu.toFixed(3)} au</p>
+    </div>
+    <div class="dash-clock">
+      <span class="dash-clock-label">${T('One-way signal')}</span>
+      <b>${esc(orbital.formatLightTime(ctx.geo.lightSeconds))}</b>
+    </div>
+  </header>
+  <div class="portal-grid">
+    <aside class="portal-letters" aria-hidden="true">${'MARSPLATZ'.split('').map((c) => `<span>${c}</span>`).join('')}</aside>
+    <div class="portal-main">${composerDevice(ctx, { inFlight, error, draft })}</div>
+    <section class="feed-col" id="exchanges">${boardScreen(ctx, { recent })}</section>
+  </div>
+  </section>`;
+  return L.page({
+    title: 'Messages', ctx, body, hideNav: true, hideRail: true, bodyClass: 'landing inner messages',
+    current: '/messages', scripts: ['/composer.js', '/board.js'], styles: ['/aura.css'],
+  });
+}
+
+/**
  * The ticker across the very top of the station: the habitat's clock and a
  * slowly running line of what is happening in there right now — the current
  * task from the day's schedule, the one after it, and the node's current
@@ -328,27 +448,33 @@ function ticker(ctx, { today, links = false } = {}) {
     cells.push(`${T('The crew are currently:')} <b id="tk-now">${nowTask ? say(nowTask) : T('off the schedule')}</b>`);
     cells.push(`${T('Next:')} <b id="tk-next">${nextTask ? say(nextTask) : T('nothing more today')}</b>`);
   }
-  cells.push(`${T('Habitat:')} <b id="tk-hab">${T('awaiting reading')}</b>`);
-  cells.push(`${T('One-way signal')} <b>${orbital.formatLightTime(ctx.geo.lightSeconds)}</b>`);
+  cells.push(`${T('Habitat:')} <b id="tk-hab">${T('awaiting reading')}</b>`);   // the one-way signal is read where a message is written, and nowhere else
   const line = cells.map((c) => `<span class="tk-cell">${c}</span>`).join('<span class="tk-sep">·</span>');
   /* The three-lines menu at the ticker's left end drops the reading matter
      — About, What this is, Who we are — as a short list; a row opens the
      same pop-up the About buttons open (info.js binds .fold-btn[data-popup]),
      so the texts live in one place. The theme and language switches sit at
      the ticker's right end. */
+  // On a phone the list is a sheet from the foot of the screen, opened by the bar's More key (layout.js, tabbar()): it gets a
+  // head and a sign on every row, which the wider screens hide.
+  const sign = (d) => `<svg class="tk-ic" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+  const MENU_ICONS = { 'about-project': '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><path d="M12 7.8h.01"/>', what: TAB_ICONS.habitat, 'who-we-are': LINE_ICONS.crew };
   const menu = `
     <button type="button" class="tk-menu" id="tk-menu" aria-expanded="false" aria-controls="tk-dropdown" aria-label="${esc(T('About, What this is, Who we are'))}"><span class="bars" aria-hidden="true"><i></i><i></i><i></i></span></button>
     <div class="tk-dropdown" id="tk-dropdown" hidden>
+      <div class="tk-sheet-head"><b>${T('About')}</b><span>${T('Everything else on the station')}</span></div>
       ${[['about-project', 'About', 'The habitat, the distance, the archive'], ['what', 'What this is', 'How the station behaves, in plain terms'], ['who-we-are', 'Who we are', 'Crew, company, production credits']]
         .map(([id, title, sub]) => links
-          ? `<a class="tk-row" href="/#${id}"><span class="fold-title">${esc(T(title))}</span><span class="fold-sub">${esc(T(sub))}</span></a>`
-          : `<button type="button" class="fold-btn tk-row" data-popup="${id}" aria-haspopup="dialog" aria-controls="${id}"><span class="fold-title">${esc(T(title))}</span><span class="fold-sub">${esc(T(sub))}</span></button>`).join('')}
+          ? `<a class="tk-row" href="/#${id}">${sign(MENU_ICONS[id])}<span class="fold-title">${esc(T(title))}</span><span class="fold-sub">${esc(T(sub))}</span></a>`
+          : `<button type="button" class="fold-btn tk-row" data-popup="${id}" aria-haspopup="dialog" aria-controls="${id}">${sign(MENU_ICONS[id])}<span class="fold-title">${esc(T(title))}</span><span class="fold-sub">${esc(T(sub))}</span></button>`).join('')}
     </div>`;
   return `
   <div class="ticker" role="marquee" aria-label="${esc(T('What is happening in the habitat'))}"
        data-tz="${esc(m.timezone)}" data-tasks="${esc(JSON.stringify(tasks))}"${over ? ' data-over="1"' : ''}
        data-phase="${esc(m.phase)}" data-opens="${esc(m.opensAt)}" data-epoch="${esc(String(require('../../lib/content').resetEpoch() || ''))}">
     ${menu}
+    <a class="tk-brand" href="/" aria-label="MARS!platz">MARS<span class="bang">!</span>platz</a>
+    <span class="tk-sol"><i aria-hidden="true"></i>${pre ? `T−${m.countdown.days}d` : over ? T('Complete') : `SOL ${String(m.clampedDay).padStart(2, '0')}/${String(m.totalDays).padStart(2, '0')}`}</span>
     <div class="tk-clock"><span class="tk-clock-label">${T('HABITAT TIME')}</span> <b id="tk-clock">${esc(m.venueTime)}</b></div>
     <div class="tk-window"><div class="tk-track" id="tk-track"><div class="tk-line">${line}</div><div class="tk-line" aria-hidden="true">${line}</div></div></div>
     <div class="tk-right">${L.statusStrip(ctx)}</div>
@@ -468,13 +594,6 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
                         media = [], mediaCounts = { total: 0, bytes: 0 }, mediaLookup = () => null,
                         hardware = null, hardwareDaily = [], cloud = null }) {
   const pre = ctx.mission.phase === 'PRE_LAUNCH', T = ctx.T;
-  // This visitor's messages that mission control has not yet published. They
-  // are in the page, but only surface under MY MESSAGES.
-  const pendingMine = recent.filter((m) => m.mine && m.pending).length;
-  // Once you have sent something, the board opens on your own messages, so
-  // the one you just transmitted is the first thing you see.
-  const openOnMine = false;   // ALL opens first; the viewer's own messages head it
-
   /* The masthead: the wordmark, one line under it, the run, and the
      station's readings as a row of small pills on the right — shared with
      every other public page so they read as one station. */
@@ -483,8 +602,12 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
   // Two doors under the lead: the composer (the orange button) and, beside
   // it, the Mission dashboard further down the page (#mission, where the
   // foot's "Daily mission" also leads).
+  // On a phone held upright the portal and the dashboard are pages of their own (/messages, /dashboard), so the doors
+  // lead there instead (aura.css shows one of each pair).
   const cta = `<a class="btn primary masthead-btn" href="#write">${T('Write to the crew')} <span aria-hidden="true">↓</span></a>
-      <a class="btn masthead-btn masthead-btn-live" href="#mission"><i class="live-dot" aria-hidden="true"></i>${T('Live Mission Dashboard')} <span aria-hidden="true">↓</span></a>`;
+      <a class="btn primary masthead-btn masthead-btn-page" href="/messages#write">${T('Write to the crew')} <span aria-hidden="true">→</span></a>
+      <a class="btn masthead-btn masthead-btn-live" href="#mission"><i class="live-dot" aria-hidden="true"></i>${T('Live Mission Dashboard')} <span aria-hidden="true">↓</span></a>
+      <a class="btn masthead-btn masthead-btn-live masthead-btn-page" href="/dashboard"><i class="live-dot" aria-hidden="true"></i>${T('Live Mission Dashboard')} <span aria-hidden="true">→</span></a>`;
   const masthead = L.masthead(ctx, { home: true, status: true, lead, cta });   // the strip is drawn in the ticker on wide screens; aura.css shows this one on phones
 
   /* The days of the run, spelled down the right-hand margin. */
@@ -520,53 +643,8 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
   </header>
   <div class="portal-grid">
     <aside class="portal-letters" aria-hidden="true">${'MARSPLATZ'.split('').map((c) => `<span>${c}</span>`).join('')}</aside>
-    <div class="portal-main">
-      <!-- The composer as a device: an LED, the ribbed grip, a knob and a
-           row of vents, then the operator's callsign and the channel. While
-           a message is crossing, the form gives way to the dial. -->
-      <section class="device composer-device${inFlight ? ' sending' : ''}" aria-label="${esc(T('Composer'))}">
-        <h2 class="dev-title">${T('Write to the crew')}</h2>
-        <span class="dev-led" aria-hidden="true"></span>
-        <span class="dev-grip" aria-hidden="true"></span>
-        <span class="dev-knob" aria-hidden="true"></span>
-        <span class="dev-vents" aria-hidden="true"></span>
-        <div class="dev-head">
-          <span>${T('Operator')}</span>
-          <span class="dev-chip" title="${esc(T('Your callsign for this visit — no account, no name'))}">${esc(ctx.callsign)}</span>
-          <span class="dev-chan">CH-09 · Uplink</span>
-        </div>
-        <div class="dev-body" id="dev-body">${composerBlock(ctx, { inFlight, error, draft })}</div>
-      </section>
-    </div>
-    <section class="feed-col" id="exchanges">
-      <!-- The board is live: board.js polls /api/board and swaps the cards in
-           place, so a reply published from mission control, or another
-           visitor's exchange, appears without anyone reloading. The full
-           structure is always rendered, even when empty, so the first card
-           can arrive into it. -->
-      <div class="feed-wrap"><div class="feed-scroll" id="feed" data-poll="/api/board"
-          data-version="${boardVersion(recent)}">
-        <div class="screen board">
-          <div class="board-head">
-            <h2>${T('Message Board')}</h2>
-            <span class="live" id="feed-live" title="${esc(T('The board refreshes itself every few seconds'))}">${T('LIVE')}</span>
-          </div>
-          <div class="scroller feed"><div class="cards" id="feed-cards">${boardCards(recent, T)}
-            <div class="empty" id="feed-empty"${recent.length ? ' style="display:none"' : ''}
-              data-none="${esc(T('Nothing transmitted yet — the first message could be yours'))}"
-              data-filtered="${esc(T('No messages match this filter'))}">${
-              T(recent.length ? 'No messages match this filter' : 'Nothing transmitted yet — the first message could be yours')}</div>
-          </div></div>
-          <div class="feed-filter" id="feed-filter" role="group" aria-label="${esc(T('Filter the board'))}"${
-          recent.length ? '' : ' hidden'}>
-          <button type="button" class="chip${openOnMine ? '' : ' active'}" data-filter="">${T('ALL')}</button>
-          <button type="button" class="chip mine${openOnMine ? ' active' : ''}" data-filter="mine">${T('MY MESSAGES')} <span
-            class="chip-count" id="feed-mine-count"${pendingMine ? '' : ' hidden'}>${pendingMine}</span></button>
-          ${TAGS.map((t) => `<button type="button" class="chip" data-filter="tag:${t}">${T(t)}</button>`).join('')}
-          </div>
-        </div>
-      </div></div>
-    </section>
+    <div class="portal-main">${composerDevice(ctx, { inFlight, error, draft })}</div>
+    <section class="feed-col" id="exchanges">${boardScreen(ctx, { recent })}</section>
     ${dayRail}
   </div>
   </section>
@@ -911,8 +989,13 @@ const folder = (T, rows, { id = 'day-folder', label = '' } = {}) => {
   const tab = (t, i) => `<button type="button" class="ftab${i === 0 ? ' is-front' : ''}" role="tab" id="ftab-${t.id}" aria-controls="fpage-${t.id}" aria-selected="${i === 0 ? 'true' : 'false'}"${i === 0 ? '' : ' tabindex="-1"'} data-folder="${t.id}">${tabIcon(t.id)}<span class="ftab-n">${esc(t.code)}</span><span class="ftab-l">${esc(t.label)}</span></button>`;
   return `
   <section class="folder span-12" id="${id}" data-stop aria-label="${esc(label)}">
-    <div class="folder-tabs" role="tablist" aria-label="${esc(label)}">${rows.map((row) => `
-      <div class="frow n${row.tabs.length}"><span class="frow-k" aria-hidden="true">${esc(row.label)}</span>${row.tabs.map((t) => tab(t, tabs.indexOf(t))).join('')}</div>`).join('')}
+    <div class="folder-tabs">
+      <!-- a phone's first row: the groups as a segmented control (aura.css shows it under 760 px only);
+           a press opens the group's first folder, and the row of its keys takes the place of the row shown -->
+      <div class="fgroups" role="group" aria-label="${esc(label)}">${rows.map((row, r) => `<button type="button" class="fgroup${r === 0 ? ' is-cur' : ''}" data-group="${r}" aria-pressed="${r === 0 ? 'true' : 'false'}">${esc(row.label)}</button>`).join('')}</div>
+      <div class="frows" role="tablist" aria-label="${esc(label)}">${rows.map((row, r) => `
+      <div class="frow n${row.tabs.length}${r === 0 ? ' is-cur' : ''}" data-group="${r}"><span class="frow-k" aria-hidden="true">${esc(row.label)}</span>${row.tabs.map((t) => tab(t, tabs.indexOf(t))).join('')}</div>`).join('')}
+      </div>
     </div>
     <div class="folder-body">${tabs.map((t, i) => `
       <div class="fpage" role="tabpanel" id="fpage-${t.id}" aria-labelledby="ftab-${t.id}" data-folder="${t.id}"${i === 0 ? '' : ' hidden'}>${t.html}</div>`).join('')}
@@ -1320,10 +1403,15 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
 /* ================================================================== BOARD */
 
 /**
- * One exchange as a label card. Sized for a grid: the callsign is stamped like
- * a lot number, the message is the content, the reply sits beneath it in
- * orange, and the foot carries the reference data — mission day and the real
- * light-time it crossed.
+ * One exchange as a card: the visitor's message in a shaded box — one line
+ * of small print above it with its tags, the callsign, Earth and the time
+ * it was sent, the reference number at the right — and beneath the box the
+ * crew's answer, large, under the words CREW ANSWER, with the officer, the
+ * habitat and the time it left Mars in small print under it. A message not
+ * yet answered shows its state — in transit, reached Mars — where the answer
+ * will stand. Drawn on the board (mission page, messages page) and, after
+ * the run, among the last exchanges on the closing page; styled under *the
+ * exchanges* in aura.css.
  */
 /** What became of a message, stamped on its card. */
 function cardStatus(m) {
@@ -1335,42 +1423,40 @@ function cardStatus(m) {
   return { label: 'REACHED MARS', cls: 'ok' };   // ARRIVED · PENDING_APPROVAL · APPROVED
 }
 
-/** `T` puts the card's chrome — the state stamp, "Sent", "replied", the
- *  tags — into the visitor's language. The archive passes nothing and gets
+/** `T` puts the card's chrome — the state, Earth, CREW ANSWER, the tags —
+ *  into the visitor's language. The archive passes nothing and gets
  *  English; what was written is never touched either way. */
 function messageCard(m, tz, T = same) {
   const fresh = m.response_at && (Date.now() - Date.parse(m.response_at)) < 6 * 3600000;
   const tags = (m.tags || '').split(',').filter(Boolean);
   const st = cardStatus(m);
-  const sent = whenLabel(m.submitted_at, tz), replied = m.response_body ? whenLabel(m.response_at, tz) : '';
+  const short = (label) => label.replace(/^[A-Za-z]{2,3} /, '');                    // the day and the time, without the weekday
+  const sent = short(whenLabel(m.submitted_at, tz)), replied = m.response_body ? short(whenLabel(m.response_at, tz)) : '';
+  const home = (() => { try { return missionLib.config().name; } catch { return ''; } })() || T('Mars habitat');
+  const meta = tags.map((t) => '#' + esc(T(t))).concat(
+    `<span class="cs">${esc(m.callsign)}</span>`, T('Earth'), `<time datetime="${esc(m.submitted_at)}">${esc(sent)}</time>`).join(' · ');
   // A card that is both the viewer's and unpublished is stamped data-pending:
   // the stylesheet keeps it out of the common board and board.js reveals it
   // under MY MESSAGES. Such cards only ever reach their own sender's page.
-  return `<article class="card ${fresh ? 'fresh' : ''}" id="m${m.id}"
+  return `<article class="card xc${fresh ? ' fresh' : ''}${m.response_body ? ' has-reply' : ''}" id="m${m.id}"
       data-tags="${esc(tags.join(','))}"${m.mine ? ' data-mine="1"' : ''}${
       m.mine && m.pending ? ' data-pending="1"' : ''}>
-    <div class="card-top">
-      <span class="cs">${esc(m.callsign)}</span>
-      ${fresh ? `<span class="badge new">${T('New')}</span>` : ''}
-      <span class="badge card-state ${st.cls}">${T(st.label)}</span>
-      <span class="card-day">D${String(m.mission_day).padStart(3, '0')}</span>
+    <div class="card-post">
+      <div class="card-top">
+        <span class="card-meta">${meta}</span>
+        ${fresh ? `<span class="badge new">${T('New')}</span>` : ''}
+        <span class="card-ref">Ref ${String(m.id).padStart(5, '0')}</span>
+      </div>
+      <div class="card-body">${esc(m.body)}</div>
     </div>
-    <div class="card-sent">
-      <span>${T('Sent')} ${esc(m.submitted_at.slice(8, 10))}.${esc(m.submitted_at.slice(5, 7))}.${esc(m.submitted_at.slice(0, 4))}</span>
-      <span>${esc(m.submitted_at.slice(11, 16))} UTC</span>
-    </div>
-    <div class="card-when"><time datetime="${esc(m.submitted_at)}">${esc(sent)}</time>${
-      replied ? ` <span class="card-when-sep">·</span> <span class="card-when-reply">${T('replied')} <time datetime="${esc(m.response_at)}">${esc(replied)}</time></span>` : ''}</div>
-    <div class="card-body">${esc(m.body)}</div>
-    ${tags.length ? `<div class="tagrow">${tags.map((t) => `<span>${esc(T(t))}</span>`).join('')}</div>` : ''}
     ${m.response_body ? `<div class="card-reply">
-      <div class="who">${esc(m.responder || T('Mars habitat'))}</div>
+      <div class="who">${T('Crew answer')}</div>
       <p>${esc(m.response_body)}</p>
-    </div>` : ''}
+      <div class="card-reply-meta">${esc(m.responder ? T(m.responder) : T('Mars habitat'))} · ${esc(home)} · <time datetime="${esc(m.response_at)}">${esc(replied)}</time></div>
+    </div>` : `<div class="card-state-line"><span class="badge card-state ${st.cls}">${T(st.label)}</span></div>`}
     <div class="card-foot">
       <span>${orbital.formatLightTime(m.light_seconds)}</span>
       <span>${m.distance_au.toFixed(2)} au</span>
-      <span style="margin-left:auto">Ref ${String(m.id).padStart(5, '0')}</span>
     </div>
   </article>`;
 }
@@ -1461,6 +1547,6 @@ function single(ctx, { message }) {
 }
 
 module.exports = {
-  mission, complete, inventoryGauges, boardCards, boardVersion, archive, single, messageCard,
+  mission, messages, dashboardPage, complete, inventoryGauges, boardCards, boardVersion, archive, single, messageCard,
   hardwareInner, ticker,
 };

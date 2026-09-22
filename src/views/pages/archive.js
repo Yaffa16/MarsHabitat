@@ -182,7 +182,7 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
       </div>
       <div class="card-body">${esc(m.body)}</div>
       ${(m.tags || '') ? `<div class="tagrow">${(m.tags || '').split(',').filter(Boolean)
-        .map((t) => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
+        .map((t) => `<span>#${esc(t)}</span>`).join('')}</div>` : ''}
       ${m.response_body ? `<div class="card-reply">
         <div class="who">${esc(m.responder || 'Mars habitat')}</div>
         <p>${esc(m.response_body)}</p></div>` : ''}

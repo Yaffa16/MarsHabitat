@@ -62,8 +62,6 @@ function aboutFold(ctx) {
         <dl class="kv">
           <dt>${T('SEPARATION')}</dt><dd>${ctx.geo.distanceAu.toFixed(3)} au</dd>
           <dt>${T('DISTANCE')}</dt><dd>${(ctx.geo.distanceKm / 1e6).toFixed(1)} M km</dd>
-          <dt>${T('ONE WAY')}</dt><dd>${orbital.formatLightTime(ctx.geo.lightSeconds)}</dd>
-          <dt>${T('ROUND TRIP')}</dt><dd>${orbital.formatLightTime(ctx.geo.lightSeconds * 2)}</dd>
           <dt>${T('TREND')}</dt><dd>${esc(T(ctx.geo.trend))}</dd>
         </dl>
         <p class="note" style="margin-top:12px">${T('Positions are computed from Keplerian elements, not fetched from a service. The station keeps working if the venue loses its connection.')}</p>`, 'earth-side')}
@@ -78,15 +76,16 @@ function whatFold(ctx) {
   return `
   <div class="grid g-hero">
     <div class="prose">
-      <h3>${T('You already have a callsign')}</h3>
-      <p>${T('The moment you opened this page the station assigned you one — yours is')} ${cs}. ${T('It is stored in a cookie on your device and nowhere else. There is no account, no email, no name. If you clear your browser you will be issued a new one and lose the thread of your earlier messages.')}</p>
+      <h3>${T(ctx.callsign ? 'You already have a callsign' : 'You will get a callsign')}</h3>
+      <p>${ctx.callsign ? `${T('The moment you opened this page the station assigned you one — yours is')} ${cs}.`
+        : T('The station assigns you one — a word and a number, such as BASALT-625 — the moment you accept its cookie, or the moment you first send.')} ${T('It is stored in a cookie on your device and nowhere else. There is no account, no email, no name. If you clear your browser you will be issued a new one and lose the thread of your earlier messages.')}</p>
 
       <h3>${T('What happens when you send something')}</h3>
       ${p(T, 'You write a message and choose up to three tags. When you transmit it, the composer is replaced by a transit display and you cannot send again until that message has arrived. The station computes the arrival time on the server, so closing the tab, reloading, or switching devices will not shorten the wait.')}
       <p>${T('The message then joins a queue that a human reads. Mission control decides whether it goes to the crew and whether it is published. Until it is answered it is visible only to you, under')} <b>${T('MY MESSAGES')}</b> ${T('on the board. Not every message is carried forward, and that is a real editorial decision rather than a spam filter.')}</p>
 
       <h3>${T('The delay is compressed, and we say so')}</h3>
-      <p>${T('At this moment a radio signal takes')} <b>${light}</b> ${T('to reach Mars, and the same again to come back. The station shows you that figure constantly — it is in the rail at the top. But the animated crossing you watch after pressing transmit runs in about ten seconds. Pretending otherwise would make the piece a lie about physics rather than a piece about distance. The real number is stored with your message and travels with it into the archive.')}</p>
+      <p>${T('At this moment a radio signal takes')} <b>${light}</b> ${T('to reach Mars, and the same again to come back. The station shows you that figure where you write. But the animated crossing you watch after pressing transmit runs in about ten seconds. Pretending otherwise would make the piece a lie about physics rather than a piece about distance. The real number is stored with your message and travels with it into the archive.')}</p>
 
       <h3>${T('Where the habitat readings come from')}</h3>
       ${p(T, 'Temperature, humidity and the other channels in the Habitat section are measured by a sensor node in the physical performance space. When the node stops reporting, the dashboard says so rather than freezing on its last value.')}
