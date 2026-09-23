@@ -1,5 +1,5 @@
 {
-  "_note": "Crew designations and the resources the habitat tracks. Edit and save; the station picks the change up within a couple of seconds. Order here is the order shown on the site.",
+  "_note": "Crew designations and the resources the habitat tracks. Edit and save; the station picks the change up within a couple of seconds. Order here is the order shown on the site. The stores' \"start\" (what is carried in) and \"warnBelow\" (the level a store turns orange at) ship as 0 — placeholders, nothing invented. Write the real figures here before the run, or file the day-1 count on the Habitat tab of mission control: the site draws every gauge against the day-1 figure and carries it forward.",
   "crew": [
     {
       "designation": "COMMUNICATION OFFICER",
@@ -21,8 +21,8 @@
       "unit": "L",
       "category": "Consumable",
       "critical": true,
-      "start": 640,
-      "warnBelow": 90
+      "start": 0,
+      "warnBelow": 0
     },
     {
       "key": "food",
@@ -30,8 +30,8 @@
       "unit": "days",
       "category": "Consumable",
       "critical": true,
-      "start": 14,
-      "warnBelow": 3
+      "start": 0,
+      "warnBelow": 0
     },
     {
       "key": "oxygen",
@@ -39,8 +39,8 @@
       "unit": "%",
       "category": "Life support",
       "critical": true,
-      "start": 98,
-      "warnBelow": 40
+      "start": 0,
+      "warnBelow": 0
     },
     {
       "key": "scrubber",
@@ -48,8 +48,8 @@
       "unit": "units",
       "category": "Life support",
       "critical": true,
-      "start": 12,
-      "warnBelow": 3
+      "start": 0,
+      "warnBelow": 0
     },
     {
       "key": "power",
@@ -57,8 +57,8 @@
       "unit": "kWh",
       "category": "Power",
       "critical": true,
-      "start": 62,
-      "warnBelow": 14
+      "start": 0,
+      "warnBelow": 0
     },
     {
       "key": "filters",
@@ -66,8 +66,8 @@
       "unit": "units",
       "category": "Equipment",
       "critical": false,
-      "start": 9,
-      "warnBelow": 2
+      "start": 0,
+      "warnBelow": 0
     },
     {
       "key": "medical",
@@ -75,8 +75,8 @@
       "unit": "kits",
       "category": "Medical",
       "critical": false,
-      "start": 6,
-      "warnBelow": 2
+      "start": 0,
+      "warnBelow": 0
     },
     {
       "key": "materials",
@@ -84,8 +84,8 @@
       "unit": "kg",
       "category": "Equipment",
       "critical": false,
-      "start": 48,
-      "warnBelow": 8
+      "start": 0,
+      "warnBelow": 0
     },
     {
       "key": "seed",
@@ -93,8 +93,8 @@
       "unit": "trays",
       "category": "Research",
       "critical": false,
-      "start": 8,
-      "warnBelow": 2
+      "start": 0,
+      "warnBelow": 0
     }
   ]
 }

@@ -1,16 +1,24 @@
 'use strict';
 /**
- * The complete mission record as one PDF: every exchange, every blog entry
- * with its photographs in place, every mission note, schedule, meal and
- * inventory count, every state filed for the crew, the habitat summaries,
- * the stores' daily use, the trend charts, the complete correspondence
- * including what was never published, and the media index with hashes.
+ * The complete mission record as one PDF: for every day that has happened,
+ * what was entered on the station that day and what its sensors measured —
+ * the schedule as it was run, the meals, the stores as they were counted,
+ * the power and the crew's figures as they were filed, every mission note,
+ * every blog entry with its photographs in place, every state filed for the
+ * crew, what was sent out, the habitat's daily summary and every reading
+ * behind it — then the crew log whole and the media index with hashes. The
+ * messages from Earth and the crew's replies are not part of the record,
+ * and neither is mission control's audit trail. Before the run, a marked
+ * rehearsal chapter for today shows the shape of a day's record.
  *
- * It is built from the same queries as the archive pages and the Markdown
- * export, so the three never disagree; it exists because a PDF is the form
- * a record gets handed to someone in, printed, and kept. It is composed
- * with src/lib/pdf.js — no browser, no image library, no font file — so it
- * can be produced on the venue laptop with the network unplugged.
+ * Nothing in it is generated: no chart, no projection, no total, no figure
+ * carried from one day to the next, no plan for a day that has not come. A
+ * store that was not counted on a day has no figure for that day; a day
+ * that has not happened has no chapter. It is built from the same queries
+ * as the archive pages and the Markdown export, so the three never
+ * disagree, and composed with src/lib/pdf.js — no browser, no image
+ * library, no font file — so it can be produced on the venue laptop with
+ * the network unplugged.
  */
 const fs = require('fs');
 const { db } = require('../db');
@@ -21,14 +29,11 @@ const archive = require('./archive');
 const mediaLib = require('./media');
 const moodLib = require('./mood');
 const content = require('./content');
-const critical = require('./critical');
-const orbital = require('./orbital');
 const readingsLog = require('./readings-log');
 
 /* ---------------------------------------------------------------- palette */
 const INK = [26, 26, 26], GREY = [107, 107, 107], LIGHT = [160, 160, 160], ORANGE = [232, 83, 26];
-const PALE = [243, 241, 238], RULE = [216, 212, 206], WASH = [252, 240, 233];
-const SERIES = [[232, 83, 26], [26, 26, 26], [70, 110, 190], [40, 150, 110], [150, 80, 170], [200, 150, 20]];
+const PALE = [243, 241, 238], RULE = [216, 212, 206];
 
 const PAGE = { w: 595.28, h: 841.89 };
 const M = { top: 64, bottom: 60, left: 52, right: 52 };
@@ -36,9 +41,10 @@ const CW = PAGE.w - M.left - M.right;   // content width
 
 const dd = (n) => String(n).padStart(2, '0');
 const ddd = (n) => String(n).padStart(3, '0');
-const fmtLight = (s) => (s == null ? '—' : `${Math.floor(s / 60)} min ${String(Math.round(s % 60)).padStart(2, '0')} s`);
 const fmtBytes = (b) => (b >= 1073741824 ? (b / 1073741824).toFixed(2) + ' GB' : b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : b >= 1024 ? Math.round(b / 1024) + ' kB' : b + ' B');
 const fmtNum = (v, d = 1) => (v == null || Number.isNaN(v) ? '—' : Number.isInteger(v) ? String(v) : Number(v).toFixed(d));
+/** A figure exactly as it was entered — no rounding, no formatting. */
+const asIs = (v) => (v == null || v === '' ? '—' : String(v));
 const cap = (s) => (s ? s.charAt(0) + s.slice(1).toLowerCase() : '');
 const longDate = (iso) => new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 
@@ -46,9 +52,8 @@ const longDate = (iso) => new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB
 
 /**
  * A cursor that flows down the page and starts a new one when it runs out,
- * with headings, paragraphs, tables, images and charts that all understand
- * page breaks. Headers and footers are drawn last, once the page count is
- * known.
+ * with headings, paragraphs, tables and images that all understand page
+ * breaks. Headers and footers are drawn last, once the page count is known.
  */
 class Layout {
   constructor(pdf, { runningTitle }) {
@@ -218,93 +223,6 @@ class Layout {
     return s + '…';
   }
 
-  /**
-   * A small chart: days on the x axis, one or more series. Each series is
-   * { name, color, points: {day: v}, planned: {day: v} } — points solid,
-   * planned dashed. `band` draws a min–max wash behind a series.
-   */
-  chart({ title, unit = '', series, totalDays, today, domain = null, w = CW, h = 120, x = M.left, band = null, legend = true, xStep = 1, xLabel = null }) {
-    const padL = 34, padR = 10, padT = 18, padB = 18;
-    const legendH = legend && series.length > 1 ? 12 : 0;
-    this.need(h + legendH + 8);
-    const top = this.y;
-    const px = x + padL, pw = w - padL - padR, py = top + padT, ph = h - padT - padB;
-    // domain
-    let lo = domain ? domain[0] : Infinity, hi = domain ? domain[1] : -Infinity;
-    if (!domain) {
-      for (const s of series) for (const src of [s.points || {}, s.planned || {}]) for (const v of Object.values(src)) { if (v == null) continue; lo = Math.min(lo, v); hi = Math.max(hi, v); }
-      if (band) for (const b of Object.values(band)) { lo = Math.min(lo, b[0]); hi = Math.max(hi, b[1]); }
-      if (!Number.isFinite(lo)) { lo = 0; hi = 1; }
-      if (lo > 0 && lo < hi * 0.6) lo = 0;      // most things are read against zero
-      if (lo === hi) { if (hi > 0) { lo = 0; hi *= 1.25; } else if (hi < 0) { hi = 0; lo *= 1.25; } else { lo = 0; hi = 1; } }
-      const span = hi - lo; hi += span * 0.08; if (lo !== 0) lo -= span * 0.08;
-    }
-    const X = (day) => px + ((day - 1) / Math.max(1, totalDays - 1)) * pw;
-    const Y = (v) => py + ph - ((v - lo) / (hi - lo)) * ph;
-    // frame and grid
-    this.pdf.text(this.page, x, top + 8, title, { font: 'bold', size: 8.5 });
-    if (unit) this.pdf.text(this.page, x + w, top + 8, unit, { size: 7.5, color: GREY, align: 'right' });
-    this.pdf.rect(this.page, px, py, pw, ph, { stroke: RULE, width: 0.4 });
-    for (const t of [0, 0.5, 1]) {
-      const v = lo + (hi - lo) * t, yy = Y(v);
-      if (t > 0 && t < 1) this.pdf.line(this.page, px, yy, px + pw, yy, { color: RULE, width: 0.3, dash: [1, 2] });
-      this.pdf.text(this.page, px - 4, yy + 2.5, fmtNum(Math.abs(v) >= 100 ? Math.round(v) : v, 1), { size: 6.5, color: GREY, align: 'right' });
-    }
-    for (let d = 1; d <= totalDays; d += xStep) {
-      const xx = X(d);
-      this.pdf.text(this.page, xx, py + ph + 10, xLabel ? xLabel(d) : dd(d), { size: 6.5, color: d === today ? INK : GREY, align: 'center' });
-      if (d === today) this.pdf.line(this.page, xx, py, xx, py + ph, { color: ORANGE, width: 0.6, dash: [2, 2] });
-    }
-    if (band) {
-      const pts = [];
-      for (let d = 1; d <= totalDays; d++) if (band[d]) pts.push([X(d), Y(band[d][1])]);
-      for (let d = totalDays; d >= 1; d--) if (band[d]) pts.push([X(d), Y(band[d][0])]);
-      if (pts.length > 2) this.pdf.path(this.page, pts, { stroke: null, fill: WASH, close: true });
-    }
-    series.forEach((s, i) => {
-      const color = s.color || SERIES[i % SERIES.length];
-      const pts = [], planned = [];
-      for (let d = 1; d <= totalDays; d++) {
-        const v = (s.points || {})[d];
-        if (v != null) pts.push([X(d), Y(v)]);
-      }
-      // the planned line runs from the last real point onward
-      const lastReal = pts.length ? Math.max(...Object.keys(s.points).map(Number).filter((d) => s.points[d] != null)) : 0;
-      for (let d = Math.max(1, lastReal); d <= totalDays; d++) {
-        const v = d === lastReal ? (s.points || {})[d] : (s.planned || {})[d];
-        if (v != null) planned.push([X(d), Y(v)]);
-      }
-      if (planned.length > 1) this.pdf.path(this.page, planned, { stroke: color, width: 0.9, dash: [3, 2] });
-      if (pts.length > 1) this.pdf.path(this.page, pts, { stroke: color, width: 1.3 });
-      for (const [xx, yy] of pts) this.pdf.circle(this.page, xx, yy, 1.6, { fill: color });
-      if (planned.length > 1 && pts.length <= 1 && !pts.length) { /* nothing yet */ }
-    });
-    this.y = top + h;
-    if (legendH) {
-      let lx = px;
-      series.forEach((s, i) => {
-        const color = s.color || SERIES[i % SERIES.length];
-        this.pdf.line(this.page, lx, this.y + 4, lx + 10, this.y + 4, { color, width: 1.3 });
-        this.pdf.text(this.page, lx + 13, this.y + 7, s.name, { size: 7, color: GREY });
-        lx += 13 + this.pdf.textWidth(s.name, 'regular', 7) + 12;
-      });
-      this.y += legendH;
-    }
-    this.y += 8;
-  }
-
-  /** Two charts side by side, or one on the left when the list is odd. */
-  chartPair(a, b) {
-    const w = (CW - 12) / 2;
-    const y0 = this.y;
-    this.need((a.h || 120) + 20);
-    const start = this.y;
-    this.chart({ ...a, w, x: M.left });
-    const yA = this.y;
-    if (b) { this.y = start; this.chart({ ...b, w, x: M.left + w + 12 }); this.y = Math.max(yA, this.y); }
-    void y0;
-  }
-
   /** Headers and footers on every page but the plain ones. Call last. */
   finish({ footerLeft }) {
     const n = this.pdf.pages.length;
@@ -323,48 +241,34 @@ class Layout {
 
 /* ================================================================== DATA */
 
-/** Everything the record needs, gathered once. */
+/** Everything the record needs, gathered once. Only the days that have
+    happened are read; the days ahead are known by date alone. */
 function gather() {
   archive.rollupPending();
   const st = mission.state();
   const total = st.totalDays;
   const pre = st.phase === 'PRE_LAUNCH';
   const today = pre ? 0 : st.clampedDay;
+  const upTo = archive.recordedUpTo(st);
   const crew = db.prepare('SELECT * FROM crew ORDER BY sort_order, id').all();
   const items = db.prepare('SELECT * FROM inventory_item ORDER BY sort_order, label').all();
   const channels = db.prepare('SELECT * FROM sensor_metric ORDER BY sort_order, metric').all();
-  const days = Array.from({ length: total }, (_, i) => archive.dayRecord(i + 1));
-  const allDays = days.map((r) => r.day);
-  const figures = content.crewFigures();
-  const power = content.power();
-  const activity = data.dailyActivity();
-  const resourceLog = content.resourceLogRows();
-  const messages = db.prepare(
-    `SELECT m.*, r.body AS response_body, r.published_at AS response_at, r.written_at AS response_written, c.designation AS responder
-     FROM message m LEFT JOIN response r ON r.message_id = m.id LEFT JOIN crew c ON c.id = r.crew_id
-     ORDER BY m.submitted_at, m.id`).all();
+  const days = Array.from({ length: upTo }, (_, i) => archive.dayRecord(i + 1));
   const media = mediaLib.list({ includeHidden: true });
-  const moods = db.prepare('SELECT cm.*, c.designation FROM crew_mood cm JOIN crew c ON c.id = cm.crew_id ORDER BY cm.effective_at').all();
-  const sensorDaily = db.prepare('SELECT sd.*, sm.label, sm.unit, sm.channel, sm.sort_order FROM sensor_daily sd LEFT JOIN sensor_metric sm ON sm.metric = sd.metric ORDER BY sm.sort_order, sd.metric, sd.mission_day').all();
-  const readings = db.prepare('SELECT COUNT(*) n, MIN(recorded_at) a, MAX(recorded_at) b FROM sensor_reading').get();
-  const external = safe(() => critical.rows(400), []);
-  const audit = db.prepare('SELECT * FROM audit ORDER BY created_at DESC, id DESC LIMIT 400').all().reverse();
-  const counts = data.counts();
-  const entryCounts = data.entryCounts();
-  const callsigns = db.prepare('SELECT COUNT(DISTINCT callsign) n FROM message').get().n;
+  const moods = db.prepare("SELECT cm.*, c.designation FROM crew_mood cm JOIN crew c ON c.id = cm.crew_id WHERE cm.set_by != 'content' ORDER BY cm.effective_at").all();
+  const readings = db.prepare(
+    `SELECT COUNT(*) n FROM sensor_reading WHERE device_id NOT IN (${archive.FAKE_DEVICES.map(() => '?').join(', ')})`
+  ).get(...archive.FAKE_DEVICES);
   const written = days.map((r) => r.entries.filter((e) => !content.isPlaceholder(e.body)).length);
-  const byId = new Map(messages.map((m) => [m.id, m]));
   const log = safe(() => readingsLog.counts(), { total: 0, bytes: 0, bySource: {} });
-  return { st, byId, log, total, pre, today, crew, items, channels, days, allDays, figures, power, activity, resourceLog, messages, media, moods,
-    sensorDaily, readings, external, audit, counts, entryCounts, callsigns, written, mediaCounts: mediaLib.counts() };
+  const readingsInRecord = days.reduce((n, r) => n + r.readings.count, 0);
+  // before the run: today's rehearsal record, shown marked, never part of the record
+  const rehearsal = pre ? archive.rehearsalRecord(st) : null;
+  return { st, log, total, pre, today, upTo, crew, items, channels, days, media, moods, rehearsal,
+    readings, readingsInRecord, written, mediaCounts: mediaLib.counts(), carriedIn: content.inventoryStart() };
 }
 const safe = (fn, fallback) => { try { return fn(); } catch { return fallback; } };
 
-/** Which mission day an ISO instant falls on, by the venue clock. */
-function dayOf(iso, st) {
-  const date = mission.localDate(new Date(iso), st.timezone);
-  return mission.daysBetween(st.start_date, date) + 1;
-}
 const localHM = (iso, st) => (iso ? mission.localTime(new Date(iso), st.timezone).slice(0, 5) : '—');
 
 /* ============================================================== SECTIONS */
@@ -377,22 +281,20 @@ function cover(L, G) {
   pdf.text(p, M.left, 200, 'ZKM | Hertzlab', { size: 10, color: GREY });
   pdf.text(p, M.left, 250, 'MARS!platz', { font: 'bold', size: 42 });
   pdf.text(p, M.left, 282, 'Communication Station', { font: 'bold', size: 20, color: ORANGE });
-  pdf.text(p, M.left, 330, 'The complete mission record', { size: 16 });
+  pdf.text(p, M.left, 330, 'The mission record', { size: 16 });
   pdf.text(p, M.left, 350, st.name, { size: 11, color: GREY });
   let y = 400;
   const line = (k, v) => { pdf.text(p, M.left, y, k, { size: 8.5, color: GREY }); pdf.text(p, M.left + 130, y, v, { size: 10 }); y += 17; };
   line('The run', `${st.runLabelLong} · ${st.totalDays} days · ${st.timezone}`);
-  line('Mission days', G.pre ? `not yet begun — opens ${st.startLabel}` : st.phase === 'COMPLETE' ? `complete — all ${st.totalDays} days` : `day ${ddd(G.today)} of ${ddd(st.totalDays)} in progress`);
-  line('Exchanges published', String(G.counts.published));
-  line('Messages from Earth', `${G.counts.total} from ${G.callsigns} callsigns · ${G.counts.rejected} rejected · ${G.counts.pending + G.counts.awaitingResponse} awaiting reply`);
+  line('Days recorded', G.pre ? `none yet — the run opens ${st.startLabel}` : st.phase === 'COMPLETE' ? `all ${st.totalDays} days` : `${G.upTo} of ${st.totalDays} (day ${ddd(G.today)} in progress)`);
   line('Crew log', `${G.written.reduce((a, b) => a + b, 0)} entries written · ${G.moods.length} states filed`);
   line('Media sent out', `${G.mediaCounts.total} files · ${fmtBytes(G.mediaCounts.bytes)} · ${G.mediaCounts.images} photographs, ${G.mediaCounts.videos} video, ${G.mediaCounts.audio} sound, ${G.mediaCounts.documents} documents`);
-  line('Habitat readings', `${G.readings.n.toLocaleString('en-GB')} stored${G.external.length ? ` · ${G.external.length.toLocaleString('en-GB')} from the external node` : ''}`);
+  line('Habitat readings', `${G.readingsInRecord.toLocaleString('en-GB')} in this record, every one printed · ${G.readings.n.toLocaleString('en-GB')} from the station's channels stored in all`);
   line('Days sealed', `${G.days.filter((d) => d.sealed).length} of ${st.totalDays}`);
   line('Readings log', G.log.total ? `${G.log.total.toLocaleString('en-GB')} files · ${fmtBytes(G.log.bytes)} · every reading ever pulled, in /archive/readings.zip` : 'empty');
   line('This record', `generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC`);
   y += 30;
-  for (const t of pdf.wrap('Every day below holds the schedule as it was run, the meals, the inventory, what the crew wrote and sent out, the states filed for them, every exchange with the public and the real time each message took to cross, and the habitat as the sensors saw it. Nothing is summarised away. The photographs are placed in the entries they were sent with; the originals, byte for byte, are in the media ZIP under the hashes printed here.', 'regular', 9.5, CW - 60)) { pdf.text(p, M.left, y, t, { size: 9.5, color: INK }); y += 13.5; }
+  for (const t of pdf.wrap('This record holds only what was entered on the station and what its sensors measured, day by day: the schedule as it was run, the meals, the stores as they were counted, the power and the crew\'s figures as they were filed, what the crew wrote and sent out, the states filed for them, and every reading of every day — the station\'s channels, the external node and the hardware, each as it was stored. Nothing in it is generated — no chart, no projection, no total, no figure carried from one day to the next, and no plan for a day that has not come. The messages from Earth and the crew\'s replies are not part of the record. The photographs are placed in the entries they were sent with; the originals, byte for byte, are in the media ZIP under the hashes printed here.', 'regular', 9.5, CW - 60)) { pdf.text(p, M.left, y, t, { size: 9.5, color: INK }); y += 13.5; }
   pdf.text(p, M.left, PAGE.h - 70, 'Mission control only. The archive is part of the work.', { size: 8, color: GREY });
 }
 
@@ -428,259 +330,160 @@ function fillContents(L, pages, entries) {
 }
 
 function missionSection(L, G) {
-  const { st, crew, items, channels } = G;
+  const { st, crew, items, channels, carriedIn } = G;
   L.h1('The mission');
   L.para(`${st.name}. ${st.runLabelLong}, ${st.totalDays} days, on ${st.timezone} time. Three people inside a sealed habitat, and a channel between them and everyone outside it.`);
   L.h2('Crew');
   L.table([{ label: 'Designation', w: 1.2, font: 'bold' }, { label: 'Role', w: 2 }], crew.map((c) => [c.designation, c.role]));
-  L.h2('What was carried in');
-  L.para('Nothing is resupplied. Every store below is drawn down over the run; the day-by-day figures are in "Daily usage", and each day\'s closing count is in that day\'s record.', { color: GREY, size: 8.5 });
+  L.h2('The stores tracked');
+  L.para('What the habitat set out with, as written in crew-and-inventory.json. Each day\'s counts are in that day\'s record; a store not counted on a day has no figure for it.', { color: GREY, size: 8.5 });
   L.table([{ label: 'Store', w: 1.6, font: 'bold' }, { label: 'Category', w: 1 }, { label: 'Carried in', w: 0.8, align: 'right' }, { label: 'Unit', w: 0.5 }, { label: 'Warning below', w: 0.8, align: 'right' }, { label: 'Critical', w: 0.5 }],
-    items.map((i) => { const first = db.prepare('SELECT quantity FROM inventory_level WHERE item_id = ? ORDER BY mission_day LIMIT 1').get(i.id); return [i.label, i.category, fmtNum(first ? first.quantity : null), i.unit, fmtNum(i.warn_below), i.critical ? 'yes' : '']; }));
+    items.map((i) => [i.label, i.category, asIs(carriedIn[i.key]), i.unit, asIs(i.warn_below), i.critical ? 'yes' : '']));
   L.h2('Monitored channels');
-  L.para('Readings arrive at the station from the habitat\'s sensor node; a channel silent for more than the stale limit reads SIGNAL LOST rather than a stale number. Expected band: outside it reads CAUTION; outside the hard limits, OUT OF RANGE.', { color: GREY, size: 8.5 });
+  L.para('The habitat\'s sensor channels as configured in sensors.json: the channel code, what it measures, its unit and the bands the station reads it against.', { color: GREY, size: 8.5 });
   L.table([{ label: 'Channel', w: 0.6, font: 'mono' }, { label: 'Metric', w: 1.6 }, { label: 'Unit', w: 0.6 }, { label: 'Expected band', w: 1, align: 'right' }, { label: 'Hard limits', w: 1, align: 'right' }, { label: 'Shown', w: 0.5 }],
     channels.map((c) => [c.channel || '—', c.label, c.unit, c.warn_min != null ? `${fmtNum(c.warn_min)} – ${fmtNum(c.warn_max)}` : '—', c.ok_min != null ? `${fmtNum(c.ok_min)} – ${fmtNum(c.ok_max)}` : '—', c.visible ? 'yes' : 'no']));
-  L.h2('The distance');
-  const rows = [];
-  for (const n of [1, Math.ceil(st.totalDays / 2), st.totalDays]) {
-    const g = orbital.geometry(new Date(mission.dateForDay(n) + 'T20:00:00Z'));
-    rows.push([`Day ${ddd(n)} · ${longDate(mission.dateForDay(n))}`, `${g.distanceAu.toFixed(3)} au`, `${Math.round(g.distanceAu * orbital.AU_KM / 1e6)} M km`, fmtLight(g.lightSeconds), fmtLight(g.lightSeconds * 2)]);
-  }
-  L.table([{ label: 'When', w: 2 }, { label: 'Distance', w: 0.8, align: 'right' }, { label: '', w: 0.8, align: 'right' }, { label: 'One-way signal', w: 1, align: 'right' }, { label: 'Round trip', w: 1, align: 'right' }], rows);
-  L.para('Positions are computed from Keplerian elements (src/lib/orbital.js), not fetched. The animated crossing on the station is compressed to seconds and says so; the real light-time is stored with every message and printed beside each exchange in this record.', { color: GREY, size: 8.5 });
   L.h2('How to read this record');
-  L.para('Days run in order; each holds the schedule as it was run with every task\'s final status, the meals and their cost, the inventory at the close, the mission notes, the crew log with its photographs in place, the states filed for the crew with the sentences they became, every exchange published that day, what was sent out and the habitat summary. "Trends" shows the whole run on one axis; "Daily usage" tabulates every store on every day; "The crew log" gathers every blog entry in full, in order; "The complete correspondence" lists every message that reached the station, including those never published; "Media" lists every file with its SHA-256, which can be checked against the ZIP at /media/export.zip with sha256sum. Every reading the station ever pulled — each poll of the sensor node, each batch posted to the ingest endpoint, the stores and figures as they changed, each day\'s summary — is kept as one JSON file per pull in the readings log, downloadable whole at /archive/readings.zip.', { size: 9 });
-}
-
-function trendsSection(L, G) {
-  const { st, total, today, items, allDays, figures, power, activity, crew, channels, sensorDaily, external, moods, written } = G;
-  L.h1('Trends');
-  L.para(`The run on one axis: mission days ${dd(1)}–${dd(total)}. Solid lines are days that have happened; dashed lines are what was planned for the days ahead, which turn solid as each day is filed. Today is marked.`, { color: GREY, size: 8.5 });
-  const upTo = (n) => today >= n;
-  const byDay = (fn, { ahead = false } = {}) => {
-    const points = {}, planned = {};
-    for (let n = 1; n <= total; n++) { const v = fn(n); if (v == null) continue; if (upTo(n)) points[n] = v; if (ahead) planned[n] = v; }
-    return { points, planned };
-  };
-  const rowOf = (n, key) => { const d = allDays[n - 1]; return d && d.inventory ? d.inventory.find((i) => i.key === key) : null; };
-  const chartSpec = (o) => ({ totalDays: total, today, h: 118, ...o });
-  const pairs = (list) => { for (let i = 0; i < list.length; i += 2) L.chartPair(list[i], list[i + 1]); };
-
-  L.h2('Stores — what is left');
-  pairs(items.map((it) => {
-    const first = rowOf(1, it.key);
-    return chartSpec({ title: it.label, unit: it.unit, domain: [0, Math.max(1, first ? first.start_quantity || first.quantity : 1)], series: [{ name: it.label, ...byDay((n) => { const r = rowOf(n, it.key); return r ? r.quantity : null; }, { ahead: true }) }] });
-  }));
-  L.h2('Stores — daily use');
-  pairs(items.map((it) => chartSpec({ title: `${it.label} · use per day`, unit: `${it.unit}/day`, series: [{ name: it.label, color: INK, ...byDay((n) => { const r = rowOf(n, it.key); return r ? r.consumption : null; }, { ahead: true }) }] })));
-  L.h2('Power — consumed by category');
-  const pwrAt = (n, key) => (power.days[String(n)] || {})[key] ?? null;
-  pairs([
-    ...power.categories.map((c) => chartSpec({ title: `Power · ${c.label}`, unit: 'kWh',
-      series: [{ name: c.label, color: INK, ...byDay((n) => pwrAt(n, c.key), { ahead: true }) }] })),
-    chartSpec({ title: 'Power · all categories', unit: 'kWh',
-      series: [{ name: 'total', ...byDay((n) => {
-        const d = power.days[String(n)]; if (!d) return null;
-        const vals = power.categories.map((c) => d[c.key]).filter((v) => v != null);
-        return vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) * 100) / 100 : null;
-      }, { ahead: true }) }] }),
-  ]);
-  L.h2('Meals and the crew\'s figures');
-  const mealSum = (f) => byDay((n) => { const d = allDays[n - 1]; return d && d.meals.length ? d.meals.reduce((s, x) => s + (x[f] || 0), 0) : null; }, { ahead: true });
-  const fig = (k) => byDay((n) => (figures[String(n)] || {})[k] ?? null, { ahead: true });
-  pairs([
-    chartSpec({ title: 'Meals · energy', unit: 'kcal', series: [{ name: 'planned', ...mealSum('kcal') }] }),
-    chartSpec({ title: 'Meals · water', unit: 'L', series: [{ name: 'planned', ...mealSum('water_litres') }] }),
-    chartSpec({ title: 'Meals · preparation power', unit: 'Wh', series: [{ name: 'planned', ...mealSum('energy_wh') }] }),
-    chartSpec({ title: 'Calories consumed (crew total)', unit: 'kcal', series: [{ name: 'calories', color: INK, ...fig('calories') }] }),
-    chartSpec({ title: 'Steps taken (crew total)', unit: 'steps', series: [{ name: 'steps', color: INK, ...fig('steps') }] }),
-  ]);
-  L.h2('Habitat — the station\'s channels');
-  L.para('One point per day: the day\'s mean, with the day\'s low–high range washed behind it. From the readings the habitat node posted to the station.', { color: GREY, size: 8.5 });
-  const metrics = [...new Set(sensorDaily.map((r) => r.metric))];
-  const habCharts = metrics.map((metric) => {
-    const rows = sensorDaily.filter((r) => r.metric === metric);
-    const ch = channels.find((c) => c.metric === metric) || {};
-    const points = {}, band = {};
-    for (const r of rows) { if (r.avg_value != null) { points[r.mission_day] = Math.round(r.avg_value * 100) / 100; band[r.mission_day] = [r.min_value, r.max_value]; } }
-    return chartSpec({ title: `${ch.channel ? ch.channel + ' · ' : ''}${ch.label || metric}`, unit: ch.unit || '', series: [{ name: ch.label || metric, points, planned: {} }], band });
-  });
-  if (habCharts.length) pairs(habCharts); else L.para('No readings were stored.', { color: GREY });
-  if (external.length) {
-    L.h2('Habitat — the external sensor node');
-    L.para(`Daily means from the critical-sensors.de node (sensor ${critical.CFG.sensorId}), polled and stored by the station.`, { color: GREY, size: 8.5 });
-    const keys = [['co2', 'CO₂', 'ppm'], ['temp', 'Temperature', '°C'], ['hum', 'Humidity', '%'], ['pres', 'Pressure', 'hPa'], ['light', 'Light', 'raw'], ['bat', 'Node battery', 'V']];
-    const acc = {};
-    for (const r of external) { const n = dayOf(new Date(r.t).toISOString(), st); if (n < 1 || n > total) continue; for (const [k] of keys) { if (r[k] == null) continue; (acc[k] = acc[k] || {})[n] = acc[k][n] || { s: 0, c: 0 }; acc[k][n].s += r[k]; acc[k][n].c++; } }
-    pairs(keys.filter(([k]) => acc[k]).map(([k, name, unit]) => { const points = {}; for (const [n, v] of Object.entries(acc[k])) points[n] = Math.round((v.s / v.c) * 100) / 100; return chartSpec({ title: name, unit, series: [{ name, points, planned: {} }] }); }));
-  }
-  // The habitat's own hardware, through Home Assistant: one point per day —
-  // a gauge's daily mean with its low–high band, a meter's daily added amount.
-  {
-    const haLib = require('./home-assistant');
-    const perDay = {};
-    for (let n = 1; n <= total; n++) {
-      if (!upTo(n)) continue;
-      for (const h of haLib.daySummary(archive.windowFor(n))) {
-        const p = (perDay[h.id] = perDay[h.id] || { label: h.label, unit: h.unit, kind: h.kind, points: {}, band: {} });
-        const v = h.kind === 'counter' ? (h.added != null ? h.added : null) : h.mean;
-        if (v == null) continue;
-        p.points[n] = Math.round(v * 100) / 100;
-        if (h.kind !== 'counter') p.band[n] = [h.low, h.high];
-      }
-    }
-    const charts = Object.values(perDay).filter((p) => Object.keys(p.points).length).map((p) => chartSpec({
-      title: p.label, unit: p.kind === 'counter' ? `${p.unit || ''}/day` : (p.unit || ''),
-      series: [{ name: p.label, points: p.points, planned: {} }],
-      band: p.kind === 'counter' ? undefined : p.band }));
-    if (charts.length) {
-      L.h2('Habitat — the hardware (Home Assistant)');
-      L.para('One point per day: a gauge\'s daily mean with the day\'s low–high range washed behind it; a meter\'s daily added amount. From the devices the station polls through Home Assistant.', { color: GREY, size: 8.5 });
-      pairs(charts);
-    }
-  }
-  L.h2('Crew states');
-  L.para('The last state filed for each officer on each day. 0 is calm, 100 is angry. These numbers are never shown on the public station — only the sentence each maps to — and appear here because this is mission control\'s record.', { color: GREY, size: 8.5 });
-  const lastOfDay = (crewId, key) => { const points = {}; for (const m of moods) { if (m.crew_id !== crewId) continue; const n = dayOf(m.effective_at, st); if (n >= 1 && n <= total) points[n] = m[key]; } return points; };
-  L.chartPair(
-    chartSpec({ title: 'Mood · calm → angry', unit: '0–100', domain: [0, 100], series: crew.map((c) => ({ name: cap(c.designation.split(' ')[0]), points: lastOfDay(c.id, 'calm_tense'), planned: {} })) }));
-  L.h2('What happened each day');
-  const count = (k) => byDay((n) => (activity[n] || {})[k] || 0);
-  const tasksDone = byDay((n) => { const d = allDays[n - 1]; return d && d.tasks.length ? d.tasks.filter((t) => t.status === 'DONE').length : null; });
-  const entries = byDay((n) => written[n - 1]);
-  pairs([
-    chartSpec({ title: 'Tasks done', series: [{ name: 'done', color: INK, ...tasksDone }] }),
-    chartSpec({ title: 'Messages from Earth · exchanges published', series: [{ name: 'messages', ...count('messages') }, { name: 'exchanges', color: INK, ...count('exchanges') }] }),
-    chartSpec({ title: 'Crew log entries written', series: [{ name: 'entries', color: INK, ...entries }] }),
-    chartSpec({ title: 'Media sent out', series: [{ name: 'files', color: INK, ...count('media') }] }),
-  ]);
-}
-
-function usageSection(L, G) {
-  const { items, resourceLog } = G;
-  L.h1('Daily usage');
-  L.para('Every store on every day of the run: the quantity at the close of the day, that day\'s use, how much has gone since it was carried in, and how many days it would last at that draw. "Filed" means the day\'s figure was counted and written into inventory-levels.json (or the Habitat tab); "carried" means it is yesterday\'s figure less the daily draw. The same rows are at /resources/log.csv.', { color: GREY, size: 8.5 });
-  for (const it of items) {
-    const rows = resourceLog.filter((r) => r.item === it.key);
-    if (!rows.length) continue;
-    L.h3(`${it.label} · ${it.unit}`, { keep: 120 });
-    L.table([{ label: 'Day', w: 0.5, font: 'mono' }, { label: 'Date', w: 1.2 }, { label: 'At close', w: 0.9, align: 'right' }, { label: 'Daily use', w: 0.9, align: 'right' }, { label: 'Used since start', w: 1.1, align: 'right' }, { label: 'Remaining', w: 0.9, align: 'right' }, { label: 'Days left at this use', w: 1.2, align: 'right' }, { label: 'Counted', w: 0.8 }],
-      rows.map((r) => [ddd(r.mission_day), r.date, fmtNum(r.quantity_at_close), fmtNum(r.daily_use), fmtNum(r.used_since_start), r.remaining_pct == null ? '—' : r.remaining_pct + ' %', r.days_left_at_this_use == null ? '—' : fmtNum(r.days_left_at_this_use), r.source]), { size: 8 });
-  }
+  L.para('Days run in order, and only the days that have happened are here. Each holds the schedule with every task\'s status as it stands, the meals as entered, the stores counted that day with the figures as they were written, the power and the steps and calories as they were filed, the mission notes, the crew log with its photographs in place, the states filed for the crew with the value chosen and the sentence the station shows for it, what was sent out, the day\'s sensor summary — each channel\'s lowest, highest and mean reading and how many readings that is — and then every reading of the day: the station\'s channels as one row per instant with a column per channel, the external node one row per reading, the hardware one table per device, every value as it was stored, times in habitat time to the second. No figure is totalled, projected or carried from one day to the next, and the messages from Earth and the crew\'s replies are not part of this record. "The crew log" gathers every blog entry in full, in order; "Media" lists every file with its SHA-256, which can be checked against the ZIP at /media/export.zip with sha256sum. The same readings, as the station received them — one JSON file per pull, with the stores and figures as they changed and each day\'s summary — are in the readings log, downloadable whole at /archive/readings.zip.', { size: 9 });
 }
 
 /** One mission day, whole. */
 function daySection(L, G, r, { asChapter = true } = {}) {
   const { st, today } = G;
   const n = r.missionDay;
-  const title = `Day ${ddd(n)} · ${longDate(r.date)}`;
-  if (asChapter) { L.section = title; L.newPage(); L.pdf.bookmark(title, L.pageIndex, 40, 1); L.pdf.rect(L.page, M.left, L.y, CW, 3, { fill: n === today ? ORANGE : INK }); L.y += 26; L.pdf.text(L.page, M.left, L.y, title, { font: 'bold', size: 22 }); L.y += 30; }
+  const title = r.rehearsal ? `Today · ${longDate(r.date)} · rehearsal, not the record` : `Day ${ddd(n)} · ${longDate(r.date)}`;
+  if (asChapter) { L.section = title; L.newPage(); L.pdf.bookmark(title, L.pageIndex, 40, 1); L.pdf.rect(L.page, M.left, L.y, CW, 3, { fill: n === today || r.rehearsal ? ORANGE : INK }); L.y += 26; for (const line of L.pdf.wrap(title, 'bold', 22, CW)) { L.pdf.text(L.page, M.left, L.y, line, { font: 'bold', size: 22 }); L.y += 26; } L.y += 4; }
   else L.h1(title);
-  const status = n < today ? (r.sealed ? 'sealed' : 'past, not yet sealed') : n === today ? 'today — in progress' : 'planned, ahead';
-  const written = r.entries.filter((e) => !content.isPlaceholder(e.body));
-  L.para(`Mission day ${ddd(n)} of ${ddd(st.totalDays)} · ${status} · ${written.length} crew ${written.length === 1 ? 'entry' : 'entries'} · ${r.messages.length} ${r.messages.length === 1 ? 'exchange' : 'exchanges'} published · ${r.traffic.sent} messages sent from Earth by ${r.traffic.callsigns} callsigns · ${r.media.length} files sent out`, { color: GREY, size: 8.5, after: 10 });
+  const status = r.rehearsal ? 'before the run' : n < today ? (r.sealed ? 'sealed' : 'past, not yet sealed') : 'today — in progress';
+  const written = r.officers.filter((o) => o.entry).length;
+  L.para(`${r.rehearsal ? `Today, ${st.today}` : `Mission day ${ddd(n)} of ${ddd(st.totalDays)}`} · ${status} · ${written} daily ${written === 1 ? 'blog' : 'blogs'} · ${r.moods.length} ${r.moods.length === 1 ? 'state' : 'states'} filed · ${r.media.length} ${r.media.length === 1 ? 'file' : 'files'} sent out · ${r.readings.count.toLocaleString('en-GB')} ${r.readings.count === 1 ? 'reading' : 'readings'}`, { color: GREY, size: 8.5, after: 10 });
+  if (r.rehearsal) L.para(`REHEARSAL, NOT THE RECORD. A preview of a day's record with what there is today: today's readings from every source and the states filed today, and whatever has been put into the opening day (SOL 001) so far — its plan, blogs, reports, counts, figures and media. This chapter disappears on ${st.startLabel}, when day 001 takes its place.`, { font: 'italic', color: ORANGE, size: 8.5, after: 10 });
   if (r.isEmpty) { L.para('Nothing was recorded on this day.', { font: 'italic', color: GREY }); return; }
   const day = r.day;
-
-  if (day && day.tasks.length) {
-    L.h2('Schedule');
-    L.table([{ label: 'Time', w: 0.5, font: 'mono' }, { label: 'Task', w: 3.5 }, { label: 'Status', w: 0.7 }],
-      day.tasks.map((t) => [t.time, t.detail ? `${t.label} — ${t.detail}` : t.label, t.status === 'PLANNED' ? (n < today ? 'planned' : '') : t.status.toLowerCase()]));
-  }
-  if (day && day.meals.length) {
-    L.h2('Meals');
-    L.table([{ label: 'Slot', w: 0.7, font: 'bold' }, { label: 'Meal', w: 2.4 }, { label: 'kcal', w: 0.5, align: 'right' }, { label: 'Water L', w: 0.6, align: 'right' }, { label: 'Prep min', w: 0.6, align: 'right' }, { label: 'Wh', w: 0.5, align: 'right' }],
-      [...day.meals.map((m) => [cap(m.slot), m.components ? `${m.name}\n${m.components.split('\n').join(' · ')}${m.notes ? `\n${m.notes}` : ''}` : m.name, m.kcal, fmtNum(m.water_litres, 2), m.prep_minutes, m.energy_wh]),
-        ['', 'Day total', day.kcalPlanned, fmtNum(day.waterPlanned, 2), day.meals.reduce((s, m) => s + (m.prep_minutes || 0), 0), day.energyPlanned]]);
-  }
-  if (day && day.inventory.length) {
-    L.h2('Inventory at the close of the day');
-    const log = G.resourceLog.filter((x) => x.mission_day === n);
-    L.table([{ label: 'Store', w: 1.6, font: 'bold' }, { label: 'Remaining', w: 0.9, align: 'right' }, { label: 'Of carried in', w: 0.8, align: 'right' }, { label: 'Daily draw', w: 0.8, align: 'right' }, { label: 'Days left', w: 0.7, align: 'right' }, { label: 'Counted', w: 0.6 }],
-      day.inventory.map((i) => { const lg = log.find((x) => x.item === i.key) || {}; const left = i.consumption > 0 ? (i.quantity / i.consumption).toFixed(1) : '—'; const pct = i.start_quantity ? Math.round((i.quantity / i.start_quantity) * 100) + ' %' : '—'; return [i.label, `${fmtNum(i.quantity)} ${i.unit}`, pct, fmtNum(i.consumption), left, lg.source === 'filed' ? 'filed' : 'carried']; }));
-    const why = (log.find((x) => x.note) || {}).note || (day.inventory.find((i) => i.note) || {}).note;
-    if (why) L.para(why, { font: 'italic', size: 8.5, color: GREY });
-  }
-  if (r.power && r.power.filed) {
-    L.h2('Power consumed');
-    L.table([{ label: 'Category', w: 1.6, font: 'bold' }, { label: 'kWh that day', w: 1, align: 'right' }],
-      [...r.power.categories.map((c) => [c.label, c.kwh == null ? '—' : fmtNum(c.kwh, 2)]),
-        ['Day total', fmtNum(r.power.total, 2)]]);
-  }
-  const notes = day ? day.notes.filter((x) => x.published_at) : [];
-  const findings = notes.filter((x) => x.kind === 'SCIENCE'), health = notes.filter((x) => x.kind === 'HEALTH'), other = notes.filter((x) => x.kind !== 'SCIENCE' && x.kind !== 'HEALTH');
   const placed = new Set();
-  if (other.length) {
-    L.h2('Mission notes');
-    for (const x of other) { L.eyebrow(x.kind); entryBlock(L, G, x.body, [], { size: 9.5, used: placed }); }
-  }
-  const inNotes = new Set(notes.flatMap((x) => [...String(x.body).matchAll(/\[media:(\d+)\]/g)].map((m) => Number(m[1]))));
-  if (r.entries.length) {
-    L.h2('Crew log');
-    for (const e of r.entries) {
-      if (content.isPlaceholder(e.body)) { L.h3(e.designation); L.para(`Not written. (${content.placeholderPublic(e.body)})`, { font: 'italic', color: GREY, size: 9 }); continue; }
-      L.h3(e.designation, { keep: 80 });
-      L.para(`Written ${e.written_at ? `${mission.localDate(new Date(e.written_at), st.timezone)} ${localHM(e.written_at, st)}` : ''}${e.updated_at && e.updated_at !== e.written_at ? ` · last edited ${localHM(e.updated_at, st)}` : ''} habitat time`, { color: GREY, size: 7.5, after: 4 });
-      entryBlock(L, G, e.body, r.media.filter((m) => m.crew_id === e.crew_id && !inNotes.has(m.id)), { used: placed });
+  const when = (iso) => (iso ? `${mission.localDate(new Date(iso), st.timezone)} ${localHM(iso, st)}` : '');
+
+  /* ---- the officers: Daily Blog, daily report, crew state ------------- */
+  for (const o of r.officers) {
+    L.h2(`${cap(o.designation)}${o.role ? ` · ${o.role}` : ''}`, { keep: 120 });
+    L.h3('Daily Blog', { keep: 80 });
+    if (o.entry) {
+      L.para(`Written ${when(o.entry.written_at)}${o.entry.updated_at && o.entry.updated_at !== o.entry.written_at ? ` · last edited ${when(o.entry.updated_at)}` : ''} habitat time`, { color: GREY, size: 7.5, after: 4 });
+      entryBlock(L, G, o.entry.body, o.media, { used: placed });
+    } else L.para('No blog written for this day.', { font: 'italic', color: GREY, size: 9 });
+    if (o.reportKind) {
+      L.h3(o.reportLabel, { keep: 80 });
+      if (o.reports.length) for (const x of o.reports) entryBlock(L, G, x.body, [], { used: placed });
+      else L.para(`No ${o.reportLabel.toLowerCase().replace('daily ', '')} written for this day.`, { font: 'italic', color: GREY, size: 9 });
     }
-  } else if (n <= today) { L.h2('Crew log'); L.para('Nothing written by the crew on this day.', { font: 'italic', color: GREY, size: 9 }); }
-  if (findings.length) { L.h2('Science findings'); for (const x of findings) entryBlock(L, G, x.body, [], { used: placed }); }
-  if (health.length) { L.h2('Health activities'); for (const x of health) entryBlock(L, G, x.body, [], { used: placed }); }
+    L.h3('Crew state', { keep: 60 });
+    if (o.states.length) {
+      L.table([{ label: 'Time', w: 0.55, font: 'mono' }, { label: 'Value (0 calm – 100 angry)', w: 1.2, align: 'right' }, { label: 'Condition', w: 0.8 }, { label: 'Shown on the station as', w: 2.3 }, { label: 'Activity', w: 1 }, { label: 'Filed by', w: 0.7 }],
+        o.states.map((m) => { const t = moodLib.translate(m); return [localHM(m.effective_at, st), asIs(m.calm_tense), t.condition, t.lines[0] || '', m.activity || '', m.set_by || '']; }), { size: 8 });
+    } else L.para('No state filed for this day.', { font: 'italic', color: GREY, size: 9 });
+  }
+  if (r.reportsUnassigned.length) {
+    L.h2('Daily reports');
+    for (const x of r.reportsUnassigned) { L.eyebrow(x.kind); entryBlock(L, G, x.body, [], { used: placed }); }
+  }
+  if (r.notesOther.length) {
+    L.h2('Mission notes');
+    for (const x of r.notesOther) { L.eyebrow(x.kind); entryBlock(L, G, x.body, [], { size: 9.5, used: placed }); }
+  }
   const loose = r.media.filter((m) => !placed.has(m.id));
   if (loose.length) { L.h2('Also sent out that day'); for (const m of loose) { placeMedia(L, G, m); placed.add(m.id); } }
-  if (r.moods.length) {
-    L.h2('Crew states filed');
-    L.table([{ label: 'Time', w: 0.55, font: 'mono' }, { label: 'Officer', w: 1.3, font: 'bold' }, { label: 'Condition', w: 0.8 }, { label: 'Mood · calm to angry', w: 2.8 }, { label: 'Activity', w: 1 }],
-      r.moods.map((m) => { const t = moodLib.translate(m); return [localHM(m.effective_at, st), m.designation, t.condition, `${t.lines[0] || ''} (${m.calm_tense})`, m.activity || '']; }), { size: 8 });
+
+  /* ---- the Habitat tab, as it stands --------------------------------- */
+  L.h2('Habitat', { keep: 100 });
+  L.para('The Habitat tab of mission control for this day, as it stands at the time of this record: the schedule, the meals, the steps and calories, the inventory levels and the power. The same tab is written to the readings log automatically at the end of each day (the daily record, /archive/readings.zip).', { color: GREY, size: 8.5 });
+  L.h3('Schedule', { keep: 70 });
+  if (day && day.tasks.length) {
+    L.table([{ label: 'Time', w: 0.5, font: 'mono' }, { label: 'Task', w: 3.5 }, { label: 'Status', w: 0.7 }],
+      day.tasks.map((t) => [t.time, t.detail ? `${t.label} — ${t.detail}` : t.label, String(t.status || 'PLANNED').toLowerCase()]));
+  } else L.para('No schedule for this day.', { font: 'italic', color: GREY, size: 9 });
+  L.h3('Meals', { keep: 70 });
+  if (day && day.meals.length) {
+    L.table([{ label: 'Slot', w: 0.7, font: 'bold' }, { label: 'Meal', w: 2.4 }, { label: 'kcal', w: 0.5, align: 'right' }, { label: 'Water L', w: 0.6, align: 'right' }, { label: 'Prep min', w: 0.6, align: 'right' }, { label: 'Wh', w: 0.5, align: 'right' }],
+      day.meals.map((m) => [m.slot === 'RATION' ? 'Other' : cap(m.slot), m.components ? `${m.name}\n${m.components.split('\n').join(' · ')}${m.notes ? `\n${m.notes}` : ''}` : m.name, asIs(m.kcal), asIs(m.water_litres), asIs(m.prep_minutes), asIs(m.energy_wh)]));
+  } else L.para('No meals entered for this day.', { font: 'italic', color: GREY, size: 9 });
+  L.h3('Steps taken and calories consumed', { keep: 70 });
+  if (r.figures && r.figures.crew && Object.keys(r.figures.crew).length) {
+    const rows = Object.entries(r.figures.crew).map(([who, f]) => [who, asIs(f.steps), asIs(f.calories)]);
+    if (r.figures.calories != null || r.figures.steps != null) rows.push(['Crew (as filed)', asIs(r.figures.steps), asIs(r.figures.calories)]);
+    L.table([{ label: 'Officer', w: 1.6, font: 'bold' }, { label: 'Steps taken', w: 1, align: 'right' }, { label: 'Calories consumed (kcal)', w: 1.2, align: 'right' }], rows);
+  } else L.para('Not filed for this day.', { font: 'italic', color: GREY, size: 9 });
+  L.h3('Inventory levels', { keep: 90 });
+  if (r.stores.length) {
+    L.para('As the tab shows them: available at the start of the day, used today, left for the future. "counted" means the figure was filed for this day; "carried" means it follows from the day before at its draw.', { color: GREY, size: 8 });
+    L.table([{ label: 'Resource', w: 1.6, font: 'bold' }, { label: 'Available amount', w: 1, align: 'right' }, { label: 'Amount used today', w: 1, align: 'right' }, { label: 'Amount left for future', w: 1.1, align: 'right' }, { label: 'Unit', w: 0.5 }, { label: 'Used figure', w: 0.7 }, { label: 'Left figure', w: 0.7 }],
+      r.stores.map((i) => [i.label, asIs(i.available), asIs(i.used), asIs(i.left), i.unit, i.counted.used ? 'counted' : 'carried', i.counted.left ? 'counted' : 'carried']), { size: 8 });
+    if (r.filed.why) L.para(r.filed.why, { font: 'italic', size: 8.5, color: GREY });
+  } else L.para('No stores tracked.', { font: 'italic', color: GREY, size: 9 });
+  L.h3('Power consumed', { keep: 60 });
+  if (r.power && r.power.filed) {
+    L.table([{ label: 'Category', w: 1.6, font: 'bold' }, { label: 'kWh that day', w: 1, align: 'right' }],
+      r.power.categories.map((c) => [c.label, asIs(c.kwh)]));
+  } else L.para('Not filed for this day.', { font: 'italic', color: GREY, size: 9 });
+
+  /* ---- the sensors: names as on the dashboard ------------------------ */
+  L.h2('Habitat sensors', { keep: 100 });
+  L.para('Every channel as it is named on the dashboard: the sensor node (the Habitat panel), the station\'s own channels, and the habitat hardware (the Habitat hardware panel). First each channel\'s lowest, highest and mean reading over the day and how many readings that is; then every reading, as stored.', { color: GREY, size: 8.5 });
+  if (r.external.length) {
+    L.h3('Habitat · sensor node', { keep: 70 });
+    L.table([{ label: 'Channel', w: 2, font: 'bold' }, { label: 'Low', w: 0.7, align: 'right' }, { label: 'High', w: 0.7, align: 'right' }, { label: 'Mean', w: 0.7, align: 'right' }, { label: 'Unit', w: 0.6 }, { label: 'Readings', w: 0.7, align: 'right' }],
+      r.external.map((h) => [h.label, fmtNum(h.low, 2), fmtNum(h.high, 2), fmtNum(h.mean, 2), h.unit || '', h.samples]));
   }
-  const unpublished = G.messages.filter((m) => m.mission_day === n && m.state !== 'PUBLISHED');
-  if (r.messages.length || unpublished.length) {
-    L.h2('Exchanges');
-    for (const m of r.messages) exchange(L, G, m);
-    if (unpublished.length) L.para(`${unpublished.length} more ${unpublished.length === 1 ? 'message' : 'messages'} sent from Earth that day ${unpublished.length === 1 ? 'was' : 'were'} not published — ${unpublished.filter((m) => m.state === 'REJECTED').length} rejected, ${unpublished.filter((m) => m.state !== 'REJECTED').length} still awaiting a reply. All of them are in "The complete correspondence".`, { font: 'italic', size: 8.5, color: GREY });
+  if (r.habitat.length) {
+    L.h3('Habitat · the station\'s channels', { keep: 70 });
+    L.table([{ label: 'Channel', w: 0.6, font: 'mono' }, { label: 'Metric', w: 1.6 }, { label: 'Low', w: 0.7, align: 'right' }, { label: 'High', w: 0.7, align: 'right' }, { label: 'Mean', w: 0.7, align: 'right' }, { label: 'Unit', w: 0.6 }, { label: 'Readings', w: 0.7, align: 'right' }, { label: 'Sealed', w: 0.8 }],
+      r.habitat.map((h) => [h.channel || '—', h.label || h.metric, fmtNum(h.min_value), fmtNum(h.max_value), fmtNum(h.avg_value), h.unit || '', h.samples, h.sealed_at ? localHM(h.sealed_at, st) : 'open']));
   }
+  if ((r.hardware || []).length) {
+    L.h3('Habitat hardware', { keep: 70 });
+    L.table([{ label: 'Device', w: 2, font: 'bold' }, { label: 'Low', w: 0.7, align: 'right' }, { label: 'High', w: 0.7, align: 'right' }, { label: 'Mean', w: 0.7, align: 'right' }, { label: 'Added today', w: 0.9, align: 'right' }, { label: 'Unit', w: 0.6 }, { label: 'Readings', w: 0.7, align: 'right' }],
+      r.hardware.map((h) => [h.label, fmtNum(h.low), fmtNum(h.high), fmtNum(h.mean), h.added == null ? '—' : fmtNum(h.added), h.unit || '', h.samples]));
+  }
+  if (!r.external.length && !r.habitat.length && !(r.hardware || []).length) L.para('No reading was stored for this day.', { font: 'italic', color: GREY, size: 9 });
+  readingsSection(L, r.readings);
+
+  /* ---- what was sent out ---------------------------------------------- */
   if (r.media.length) {
     L.h2('Media sent out');
     L.table([{ label: 'File', w: 2, font: 'bold' }, { label: 'Kind', w: 0.6 }, { label: 'Size', w: 0.6, align: 'right' }, { label: 'Officer', w: 1.2 }, { label: 'Caption', w: 1.8 }, { label: 'SHA-256 (full hash in Media)', w: 1.2, font: 'mono' }],
       r.media.map((m) => [m.filename, m.kind, fmtBytes(m.bytes), m.designation || '—', m.caption || '', m.sha256.slice(0, 16) + '…']), { size: 7.5 });
   }
-  if (r.habitat.length) {
-    L.h2('Habitat');
-    L.table([{ label: 'Channel', w: 0.6, font: 'mono' }, { label: 'Metric', w: 1.6 }, { label: 'Low', w: 0.7, align: 'right' }, { label: 'High', w: 0.7, align: 'right' }, { label: 'Mean', w: 0.7, align: 'right' }, { label: 'Unit', w: 0.6 }, { label: 'Samples', w: 0.7, align: 'right' }, { label: 'Sealed', w: 0.8 }],
-      r.habitat.map((h) => [h.channel || '—', h.label || h.metric, fmtNum(h.min_value), fmtNum(h.max_value), fmtNum(h.avg_value), h.unit || '', h.samples, h.sealed_at ? localHM(h.sealed_at, st) : 'open']));
+}
+
+/**
+ * Every reading of the day, as stored: the station's channels as one row
+ * per instant with a column per channel, the external node one row per
+ * reading, the hardware one table per device. Values exactly as stored,
+ * times in habitat time to the second. Long tables run over the pages;
+ * the header repeats.
+ */
+function readingsSection(L, R) {
+  if (!R || !R.count) return;
+  L.h3(`Every reading of the day · ${R.count.toLocaleString('en-GB')} readings`, { keep: 90 });
+  L.para('Each as it was stored. Times are habitat time, to the second.', { color: GREY, size: 8.5 });
+  const opts = { size: 7, headSize: 6.5, pad: 2.5, maxRowLines: 3 };
+  // Column heads are short — the channel code and unit — with the full names
+  // on a line above, so ten columns fit the page.
+  const short = (c) => (c.channel && !/\?/.test(c.channel) ? c.channel : c.metric.slice(0, 8)) + (c.unit ? ` ${c.unit}` : '');
+  if (R.station.rows.length) {
+    L.h3(`Habitat · the station's channels · every reading · ${R.station.readings.toLocaleString('en-GB')} readings`, { keep: 80 });
+    L.para(R.station.columns.map((c) => `${short(c)} = ${c.label}`).join(' · '), { color: GREY, size: 7.5, after: 4 });
+    const cols = [{ label: 'Time', w: 1.1, font: 'mono' }, ...R.station.columns.map((c) => ({ label: short(c), w: 1, align: 'right' }))];
+    L.table(cols, R.station.rows.map((row) => [row.at, ...R.station.columns.map((c) => asIs(row.values[c.metric]))]), opts);
   }
-  if ((r.hardware || []).length) {
-    L.h2('Habitat hardware');
-    L.table([{ label: 'Device', w: 2, font: 'bold' }, { label: 'Low', w: 0.7, align: 'right' }, { label: 'High', w: 0.7, align: 'right' }, { label: 'Mean', w: 0.7, align: 'right' }, { label: 'Added today', w: 0.9, align: 'right' }, { label: 'Unit', w: 0.6 }, { label: 'Samples', w: 0.7, align: 'right' }],
-      r.hardware.map((h) => [h.label, fmtNum(h.low), fmtNum(h.high), fmtNum(h.mean), h.added == null ? '—' : fmtNum(h.added), h.unit || '', h.samples]));
+  if (R.external.rows.length) {
+    L.h3(`Habitat · sensor node · every reading · ${R.external.readings.toLocaleString('en-GB')} readings`, { keep: 70 });
+    const cols = [{ label: 'Time', w: 1.1, font: 'mono' }, ...R.external.columns.map((c) => ({ label: `${c.label} ${c.unit}`, w: 1, align: 'right' }))];
+    L.table(cols, R.external.rows.map((row) => [row.at, ...R.external.columns.map((c) => asIs(row.values[c.key]))]), opts);
   }
-  /* The day over its 24 hours: every reading pulled that day — the station's
-     channels, the external node and the hardware — one point per hour on an
-     00–24 axis; then the two-point day, each store from open to close and
-     the calories from zero to the day's total. */
-  {
-    const HOURS = { totalDays: 25, today: -1, h: 104, xStep: 2, xLabel: (p) => String(p - 1).padStart(2, '0') };
-    const two = (a, b) => { for (let i = 0; i < a.length; i += 2) L.chartPair(a[i], a[i + 1]); void b; };
-    const hourCharts = [
-      ...(r.habitatHours || []).map((c) => ({ ...HOURS, title: `${c.channel ? c.channel + ' · ' : ''}${c.label}`, unit: c.unit || '', series: [{ name: c.label, points: c.points, planned: {} }] })),
-      ...(r.externalHours || []).map((c) => ({ ...HOURS, title: c.label, unit: c.unit || '', series: [{ name: c.label, points: c.points, planned: {} }] })),
-      ...(r.hardwareHours || []).map((c) => ({ ...HOURS, title: c.label, unit: c.unit || '', series: [{ name: c.label, points: c.points, planned: {} }] })),
-    ];
-    if (hourCharts.length) {
-      L.h2('The day, hour by hour');
-      L.para('Every reading pulled that day — the station\'s own channels, the external node and the habitat hardware — one point per hour, 00 to 24 venue time. A gauge\'s hour is its mean; a meter shows its level.', { color: GREY, size: 8.5 });
-      two(hourCharts);
-    }
-    const twoPoint = [
-      ...(r.resourcesDay || []).map((s) => ({ ...HOURS, title: `${s.label} — open to close`, unit: s.unit || '', series: [{ name: s.label, points: { 1: s.open, 25: s.close }, planned: {} }] })),
-      ...(r.caloriesDay ? [{ ...HOURS, title: 'Calories consumed — open to close', unit: 'kcal', series: [{ name: 'calories', points: { 1: r.caloriesDay.open, 25: r.caloriesDay.close }, planned: {} }] }] : []),
-    ];
-    if (twoPoint.length) {
-      L.h2('Resources over the day');
-      L.para('Two points per line: what the store held at the start of the day and at its close; the calories run from zero to the day\'s total.', { color: GREY, size: 8.5 });
-      two(twoPoint);
-    }
+  for (const h of R.hardware) {
+    L.h3(`Habitat hardware · ${h.label} · every reading · ${h.rows.length.toLocaleString('en-GB')} readings`, { keep: 70 });
+    L.table([{ label: 'Time', w: 0.9, font: 'mono' }, { label: `Value${h.unit ? ` (${h.unit})` : ''}`, w: 1, align: 'right' }, { label: 'As reported', w: 1.4 }],
+      h.rows.map((row) => [row.at, asIs(row.value), row.state]), opts);
   }
 }
 
@@ -719,32 +522,13 @@ function placeMedia(L, G, m) {
   L.fileBox(m, { thumb: loadImage(L, m) });
 }
 
-/** One exchange as it is shown on the board: the message, then the reply. */
-function exchange(L, G, m, { withState = false } = {}) {
-  const { st } = G;
-  const full = G.byId.get(m.id) || m;
-  if (m.response_at === undefined) m = { ...m, response_at: full.response_at, response_written: full.response_written };
-  const tags = (m.tags || '').split(',').filter(Boolean).map(cap).join(', ');
-  const state = withState ? ` · ${({ PUBLISHED: 'published', REJECTED: 'rejected', PENDING_APPROVAL: 'awaiting reply', APPROVED: 'awaiting reply', IN_TRANSIT: 'in transit', TRANSMITTED: 'in transit', ARRIVED: 'arrived' })[m.state] || m.state.toLowerCase()}` : '';
-  L.need(48);
-  L.pdf.text(L.page, M.left, L.y, m.callsign, { font: 'bold', size: 9.5, color: ORANGE });
-  L.pdf.text(L.page, M.left + L.pdf.textWidth(m.callsign, 'bold', 9.5) + 6, L.y, `· Ref ${String(m.id).padStart(5, '0')} · day ${ddd(m.mission_day)} · ${localHM(m.submitted_at, st)}${tags ? ` · ${tags}` : ''}${state}`, { size: 8, color: GREY });
-  L.y += 14;
-  L.para(m.body, { size: 9.5, after: 4 });
-  if (m.response_body) {
-    L.quote(`${m.responder || 'Mars habitat'} — ${m.response_body}${m.response_at ? '' : '  [draft, not published]'}`, { color: ORANGE, fill: WASH });
-  } else if (m.state === 'REJECTED') L.para(`Rejected without a reply${m.reject_reason ? `: ${m.reject_reason}` : ''}.`, { font: 'italic', color: GREY, size: 8.5 });
-  else if (withState) L.para('No reply yet.', { font: 'italic', color: GREY, size: 8.5 });
-  L.para(`Crossed in ${fmtLight(m.light_seconds)} at ${m.distance_au != null ? m.distance_au.toFixed(3) : '—'} au${m.response_at ? ` · reply published day ${ddd(dayOf(m.response_at, st))} ${localHM(m.response_at, st)}` : ''}`, { size: 7.5, color: GREY, after: 12 });
-}
-
 /** Every blog entry, whole, in one place: day by day, officer by officer, held ones included. */
 function crewLogSection(L, G) {
-  const { st, total, days } = G;
+  const { st, upTo, days } = G;
   L.h1('The crew log');
   L.para('Everything the crew wrote, in full, day by day and officer by officer — the same text as in each day\'s record, gathered so the log can be read straight through. Photographs sit where they were placed in the entry; video and sound are listed. An entry held back from the public station is included and marked, because this is mission control\'s record.', { color: GREY, size: 8.5 });
   let any = 0;
-  for (let n = 1; n <= total; n++) {
+  for (let n = 1; n <= upTo; n++) {
     const entries = data.entriesForDay(n, { includeHeld: true }).filter((e) => !content.isPlaceholder(e.body));
     if (!entries.length) continue;
     const r = days[n - 1];
@@ -758,18 +542,6 @@ function crewLogSection(L, G) {
     }
   }
   if (!any) L.para('Nothing has been written yet.', { font: 'italic', color: GREY });
-}
-
-function correspondenceSection(L, G) {
-  const { messages, counts, callsigns } = G;
-  L.h1('The complete correspondence');
-  L.para(`Every message that reached the station, in the order it was sent: ${counts.total} from ${callsigns} callsigns — ${counts.published} published with a reply, ${counts.rejected} rejected, ${counts.pending + counts.awaitingResponse} still awaiting a reply, ${counts.inTransit} in transit. Messages sent before the habitat was occupied carry day 000.`, { color: GREY, size: 8.5 });
-  let day = null;
-  for (const m of messages) {
-    if (m.mission_day !== day) { day = m.mission_day; L.h2(day < 1 ? 'Before the mission · day 000' : `Day ${ddd(day)}`, { keep: 90 }); }
-    exchange(L, G, m, { withState: true });
-  }
-  if (!messages.length) L.para('No messages have been sent.', { font: 'italic', color: GREY });
 }
 
 function mediaSection(L, G) {
@@ -792,15 +564,6 @@ function mediaSection(L, G) {
   if (!media.length) L.para('Nothing has been sent out.', { font: 'italic', color: GREY });
 }
 
-function auditSection(L, G) {
-  const { audit, st } = G;
-  L.h1('Audit trail');
-  L.para(`What mission control did, as the station logged it${audit.length >= 400 ? ' (the most recent 400 entries)' : ''}: replies, rejections, entries, states, uploads, edits, the reset.`, { color: GREY, size: 8.5 });
-  if (audit.length) L.table([{ label: 'When (habitat time)', w: 1.1, font: 'mono' }, { label: 'Who', w: 0.7 }, { label: 'Action', w: 0.8 }, { label: 'On', w: 1.6 }, { label: 'Detail', w: 2.4 }],
-    audit.map((a) => [`${mission.localDate(new Date(a.created_at), st.timezone)} ${localHM(a.created_at, st)}`, a.actor, a.action, `${a.entity} ${a.entity_id}`, a.detail || '']), { size: 7.5 });
-  else L.para('Nothing logged.', { font: 'italic', color: GREY });
-}
-
 /* ================================================================ BUILDS */
 
 /** The whole mission. Returns a Buffer. */
@@ -808,35 +571,40 @@ function fullRecord() {
   imageCache.clear();
   const G = gather();
   const { st } = G;
-  const pdf = new PDF({ title: `${st.name} — complete mission record`, author: 'ZKM | Hertzlab — Mars Communication Station', subject: `${st.runLabelLong}, ${st.totalDays} days` });
-  const L = new Layout(pdf, { runningTitle: `${st.name} · complete mission record` });
+  const pdf = new PDF({ title: `${st.name} — mission record`, author: 'ZKM | Hertzlab — Mars Communication Station', subject: `${st.runLabelLong}, ${st.totalDays} days` });
+  const L = new Layout(pdf, { runningTitle: `${st.name} · mission record` });
   cover(L, G);
   // The contents list is known before the body is laid out: the sections and
   // the days. Its pages are reserved here and written once the page numbers exist.
   const toc = [];
-  const sectionTitles = ['The mission', 'Trends', 'Daily usage', 'The days', ...G.days.map((r) => `Day ${ddd(r.missionDay)} · ${longDate(r.date)}`), 'The crew log', 'The complete correspondence', 'Media', 'Audit trail'];
+  const rehearsalTitle = G.rehearsal ? `Today · ${longDate(G.rehearsal.date)} · rehearsal, not the record` : null;
+  const sectionTitles = ['The mission', 'The days', ...G.days.map((r) => `Day ${ddd(r.missionDay)} · ${longDate(r.date)}`), ...(rehearsalTitle ? [rehearsalTitle] : []), 'The crew log', 'Media'];
   const tocPages = contentsPages(L, sectionTitles);
   const startOf = (title) => (L.sections.find((s) => s[1] === title) || [L.pageIndex])[0];
   const sec = (title, level = 0) => toc.push({ title, level, page: startOf(title), y: 0 });
 
   missionSection(L, G); sec('The mission');
-  trendsSection(L, G); sec('Trends');
-  usageSection(L, G); sec('Daily usage');
   L.h1('The days'); sec('The days');
-  L.para(`${st.totalDays} days, each whole: the schedule as it was run, the meals, the inventory at the close, the mission notes, the crew log with its photographs, the states filed, the exchanges, what was sent out and the habitat summary. Days ahead show the plan.`, { color: GREY, size: 8.5 });
-  L.table([{ label: 'Day', w: 0.5, font: 'mono' }, { label: 'Date', w: 1.6 }, { label: 'State', w: 1 }, { label: 'Entries', w: 0.6, align: 'right' }, { label: 'Exchanges', w: 0.7, align: 'right' }, { label: 'Sent from Earth', w: 0.9, align: 'right' }, { label: 'Files', w: 0.5, align: 'right' }, { label: 'Channels', w: 0.6, align: 'right' }],
-    G.days.map((r, i) => [ddd(r.missionDay), longDate(r.date), r.missionDay < G.today ? (r.sealed ? 'sealed' : 'past') : r.missionDay === G.today ? 'today' : 'ahead', G.written[i], r.messages.length, r.traffic.sent, r.media.length, r.habitat.length]));
+  L.para(G.upTo === 0
+    ? `The run opens ${st.startLabel}. No day has been recorded yet; the ${st.totalDays} days are listed below by date.${G.rehearsal ? ' Until then a rehearsal chapter for today follows the list — marked, and not part of the record — so the shape of a day\'s record can be seen with what there is now.' : ''}`
+    : `${G.upTo} of ${st.totalDays} days recorded, each whole: the schedule as it was run, the meals, the stores counted that day, the power and the crew's figures as filed, the mission notes, the crew log with its photographs, the states filed, what was sent out, the day's sensor summary and every reading of the day. A day that has not happened has no chapter.`, { color: GREY, size: 8.5 });
+  const rows = [];
+  for (let n = 1; n <= st.totalDays; n++) {
+    const r = G.days[n - 1];
+    if (r) rows.push([ddd(n), longDate(r.date), n < G.today ? (r.sealed ? 'sealed' : 'past') : 'today', G.written[n - 1], r.moods.length, r.media.length, r.habitat.length, r.readings.count.toLocaleString('en-GB')]);
+    else rows.push([ddd(n), longDate(mission.dateForDay(n)), 'not yet', '', '', '', '', '']);
+  }
+  L.table([{ label: 'Day', w: 0.5, font: 'mono' }, { label: 'Date', w: 1.6 }, { label: 'State', w: 1 }, { label: 'Entries', w: 0.6, align: 'right' }, { label: 'States filed', w: 0.7, align: 'right' }, { label: 'Files', w: 0.5, align: 'right' }, { label: 'Channels', w: 0.6, align: 'right' }, { label: 'Readings', w: 0.7, align: 'right' }], rows);
   for (const r of G.days) { const title = `Day ${ddd(r.missionDay)} · ${longDate(r.date)}`; daySection(L, G, r); sec(title, 1); }
+  if (G.rehearsal) { daySection(L, G, G.rehearsal); sec(rehearsalTitle, 1); }
   crewLogSection(L, G); sec('The crew log');
-  correspondenceSection(L, G); sec('The complete correspondence');
   mediaSection(L, G); sec('Media');
-  auditSection(L, G); sec('Audit trail');
   fillContents(L, tocPages, toc);
   L.finish({ footerLeft: `ZKM | Hertzlab · ${st.runLabelLong} · generated ${new Date().toISOString().slice(0, 10)}` });
   return pdf.build();
 }
 
-/** One day, whole. */
+/** One day, whole. Null for a day that has not happened. */
 function dayRecord(n) {
   imageCache.clear();
   const G = gather();
@@ -850,4 +618,98 @@ function dayRecord(n) {
   return pdf.build();
 }
 
-module.exports = { fullRecord, dayRecord, gather };
+/** Today, before the run — the rehearsal record as its own PDF. Null once the run has begun. */
+function todayRecord() {
+  imageCache.clear();
+  const G = gather();
+  const { st } = G;
+  const r = G.rehearsal;
+  if (!r) return null;
+  const pdf = new PDF({ title: `${st.name} — today, before the run · ${longDate(r.date)} · rehearsal`, author: 'ZKM | Hertzlab — Mars Communication Station' });
+  const L = new Layout(pdf, { runningTitle: `${st.name} · today · rehearsal, not the record` });
+  daySection(L, G, r, { asChapter: false });
+  L.finish({ footerLeft: `ZKM | Hertzlab · ${st.runLabelLong} · rehearsal · generated ${new Date().toISOString().slice(0, 10)}` });
+  return pdf.build();
+}
+
+/* ============================================================ MESSAGES */
+
+/**
+ * All the messages from Earth, as one PDF of their own — not the record,
+ * which leaves them out, but the complete correspondence for mission
+ * control to keep: every message that ever reached the station, in the
+ * order it was sent, whatever became of it — published with its reply,
+ * rejected with the reason, still waiting, or in transit — with its
+ * callsign, tags, day and time, and the signal delay stored with it.
+ */
+const STATE_WORD = { PUBLISHED: 'published', REJECTED: 'rejected', PENDING_APPROVAL: 'awaiting reply', APPROVED: 'awaiting reply', IN_TRANSIT: 'in transit', TRANSMITTED: 'in transit', ARRIVED: 'arrived' };
+const WASH = [252, 240, 233];
+const fmtLight = (sec) => (sec == null ? '—' : `${Math.floor(sec / 60)} min ${String(Math.round(sec % 60)).padStart(2, '0')} s`);
+function dayOf(iso, st) {
+  const date = mission.localDate(new Date(iso), st.timezone);
+  return mission.daysBetween(st.start_date, date) + 1;
+}
+
+/** Every message with its reply, oldest first — the one query the PDF, the CSV and the JSON share. */
+function allMessages() {
+  return db.prepare(
+    `SELECT m.*, r.body AS response_body, r.published_at AS response_at, r.written_at AS response_written, c.designation AS responder
+     FROM message m LEFT JOIN response r ON r.message_id = m.id LEFT JOIN crew c ON c.id = r.crew_id
+     ORDER BY m.submitted_at, m.id`).all();
+}
+
+function messagesPdf() {
+  const st = mission.state();
+  const messages = allMessages();
+  const counts = data.counts();
+  const callsigns = db.prepare('SELECT COUNT(DISTINCT callsign) n FROM message').get().n;
+  const pdf = new PDF({ title: `${st.name} — all messages from Earth`, author: 'ZKM | Hertzlab — Mars Communication Station' });
+  const L = new Layout(pdf, { runningTitle: `${st.name} · all messages from Earth` });
+  L.h1('All messages from Earth');
+  L.para(`Every message that reached the station, in the order it was sent: ${counts.total} from ${callsigns} callsigns — ${counts.published} published with a reply, ${counts.rejected} rejected, ${counts.pending + counts.awaitingResponse} still awaiting a reply, ${counts.inTransit} in transit. Messages sent before the habitat was occupied carry day 000. Generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC. The messages are not part of the mission record; this is mission control's own copy.`, { color: GREY, size: 8.5 });
+  let day = null;
+  for (const m of messages) {
+    if (m.mission_day !== day) { day = m.mission_day; L.h2(day < 1 ? 'Before the mission · day 000' : `Day ${ddd(day)}`, { keep: 90 }); }
+    const tags = (m.tags || '').split(',').filter(Boolean).map((t) => '#' + t).join(' ');
+    L.need(48);
+    L.pdf.text(L.page, M.left, L.y, m.callsign, { font: 'bold', size: 9.5, color: ORANGE });
+    L.pdf.text(L.page, M.left + L.pdf.textWidth(m.callsign, 'bold', 9.5) + 6, L.y, `· Ref ${String(m.id).padStart(5, '0')} · day ${ddd(m.mission_day)} · ${mission.localDate(new Date(m.submitted_at), st.timezone)} ${localHM(m.submitted_at, st)}${tags ? ` · ${tags}` : ''} · ${STATE_WORD[m.state] || m.state.toLowerCase()}${m.flagged ? ' · flagged' : ''}`, { size: 8, color: GREY });
+    L.y += 14;
+    L.para(m.body, { size: 9.5, after: 4 });
+    if (m.response_body) {
+      L.quote(`${m.responder || 'Mars habitat'} — ${m.response_body}${m.response_at ? '' : '  [draft, not published]'}`, { color: ORANGE, fill: WASH });
+    } else if (m.state === 'REJECTED') L.para(`Rejected without a reply${m.reject_reason ? `: ${m.reject_reason}` : ''}${m.reviewed_by ? ` · by ${m.reviewed_by}` : ''}${m.reviewed_at ? ` · ${localHM(m.reviewed_at, st)}` : ''}.`, { font: 'italic', color: GREY, size: 8.5 });
+    else L.para('No reply yet.', { font: 'italic', color: GREY, size: 8.5 });
+    L.para(`Signal delay stored with the message: ${fmtLight(m.light_seconds)} one way at ${m.distance_au != null ? m.distance_au.toFixed(3) : '—'} au${m.response_at ? ` · reply published day ${ddd(dayOf(m.response_at, st))} ${localHM(m.response_at, st)}` : ''}`, { size: 7.5, color: GREY, after: 12 });
+  }
+  if (!messages.length) L.para('No messages have been sent.', { font: 'italic', color: GREY });
+  L.finish({ footerLeft: `ZKM | Hertzlab · ${st.runLabelLong} · all messages · generated ${new Date().toISOString().slice(0, 10)}` });
+  return pdf.build();
+}
+
+/** The same, as one row per message for a spreadsheet. */
+function messagesCsv() {
+  const cell = (v) => { const t = v == null ? '' : String(v); return /[",\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+  const head = ['id', 'callsign', 'mission_day', 'submitted_at', 'arrived_at', 'state', 'flagged', 'tags', 'message',
+    'reply', 'replied_by', 'reply_written_at', 'reply_published_at', 'reviewed_at', 'reviewed_by', 'reject_reason', 'light_seconds', 'distance_au'];
+  const rows = allMessages().map((m) => [m.id, m.callsign, m.mission_day, m.submitted_at, m.arrival_at, m.state, m.flagged ? 1 : 0, m.tags, m.body,
+    m.response_body, m.responder, m.response_written, m.response_at, m.reviewed_at, m.reviewed_by, m.reject_reason, m.light_seconds, m.distance_au]);
+  return [head, ...rows].map((r) => r.map(cell).join(',')).join('\r\n') + '\r\n';
+}
+
+/** And as JSON, for machines. */
+function messagesJson() {
+  const st = mission.state();
+  return {
+    mission: { name: st.name, start: st.start_date, end: st.end_date, timezone: st.timezone },
+    exportedAt: new Date().toISOString(),
+    note: 'Every message that reached the station, in the order it was sent, whatever became of it. Not part of the mission record.',
+    counts: data.counts(),
+    messages: allMessages().map((m) => ({ id: m.id, callsign: m.callsign, missionDay: m.mission_day, submittedAt: m.submitted_at, arrivedAt: m.arrival_at,
+      state: m.state, flagged: !!m.flagged, tags: (m.tags || '').split(',').filter(Boolean), body: m.body,
+      reply: m.response_body ? { body: m.response_body, by: m.responder, writtenAt: m.response_written, publishedAt: m.response_at } : null,
+      reviewedAt: m.reviewed_at, reviewedBy: m.reviewed_by, rejectReason: m.reject_reason, lightSeconds: m.light_seconds, distanceAu: m.distance_au })),
+  };
+}
+
+module.exports = { fullRecord, dayRecord, todayRecord, gather, messagesPdf, messagesCsv, messagesJson };

@@ -35,7 +35,7 @@
     },
     "seed": {
       "quantity": 8,
-      "consumption": 0
+      "consumption": 1
     }
   },
   "2": {
@@ -45,10 +45,12 @@
       "consumption": 0
     },
     "food": {
-      "consumption": 10
+      "consumption": 10,
+      "quantity": 13
     },
     "water": {
-      "consumption": 2
+      "consumption": 250,
+      "quantity": 618
     }
   },
   "5": {

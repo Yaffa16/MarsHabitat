@@ -460,7 +460,12 @@ function resetLocked(state) {
  *   - every blog slot is emptied — logbook.json becomes a placeholder for
  *     every day and officer, for the crew to fill in during the run
  *   - the crew's figures are emptied — crew-figures.json loses its days;
- *     calories and steps are filed daily on the Health tab from 15 October
+ *     calories and steps are filed daily on the Habitat tab from 15 October
+ *   - the power figures, the stores' counts and the mission notes are
+ *     emptied the same way — power.json, inventory-levels.json and
+ *     notes.json lose their days and keep their notes and categories; each
+ *     is filed during the run. The stores start from what was carried in
+ *     (crew-and-inventory.json) and carry forward until a day is counted.
  *   - messages, replies and callsigns from Earth go
  *   - every crew state filed goes; the crew begin with nothing filed
  *   - media sent out goes from the record (the files stay on disk under
@@ -511,12 +516,23 @@ function reset(actor = 'control') {
   fs.writeFileSync(lb, JSON.stringify({ ...(note ? { _note: note } : {}), ...slots }, null, 2) + '\n');
   try { fs.unlinkSync(path.join(DIR, LOG_FILE)); } catch { /* not there */ }
 
+  // The stores' counts and the mission notes are dailies too — counted and
+  // filed as the run goes. Their days are emptied; the file's own note stays.
+  const emptyDays = (name, fallbackNote) => {
+    const file = path.join(DIR, name);
+    let kept = null;
+    try { kept = (JSON.parse(fs.readFileSync(file, 'utf8')) || {})._note || null; } catch { /* rewritten below */ }
+    fs.writeFileSync(file, JSON.stringify({ _note: kept || fallbackNote }, null, 2) + '\n');
+  };
+  emptyDays('inventory-levels.json', 'Quantity remaining at the end of each mission day and the daily draw, per store, over the thirteen days of the run — counted on the Habitat tab of mission control, or written here as "5": { "water": { "quantity": 440, "consumption": 36 } }. A day with no entry carries forward on the site from the previous day at its draw; the record prints only the days that were counted.');
+  emptyDays('notes.json', 'Mission notes filed from control, over the thirteen days of the run: "3": [ { "kind": "LOG", "body": "…" } ]. kind is LOG or ANOMALY; the science officer\'s findings (SCIENCE) and the health officer\'s activities (HEALTH) are written on their tabs of mission control.');
+
   // 2. the database
   const wiped = {};
   const wipe = db.transaction(() => {
     for (const t of ['response', 'message', 'visitor', 'crew_entry', 'crew_mood', 'media',
                      'sensor_reading', 'sensor_daily', 'day_seal', 'day_note', 'task', 'meal', 'inventory_level',
-                     'external_reading', 'ha_reading']) {
+                     'external_reading', 'ha_reading', 'control_edit', 'control_draft']) {
       wiped[t] = db.prepare(`DELETE FROM ${t}`).run().changes;
     }
     db.prepare("UPDATE day SET status = 'DRAFT', updated_at = ?, updated_by = 'reset'").run(now());
@@ -669,6 +685,34 @@ function power() {
   return { categories: categories.length ? categories : POWER_DEFAULTS.map((c) => ({ ...c })), days };
 }
 
+/**
+ * The stores as they were counted on one day: exactly what inventory-levels.json
+ * holds for that day — quantity left at the close and/or the day's use, per
+ * store, whichever was written (the Habitat tab writes what its fields hold) —
+ * with the day's `_why` note. Nothing carried forward, nothing derived: a
+ * store not written for that day is not in `items`. This is what the record
+ * prints; the site's day-by-day levels (data.day) carry forward instead.
+ */
+function inventoryFiled(missionDay) {
+  let entry = null;
+  try {
+    const obj = JSON.parse(fs.readFileSync(path.join(DIR, 'inventory-levels.json'), 'utf8')) || {};
+    entry = obj[String(missionDay)];
+  } catch { entry = null; }
+  if (!entry || typeof entry !== 'object') return { why: '', items: [] };
+  const items = db.prepare('SELECT key, label, unit FROM inventory_item ORDER BY sort_order, label').all();
+  const out = [];
+  for (const it of items) {
+    const o = entry[it.key];
+    if (!o || typeof o !== 'object') continue;
+    const q = o.quantity != null && Number.isFinite(Number(o.quantity)) ? Number(o.quantity) : null;
+    const c = o.consumption != null && Number.isFinite(Number(o.consumption)) ? Number(o.consumption) : null;
+    if (q == null && c == null) continue;
+    out.push({ key: it.key, label: it.label, unit: it.unit, quantity: q, consumption: c });
+  }
+  return { why: entry._why ? String(entry._why) : '', items: out };
+}
+
 /** One day of it: each category with its kWh, the day total, and whether anything was filed. */
 function powerDay(missionDay, p = power()) {
   const d = p.days[String(missionDay)] || {};
@@ -715,7 +759,7 @@ function edit(name, mutate) {
   return { ok: result.ok, error: result.errors[0] || null };
 }
 
-module.exports = { load, watch, status, edit, templates, crewFigures, power, powerDay, DIR,
+module.exports = { load, watch, status, edit, templates, crewFigures, power, powerDay, inventoryFiled, DIR,
                    resourceLogRows, resourceLogCsv, LOG_FILE,
                    planStatus, savePlan, ensurePlan, reset, resetLocked, resetEpoch, inventoryStart, PLAN_DIR, PLAN_FILES,
                    PLACEHOLDER, isPlaceholder, placeholderCue, placeholderPublic, placeholderFor };

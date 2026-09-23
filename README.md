@@ -97,7 +97,7 @@ which is mission control's, sits behind the same login.
 | At a Glance | `/at-a-glance` | **A booklet: one day per page, turned by scrolling or swiping sideways** — arrows either side, ← → on a keyboard, a day strip to jump, a `#day-n` link opens on that day. Each page: each day's crew log with its photographs, the exchanges published, the schedule as run, the meals and their cost, the consumption of every store, the habitat summary, the crew's condition as sentences, the mission notes and the media. Days ahead show the plan, and each page scrolls on its own like a page being read. Opened from the button under the mission dashboard, and from the navigation |
 | Crew log | `/logbook` | All thirteen days in order, each officer's entry where written and its placeholder where not — a day strip to jump by, a chip per voice. Opened from the Crew log panel on the station, and from the nav |
 | Media | `/media` | Everything the crew send out — photographs and video — by day, with filters; `/media/:id` one item; `/media/export.zip` everything as one ZIP; `/media/manifest.json` every file with its SHA-256 |
-| Archive | `/archive` | **Mission control only.** Day-by-day permanent record; `/archive/day/:n`, `/archive/messages`, **`/archive/export.pdf`** (the whole mission as one document), `/archive/export.md`, `/archive/export.json`, **`/archive/readings.zip`** (every reading ever pulled) |
+| Archive | `/archive` | **Mission control only.** Day-by-day permanent record — no messages, every reading; `/archive/day/:n`, **`/archive/export.pdf`** (the whole mission as one document), `/archive/export.md`, `/archive/export.json`, **`/archive/readings.zip`** (every reading ever pulled). `/archive/messages` is a separate, unlinked search over the message queue and is not part of the record |
 
 Every address the public subpages used to have (`/messages`, `/crew`, `/day`, `/schedule`,
 `/what`, `/about`, `/who-we-are`) redirects to its section on the landing page, so old links
@@ -106,11 +106,13 @@ and printed material still land somewhere. The footer of the landing page is the
 ### Mission control
 
 Messages come first: the queue is the first tab, because answering Earth is the job that
-cannot wait. Each message has its reply box directly beneath it and one orange button.
-**Ctrl+Enter** (Cmd+Enter on a Mac) in the box sends and publishes. Saving a draft, rejecting
-and deleting are on the same row, quieter. A message arriving while the desk is open is
-announced in a banner rather than discovered on the next reload — the page polls a count and
-never rebuilds itself under someone mid-reply.
+cannot wait. Each message is a card: who wrote and what they wrote, large, with the state and
+the time in the top line and the quiet actions — reject, delete, unpublish — beside them; the
+reply beneath, headed *Reply as …*, one box and one orange **Reply** button that sends it to
+the board. **Ctrl+Enter** (Cmd+Enter on a Mac) in the box does the same. The queue shows what
+is awaiting a reply, what is answered and what was rejected. A message arriving while the
+desk is open is announced in a banner rather than discovered on the next reload — the page
+polls a count and never rebuilds itself under someone mid-reply.
 
 The other tabs are **the day's work**: a day picker, then the tabs, which switch without a
 page load. Everything editable lives here.
@@ -120,18 +122,43 @@ page load. Everything editable lives here.
 | **Messages** | The reply queue: awaiting reply · published · rejected · everything |
 | **Communication officer** | The **Daily Blog** at the top, then the officer's state |
 | **Science officer** | The **Daily Blog** at the top, then the daily science findings (a post of their own), then the state |
-| **Health officer** | The **Daily Blog** at the top, then the daily health activities (a post of their own), **crew figures** (calories and steps, one line per officer), and the state |
-| **Habitat** | The daily schedule, the daily food plan, the inventory levels, and the day's power figures (with the category names, editable in place) |
+| **Health officer** | The **Daily Blog** at the top, then the daily health activities (a post of their own), and the state |
+| **Habitat** | The daily schedule (a task with its name emptied is removed on save), the meals — Breakfast, Lunch, Dinner, Other — **Steps taken** and **Calories consumed** (one line per officer each, both written to `crew-figures.json`), the inventory levels, and the day's power figures (with the category names, editable in place) |
 
 Every composer is the same: paragraphs and pictures in a column, a ＋ between every two, no
-template buttons. The day picker above the tabs reaches all thirteen days of the run, so any
-officer's Daily Blog can be written for any day, at any time.
+template buttons, and two buttons under it — **Publish**, which makes the text live, and
+**Save draft**, which keeps it on the desk (`control_draft` in the database, one per composer
+and day) without publishing: the composer opens on the draft, its head says *Draft · when*,
+what is live stays live until Publish, and Publish drops the draft. The day picker above the
+tabs reaches all thirteen days of the run, so any officer's Daily Blog can be written for any
+day, at any time.
 
 A save returns you to the tab and day you were on; a reply returns you to the Messages tab in
 the view you were looking at. Mission control is deliberately plain — flat white panels, black
 on white, one size of type, and orange kept for the button that publishes and the count of
 messages waiting — so it reads across a dark room and nothing on it competes with the work. `/control/science`, `/control/health` and `/control/habitat` still
-work as addresses — they open the page on that tab.
+work as addresses — they open the page on that tab. The desk carries no rail across the
+top: its own header holds the **Dark** switch (the same switch and cookie as the public
+pages; every grey on the desk comes from one palette, `--c-*` in `public/station.css`, so
+nothing is left white), Archive, the record, Reset and Sign out. The tab names are bold and
+large, the open tab in orange. Every block's head — *Schedule · day 005*, *Daily Blog*,
+*Messages from Earth* — folds its block on a click and unfolds it on the next, with an arrow
+beside the name; the desk remembers which blocks are folded (in that browser), so a save
+brings the page back as it was arranged. In the schedule, a task whose name is emptied is
+removed when the day is saved.
+
+**What you have changed is marked, before and after it is saved.** Every field remembers
+what it held when the page was drawn (`public/control.js`): a field that now holds something
+else is marked in orange — the field itself, its row in the schedule, inventory or power
+table, the caption over it, the face chosen on the mood scale, the composer's sheet (*Edited
+— not published*) — and beside the form's Publish or Save button a note says how many fields
+differ, *2 fields changed — not saved yet*. Put a value back and its mark goes. On the save
+the station records which fields changed (`control_edit` in the database, one row per form,
+day and field; a schedule row is remembered by what it says), so the mark stays after the
+page is drawn afresh — the same orange, without the tint — and beside each button the desk
+says when that form was last saved, *Last saved 23 Sept 2026, 12:02 · control*. The reset
+empties the record. Inventory levels show the plan's figure as a ghosted placeholder until a
+level is filed, so a filed level is plain from a planned one.
 
 **Reviewing and replying are a single interaction.** There is no approve step: a message
 arrives, you read it, you write the answer and you send it. Until it is answered the message is
@@ -160,9 +187,13 @@ can trigger it by accident. Then it starts the station again for the run:
 - **every blog slot is emptied** — `logbook.json` becomes one placeholder per day and officer,
   for the crew to fill in during the mission;
 - **the crew's figures are emptied** — `crew-figures.json` loses its days; the health officer
-  files each day's calories and steps, per officer, on the Health tab as the run goes;
+  files each day's steps and calories, per officer, under Steps taken on the Habitat tab as the run goes;
 - **the power figures are emptied** — `power.json` loses its days and keeps its categories;
   each day's kWh by category is filed on the Habitat tab as the run goes;
+- **the stores' counts and the mission notes are emptied** — `inventory-levels.json` and
+  `notes.json` lose their days and keep their notes; the stores start from what was carried in
+  (`crew-and-inventory.json`) and carry forward on the site until a day is counted, and the
+  notes, findings and activities are written on the tabs as the run goes;
 - **every message, reply and callsign from Earth is cleared** — the correspondence is logged
   from the run on;
 - **every crew state is cleared** — the crew begin with nothing filed;
@@ -174,7 +205,7 @@ can trigger it by accident. Then it starts the station again for the run:
   readings start*, below). Phones that had cached readings drop them on their next poll;
 - the sealed daily records, task statuses and live notes are cleared;
 - and **the mission is reloaded from the files in `content/` exactly as they are at that
-  moment** — schedule, meals, inventory levels, notes, sensors, figures, crew. Nothing is copied
+  moment** — schedule, meals, the stores carried in, sensors, crew. Nothing else is copied
   over the files: they are the plan.
 
 From the reset on, **the trend graph carries no plan**: every day ahead is null — an empty
@@ -259,8 +290,8 @@ whichever suits the moment and it is live on the station within seconds:
 
 | What | The file | The tab in mission control |
 |---|---|---|
-| Resources — what is left of each store | `content/inventory-levels.json`: per day, per store, `{ "quantity": 618, "consumption": 46 }`. Only write the stores that changed; the rest carry forward at their daily draw | **Habitat** → Inventory levels, with the day picker on the day |
-| Calories and steps | `content/crew-figures.json`: per day, one entry per officer under `crew`, keyed by designation, and the crew's totals as the sums — `"5": { "crew": { "COMMUNICATION OFFICER": { "calories": 1720, "steps": 2200 }, "SCIENCE OFFICER": { … }, "HEALTH OFFICER": { … } }, "calories": 5010, "steps": 6420 }`. A day written with the totals alone still shows, as a total. The Habitat panel shows each officer's figure with the crew's total beneath; At a Glance and the record carry the totals | **Health officer** → Crew figures, day picker on the day |
+| Resources — what is left of each store | `content/inventory-levels.json`: per day, per store, `{ "quantity": 618, "consumption": 46 }`. Only write the stores that changed; on the site the rest carry forward at their daily draw, while the record prints only what was counted | **Habitat** → Inventory levels, with the day picker on the day |
+| Calories and steps | `content/crew-figures.json`: per day, one entry per officer under `crew`, keyed by designation, and the crew's totals as the sums — `"5": { "crew": { "COMMUNICATION OFFICER": { "calories": 1720, "steps": 2200 }, "SCIENCE OFFICER": { … }, "HEALTH OFFICER": { … } }, "calories": 5010, "steps": 6420 }`. A day written with the totals alone still shows, as a total. The Habitat panel shows each officer's figure with the crew's total beneath; At a Glance carries the totals and the record each officer's figure with the totals as filed | **Habitat** → Steps taken and Calories consumed, day picker on the day |
 | Power consumed, by category | `content/power.json`: `"5": { "heating": 1.1, "food": 0.5, "lighting": 0.35, "electronics": 0.45, "other": 0.1 }` — kWh per day. The `categories` list above the days is editable too: rename a label, add or remove one; the key is the stable name in the record | **Habitat** → Power, day picker on the day; the name fields rename the categories everywhere |
 | Today's schedule | `content/schedule.json`: per day, `{ "time": "06:45", "label": "…", "detail": "…" }`; task status (done, active, skipped) is marked on the tab as the day runs | **Habitat** → Schedule |
 | Meals | `content/meals.json`: per day, slots BREAKFAST / LUNCH / DINNER / RATION with `kcal`, `water`, `prep`, `energy` | **Habitat** → Food plan |
@@ -287,7 +318,7 @@ the running station.
 | File | What it holds |
 |---|---|
 | `crew-and-inventory.json` | Crew designations and roles; the tracked resources and their starting amounts |
-| `schedule.json` | The daily task schedule |
+| `schedule.json` | The daily task schedule — as shipped, the crew's typical day (08:00 Shift Change … 22:00 Shift Change / Lights Out, seventeen tasks) written into every one of the thirteen days; change a day in mission control's **Habitat** → Schedule, or here |
 | `meals.json` | Meals per day, with energy, water and power cost |
 | `inventory-levels.json` | What is left of each resource at the end of each day |
 | `power.json` | Power consumed per day in kWh, split by editable categories (heating, food, lighting, electronics, other as shipped) — drawn on the Habitat panel, in At a Glance, in the Trends and throughout the record |
@@ -296,18 +327,16 @@ the running station.
 | `sensors.json` | The monitored channels, with units, channel codes and thresholds |
 | `templates.json` | The prefilled text of the daily health activities (the `Default` entry under `HEALTH`) |
 
-It ships with the whole thirteen-day run written: 39 diary slots (thirteen days × three
-officers) with a cue each for the crew to write into, 105 scheduled tasks, 39 meals, crew figures
-for every day, nine tracked resources with a depletion curve, and the mission notes that go with
-them. The dramaturgy, day by day: hatch sealed on Thursday 15 (day 1); a condensation problem on
-day 3; a water recovery shortfall on Monday 19 (day 5) that costs a rationing decision; dust on
-the panel and eleven per cent of the power on day 6; the midpoint on Wednesday 21 (day 7 — six
-done, six to go, the hand audit and the longest window); a hard day 8 with CO₂ in the sleep period
-and a seal that fails a second time; the membrane replaced and the allowance restored on day 9; the
-first harvest on Saturday 24 (day 10), the night the clocks go back; a twenty-five-hour day 11
-with the consumables projection; packing on day 12; and the final count, the last window and the
-hatch open at 21:00 on Tuesday 27 (day 13). Change any of it in the files or on the tabs in
-mission control.
+It ships with the plan and nothing invented: 39 diary slots (thirteen days × three officers)
+with a cue each for the crew to write into, the typical daily schedule on every day (17 tasks ×
+13 days), 39 meals, nine tracked resources (their carried-in amounts and warning levels ship as
+0 — placeholders to be written into `crew-and-inventory.json` before the run, or the day-1 count
+filed on the Habitat tab, which every gauge is then drawn against), and the sensor channels.
+The dailies — the stores' counts (`inventory-levels.json`), the steps and calories
+(`crew-figures.json`), the power (`power.json`) and the mission notes, findings and activities
+(`notes.json`) — ship empty and are filed on the tabs of mission control as the run goes, so
+the record holds only what the crew and mission control put in. Change any of the plan in the
+files or on the tabs.
 
 **Inventory carries forward.** You only write the items that changed on a given day; everything
 else inherits yesterday's closing figure minus its daily draw. A normal day needs no entry.
@@ -645,14 +674,38 @@ with **Mission** and **Archive** and lets the habitat data come after.
 Nothing on this site is transient. Each mission day is rolled up and **sealed** into a
 permanent record shortly after it ends, holding:
 
-- the schedule as it was actually run, with each task's final status
-- the meal plan, with energy, water and preparation cost
-- the inventory at the close of the day
-- every crew entry the crew wrote that day
-- every crew state filed by mission control, with times
-- a summary of every habitat channel — low, high, mean, sample count
-- every published exchange, with the real light-time it crossed that day
-- how many messages were sent from Earth, and by how many callsigns
+- the schedule as it was actually run, with each task's status as it stands
+- the meals as entered, with energy, water and preparation cost
+- the stores as they were counted that day — the figures written into
+  `inventory-levels.json` (by the Habitat tab or by hand), and nothing else
+- the power and the crew's steps and calories as they were filed
+- every crew entry the crew wrote that day, and every mission note
+- every crew state filed by mission control, with the value chosen and the sentence it is shown as
+- a summary of every habitat channel — lowest, highest and mean reading, and how many readings
+- **every reading of the day**, as stored: the station's channels as one row per instant with a
+  value per channel, the external node one row per reading, the hardware one table per device
+- **the Habitat tab as it stood when the day ended**: at the seal, a few minutes after
+  midnight, the day's schedule, meals, steps and calories, inventory levels and power are
+  written to the readings log with the day's summary (`daily/<date>/…json`, `habitatTab`), so
+  the record as printed later — from the files as they then are — can be checked against the
+  tab as it was
+
+**The messages from Earth and the crew's replies are not part of the record** — not on the day
+pages, not in the PDF, the Markdown or the JSON. They live on the station and in mission
+control's queue only. Mission control's audit trail is not in the record either; it stays in
+the database.
+
+**The record holds only what was entered or measured.** Nothing in it is generated: no chart,
+no projection, no total, no figure carried from one day to the next, and no plan for a day that
+has not come. A store that was not counted on a day has no figure for that day (the site's
+Habitat panel carries yesterday's figure forward at its draw; the record says "no store was
+counted"). A day that has not happened has no record — `/archive/day/:n` and its downloads
+answer 404 until the day arrives, and the full record lists the days ahead by date only. The
+day-of-readings written by the seed on a fresh install (`seed-01`) and by the simulator
+(`sim-01`), and the demo rows of the external node, are never rolled into it, and the seed
+writes no readings at all once the run has begun or a reset has been made. The mid-scale
+state the content loader gives a new officer so the public crew page has something to show is
+not a filed state and is left out too.
 
 Raw sensor readings are kept as well; the rollup exists so the record does not depend on
 re-scanning a hundred thousand rows, or on those rows surviving a future cleanup. Nothing
@@ -661,24 +714,39 @@ that has been publicly visible is ever hard-deleted.
 ### The record, as one document
 
 **Download full record (PDF)** — at the top of mission control, on the archive contents page,
-and at `/archive/export.pdf` — hands over the whole mission as a single PDF, bookmarked by
-section and by day, with a contents page. In order: the mission (crew, what was carried in,
-the monitored channels, the distance); **Trends** — every store's level and daily use, the
-meals' cost, the crew's calories and steps, every habitat channel with its daily low–high
-band, the external sensor node, the crew's mood and energy, and what happened each day, on
-one thirteen-day axis, planned days dashed; **Daily usage** — every store on every day,
-quantity at close, use, used since start, days left at that draw, filed or carried; then
-**each day whole** — the schedule with every task's final status, the meals with their cost
-and the day's totals, the inventory at the close, the mission notes, the crew log with
-**every photograph set in the entry it was sent with** and every video, sound file and
-document listed with its poster frame, size, duration and hash, the science findings and
-health activities, every state filed with the sentence it became, every exchange with its
-reply and the real light-time it crossed, what was sent out that day and the habitat
-summary; then **the crew log, whole** — every blog entry in full, day by day and officer by
-officer, held entries included and marked; **the complete correspondence** — every message that ever reached the
-station, published, rejected or still waiting, in the order it was sent; the **media index**
-with every file's SHA-256, checkable against the ZIP with `sha256sum`; and the **audit
-trail**. `/archive/day/:n/export.pdf` does one day.
+and at `/archive/export.pdf` — hands over the mission as a single PDF, bookmarked by
+section and by day, with a contents page. In order: the mission (crew, the stores tracked
+with what was carried in, the monitored channels); **the days** — a table of every day of the
+run, then a chapter for each day that has happened, in a fixed order: **the communication
+officer** — Daily Blog and crew state; **the science officer** — Daily Blog, Daily science
+findings and crew state; **the health officer** — Daily Blog, Daily health activities and crew
+state (each blog and report with **every photograph set where it was placed**, and every
+video, sound file and document listed with its poster frame, size, duration and hash; each
+state with the value chosen and the sentence it is shown as); then **the Habitat tab** of
+mission control as it stands at the time of the record — the schedule with every task's
+status, the meals, the steps taken and calories consumed, the inventory levels row for row as
+the tab shows them (available at the start, used today, left for the future, each figure
+marked *counted* when it was filed that day or *carried* when it follows from the day before)
+and the power; then **the habitat sensors, named as on the dashboard** — the sensor node (the
+Habitat panel: Carbon dioxide, Temperature, Humidity, Light, Pressure, Node battery, Signal),
+the station's own channels and the Habitat hardware, first each channel's lowest, highest and
+mean reading over the day, then **every reading of the day** — the node one row per reading,
+the station's channels one row per instant with a column per channel, the hardware one table
+per device, every value as stored, habitat time to the second; then
+**the crew log, whole** — every blog entry in full, day by day and officer by officer, held
+entries included and marked; and the **media index** with every file's SHA-256, checkable
+against the ZIP with `sha256sum`. `/archive/day/:n/export.pdf` does one day. Nothing is drawn
+and nothing is derived: the record has no charts, no totals, no projections, no chapter for a
+day that has not come, no messages and no audit trail.
+
+**Before the run, a rehearsal page shows the shape.** Until 15 October the archive's contents
+page opens with a **NOW** row — today, before the run — and `/archive/today` (with
+`/archive/today/export.pdf` and `.md`) is a day's record built for today: today's readings
+from every source with their summary, the states filed today, and whatever has been put into
+the opening day (SOL 001) so far — its plan, entries, counts, figures and media. The full PDF
+and the Markdown carry it as a chapter after the list of days. It is marked *REHEARSAL · NOT
+THE RECORD* wherever it appears and disappears on the first day of the run, when day 001
+takes its place; from then on `/archive/today` simply leads to the current day.
 
 The PDF is composed by the station itself — `src/lib/pdf.js` is a dependency-free PDF
 writer in the spirit of the ZIP writer, with the standard Helvetica and Courier that every
@@ -691,18 +759,21 @@ The one thing it cannot do is show characters outside WinAnsi, so `✧` and `CO�
 
 ### The record, readable
 
-`/archive/export.md` hands over the whole mission as plain Markdown: every day with its
-schedule, its meals and their cost, the inventory table with days-remaining, everything the
-crew wrote, every state filed for them with the sentences it produced, every exchange with its
-reply and the real time it took to cross, the mission notes and a habitat summary. In order,
-nothing summarised away. It opens in any text editor, prints without a stylesheet, and still
+`/archive/export.md` hands over the record as plain Markdown: every day that has happened,
+with its schedule, its meals, the stores counted that day as they were written, the power and
+figures as filed, everything the crew wrote, every state filed for them with the value and the
+sentence, the mission notes, the habitat summary and every reading of the day as a table per
+source. In order, as entered, nothing added, no messages. It opens in any text editor, prints without a stylesheet, and still
 makes sense with nothing left to render it — which matters for a record that is part of the
-artwork. `/archive/day/:n/export.md` does one day. JSON is still there for machines.
+artwork. `/archive/day/:n/export.md` does one day. JSON is still there for machines
+(`/archive/export.json`: `storesCounted` holds only what was filed, `crewFigures` and `power`
+the figures as filed, `readings` every reading of the day by source, and a day ahead carries
+`recorded: false` and nothing else).
 
 **The archive belongs to mission control.** Everything under `/archive`, including the
 download, requires the control session; the public station carries no link to it. A visitor
 sees the exchange on the mission page and the crew's writing in the logbook. The complete
-day-by-day record — crew states, habitat summaries, rejected traffic, the lot — is yours.
+day-by-day record — crew states, habitat summaries, every reading — is yours.
 `/archive` is the contents page, `/archive/day/:n` is one day whole, and
 `/archive/export.json` hands over the entire mission as a single file.
 
@@ -824,7 +895,7 @@ The parts are working parts, not decoration:
 - **Channel tags** still stamp every panel with the data channel it renders, now as a small
   grey code in the corner.
 - **The foot** (`foot()` in `src/views/layout.js`) carries the wordmark, two keys — *Privacy
-  policy*, to zkm.de/en/privacy-statement, and *ZKM*, to zkm.de — and the house's name,
+  policy*, to zkm.de/en/privacy-policy, and *ZKM*, to zkm.de — and the house's name,
   nothing else; the pages are reached from the bar of keys, the ticker's menu and the doors.
   On a phone held upright it is a low band the width of the page: the wordmark and the house
   at the left, the two keys one above the other at the right.
@@ -1221,9 +1292,15 @@ WAL database can produce a corrupt copy:
 bash tools/backup.sh --docker      # or: npm run backup
 ```
 
-`/control/export/archive.json` downloads every published exchange with its callsign, tags,
-timestamps and the real light-time it crossed. Worth taking at the end of each performance
-week and keeping off the venue machine.
+**Download all messages** — a card of its own on the archive contents page, beside the
+record's downloads, `/control/messages/export.pdf` — hands over every message that ever reached the
+station, in the order it was sent, whatever became of it: published with its reply and who
+gave it, rejected with the reason, still waiting, or in transit, each with its callsign,
+tags, day, time and the signal delay stored with it. The same set is beside it as a CSV
+(`/control/messages/export.csv`, one row per message, opens in a spreadsheet) and as JSON
+(`/control/messages/export.json`). The messages are not part of the mission record; this is
+mission control's own copy. Worth taking at the end of each performance week and keeping
+off the venue machine.
 
 Nothing that has been publicly visible is hard-deleted. The archive is part of the work.
 

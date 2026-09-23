@@ -1,25 +1,26 @@
 {
-  "_note": "Power consumed inside the habitat, in kWh per day, split by category. The categories are yours to shape: rename a label, add one, remove one — the key is the stable name in the record, the label is what the station shows. Days are filed as \"1\": { \"heating\": 1.1, \"food\": 0.5, ... } — edit here or on the Habitat tab of mission control; a save is live within a couple of seconds. The reset empties the days (they are counted daily during the run) and keeps the categories.",
+  "_note": "Power consumed inside the habitat, in kWh per day, split by category. The categories are yours to shape: rename a label, add one, remove one — the key is the stable name in the record, the label is what the station shows. Days are filed as \"1\": { \"heating\": 1.1, \"food\": 0.5, ... } — on the Habitat tab of mission control or here; a save is live within a couple of seconds. Emptied of its days by the reset; the categories stay.",
   "categories": [
-    { "key": "heating", "label": "Heating" },
-    { "key": "food", "label": "Food" },
-    { "key": "lighting", "label": "Lighting" },
-    { "key": "electronics", "label": "Electronics" },
-    { "key": "other", "label": "Other" }
+    {
+      "key": "heating",
+      "label": "Heating"
+    },
+    {
+      "key": "food",
+      "label": "Food"
+    },
+    {
+      "key": "lighting",
+      "label": "Lighting"
+    },
+    {
+      "key": "electronics",
+      "label": "Electronics"
+    },
+    {
+      "key": "other",
+      "label": "Other"
+    }
   ],
-  "days": {
-    "1": { "heating": 1.1, "food": 0.5, "lighting": 0.35, "electronics": 0.45, "other": 0.1 },
-    "2": { "heating": 1.05, "food": 0.55, "lighting": 0.35, "electronics": 0.4, "other": 0.1 },
-    "3": { "heating": 1.1, "food": 0.5, "lighting": 0.4, "electronics": 0.45, "other": 0.05 },
-    "4": { "heating": 1.15, "food": 0.5, "lighting": 0.35, "electronics": 0.4, "other": 0.1 },
-    "5": { "heating": 1.1, "food": 0.55, "lighting": 0.35, "electronics": 0.45, "other": 0.1 },
-    "6": { "heating": 1.05, "food": 0.5, "lighting": 0.35, "electronics": 0.4, "other": 0.15 },
-    "7": { "heating": 1.1, "food": 0.5, "lighting": 0.4, "electronics": 0.45, "other": 0.1 },
-    "8": { "heating": 1.1, "food": 0.55, "lighting": 0.35, "electronics": 0.4, "other": 0.1 },
-    "9": { "heating": 1.15, "food": 0.5, "lighting": 0.35, "electronics": 0.45, "other": 0.05 },
-    "10": { "heating": 1.1, "food": 0.5, "lighting": 0.35, "electronics": 0.4, "other": 0.1 },
-    "11": { "heating": 1.05, "food": 0.55, "lighting": 0.4, "electronics": 0.45, "other": 0.1 },
-    "12": { "heating": 1.1, "food": 0.5, "lighting": 0.35, "electronics": 0.4, "other": 0.1 },
-    "13": { "heating": 1.1, "food": 0.5, "lighting": 0.35, "electronics": 0.45, "other": 0.1 }
-  }
+  "days": {}
 }

@@ -55,9 +55,12 @@ function record(source, payload, { dedupe = false } = {}) {
     if (!SOURCES.includes(source)) throw new Error(`unknown source ${source}`);
     const body = JSON.stringify(payload);
     if (dedupe) {
+      // a daily record is one per mission day, so each day is deduplicated
+      // on its own — rolling the days in turn must not rewrite them in turn
+      const key = dedupeKey(source, payload);
       const h = crypto.createHash('sha256').update(body).digest('hex');
-      if (last.get(source) === h) return null;
-      last.set(source, h);
+      if (last.get(key) === h) return null;
+      last.set(key, h);
     }
     const now = new Date();
     const { day, file } = stamp(now);
@@ -74,16 +77,25 @@ function record(source, payload, { dedupe = false } = {}) {
   }
 }
 
-/** Remember the last snapshot hash across restarts, so a restart does not rewrite it. */
+const dedupeKey = (source, payload) => (source === 'daily' && payload && payload.missionDay != null ? `${source}:${payload.missionDay}` : source);
+
+/** Remember the last snapshot hash across restarts, so a restart does not
+    rewrite it — for the daily records, the last one of each mission day. */
 function primeDedupe() {
   for (const source of ['resources', 'figures', 'daily']) {
     try {
       const files = list({ source });
       if (!files.length) continue;
-      const f = files[files.length - 1];
-      const obj = JSON.parse(fs.readFileSync(f.path, 'utf8'));
-      delete obj.pulledAt; delete obj.source;
-      last.set(source, crypto.createHash('sha256').update(JSON.stringify(obj)).digest('hex'));
+      const seen = new Set();
+      for (let i = files.length - 1; i >= 0; i--) {              // newest first, one per key
+        const obj = JSON.parse(fs.readFileSync(files[i].path, 'utf8'));
+        delete obj.pulledAt; delete obj.source;
+        const key = dedupeKey(source, obj);
+        if (seen.has(key)) { if (source !== 'daily') break; continue; }
+        seen.add(key);
+        last.set(key, crypto.createHash('sha256').update(JSON.stringify(obj)).digest('hex'));
+        if (source !== 'daily') break;
+      }
     } catch { /* fine: the next snapshot is written */ }
   }
 }

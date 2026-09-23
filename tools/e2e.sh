@@ -285,12 +285,18 @@ ID2=$(curl -s -b $A $B/control | grep -oE '/control/[0-9]+/reply' | head -1 | gr
 curl -s -b $A -X POST --data-urlencode "body=In colour, and always outdoors." -d "action=publish" -o /dev/null $B/control/$ID2/reply
 curl -s -b $A $B/archive/export.md -o /tmp/record.md
 grep -q "^# " /tmp/record.md && ok "the record downloads as readable Markdown" || bad "no Markdown record"
-for section in "### Schedule" "### Meals" "### Inventory" "### Crew log" "### Crew states filed" "### Exchanges"; do
+for section in "### COMMUNICATION OFFICER" "### SCIENCE OFFICER" "### HEALTH OFFICER" "#### Daily Blog" "#### Daily science findings" "#### Daily health activities" "#### Crew state" "### Habitat" "#### Schedule" "#### Meals" "#### Steps taken and calories consumed" "#### Inventory levels" "#### Power consumed" "### Habitat sensors"; do
   grep -q "$section" /tmp/record.md || bad "record missing $section"
 done
-ok "the record holds schedule, meals, inventory, logs, moods and exchanges by day"
-grep -q "Mission day 001" /tmp/record.md && grep -q "Mission day 013" /tmp/record.md \
-  && ok "every mission day is in the record" || bad "days missing from the record"
+ok "each day of the record has the three officers (Daily Blog, daily report, crew state), the Habitat tab and the sensors"
+grep -q "### Exchanges\|Do you still dream in colour\|In colour, and always outdoors" /tmp/record.md && bad "the readable record still carries messages" || ok "no message from Earth and no reply in the readable record"
+grep -q "Mission day 001" /tmp/record.md && grep -q "Mission day 00$TODAY" /tmp/record.md && ! grep -q "Mission day 013" /tmp/record.md \
+  && grep -q "have not happened yet" /tmp/record.md \
+  && ok "every day that has happened is in the record, and no day that has not" || bad "the record's days are wrong"
+for made_up in "Day total" "Days left" "days left" "used since start"; do
+  grep -q "$made_up" /tmp/record.md && bad "the readable record carries a derived figure: $made_up"
+done
+ok "the readable record carries no total, projection or carried-forward figure"
 [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/archive/day/2/export.md)" = "200" ] \
   && ok "a single day downloads on its own" || bad "no per-day download"
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/archive/export.md)" = "302" ] \
@@ -317,12 +323,18 @@ grep -qi "content-type: application/pdf" /tmp/pdf.h && head -c 5 /tmp/record.pdf
 [ "$(grep -ac '/Type /Page$\|/Type /Page ' /tmp/record.pdf)" -ge 13 ] && ok "it has a page for every day and more" || bad "PDF has too few pages"
 grep -aq "/Outlines" /tmp/record.pdf && ok "and bookmarks by section and day" || bad "PDF has no bookmarks"
 PDFTXT=$(pdftext /tmp/record.pdf)
-for needle in "Contents" "The mission" "Trends" "Daily usage" "Day 001" "Day 013" "The crew log" "The complete correspondence" "Media" "Audit trail" "Schedule" "Meals" "Inventory at the close of the day" "Crew states filed" "Exchanges" "Potable water"; do
+for needle in "Contents" "The mission" "Day 001" "Day 00$TODAY" "The crew log" "Media" "Communication officer" "Science officer" "Health officer" "Daily Blog" "Daily science findings" "Daily health activities" "Crew state" "Schedule" "Meals" "Inventory levels" "Steps taken and calories consumed" "Habitat sensors" "Potable water"; do
   echo "$PDFTXT" | grep -q "$needle" || bad "PDF record missing: $needle"
 done
-ok "the PDF holds the mission, the trends, every store's use, every day, the whole crew log, the correspondence, the media and the audit trail"
-echo "$PDFTXT" | grep -q "In colour, and always outdoors." && ok "the crew's reply is in the PDF" || bad "reply missing from the PDF"
-echo "$PDFTXT" | grep -q "Do you still dream in colour" && ok "and the message it answered" || bad "message missing from the PDF"
+ok "the PDF holds the mission, every day that has happened, the whole crew log and the media"
+echo "$PDFTXT" | grep -q "Audit trail" && bad "the PDF still carries the audit trail" || ok "no audit trail in the PDF"
+[ "$(curl -s -b $A -o /dev/null -w '%{redirect_url}' $B/archive/today)" = "$B/archive/day/$TODAY" ] && ok "during the run /archive/today is the current day" || bad "/archive/today does not lead to today"
+for made_up in "Trends" "Daily usage" "hour by hour" "Resources over the day" "Day total" "Days left" "planned, ahead" "The distance"; do
+  echo "$PDFTXT" | grep -q "$made_up" && bad "the PDF still carries generated matter: $made_up"
+done
+echo "$PDFTXT" | grep -q "Day 013" && bad "the PDF carries a chapter for a day that has not happened"
+ok "no chart, no projection, no total and no day ahead in the PDF"
+echo "$PDFTXT" | grep -q "In colour, and always outdoors.\|Do you still dream in colour\|The complete correspondence\|Exchanges published\|Messages from Earth" && bad "the PDF still carries messages" || ok "no message from Earth, no reply and no correspondence in the PDF"
 echo "$PDFTXT" | grep -q "tense, short with the others" && ok "a filed state appears as its sentence" || bad "state missing from the PDF"
 [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/archive/day/2/export.pdf)" = "200" ] \
   && ok "a single day downloads as a PDF too" || bad "no per-day PDF"
@@ -331,6 +343,16 @@ echo "$PDFTXT" | grep -q "tense, short with the others" && ok "a filed state app
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/archive/export.pdf)" = "302" ] \
   && ok "the PDF is control-only too" || bad "PDF record is public"
 curl -s -b $A $B/control | grep -q 'href="/archive/export.pdf"' && ok "mission control carries the download" || bad "no PDF button on control"
+echo "── all the messages, as a download of their own"
+curl -s -b $A $B/archive | grep -q 'href="/control/messages/export.pdf"' && ok "the archive page carries a Download all messages card" || bad "no all-messages card"
+curl -s -b $A "$B/control?show=pending" | grep -q 'href="/control/messages/export.pdf"' && bad "the button is still on the Messages tab" || ok "and the Messages tab does not"
+curl -s -b $A -D /tmp/msgs.h $B/control/messages/export.pdf -o /tmp/messages.pdf
+grep -qi "content-type: application/pdf" /tmp/msgs.h && head -c 5 /tmp/messages.pdf | grep -q "%PDF-" && ok "all the messages download as a PDF" || bad "no messages PDF"
+MSGTXT=$(pdftext /tmp/messages.pdf)
+echo "$MSGTXT" | grep -q "Do you still dream in colour" && echo "$MSGTXT" | grep -q "In colour, and always outdoors." && ok "with the message and its reply" || bad "a message or its reply is missing from the messages PDF"
+curl -s -b $A $B/control/messages/export.csv | head -1 | grep -q "id,callsign,mission_day" && curl -s -b $A $B/control/messages/export.csv | grep -q "Do you still dream in colour" && ok "and as a CSV, one row per message (with a BOM so Excel reads the accents)" || bad "messages CSV wrong"
+curl -s -b $A $B/control/messages/export.json | grep -q '"messages":\[' && ok "and as JSON" || bad "messages JSON wrong"
+[ "$(curl -s -o /dev/null -w '%{http_code}' $B/control/messages/export.pdf)" = "302" ] && ok "the messages download is control-only" || bad "messages download is public"
 
 echo "── crew entries are written from control"
 TODAY=$(curl -s $B/api/status | grep -oE '"missionDay":[0-9]+' | cut -d: -f2)
@@ -785,7 +807,7 @@ grep -aq "/Subtype /Image" /tmp/record2.pdf && ok "the PDF record carries the ph
 pdftext /tmp/record2.pdf | grep -q "$PSHA" && ok "and lists it with its full hash" || bad "hash missing from the PDF media index"
 [ -f "$DATA_DIR/media/manifest.json" ] && node tools/verify-media.js "$DATA_DIR/media" >/dev/null && ok "manifest.json sits beside the files and tools/verify-media.js checks it" || bad "on-disk manifest or verify tool failed"
 # an entry with media attached, through the plain form (no script)
-curl -s -b $A -F "day=$((TODAY + 2))" -F "designation=HEALTH OFFICER" -F "back=health" -F "body=Entry with a photograph." -F "media_caption=Attached to the entry" -F "file=@/tmp/e2e-photo.png" -o /dev/null -w '%{redirect_url}' $B/control/logbook | grep -q "tab=health" \
+curl -s -b $A -F "day=$((TODAY - 1))" -F "designation=HEALTH OFFICER" -F "back=health" -F "body=Entry with a photograph." -F "media_caption=Attached to the entry" -F "file=@/tmp/e2e-photo.png" -o /dev/null -w '%{redirect_url}' $B/control/logbook | grep -q "tab=health" \
   && ok "an officer can send media with a blog entry" || bad "blog post with a file failed"
 LOGX=$(curl -s $B/logbook)
 echo "$LOGX" | grep -q "Entry with a photograph." && echo "$LOGX" | grep -q "Attached to the entry" && ok "the entry and its media are public together" || bad "entry or its media missing from /logbook"
@@ -819,10 +841,12 @@ curl -s $B/at-a-glance | grep -q "EDITED FROM THE FILE" \
 node -e '
 const fs=require("fs"),p=process.env.CONTENT_DIR+"/inventory-levels.json";
 const d=JSON.parse(fs.readFileSync(p));
-d["1"].water.quantity=444;
+d["1"]=Object.assign(d["1"]||{},{water:{quantity:444,consumption:46}});
 fs.writeFileSync(p,JSON.stringify(d,null,2));'
 sleep 2
-curl -s -b $A $B/archive/day/1 | grep -q "444" && ok "inventory edit reaches the site" || bad "inventory edit did not apply"
+curl -s -b $A $B/archive/day/1 | grep -q "444" && ok "a count written into the file reaches the record" || bad "inventory edit did not apply"
+curl -s -b $A $B/archive/day/3 | grep -q "left carried" && ok "a day with no count shows the tab's figure marked carried, not as a count" || bad "the record does not mark a carried figure"
+curl -s -b $A $B/archive/day/1 | grep -q "left counted" && ok "and a counted figure marked counted" || bad "the record does not mark a counted figure"
 
 # Control and the file are the same record now: whichever wrote last wins.
 curl -s -b $A -X POST -d "day=4" -d "designation=SCIENCE OFFICER" --data-urlencode "body=WRITTEN FROM CONTROL." -o /dev/null $B/control/logbook
@@ -875,6 +899,9 @@ curl -s -X POST -H "Authorization: Bearer ${SENSOR_TOKEN:-test-token}" -H "Conte
   -d '{"deviceId":"hab-01","readings":[{"metric":"temperature","value":23.7,"unit":"C"},{"metric":"oxygen","value":20.9,"unit":"%"}]}' \
   $B/api/sensors/ingest | grep -q '"stored":2' && ok "ingest accepted 2 readings" || bad "ingest failed"
 curl -s $B/api/sensors/latest | grep -q '"metric":"oxygen"' && ok "unknown metric auto-registered" || bad "oxygen not registered"
+curl -s -b $A $B/archive/day/$TODAY/export.md | grep -A 400 "Every reading of the day" | grep -q "| 23.7 |\|23.7 |" && ok "every reading is printed in the day's record, value as stored" || bad "the ingested reading is not in the record"
+curl -s -b $A $B/archive/day/$TODAY | grep -q "EVERY READING" && ok "and on the archive's day page" || bad "readings missing from the day page"
+curl -s -b $A $B/archive/export.json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const d=JSON.parse(s);const day=d.days.find(x=>x.recorded&&x.readings&&x.readings.station.some(r=>r.temperature===23.7));process.exit(day?0:1);});' && ok "and in the JSON export, one entry per instant with a value per channel" || bad "readings missing from export.json"
 [ "$(curl -s -X POST -H 'Authorization: Bearer wrong' -d '{}' -o /dev/null -w '%{http_code}' $B/api/sensors/ingest)" = "401" ] \
   && ok "ingest rejects a bad token" || bad "ingest auth failed"
 
@@ -1011,17 +1038,19 @@ curl -s -b $A $B/archive | grep -q "day by day" && ok "archive contents page lis
 DAYN=$(curl -s -b $A $B/archive | grep -oE "archive/day/[0-9]+" | tail -1 | grep -oE "[0-9]+")
 REC=$(curl -s -b $A $B/archive/day/$DAYN)
 MISSING=""
-for section in "SCHEDULE" "GALLEY" "INVENTORY" "HABITAT" "CREW STATES"; do
+for section in "COMMUNICATION OFFICER" "SCIENCE OFFICER" "HEALTH OFFICER" "Daily Blog" "Crew state" "SCHEDULE" "MEALS" "INVENTORY LEVELS" "STEPS TAKEN" "POWER" "HABITAT"; do
   echo "$REC" | grep -q "$section" || MISSING="$MISSING $section"
 done
-[ -z "$MISSING" ] && ok "day record keeps schedule, meals, inventory, habitat and states" \
+[ -z "$MISSING" ] && ok "day record has the three officers, the Habitat tab and the sensors" \
   || bad "day record missing:$MISSING"
+echo "$REC" | grep -q "hw-chart" && bad "the day record still draws a chart" || ok "the day record draws no chart"
 curl -s -b $A $B/archive/export.json | node -e '
 let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>{
   const d=JSON.parse(s);
-  const need=["schedule","meals","inventory","notes","crewEntries","crewStates","habitat","exchanges"];
-  const day=d.days.find(x=>x.crewEntries.length)||d.days[0];
-  process.exit(need.every(k=>k in day)&&d.crew.length?0:1);
+  const need=["schedule","meals","storesCounted","crewFigures","power","notes","crewEntries","crewStates","habitat","readings"];
+  const day=d.days.find(x=>x.recorded&&x.crewEntries.length)||d.days[0];
+  const ahead=d.days[d.days.length-1];
+  process.exit(need.every(k=>k in day)&&d.crew.length&&ahead.recorded===false&&!("schedule" in ahead)?0:1);
 });' && ok "full export carries every strand" || bad "export incomplete"
 
 echo "── mobile"
@@ -1060,8 +1089,8 @@ curl -s $B/ | grep -q "Greenhouse" && ok "and the landing page" || bad "renamed 
 curl -s -b $A $B/archive/export.pdf -o /tmp/record-pwr.pdf
 PWRTXT=$(pdftext /tmp/record-pwr.pdf)
 echo "$PWRTXT" | grep -q "Power consumed" && echo "$PWRTXT" | grep -q "Greenhouse" \
-  && ok "the full record PDF carries the power figures, per day and in the trends" || bad "power missing from the PDF record"
-curl -s -b $A $B/archive/export.json | grep -q '"totalKwh"' && ok "and the JSON export carries each day's total kWh by category" || bad "power missing from export.json"
+  && ok "the full record PDF carries the power figures, per day" || bad "power missing from the PDF record"
+curl -s -b $A $B/archive/export.json | grep -q '"label":"Greenhouse","kwh":0.2' && ok "and the JSON export carries each day's kWh by category, as filed" || bad "power missing from export.json"
 curl -s -b $A $B/archive/export.md | grep -q "Power consumed" && ok "and the Markdown record" || bad "power missing from export.md"
 curl -s -b $A $B/archive/day/2 | grep -q "CH-35 / POWER" && ok "and the archive's day page" || bad "power missing from the archive day"
 

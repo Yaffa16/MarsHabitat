@@ -1,9 +1,19 @@
 {
-  "_note": "Mission notes filed from control, over the thirteen days of the run. kind is LOG or ANOMALY; the science officer's daily findings (SCIENCE) and the health officer's daily activities (HEALTH) are written from the composers in mission control and land here too, one per day and kind. These appear on the landing page's whole-mission fold and in the archive. This is the file to add to during the run when something happens that is not in the schedule.",
+  "1": [],
+  "2": [
+    {
+      "kind": "SCIENCE",
+      "body": "[media:7]"
+    }
+  ],
   "3": [
     {
       "kind": "LOG",
       "body": "Condensation forming on the west wall overnight. Wipe-down added to the daily routine."
+    },
+    {
+      "kind": "HEALTH",
+      "body": "Workout session in the morning:\r\n\r\nWellbeing activity in the evening:\r\n\r\nOther reporting:\r\n\r\n[media:11]"
     }
   ],
   "5": [
@@ -67,5 +77,6 @@
       "kind": "LOG",
       "body": "Final count by hand: 84 litres of water, one day of food, oxygen reserve 48%, four scrubber cartridges, 26 kWh in the battery."
     }
-  ]
+  ],
+  "_note": "Mission notes filed from control, over the thirteen days of the run. kind is LOG or ANOMALY; the science officer's daily findings (SCIENCE) and the health officer's daily activities (HEALTH) are written from the composers in mission control and land here too, one per day and kind. These appear on the landing page's whole-mission fold and in the archive. This is the file to add to during the run when something happens that is not in the schedule."
 }

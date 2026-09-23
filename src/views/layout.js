@@ -210,7 +210,7 @@ function foot(ctx, T = ctx.T || same, landing = false) {
   return `<div class="foot">${landing ? `
     <div class="foot-brand-block"><span class="foot-wordmark">MARS<span class="bang">!</span>platz</span></div>` : ''}
     <div class="foot-links">
-      <a href="https://zkm.de/en/privacy-statement">${T('Privacy policy')}</a><a href="https://zkm.de/">ZKM</a>
+      <a href="https://zkm.de/en/privacy-policy">${T('Privacy policy')}</a><a href="https://zkm.de/">ZKM</a>
     </div>
     <div class="foot-base">
       <span class="foot-brand">ZKM | HERTZLAB — MARS</span>
@@ -449,5 +449,5 @@ function scaleStrip(mission) {
 module.exports = {
   masthead, pageNav,
   page, panel, eyebrow, readout, orbitPlot, sparkline, pipeline, scaleStrip,
-  statusStrip, langSwitch, sym, legend, SYMBOL_KEY, esc, NAV, MESSAGE_STATES,
+  statusStrip, langSwitch, themeSwitch, sym, legend, SYMBOL_KEY, esc, NAV, MESSAGE_STATES,
 };

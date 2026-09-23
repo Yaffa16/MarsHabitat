@@ -111,6 +111,42 @@ const entryFor = (crewId, day) =>
 const notesFor = (day) =>
   db.prepare('SELECT * FROM day_note WHERE mission_day = ? ORDER BY posted_at').all(day);
 
+/* The desk's memory of edits (control_edit): which fields of which form and
+   day were changed through this page, and when each form was last saved (the
+   key '*'). The view marks those fields in orange — the marks stay after the
+   save — and says "Last saved …" beside each form's button. The mood forms
+   have no day; they file under day 0. */
+function noteEdits(form, day, keys, actor) {
+  const at = now();
+  const up = db.prepare(`INSERT INTO control_edit (form, day, key, at, actor) VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(form, day, key) DO UPDATE SET at = excluded.at, actor = excluded.actor`);
+  db.transaction(() => { up.run(form, day, '*', at, actor); for (const k of keys) up.run(form, day, k, at, actor); })();
+}
+function editsFor(day) {
+  const out = {};
+  for (const r of db.prepare('SELECT form, key, at, actor FROM control_edit WHERE day = ? OR day = 0').all(day)) {
+    const f = out[r.form] || (out[r.form] = { savedAt: null, actor: '', keys: {} });
+    if (r.key === '*') { f.savedAt = r.at; f.actor = r.actor; } else f.keys[r.key] = r.at;
+  }
+  return out;
+}
+const same = (a, b) => String(a ?? '') === String(b ?? '');
+
+/* Drafts (control_draft): a blog or a report written and kept on the desk,
+   not yet public — one per composer and day. The composer opens on the
+   draft when there is one; Publish sends the text live and drops the draft. */
+const draftFor = (form, day) => db.prepare('SELECT body, at, actor FROM control_draft WHERE form = ? AND day = ?').get(form, day) || null;
+function keepDraft(form, day, body, actor) {
+  db.prepare(`INSERT INTO control_draft (form, day, body, at, actor) VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(form, day) DO UPDATE SET body = excluded.body, at = excluded.at, actor = excluded.actor`).run(form, day, body, now(), actor);
+}
+const dropDraft = (form, day) => db.prepare('DELETE FROM control_draft WHERE form = ? AND day = ?').run(form, day);
+function draftsFor(day) {
+  const out = {};
+  for (const r of db.prepare('SELECT form, body, at, actor FROM control_draft WHERE day = ?').all(day)) out[r.form] = r;
+  return out;
+}
+
 /** Report templates, read from content/templates.json on every request. */
 const allTemplates = () => ({
   SCIENCE: content.templates('SCIENCE'),
@@ -197,6 +233,8 @@ router.get('/', (req, res) => {
     figures: content.crewFigures(),
     power: content.power(),
     items: inventoryFor(day),
+    edits: editsFor(day),
+    drafts: draftsFor(day),
     // Every slot of the crew log, for the Crew log tab: each day, each officer.
     // Everything in the media archive, hidden items included, for the Media tab.
     media: media.byDay({ includeHidden: true }).map((d) => ({ ...d, date: missionLib.dateForDay(d.missionDay) })),
@@ -233,11 +271,20 @@ router.post('/report', (req, res, next) => upload.array('file', 50)(req, res, (e
       text = `${text}\n\n[media:${m.id}]`.trim();
     } catch (e) { mediaError = e.message; }
   }
+  if (req.body.action === 'draft') {                                         // kept on the desk; what is live stays live
+    keepDraft(`report:${kindKey}`, day, text, req.user.username);
+    audit(req.user.username, 'DayNote', day, kind.toLowerCase() + ' draft');
+    setFlash(req, `Draft saved for day ${day} — not public until it is published.` + (attached ? ` ${attached} file${attached === 1 ? '' : 's'} added.` : '') + (mediaError ? ` One file was refused: ${mediaError}` : ''), !!mediaError);
+    return toTab(res, tabOf(req.body.back) === 'messages' ? kindKey : req.body.back, day);
+  }
+  const wasReport = reportFor(day, kind);
   const r = content.edit('notes.json', (obj) => {
     const rest = (Array.isArray(obj[String(day)]) ? obj[String(day)] : []).filter((n) => n.kind !== kind);
     obj[String(day)] = text ? rest.concat([{ kind, body: text }]) : rest;
   });
   audit(req.user.username, 'DayNote', day, kind.toLowerCase() + (text ? '' : ' cleared'));
+  noteEdits(`report:${kindKey}`, day, same(wasReport, text) ? [] : ['body'], req.user.username);
+  dropDraft(`report:${kindKey}`, day);
   const label = kind === 'SCIENCE' ? 'Science findings' : 'Health activities';
   setFlash(req, r.ok ? `${label} ${text ? 'published' : 'cleared'} for day ${day}.` + (attached ? ` ${attached} file${attached === 1 ? '' : 's'} added.` : '') + (mediaError ? ` One file was refused: ${mediaError}` : '')
     : `Saved, but: ${r.error}`, !r.ok || !!mediaError);
@@ -256,6 +303,23 @@ for (const t of ['science', 'health', 'habitat']) {
 router.get('/api/queue', (req, res) => {
   const c = data.counts();
   res.set('Cache-Control', 'no-store').json({ waiting: c.pending + c.awaitingResponse, total: c.total });
+});
+
+/* All the messages, as a download of their own — every message that ever
+   reached the station with whatever became of it. Not part of the mission
+   record (which leaves the messages out); mission control's own copy, as a
+   PDF to read, a CSV to open in a spreadsheet, or JSON. */
+const stampNow = () => new Date().toISOString().slice(0, 10);
+router.get('/messages/export.pdf', (req, res, next) => {
+  try {
+    res.type('application/pdf').attachment(`mars-station-messages-${stampNow()}.pdf`).send(require('../lib/record-pdf').messagesPdf());
+  } catch (e) { next(e); }
+});
+router.get('/messages/export.csv', (req, res) => {
+  res.type('text/csv; charset=utf-8').attachment(`mars-station-messages-${stampNow()}.csv`).send('\ufeff' + require('../lib/record-pdf').messagesCsv());
+});
+router.get('/messages/export.json', (req, res) => {
+  res.attachment(`mars-station-messages-${stampNow()}.json`).json(require('../lib/record-pdf').messagesJson());
 });
 
 /* ================================================================= REPLIES */
@@ -338,6 +402,7 @@ router.post('/moods/:id', (req, res) => {
   // The form carries no activity field any more; what the crew are doing
   // comes from the schedule (the ticker). Anything still posted is ignored.
   const activity = '';
+  const before = db.prepare('SELECT calm_tense FROM crew_mood WHERE crew_id = ? ORDER BY effective_at DESC LIMIT 1').get(id);
   db.prepare(
     `INSERT INTO crew_mood (crew_id, calm_tense, energetic_exhausted, optimistic_uncertain,
        connected_isolated, activity, status, effective_at, set_by)
@@ -345,6 +410,7 @@ router.post('/moods/:id', (req, res) => {
   ).run(id, v('calm_tense'), v('energetic_exhausted'), 50, 50,
         activity, member.status, now(), req.user.username);
   audit(req.user.username, 'CrewMood', id, 'file');
+  noteEdits(`mood:${id}`, 0, before && same(before.calm_tense, v('calm_tense')) ? [] : ['calm_tense'], req.user.username);
   setFlash(req, `State filed for ${member.designation}. The mission page has been updated.`);
   toTab(res, TAB_OF_OFFICER[member.designation] || 'comms', dayParam(req, ctx));
 });
@@ -381,6 +447,7 @@ router.post('/logbook', (req, res, next) => upload.array('file', 50)(req, res, (
   const tab = tabOf(req.body.back);
   const dropFiles = () => { for (const f of req.files || []) { try { require('fs').unlinkSync(f.path); } catch (e) { /* gone */ } } };
   if (!member) { dropFiles(); setFlash(req, 'No such crew member.', true); return toTab(res, tab, day); }
+  const draft = req.body.action === 'draft';
 
   // Media sent with the entry goes into the archive under this officer and
   // day, so it travels with the entry wherever the entry is shown.
@@ -396,6 +463,14 @@ router.post('/logbook', (req, res, next) => upload.array('file', 50)(req, res, (
     } catch (e) { mediaError = e.message; }
   }
 
+  if (draft) {                                                               // kept on the desk; what is live stays live
+    keepDraft(`blog:${member.id}`, day, text, req.user.username);
+    audit(req.user.username, 'CrewEntry', `${designation} day ${day}`, 'draft');
+    setFlash(req, `Draft saved for ${designation}, day ${day} — not public until it is published.`
+      + (attached ? ` ${attached} file${attached === 1 ? '' : 's'} added to the archive with it.` : '') + (mediaError ? ` One file was refused: ${mediaError}` : ''), !!mediaError);
+    return toTab(res, tab, day);
+  }
+
   // An entry once typed at the old habitat terminal is marked as not the
   // file's. Hand it back to the file so this edit — and the file — apply.
   db.prepare("UPDATE crew_entry SET source = 'file' WHERE crew_id = ? AND mission_day = ?")
@@ -404,11 +479,15 @@ router.post('/logbook', (req, res, next) => upload.array('file', 50)(req, res, (
   // An empty save does not delete the slot: it puts the placeholder back, so
   // the day still has somewhere to be written, and nothing is public.
   const finalText = text || content.placeholderFor(day, designation);
+  let wasText = '';
   const r = content.edit('logbook.json', (obj) => {
     obj[String(day)] = obj[String(day)] || {};
+    wasText = String(obj[String(day)][designation] || '');
     obj[String(day)][designation] = finalText;
   });
   audit(req.user.username, 'CrewEntry', `${designation} day ${day}`, body ? 'write' : 'clear');
+  noteEdits(`blog:${member.id}`, day, same(wasText, finalText) ? [] : ['body'], req.user.username);
+  dropDraft(`blog:${member.id}`, day);
   const what = (!body ? `Entry cleared for ${designation}, day ${day} — the slot is a placeholder again.`
     : content.isPlaceholder(body) ? `Placeholder saved for ${designation}, day ${day} — the text is not public until replaced.`
     : `Blog entry saved for ${designation}, day ${day} — live on the station.`)
@@ -562,6 +641,10 @@ router.post('/schedule', (req, res) => {
     else delete obj[String(day)];
   });
   audit(req.user.username, 'Schedule', day, 'edit', `${rows.length} tasks`);
+  // a row is remembered by what it says: one not in the day before this save is an edited row
+  const rowKey = (t) => `row:${t.time}|${t.label}|${t.detail || ''}`;
+  const had = new Set(existing.map(rowKey));
+  noteEdits('schedule', day, rows.map(rowKey).filter((k) => !had.has(k)), req.user.username);
   setFlash(req, r.ok ? `Day ${day} schedule saved — ${rows.length} tasks.` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, 'habitat', day);
 });
@@ -577,38 +660,48 @@ router.post('/crew-figures', (req, res) => {
     const n = Number(v);
     return Number.isFinite(n) && n >= 0 ? Math.round(n) : null;
   };
-  // One line per officer (calories_<id>, steps_<id>); the crew's totals are
-  // the sums of what was filed. The older form's two totals (calories,
+  // Two forms on the Habitat tab write here, Steps taken (steps_<id>) and
+  // Calories consumed (calories_<id>), one line per officer: each save
+  // touches only the figure it carries and keeps the other as it was; the
+  // crew's totals are the sums. The older form's two totals (calories,
   // steps) are still accepted when no officer's field came with the request.
   const crew = db.prepare('SELECT id, designation FROM crew ORDER BY sort_order, id').all();
-  const perOfficer = crew.some((c) => `calories_${c.id}` in req.body || `steps_${c.id}` in req.body);
-  const entry = {};
-  if (perOfficer) {
-    const per = {};
-    let calories = null, steps = null;
-    for (const c of crew) {
-      const cal = val(`calories_${c.id}`), st = val(`steps_${c.id}`);
-      if (cal == null && st == null) continue;
-      per[c.designation] = {};
-      if (cal != null) { per[c.designation].calories = cal; calories = (calories || 0) + cal; }
-      if (st != null) { per[c.designation].steps = st; steps = (steps || 0) + st; }
-    }
-    if (Object.keys(per).length) entry.crew = per;
-    if (calories != null) entry.calories = calories;
-    if (steps != null) entry.steps = steps;
-  } else {
-    const calories = val('calories'), steps = val('steps');
-    if (calories != null) entry.calories = calories;
-    if (steps != null) entry.steps = steps;
-  }
-
+  const hasSteps = crew.some((c) => `steps_${c.id}` in req.body);
+  const hasCal = crew.some((c) => `calories_${c.id}` in req.body);
+  const changed = [];
   const r = content.edit('crew-figures.json', (obj) => {
-    if (!Object.keys(entry).length) { delete obj[String(day)]; return; }
-    obj[String(day)] = entry;
+    const cur = obj[String(day)] || {};
+    const per = {};
+    for (const [d, line] of Object.entries(cur.crew || {})) per[d] = { ...line };
+    if (hasSteps || hasCal) {
+      for (const c of crew) {
+        const line = per[c.designation] || {};
+        if (hasSteps) { const st = val(`steps_${c.id}`); if (!same(line.steps, st ?? undefined)) changed.push(`steps_${c.id}`); if (st == null) delete line.steps; else line.steps = st; }
+        if (hasCal) { const cal = val(`calories_${c.id}`); if (!same(line.calories, cal ?? undefined)) changed.push(`calories_${c.id}`); if (cal == null) delete line.calories; else line.calories = cal; }
+        if (Object.keys(line).length) per[c.designation] = line; else delete per[c.designation];
+      }
+    }
+    const entry = {};
+    if (Object.keys(per).length) entry.crew = per;
+    const sum = (k) => Object.values(per).reduce((t, line) => (line[k] == null ? t : (t || 0) + line[k]), null);
+    if (hasSteps || hasCal) {
+      const steps = sum('steps'), calories = sum('calories');
+      // a total filed before the officers were counted separately stays until that figure is filed per officer
+      if (steps != null) entry.steps = steps; else if (!hasSteps && cur.steps != null) entry.steps = cur.steps;
+      if (calories != null) entry.calories = calories; else if (!hasCal && cur.calories != null) entry.calories = cur.calories;
+    } else {
+      const calories = val('calories'), steps = val('steps');
+      if (calories != null) entry.calories = calories;
+      if (steps != null) entry.steps = steps;
+    }
+    if (!Object.keys(entry).length) delete obj[String(day)];
+    else obj[String(day)] = entry;
   });
   audit(req.user.username, 'CrewFigures', day, 'edit');
-  setFlash(req, r.ok ? `Day ${day} crew figures saved.` : `Saved, but: ${r.error}`, !r.ok);
-  toTab(res, 'health', day);
+  const form = hasCal && !hasSteps ? 'calories' : 'steps';
+  noteEdits(form, day, changed, req.user.username);
+  setFlash(req, r.ok ? `Day ${day} ${form === 'calories' ? 'calories consumed' : 'steps taken'} saved.` : `Saved, but: ${r.error}`, !r.ok);
+  toTab(res, 'habitat', day);
 });
 
 /* ================================================================ FOOD PLAN */
@@ -644,6 +737,16 @@ router.post('/meals', (req, res) => {
     else delete obj[String(day)];
   });
   audit(req.user.username, 'Meals', day, 'edit', `${rows.length} slots`);
+  const changed = [];
+  for (const slot of SLOTS) {
+    const was = current.find((m) => m.slot === slot) || {}, is = rows.find((m) => m.slot === slot) || {};
+    if (!same(was.name, is.name)) changed.push(`${slot}_name`);
+    if (!same(was.components, is.components)) changed.push(`${slot}_components`);
+    if (!same(was.kcal || 0, is.kcal || 0)) changed.push(`${slot}_kcal`);
+    if (!same(was.prep_minutes || 0, is.prep || 0)) changed.push(`${slot}_prep`);
+    if (!same(was.notes, is.notes)) changed.push(`${slot}_notes`);
+  }
+  noteEdits('meals', day, changed, req.user.username);
   setFlash(req, r.ok ? `Day ${day} food plan saved — ${rows.length} slots.` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, 'habitat', day);
 });
@@ -654,8 +757,14 @@ router.post('/inventory', (req, res) => {
   const ctx = req.ctx();
   const day = dayParam(req, ctx);
   const keys = db.prepare('SELECT key FROM inventory_item').all().map((i) => i.key);
+  const changed = [];
   const r = content.edit('inventory-levels.json', (obj) => {
     const entry = obj[String(day)] || {};
+    for (const k of keys) {                                                   // what differs from the day's levels as they were
+      const was = entry[k] || {}, q = req.body[`q_${k}`], c = req.body[`c_${k}`];
+      if (!same(was.quantity, q === '' || q == null ? undefined : Number(q))) changed.push(`q_${k}`);
+      if (!same(was.consumption, c === '' || c == null ? undefined : Number(c))) changed.push(`c_${k}`);
+    }
     if (req.body.why) entry._why = String(req.body.why);
     for (const k of keys) {
       const q = req.body[`q_${k}`], c = req.body[`c_${k}`];
@@ -669,6 +778,7 @@ router.post('/inventory', (req, res) => {
     else delete obj[String(day)];
   });
   audit(req.user.username, 'Inventory', day, 'update');
+  noteEdits('inventory', day, changed, req.user.username);
   setFlash(req, r.ok ? `Inventory saved for day ${day}. Later days recalculated.` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, 'habitat', day);
 });
@@ -694,6 +804,8 @@ router.post('/power', (req, res) => {
   const ctx = req.ctx();
   const day = dayParam(req, ctx);
   const cats = content.power().categories;
+  const wasDay = content.power().days[String(day)] || {};
+  const changed = [];
   const r = content.edit('power.json', (obj) => {
     // The names, as the form has them now. An emptied name keeps the old one.
     obj.categories = cats.map((c) => {
@@ -708,10 +820,15 @@ router.post('/power', (req, res) => {
       const n = Number(v);
       if (Number.isFinite(n) && n >= 0) entry[c.key] = Math.round(n * 100) / 100;
     }
+    for (const c of cats) {
+      if (!same(c.label, (obj.categories.find((x) => x.key === c.key) || {}).label)) changed.push(`name_${c.key}`);
+      if (!same(wasDay[c.key], entry[c.key])) changed.push(`kwh_${c.key}`);
+    }
     if (Object.keys(entry).length) obj.days[String(day)] = entry;
     else delete obj.days[String(day)];
   });
   audit(req.user.username, 'Power', day, 'update');
+  noteEdits('power', day, changed, req.user.username);
   setFlash(req, r.ok ? `Day ${day} power figures saved.` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, 'habitat', day);
 });

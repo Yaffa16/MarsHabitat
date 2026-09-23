@@ -1865,6 +1865,7 @@ a.chip { text-decoration: none; }
    waiting. Everything else the station does in colour, control does in grey. */
 body.control {
   --c-bg: #f3f3f2; --c-panel: #ffffff; --c-line: #d9d9d6; --c-line-soft: #ebebe8; --c-text: #161616; --c-muted: #666; --c-faint: #9a9a97;
+  --c-field: #ffffff; --c-quoted: #fafaf9; --c-bar: #f6f7f7; --c-hover: #f0f0ee; --c-face: #f3f1ee; --c-line-strong: #8c8f94; --c-on-text: #ffffff; --c-bad: #b00; --c-edit: #fff4ea;
   /* Every face on this page is Open Sans: the three font stacks are
      redefined here, so headings, labels, codes and reading matter all follow. */
   --display: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -1872,6 +1873,13 @@ body.control {
   --sans: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
   background: var(--c-bg); color: var(--c-text); font-size: 15px; font-family: var(--sans);
 }
+/* the same desk in the dark: every grey drawn from these, so nothing on the page is left white */
+:root[data-theme="dark"] body.control {
+  --c-bg: #141416; --c-panel: #1f1f22; --c-line: #35363c; --c-line-soft: #2a2b30; --c-text: #ececea; --c-muted: #a5a5ab; --c-faint: #6e6e75;
+  --c-field: #17171a; --c-quoted: #26262a; --c-bar: #26262a; --c-hover: #2d2d32; --c-face: #2d2d32; --c-line-strong: #6b6c74; --c-on-text: #141416; --c-bad: #ff7b6b; --c-edit: #2b2118;
+  color-scheme: dark;
+}
+body.control h1, body.control h2, body.control h3, body.control .bigsec, body.control .block-title, body.control .quoted, body.control .kv dd, body.control table, body.control .popup-head .fold-title { color: var(--c-text); }
 body.control input, body.control select, body.control textarea, body.control button { font-family: var(--sans); }
 body.control .shell { max-width: 1240px; }
 /* surfaces: no gradients, no shadows */
@@ -1881,7 +1889,7 @@ body.control .ed-block-media, body.control .fold {
 }
 body.control .panel { padding: 22px 22px 20px; }
 body.control .panel > .chan, body.control .panel.mars-side > .chan { color: var(--c-faint); }
-body.control .quoted { background: #fafaf9; }
+body.control .quoted { background: var(--c-quoted); }
 /* type: bigger, plainer, no micro-caps */
 body.control .eyebrow, body.control .lbl, body.control label.f > span, body.control .secsub,
 body.control .media-meta, body.control .msg-top,
@@ -1900,36 +1908,36 @@ body.control .row .m span, body.control .row .t { font-size: 13px; }
 /* fields: white, one line around them */
 body.control input[type=text], body.control input[type=password], body.control input[type=number], body.control input[type=time],
 body.control input[type=date], body.control textarea, body.control select, body.control .ed-block-text .ed-text {
-  background: #fff; box-shadow: none; border: 1px solid var(--c-line); border-radius: 6px; color: var(--c-text); font-size: 15px;
+  background: var(--c-field); box-shadow: none; border: 1px solid var(--c-line); border-radius: 6px; color: var(--c-text); font-size: 15px;
 }
 body.control textarea:focus, body.control input:focus, body.control select:focus, body.control .ed-text:focus { outline: 2px solid var(--c-text); outline-offset: -1px; }
 body.control ::placeholder { color: var(--c-faint); font-style: normal; }
 /* buttons: grey outline; the one that publishes is orange */
 body.control button, body.control .btn, body.control .filters a, body.control .daypick a, body.control .chip, body.control .ed-tools button, body.control .attach-pick {
-  background: #fff; box-shadow: none; border: 1px solid var(--c-line); color: var(--c-text); font-family: var(--sans); font-size: 13px; letter-spacing: 0; text-transform: none; font-weight: 500; border-radius: 6px; transform: none;
+  background: var(--c-panel); box-shadow: none; border: 1px solid var(--c-line); color: var(--c-text); font-family: var(--sans); font-size: 13px; letter-spacing: 0; text-transform: none; font-weight: 500; border-radius: 6px; transform: none;
 }
 body.control button:hover, body.control .btn:hover, body.control .filters a:hover, body.control .daypick a:hover, body.control .ed-tools button:hover {
-  background: #f0f0ee; color: var(--c-text); box-shadow: none; transform: none; border-color: #bcbcb8;
+  background: var(--c-hover); color: var(--c-text); box-shadow: none; transform: none; border-color: var(--c-line-strong);
 }
 body.control button.primary, body.control .btn.primary { background: var(--orange); border-color: var(--orange); color: #fff; font-weight: 700; box-shadow: none; }
 body.control button.primary:hover { background: var(--orange-deep); border-color: var(--orange-deep); color: #fff; box-shadow: none; }
 body.control button.ghost, body.control button.danger { background: transparent; color: var(--c-muted); }
-body.control button.danger:hover { background: #fff; color: var(--c-text); }
-body.control .filters a.on, body.control .daypick a.on, body.control .chip.active { background: var(--c-text); color: #fff; border-color: var(--c-text); }
-body.control .filters a.on b { color: #fff; }
+body.control button.danger:hover { background: var(--c-panel); color: var(--c-text); }
+body.control .filters a.on, body.control .daypick a.on, body.control .chip.active { background: var(--c-text); color: var(--c-on-text); border-color: var(--c-text); }
+body.control .filters a.on b { color: var(--c-on-text); }
 body.control .filters a b { font-size: 13px; }
 /* the editor's toolbar and tabs keep their own shape under the control rules */
-body.control .ed-bar-add button { border: 1px solid #8c8f94; border-radius: 3px; }
-body.control .ed-bar-add button:hover { border-color: var(--c-text); background: #fff; }
+body.control .ed-bar-add button { border: 1px solid var(--c-line-strong); border-radius: 3px; }
+body.control .ed-bar-add button:hover { border-color: var(--c-text); background: var(--c-panel); }
 body.control .ed-bar-tabs button { border: 1px solid transparent; border-bottom: 0; border-radius: 3px 3px 0 0; background: transparent; color: var(--c-muted); }
-body.control .ed-bar-tabs button:hover { background: #ececec; color: var(--c-text); border-color: transparent; }
-body.control .ed-bar-tabs button.on { background: #fff; border-color: var(--c-line); color: var(--c-text); }
+body.control .ed-bar-tabs button:hover { background: var(--c-hover); color: var(--c-text); border-color: transparent; }
+body.control .ed-bar-tabs button.on { background: var(--c-panel); border-color: var(--c-line); color: var(--c-text); }
 body.control .ed-block-text .ed-text { border: 1px solid var(--c-line-soft); }
 body.control .ed-block-text .ed-text:focus { border-color: var(--c-text); outline: 0; }
 body.control textarea.ed-source { border: 0; }
 body.control textarea.ed-source:focus { outline: 0; }
-body.control .ed-block-media .ed-tools button { background: #fff; color: var(--c-text); box-shadow: none; }
-body.control .ed-tools .ed-remove:hover { background: #fff; color: #b00; border-color: #b00; }
+body.control .ed-block-media .ed-tools button { background: var(--c-panel); color: var(--c-text); box-shadow: none; }
+body.control .ed-tools .ed-remove:hover { background: var(--c-panel); color: var(--c-bad); border-color: var(--c-bad); }
 /* the tab bar: plain text with an underline on the open tab */
 body.control .tabs.officer-bar { gap: 0; border-bottom: 1px solid var(--c-line); padding-bottom: 0; margin-bottom: 14px; }
 body.control .tabs.officer-bar a {
@@ -1940,16 +1948,16 @@ body.control .tabs.officer-bar a:hover { color: var(--c-text); box-shadow: none;
 body.control .tabs.officer-bar a.on { color: var(--c-text); font-weight: 700; border-bottom-color: var(--c-text); background: transparent; }
 body.control .tabs a .waiting, body.control .sechead .waiting { background: var(--orange); color: #fff; font-family: var(--sans); font-weight: 700; }
 /* badges and states: outlined grey, no colour */
-body.control .badge { background: #fff; border: 1px solid var(--c-line); color: var(--c-muted); font-family: var(--sans); font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 500; }
+body.control .badge { background: var(--c-panel); border: 1px solid var(--c-line); color: var(--c-muted); font-family: var(--sans); font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 500; }
 body.control .badge.mars, body.control .badge.ok { color: var(--c-text); border-color: var(--c-text); }
-body.control .badge.warn { background: #fff; color: #b00; border-color: #b00; }
+body.control .badge.warn { background: var(--c-panel); color: var(--c-bad); border-color: var(--c-bad); }
 /* messages: the one waiting for a reply has a black edge, not orange */
 body.control .msg.pending { box-shadow: none; border-left: 3px solid var(--c-text); }
-body.control .msg.pending .reply-box { box-shadow: none; border: 2px solid var(--c-text); background: #fff; }
-body.control .msg .reply-box { border: 2px solid var(--c-line); background: #fff; }
+body.control .msg.pending .reply-box { box-shadow: none; border: 2px solid var(--c-text); background: var(--c-field); }
+body.control .msg .reply-box { border: 2px solid var(--c-line); background: var(--c-field); }
 body.control .msg .reply-box:focus { border-color: var(--orange); outline: 0; }
-body.control .flash { background: #fff; border: 1px solid var(--c-line); box-shadow: none; color: var(--c-text); }
-body.control .flash.err { color: #b00; border-color: #b00; }
+body.control .flash { background: var(--c-panel); border: 1px solid var(--c-line); box-shadow: none; color: var(--c-text); }
+body.control .flash.err { color: var(--c-bad); border-color: var(--c-bad); }
 body.control .work { border-top: 0; }
 /* mood sliders: grey track, black thumb */
 body.control input[type=range]::-webkit-slider-runnable-track { background: var(--c-line-soft); box-shadow: none; }
@@ -1967,6 +1975,86 @@ body.control .media-bar i { background: var(--c-text); }
 body.control button.small, body.control .btn.small { font-size: 12.5px; padding: 7px 12px; min-height: 34px; }
 body.control .badge.warn { color: var(--c-text); border-color: var(--c-text); }
 body.control .rail-cell.theme button { font-size: 10px; }
+/* edits (control.js): a field holding something other than what the page was drawn with is marked in orange — the
+   field, its row, its caption, the face chosen, the sheet — and the form's buttons say how many fields differ */
+body.control input[type=text].is-edited, body.control input[type=number].is-edited, body.control input[type=time].is-edited,
+body.control input[type=date].is-edited, body.control textarea.is-edited, body.control select.is-edited { border-color: var(--orange); background: var(--c-edit); box-shadow: inset 3px 0 0 var(--orange); }
+body.control .msg textarea.reply-box.is-edited { border-color: var(--orange); }
+body.control tr.is-edited > td:first-child, body.control tr.is-edited > th:first-child { box-shadow: inset 3px 0 0 var(--orange); }
+body.control label.f.is-edited > span { color: var(--orange); }
+body.control label.f.is-edited > span::after { content: " · edited"; font-weight: 700; }
+body.control .fig-officer.is-edited .fig-officer-name { color: var(--orange); }
+body.control .mood-face.is-edited { box-shadow: inset 0 0 0 2px var(--orange); }
+body.control .mood-face.is-edited span::after { content: " · edited"; }
+body.control .ed.is-edited { border-color: var(--orange); box-shadow: inset 3px 0 0 var(--orange); }
+body.control .ed.is-edited .ed-foot::after { content: "Edited — not published"; color: var(--orange); font-weight: 700; }
+body.control .ed.is-edited .ed-hint { display: none; }
+body.control input[type=checkbox].is-edited { outline: 2px solid var(--orange); outline-offset: 2px; }
+body.control .edits { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--orange); white-space: nowrap; }
+body.control .edits::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
+body.control .edits[hidden] { display: none; }
+body.control form.has-edits button.primary { box-shadow: 0 0 0 3px rgba(255,106,0,.32); }
+/* an edit once saved stays marked (control_edit, routes/control.js): the same orange, without the unsaved tint */
+body.control input[type=text].was-edited, body.control input[type=number].was-edited, body.control input[type=time].was-edited,
+body.control textarea.was-edited, body.control select.was-edited { border-color: var(--orange); box-shadow: inset 3px 0 0 var(--orange); }
+body.control label.f.was-edited > input, body.control label.f.was-edited > textarea { border-color: var(--orange); box-shadow: inset 3px 0 0 var(--orange); }
+body.control label.f.was-edited > span { color: var(--orange); }
+body.control label.f.was-edited > span::after { content: " · edited"; font-weight: 700; }
+body.control tr.was-edited > td:first-child, body.control tr.was-edited > th:first-child { box-shadow: inset 3px 0 0 var(--orange); }
+body.control .mood-face.was-edited { box-shadow: inset 0 0 0 2px var(--orange); }
+body.control .mood-face.was-edited span::after { content: " · edited"; }
+body.control form.was-edited .ed, body.control form.was-edited textarea.blog-box { border-color: var(--orange); box-shadow: inset 3px 0 0 var(--orange); }
+body.control form.was-edited .ed .ed-foot::after { content: "Edited on this desk"; color: var(--orange); font-weight: 700; }
+body.control form.was-edited .ed.is-edited .ed-foot::after { content: "Edited — not published"; }
+body.control form.was-edited .ed .ed-hint { display: none; }
+/* when the form was last saved, beside its button */
+body.control .saved-at { font-size: 12.5px; color: var(--c-muted); white-space: nowrap; }
+body.control .saved-at.saved-never { color: var(--c-faint); }
+/* the tab bar: bold, larger, the open tab in orange */
+body.control .tabs.officer-bar a { font-size: 17px; font-weight: 700; padding: 12px 18px; }
+body.control .tabs.officer-bar a.on { color: var(--orange); border-bottom-color: var(--orange); font-weight: 700; }
+/* every block's head folds its block (control.js): a chevron at the right of the head, the block hidden while folded */
+body.control .panel > .eyebrow, body.control .block-head, body.control .sechead { cursor: pointer; user-select: none; }
+body.control .fold-chev { display: inline-block; flex: none; margin-left: 8px; font-size: 12px; line-height: 1; color: var(--c-muted); transition: transform .15s; }
+body.control .is-folded > .fold-head .fold-chev { transform: rotate(-90deg); }
+body.control .panel.is-folded > :not(.chan):not(.fold-head), body.control .queue.is-folded > :not(.fold-head) { display: none; }
+body.control .fold-head:focus-visible { outline: 2px solid var(--c-text); outline-offset: 2px; }
+body.control .fig-grid { gap: 0 12px; }
+body.control .actions > form.theme { display: inline-flex; margin: 0; }
+body.control .block-title .fold-chev { margin-left: 10px; }
+body.control .block-state.draft { border-color: var(--c-line-strong); color: var(--c-text); font-weight: 600; }
+/* the meals: the four slots named large */
+body.control .slot-name { margin: 0 0 10px; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; color: var(--c-text); }
+/* the message card: who wrote and what they wrote first, in a larger hand; the state, the time and the quiet actions in the
+   top line at the right; the reply beneath with its own head — "Reply as …" — one box and one orange button */
+body.control .msg { padding: 18px 22px 18px; margin-bottom: 16px; }
+body.control .msg-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px 18px; font-size: 12.5px; letter-spacing: 0; text-transform: none; color: var(--c-muted); }
+body.control .msg-who { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+body.control .msg-who .cs { font-size: 17px; font-weight: 700; color: var(--c-text); margin-right: 4px; }
+body.control .msg-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: none; }
+body.control .msg-side .msg-meta { margin: 0; letter-spacing: 0; font-size: 12px; color: var(--c-faint); white-space: nowrap; }
+body.control .msg-side .msg-actions { margin: 0; gap: 4px; }
+body.control .msg-side .msg-actions button { border-color: transparent; background: transparent; color: var(--c-muted); font-size: 12.5px; padding: 4px 8px; min-height: 0; }
+body.control .msg-side .msg-actions button:hover { color: var(--c-text); background: var(--c-hover); border-color: transparent; }
+body.control .msg-side .msg-actions button.danger:hover { color: var(--c-bad); }
+body.control .msg .quoted { margin: 14px 0 16px; padding: 16px 20px; font-size: 18px; line-height: 1.5; color: var(--c-text); border-left: 3px solid var(--c-line-strong); }
+body.control .msg.pending .quoted { border-left-color: var(--orange); }
+body.control .msg.pending { border-left: 1px solid var(--c-line); }
+body.control .msg .reply { margin: 0; padding: 14px 16px 14px; border-radius: 8px; background: var(--c-bar); }
+body.control .msg .reply-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; margin: 0 0 8px; }
+body.control .msg .reply-label { margin: 0; font-size: 14px; font-weight: 700; color: var(--c-text); }
+body.control .msg .reply-as { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--c-muted); }
+body.control .msg .reply-as select { width: auto; min-width: 0; padding: 4px 28px 4px 10px; min-height: 32px; font-size: 13px; }
+body.control .msg .reply-box, body.control .msg.pending .reply-box { border: 1px solid var(--c-line); box-shadow: none; }
+body.control .msg .reply-box:focus, body.control .msg.pending .reply-box:focus { border-color: var(--orange); outline: 2px solid var(--orange); outline-offset: -1px; }
+body.control .msg .reply-bar { align-items: center; gap: 12px; margin-top: 10px; }
+body.control .msg .reply-bar .primary { min-width: 120px; }
+body.control .msg .reply-hint { font-size: 12.5px; color: var(--c-muted); }
+body.control .msg.rejected .quoted { border-left-color: var(--c-line); }
+@media (max-width: 700px) {
+  body.control .msg-top { flex-direction: column; }
+  body.control .msg-side { align-items: flex-start; }
+}
 
 
 
@@ -2243,7 +2331,7 @@ body.landing.inner .cloud-gallery:first-child { margin-top: 26px; }
 .mood-face:hover { color: var(--ink); background: var(--well); }
 .mood-face:has(input:checked) { color: var(--orange); background: var(--well); box-shadow: var(--sh-inset); }
 .mood-face:has(input:focus-visible) { outline: 2px solid var(--orange); outline-offset: 2px; }
-.control .mood-face:hover, .control .mood-face:has(input:checked) { background: #f3f1ee; }
+.control .mood-face:hover, .control .mood-face:has(input:checked) { background: var(--c-face, #f3f1ee); }
 @media (max-width: 760px) { .mood-face svg { width: 44px; height: 44px; } }
 .mood-poles { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
 
@@ -2264,7 +2352,7 @@ textarea.blog-box { min-height: 340px; font-size: 16px; line-height: 1.65; }
 .officer-stack .officer-block { padding: 22px 24px 20px; }
 .block-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--c-line-soft, var(--rule)); }
 .block-head .block-title { display: flex; align-items: center; gap: 10px; margin: 0 0 3px; font-size: 20px; }
-.block-n { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--c-text, var(--ink)); color: #fff; font-size: 13px; font-weight: 700; flex: none; }
+.block-n { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--c-text, var(--ink)); color: var(--c-on-text, #fff); font-size: 13px; font-weight: 700; flex: none; }
 .block-sub { margin: 0; font-size: 13px; color: var(--c-muted, var(--dim)); }
 .block-sub b { color: var(--c-text, var(--ink)); font-weight: 600; }
 .block-state { flex: none; align-self: center; padding: 5px 11px; border-radius: 20px; border: 1px solid var(--c-line, var(--rule)); font-size: 12px; color: var(--c-muted, var(--dim)); white-space: nowrap; }
@@ -2274,16 +2362,16 @@ textarea.blog-box { min-height: 340px; font-size: 16px; line-height: 1.65; }
 /* The composer, laid out like a classic post editor: a grey toolbar strip
    across the top with the add buttons on the left and Visual | Text tabs on
    the right, one white sheet under it, a foot with the word count. */
-.ed { gap: 0; border: 1px solid var(--c-line, var(--rule)); border-radius: 4px; background: #fff; overflow: hidden; }
-.ed-bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 8px 10px 0; background: #f6f7f7; border-bottom: 1px solid var(--c-line, var(--rule)); }
+.ed { gap: 0; border: 1px solid var(--c-line, var(--rule)); border-radius: 4px; background: var(--c-panel, #fff); overflow: hidden; }
+.ed-bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 8px 10px 0; background: var(--c-bar, #f6f7f7); border-bottom: 1px solid var(--c-line, var(--rule)); }
 .ed-bar-add { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 8px; }
 .ed-bar-add button {
   display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 0 12px;
-  border: 1px solid #8c8f94; border-radius: 3px; background: #fff; color: var(--c-text, var(--ink));
+  border: 1px solid var(--c-line-strong, #8c8f94); border-radius: 3px; background: var(--c-panel, #fff); color: var(--c-text, var(--ink));
   font: inherit; font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; box-shadow: none; transform: none; cursor: pointer;
 }
 .ed-bar-add button svg { flex: none; color: var(--c-muted, var(--dim)); }
-.ed-bar-add button:hover { border-color: var(--c-text, var(--ink)); background: #fff; color: var(--c-text, var(--ink)); box-shadow: none; transform: none; }
+.ed-bar-add button:hover { border-color: var(--c-text, var(--ink)); background: var(--c-panel, #fff); color: var(--c-text, var(--ink)); box-shadow: none; transform: none; }
 .ed-bar-add button:hover svg { color: var(--orange); }
 .ed-bar-tabs { display: flex; gap: 2px; align-self: flex-end; }
 .ed-bar-tabs button {
@@ -2291,8 +2379,8 @@ textarea.blog-box { min-height: 340px; font-size: 16px; line-height: 1.65; }
   border: 1px solid transparent; border-bottom: 0; border-radius: 3px 3px 0 0; background: transparent;
   color: var(--c-muted, var(--dim)); font: inherit; font-size: 13px; letter-spacing: 0; text-transform: none; box-shadow: none; transform: none; cursor: pointer;
 }
-.ed-bar-tabs button:hover { background: #ececec; color: var(--c-text, var(--ink)); box-shadow: none; transform: none; }
-.ed-bar-tabs button.on { background: #fff; border-color: var(--c-line, var(--rule)); color: var(--c-text, var(--ink)); }
+.ed-bar-tabs button:hover { background: var(--c-hover, #ececec); color: var(--c-text, var(--ink)); box-shadow: none; transform: none; }
+.ed-bar-tabs button.on { background: var(--c-panel, #fff); border-color: var(--c-line, var(--rule)); color: var(--c-text, var(--ink)); }
 .ed-blocks { padding: 10px 12px 4px; min-height: 0; }
 /* the sheet: one document, text flowing round the pictures */
 .ed-doc { position: relative; padding: 18px 20px 12px; min-height: 240px; outline: 0; font-size: 16px; line-height: 1.65; color: var(--c-text, var(--ink)); cursor: text; }
@@ -2305,23 +2393,23 @@ textarea.blog-box { min-height: 340px; font-size: 16px; line-height: 1.65; }
 .ed-fig .ed-figure .ed-kind { padding: 34px; color: #bbb; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
 .ed-fig .ed-caption { display: flex; align-items: center; gap: 10px; padding: 6px 0 0; border: 0; background: transparent; }
 .ed-fig .ed-caption input { flex: 1; min-width: 0; margin: 0; padding: 6px 8px; font-size: 13.5px; font-style: italic; color: var(--c-muted, var(--dim)); border: 1px solid transparent; border-radius: 3px; background: transparent; box-shadow: none; }
-.ed-fig .ed-caption input:focus { border-color: var(--c-line, var(--rule)); background: #fff; outline: 0; }
+.ed-fig .ed-caption input:focus { border-color: var(--c-line, var(--rule)); background: var(--c-field, #fff); outline: 0; }
 .ed-fig .ed-caption a, .ed-fig .ed-caption-state { font-size: 12px; color: var(--c-muted, var(--dim)); white-space: nowrap; }
 .ed-fig .ed-tools { position: absolute; top: 8px; right: 8px; }
 .ed-fig .ed-tools button { width: 30px; height: 30px; min-height: 0; padding: 0; display: grid; place-items: center; border-radius: 3px; background: rgba(255,255,255,.92); color: #111; border: 1px solid rgba(0,0,0,.25); box-shadow: none; }
-.ed-fig .ed-tools button:hover { background: #fff; color: #b00; border-color: #b00; }
-.ed-fig .ed-progress { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 8px 10px; font-size: 12px; background: #fff; }
+.ed-fig .ed-tools button:hover { background: var(--c-panel, #fff); color: var(--c-bad, #b00); border-color: var(--c-bad, #b00); }
+.ed-fig .ed-progress { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 8px 10px; font-size: 12px; background: var(--c-panel, #fff); }
 .ed-fig .ed-progress .media-bar { grid-column: 1 / -1; }
 .ed-fig.ed-uploading .ed-figure { min-height: 90px; }
 .ed-fig.ed-failed .ed-progress-state { color: var(--orange); }
 .ed-fig.ed-failed .ed-tools { top: auto; bottom: 8px; }
 @media (max-width: 760px) { .ed-doc { padding: 14px; } .ed-doc.is-empty::before { left: 14px; top: 14px; } }
-.ed-block-text .ed-text { background: #fff; border: 1px solid var(--c-line-soft, var(--rule)); border-radius: 4px; font-size: 16px; line-height: 1.65; box-shadow: none; }
+.ed-block-text .ed-text { background: var(--c-field, #fff); border: 1px solid var(--c-line-soft, var(--rule)); border-radius: 4px; font-size: 16px; line-height: 1.65; box-shadow: none; }
 .ed-block-text .ed-text:focus { border-color: var(--c-text, var(--ink)); outline: 0; }
 .ed-block:first-child .ed-text { min-height: 180px; }
-textarea.ed-source { display: block; width: 100%; min-height: 260px; margin: 0; padding: 12px 14px; border: 0; border-radius: 0; box-shadow: none; background: #fff; font-family: var(--mono); font-size: 13.5px; line-height: 1.6; resize: vertical; }
+textarea.ed-source { display: block; width: 100%; min-height: 260px; margin: 0; padding: 12px 14px; border: 0; border-radius: 0; box-shadow: none; background: var(--c-field, #fff); font-family: var(--mono); font-size: 13.5px; line-height: 1.6; resize: vertical; }
 textarea.ed-source:focus { outline: 0; }
-.ed-foot { display: flex; justify-content: space-between; gap: 12px; padding: 7px 12px; background: #f6f7f7; border-top: 1px solid var(--c-line, var(--rule)); font-size: 12px; color: var(--c-muted, var(--dim)); }
+.ed-foot { display: flex; justify-content: space-between; gap: 12px; padding: 7px 12px; background: var(--c-bar, #f6f7f7); border-top: 1px solid var(--c-line, var(--rule)); font-size: 12px; color: var(--c-muted, var(--dim)); }
 .ed-hint { text-align: right; }
 .officer-stack .actions { margin-top: 14px; }
 .ed.over { outline: 2px dashed var(--orange); outline-offset: -4px; }

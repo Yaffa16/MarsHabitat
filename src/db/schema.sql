@@ -202,6 +202,31 @@ CREATE TABLE IF NOT EXISTS audit (
 );
 CREATE INDEX IF NOT EXISTS idx_audit ON audit(created_at DESC);
 
+-- What was changed on mission control's desk, and when: one row per field of
+-- a form and day that was edited through the page (the key '*' is the form's
+-- last save), so an edited value stays marked after it is saved and each
+-- form says when it was last saved. Emptied by the reset.
+-- A draft of a blog or a report, kept on the desk until it is published:
+-- one per composer and day (form is blog:<crew id> or report:<kind>). What
+-- is live stays live until Publish; the reset empties the drafts too.
+CREATE TABLE IF NOT EXISTS control_draft (
+  form  TEXT NOT NULL,
+  day   INTEGER NOT NULL,
+  body  TEXT NOT NULL,
+  at    TEXT NOT NULL,
+  actor TEXT NOT NULL DEFAULT '',
+  PRIMARY KEY (form, day)
+);
+
+CREATE TABLE IF NOT EXISTS control_edit (
+  form  TEXT NOT NULL,
+  day   INTEGER NOT NULL,
+  key   TEXT NOT NULL,
+  at    TEXT NOT NULL,
+  actor TEXT NOT NULL DEFAULT '',
+  PRIMARY KEY (form, day, key)
+);
+
 -- --------------------------------------------------------------- logbook
 -- One entry per crew member per mission day, written by that crew member
 -- from the habitat terminal. Editable by its author for as long as the day

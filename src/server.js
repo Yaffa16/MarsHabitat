@@ -329,22 +329,64 @@ function requireControl(req, res, next) {
 }
 
 app.get('/archive', requireControl, (req, res) => {
+  const ctx = req.ctx();
   archive.rollupPending();
-  res.send(AR.contents(req.ctx(), {
+  res.send(AR.contents(ctx, {
     days: archive.index(),
     counts: data.counts(),
     entryCounts: data.entryCounts(),
+    // before the run: today's rehearsal page, so the shape can be seen
+    rehearsal: archive.rehearsalRecord(ctx.mission),
   }));
 });
 
+/* Today. Before the run this is the rehearsal page — a day's record built
+   for today, marked as not the record, gone on the first day of the run.
+   During the run "today" is simply the current mission day, so the address
+   goes there; after the run, to the last day. */
+const todayTarget = (req, suffix = '') => {
+  const st = req.ctx().mission;
+  return st.phase === 'PRE_LAUNCH' ? null : `/archive/day/${archive.recordedUpTo(st)}${suffix}`;
+};
+app.get('/archive/today', requireControl, (req, res) => {
+  const to = todayTarget(req);
+  if (to) return res.redirect(to);
+  res.send(AR.dayRecord(req.ctx(), { record: archive.rehearsalRecord(req.ctx().mission), hasPrev: false, hasNext: false }));
+});
+app.get('/archive/today/export.md', requireControl, (req, res) => {
+  const to = todayTarget(req, '/export.md');
+  if (to) return res.redirect(to);
+  res.type('text/markdown; charset=utf-8')
+     .attachment(`mars-station-today-rehearsal-${new Date().toISOString().slice(0, 10)}.md`)
+     .send(archive.rehearsalMarkdown());
+});
+app.get('/archive/today/export.pdf', requireControl, (req, res, next) => {
+  const to = todayTarget(req, '/export.pdf');
+  if (to) return res.redirect(to);
+  try {
+    const buf = recordPdf.todayRecord();
+    if (!buf) return next();
+    res.type('application/pdf')
+       .attachment(`mars-station-today-rehearsal-${new Date().toISOString().slice(0, 10)}.pdf`)
+       .send(buf);
+  } catch (e) { next(e); }
+});
+
+/* A day's record exists once the day has happened. A day ahead has no
+   record — not the plan dressed as one — so its addresses do not exist yet. */
+const recordedDay = (req) => {
+  const n = Number(req.params.n);
+  return Number.isInteger(n) && n >= 1 && n <= archive.recordedUpTo(req.ctx().mission) ? n : null;
+};
+
 app.get('/archive/day/:n', requireControl, (req, res, next) => {
   const ctx = req.ctx();
-  const n = Number(req.params.n);
-  if (!Number.isInteger(n) || n < 1 || n > ctx.mission.totalDays) return next();
+  const n = recordedDay(req);
+  if (!n) return next();
   res.send(AR.dayRecord(ctx, {
     record: archive.dayRecord(n),
     hasPrev: n > 1,
-    hasNext: n < Math.min(ctx.mission.clampedDay, ctx.mission.totalDays),
+    hasNext: n < archive.recordedUpTo(ctx.mission),
   }));
 });
 
@@ -357,19 +399,22 @@ app.get('/archive/export.md', requireControl, (req, res) => {
 });
 
 app.get('/archive/day/:n/export.md', requireControl, (req, res, next) => {
-  const n = Number(req.params.n);
-  if (!Number.isInteger(n) || n < 1) return next();
+  const n = recordedDay(req);
+  if (!n) return next();
   res.type('text/markdown; charset=utf-8')
      .attachment(`mars-station-day-${String(n).padStart(3, '0')}.md`)
      .send(archive.dayMarkdown(n));
 });
 
 /**
- * The full record as one PDF: every exchange, every blog entry with its
- * photographs in place, the schedules, meals and inventory, the states filed,
- * the trend charts, the stores' daily use, the complete correspondence and
- * the media index with hashes — the form the record is handed over in.
- * Composed here without a browser or an image library (src/lib/pdf.js).
+ * The full record as one PDF: for every day that has happened, what was
+ * entered and what was measured — every exchange, every blog entry with its
+ * photographs in place, the schedule as run, the meals, the stores as
+ * counted, the power and figures as filed, the states filed, the daily
+ * sensor summary, the complete correspondence and the media index with
+ * hashes — the form the record is handed over in. No chart, no projection,
+ * nothing generated. Composed here without a browser or an image library
+ * (src/lib/pdf.js).
  */
 app.get('/archive/export.pdf', requireControl, (req, res, next) => {
   try {
@@ -381,12 +426,14 @@ app.get('/archive/export.pdf', requireControl, (req, res, next) => {
 });
 
 app.get('/archive/day/:n/export.pdf', requireControl, (req, res, next) => {
-  const n = Number(req.params.n);
-  if (!Number.isInteger(n) || n < 1 || n > req.ctx().mission.totalDays) return next();
+  const n = recordedDay(req);
+  if (!n) return next();
   try {
+    const buf = recordPdf.dayRecord(n);
+    if (!buf) return next();
     res.type('application/pdf')
        .attachment(`mars-station-day-${String(n).padStart(3, '0')}.pdf`)
-       .send(recordPdf.dayRecord(n));
+       .send(buf);
   } catch (e) { next(e); }
 });
 

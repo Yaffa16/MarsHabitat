@@ -93,6 +93,112 @@
   document.addEventListener('visibilitychange', function () { if (!document.hidden) poll(); });
 })();
 
+/* ------------------------------------------------------------------ edits */
+/* Every field remembers what it held when the page was drawn. A field that
+   now holds something else is marked — the field itself, its row in a table,
+   the caption over it, the face chosen — and the form's buttons carry a count
+   of the fields that differ, so what a save is about to change is plain
+   before it is saved. Undo the change and the mark goes; save, and the page
+   is drawn afresh with nothing marked. The blog composer's sheet writes into
+   its textarea (entry-editor.js), so the textarea's text is what is compared. */
+(function () {
+  'use strict';
+  var norm = function (v) {
+    return String(v == null ? '' : v).replace(/\r/g, '').split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean).join('\n\n');
+  };
+  var skip = /^(hidden|submit|button|file)$/;
+  function differs(el) {
+    if (el.type === 'checkbox' || el.type === 'radio') return el.checked !== el.defaultChecked;
+    if (el.tagName === 'SELECT') {
+      var was = -1;
+      for (var k = 0; k < el.options.length; k++) if (el.options[k].defaultSelected) { was = k; break; }
+      return el.selectedIndex !== (was < 0 ? 0 : was);
+    }
+    return norm(el.value) !== norm(el.defaultValue);
+  }
+  var forms = Array.prototype.slice.call(document.querySelectorAll('.tab-pane form'));
+  forms.forEach(function (form) {
+    var fields = function () {
+      return Array.prototype.slice.call(form.querySelectorAll('input, textarea, select')).filter(function (el) { return !skip.test(el.type) && !el.closest('.ed-fig'); });
+    };
+    if (!fields().length) return;
+    var note = null;
+    var noteFor = function () {
+      if (note) return note;
+      var primary = form.querySelector('button.primary'), bar = form.querySelector('.actions, .reply-bar');
+      var home = primary ? primary.parentNode : bar;
+      if (!home) return null;
+      note = document.createElement('span'); note.className = 'edits'; note.hidden = true; note.setAttribute('aria-live', 'polite');
+      if (primary && primary.nextSibling) home.insertBefore(note, primary.nextSibling); else home.appendChild(note);
+      return note;
+    };
+    var read = function () {
+      var radios = {}, n = 0;
+      Array.prototype.forEach.call(form.querySelectorAll('.is-edited'), function (el) { el.classList.remove('is-edited'); });
+      fields().forEach(function (el) {
+        if (el.type === 'radio') {                                             // a group counts once; the face now chosen carries the mark
+          var g = radios[el.name] || (radios[el.name] = { on: false, chosen: null });
+          if (differs(el)) g.on = true;
+          if (el.checked) g.chosen = el;
+          return;
+        }
+        var on = differs(el);
+        el.classList.toggle('is-edited', on);
+        if (on) n += 1;
+      });
+      Object.keys(radios).forEach(function (k) { var g = radios[k]; if (g.on) { n += 1; if (g.chosen) g.chosen.classList.add('is-edited'); } });
+      fields().forEach(function (el) {
+        if (!el.classList.contains('is-edited')) return;
+        var row = el.closest('tr'), cap = el.closest('label.f'), face = el.closest('.mood-face'), fig = el.closest('.fig-officer');
+        var prev = el.previousElementSibling;                                  // the composer's sheet stands before its textarea (text mode: around it)
+        var ed = el.closest('.ed') || (prev && prev.classList.contains('ed') ? prev : null);
+        if (row) row.classList.add('is-edited');
+        if (cap) cap.classList.add('is-edited');
+        if (face) face.classList.add('is-edited');
+        if (ed) ed.classList.add('is-edited');
+        if (fig) fig.classList.add('is-edited');
+      });
+      form.classList.toggle('has-edits', n > 0);
+      var tag = noteFor();
+      if (tag) { tag.hidden = n === 0; tag.textContent = n ? (n === 1 ? '1 field changed' : n + ' fields changed') + ' — not saved yet' : ''; }
+    };
+    form.addEventListener('input', read);
+    form.addEventListener('change', read);
+    form.addEventListener('reset', function () { setTimeout(read, 0); });
+    read();
+  });
+})();
+
+/* ------------------------------------------------------------------ folds */
+/* Every block's head folds and unfolds its block on a click — the schedule,
+   the galley, an officer's blog, the queue — and the desk remembers which
+   blocks were folded (this browser only), so a save, which redraws the page,
+   brings it back as it was arranged. */
+(function () {
+  'use strict';
+  var STORE = 'mcs-control-folds';
+  var folded = {};
+  try { folded = JSON.parse(localStorage.getItem(STORE) || '{}') || {}; } catch (e) { folded = {}; }
+  var remember = function () { try { localStorage.setItem(STORE, JSON.stringify(folded)); } catch (e) { /* private mode */ } };
+  var blocks = Array.prototype.slice.call(document.querySelectorAll('.tab-pane .panel, .tab-pane .queue'));
+  blocks.forEach(function (block, i) {
+    var head = block.querySelector(':scope > .eyebrow, :scope > .block-head, :scope > .sechead');
+    if (!head) return;
+    var chan = block.querySelector(':scope > .chan');
+    var key = (chan ? chan.textContent.trim() : '') || (block.id ? '#' + block.id : 'block-' + i);   // the channel code names the block wherever it stands
+    head.classList.add('fold-head');
+    head.setAttribute('role', 'button'); head.tabIndex = 0;
+    var chev = document.createElement('span'); chev.className = 'fold-chev'; chev.setAttribute('aria-hidden', 'true'); chev.textContent = '\u25be';
+    var title = head.querySelector('.block-title, .bigsec');                   // next to the name where the head has one, else at the end of the line
+    (title || head).appendChild(chev);
+    var set = function (on) { block.classList.toggle('is-folded', on); head.setAttribute('aria-expanded', on ? 'false' : 'true'); };
+    set(!!folded[key]);
+    var flip = function () { var on = !block.classList.contains('is-folded'); set(on); if (on) folded[key] = 1; else delete folded[key]; remember(); };
+    head.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('a, button, input, select, textarea')) return; flip(); });
+    head.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
+  });
+})();
+
 /* ------------------------------------------------------------------ moods */
 /* Mirrors src/lib/mood.js so the operator picks a face while reading the
    exact words the public will get. Keep the two in step. */

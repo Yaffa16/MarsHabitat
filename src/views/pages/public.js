@@ -84,11 +84,12 @@ function inventoryGauges(inventory, { compact = false, strip = false, cells = fa
     const R = 24, C = 2 * Math.PI * R;
     return `<div class="gauges rounds">${shown.map((i) => {
       const start = i.start_quantity || i.quantity || 1;
+      const startLabel = (i.start_quantity || i.quantity) ? start : '—';   // a 0 placeholder reads "of —", not "of 1"
       const pct = Math.max(0, Math.min(100, (i.quantity / start) * 100));
       const low = i.warn_below > 0 && i.quantity <= i.warn_below;
       const daysLeft = i.consumption > 0 ? i.quantity / i.consumption : null;
       const num = Number.isInteger(i.quantity) ? String(i.quantity) : i.quantity.toFixed(1);
-      return `<div class="gauge round ${low ? 'low' : ''}" title="${esc(i.label)}: ${i.quantity} ${esc(i.unit)} ${T('of')} ${start} · ${esc(left(daysLeft, 1))}">
+      return `<div class="gauge round ${low ? 'low' : ''}" title="${esc(i.label)}: ${i.quantity} ${esc(i.unit)} ${T('of')} ${startLabel} · ${esc(left(daysLeft, 1))}">
         <svg viewBox="0 0 60 60" aria-hidden="true">
           <circle cx="30" cy="30" r="${R}" class="round-track"/>
           <circle cx="30" cy="30" r="${R}" class="round-arc" stroke-dasharray="${C.toFixed(1)}"
@@ -103,6 +104,7 @@ function inventoryGauges(inventory, { compact = false, strip = false, cells = fa
   }
   return `<div class="gauges${strip ? ' strip' : ''}">${shown.map((i) => {
     const start = i.start_quantity || i.quantity || 1;
+    const startLabel = (i.start_quantity || i.quantity) ? start : '—';   // a 0 placeholder reads "of —", not "of 1"
     const pct = Math.max(0, Math.min(100, (i.quantity / start) * 100));
     const low = i.warn_below > 0 && i.quantity <= i.warn_below;
     const daysLeft = i.consumption > 0 ? i.quantity / i.consumption : null;
@@ -113,7 +115,7 @@ function inventoryGauges(inventory, { compact = false, strip = false, cells = fa
       </div>
       <div class="gauge-track"><i style="width:${pct.toFixed(1)}%"></i></div>
       <div class="gauge-foot">
-        <span>${pct.toFixed(0)}% ${T('of')} ${start} ${esc(i.unit)}</span>
+        <span>${pct.toFixed(0)}% ${T('of')} ${startLabel} ${esc(i.unit)}</span>
         <span>${left(daysLeft, 1)}</span>
       </div>
     </div>`;
@@ -665,8 +667,8 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
  * figure for every officer, one under the other, the crew's total beneath it
  * with the thirteen days as a sparkline, and the average. Lives inside the
  * habitat bento beside the sensor tiles rather than as a chart of its own.
- * The health officer files the figures per officer on the Health tab
- * (content/crew-figures.json, a day as
+ * The figures are filed per officer on mission control's Habitat tab, under
+ * Steps taken (content/crew-figures.json, a day as
  *   "5": { "crew": { "SCIENCE OFFICER": { "calories": 1480, "steps": 2010 }, … }, "calories": 4420, "steps": 5960 }
  * — the totals are the sums); a day filed only as a total shows the total
  * and a dash for each officer.

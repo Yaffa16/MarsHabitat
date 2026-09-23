@@ -88,7 +88,13 @@ if (!existing) {
 db.prepare("DELETE FROM admin_user WHERE username != ?").run(user);
 
 /* -------------------------------------------------- opening sensor history */
-if (!db.prepare('SELECT 1 FROM sensor_reading LIMIT 1').get()) {
+// A day of made-up readings so the dashboard is not blank on a fresh
+// install — before the run only, and never after a reset: from the first
+// day of the run the readings are the record, and the archive leaves
+// anything from 'seed-01' out in any case (src/lib/archive.js).
+const runBegun = new Date().toISOString().slice(0, 10) >= START;
+const wasReset = !!db.prepare("SELECT 1 FROM audit WHERE action = 'reset' LIMIT 1").get();
+if (!db.prepare('SELECT 1 FROM sensor_reading LIMIT 1').get() && !runBegun && !wasReset) {
   const insert = db.prepare(
     'INSERT INTO sensor_reading (device_id, metric, value, unit, recorded_at) VALUES (?, ?, ?, ?, ?)');
   const tx = db.transaction(() => {
