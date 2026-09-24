@@ -429,6 +429,7 @@ function habitatDome(ctx, args) {
       // stands there, over the page's own ground; otherwise it is centred.
       function place(d, el) {
         var screen = root.querySelector('.dome-screen'), room = parseFloat(getComputedStyle(root).getPropertyValue('--pop-room')) || 0;
+        if (screen && upright()) { under(d); return; }                        // a phone held upright: under the dome
         if (!screen || !room) { beside(d, el); return; }
         var r = screen.getBoundingClientRect(), head = root.querySelector('.dome-head'), hb = head ? head.getBoundingClientRect() : r;
         var hp = head ? parseFloat(getComputedStyle(head).paddingLeft) || 0 : 0;
@@ -443,6 +444,33 @@ function habitatDome(ctx, args) {
         var top = apexY - 10 - h, left = head ? hl : apexX - w / 2;
         if (top < 8) top = 8;
         d.style.left = Math.max(8, left) + 'px'; d.style.top = top + 'px';
+      }
+      // A phone held upright: the pop-up rises from the foot of the screen
+      // into the space under the dome, the page moving up a little first so
+      // the whole dome stays in view above it (aura.css draws the rise).
+      function upright() { return window.matchMedia && window.matchMedia('(max-width: 760px) and (min-height: 521px)').matches; }
+      function under(d) {
+        var vw = window.innerWidth, vh = window.innerHeight, m = 8;
+        var bar = document.querySelector('.tabbar'), bh = bar && getComputedStyle(bar).display !== 'none' ? bar.getBoundingClientRect().height : 0;
+        var top0 = document.querySelector('.ticker');
+        var over = top0 ? Math.max(0, top0.getBoundingClientRect().bottom) : 0;       // the bar at the top of the screen
+        var w = Math.min(vw - 2 * m, 560); d.style.width = w + 'px'; d.style.margin = '0';
+        var h = d.getBoundingClientRect().height;
+        var stage = root.querySelector('.dome-stage').getBoundingClientRect(), head = root.querySelector('.dome-head');
+        var first = head ? head.getBoundingClientRect().top : stage.top;
+        var floor = vh - bh - m;                                                     // the lowest the pop-up may reach
+        var shift = stage.bottom + 10 + h - floor;                                   // how far the page has to move up
+        shift = Math.min(shift, first - over - m);                                   // never past the habitat's heading
+        var most = document.documentElement.scrollHeight - vh - window.scrollY;
+        if (shift > most) {                                                          // the page ends too soon: room is lent at its foot while the pop-up is open
+          var body = document.body, was = body.style.paddingBottom, pad = parseFloat(getComputedStyle(body).paddingBottom) || 0;
+          body.style.paddingBottom = (pad + shift - most + 2) + 'px';
+          d.addEventListener('close', function back() { d.removeEventListener('close', back); body.style.paddingBottom = was; });
+        }
+        if (shift < 0) shift = Math.max(shift, first - over - m, -window.scrollY);   // a dome half off the top comes down into view
+        if (Math.abs(shift) > 1) window.scrollTo({ top: window.scrollY + shift, behavior: 'smooth' });
+        var top = Math.max(over + m, Math.min(floor - h, stage.bottom - shift + 10));
+        d.style.left = Math.round((vw - w) / 2) + 'px'; d.style.top = Math.round(top) + 'px';
       }
       // On a phone (no room kept above the picture) the pop-up opens beside
       // the key that was pressed: under it when the screen has room there,
@@ -670,7 +698,7 @@ function habitatDome(ctx, args) {
           }
         }
         hexes.forEach(function (h) {
-          var speed = Math.sqrt(h.vel[0] * h.vel[0] + h.vel[1] * h.vel[1] + h.vel[2] * h.vel[2]), cap = 0.03;
+          var speed = Math.sqrt(h.vel[0] * h.vel[0] + h.vel[1] * h.vel[1] + h.vel[2] * h.vel[2]), cap = still ? 0.022 : 0.03;   // asked for less motion: a little slower, never stopped
           if (speed > cap) for (var k = 0; k < 3; k++) h.vel[k] *= cap / speed;
           // Under the hand a hexagon stands still, so it can be pressed.
           if (held[h.n.getAttribute('data-hex')]) { h.vel = [0, 0, 0]; }
@@ -702,11 +730,11 @@ function habitatDome(ctx, args) {
           for (var k = col.length - 2; k >= 0; k--) if (col[k + 1].ly - col[k].ly < minGap) col[k].ly = col[k + 1].ly - minGap;
           col.forEach(placeLabel);
         });
-        if (!still && !document.hidden) requestAnimationFrame(frame);
+        if (!document.hidden) requestAnimationFrame(frame);
       }
       if (hexes.length && hexes[0].lab) {
         requestAnimationFrame(frame);
-        document.addEventListener('visibilitychange', function () { if (!document.hidden && !still) { last = null; requestAnimationFrame(frame); } });
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) { last = null; requestAnimationFrame(frame); } });
       }
       // On a phone the drawing is cropped to the dome itself; the labels
       // are the chips beneath it.

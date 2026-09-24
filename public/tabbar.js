@@ -81,7 +81,10 @@
       }
     };
     if (window.ResizeObserver) new ResizeObserver(function () { if (isOpen()) room(); }).observe(dock);
-    setOpen(location.hash === '#write' || !phone(), false);                      // opened by its door; a wider screen simply has it
+    if (phone() && location.hash === '#write') {                                 // opened by its door: it rises from the foot of the screen
+      setOpen(false, false);
+      requestAnimationFrame(function () { requestAnimationFrame(function () { setOpen(true, true); }); });
+    } else setOpen(!phone(), false);                                             // a wider screen simply has it
     window.addEventListener('hashchange', function () { if (phone() && location.hash === '#write') setOpen(true, true); });   // a door on this page
     if (writeKey) writeKey.addEventListener('click', function (e) {
       if (!phone()) return;                                                      // sideways the key is the link it says

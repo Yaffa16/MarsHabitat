@@ -885,6 +885,11 @@ body.landing .dpanel-code { white-space: nowrap; }
   body.landing .dome-caption { font-size: 0; line-height: 0; }                        /* the base line stays; the hint under it goes */
   body.landing .dome-caption::before { margin: 0; }
   body.landing dialog.dome-popup { width: min(560px, calc(100vw - 16px)); margin: auto; }
+  /* held upright, a part's pop-up rises from the foot of the screen into the space under the dome (dome.js, under) —
+     one short slide, kept even where the phone asks for less motion */
+  body.landing dialog.dome-popup[open] { animation: dome-rise .38s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes dome-rise { from { transform: translateY(70vh); opacity: .4; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { body.landing dialog.dome-popup[open] { animation-duration: .3s !important; } }
   body.landing .dome-popup .popup-body p { font-size: 13px; line-height: 1.4; }
   body.landing .portal-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; min-height: 0; align-content: start; gap: 14px; }
   body.landing .composer-device form.composer .msgbox textarea, body.landing .composer .msgbox textarea { min-height: 112px; flex: none; }
@@ -1054,6 +1059,12 @@ body.landing .dpanel-code { white-space: nowrap; }
   body.landing.messages .portal-grid { display: block; }
   body.landing.messages .portal-main { position: fixed; left: 0; right: 0; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); z-index: 25; margin: 0; transition: transform .3s cubic-bezier(.2,.8,.2,1), visibility 0s linear 0s; }
   html.js body.landing.messages .portal-main:not(.is-open) { transform: translateY(calc(100% + 100px)); visibility: hidden; transition: transform .24s ease-in, visibility 0s linear .24s; }
+  /* a phone set to reduce motion (station.css stops every transition there) still sees the pop-up rise from the foot of the
+     screen and sink back — one short slide, which is how it tells where it came from */
+  @media (prefers-reduced-motion: reduce) {
+    body.landing.messages .portal-main { transition-duration: .3s, 0s !important; }
+    html.js body.landing.messages .portal-main:not(.is-open) { transition-duration: .24s, 0s !important; }
+  }
   body.landing.messages { padding-bottom: calc(66px + 260px + env(safe-area-inset-bottom, 0px)); }                 /* room under the list for the pop-up */
   html.js body.landing.messages:not(.dock-open) { padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
   html.js body.landing.messages.dock-open { padding-bottom: calc(66px + var(--dock-h, 260px) + env(safe-area-inset-bottom, 0px)); }
