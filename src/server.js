@@ -880,10 +880,16 @@ if (process.env.HA_POLL !== 'false') homeAssistant.start();
 if (process.env.CLOUD_POLL !== 'false') require('./lib/cloud').start();
 
 const PORT = Number(process.env.PORT || 8080);
-const server = app.listen(PORT, '0.0.0.0', () => {
+// Which address to listen on. 0.0.0.0 (every address) is right inside a
+// container with its own network. With network_mode: host — the container
+// sharing the server's network, so it can reach an SSH tunnel on the server's
+// localhost — set LISTEN_HOST=127.0.0.1 so the station is only reachable from
+// the server itself (the reverse proxy in front of it), as before.
+const LISTEN_HOST = (process.env.LISTEN_HOST || '0.0.0.0').trim();
+const server = app.listen(PORT, LISTEN_HOST, () => {
   const m = missionLib.state();
   const g = geometry();
-  console.log(`[MCS] station listening on :${PORT}`);
+  console.log(`[MCS] station listening on ${LISTEN_HOST}:${PORT}`);
   console.log(`[MCS] mission day ${m.missionDay}/${m.totalDays} (${m.phase})`);
   console.log(`[MCS] Earth-Mars ${g.distanceAu.toFixed(3)} au, one way ${orbital.formatLightTime(g.lightSeconds)}`);
 });

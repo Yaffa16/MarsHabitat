@@ -591,6 +591,13 @@ Other endpoints: `/api/sensors/latest`, `/api/sensors/history?metric=temperature
 
 ## The habitat's own hardware (Home Assistant)
 
+**On the marsplatz server Home Assistant is behind an SSH tunnel** that listens on the server's
+own `localhost:8088` only, which a container on Docker's network cannot reach. There the station
+runs with `network_mode: host` — see **`deploy/marsplatz-docker-compose.yml`** — so its
+`localhost` is the server's: `HA_HOST=localhost`, `HA_PORT=8088`, and `LISTEN_HOST=127.0.0.1`
+keeps the station on the server's localhost:8080 for the reverse proxy, exactly where the old
+port mapping put it. Neither the tunnel nor Home Assistant changes.
+
 The real devices inside the habitat — as configured now: the cricket terrarium's temperature
 (`m5_temperatur_cricket_temperature`), NO₂, O₂ and CO from the environment sensor, and the
 Shelly plug's energy meter — hang off a Home Assistant instance on the venue network. The

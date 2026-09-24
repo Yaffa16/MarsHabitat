@@ -77,6 +77,7 @@ services:
       # Host, port and token come from .env and stay out of the repository;
       # which sensors are read lives in content/home-assistant.json. Without
       # host and token the bridge is off and the panel stays off the page.
+      LISTEN_HOST: "${LISTEN_HOST:-0.0.0.0}"
       HA_HOST: "${HA_HOST:-}"
       HA_PORT: "${HA_PORT:-80}"
       HA_API_TOKEN: "${HA_API_TOKEN:-}"

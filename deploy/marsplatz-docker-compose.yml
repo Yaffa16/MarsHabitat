@@ -1,0 +1,40 @@
+# docker-compose.yml for the marsplatz server (marsplatz.zkm.de).
+#
+# Home Assistant is reached there through an SSH tunnel that listens on the
+# server's own localhost:8088 only. A container on Docker's own network cannot
+# reach that, so the station shares the server's network instead
+# (network_mode: host): "localhost" inside the station is then the server's
+# localhost, and the tunnel is reachable as it is — nothing about the tunnel
+# or Home Assistant has to change.
+#
+# With host networking there is no port mapping: the station listens on the
+# server directly. LISTEN_HOST=127.0.0.1 keeps it on the server's localhost
+# only — exactly where the old "127.0.0.1:8080:8080" mapping put it — so the
+# reverse proxy in front of marsplatz.zkm.de keeps working unchanged and
+# nothing is opened to the outside.
+#
+# In .env beside this file:
+#   LISTEN_HOST=127.0.0.1
+#   PORT=8080
+#   HA_HOST=localhost
+#   HA_PORT=8088
+#   HA_API_TOKEN=<the long-lived token>
+#   HA_POLL_MS=60000
+#
+# Then:  docker compose up -d --force-recreate
+
+services:
+  web:
+    build: ./MarsHabitat
+    container_name: marshabitat
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      LISTEN_HOST: "127.0.0.1"
+    volumes:
+      - marshabitat-data:/data
+    restart: unless-stopped
+
+volumes:
+  marshabitat-data:
