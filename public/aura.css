@@ -359,6 +359,7 @@ body.landing .portal-letters, body.landing .day-rail { display: none; }
 body.landing .device { padding: 28px; border-radius: var(--r-lg); background: var(--glass); box-shadow: var(--glass-shadow); }
 :root[data-theme="dark"] body.landing .device { background: var(--glass); }
 body.landing .dev-led, body.landing .dev-grip, body.landing .dev-knob, body.landing .dev-vents { display: none; }
+.dev-close { display: none; }                                                        /* the pop-up's close key: only where the composer is a pop-up (a phone's messages page, below) */
 body.landing .dev-title { margin: 0 0 14px; font-size: 23.5px; line-height: 1.1; font-weight: 600; letter-spacing: -.015em; color: var(--ink); }
 body.landing .dev-head { margin: 0 0 14px; gap: 10px; font-family: var(--display); font-size: 11px; letter-spacing: .16em; color: var(--cobalt); font-weight: 500; }
 body.landing .dev-chip { font-family: var(--display); font-size: 12px; letter-spacing: .16em; font-weight: 600; color: var(--paper); background: var(--ink); border-radius: 999px; padding: 7px 13px; box-shadow: none; }
@@ -1079,7 +1080,13 @@ body.landing .dpanel-code { white-space: nowrap; }
   /* the page ends with the last message: no foot here (the keys and More lead everywhere it did), so the list scrolls up to
      just above the pop-up and no further */
   body.landing.messages .foot { display: none; }
-  body.landing.messages .dev-title { display: block; margin: 0 0 10px; font-size: 21px; line-height: 1.1; }
+  body.landing.messages .dev-title { display: block; margin: 0 52px 10px 0; font-size: 21px; line-height: 1.1; }
+  /* the cross at the top right closes the pop-up (tabbar.js); without the script there is nothing to close, so it is not drawn */
+  body.landing.messages .composer-device { position: relative; }
+  html.js body.landing.messages .dev-close { display: grid; place-items: center; position: absolute; top: 13px; right: 14px; z-index: 2; width: 34px; height: 34px; margin: 0; padding: 0; border: 0; border-radius: 50%; background: rgba(15,21,64,.06); color: var(--ink); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  html.js body.landing.messages .dev-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+  html.js body.landing.messages .dev-close:active { transform: scale(.92); background: rgba(15,21,64,.12); }
+  :root[data-theme="dark"] html.js body.landing.messages .dev-close { background: rgba(255,255,255,.08); }
   body.landing.messages .dev-head { margin: 0 0 12px; gap: 10px; font-size: 12px; }
   body.landing.messages .dev-chip { font-size: 13px; padding: 5px 12px; }
   /* the form: the writing box the whole width and seven lines deep to begin with (less while the keyboard is up, so the

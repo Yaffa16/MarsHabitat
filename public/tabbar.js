@@ -94,6 +94,14 @@
       setOpen(false, false);
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && phone() && isOpen()) setOpen(false, false); });
+    dock.addEventListener('click', function (e) {                                // the cross at its top right closes it
+      if (!e.target.closest || !e.target.closest('.dev-close') || !phone()) return;
+      e.preventDefault();
+      var box = dock.querySelector('form.composer:not(.ghost) textarea');
+      if (box && document.activeElement === box) box.blur();                     // the keyboard folds away with it
+      setOpen(false, false);
+      if (writeKey) writeKey.focus({ preventScroll: true });
+    });
     onUpright(function () { setOpen(isOpen() || !phone(), false); });
 
     // the keyboard: while it is up the bar of keys steps aside (aura.css, body.kb) and the pop-up is seated on the

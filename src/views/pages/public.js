@@ -310,6 +310,7 @@ function composerDevice(ctx, { inFlight = null, error = null, draft = '' } = {})
   const T = ctx.T;
   return `<section class="device composer-device${inFlight ? ' sending' : ''}" aria-label="${esc(T('Composer'))}">
         <h2 class="dev-title">${T('Write to the crew')}</h2>
+        <button type="button" class="dev-close" aria-label="${esc(T('Close'))}" title="${esc(T('Close'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
         <span class="dev-led" aria-hidden="true"></span>
         <span class="dev-grip" aria-hidden="true"></span>
         <span class="dev-knob" aria-hidden="true"></span>
