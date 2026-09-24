@@ -764,20 +764,56 @@ router.post('/meals', (req, res) => {
     else delete obj[String(day)];
   });
   audit(req.user.username, 'Meals', day, 'edit', `${rows.length} slots`);
-  const changed = [];
+  // What counts as changed, and is marked in orange: a field that differs
+  // from what the slot held — or, when a recipe (or Empty) was chosen from
+  // the dropdown, from what that choice filled in. Choosing is not a change;
+  // only a value altered after the choice is. The dropdown itself is never marked.
+  const r2 = (v, dp) => (v == null || v === '' ? '' : String(+Number(v).toFixed(dp)));
+  const changed = [], picked = [];
   for (const slot of SLOTS) {
     const was = current.find((m) => m.slot === slot) || {}, is = rows.find((m) => m.slot === slot) || {};
+    const choice = String(req.body[`${slot}_recipe`] ?? '');
+    const rec = is.recipe && is.recipe !== (was.recipe || '') ? book.find((x) => x.slug === is.recipe) : null;
+    const emptied = choice === '__empty' && (was.recipe || was.name);
+    let base;                                                // the values the choice put in the fields
+    if (rec) {
+      base = { name: rec.name, components: '', kcal: r2(rec.kcal == null ? null : Math.round(rec.kcal), 0), prep: r2(rec.prep_minutes, 0),
+        co2e: r2(rec.co2e_kg, 4), wfp: r2(rec.water_total_l, 1), n: {} };
+      for (const { key } of content.NUTRIENTS) base.n[key] = r2(rec.nutrients[key], 2);
+    } else if (emptied) {
+      base = { name: '', components: '', kcal: '', prep: '', co2e: '', wfp: '', n: {} };
+    }
+    if (base) {
+      picked.push(slot);
+      const num0 = (v) => (v ? String(v) : '');                // 0 is how an empty number field is saved
+      if (!same(base.name, is.name || '')) changed.push(`${slot}_name`);
+      if (!same(base.components, is.components || '')) changed.push(`${slot}_components`);
+      if (!same(base.kcal, num0(is.kcal))) changed.push(`${slot}_kcal`);
+      if (!same(base.prep, num0(is.prep))) changed.push(`${slot}_prep`);
+      if (!same(was.notes, is.notes)) changed.push(`${slot}_notes`);
+      for (const { key } of content.NUTRIENTS) if (!same(base.n[key] ?? '', r2((is.nutrients || {})[key], 2))) changed.push(`${slot}_${key}`);
+      if (!same(base.co2e, r2(is.co2e_kg, 4))) changed.push(`${slot}_co2e`);
+      if (!same(base.wfp, r2(is.water_footprint_l, 1))) changed.push(`${slot}_wfp`);
+      continue;
+    }
     if (!same(was.name, is.name)) changed.push(`${slot}_name`);
     if (!same(was.components, is.components)) changed.push(`${slot}_components`);
     if (!same(was.kcal || 0, is.kcal || 0)) changed.push(`${slot}_kcal`);
     if (!same(was.prep_minutes || 0, is.prep || 0)) changed.push(`${slot}_prep`);
     if (!same(was.notes, is.notes)) changed.push(`${slot}_notes`);
-    if (!same(was.recipe || '', is.recipe || '')) changed.push(`${slot}_recipe`);
     for (const { key } of content.NUTRIENTS) {
       if (!same((was.nutrients || {})[key], (is.nutrients || {})[key])) changed.push(`${slot}_${key}`);
     }
     if (!same(was.co2e_kg, is.co2e_kg)) changed.push(`${slot}_co2e`);
     if (!same(was.water_footprint_l, is.water_footprint_l)) changed.push(`${slot}_wfp`);
+  }
+  // A slot chosen afresh starts clean: marks left from its earlier dish go,
+  // the dropdown's own mark from before this rule too.
+  const clear = db.prepare("DELETE FROM control_edit WHERE form = 'meals' AND day = ? AND key = ?");
+  for (const slot of SLOTS) {
+    const keys = ['name', 'components', 'kcal', 'prep', 'notes', 'co2e', 'wfp', ...content.NUTRIENTS.map((x) => x.key)];
+    if (picked.includes(slot)) for (const k of keys) if (!changed.includes(`${slot}_${k}`)) clear.run(day, `${slot}_${k}`);
+    clear.run(day, `${slot}_recipe`);
   }
   noteEdits('meals', day, changed, req.user.username);
   setFlash(req, r.ok ? `Day ${day} food plan saved — ${rows.length} slots.` : `Saved, but: ${r.error}`, !r.ok);

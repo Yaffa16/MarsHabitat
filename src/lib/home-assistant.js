@@ -81,6 +81,9 @@ function sensors() {
         // 0–30, energy charts to 0–300 (src/views/pages/public.js).
         range: Array.isArray(s.range) && s.range.length === 2 && s.range.every((n) => Number.isFinite(Number(n)))
           && Number(s.range[1]) > Number(s.range[0]) ? [Number(s.range[0]), Number(s.range[1])] : null,
+        // An optional chart name: devices sharing one are drawn on the same
+        // chart under that title (e.g. "Air quality"), whatever their unit.
+        chart: s.chart ? String(s.chart) : null,
       }));
     cfgCache = { mtimeMs: st.mtimeMs, sensors: list, error: null };
     console.log(`[home-assistant] ${list.length} sensor${list.length === 1 ? '' : 's'} configured in content/home-assistant.json`);
@@ -350,7 +353,7 @@ function snapshot(hours = 24) {
       if (cur && cur.value != null && base != null && cur.value >= base) today = cur.value - base;
     }
     return {
-      id: s.id, label: s.label, kind: s.kind, decimals: s.decimals, range: s.range || null,
+      id: s.id, label: s.label, kind: s.kind, decimals: s.decimals, range: s.range || null, chart: s.chart || null,
       unit: (cur && cur.unit) || s.unit || '',
       value: cur ? cur.value : null,
       state: cur ? cur.state : null,

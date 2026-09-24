@@ -1,539 +1,1134 @@
 {
+  "_note": "One block per mission day, thirteen days: Thursday 15 to Tuesday 27 October 2026. Times are habitat-local, 24 hour. Every day carries the typical daily schedule; edit a day on mission control's Habitat tab (or here) to make it differ. Deleting a day removes its schedule from the site.",
   "1": [
     {
-      "time": "14:00",
-      "label": "Habitat survey",
-      "detail": "Photograph every surface while it is still clean"
-    },
-    {
-      "time": "16:00",
-      "label": "Communication window",
-      "detail": "First contact with Earth. Read everything that has arrived."
-    },
-    {
-      "time": "19:00",
-      "label": "First meal together",
+      "time": "08:00",
+      "label": "Shift Change",
       "detail": ""
     },
     {
-      "time": "21:30",
-      "label": "Crew briefing",
-      "detail": "Set the rhythm for thirteen daysszdf "
+      "time": "08:30",
+      "label": "Breakfast / Communal Mission Planning",
+      "detail": ""
     },
     {
-      "time": "23:00",
-      "label": "Sleep period well. Done.",
+      "time": "09:30",
+      "label": "Science Block 1",
+      "detail": ""
+    },
+    {
+      "time": "11:00",
+      "label": "Mental Health / Movement",
+      "detail": ""
+    },
+    {
+      "time": "11:30",
+      "label": "Lunch Prep",
+      "detail": ""
+    },
+    {
+      "time": "12:00",
+      "label": "Lunch",
+      "detail": ""
+    },
+    {
+      "time": "13:00",
+      "label": "Science Block 2",
+      "detail": ""
+    },
+    {
+      "time": "14:00",
+      "label": "Science Block 2 / Hot Water Prep with Bike",
+      "detail": ""
+    },
+    {
+      "time": "15:00",
+      "label": "Kaffee & Kuchen / Discuss Governance topics",
+      "detail": ""
+    },
+    {
+      "time": "16:00",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:00",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:30",
+      "label": "Dinner prep",
+      "detail": ""
+    },
+    {
+      "time": "18:00",
+      "label": "Dinner / Washing Up",
+      "detail": ""
+    },
+    {
+      "time": "19:00",
+      "label": "Communication Hour / Report Writing Hour",
+      "detail": ""
+    },
+    {
+      "time": "20:00",
+      "label": "Social / Personal Time",
+      "detail": ""
+    },
+    {
+      "time": "21:00",
+      "label": "Social / Personal Time",
+      "detail": ""
+    },
+    {
+      "time": "22:00",
+      "label": "Shift Change / Lights Out",
       "detail": ""
     }
   ],
   "2": [
     {
-      "time": "06:45",
-      "label": "Wake and habitat check",
-      "detail": "Pressure, temperature, humidity, filter status"
-    },
-    {
       "time": "08:00",
-      "label": "Greenhouse start-up",
-      "detail": "First trays seeded and logged"
-    },
-    {
-      "time": "10:30",
-      "label": "Regolith sampling",
-      "detail": "Batch A, twelve samples from the exterior collector"
-    },
-    {
-      "time": "13:00",
-      "label": "Water loop calibration",
-      "detail": "Baseline recovery rate established"
-    },
-    {
-      "time": "16:00",
-      "label": "Communication window",
+      "label": "Shift Change",
       "detail": ""
     },
     {
-      "time": "18:30",
-      "label": "Physical conditioning",
-      "detail": "Resistance, 45 minutes each"
+      "time": "08:30",
+      "label": "Breakfast / Communal Mission Planning",
+      "detail": ""
+    },
+    {
+      "time": "09:30",
+      "label": "Science Block 1",
+      "detail": ""
+    },
+    {
+      "time": "11:00",
+      "label": "Mental Health / Movement",
+      "detail": ""
+    },
+    {
+      "time": "11:30",
+      "label": "Lunch Prep",
+      "detail": ""
+    },
+    {
+      "time": "12:00",
+      "label": "Lunch",
+      "detail": ""
+    },
+    {
+      "time": "13:00",
+      "label": "Science Block 2",
+      "detail": ""
+    },
+    {
+      "time": "14:00",
+      "label": "Science Block 2 / Hot Water Prep with Bike",
+      "detail": ""
+    },
+    {
+      "time": "15:00",
+      "label": "Kaffee & Kuchen / Discuss Governance topics",
+      "detail": ""
+    },
+    {
+      "time": "16:00",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:00",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:30",
+      "label": "Dinner prep",
+      "detail": ""
+    },
+    {
+      "time": "18:00",
+      "label": "Dinner / Washing Up",
+      "detail": ""
+    },
+    {
+      "time": "19:00",
+      "label": "Communication Hour / Report Writing Hour",
+      "detail": ""
+    },
+    {
+      "time": "20:00",
+      "label": "Social / Personal Time",
+      "detail": ""
     },
     {
       "time": "21:00",
-      "label": "Evening observation",
-      "detail": "Exterior light readings through the west port"
+      "label": "Social / Personal Time",
+      "detail": ""
     },
     {
-      "time": "23:00",
-      "label": "Sleep period",
+      "time": "22:00",
+      "label": "Shift Change / Lights Out",
       "detail": ""
     }
   ],
   "3": [
     {
-      "time": "06:45",
-      "label": "Wake and habitat check",
-      "detail": "Condensation noted on the west wall overnight"
+      "time": "08:00",
+      "label": "Shift Change",
+      "detail": ""
     },
     {
       "time": "08:30",
-      "label": "Surface wipe-down",
-      "detail": "Added to the daily routine from today"
+      "label": "Breakfast / Communal Mission Planning",
+      "detail": ""
     },
     {
-      "time": "10:00",
-      "label": "Air handling inspection",
-      "detail": "Trace the moisture back through the ducting"
+      "time": "09:30",
+      "label": "Science Block 1",
+      "detail": ""
+    },
+    {
+      "time": "11:00",
+      "label": "Mental Health / Movement",
+      "detail": ""
+    },
+    {
+      "time": "11:30",
+      "label": "Lunch Prep",
+      "detail": ""
+    },
+    {
+      "time": "12:00",
+      "label": "Lunch",
+      "detail": ""
     },
     {
       "time": "13:00",
-      "label": "Sample analysis",
-      "detail": "Batch A under the scope"
+      "label": "Science Block 2",
+      "detail": ""
+    },
+    {
+      "time": "14:00",
+      "label": "Science Block 2 / Hot Water Prep with Bike",
+      "detail": ""
+    },
+    {
+      "time": "15:00",
+      "label": "Kaffee & Kuchen / Discuss Governance topics",
+      "detail": ""
     },
     {
       "time": "16:00",
-      "label": "Communication window",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:00",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:30",
+      "label": "Dinner prep",
+      "detail": ""
+    },
+    {
+      "time": "18:00",
+      "label": "Dinner / Washing Up",
       "detail": ""
     },
     {
       "time": "19:00",
-      "label": "Maintenance",
-      "detail": "Seal check on the west panel joins"
+      "label": "Communication Hour / Report Writing Hour",
+      "detail": ""
     },
     {
-      "time": "21:30",
-      "label": "Crew meeting",
-      "detail": "Review the humidity trend"
+      "time": "20:00",
+      "label": "Social / Personal Time",
+      "detail": ""
     },
     {
-      "time": "23:00",
-      "label": "Sleep period",
+      "time": "21:00",
+      "label": "Social / Personal Time",
+      "detail": ""
+    },
+    {
+      "time": "22:00",
+      "label": "Shift Change / Lights Out",
       "detail": ""
     }
   ],
   "4": [
     {
-      "time": "06:45",
-      "label": "Wake and habitat check",
-      "detail": "West wall dry. Wipe-down stays."
-    },
-    {
-      "time": "08:30",
-      "label": "Greenhouse check",
-      "detail": "Trays 1–4 misted; nothing up yet"
-    },
-    {
-      "time": "10:30",
-      "label": "Regolith sampling",
-      "detail": "Batch B, twelve samples"
-    },
-    {
-      "time": "13:00",
-      "label": "Sample analysis",
-      "detail": "Batch A, second pass. Grain size and colour logged."
-    },
-    {
-      "time": "16:00",
-      "label": "Communication window",
+      "time": "08:00",
+      "label": "Shift Change",
       "detail": ""
     },
     {
-      "time": "18:30",
-      "label": "Physical conditioning",
-      "detail": "Resistance, 45 minutes each"
+      "time": "08:30",
+      "label": "Breakfast / Communal Mission Planning",
+      "detail": ""
+    },
+    {
+      "time": "09:30",
+      "label": "Science Block 1",
+      "detail": ""
+    },
+    {
+      "time": "11:00",
+      "label": "Mental Health / Movement",
+      "detail": ""
+    },
+    {
+      "time": "11:30",
+      "label": "Lunch Prep",
+      "detail": ""
+    },
+    {
+      "time": "12:00",
+      "label": "Lunch",
+      "detail": ""
+    },
+    {
+      "time": "13:00",
+      "label": "Science Block 2",
+      "detail": ""
+    },
+    {
+      "time": "14:00",
+      "label": "Science Block 2 / Hot Water Prep with Bike",
+      "detail": ""
+    },
+    {
+      "time": "15:00",
+      "label": "Kaffee & Kuchen / Discuss Governance topics",
+      "detail": ""
+    },
+    {
+      "time": "16:00",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:00",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:30",
+      "label": "Dinner prep",
+      "detail": ""
+    },
+    {
+      "time": "18:00",
+      "label": "Dinner / Washing Up",
+      "detail": ""
+    },
+    {
+      "time": "19:00",
+      "label": "Communication Hour / Report Writing Hour",
+      "detail": ""
+    },
+    {
+      "time": "20:00",
+      "label": "Social / Personal Time",
+      "detail": ""
     },
     {
       "time": "21:00",
-      "label": "Quiet period",
-      "detail": "No scheduled tasks"
+      "label": "Social / Personal Time",
+      "detail": ""
     },
     {
-      "time": "23:00",
-      "label": "Sleep period",
+      "time": "22:00",
+      "label": "Shift Change / Lights Out",
       "detail": ""
     }
   ],
   "5": [
     {
-      "time": "06:45",
-      "label": "Wake and habitat check",
-      "detail": "Recovery loop reading low since 02:00"
+      "time": "08:00",
+      "label": "Shift Change",
+      "detail": ""
     },
     {
-      "time": "08:00",
-      "label": "Water recovery diagnostic",
-      "detail": "Loop running four per cent below spec"
+      "time": "08:30",
+      "label": "Breakfast / Communal Mission Planning",
+      "detail": ""
+    },
+    {
+      "time": "09:30",
+      "label": "Science Block 1",
+      "detail": ""
     },
     {
       "time": "11:00",
-      "label": "Filter change",
-      "detail": "Primary intake, brought forward from day 8"
+      "label": "Mental Health / Movement",
+      "detail": ""
     },
     {
-      "time": "13:30",
-      "label": "Rationing review",
-      "detail": "Recalculate water allowance against the recovery shortfall"
+      "time": "11:30",
+      "label": "Lunch Prep",
+      "detail": ""
+    },
+    {
+      "time": "12:00",
+      "label": "Lunch",
+      "detail": ""
+    },
+    {
+      "time": "13:00",
+      "label": "Science Block 2",
+      "detail": ""
+    },
+    {
+      "time": "14:00",
+      "label": "Science Block 2 / Hot Water Prep with Bike",
+      "detail": ""
+    },
+    {
+      "time": "15:00",
+      "label": "Kaffee & Kuchen / Discuss Governance topics",
+      "detail": ""
     },
     {
       "time": "16:00",
-      "label": "Communication window",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:00",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:30",
+      "label": "Dinner prep",
       "detail": ""
     },
     {
       "time": "18:00",
-      "label": "Greenhouse survey",
-      "detail": "First germination check"
+      "label": "Dinner / Washing Up",
+      "detail": ""
+    },
+    {
+      "time": "19:00",
+      "label": "Communication Hour / Report Writing Hour",
+      "detail": ""
+    },
+    {
+      "time": "20:00",
+      "label": "Social / Personal Time",
+      "detail": ""
     },
     {
       "time": "21:00",
-      "label": "Quiet period",
-      "detail": "No scheduled tasks"
+      "label": "Social / Personal Time",
+      "detail": ""
     },
     {
-      "time": "23:00",
-      "label": "Sleep period",
+      "time": "22:00",
+      "label": "Shift Change / Lights Out",
       "detail": ""
     }
   ],
   "6": [
     {
-      "time": "06:45",
-      "label": "Wake and habitat check",
+      "time": "08:00",
+      "label": "Shift Change",
       "detail": ""
     },
     {
       "time": "08:30",
-      "label": "Exterior dust survey",
-      "detail": "Deposition on the west panel measured and photographed"
+      "label": "Breakfast / Communal Mission Planning",
+      "detail": ""
+    },
+    {
+      "time": "09:30",
+      "label": "Science Block 1",
+      "detail": ""
     },
     {
       "time": "11:00",
-      "label": "Panel clean",
-      "detail": "Power generation down eleven per cent since day 1"
+      "label": "Mental Health / Movement",
+      "detail": ""
+    },
+    {
+      "time": "11:30",
+      "label": "Lunch Prep",
+      "detail": ""
+    },
+    {
+      "time": "12:00",
+      "label": "Lunch",
+      "detail": ""
     },
     {
       "time": "13:00",
-      "label": "Sample analysis",
-      "detail": "Batch B under the scope"
+      "label": "Science Block 2",
+      "detail": ""
+    },
+    {
+      "time": "14:00",
+      "label": "Science Block 2 / Hot Water Prep with Bike",
+      "detail": ""
+    },
+    {
+      "time": "15:00",
+      "label": "Kaffee & Kuchen / Discuss Governance topics",
+      "detail": ""
     },
     {
       "time": "16:00",
-      "label": "Communication window",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
       "detail": ""
     },
     {
-      "time": "18:30",
-      "label": "Physical conditioning",
-      "detail": "Reduced-water protocol"
+      "time": "17:00",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:30",
+      "label": "Dinner prep",
+      "detail": ""
+    },
+    {
+      "time": "18:00",
+      "label": "Dinner / Washing Up",
+      "detail": ""
+    },
+    {
+      "time": "19:00",
+      "label": "Communication Hour / Report Writing Hour",
+      "detail": ""
+    },
+    {
+      "time": "20:00",
+      "label": "Social / Personal Time",
+      "detail": ""
     },
     {
       "time": "21:00",
-      "label": "Evening observation",
+      "label": "Social / Personal Time",
       "detail": ""
     },
     {
-      "time": "23:00",
-      "label": "Sleep period",
+      "time": "22:00",
+      "label": "Shift Change / Lights Out",
       "detail": ""
     }
   ],
   "7": [
     {
-      "time": "06:45",
-      "label": "Wake and habitat check",
+      "time": "08:00",
+      "label": "Shift Change",
       "detail": ""
     },
     {
       "time": "08:30",
-      "label": "Full inventory audit",
-      "detail": "Every item counted by hand against the log"
+      "label": "Breakfast / Communal Mission Planning",
+      "detail": ""
+    },
+    {
+      "time": "09:30",
+      "label": "Science Block 1",
+      "detail": ""
     },
     {
       "time": "11:00",
-      "label": "Greenhouse survey",
-      "detail": "First shoots on trays 1 and 3"
+      "label": "Mental Health / Movement",
+      "detail": ""
+    },
+    {
+      "time": "11:30",
+      "label": "Lunch Prep",
+      "detail": ""
+    },
+    {
+      "time": "12:00",
+      "label": "Lunch",
+      "detail": ""
     },
     {
       "time": "13:00",
-      "label": "Habitat survey",
-      "detail": "Photograph every surface again. Compare with day 1."
+      "label": "Science Block 2",
+      "detail": ""
+    },
+    {
+      "time": "14:00",
+      "label": "Science Block 2 / Hot Water Prep with Bike",
+      "detail": ""
+    },
+    {
+      "time": "15:00",
+      "label": "Kaffee & Kuchen / Discuss Governance topics",
+      "detail": ""
     },
     {
       "time": "16:00",
-      "label": "Communication window",
-      "detail": "Longest window of the mission by crew request"
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:00",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:30",
+      "label": "Dinner prep",
+      "detail": ""
+    },
+    {
+      "time": "18:00",
+      "label": "Dinner / Washing Up",
+      "detail": ""
     },
     {
       "time": "19:00",
-      "label": "Midpoint meal",
-      "detail": "The one meal with something kept back for it"
+      "label": "Communication Hour / Report Writing Hour",
+      "detail": ""
     },
     {
-      "time": "21:30",
-      "label": "Crew meeting",
-      "detail": "Halfway. Six days done, six to go. Plan the back half."
+      "time": "20:00",
+      "label": "Social / Personal Time",
+      "detail": ""
     },
     {
-      "time": "23:00",
-      "label": "Sleep period",
+      "time": "21:00",
+      "label": "Social / Personal Time",
+      "detail": ""
+    },
+    {
+      "time": "22:00",
+      "label": "Shift Change / Lights Out",
       "detail": ""
     }
   ],
   "8": [
     {
-      "time": "06:45",
-      "label": "Wake and habitat check",
-      "detail": "CO₂ high through the sleep period"
-    },
-    {
-      "time": "09:00",
-      "label": "Scrubber cartridge swap",
-      "detail": "CO₂ climbing faster than modelled overnight"
-    },
-    {
-      "time": "11:30",
-      "label": "Sample analysis",
-      "detail": "Batch B, second pass"
-    },
-    {
-      "time": "14:00",
-      "label": "Repair work",
-      "detail": "West panel seal, second attempt"
-    },
-    {
-      "time": "16:00",
-      "label": "Communication window",
+      "time": "08:00",
+      "label": "Shift Change",
       "detail": ""
     },
     {
-      "time": "18:30",
-      "label": "Physical conditioning",
-      "detail": "Shortened by agreement"
+      "time": "08:30",
+      "label": "Breakfast / Communal Mission Planning",
+      "detail": ""
+    },
+    {
+      "time": "09:30",
+      "label": "Science Block 1",
+      "detail": ""
+    },
+    {
+      "time": "11:00",
+      "label": "Mental Health / Movement",
+      "detail": ""
+    },
+    {
+      "time": "11:30",
+      "label": "Lunch Prep",
+      "detail": ""
+    },
+    {
+      "time": "12:00",
+      "label": "Lunch",
+      "detail": ""
+    },
+    {
+      "time": "13:00",
+      "label": "Science Block 2",
+      "detail": ""
+    },
+    {
+      "time": "14:00",
+      "label": "Science Block 2 / Hot Water Prep with Bike",
+      "detail": ""
+    },
+    {
+      "time": "15:00",
+      "label": "Kaffee & Kuchen / Discuss Governance topics",
+      "detail": ""
+    },
+    {
+      "time": "16:00",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:00",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:30",
+      "label": "Dinner prep",
+      "detail": ""
+    },
+    {
+      "time": "18:00",
+      "label": "Dinner / Washing Up",
+      "detail": ""
+    },
+    {
+      "time": "19:00",
+      "label": "Communication Hour / Report Writing Hour",
+      "detail": ""
+    },
+    {
+      "time": "20:00",
+      "label": "Social / Personal Time",
+      "detail": ""
     },
     {
       "time": "21:00",
-      "label": "Quiet period",
-      "detail": "No scheduled tasks. Nobody talks."
+      "label": "Social / Personal Time",
+      "detail": ""
     },
     {
-      "time": "23:00",
-      "label": "Sleep period",
+      "time": "22:00",
+      "label": "Shift Change / Lights Out",
       "detail": ""
     }
   ],
   "9": [
     {
-      "time": "06:45",
-      "label": "Wake and habitat check",
+      "time": "08:00",
+      "label": "Shift Change",
       "detail": ""
     },
     {
-      "time": "08:00",
-      "label": "Water loop repair",
-      "detail": "Replace the recovery membrane"
+      "time": "08:30",
+      "label": "Breakfast / Communal Mission Planning",
+      "detail": ""
+    },
+    {
+      "time": "09:30",
+      "label": "Science Block 1",
+      "detail": ""
     },
     {
       "time": "11:00",
-      "label": "System revalidation",
-      "detail": "Confirm the loop back to spec"
+      "label": "Mental Health / Movement",
+      "detail": ""
     },
     {
-      "time": "13:30",
-      "label": "Regolith sampling",
-      "detail": "Batch C, twelve samples. The last collection."
+      "time": "11:30",
+      "label": "Lunch Prep",
+      "detail": ""
+    },
+    {
+      "time": "12:00",
+      "label": "Lunch",
+      "detail": ""
+    },
+    {
+      "time": "13:00",
+      "label": "Science Block 2",
+      "detail": ""
+    },
+    {
+      "time": "14:00",
+      "label": "Science Block 2 / Hot Water Prep with Bike",
+      "detail": ""
+    },
+    {
+      "time": "15:00",
+      "label": "Kaffee & Kuchen / Discuss Governance topics",
+      "detail": ""
     },
     {
       "time": "16:00",
-      "label": "Communication window",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:00",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:30",
+      "label": "Dinner prep",
+      "detail": ""
+    },
+    {
+      "time": "18:00",
+      "label": "Dinner / Washing Up",
       "detail": ""
     },
     {
       "time": "19:00",
-      "label": "Evening observation",
+      "label": "Communication Hour / Report Writing Hour",
       "detail": ""
     },
     {
-      "time": "21:30",
-      "label": "Crew meeting",
-      "detail": "Allowance restored. Four full days left."
+      "time": "20:00",
+      "label": "Social / Personal Time",
+      "detail": ""
     },
     {
-      "time": "23:00",
-      "label": "Sleep period",
+      "time": "21:00",
+      "label": "Social / Personal Time",
+      "detail": ""
+    },
+    {
+      "time": "22:00",
+      "label": "Shift Change / Lights Out",
       "detail": ""
     }
   ],
   "10": [
     {
-      "time": "06:45",
-      "label": "Wake and habitat check",
+      "time": "08:00",
+      "label": "Shift Change",
       "detail": ""
     },
     {
-      "time": "08:00",
-      "label": "Greenhouse harvest",
-      "detail": "First cut. Twenty-two grams."
+      "time": "08:30",
+      "label": "Breakfast / Communal Mission Planning",
+      "detail": ""
     },
     {
-      "time": "10:30",
-      "label": "Sample analysis",
-      "detail": "Batch C under the scope"
+      "time": "09:30",
+      "label": "Science Block 1",
+      "detail": ""
+    },
+    {
+      "time": "11:00",
+      "label": "Mental Health / Movement",
+      "detail": ""
+    },
+    {
+      "time": "11:30",
+      "label": "Lunch Prep",
+      "detail": ""
+    },
+    {
+      "time": "12:00",
+      "label": "Lunch",
+      "detail": ""
     },
     {
       "time": "13:00",
-      "label": "Maintenance",
-      "detail": "West panel seal, third attempt, left to cure overnight"
-    },
-    {
-      "time": "16:00",
-      "label": "Communication window",
+      "label": "Science Block 2",
       "detail": ""
     },
     {
-      "time": "18:30",
-      "label": "Physical conditioning",
-      "detail": "Full session, first since day 7"
+      "time": "14:00",
+      "label": "Science Block 2 / Hot Water Prep with Bike",
+      "detail": ""
+    },
+    {
+      "time": "15:00",
+      "label": "Kaffee & Kuchen / Discuss Governance topics",
+      "detail": ""
+    },
+    {
+      "time": "16:00",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:00",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:30",
+      "label": "Dinner prep",
+      "detail": ""
+    },
+    {
+      "time": "18:00",
+      "label": "Dinner / Washing Up",
+      "detail": ""
+    },
+    {
+      "time": "19:00",
+      "label": "Communication Hour / Report Writing Hour",
+      "detail": ""
+    },
+    {
+      "time": "20:00",
+      "label": "Social / Personal Time",
+      "detail": ""
     },
     {
       "time": "21:00",
-      "label": "Evening observation",
-      "detail": "Clocks go back an hour at 03:00 tonight. Day 11 is twenty-five hours long."
+      "label": "Social / Personal Time",
+      "detail": ""
     },
     {
-      "time": "23:00",
-      "label": "Sleep period",
+      "time": "22:00",
+      "label": "Shift Change / Lights Out",
       "detail": ""
     }
   ],
   "11": [
     {
-      "time": "06:45",
-      "label": "Wake and habitat check",
-      "detail": "The longest day of the run: twenty-five hours"
+      "time": "08:00",
+      "label": "Shift Change",
+      "detail": ""
     },
     {
       "time": "08:30",
-      "label": "Consumables projection",
-      "detail": "Confirm the remaining margin to hatch open"
+      "label": "Breakfast / Communal Mission Planning",
+      "detail": ""
+    },
+    {
+      "time": "09:30",
+      "label": "Science Block 1",
+      "detail": ""
     },
     {
       "time": "11:00",
-      "label": "Sample analysis",
-      "detail": "All three batches side by side"
+      "label": "Mental Health / Movement",
+      "detail": ""
     },
     {
-      "time": "13:30",
-      "label": "Greenhouse survey",
-      "detail": "Second cut due day 13"
+      "time": "11:30",
+      "label": "Lunch Prep",
+      "detail": ""
+    },
+    {
+      "time": "12:00",
+      "label": "Lunch",
+      "detail": ""
+    },
+    {
+      "time": "13:00",
+      "label": "Science Block 2",
+      "detail": ""
+    },
+    {
+      "time": "14:00",
+      "label": "Science Block 2 / Hot Water Prep with Bike",
+      "detail": ""
+    },
+    {
+      "time": "15:00",
+      "label": "Kaffee & Kuchen / Discuss Governance topics",
+      "detail": ""
     },
     {
       "time": "16:00",
-      "label": "Communication window",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:00",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:30",
+      "label": "Dinner prep",
+      "detail": ""
+    },
+    {
+      "time": "18:00",
+      "label": "Dinner / Washing Up",
       "detail": ""
     },
     {
       "time": "19:00",
-      "label": "Second set of full readings",
-      "detail": "Weight, sleep, grip, pulse — all three"
-    },
-    {
-      "time": "21:30",
-      "label": "Quiet period",
+      "label": "Communication Hour / Report Writing Hour",
       "detail": ""
     },
     {
-      "time": "23:00",
-      "label": "Sleep period",
+      "time": "20:00",
+      "label": "Social / Personal Time",
+      "detail": ""
+    },
+    {
+      "time": "21:00",
+      "label": "Social / Personal Time",
+      "detail": ""
+    },
+    {
+      "time": "22:00",
+      "label": "Shift Change / Lights Out",
       "detail": ""
     }
   ],
   "12": [
     {
-      "time": "06:45",
-      "label": "Wake and habitat check",
+      "time": "08:00",
+      "label": "Shift Change",
       "detail": ""
     },
     {
       "time": "08:30",
-      "label": "Sample packing",
-      "detail": "Everything that leaves with the crew, boxed and labelled"
+      "label": "Breakfast / Communal Mission Planning",
+      "detail": ""
+    },
+    {
+      "time": "09:30",
+      "label": "Science Block 1",
+      "detail": ""
     },
     {
       "time": "11:00",
-      "label": "Data export",
-      "detail": "Every log and reading copied to the carry-out drive"
+      "label": "Mental Health / Movement",
+      "detail": ""
     },
     {
-      "time": "13:30",
-      "label": "Habitat survey",
-      "detail": "Third and last set of photographs"
+      "time": "11:30",
+      "label": "Lunch Prep",
+      "detail": ""
+    },
+    {
+      "time": "12:00",
+      "label": "Lunch",
+      "detail": ""
+    },
+    {
+      "time": "13:00",
+      "label": "Science Block 2",
+      "detail": ""
+    },
+    {
+      "time": "14:00",
+      "label": "Science Block 2 / Hot Water Prep with Bike",
+      "detail": ""
+    },
+    {
+      "time": "15:00",
+      "label": "Kaffee & Kuchen / Discuss Governance topics",
+      "detail": ""
     },
     {
       "time": "16:00",
-      "label": "Communication window",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:00",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:30",
+      "label": "Dinner prep",
+      "detail": ""
+    },
+    {
+      "time": "18:00",
+      "label": "Dinner / Washing Up",
       "detail": ""
     },
     {
       "time": "19:00",
-      "label": "Maintenance",
-      "detail": "Leave the systems better than they were found"
+      "label": "Communication Hour / Report Writing Hour",
+      "detail": ""
     },
     {
-      "time": "21:30",
-      "label": "Crew meeting",
-      "detail": "Last full day. Order of egress."
+      "time": "20:00",
+      "label": "Social / Personal Time",
+      "detail": ""
     },
     {
-      "time": "23:00",
-      "label": "Sleep period",
+      "time": "21:00",
+      "label": "Social / Personal Time",
+      "detail": ""
+    },
+    {
+      "time": "22:00",
+      "label": "Shift Change / Lights Out",
       "detail": ""
     }
   ],
   "13": [
     {
-      "time": "06:45",
-      "label": "Wake and habitat check",
-      "detail": "Final entry in the systems log"
+      "time": "08:00",
+      "label": "Shift Change",
+      "detail": ""
     },
     {
-      "time": "08:00",
-      "label": "Greenhouse harvest",
-      "detail": "Second cut. Whatever has grown."
+      "time": "08:30",
+      "label": "Breakfast / Communal Mission Planning",
+      "detail": ""
     },
     {
       "time": "09:30",
-      "label": "Power down non-essential",
-      "detail": "Greenhouse lights, secondary heating, spare comms"
+      "label": "Science Block 1",
+      "detail": ""
     },
     {
       "time": "11:00",
-      "label": "Final inventory count",
-      "detail": "What is left goes on the record"
+      "label": "Mental Health / Movement",
+      "detail": ""
+    },
+    {
+      "time": "11:30",
+      "label": "Lunch Prep",
+      "detail": ""
+    },
+    {
+      "time": "12:00",
+      "label": "Lunch",
+      "detail": ""
     },
     {
       "time": "13:00",
-      "label": "Habitat clean",
+      "label": "Science Block 2",
+      "detail": ""
+    },
+    {
+      "time": "14:00",
+      "label": "Science Block 2 / Hot Water Prep with Bike",
+      "detail": ""
+    },
+    {
+      "time": "15:00",
+      "label": "Kaffee & Kuchen / Discuss Governance topics",
       "detail": ""
     },
     {
       "time": "16:00",
-      "label": "Final communication window",
-      "detail": "Answer everything still waiting"
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:00",
+      "label": "EVA (Extra Vehicular Activity) / Science Block 3",
+      "detail": ""
+    },
+    {
+      "time": "17:30",
+      "label": "Dinner prep",
+      "detail": ""
+    },
+    {
+      "time": "18:00",
+      "label": "Dinner / Washing Up",
+      "detail": ""
     },
     {
       "time": "19:00",
-      "label": "Last meal inside",
+      "label": "Communication Hour / Report Writing Hour",
+      "detail": ""
+    },
+    {
+      "time": "20:00",
+      "label": "Social / Personal Time",
       "detail": ""
     },
     {
       "time": "21:00",
-      "label": "Hatch unseal",
-      "detail": "Pressure equalised. Mission clock stops."
+      "label": "Social / Personal Time",
+      "detail": ""
     },
     {
       "time": "22:00",
-      "label": "Egress",
+      "label": "Shift Change / Lights Out",
       "detail": ""
     }
-  ],
-  "_note": "One block per mission day, thirteen days: Thursday 15 to Tuesday 27 October 2026. Times are habitat-local, 24 hour. 'crew' is optional and is not shown publicly — it is there so you can see at a glance who is where. Deleting a day removes its schedule from the site."
+  ]
 }

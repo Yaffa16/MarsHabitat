@@ -460,6 +460,7 @@ const D = {
   'Accept': ['Akzeptieren', 'Accepter'],
   'Privacy policy': ['Datenschutz', 'Politique de confidentialité'],
   'Imprint': ['Impressum', 'Mentions légales'],
+  'hourly average': ['Stundenmittel', 'moyenne horaire'],
   'Reject': ['Ablehnen', 'Refuser'],
   'Callsign on sending': ['Rufzeichen beim Senden', 'Indicatif à l’envoi'],
   'You will get a callsign': ['Du bekommst ein Rufzeichen', 'Vous recevrez un indicatif'],

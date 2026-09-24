@@ -334,7 +334,7 @@ function mealsBlock(day, meals, e = null, recipes = []) {
 
   const picker = (slot, m) => {
     const inBook = m.recipe && recipes.some((r) => r.slug === m.recipe);
-    return `<label class="f recipe-pick-f${mark(e, `${slot}_recipe`)}"><span>From the recipe book</span>
+    return `<label class="f recipe-pick-f"><span>From the recipe book</span>
       <select name="${slot}_recipe" class="recipe-pick" data-slot="${slot}">
         <option value="" hidden${inBook ? '' : ' selected'}>Choose meal</option>
         <option value="__empty">Empty</option>

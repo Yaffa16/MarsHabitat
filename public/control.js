@@ -107,7 +107,12 @@
     return String(v == null ? '' : v).replace(/\r/g, '').split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean).join('\n\n');
   };
   var skip = /^(hidden|submit|button|file)$/;
+  // A field can carry a baseline other than what the page was drawn with:
+  // choosing a recipe from a meal's dropdown fills the slot and makes what it
+  // filled in the baseline (data-base), so the choice itself is not marked —
+  // only a value altered afterwards is.
   function differs(el) {
+    if (el.hasAttribute('data-base')) return norm(el.value) !== norm(el.getAttribute('data-base'));
     if (el.type === 'checkbox' || el.type === 'radio') return el.checked !== el.defaultChecked;
     if (el.tagName === 'SELECT') {
       var was = -1;
@@ -159,8 +164,18 @@
         if (fig) fig.classList.add('is-edited');
       });
       form.classList.toggle('has-edits', n > 0);
+      // a meal chosen from the dropdown is not an edit, but it is not saved either: say so, quietly
+      var chosen = fields().filter(function (el) { return el.tagName === 'SELECT' && el.hasAttribute('data-base') && el.value !== (function () {
+        for (var k = 0; k < el.options.length; k++) if (el.options[k].defaultSelected) return el.options[k].value;
+        return el.options.length ? el.options[0].value : '';
+      })(); }).length;
       var tag = noteFor();
-      if (tag) { tag.hidden = n === 0; tag.textContent = n ? (n === 1 ? '1 field changed' : n + ' fields changed') + ' — not saved yet' : ''; }
+      if (tag) {
+        tag.hidden = n === 0 && chosen === 0;
+        tag.classList.toggle('quiet', n === 0 && chosen > 0);
+        tag.textContent = n ? (n === 1 ? '1 field changed' : n + ' fields changed') + ' — not saved yet'
+          : chosen ? (chosen === 1 ? 'Meal chosen' : chosen + ' meals chosen') + ' — not saved yet' : '';
+      }
     };
     form.addEventListener('input', read);
     form.addEventListener('change', read);
@@ -254,10 +269,13 @@
   var NUTR = ['protein_g', 'fat_g', 'carb_g', 'fiber_g', 'sugar_g', 'sodium_mg'];
   var round = function (v, dp) { return v == null || v === '' || isNaN(v) ? '' : String(+Number(v).toFixed(dp)); };
 
+  // Fill one field and make that value its baseline: what a choice fills in
+  // is not marked as changed (control.js, edits); what is typed over it is.
   function set(form, name, value) {
     var el = form.querySelector('[name="' + name + '"]');
     if (!el) return;
     el.value = value;
+    el.setAttribute('data-base', value);
     el.dispatchEvent(new Event('input', { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
   }
@@ -267,6 +285,7 @@
     var form = sel.form;
         sel.addEventListener('change', function () {
       var v = sel.value;
+      sel.setAttribute('data-base', v);                       // the choice itself is never marked
       var figs = form.querySelector('.meal-slot-edit[data-slot="' + slot + '"] .meal-recipe-figs');
       if (v === '__empty') {                                          // a one-off: the recipe's figures go, the name is typed
         set(form, slot + '_name', '');

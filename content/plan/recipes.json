@@ -1,0 +1,242 @@
+{
+  "_note": "The recipe book for the food plan: what the Breakfast, Lunch and Dinner dropdowns on mission control's Habitat tab offer. Chili Non Carne and Pfannenbrot carry measured figures; the recipes marked \"sample\": true are invented placeholders — names, nutrients, CO2e, water footprint and prep time made up to fill the list — replace them with real ones here. Choosing a recipe fills the slot's name, kcal, prep time, nutrients, CO2e and water footprint (per serving); the slot keeps its own copy in meals.json. The dropdown's first option leaves the slot empty to be filled in by hand; that never adds a recipe. water_total_l is the water footprint, not water drunk; prep_minutes is minutes of preparation. This file is edited here only — mission control has no recipe editor.",
+  "recipes": [
+    {
+      "name": "Chili Non Carne",
+      "slug": "chili-non-carne",
+      "per_serving": {
+        "kcal": 467.7,
+        "nutrients": {
+          "protein_g": 22.85,
+          "fat_g": 16.55,
+          "carb_g": 37.88,
+          "fiber_g": 20.0,
+          "sugar_g": 18.41,
+          "sodium_mg": 1425.89
+        },
+        "co2e_kg": 0.5351,
+        "water_total_l": 979.0
+      },
+      "prep_minutes": 45,
+      "sample": false
+    },
+    {
+      "name": "Pfannenbrot",
+      "slug": "pfannenbrot",
+      "servings": 10.0,
+      "per_serving": {
+        "kcal": 107.6,
+        "nutrients": {
+          "protein_g": 2.9,
+          "fat_g": 2.13,
+          "carb_g": 18.47,
+          "fiber_g": 1.49,
+          "sugar_g": 0.5,
+          "sodium_mg": 229.8
+        },
+        "co2e_kg": 0.0259,
+        "water_total_l": 55.7
+      },
+      "coverage": {
+        "lines_total": 7,
+        "lines_with_mass": 7,
+        "kcal_pct": 100.0,
+        "co2e_pct": 85.7,
+        "water_pct": 85.7,
+        "is_complete": false
+      },
+      "prep_minutes": 20,
+      "sample": false
+    },
+    {
+      "name": "Oat Porridge with Dried Apple",
+      "slug": "oat-porridge-dried-apple",
+      "sample": true,
+      "prep_minutes": 10,
+      "per_serving": {
+        "kcal": 385.0,
+        "nutrients": {
+          "protein_g": 11.2,
+          "fat_g": 7.4,
+          "carb_g": 66.3,
+          "fiber_g": 8.1,
+          "sugar_g": 14.9,
+          "sodium_mg": 95.0
+        },
+        "co2e_kg": 0.212,
+        "water_total_l": 310.0
+      }
+    },
+    {
+      "name": "Lentil and Tomato Stew",
+      "slug": "lentil-tomato-stew",
+      "sample": true,
+      "prep_minutes": 35,
+      "per_serving": {
+        "kcal": 512.4,
+        "nutrients": {
+          "protein_g": 27.6,
+          "fat_g": 9.8,
+          "carb_g": 74.2,
+          "fiber_g": 16.3,
+          "sugar_g": 9.7,
+          "sodium_mg": 780.5
+        },
+        "co2e_kg": 0.418,
+        "water_total_l": 655.0
+      }
+    },
+    {
+      "name": "Chickpea Flatbread with Hummus",
+      "slug": "chickpea-flatbread-hummus",
+      "sample": true,
+      "prep_minutes": 25,
+      "per_serving": {
+        "kcal": 448.9,
+        "nutrients": {
+          "protein_g": 17.3,
+          "fat_g": 15.2,
+          "carb_g": 58.6,
+          "fiber_g": 11.4,
+          "sugar_g": 3.8,
+          "sodium_mg": 640.2
+        },
+        "co2e_kg": 0.301,
+        "water_total_l": 402.0
+      }
+    },
+    {
+      "name": "Rice, Beans and Preserved Greens",
+      "slug": "rice-beans-greens",
+      "sample": true,
+      "prep_minutes": 30,
+      "per_serving": {
+        "kcal": 598.3,
+        "nutrients": {
+          "protein_g": 21.4,
+          "fat_g": 8.1,
+          "carb_g": 106.7,
+          "fiber_g": 14.9,
+          "sugar_g": 4.2,
+          "sodium_mg": 520.8
+        },
+        "co2e_kg": 0.566,
+        "water_total_l": 1120.0
+      }
+    },
+    {
+      "name": "Potato and Pea Curry",
+      "slug": "potato-pea-curry",
+      "sample": true,
+      "prep_minutes": 40,
+      "per_serving": {
+        "kcal": 472.6,
+        "nutrients": {
+          "protein_g": 13.9,
+          "fat_g": 14.6,
+          "carb_g": 70.3,
+          "fiber_g": 12.2,
+          "sugar_g": 8.8,
+          "sodium_mg": 890.4
+        },
+        "co2e_kg": 0.344,
+        "water_total_l": 287.0
+      }
+    },
+    {
+      "name": "Barley and Mushroom Risotto",
+      "slug": "barley-mushroom-risotto",
+      "sample": true,
+      "prep_minutes": 45,
+      "per_serving": {
+        "kcal": 436.2,
+        "nutrients": {
+          "protein_g": 12.8,
+          "fat_g": 10.9,
+          "carb_g": 70.1,
+          "fiber_g": 13.6,
+          "sugar_g": 3.1,
+          "sodium_mg": 710.0
+        },
+        "co2e_kg": 0.389,
+        "water_total_l": 498.0
+      }
+    },
+    {
+      "name": "Peanut Noodles with Sprouts",
+      "slug": "peanut-noodles-sprouts",
+      "sample": true,
+      "prep_minutes": 20,
+      "per_serving": {
+        "kcal": 561.7,
+        "nutrients": {
+          "protein_g": 20.5,
+          "fat_g": 22.3,
+          "carb_g": 69.4,
+          "fiber_g": 7.8,
+          "sugar_g": 9.6,
+          "sodium_mg": 1105.3
+        },
+        "co2e_kg": 0.452,
+        "water_total_l": 733.0
+      }
+    },
+    {
+      "name": "Black Bean Soup",
+      "slug": "black-bean-soup",
+      "sample": true,
+      "prep_minutes": 30,
+      "per_serving": {
+        "kcal": 398.5,
+        "nutrients": {
+          "protein_g": 22.1,
+          "fat_g": 5.3,
+          "carb_g": 63.9,
+          "fiber_g": 18.7,
+          "sugar_g": 5.4,
+          "sodium_mg": 960.1
+        },
+        "co2e_kg": 0.276,
+        "water_total_l": 574.0
+      }
+    },
+    {
+      "name": "Millet with Roasted Root Vegetables",
+      "slug": "millet-root-vegetables",
+      "sample": true,
+      "prep_minutes": 40,
+      "per_serving": {
+        "kcal": 452.3,
+        "nutrients": {
+          "protein_g": 11.6,
+          "fat_g": 11.8,
+          "carb_g": 74.8,
+          "fiber_g": 9.9,
+          "sugar_g": 10.2,
+          "sodium_mg": 410.6
+        },
+        "co2e_kg": 0.237,
+        "water_total_l": 366.0
+      }
+    },
+    {
+      "name": "Soy Protein Scramble",
+      "slug": "soy-protein-scramble",
+      "sample": true,
+      "prep_minutes": 15,
+      "per_serving": {
+        "kcal": 342.8,
+        "nutrients": {
+          "protein_g": 29.4,
+          "fat_g": 17.1,
+          "carb_g": 16.2,
+          "fiber_g": 5.6,
+          "sugar_g": 2.9,
+          "sodium_mg": 690.3
+        },
+        "co2e_kg": 0.198,
+        "water_total_l": 241.0
+      }
+    }
+  ]
+}

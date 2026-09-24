@@ -6,6 +6,12 @@ services:
     restart: unless-stopped
     ports:
       - "${PORT:-8080}:8080"
+    # Inside the container "localhost" is the container itself. A service on
+    # this machine — Home Assistant on localhost:8088 — is reached as
+    # host.docker.internal (HA_HOST=host.docker.internal in .env); this line
+    # makes that name work on Linux too.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       # --- the mission -----------------------------------------------------
       # The run — Thu 15 to Tue 27 October 2026, thirteen days, Europe/Berlin —

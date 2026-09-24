@@ -1905,6 +1905,10 @@ body.control h1 { font-size: 28px; letter-spacing: -0.02em; }
 body.control .bigsec { font-size: 22px; }
 body.control .msg-top .cs { color: var(--c-text); font-weight: 700; font-size: 14px; }
 body.control .block-title { font-size: 22px; margin-bottom: 2px; }
+/* the Habitat tab: each block's head — Schedule, Meals, Steps taken, Calories consumed, the stores, Power,
+   the gallery, the reset — in bold and large, like the block titles on the officer tabs */
+body.control [data-pane="habitat"] .panel > .eyebrow { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; text-transform: none; color: var(--c-text); line-height: 1.25; margin-bottom: 16px; }
+body.control [data-pane="habitat"] .panel > .eyebrow .fold-chev { font-size: 14px; }
 body.control .note, body.control .tab-note { font-size: 13.5px; color: var(--c-muted); }
 body.control .row .m b { font-size: 15px; }
 body.control .row .m span, body.control .row .t { font-size: 13px; }
@@ -1996,6 +2000,9 @@ body.control input[type=checkbox].is-edited { outline: 2px solid var(--orange); 
 body.control .edits { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--orange); white-space: nowrap; }
 body.control .edits::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
 body.control .edits[hidden] { display: none; }
+/* a meal chosen from the dropdown and not saved yet: said, but not in orange — a choice is not an edit */
+body.control .edits.quiet { color: var(--c-muted); font-weight: 600; }
+body.control .edits.quiet::before { background: var(--c-muted); }
 body.control form.has-edits button.primary { box-shadow: 0 0 0 3px rgba(255,106,0,.32); }
 /* an edit once saved stays marked (control_edit, routes/control.js): the same orange, without the unsaved tint */
 body.control input[type=text].was-edited, body.control input[type=number].was-edited, body.control input[type=time].was-edited,
@@ -2027,7 +2034,7 @@ body.control .actions > form.theme { display: inline-flex; margin: 0; }
 body.control .block-title .fold-chev { margin-left: 10px; }
 body.control .block-state.draft { border-color: var(--c-line-strong); color: var(--c-text); font-weight: 600; }
 /* the meals: the four slots named large */
-body.control .slot-name { margin: 0 0 10px; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; color: var(--c-text); }
+body.control .slot-name { margin: 0 0 10px; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; color: var(--c-text); }
 /* the recipe book: a dropdown over each of Breakfast, Lunch and Dinner, the per-serving figures folded beneath */
 body.control .recipe-pick { width: 100%; }
 body.control .meal-slot-edit { min-width: 0; }

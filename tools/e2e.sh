@@ -753,6 +753,11 @@ process.exit(l.recipe === "chili-non-carne" && l.nutrients.protein_g === 22.85 &
 sleep 1.5
 GL=$(curl -s $B/at-a-glance); echo "$GL" | grep -q "0.535" && echo "$GL" | grep -q "Protein 22.9 g" && ok "the figures are public in At a Glance" || bad "recipe figures not in At a Glance"
 curl -s -b $A "$B/control?tab=habitat&day=4" | grep -q '<option value="chili-non-carne" selected' && ok "the slot reopens on its recipe" || bad "slot does not remember its recipe"
+curl -s -b $A -X POST -d "day=7" -d "LUNCH_recipe=millet-root-vegetables" -d "LUNCH_name=Millet with Roasted Root Vegetables" -d "LUNCH_kcal=450" -d "LUNCH_prep=40" \
+  -d "LUNCH_protein_g=11.6" -d "LUNCH_fat_g=11.8" -d "LUNCH_carb_g=74.8" -d "LUNCH_fiber_g=9.9" -d "LUNCH_sugar_g=10.2" -d "LUNCH_sodium_mg=410.6" \
+  -d "LUNCH_co2e=0.237" -d "LUNCH_wfp=366" -o /dev/null $B/control/meals
+MK=$(curl -s -b $A "$B/control?tab=habitat&day=7" | grep -o 'class="f was-edited"><span>[^<]*' | sed 's/.*<span>//' | tr '\n' '|')
+[ "$MK" = "kcal|" ] && ok "choosing a recipe is not marked as a change; only the value altered after it is (kcal)" || bad "wrong fields marked after a recipe choice: $MK"
 [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' -X POST -d "count=0" $B/control/recipes)" = "404" ] && ok "the book cannot be edited from the desk" || bad "the recipe editor route still answers"
 MB=$(node -e 'console.log(JSON.stringify(require(process.env.CONTENT_DIR + "/recipes.json").recipes.map((r) => r.slug)))')
 curl -s -b $A -X POST -d "day=6" -d "DINNER_recipe=__empty" -d "DINNER_name=Improvised stew" -d "DINNER_kcal=500" -d "DINNER_protein_g=20" -o /dev/null $B/control/meals

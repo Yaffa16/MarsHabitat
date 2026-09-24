@@ -1,12 +1,36 @@
 {
-  "_note": "The habitat's own hardware, read through Home Assistant. Each entry is one entity to poll and show inside the station's Habitat panel (under the node's tiles, headed Habitat hardware): id is the entity id without the 'sensor.' prefix, label is what the station shows, unit is a fallback when Home Assistant does not name one, kind is 'gauge' (reads as it is) or 'counter' (only ever rises, like an energy meter — the tile then also says what today has added), decimals is how the value is printed, and an optional range [lo, hi] fixes the Y axis of the chart the device is drawn on (temperature charts are 0–30 and energy charts 0–300 unless a device says otherwise). Add a sensor here and it is on the station within a minute — no restart, no redeploy. WHERE Home Assistant is and the API token live in .env (HA_HOST, HA_PORT, HA_API_TOKEN), never in this repository.",
+  "_note": "The habitat's own hardware, read through Home Assistant. Each entry is one entity to poll and show inside the station's Habitat panel (under the node's tiles, headed Habitat hardware): id is the entity id without the 'sensor.' prefix, label is what the station shows, unit is a fallback when Home Assistant does not name one, kind is 'gauge' (reads as it is) or 'counter' (only ever rises, like an energy meter — the tile then also says what today has added), decimals is how the value is printed, an optional chart names the chart the device is drawn on (devices with the same chart and unit share it — NO₂ and CO on \"Air quality\"), and an optional range [lo, hi] fixes the Y axis of the chart the device is drawn on (temperature charts are 0–30 and energy charts 0–300 unless a device says otherwise). Add a sensor here and it is on the station within a minute — no restart, no redeploy. WHERE Home Assistant is and the API token live in .env (HA_HOST, HA_PORT, HA_API_TOKEN), never in this repository.",
   "sensors": [
     {
-      "id": "sonoff_temperatur_temperature_1",
-      "label": "Cricket Terrarium Temperature",
+      "id": "m5_temperatur_cricket_temperature",
+      "label": "Cricket Temperature",
       "unit": "°C",
       "kind": "gauge",
       "decimals": 1
+    },
+    {
+      "id": "environment_no2_nitrogen_dioxide",
+      "label": "NO₂ · nitrogen dioxide",
+      "unit": "ppm",
+      "kind": "gauge",
+      "decimals": 2,
+      "chart": "Air quality"
+    },
+    {
+      "id": "environment_o2_oxygen",
+      "label": "O₂ · oxygen",
+      "unit": "%",
+      "kind": "gauge",
+      "decimals": 1,
+      "chart": "Oxygen"
+    },
+    {
+      "id": "environment_co_carbon_monoxide",
+      "label": "CO · carbon monoxide",
+      "unit": "ppm",
+      "kind": "gauge",
+      "decimals": 2,
+      "chart": "Air quality"
     },
     {
       "id": "shelly_steckdose_2_energie",
@@ -14,6 +38,20 @@
       "unit": "Wh",
       "kind": "counter",
       "decimals": 1
+    },
+    {
+      "id": "habitat_power_kitchen_leistung",
+      "label": "Kitchen · power draw",
+      "unit": "W",
+      "kind": "gauge",
+      "decimals": 0
+    },
+    {
+      "id": "habitat_power_kitchen_energie",
+      "label": "Kitchen · energy used",
+      "unit": "kWh",
+      "kind": "counter",
+      "decimals": 2
     }
   ]
 }

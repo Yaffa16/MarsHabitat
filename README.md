@@ -591,8 +591,9 @@ Other endpoints: `/api/sensors/latest`, `/api/sensors/history?metric=temperature
 
 ## The habitat's own hardware (Home Assistant)
 
-The real devices inside the habitat — a smart plug's energy meter, a temperature sensor,
-more as they are installed — hang off a Home Assistant instance on the venue network. The
+The real devices inside the habitat — as configured now: the cricket terrarium's temperature
+(`m5_temperatur_cricket_temperature`), NO₂, O₂ and CO from the environment sensor, and the
+Shelly plug's energy meter — hang off a Home Assistant instance on the venue network. The
 station server polls its REST API and draws them **inside the Habitat panel**, under a
 *Habitat hardware* heading below the node's tiles, the stores and the power (there is no
 separate Habitat hardware tab): one tile per device with the current

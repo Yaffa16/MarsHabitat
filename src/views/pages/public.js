@@ -792,9 +792,14 @@ function hwGroupOf(s) {
   // `range` is the fixed Y axis of the chart. A device can carry its own
   // `range: [lo, hi]` in content/home-assistant.json, which widens the
   // chart's axis to hold it; a group with no range at all fits the data.
+  if (s.chart) return { key: 'chart:' + s.chart.toLowerCase() + ':' + u.toLowerCase(), title: s.chart, unit: u, zero: false, range: null };
   if (/^(°\s*[cf]|k)$/i.test(u)) return { key: 'temperature', title: 'Temperature', unit: u, zero: false, range: [0, 30] };
-  if (s.kind === 'counter' || /^(m?wh|kwh|mwh)$/i.test(u)) return { key: 'energy', title: 'Energy', unit: u, zero: true, range: [0, 300] };
-  if (/^(m?w|kw)$/i.test(u)) return { key: 'power', title: 'Power', unit: u, zero: true, range: null };
+  // Energy and power are drawn in one unit each whatever the meter reports —
+  // Wh and W — so a Shelly reading kWh and another reading Wh share an axis
+  // (a kWh meter's line is drawn ×1000; its legend keeps its own unit).
+  if (/^k?wh$/i.test(u)) return { key: 'energy', title: 'Energy', unit: 'Wh', zero: true, range: [0, 300] };
+  if (s.kind === 'counter') return { key: 'energy:' + u.toLowerCase(), title: 'Energy', unit: u, zero: true, range: null };
+  if (/^k?w$/i.test(u)) return { key: 'power', title: 'Power', unit: 'W', zero: true, range: null };
   return { key: 'unit:' + u.toLowerCase(), title: u || 'Other', unit: u, zero: false, range: null };
 }
 
@@ -844,16 +849,22 @@ function hwChart(hw, group, members, tz, T = same) {
   const sx = (t) => padL + ((t - hw.since) / span) * iw;
   // A counter is drawn from its first reading of the day, so the axis is
   // what today has added; a gauge is drawn as it is.
-  const val = (s, v) => s.kind === 'counter' && s.base != null ? Math.max(0, v - s.base) : v;
+  // kWh on the Wh axis and kW on the W axis are scaled into it.
+  const scale = (s) => ((group.unit === 'Wh' && /^kwh$/i.test(s.unit)) || (group.unit === 'W' && /^kw$/i.test(s.unit)) ? 1000 : 1);
+  const val = (s, v) => (s.kind === 'counter' && s.base != null ? Math.max(0, v - s.base) : v) * scale(s);
   const drawn = members.filter((m) => m.s.points && m.s.points.length);
   if (!drawn.length) return '';
   const all = drawn.flatMap((m) => m.s.points.map((p) => val(m.s, p[1])));
   // The axis: the fixed range of the group (widened by any device's own
   // range from the file), or, with no range set, round bounds round the data.
   const ranges = members.map((m) => m.s.range).filter(Boolean).concat(group.range ? [group.range] : []);
-  const ax = ranges.length
-    ? hwFixedTicks(Math.min(...ranges.map((r) => r[0])), Math.max(...ranges.map((r) => r[1])))
-    : hwTicks(Math.min(...all), Math.max(...all), 4, group.zero);
+  // A fixed range is the least the axis shows: readings beyond it widen the
+  // axis (a kitchen's day of energy outgrows 300 Wh) rather than being cut off.
+  const rlo = ranges.length ? Math.min(...ranges.map((r) => r[0])) : null, rhi = ranges.length ? Math.max(...ranges.map((r) => r[1])) : null;
+  const dlo = Math.min(...all), dhi = Math.max(...all);
+  const ax = ranges.length && dlo >= rlo && dhi <= rhi
+    ? hwFixedTicks(rlo, rhi)
+    : hwTicks(ranges.length ? Math.min(rlo, dlo) : dlo, ranges.length ? Math.max(rhi, dhi) : dhi, 4, group.zero);
   // A reading outside a fixed axis is held at its edge rather than drawn off the chart.
   const clamp = (v) => Math.min(ax.hi, Math.max(ax.lo, v));
   const sy = (v) => padT + ih - ((clamp(v) - ax.lo) / (ax.hi - ax.lo)) * ih;
@@ -875,7 +886,7 @@ function hwChart(hw, group, members, tz, T = same) {
     ? `+${hwNum(s.today, s.decimals)}${s.unit ? ' ' + esc(s.unit) : ''} ${T('today')} · ${hwNum(s.value, s.decimals)}${s.unit ? ' ' + esc(s.unit) : ''}`
     : `${hwNum(s.value, s.decimals)}${s.unit ? ' ' + esc(s.unit) : ''}`;
   return `<figure class="hw-chart hw-${esc(group.key.replace(/[^a-z0-9]+/gi, '-'))}">
-  <figcaption class="hw-title"><b>${esc(T(group.title))}</b>${unit ? ` <span class="hw-unit">${unit}${group.zero ? ` · ${T('added since midnight')}` : ''}</span>` : ''}</figcaption>
+  <figcaption class="hw-title"><b>${esc(T(group.title))}</b>${unit ? ` <span class="hw-unit">${unit}${group.key.startsWith('energy') ? ` · ${T('added since midnight')}` : group.key === 'power' ? ` · ${T('hourly average')}` : ''}</span>` : ''}</figcaption>
   <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(T(group.title))} — ${esc(T('today, midnight to midnight venue time, one line per device, on one scale in'))} ${unit || '—'}">
     ${ax.ticks.map((v) => `<line x1="${padL}" y1="${sy(v).toFixed(1)}" x2="${W - padR}" y2="${sy(v).toFixed(1)}" stroke="var(--rule)" stroke-width="1"/>
       <text x="${padL - 7}" y="${(sy(v) + 3.5).toFixed(1)}" text-anchor="end" class="hw-ax">${yLabel(v)}</text>`).join('')}
