@@ -367,13 +367,17 @@ body.landing .dev-chip.dev-chip-later { background: transparent; color: var(--di
 
 /* the cookie question (layout.js, consent()): a card at the foot of the window until it is answered — on a desk at the
    right, on a phone (below) a sheet above the bar of keys */
-body.landing .consent { position: fixed; left: 50%; right: auto; transform: translateX(-50%); bottom: 20px; z-index: 45; width: min(460px, calc(100vw - 32px)); padding: 13px 16px 12px; border-radius: 18px; background: var(--glass-solid); border: 1px solid var(--glass-edge); box-shadow: 0 24px 60px -24px rgba(15,21,64,.45), 0 2px 6px rgba(30,40,120,.08); color: var(--ink); }
+/* the cookie card: centred on the screen over the page, which is blurred and dimmed behind it */
+body.landing .consent-veil { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15,21,64,.28); -webkit-backdrop-filter: blur(10px) saturate(1.1); backdrop-filter: blur(10px) saturate(1.1); }
+:root[data-theme="dark"] body.landing .consent-veil { background: rgba(0,0,0,.45); }
+html:has(.consent-veil), body:has(.consent-veil) { overflow: hidden; }   /* the page behind stays put while the card is up */
+body.landing .consent { position: relative; z-index: 91; width: min(480px, 100%); padding: 22px 24px 20px; border-radius: 22px; background: var(--glass-solid); border: 1px solid var(--glass-edge); box-shadow: 0 24px 60px -24px rgba(15,21,64,.45), 0 2px 6px rgba(30,40,120,.08); color: var(--ink); }
 :root[data-theme="dark"] body.landing .consent { background: var(--glass-solid); box-shadow: 0 24px 60px -24px rgba(0,0,0,.7); }
 body.landing .consent .consent-cs { color: var(--mars-ink, #ff5a1f); font-weight: 700; letter-spacing: .08em; }
-body.landing .consent h2 { margin: 0 0 3px; font-family: var(--display); font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink); }
-body.landing .consent p { margin: 0 0 10px; font-family: var(--display); font-size: 12px; line-height: 1.45; color: var(--dim); }
+body.landing .consent h2 { margin: 0 0 8px; font-family: var(--display); font-size: 14px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink); }
+body.landing .consent p { margin: 0 0 16px; font-family: var(--display); font-size: 14px; line-height: 1.5; color: var(--dim); }
 body.landing .consent-keys { display: flex; gap: 8px; }
-body.landing .consent-keys .btn { flex: 1 1 0; min-height: 36px; padding: 0 12px; font-size: 10.5px; letter-spacing: .14em; }
+body.landing .consent-keys .btn { flex: 1 1 0; min-height: 42px; padding: 0 12px; font-size: 10.5px; letter-spacing: .14em; }
 body.landing .consent-keys a.btn { display: inline-flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; }
 body.landing .consent-keys .btn:not(.primary) { background: rgba(255,255,255,.5); color: var(--cobalt); border: 1px solid rgba(var(--cobalt-rgb),.45); box-shadow: none; }
 :root[data-theme="dark"] body.landing .consent-keys .btn:not(.primary) { background: rgba(255,255,255,.06); color: #e6e6ec; border-color: rgba(255,255,255,.3); }
@@ -1113,7 +1117,7 @@ body.landing .dpanel-code { white-space: nowrap; }
   body.landing.messages .transit .honesty { margin-top: 4px; font-size: 9.5px; letter-spacing: .08em; }
   body.landing.messages .transit.closed { padding: 4px 0; }
   /* the cookie question as a sheet above the bar of keys */
-  body.landing .consent { left: 0; right: 0; transform: none; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); width: auto; max-height: 72vh; overflow: auto; padding: 12px 16px 12px; border-radius: 20px 20px 0 0; border-bottom: 0; box-shadow: 0 -20px 44px -24px rgba(15,21,64,.4); }
+  body.landing .consent { width: 100%; max-height: calc(100vh - 32px); overflow: auto; padding: 14px 16px 14px; }
   body.landing .consent-keys .btn { min-height: 40px; }
   /* the peek tiles: the sol, the signal, the crew's latest line — under the doors, before the portal */
   body.landing .peek { display: grid; gap: 10px; margin: -6px 0 26px; }

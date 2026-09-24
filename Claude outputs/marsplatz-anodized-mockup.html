@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MARS!platz — Communication Station · Anodized mock-up</title>
+<style>
+/* =====================================================================
+   MARS!platz — anodized mock-up
+   Orange anodized plates with chamfered cuts, brushed silver inlays,
+   black knobs, lit slots and LEDs on a black field. Self-contained.
+   ===================================================================== */
+:root{
+  --bg:#08080a; --bg-2:#101014;
+  --or:#e0512a; --or-hi:#f06a3d; --or-lo:#b83d1a; --or-ink:#5a1d0b;
+  --si:#d7d9dd; --si-hi:#eef0f2; --si-lo:#a9adb3; --si-ink:#2a2c30;
+  --glass:#c9ccd2; --black:#0c0c0e;
+  --blue:#4f8dff; --blue-glow:rgba(79,141,255,.75); --white-glow:rgba(255,255,255,.85); --or-glow:rgba(255,122,74,.85);
+  --text:#f3f3f1; --dim:#9a9aa1;
+  --sans:"Helvetica Neue","Neue Haas Grotesk Display Pro",Inter,Arial,system-ui,sans-serif;
+  --mono:"JetBrains Mono","IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --cut:34px; --gut:clamp(14px,3vw,36px);
+}
+*{box-sizing:border-box}
+html{background:var(--bg);overflow-x:clip}
+body{margin:0;background:
+  radial-gradient(1200px 700px at 70% -10%,rgba(224,81,42,.18),transparent 60%),
+  radial-gradient(900px 600px at 0% 40%,rgba(79,141,255,.08),transparent 60%),var(--bg);
+  color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased;padding-bottom:0;overflow-x:clip}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+.wrap{max-width:1320px;margin:0 auto;padding:0 var(--gut)}
+.micro{font-family:var(--sans);font-size:8.5px;line-height:1.35;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+.micro.j{text-align:justify}
+.mono{font-family:var(--mono)}
+.cap{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase}
+
+/* ---------------------------------------------------------------- materials */
+.anod{background:
+  linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,0) 30%),
+  radial-gradient(140% 120% at 20% 0%,var(--or-hi),var(--or) 45%,var(--or-lo));
+  color:var(--or-ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.brushed{background:
+  repeating-linear-gradient(90deg,rgba(255,255,255,.06) 0 1px,rgba(0,0,0,.02) 1px 3px),
+  linear-gradient(180deg,var(--si-hi),var(--si) 55%,var(--si-lo));
+  color:var(--si-ink)}
+.glass{background:linear-gradient(180deg,#d6d9de,#bfc3c9);color:#1c1d20}
+.hole{position:absolute;width:8px;height:8px;border-radius:50%;background:#111;box-shadow:inset 0 1px 1px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.25)}
+.hole.o{background:transparent;box-shadow:inset 0 0 0 1.3px #111}
+.led{position:absolute;width:7px;height:7px;border-radius:50%;background:#bcd4ff;box-shadow:0 0 6px 2px var(--blue-glow),0 0 18px 4px rgba(79,141,255,.35)}
+.led.w{background:#fff;box-shadow:0 0 6px 2px var(--white-glow),0 0 22px 6px rgba(255,255,255,.35)}
+.led.o{background:#ffd2bf;box-shadow:0 0 6px 2px var(--or-glow),0 0 20px 5px rgba(255,122,74,.4)}
+.slot-light{height:12px;border-radius:999px;background:#fff;box-shadow:0 0 10px 3px var(--white-glow),0 0 40px 10px rgba(255,255,255,.25)}
+.slot-light.o{background:#ff9a72;box-shadow:0 0 10px 3px var(--or-glow),0 0 40px 10px rgba(255,122,74,.3)}
+.slot-light.b{background:#9ec0ff;box-shadow:0 0 10px 3px var(--blue-glow),0 0 40px 10px rgba(79,141,255,.3)}
+.groove{height:10px;border-radius:999px;background:var(--or-lo);box-shadow:inset 0 2px 3px rgba(0,0,0,.35)}
+.stripes{height:24px;background:repeating-linear-gradient(-60deg,#1a0f0b 0 12px,transparent 12px 22px)}
+.knob{--s:78px;width:var(--s);height:var(--s);border-radius:50%;position:relative;flex:none;
+  background:radial-gradient(circle at 40% 32%,#3a3a3e,#111 55%,#050506);box-shadow:0 8px 18px -6px rgba(0,0,0,.7),inset 0 1px 1px rgba(255,255,255,.12);cursor:grab}
+.knob::before{content:"";position:absolute;inset:-9px;border-radius:50%;border:2px solid transparent;border-top-color:var(--or-lo);border-left-color:var(--or-lo);transform:rotate(-20deg)}
+.knob .needle{position:absolute;left:50%;top:7px;width:2px;height:10px;margin-left:-1px;background:#f3f3f1;border-radius:2px;transform-origin:50% calc(var(--s)/2 - 7px)}
+.knob span{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;letter-spacing:.06em;color:#f3f3f1;text-transform:uppercase}
+.klabel{font-family:var(--sans);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--or-ink);text-align:center;margin-top:14px;font-weight:600}
+.toggle{width:84px;height:40px;border-radius:999px;background:#111;position:relative;box-shadow:inset 0 2px 4px rgba(0,0,0,.8);border:0;padding:0;flex:none}
+.toggle i{position:absolute;top:5px;left:5px;width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fff,#c9ccd2);transition:left .2s}
+.toggle.on i{left:49px}
+.toggle.on{box-shadow:inset 0 2px 4px rgba(0,0,0,.8),0 0 0 2px rgba(255,122,74,.5)}
+
+/* ---------------------------------------------------------------- top rail */
+.rail{position:sticky;top:0;z-index:60;background:rgba(8,8,10,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid #1d1d22}
+.rail .wrap{display:grid;grid-template-columns:auto auto 1fr auto;gap:18px;align-items:center;height:58px}
+.menu{width:44px;height:36px;border-radius:10px;border:0;background:var(--or);display:grid;place-items:center;box-shadow:0 0 18px -4px var(--or-glow)}
+.menu i{display:block;width:18px;height:2px;background:#1a0f0b;box-shadow:0 -6px 0 #1a0f0b,0 6px 0 #1a0f0b}
+.clock{font-family:var(--mono);font-size:13px;letter-spacing:.06em}
+.clock b{color:var(--or-hi);font-weight:600;margin-left:10px}
+.ticker{overflow:hidden;white-space:nowrap;mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.ticker span{display:inline-block;padding-left:100%;animation:run 38s linear infinite;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.ticker b{color:var(--text);font-weight:600}
+@keyframes run{to{transform:translateX(-100%)}}
+.rail-r{display:flex;gap:8px}
+.chip{height:34px;padding:0 14px;border-radius:999px;border:1px solid #2c2c33;background:#121216;font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;display:inline-flex;align-items:center;gap:8px}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--blue-glow)}
+
+/* ---------------------------------------------------------------- the hero unit */
+.hero{padding:40px 0 0}
+.unit{position:relative;border-radius:28px 44px 28px 28px;padding:0;overflow:visible}
+.hero-plate{position:relative;min-height:560px;border-radius:26px;clip-path:polygon(0 0,calc(100% - 60px) 0,100% 60px,100% 100%,0 100%);padding:34px 40px}
+.hero-plate .inlay-top{position:absolute;right:0;top:0;width:47%;height:128px;clip-path:polygon(0 0,calc(100% - 60px) 0,100% 60px,100% 100%,14% 100%,0 36%);padding:26px 70px 0 60px}
+.hero-plate .inlay-top .slot-light{position:absolute;left:14%;right:24px;bottom:-6px}
+.inlay-bot{position:absolute;left:0;right:0;bottom:0;height:210px;clip-path:polygon(0 30%,56% 30%,64% 0,100% 0,100% 100%,0 100%);border-bottom-left-radius:26px;border-bottom-right-radius:26px}
+.inlay-side{position:absolute;left:0;bottom:0;width:78px;height:150px;border-radius:0 26px 0 26px}
+.wordmark{font-size:clamp(64px,9.4vw,138px);font-weight:600;letter-spacing:-.045em;line-height:.9;color:#fbe9e2;margin:94px 0 0;text-shadow:0 1px 0 rgba(0,0,0,.08)}
+.wordmark sup{font-size:.36em;vertical-align:.95em;letter-spacing:0;margin-left:.04em}
+.wordmark b{color:#1a0f0b}
+.hero-sub{display:flex;align-items:center;gap:28px;margin-top:22px}
+.pillcut{height:62px;border-radius:999px;border:1.3px solid var(--or-ink);display:flex;align-items:center;justify-content:space-around;min-width:300px;padding:0 24px}
+.pillcut .micro{color:var(--or-ink)}
+.cta-knobs{display:flex;gap:18px}
+.cta-knobs a{text-decoration:none}
+.cta-knobs .knob{--s:70px}
+.cta-knobs .klabel{margin-top:10px}
+.puck{position:absolute;z-index:3;right:48px;top:140px;width:250px;height:250px;border-radius:50%;
+  background:radial-gradient(circle at 50% 40%,#2a4bb8,#16255e 58%,#0b1330);box-shadow:inset 0 0 0 10px rgba(0,0,0,.25),inset 0 -20px 50px rgba(79,141,255,.45),0 0 60px -10px rgba(79,141,255,.55);display:grid;place-items:center;text-align:center;color:#dfe8ff}
+.puck .l{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:#9db8ff}
+.puck .v{font-family:var(--mono);font-size:34px;font-weight:600;letter-spacing:.02em;margin:6px 0}
+.puck .s{font-size:12px;color:#b9c9ff}
+.hero-bottom{position:absolute;left:110px;right:40px;bottom:44px;display:grid;grid-template-columns:auto 1.2fr 1fr;gap:28px;align-items:end;color:var(--si-ink)}
+.num21{font-size:64px;font-weight:800;letter-spacing:-.06em;line-height:.8;color:#111}
+.num21 small{display:block;font-size:10px;letter-spacing:.18em;font-weight:600;margin-top:10px}
+.lede{font-size:14.5px;line-height:1.5;margin:0;color:#23252a;max-width:36em}
+.hero-bottom .groove{position:absolute;left:0;right:34%;bottom:-24px;height:12px;background:#c34520}
+.hero-bottom .slotbar{position:absolute;left:14px;width:36%;bottom:-24px;height:12px;border-radius:999px;background:#0e1a44;box-shadow:inset 0 0 8px rgba(79,141,255,.8)}
+.hero .jack{position:absolute;right:-26px;top:70px;width:40px;height:14px;border-radius:3px;background:linear-gradient(180deg,#f5f5f5,#8e9197);box-shadow:0 0 0 1px #555}
+.hero .jack::after{content:"";position:absolute;left:38px;top:5px;width:120px;height:4px;background:#1b1b1e;border-radius:2px}
+
+/* ---------------------------------------------------------------- section header plate */
+.sec{padding:78px 0 0}
+.head{position:relative;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:22px;margin-bottom:22px}
+.head .n{width:54px;height:54px;border-radius:14px;display:grid;place-items:center;font-size:22px;font-weight:800;letter-spacing:-.04em;color:#1a0f0b}
+.head h2{margin:0;font-size:clamp(28px,3.6vw,48px);font-weight:600;letter-spacing:-.04em;line-height:1}
+.head h2 span{color:var(--dim);font-weight:400}
+.head .r{display:flex;align-items:center;gap:14px}
+.head .r .micro{color:var(--dim);max-width:220px}
+.head .rule{position:absolute;left:78px;right:0;bottom:-10px;height:1px;background:linear-gradient(90deg,#2a2a31,transparent)}
+
+/* ---------------------------------------------------------------- the dome */
+.dome-wrap{position:relative;border-radius:26px;clip-path:polygon(0 0,100% 0,100% calc(100% - 50px),calc(100% - 50px) 100%,0 100%);padding:26px 30px 30px;display:grid;grid-template-columns:1.4fr 1fr;gap:26px}
+.dome{position:relative;aspect-ratio:2/1.08}
+.dome>svg{position:absolute;inset:0;width:100%;height:100%}
+.node{position:absolute;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:6px;border:0;background:none;padding:0}
+.node .k{width:48px;height:48px;border-radius:50%;background:radial-gradient(circle at 40% 32%,#3a3a3e,#111 55%,#050506);box-shadow:0 6px 12px -4px rgba(0,0,0,.6);display:grid;place-items:center;transition:box-shadow .2s}
+.node .k svg{width:22px;height:22px;stroke:#f3f3f1;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.node span{font-size:9px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:#2a2c30;background:rgba(255,255,255,.7);padding:3px 7px;border-radius:999px}
+.node.on .k{box-shadow:0 0 0 3px var(--or),0 0 22px 4px var(--or-glow)}
+.readout{border-radius:20px;background:#0c0c0e;color:var(--text);padding:22px;position:relative;box-shadow:inset 0 0 0 1px #202025}
+.readout .cap{color:#7f8ea8}
+.readout h3{margin:8px 0 10px;font-size:28px;letter-spacing:-.03em;font-weight:600}
+.readout p{margin:0 0 14px;color:#c9c9cf;font-size:14px}
+.readout .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.readout .stats div{border-radius:12px;background:#15151a;padding:10px 12px}
+.readout .stats b{display:block;font-family:var(--mono);font-size:18px;color:#fff}
+.readout .led{right:18px;top:18px}
+
+/* ---------------------------------------------------------------- the portal (music player form) */
+.player{position:relative;max-width:1080px;margin:0 auto}
+.pl-top{position:relative;z-index:2;clip-path:polygon(0 0,calc(100% - 80px) 0,100% 80px,100% 100%,62% 100%,56% 72%,0 72%);border-radius:18px 0 0 0;padding:30px 40px 90px;display:grid;grid-template-columns:auto 1fr auto;gap:30px;align-items:start}
+.pl-knobs{display:flex;gap:34px}
+.pl-knobs .knob{--s:84px}
+.pl-knobs .knob.on{box-shadow:0 0 0 3px #1a0f0b,0 0 24px 4px var(--or-glow)}
+.pl-top .micro{color:var(--or-ink);max-width:250px;padding-top:28px}
+.send{--s:150px;display:grid;place-items:center}
+.send span{font-size:15px;letter-spacing:.08em}
+.pl-top .slot-light.o{position:absolute;right:60px;bottom:60px;width:190px}
+.pl-top .slot-light.w{position:absolute;left:52px;bottom:40px;width:300px}
+.pl-glass{position:relative;z-index:1;margin:-86px 40px 0;border-radius:0 0 22px 22px;padding:110px 44px 130px;display:grid;grid-template-columns:1fr 1.25fr;gap:40px}
+.cover{position:relative;aspect-ratio:1/1;background:#0b0c10;border-radius:4px;overflow:hidden;box-shadow:0 20px 40px -18px rgba(0,0,0,.6)}
+.cover svg{position:absolute;inset:0;width:100%;height:100%}
+.cover .tag{position:absolute;left:12px;top:10px;font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;color:#8ea0c6}
+.scrub{margin-top:18px}
+.scrub .track{position:relative;height:2px;background:#9aa0a8}
+.scrub .track i{position:absolute;left:0;top:0;height:2px;background:var(--or)}
+.scrub .track b{position:absolute;top:-5px;width:12px;height:12px;border-radius:50%;background:var(--or);margin-left:-6px}
+.scrub .row{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-family:var(--mono);font-size:11px;color:#3a3d44}
+.composer h3{margin:0;font-size:26px;font-weight:500;letter-spacing:-.01em;text-transform:uppercase}
+.composer .sub{font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin:4px 0 22px;color:#3a3d44}
+.composer textarea{width:100%;height:150px;resize:none;border:0;border-radius:14px;background:rgba(255,255,255,.55);box-shadow:inset 0 1px 3px rgba(0,0,0,.2);padding:14px 16px;font:15px/1.5 var(--sans);color:#16171a;outline:none}
+.composer textarea:focus{box-shadow:inset 0 1px 3px rgba(0,0,0,.2),0 0 0 2px var(--or)}
+.composer .under{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-family:var(--mono);font-size:10.5px;color:#4a4d55;letter-spacing:.08em}
+.tagrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.tagrow button{height:30px;padding:0 12px;border-radius:999px;border:1.2px solid #5a5e66;background:transparent;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#2a2c30;font-weight:600}
+.tagrow button.on{background:#111;color:#fff;border-color:#111;box-shadow:0 0 12px -2px var(--or-glow)}
+.feed{grid-column:1/-1;border-top:1px solid rgba(0,0,0,.18);padding-top:22px;margin-top:6px}
+.feed-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.feed-h .tabs{display:flex;gap:6px}
+.feed-h .tabs button{height:30px;padding:0 14px;border-radius:999px;border:0;background:rgba(0,0,0,.08);font-size:10px;letter-spacing:.14em;font-weight:700;text-transform:uppercase}
+.feed-h .tabs button.on{background:#111;color:#fff}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.card{border-radius:14px;background:rgba(255,255,255,.6);padding:14px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.card .meta{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#5b5f68;display:flex;justify-content:space-between;gap:8px}
+.card .meta b{color:#111}
+.card .q{font-size:14.5px;margin:10px 0}
+.card .a{border-radius:10px;background:#0c0c0e;color:#f1f1ef;padding:10px 12px;font-size:14px}
+.card .a .w{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--or-hi);margin-bottom:5px;text-transform:uppercase}
+.card.wait .a{background:transparent;color:#5b5f68;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
+.card.wait .a .w{color:#5b5f68}
+.pl-bot{position:relative;z-index:2;margin-top:-104px;clip-path:polygon(0 0,22% 0,28% 34%,100% 34%,100% 100%,40px 100%,0 calc(100% - 40px));padding:74px 40px 32px;display:grid;grid-template-columns:auto 1fr auto;gap:30px;align-items:center;border-radius:0 0 18px 18px}
+.pl-bot .toggle{margin-top:-30px}
+.pl-bot .italic{font-size:22px;font-style:italic;letter-spacing:-.01em;color:#1a0f0b;text-transform:uppercase}
+.pl-bot .big{font-size:clamp(22px,2.6vw,34px);font-style:italic;letter-spacing:-.02em;line-height:1.05;color:#111;text-transform:uppercase;text-align:right}
+.pl-bot .stripes{width:260px;margin-top:10px}
+.pl-bot .slot-light.o{position:absolute;left:36%;bottom:22px;width:160px;height:8px}
+.transit{position:absolute;inset:0;background:rgba(8,8,12,.86);display:none;flex-direction:column;justify-content:center;padding:20px;color:#fff;gap:10px}
+.transit.on{display:flex}
+.transit .bar{height:4px;background:#2a2d38;border-radius:2px;overflow:hidden}
+.transit .bar i{display:block;height:100%;width:0;background:var(--or)}
+.transit .pct{font-family:var(--mono);font-size:30px}
+
+/* ---------------------------------------------------------------- dashboard */
+.dash-top{display:grid;grid-template-columns:1.3fr 1fr;gap:14px}
+.cloud{position:relative;border-radius:22px;padding:18px;clip-path:polygon(0 0,100% 0,100% 100%,40px 100%,0 calc(100% - 40px))}
+.cloud .row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px}
+.cloud .ph{aspect-ratio:1/1;border-radius:8px;background:var(--bg-img);box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.cloud .hd{display:flex;justify-content:space-between;align-items:center}
+.live{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;letter-spacing:.18em;font-weight:600}
+.live i{width:8px;height:8px;border-radius:50%;background:#ff7a4a;box-shadow:0 0 8px var(--or-glow);animation:bl 1.4s steps(2) infinite}
+@keyframes bl{50%{opacity:.2}}
+.doors{display:grid;grid-template-rows:1fr 1fr;gap:14px}
+.door{position:relative;display:flex;align-items:center;justify-content:space-between;padding:0 26px;border-radius:22px;text-decoration:none;font-size:clamp(24px,2.6vw,36px);font-weight:600;letter-spacing:-.03em;min-height:92px;overflow:hidden}
+.door .arrow{font-family:var(--mono);font-size:20px}
+.door .slot-light{position:absolute;left:26px;right:90px;bottom:14px;height:5px}
+.sols{display:grid;grid-template-columns:repeat(13,1fr);gap:6px;margin-top:14px}
+.sol{border-radius:12px;padding:10px 8px;background:#121216;box-shadow:inset 0 0 0 1px #202027;display:grid;gap:4px}
+.sol b{font-size:20px;letter-spacing:-.04em}
+.sol span{font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:.08em}
+.sol.past{background:#17171c}
+.sol.now{background:var(--or);color:#1a0f0b;box-shadow:0 0 24px -6px var(--or-glow)}
+.sol.now span{color:#3a150a}
+.sol .leds{display:flex;gap:4px}
+.sol .leds i{width:5px;height:5px;border-radius:50%;background:#2c2c33}
+.sol.past .leds i{background:var(--blue);box-shadow:0 0 5px var(--blue-glow)}
+.sol.now .leds i{background:#fff;box-shadow:0 0 5px #fff}
+
+/* the folder: rows of lit keys + the open panel */
+.folder{margin-top:14px;border-radius:24px;overflow:hidden;background:#0f0f13;box-shadow:inset 0 0 0 1px #1e1e25}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#1e1e25}
+.krow{background:#0f0f13;padding:14px}
+.krow .micro{color:var(--dim);margin-bottom:10px}
+.krow .btns{display:flex;gap:8px;flex-wrap:wrap}
+.fkey{position:relative;display:flex;align-items:center;gap:8px;height:40px;padding:0 14px 0 12px;border-radius:12px;border:0;background:#1a1a20;color:#d9d9de;font-size:12px;font-weight:600;letter-spacing:.02em;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 2px 0 #050507}
+.fkey i{width:7px;height:7px;border-radius:50%;background:#34343d}
+.fkey.on{background:var(--or);color:#1a0f0b}
+.fkey.on i{background:#fff;box-shadow:0 0 8px #fff}
+.fkey small{font-family:var(--mono);font-size:9px;opacity:.7}
+.page{display:none;padding:20px}
+.page.on{display:block}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+.tile{position:relative;border-radius:18px;padding:16px;min-height:170px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.tile h4{margin:0;font-size:13px;font-weight:600;letter-spacing:.01em}
+.tile .top{display:flex;justify-content:space-between;align-items:flex-start}
+.tile .top .cap{opacity:.65}
+.tile .big{font-size:46px;font-weight:600;letter-spacing:-.05em;line-height:.9}
+.tile .big small{font-size:14px;font-weight:500;letter-spacing:0;margin-left:4px;opacity:.7}
+.tile .foot{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.7}
+.tile.dark{background:#141418;box-shadow:inset 0 0 0 1px #24242b}
+.c2{grid-column:span 2}.c3{grid-column:span 3}.c4{grid-column:span 4}.c5{grid-column:span 5}.c6{grid-column:span 6}.c7{grid-column:span 7}.c8{grid-column:span 8}.c12{grid-column:span 12}
+.dialw{display:flex;justify-content:center}
+.bars{display:flex;align-items:flex-end;gap:3px;height:64px}
+.bars i{flex:1;border-radius:2px 2px 0 0;background:currentColor;opacity:.85;min-height:2px}
+.bars i.hi{background:#fff;opacity:1;box-shadow:0 0 8px #fff}
+.gg{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 22px}
+.g .t{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}
+.g .t b{font-family:var(--mono);font-weight:500}
+.g .tr{height:8px;border-radius:999px;background:rgba(0,0,0,.18);overflow:hidden}
+.tile.dark .g .tr{background:#24242b}
+.g .tr i{display:block;height:100%;background:#111;border-radius:999px}
+.tile.dark .g .tr i{background:#e8e8ea}
+.g.low .tr i{background:var(--or)!important;box-shadow:0 0 8px var(--or-glow)}
+.chart{width:100%;height:230px}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.sched{list-style:none;margin:0;padding:0}
+.sched li{display:grid;grid-template-columns:62px 1fr auto;gap:12px;align-items:center;padding:10px 12px;border-radius:12px;font-size:14px}
+.sched li+li{margin-top:2px}
+.sched .tm{font-family:var(--mono);font-size:12px;color:var(--dim)}
+.sched .st{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.sched li.done{opacity:.45}
+.sched li.now{background:var(--or);color:#1a0f0b;box-shadow:0 0 30px -10px var(--or-glow)}
+.sched li.now .tm,.sched li.now .st{color:#1a0f0b}
+.meal{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid #24242b}
+.meal .ix{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:12px}
+.meal b{display:block;font-size:15px}
+.meal .m{font-family:var(--mono);font-size:10.5px;color:var(--dim)}
+.meal .kc{font-family:var(--mono);font-size:13px}
+.officer{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;padding:12px;border-radius:16px;background:#141418;box-shadow:inset 0 0 0 1px #24242b}
+.officer+.officer{margin-top:8px}
+.officer .knob{--s:56px}
+.officer .knob svg{position:absolute;inset:14px;width:28px;height:28px;stroke:#f3f3f1;fill:none;stroke-width:2;stroke-linecap:round}
+.officer b{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+.officer span{color:var(--dim);font-size:13.5px}
+.state{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;padding:5px 9px;border-radius:999px;background:#1e1e25;text-transform:uppercase}
+.state.or{background:var(--or);color:#1a0f0b}
+.blog{position:relative;border-radius:22px;padding:24px;min-height:360px;clip-path:polygon(0 0,calc(100% - 44px) 0,100% 44px,100% 100%,0 100%)}
+.blog .num{font-size:88px;font-weight:800;letter-spacing:-.07em;line-height:.8}
+.blog h3{margin:18px 0 4px;font-size:24px;letter-spacing:-.03em;font-weight:600}
+.blog .by{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin-bottom:14px}
+.blog p{margin:0 0 12px;font-size:15px;line-height:1.55;max-width:42em}
+.blog .img{height:160px;border-radius:12px;margin:6px 0 14px;background:radial-gradient(circle at 60% 40%,#ff9d74,#e0512a 40%,#40150a);position:relative}
+.blog .img::after{content:"IMG_0412 · 14:06";position:absolute;right:10px;bottom:8px;font-family:var(--mono);font-size:9.5px;color:#fff;letter-spacing:.1em}
+
+/* ---------------------------------------------------------------- about */
+.about{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.fold{border-radius:22px;padding:22px;position:relative;min-height:320px}
+.fold h3{margin:0 0 12px;font-size:24px;letter-spacing:-.03em;font-weight:600}
+.fold p{margin:0 0 12px;font-size:14.5px;line-height:1.55}
+.fold .steps{display:grid;gap:8px;margin-top:10px}
+.fold .steps div{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start}
+.fold .steps b{font-family:var(--mono);font-size:11px;color:var(--or-hi)}
+.credits{display:grid;gap:6px;font-size:13.5px}
+.credits div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid rgba(0,0,0,.14);padding-bottom:6px}
+.credits span:first-child{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.7}
+
+/* ---------------------------------------------------------------- footer */
+.site-foot{margin:90px 0 0;padding:0 var(--gut) 40px}
+.foot-plate{max-width:1320px;margin:0 auto;position:relative;border-radius:26px;clip-path:polygon(0 0,calc(100% - 60px) 0,100% 60px,100% 100%,0 100%);padding:40px 40px 34px;display:grid;grid-template-columns:1fr auto;gap:30px;min-height:280px}
+.foot-plate .wm{font-size:clamp(56px,8vw,120px);font-weight:600;letter-spacing:-.05em;line-height:.9;color:#fbe9e2;margin:0}
+.foot-plate .wm b{color:#1a0f0b}
+.foot-links{display:flex;gap:10px;align-items:flex-start}
+.foot-links a{height:40px;display:inline-flex;align-items:center;padding:0 18px;border-radius:999px;border:1.3px solid var(--or-ink);color:#1a0f0b;text-decoration:none;font-size:10.5px;letter-spacing:.16em;font-weight:700;text-transform:uppercase}
+.foot-links a:hover{background:#1a0f0b;color:#fbe9e2}
+.foot-in{grid-column:1/-1;border-radius:18px;padding:18px 22px;display:grid;grid-template-columns:repeat(3,1fr) auto;gap:20px;align-items:center}
+.foot-in b{display:block;font-size:12px}
+.foot-in div{font-size:12px}
+
+/* ---------------------------------------------------------------- phone tabbar */
+.tabbar{display:none}
+
+/* ---------------------------------------------------------------- welcome */
+.veil{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:16px;background:rgba(0,0,0,.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.veil.gone{display:none}
+.welcome{position:relative;width:min(560px,100%);border-radius:24px;clip-path:polygon(0 0,calc(100% - 44px) 0,100% 44px,100% 100%,0 100%);padding:28px 28px 26px;display:grid;grid-template-columns:1fr 150px;gap:22px}
+.welcome h2{margin:0 0 12px;font-size:34px;letter-spacing:-.04em;color:#fbe9e2;font-weight:600;line-height:1}
+.welcome h2 b{display:block;color:#1a0f0b;font-family:var(--mono);font-size:22px;letter-spacing:.02em;margin-top:8px}
+.welcome p{margin:0 0 18px;font-size:14px;line-height:1.5;color:#2a0f06}
+.welcome .mini{width:150px;height:150px;border-radius:50%;background:radial-gradient(circle at 50% 40%,#2a4bb8,#16255e 58%,#0b1330);box-shadow:inset 0 -14px 40px rgba(79,141,255,.5),0 0 40px -8px rgba(79,141,255,.6);display:grid;place-items:center;text-align:center;color:#dfe8ff;font-family:var(--mono);font-size:10px;letter-spacing:.16em;align-self:center}
+.welcome .mini b{display:block;font-size:14px;letter-spacing:.04em;margin-top:6px}
+.wbtns{grid-column:1/-1;display:grid;grid-template-columns:1fr 1.3fr;gap:10px}
+.wbtns a,.wbtns button{height:50px;border-radius:999px;display:grid;place-items:center;text-decoration:none;font-size:11px;letter-spacing:.16em;font-weight:700;text-transform:uppercase}
+.wbtns a{border:1.4px solid #1a0f0b;color:#1a0f0b}
+.wbtns button{border:0;background:#0c0c0e;color:#fff;box-shadow:0 0 22px -6px rgba(255,255,255,.4)}
+
+/* ---------------------------------------------------------------- responsive */
+@media (max-width:1060px){
+  .puck{width:200px;height:200px;right:30px;top:150px}
+  .puck .v{font-size:24px}
+  .dome-wrap{grid-template-columns:1fr}
+  .dash-top{grid-template-columns:1fr}
+  .keys{grid-template-columns:1fr}
+  .about{grid-template-columns:1fr}
+  .grid .c2,.grid .c3{grid-column:span 6}.grid .c6{grid-column:span 12}.grid .c4,.grid .c5,.grid .c7,.grid .c8{grid-column:span 12}
+  .cards{grid-template-columns:1fr 1fr}
+  .sols{grid-template-columns:repeat(7,1fr)}
+  .pl-glass{grid-template-columns:1fr}
+}
+@media (max-width:720px){
+  body{padding-bottom:78px}
+  .rail .wrap{grid-template-columns:auto 1fr auto;gap:10px}
+  .ticker{display:none}
+  .rail-r .chip:last-child{display:none}
+  .hero-plate{padding:24px 20px 250px;min-height:0;clip-path:polygon(0 0,calc(100% - 36px) 0,100% 36px,100% 100%,0 100%)}
+  .hero-plate .inlay-top{display:none}
+  .hero-plate>.micro,.hero-plate>.hole{display:none}
+  .dome{aspect-ratio:1/.8}.node span{display:none}.node .k{width:40px;height:40px}
+  .wordmark{margin-top:20px;font-size:15vw}
+  .hero-sub{flex-direction:column;align-items:flex-start;gap:18px}
+  .pillcut{min-width:0;width:100%}
+  .puck{position:relative;right:auto;top:auto;width:180px;height:180px;margin:20px auto 0}
+  .hero-bottom{left:20px;right:20px;grid-template-columns:auto 1fr;bottom:22px}
+  .hero-bottom .lede{grid-column:1/-1;font-size:13px}
+  .inlay-bot{height:250px;clip-path:polygon(0 12%,100% 0,100% 100%,0 100%)}
+  .inlay-side{display:none}
+  .hero .jack{display:none}
+  .head{grid-template-columns:auto 1fr}.head .r{display:none}
+  .pl-top{grid-template-columns:1fr;padding:24px 22px 90px;clip-path:polygon(0 0,calc(100% - 40px) 0,100% 40px,100% 100%,0 100%)}
+  .pl-knobs{gap:18px}.pl-knobs .knob{--s:62px}
+  .pl-top .micro{display:none}
+  .send{--s:110px;justify-self:end;margin-top:-10px}
+  .pl-glass{margin:-86px 12px 0;padding:100px 18px 120px}
+  .pl-bot{grid-template-columns:1fr;clip-path:polygon(0 0,100% 0,100% 100%,0 100%);padding:60px 22px 26px}
+  .pl-bot .big{text-align:left}
+  .pl-bot .slot-light.o{display:none}
+  .cards{grid-template-columns:1fr}
+  .cloud .row{grid-template-columns:repeat(3,1fr)}
+  .sols{grid-template-columns:repeat(4,1fr)}
+  .grid .c3{grid-column:span 12}.grid .c2{grid-column:span 6}
+  .gg{grid-template-columns:1fr 1fr}
+  .welcome{grid-template-columns:1fr}.welcome .mini{display:none}
+  .foot-plate{grid-template-columns:1fr;clip-path:none}
+  .foot-in{grid-template-columns:1fr 1fr}
+  .tabbar{display:grid;position:fixed;left:0;right:0;bottom:0;z-index:70;grid-template-columns:repeat(5,1fr);background:rgba(10,10,12,.92);backdrop-filter:blur(14px);border-top:1px solid #222;padding:8px 6px calc(10px + env(safe-area-inset-bottom,0px))}
+  .tabbar a{display:grid;justify-items:center;gap:4px;text-decoration:none;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+  .tabbar a i{width:24px;height:4px;border-radius:2px;background:#2a2a31}
+  .tabbar a.on{color:#fff}.tabbar a.on i{background:var(--or);box-shadow:0 0 8px var(--or-glow)}
+  .tabbar a.w{margin-top:-22px}.tabbar a.w i{width:52px;height:52px;border-radius:50%;background:var(--or);box-shadow:0 0 22px -4px var(--or-glow)}
+}
+</style>
+</head>
+<body>
+
+<!-- ================================================================ RAIL -->
+<header class="rail">
+  <div class="wrap">
+    <button class="menu" type="button" aria-label="Menu"><i></i></button>
+    <div class="clock"><span id="now">14:06:22</span><b>SOL 05/13</b></div>
+    <div class="ticker"><span>The crew are currently: <b>12:00 · Lunch</b> &nbsp;·&nbsp; Next: <b>13:00 · Science block 2</b> &nbsp;·&nbsp; Habitat: <b>21.4 °C · 812 ppm CO₂ · 38 %RH</b> &nbsp;·&nbsp; One-way signal <b>12 min 58 s</b> &nbsp;·&nbsp; Earth–Mars <b>1.559 au</b></span></div>
+    <div class="rail-r"><span class="chip"><span class="dot"></span><span id="tclock">T+004:14:06</span></span><button class="chip" type="button">EN ▾</button><button class="chip" type="button">◐ Dark</button></div>
+  </div>
+</header>
+
+<main>
+<!-- ================================================================ HERO -->
+<section class="hero wrap" id="top">
+  <div class="unit">
+    <span class="jack" aria-hidden="true"></span>
+    <div class="hero-plate anod">
+      <span class="hole" style="left:26px;top:26px;width:16px;height:16px"></span>
+      <span class="micro" style="position:absolute;left:52px;top:30px">Deliberately interplanetary.</span>
+      <span class="hole o" style="left:34%;top:26px"></span>
+      <span class="hole" style="left:12px;top:78px"></span><span class="hole" style="left:26px;top:78px"></span>
+      <div class="inlay-top brushed">
+        <p class="micro j" style="margin:0;max-width:330px">A live channel between an Earth-based audience and three officers sealed in the MARS habitat. What you write crosses the real distance, and the crew answer from inside.</p>
+        <span class="slot-light b"></span>
+        <span class="led" style="right:18px;top:18px"></span><span class="led" style="right:34px;top:18px"></span>
+      </div>
+
+      <h1 class="wordmark">MARS<b>!</b>platz<sup>™</sup></h1>
+      <div class="hero-sub">
+        <div class="pillcut"><span class="micro">Communication station</span><span class="micro">ZKM | Hertzlab</span></div>
+        <div class="cta-knobs">
+          <a href="#write"><div class="knob" data-knob><i class="needle"></i></div><div class="klabel">Write</div></a>
+          <a href="#dashboard"><div class="knob" data-knob><i class="needle"></i></div><div class="klabel">Dashboard</div></a>
+        </div>
+      </div>
+
+      <div class="puck" aria-label="Mission clock">
+        <div><div class="l">MISSION DAY</div><div class="v" id="puckclock">T+004:14:06</div><div class="s">Thu 15 – Tue 27 Oct 2026<br>13 sols in the habitat</div></div>
+      </div>
+
+      <div class="inlay-side brushed" aria-hidden="true">
+        <span class="led" style="left:36px;top:26px"></span><span class="led" style="left:18px;bottom:22px"></span><span class="led" style="left:44px;bottom:22px"></span>
+        <span style="position:absolute;left:30px;top:50px;bottom:40px;width:8px;border-radius:4px;background:var(--or)"></span>
+        <span style="position:absolute;left:48px;top:50px;bottom:40px;width:8px;border-radius:4px;background:var(--or)"></span>
+      </div>
+      <div class="inlay-bot brushed" aria-hidden="true"></div>
+      <div class="hero-bottom">
+        <div class="num21">13<small>Sols</small></div>
+        <p class="lede">MARS is a durational performance. Three officers live sealed inside the habitat for thirteen days; visitors can see it from outside. What they cannot do is walk in and talk to the people inside it. Here a message has to travel. You watch it go. You wait.</p>
+        <p class="micro j" style="margin:0;color:#2a2c30">Earth 49°00′N 8°23′E · Karlsruhe → Mars · Habitat One · light-time computed on the station from Kepler elements · works offline · no tracking</p>
+        <span class="groove"></span><span class="slotbar"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ 01 THE HABITAT (dome) -->
+<section class="sec wrap" id="habitat-dome">
+  <div class="head"><span class="n anod">01</span><h2>The habitat <span>/ press a part</span></h2><div class="r"><span class="micro">Habitat one · R75-2 · eight stations</span><span class="led w" style="position:relative"></span></div><span class="rule"></span></div>
+  <div class="dome-wrap brushed">
+    <span class="hole" style="left:12px;top:12px"></span><span class="hole" style="right:12px;top:12px"></span>
+    <div class="dome">
+      <svg viewBox="0 0 600 324" aria-hidden="true">
+        <defs><linearGradient id="dg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0512a" stop-opacity=".12"/><stop offset="1" stop-color="#e0512a" stop-opacity=".55"/></linearGradient></defs>
+        <path d="M40 300 A260 260 0 0 1 560 300 Z" fill="url(#dg)" stroke="#2a2c30" stroke-width="1.4"/>
+        <g stroke="#2a2c30" stroke-width=".8" fill="none" opacity=".55">
+          <path d="M300 40 L180 110 L100 200 L60 300"/><path d="M300 40 L420 110 L500 200 L540 300"/>
+          <path d="M180 110 L300 150 L420 110"/><path d="M100 200 L220 220 L300 150 L380 220 L500 200"/>
+          <path d="M220 220 L160 300"/><path d="M220 220 L300 300"/><path d="M380 220 L300 300"/><path d="M380 220 L440 300"/>
+          <path d="M300 40 L300 150"/>
+        </g>
+        <line x1="20" y1="300" x2="580" y2="300" stroke="#2a2c30" stroke-width="1.4"/>
+      </svg>
+      <button class="node" style="left:26%;top:52%" data-n="0"><span class="k"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/></svg></span><span>Science lab</span></button>
+      <button class="node on" style="left:50%;top:45%" data-n="1"><span class="k"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14c3 0 5 2 5 5"/></svg></span><span>Crew</span></button>
+      <button class="node" style="left:68%;top:26%" data-n="2"><span class="k"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M8 8a6 6 0 0 0 0 8M16 8a6 6 0 0 1 0 8M5 5a10 10 0 0 0 0 14M19 5a10 10 0 0 1 0 14"/></svg></span><span>Communication</span></button>
+      <button class="node" style="left:83%;top:52%" data-n="3"><span class="k"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span><span>Power</span></button>
+      <button class="node" style="left:24%;top:78%" data-n="4"><span class="k"><svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg></span><span>Water recycling</span></button>
+      <button class="node" style="left:43%;top:80%" data-n="5"><span class="k"><svg viewBox="0 0 24 24"><path d="M12 21V11M12 11c0-4 3-6 7-6 0 4-3 6-7 6zM12 14c0-3-2-5-6-5 0 3 2 5 6 5z"/></svg></span><span>Hydroponics</span></button>
+      <button class="node" style="left:62%;top:80%" data-n="6"><span class="k"><svg viewBox="0 0 24 24"><circle cx="6" cy="16" r="3"/><circle cx="18" cy="16" r="3"/><path d="M6 16l4-7h5l3 7M10 9l2 7"/></svg></span><span>Power generator</span></button>
+      <button class="node" style="left:80%;top:80%" data-n="7"><span class="k"><svg viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="8" rx="3"/><path d="M7 13h4"/></svg></span><span>Nap pod</span></button>
+    </div>
+    <div class="readout" id="readout">
+      <span class="led"></span>
+      <div class="cap" id="ro-code">CH-12 · Crew</div>
+      <h3 id="ro-title">Three officers, sealed inside</h3>
+      <p id="ro-text">A communication officer who relays every message from Earth, a science officer who runs the experiments, and a health officer who keeps the crew fit. Between them they write three blogs a day and file their condition from inside.</p>
+      <div class="stats" id="ro-stats"><div><span class="cap">Condition</span><b>2 calm · 1 tense</b></div><div><span class="cap">Steps today</span><b>6,420</b></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ 02 WRITE (the portal as a player) -->
+<section class="sec wrap" id="write">
+  <div class="head"><span class="n anod">02</span><h2>Write to the crew <span>/ uplink CH-09</span></h2><div class="r"><span class="micro">Earth → Mars · compressed transit 12 s · real crossing stored with every message</span></div><span class="rule"></span></div>
+  <div class="player">
+    <div class="pl-top anod">
+      <span class="hole" style="left:22px;top:22px"></span><span class="hole o" style="left:78px;top:22px"></span><span class="hole" style="left:50%;top:22px"></span><span class="hole" style="right:30px;top:120px"></span><span class="hole" style="left:26px;bottom:34%"></span>
+      <div>
+        <div class="pl-knobs" id="tagknobs">
+          <div><div class="knob" data-tag="QUESTION" data-knob><i class="needle"></i></div><div class="klabel">Question</div></div>
+          <div><div class="knob" data-tag="PERSONAL" data-knob><i class="needle"></i></div><div class="klabel">Personal</div></div>
+          <div><div class="knob" data-tag="SCIENCE" data-knob><i class="needle"></i></div><div class="klabel">Science</div></div>
+        </div>
+      </div>
+      <p class="micro j">Operator BASALT-625 · choose up to three tags with the dials · 280 characters · nobody edits your words on the way out · the crew answer from inside</p>
+      <button class="knob send" id="send" type="button"><span>TRANSMIT</span></button>
+      <span class="slot-light w"></span><span class="slot-light o"></span>
+      <span class="led w" style="right:30px;bottom:56px"></span>
+    </div>
+
+    <div class="pl-glass glass">
+      <div>
+        <div class="cover">
+          <svg viewBox="0 0 300 300" aria-hidden="true">
+            <defs><radialGradient id="sun"><stop offset="0" stop-color="#ffb27a"/><stop offset="1" stop-color="#e0512a" stop-opacity="0"/></radialGradient></defs>
+            <circle cx="150" cy="150" r="46" fill="url(#sun)"/>
+            <circle cx="150" cy="150" r="10" fill="#ffd2a8"/>
+            <circle cx="150" cy="150" r="70" fill="none" stroke="#3b4a7a" stroke-width="1"/>
+            <circle cx="150" cy="150" r="118" fill="none" stroke="#3b4a7a" stroke-width="1" stroke-dasharray="2 5"/>
+            <circle cx="205" cy="107" r="7" fill="#4f8dff"/>
+            <circle cx="238" cy="68" r="9" fill="#e0512a"/>
+            <line x1="205" y1="107" x2="238" y2="68" stroke="#ff9a72" stroke-width="1.3" stroke-dasharray="3 3"/>
+            <circle id="pkt" cx="205" cy="107" r="3" fill="#fff"/>
+            <g font-family="ui-monospace,monospace" font-size="9" letter-spacing="1.5" fill="#8ea0c6"><text x="214" y="122">EARTH</text><text x="250" y="66">MARS</text></g>
+          </svg>
+          <span class="tag">ORBITAL PLOT · LIVE</span>
+          <div class="transit" id="transit"><span class="cap">Transmitting · BASALT-625</span><span class="pct" id="tpct">00%</span><div class="bar"><i id="tbar"></i></div><span class="cap" id="tdist">233 M km to go</span></div>
+        </div>
+        <div class="scrub">
+          <div class="track"><i style="width:44%"></i><b style="left:44%"></b></div>
+          <div class="row"><span>05:42 elapsed</span><span>▏◀ &nbsp; ❚❚ &nbsp; ▶▕</span><span>12:58</span></div>
+        </div>
+      </div>
+      <div class="composer">
+        <h3>Earth → Mars · 1.559 au</h3>
+        <div class="sub">One-way signal 12 min 58 s · round trip 25 min 56 s</div>
+        <textarea id="msg" maxlength="280" placeholder="Write to the crew."></textarea>
+        <div class="under"><span id="count">0 / 280</span><span id="tags">No tags · turn a dial</span></div>
+        <div class="tagrow" id="tagrow">
+          <button type="button">Question</button><button type="button">Personal</button><button type="button">Science</button><button type="button">Food</button><button type="button">Home</button><button type="button">Art</button>
+        </div>
+      </div>
+      <div class="feed">
+        <div class="feed-h"><div class="tabs"><button class="on" type="button">The board</button><button type="button">My messages</button></div><span class="live"><i></i>LIVE · 41 exchanges</span></div>
+        <div class="cards">
+          <article class="card"><div class="meta"><span>#QUESTION · <b>BASALT-625</b> · Earth</span><span>14:06</span></div><div class="q">What is the first thing you miss about Earth?</div><div class="a"><span class="w">Crew answer · Mars · 14:31</span>Rain. All three of us said it at the same time.</div></article>
+          <article class="card"><div class="meta"><span>#SCIENCE · <b>PERIGEE-405</b> · Earth</span><span>13:52</span></div><div class="q">How do you keep the crickets warm at night?</div><div class="a"><span class="w">Crew answer · Mars · 14:20</span>A heat mat on a timer. The sensor says 23.6 °C right now.</div></article>
+          <article class="card wait"><div class="meta"><span>#PERSONAL · <b>OXIDE-569</b> · Earth</span><span>14:44</span></div><div class="q">Do you still dream in colour?</div><div class="a"><span class="w">Reached Mars</span>Waiting for the crew.</div></article>
+        </div>
+      </div>
+    </div>
+
+    <div class="pl-bot anod">
+      <span class="hole" style="left:22px;top:44%"></span><span class="hole" style="left:24%;top:40px"></span><span class="hole o" style="left:36%;bottom:26px"></span><span class="hole" style="right:26px;bottom:26px"></span><span class="led w" style="left:26%;top:52%"></span><span class="led w" style="right:30%;bottom:28px"></span>
+      <div><button class="toggle" type="button" id="mine" aria-label="Show my messages"><i></i></button><div class="micro" style="margin-top:8px;color:var(--or-ink)">My messages</div></div>
+      <div><div class="italic">Earth-based audience</div><div class="stripes"></div></div>
+      <div class="big">Communication<br>portal</div>
+      <span class="slot-light o"></span>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ 03 DASHBOARD -->
+<section class="sec wrap" id="dashboard">
+  <div class="head"><span class="n anod">03</span><h2>Mission dashboard <span>/ sol 05 · Mon 19 Oct</span></h2><div class="r"><span class="micro">MARS — Habitat One · Thu 15 – Tue 27 Oct 2026 · 13 days · Europe/Berlin</span></div><span class="rule"></span></div>
+
+  <div class="dash-top">
+    <div class="cloud brushed">
+      <div class="hd"><strong>From the habitat</strong><span class="live" style="color:#1c1d20"><i></i>LIVE · checked every 15 min</span></div>
+      <div class="row" id="cloudrow"></div>
+    </div>
+    <div class="doors">
+      <a class="door anod" href="#" style="color:#1a0f0b">At a Glance <span class="arrow">-&gt;</span><span class="slot-light"></span></a>
+      <a class="door" href="#" style="background:#141418;box-shadow:inset 0 0 0 1px #24242b">Media <span class="arrow">-&gt;</span><span class="slot-light b"></span></a>
+    </div>
+  </div>
+  <div class="sols" id="sols"></div>
+
+  <div class="folder">
+    <div class="keys" id="keys">
+      <div class="krow"><div class="micro">Habitat</div><div class="btns">
+        <button class="fkey on" data-p="habitat" type="button"><i></i>Habitat <small>CH-01</small></button>
+        <button class="fkey" data-p="trends" type="button"><i></i>Trends <small>CH-40</small></button></div></div>
+      <div class="krow"><div class="micro">Today</div><div class="btns">
+        <button class="fkey" data-p="schedule" type="button"><i></i>Schedule <small>CH-30</small></button>
+        <button class="fkey" data-p="meal" type="button"><i></i>Meal <small>CH-32</small></button>
+        <button class="fkey" data-p="crew" type="button"><i></i>Crew moods <small>CH-12</small></button></div></div>
+      <div class="krow"><div class="micro">Blogs</div><div class="btns">
+        <button class="fkey" data-p="b-cmd" type="button"><i></i>Commander <small>CH-53</small></button>
+        <button class="fkey" data-p="b-health" type="button"><i></i>Health <small>CH-52</small></button>
+        <button class="fkey" data-p="b-sci" type="button"><i></i>Science <small>CH-51</small></button></div></div>
+    </div>
+
+    <!-- HABITAT -->
+    <div class="page on" id="p-habitat">
+      <div class="grid">
+        <div class="tile anod c4"><div class="top"><h4>Carbon dioxide</h4><span class="cap">CH-01</span></div>
+          <div class="dialw"><svg viewBox="0 0 132 132" width="140" height="140" aria-label="812 ppm">
+            <circle cx="66" cy="66" r="54" fill="none" stroke="rgba(0,0,0,.2)" stroke-width="9" stroke-dasharray="254 340" transform="rotate(135 66 66)" stroke-linecap="round"/>
+            <circle cx="66" cy="66" r="54" fill="none" stroke="#fbe9e2" stroke-width="9" stroke-dasharray="118 340" transform="rotate(135 66 66)" stroke-linecap="round"/>
+            <circle cx="66" cy="66" r="38" fill="#0c0c0e"/>
+            <text x="66" y="69" text-anchor="middle" font-size="24" font-weight="700" fill="#fff" letter-spacing="-1">812</text>
+            <text x="66" y="85" text-anchor="middle" font-size="8.5" fill="#9a9aa1" font-family="ui-monospace,monospace" letter-spacing="1.6">PPM</text></svg></div>
+          <div class="foot"><span>Fresh</span><span>0 — 2000</span></div></div>
+        <div class="tile brushed c4"><div class="top"><h4>Temperature</h4><span class="cap">CH-02</span></div>
+          <div class="big">21.4<small>°C</small></div>
+          <div style="height:10px;border-radius:999px;background:#111;position:relative;overflow:hidden"><i style="position:absolute;left:0;top:0;bottom:0;width:53%;background:linear-gradient(90deg,#4f8dff,#e0512a);box-shadow:0 0 10px var(--or-glow)"></i></div>
+          <div class="foot"><span>Scale 0–40 °C</span><span>Comfortable</span></div></div>
+        <div class="tile dark c2"><div class="top"><h4>Humidity</h4></div><div class="big">38<small>%</small></div><div class="foot"><span>0–100 %RH</span></div></div>
+        <div class="tile dark c2"><div class="top"><h4>Light</h4></div><div class="big">412<small>raw</small></div><div class="foot"><span>0–1000</span></div></div>
+        <div class="tile dark c3"><div class="top"><h4>Calories consumed</h4><span class="cap">CH-14</span></div><div class="big">5,010<small>kcal</small></div><div class="foot"><span>Comm 1,720 · Sci 1,650 · Hlth 1,640</span></div></div>
+        <div class="tile dark c3"><div class="top"><h4>Steps taken</h4><span class="cap">CH-13</span></div><div class="big">6,420<small>steps</small></div><div class="foot"><span>Counted by the crew</span></div></div>
+        <div class="tile brushed c6"><div class="top"><h4>Power consumed</h4><span class="cap">Today · kWh</span></div>
+          <div class="gg">
+            <div class="g"><div class="t"><span>Heating</span><b>1.1</b></div><div class="tr"><i style="width:73%"></i></div></div>
+            <div class="g"><div class="t"><span>Food</span><b>0.5</b></div><div class="tr"><i style="width:33%"></i></div></div>
+            <div class="g"><div class="t"><span>Lighting</span><b>0.35</b></div><div class="tr"><i style="width:23%"></i></div></div>
+            <div class="g"><div class="t"><span>Electronics</span><b>0.45</b></div><div class="tr"><i style="width:30%"></i></div></div>
+            <div class="g"><div class="t"><span>Other</span><b>0.1</b></div><div class="tr"><i style="width:7%"></i></div></div>
+            <div class="g"><div class="t"><span><b style="font-family:var(--sans);font-weight:700">Total</b></span><b>2.5</b></div><div class="tr"><i style="width:100%;background:var(--or)"></i></div></div>
+          </div><div class="foot"><span>Counted by the crew</span><span>Sol 05</span></div></div>
+        <div class="tile dark c12" style="min-height:0"><div class="top"><h4>Resources</h4><span class="cap">Carried in · never resupplied</span></div>
+          <div class="gg" style="margin:16px 0">
+            <div class="g"><div class="t"><span>Potable water</span><b>418 L</b></div><div class="tr"><i style="width:64%"></i></div></div>
+            <div class="g"><div class="t"><span>Food rations</span><b>31 days</b></div><div class="tr"><i style="width:71%"></i></div></div>
+            <div class="g"><div class="t"><span>Oxygen reserve</span><b>82 %</b></div><div class="tr"><i style="width:82%"></i></div></div>
+            <div class="g low"><div class="t"><span>CO₂ scrubbers</span><b>6 units</b></div><div class="tr"><i style="width:22%"></i></div></div>
+            <div class="g"><div class="t"><span>Battery charge</span><b>7.2 kWh</b></div><div class="tr"><i style="width:58%"></i></div></div>
+            <div class="g"><div class="t"><span>Dust filters</span><b>9 units</b></div><div class="tr"><i style="width:75%"></i></div></div>
+            <div class="g"><div class="t"><span>Medical kits</span><b>3 kits</b></div><div class="tr"><i style="width:100%"></i></div></div>
+            <div class="g"><div class="t"><span>Repair materials</span><b>11 kg</b></div><div class="tr"><i style="width:69%"></i></div></div>
+            <div class="g low"><div class="t"><span>Germination trays</span><b>2 trays</b></div><div class="tr"><i style="width:17%"></i></div></div>
+          </div></div>
+        <!-- habitat hardware (Home Assistant) inside the Habitat -->
+        <div class="tile dark c7" style="min-height:0"><div class="top"><h4>Habitat hardware · air</h4><span class="cap">Home Assistant · 6 devices · every 15 min</span></div>
+          <svg class="chart" viewBox="0 0 600 230" preserveAspectRatio="none" id="hwchart" aria-hidden="true"></svg>
+          <div class="legend"><span><i style="background:#e0512a"></i>Cricket 23.6 °C</span><span><i style="background:#4f8dff"></i>O₂ 20.8 %</span><span><i style="background:#e8e8ea"></i>CO 1.2 ppm</span><span><i style="background:#8e7cff"></i>NO₂ 0.04 ppm</span></div></div>
+        <div class="tile anod c5" style="min-height:0"><div class="top"><h4>Kitchen · Shelly plug</h4><span class="cap">W · hourly avg</span></div>
+          <div class="big" style="color:#fbe9e2">1.4<small style="color:#2a0f06">kW now</small></div>
+          <div class="bars" id="kbars" style="color:#1a0f0b"></div>
+          <div class="foot"><span>+5.47 kWh today</span><span>00 — 24</span></div></div>
+      </div>
+    </div>
+
+    <!-- TRENDS -->
+    <div class="page" id="p-trends">
+      <div class="tile dark" style="min-height:0"><div class="top"><h4>Trends · the run</h4><span class="cap">SOL 01 — SOL 13 · each line on its own 0–100 scale</span></div>
+        <svg class="chart" viewBox="0 0 900 260" preserveAspectRatio="none" id="trends" style="height:300px" aria-hidden="true"></svg>
+        <div class="legend"><span><i style="background:#e0512a"></i>CO₂</span><span><i style="background:#4f8dff"></i>Water</span><span><i style="background:#e8e8ea"></i>Food rations</span><span><i style="background:#8e7cff"></i>Calories</span><span><i style="background:#3fbf8f"></i>Exchanges</span><span style="margin-left:auto">— measured &nbsp; ┄ planned</span></div></div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div class="page" id="p-schedule">
+      <div class="tile dark" style="min-height:0"><div class="top"><h4>Today’s schedule</h4><span class="cap">SOL 05 · Mon 19 Oct</span></div>
+        <ul class="sched" style="margin-top:12px">
+          <li class="done"><span class="tm">08:00</span><span>Shift change</span><span class="st">Done</span></li>
+          <li class="done"><span class="tm">08:30</span><span>Breakfast / communal mission planning</span><span class="st">Done</span></li>
+          <li class="done"><span class="tm">09:30</span><span>Science block 1</span><span class="st">Done</span></li>
+          <li class="done"><span class="tm">11:00</span><span>Mental health / movement</span><span class="st">Done</span></li>
+          <li class="done"><span class="tm">11:30</span><span>Lunch prep</span><span class="st">Done</span></li>
+          <li class="now"><span class="tm">12:00</span><span>Lunch</span><span class="st">● Now</span></li>
+          <li><span class="tm">13:00</span><span>Science block 2</span><span class="st">Next</span></li>
+          <li><span class="tm">14:00</span><span>Science block 2 / hot water prep with bike</span><span class="st"></span></li>
+          <li><span class="tm">15:00</span><span>Kaffee &amp; Kuchen / governance topics</span><span class="st"></span></li>
+          <li><span class="tm">16:00</span><span>EVA / science block 3</span><span class="st"></span></li>
+          <li><span class="tm">22:00</span><span>Shift change / lights out</span><span class="st"></span></li>
+        </ul></div>
+    </div>
+
+    <!-- MEAL -->
+    <div class="page" id="p-meal">
+      <div class="tile dark" style="min-height:0"><div class="top"><h4>Today’s meal</h4><span class="cap">961 kcal · 1.2 L · 0.8 kg CO₂e</span></div>
+        <div style="margin-top:12px">
+          <div class="meal"><span class="ix" style="background:var(--or);color:#1a0f0b">B</span><div><b>Oat Porridge with Dried Apple</b><span class="m">Protein 11.2 g · Fat 7.4 g · Carbs 66.3 g · Fibre 8.1 g · 0.212 kg CO₂e · 310 L water footprint</span></div><span class="kc">385 kcal · 10 min</span></div>
+          <div class="meal"><span class="ix" style="background:#e8e8ea;color:#111">L</span><div><b>Chili Non Carne</b><span class="m">Protein 22.9 g · Fat 16.6 g · Carbs 37.9 g · Fibre 20 g · 0.535 kg CO₂e · 979 L water footprint</span></div><span class="kc">468 kcal · 45 min</span></div>
+          <div class="meal"><span class="ix" style="background:#4f8dff;color:#fff">D</span><div><b>Pfannenbrot</b><span class="m">Protein 2.9 g · Fat 2.1 g · Carbs 18.5 g · Fibre 1.5 g · 0.026 kg CO₂e · 55.7 L water footprint</span></div><span class="kc">108 kcal · 20 min</span></div>
+        </div></div>
+    </div>
+
+    <!-- CREW -->
+    <div class="page" id="p-crew">
+      <div class="officer"><div class="knob"><svg viewBox="0 0 28 28"><circle cx="10" cy="11" r="1" fill="#fff"/><circle cx="18" cy="11" r="1" fill="#fff"/><path d="M9 17c3 3 7 3 10 0"/></svg></div><div><b>Communication officer</b><span>Calm, at ease with the day</span></div><span class="state">Calm</span></div>
+      <div class="officer"><div class="knob"><svg viewBox="0 0 28 28"><circle cx="10" cy="11" r="1" fill="#fff"/><circle cx="18" cy="11" r="1" fill="#fff"/><path d="M9 18h10"/></svg></div><div><b>Science officer</b><span>Level — neither calm nor cross</span></div><span class="state">Level</span></div>
+      <div class="officer"><div class="knob" style="background:radial-gradient(circle at 40% 32%,#ff8a5c,#e0512a 55%,#8a2a0e)"><svg viewBox="0 0 28 28"><circle cx="10" cy="11" r="1" fill="#fff"/><circle cx="18" cy="11" r="1" fill="#fff"/><path d="M9 19c3-3 7-3 10 0"/></svg></div><div><b>Health officer</b><span>Tense, short with the others</span></div><span class="state or">Tense</span></div>
+      <p class="micro" style="color:var(--dim);margin:14px 4px 0">Condition as reported · never as numbers</p>
+    </div>
+
+    <!-- BLOGS -->
+    <div class="page" id="p-b-cmd">
+      <article class="blog anod" style="color:#1a0f0b"><div class="num" style="color:#fbe9e2">01</div><h3>Commander Blog</h3><div class="by">Communication officer · SOL 05 · Mon 19 Oct</div>
+        <p>Forty-one messages crossed today. Someone asked what we miss first. Rain, all three of us said, before anyone else could answer.</p>
+        <p>The kitchen is the loudest room in the habitat. We cooked chili for the first time and the whole dome smelled of cumin for an hour.</p></article>
+    </div>
+    <div class="page" id="p-b-health">
+      <article class="blog brushed"><div class="num">02</div><h3>Daily Health Blog</h3><div class="by">Health officer · SOL 05 · Mon 19 Oct</div>
+        <p>6,420 steps between the three of us — the treadmill counts for most of it. Sleep was short. Tomorrow's movement block starts earlier.</p>
+        <p>Heart rates logged at 07:00 and 19:00, all within range.</p></article>
+    </div>
+    <div class="page" id="p-b-sci">
+      <article class="blog" style="background:#141418;box-shadow:inset 0 0 0 1px #24242b"><div class="num" style="color:var(--or)">03</div><h3>Daily Science Findings</h3><div class="by">Science officer · SOL 05 · Mon 19 Oct</div>
+        <div class="img"></div>
+        <p>Cricket terrarium held 23.6 °C through the night. CO₂ peaked at 1,140 ppm during lunch prep and fell below 800 within the hour.</p></article>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ 04 ABOUT -->
+<section class="sec wrap" id="about">
+  <div class="head"><span class="n anod">04</span><h2>About <span>/ the project, the station, who we are</span></h2><span class="rule"></span></div>
+  <div class="about">
+    <div class="fold anod" style="color:#1a0f0b"><span class="hole" style="right:16px;top:16px"></span>
+      <h3 style="color:#fbe9e2">The project</h3>
+      <p>MARS is a durational performance at ZKM Karlsruhe. For thirteen days three officers live in a sealed habitat on the Marsplatz, with its own water, food and power.</p>
+      <p>The station is the only way in: you write, the message crosses the real distance to Mars, and the crew answer from inside.</p></div>
+    <div class="fold" style="background:#141418;box-shadow:inset 0 0 0 1px #24242b">
+      <h3>How the station behaves</h3>
+      <div class="steps">
+        <div><b>01</b><span>You write, the crossing plays for twelve seconds; the real 13-minute light-time is stored.</span></div>
+        <div><b>02</b><span>The message reaches Mars. Only you see it, under My messages.</span></div>
+        <div><b>03</b><span>The crew answer and publish; both halves appear on the board for everyone.</span></div>
+        <div><b>04</b><span>Everything is kept: the whole run is the record.</span></div>
+      </div></div>
+    <div class="fold brushed">
+      <h3>Who we are</h3>
+      <div class="credits">
+        <div><span>Concept and direction</span><span>To be credited</span></div>
+        <div><span>Performance</span><span>Three performers</span></div>
+        <div><span>Scenography and habitat</span><span>To be credited</span></div>
+        <div><span>Sensor systems and software</span><span>To be credited</span></div>
+        <div><span>Production</span><span>ZKM | Hertzlab</span></div>
+      </div></div>
+  </div>
+</section>
+</main>
+
+<!-- ================================================================ FOOTER -->
+<footer class="site-foot">
+  <div class="foot-plate anod">
+    <span class="hole" style="left:22px;top:22px;width:14px;height:14px"></span>
+    <p class="wm">MARS<b>!</b>platz</p>
+    <div class="foot-links"><a href="#">Privacy policy</a><a href="#">ZKM</a><a href="#">Imprint</a></div>
+    <div class="foot-in brushed">
+      <div><b>ZKM | Hertzlab — MARS</b>Lorenzstraße 19 · 76135 Karlsruhe</div>
+      <div><b>Run 01</b>15 – 27 Oct 2026 · 13 sols</div>
+      <div><b>Station</b>No tracking · works offline</div>
+      <span class="led" style="position:relative"></span>
+    </div>
+  </div>
+</footer>
+
+<nav class="tabbar" aria-label="Station">
+  <a class="on" href="#top"><i></i>Home</a><a href="#dashboard"><i></i>Dashboard</a><a class="w" href="#write"><i></i>Write</a><a href="#dashboard"><i></i>Media</a><a href="#about"><i></i>About</a>
+</nav>
+
+<!-- ================================================================ WELCOME -->
+<div class="veil" id="veil" role="dialog" aria-modal="true" aria-labelledby="w-t">
+  <div class="welcome anod">
+    <span class="hole" style="left:16px;top:16px"></span>
+    <div>
+      <h2 id="w-t">Welcome<b>BASALT-625</b></h2>
+      <p>To make sure you talk to the Mars habitat under the same call sign every time, please accept. If you do not, you will be given a new name on each visit and cannot see your own messages. We do not track anything.</p>
+    </div>
+    <div class="mini"><div>YOUR CALLSIGN<b>BASALT-625</b></div></div>
+    <div class="wbtns"><a href="#">Learn more</a><button type="button" id="agree">Agree and close</button></div>
+  </div>
+</div>
+
+<script>
+/* Mock behaviour only: clocks, knobs, tags, the crossing, the dome, the folder, sample data. */
+(function () {
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return [].slice.call((r || document).querySelectorAll(s)); };
+  var pad = function (n) { return String(n).padStart(2, '0'); };
+
+  // clocks: habitat time and T+ since the start of the rehearsal
+  var start = Date.now() - (4 * 86400 + 14 * 3600 + 6 * 60) * 1000;
+  function tick() {
+    var d = new Date(); $('#now').textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    var s = Math.floor((Date.now() - start) / 1000), t = 'T+' + String(Math.floor(s / 86400)).padStart(3, '0') + ':' + pad(Math.floor(s / 3600) % 24) + ':' + pad(Math.floor(s / 60) % 60);
+    $('#tclock').textContent = t; $('#puckclock').textContent = t;
+  }
+  tick(); setInterval(tick, 1000);
+
+  $('#agree').onclick = function () { $('#veil').classList.add('gone'); };
+
+  // knobs turn when dragged; tag dials toggle a tag
+  $$('[data-knob]').forEach(function (k) {
+    var n = k.querySelector('.needle'), a = -60, y0 = null;
+    if (n) n.style.transform = 'rotate(' + a + 'deg)';
+    k.addEventListener('pointerdown', function (e) { y0 = e.clientY; });
+    window.addEventListener('pointermove', function (e) { if (y0 === null || !n) return; a = Math.max(-140, Math.min(140, a + (y0 - e.clientY) * 1.5)); y0 = e.clientY; n.style.transform = 'rotate(' + a + 'deg)'; });
+    window.addEventListener('pointerup', function () { y0 = null; });
+  });
+  var chosen = [];
+  function showTags() {
+    $('#tags').textContent = chosen.length ? chosen.map(function (t) { return '#' + t; }).join(' ') : 'No tags · turn a dial';
+    $$('#tagrow button').forEach(function (b) { b.classList.toggle('on', chosen.indexOf(b.textContent.toUpperCase()) > -1); });
+    $$('#tagknobs .knob').forEach(function (k) { k.classList.toggle('on', chosen.indexOf(k.dataset.tag) > -1); });
+  }
+  function toggleTag(t) { var i = chosen.indexOf(t); if (i > -1) chosen.splice(i, 1); else if (chosen.length < 3) chosen.push(t); showTags(); }
+  $$('#tagknobs .knob').forEach(function (k) { k.addEventListener('click', function () { toggleTag(k.dataset.tag); }); });
+  $$('#tagrow button').forEach(function (b) { b.onclick = function () { toggleTag(b.textContent.toUpperCase()); }; });
+  $('#msg').oninput = function () { $('#count').textContent = this.value.length + ' / 280'; };
+  $('#mine').onclick = function () { this.classList.toggle('on'); };
+
+  // transmit: the compressed crossing plays on the orbital plot
+  $('#send').onclick = function () {
+    var m = $('#msg'); if (!m.value.trim()) { m.focus(); m.placeholder = 'Write something first.'; return; }
+    var t = $('#transit'), t0 = performance.now(); t.classList.add('on');
+    (function step(now) {
+      var p = Math.min(1, (now - t0) / 12000);
+      $('#tbar').style.width = p * 100 + '%'; $('#tpct').textContent = pad(Math.round(p * 100)) + '%';
+      $('#tdist').textContent = Math.round(233 * (1 - p)) + ' M km to go';
+      if (p < 1) requestAnimationFrame(step); else { $('#tpct').textContent = 'REACHED MARS'; setTimeout(function () { t.classList.remove('on'); m.value = ''; $('#count').textContent = '0 / 280'; }, 1800); }
+    })(t0);
+  };
+  var pk = $('#pkt');
+  (function orbit(now) { var p = (now / 2600) % 1; pk.setAttribute('cx', 205 + 33 * p); pk.setAttribute('cy', 107 - 39 * p); requestAnimationFrame(orbit); })(0);
+
+  // the dome's eight stations
+  var D = [
+    ['CH-11 · Science lab', 'The science bench', 'Samples, cultures and readings, and the daily findings the science officer writes up. The sensor node beside it measures temperature, humidity and CO₂.', ['Findings today', '1 post'], ['CO₂ peak', '1,140 ppm']],
+    ['CH-12 · Crew', 'Three officers, sealed inside', 'A communication officer who relays every message from Earth, a science officer who runs the experiments, and a health officer who keeps the crew fit. Between them they write three blogs a day.', ['Condition', '2 calm · 1 tense'], ['Steps today', '6,420']],
+    ['CH-09 · Communication', 'The uplink', 'Every message from Earth arrives here after its crossing. The communication officer reads, answers and publishes.', ['Waiting', '3 messages'], ['Published', '41']],
+    ['CH-20 · Power', 'Power', 'Batteries charged by the generator and the bike. Heating, food, light and electronics each draw their share.', ['Today', '2.5 kWh'], ['Battery', '7.2 kWh']],
+    ['CH-21 · Water recycling', 'Nothing is thrown away', 'Used water passes a planted filter bed, a screw press and a settling funnel and comes back for the plants and the crew.', ['Potable water', '418 L'], ['Days left', '9']],
+    ['CH-22 · Hydroponics', 'Plants without soil', 'Three shelves of plants grown in nutrient-rich water — fresh food and part of the habitat’s air.', ['Germination trays', '2'], ['Harvest', 'Sol 09']],
+    ['CH-23 · Power generator', 'The bike', 'Pedal power for hot water and charging. Two science blocks a day end with a ride.', ['Ridden today', '46 min'], ['Output', '0.3 kWh']],
+    ['CH-24 · Nap pod', 'Rest', 'Sleep and quiet, one officer at a time. Shift change at 08:00 and 22:00.', ['Sleep last night', '6 h 10'], ['Lights out', '22:00']]];
+  $$('.node').forEach(function (b) {
+    b.onclick = function () {
+      $$('.node').forEach(function (x) { x.classList.toggle('on', x === b); });
+      var d = D[+b.dataset.n];
+      $('#ro-code').textContent = d[0]; $('#ro-title').textContent = d[1]; $('#ro-text').textContent = d[2];
+      $('#ro-stats').innerHTML = [d[3], d[4]].map(function (s) { return '<div><span class="cap">' + s[0] + '</span><b>' + s[1] + '</b></div>'; }).join('');
+    };
+  });
+
+  // the folder of panels
+  $$('.fkey').forEach(function (k) {
+    k.onclick = function () {
+      $$('.fkey').forEach(function (x) { x.classList.toggle('on', x === k); });
+      $$('.page').forEach(function (p) { p.classList.toggle('on', p.id === 'p-' + k.dataset.p); });
+    };
+  });
+
+  // sample data: cloud stills, sols, kitchen bars, charts
+  var tones = ['linear-gradient(160deg,#c9ccd2,#7c8088)', 'radial-gradient(circle at 60% 40%,#ffb08c,#e0512a 45%,#40150a)', 'linear-gradient(135deg,#1b1b1e,#4a4b52)',
+    'radial-gradient(circle at 40% 60%,#9ec0ff,#16255e 70%)', 'repeating-linear-gradient(90deg,#d7d9dd 0 5px,#b8bbc0 5px 10px)', 'linear-gradient(200deg,#e0512a,#ffcfb8)'];
+  tones.forEach(function (t) { var d = document.createElement('div'); d.className = 'ph'; d.style.setProperty('--bg-img', t); $('#cloudrow').appendChild(d); });
+  ['Thu 15', 'Fri 16', 'Sat 17', 'Sun 18', 'Mon 19', 'Tue 20', 'Wed 21', 'Thu 22', 'Fri 23', 'Sat 24', 'Sun 25', 'Mon 26', 'Tue 27'].forEach(function (d, i) {
+    var s = document.createElement('div'); s.className = 'sol' + (i < 4 ? ' past' : i === 4 ? ' now' : '');
+    s.innerHTML = '<span>SOL ' + pad(i + 1) + '</span><b>' + d.split(' ')[1] + '</b><span>' + d.split(' ')[0] + '</span><div class="leds"><i></i><i></i><i></i></div>';
+    $('#sols').appendChild(s);
+  });
+  [4, 4, 3, 4, 3, 4, 5, 60, 82, 12, 6, 70, 96, 40, 8, 6, 5, 5, 6, 30, 64, 20, 6, 5].forEach(function (v, i) {
+    var b = document.createElement('i'); b.style.height = v + '%'; if (i === 12) b.className = 'hi'; $('#kbars').appendChild(b);
+  });
+  function line(svg, pts, col, dash, w) {
+    var p = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    p.setAttribute('points', pts.map(function (q) { return q.join(','); }).join(' '));
+    p.setAttribute('fill', 'none'); p.setAttribute('stroke', col); p.setAttribute('stroke-width', w || 2); if (dash) p.setAttribute('stroke-dasharray', dash);
+    p.setAttribute('vector-effect', 'non-scaling-stroke'); svg.appendChild(p);
+  }
+  function grid(svg, W, H, n) {
+    for (var i = 0; i <= n; i++) { var l = document.createElementNS('http://www.w3.org/2000/svg', 'line'); var x = i * W / n;
+      l.setAttribute('x1', x); l.setAttribute('x2', x); l.setAttribute('y1', 0); l.setAttribute('y2', H); l.setAttribute('stroke', '#24242b'); l.setAttribute('vector-effect', 'non-scaling-stroke'); svg.appendChild(l); }
+  }
+  var hw = $('#hwchart'); grid(hw, 600, 230, 24);
+  function wave(n, base, amp, f, ph, W, H) { var a = []; for (var i = 0; i <= n; i++) a.push([i * W / n, H - (base + amp * Math.sin(i / f + ph)) * H]); return a; }
+  line(hw, wave(14, .62, .06, 3, 0, 600 * 14 / 24, 230), '#e0512a', null, 2.2);
+  line(hw, wave(14, .78, .02, 2, 1, 600 * 14 / 24, 230), '#4f8dff');
+  line(hw, wave(14, .30, .06, 2.5, 2, 600 * 14 / 24, 230), '#e8e8ea');
+  line(hw, wave(14, .12, .03, 1.5, 3, 600 * 14 / 24, 230), '#8e7cff');
+  var tr = $('#trends'), W = 900, H = 260; grid(tr, W, H, 12);
+  function run(vals, col) { var past = vals.slice(0, 5).map(function (v, i) { return [i * W / 12, H - v * H]; }), fut = vals.slice(4).map(function (v, i) { return [(i + 4) * W / 12, H - v * H]; }); line(tr, past, col, null, 2.4); line(tr, fut, col, '5 6', 1.4); }
+  run([.55, .6, .52, .66, .58, .6, .57, .62, .6, .58, .61, .59, .6], '#e0512a');
+  run([.98, .9, .82, .74, .66, .58, .5, .42, .34, .27, .2, .13, .06], '#4f8dff');
+  run([.95, .9, .85, .8, .76, .7, .66, .61, .56, .5, .46, .41, .36], '#e8e8ea');
+  run([.45, .5, .48, .55, .52, .5, .5, .5, .5, .5, .5, .5, .5], '#8e7cff');
+  line(tr, [[0, H - .2 * H], [W / 12, H - .35 * H], [2 * W / 12, H - .5 * H], [3 * W / 12, H - .42 * H], [4 * W / 12, H - .6 * H]], '#3fbf8f', null, 2.4);
+})();
+</script>
+</body>
+</html>

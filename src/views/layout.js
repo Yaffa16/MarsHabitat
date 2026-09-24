@@ -192,7 +192,10 @@ function consent(current, T = same, callsign = '') {
   // The callsign the visitor has, or will get on agreeing: the one they were
   // given for this visit if they have written already, otherwise a free one
   // picked now and carried in the form, so the name greeted is the name kept.
-  return `<aside class="consent" id="consent" role="dialog" aria-labelledby="consent-title" aria-describedby="consent-text">
+  // Shown in the middle of the screen over a blurred page (.consent-veil,
+  // aura.css), so it is read before anything else.
+  return `<div class="consent-veil" id="consent-veil">
+  <aside class="consent" id="consent" role="dialog" aria-modal="true" aria-labelledby="consent-title" aria-describedby="consent-text">
     <form method="post" action="/consent">
       <input type="hidden" name="back" value="${esc(current || '/')}">
       ${callsign ? `<input type="hidden" name="callsign" value="${esc(callsign)}">` : ''}
@@ -203,7 +206,8 @@ function consent(current, T = same, callsign = '') {
         <button type="submit" name="choice" value="yes" class="btn primary">${T('Agree and close')}</button>
       </div>
     </form>
-  </aside>`;
+  </aside>
+  </div>`;
 }
 
 /* The foot: the wordmark (on the station page), three keys — the privacy
