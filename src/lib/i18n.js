@@ -454,9 +454,15 @@ const D = {
   'Crew answer': ['Antwort der Crew', 'Réponse de l’équipage'],
   'Home': ['Start', 'Accueil'],
   'Cookies': ['Cookies', 'Cookies'],
-  'One cookie: your callsign (e.g. BASALT-625), so you find your messages when you come back. Theme and language are kept the same way. No account, no tracking, nothing passed on. Reject: nothing is kept beyond this visit.':
-    ['Ein Cookie: dein Rufzeichen (z. B. BASALT-625), damit du deine Nachrichten wiederfindest, wenn du zurückkommst. Thema und Sprache werden genauso gemerkt. Kein Konto, kein Tracking, nichts wird weitergegeben. Ablehnen: nichts bleibt über diesen Besuch hinaus.',
-     'Un cookie : votre indicatif (p. ex. BASALT-625), pour retrouver vos messages à votre retour. Thème et langue sont gardés de la même manière. Pas de compte, pas de pistage, rien n’est transmis. Refuser : rien n’est conservé au-delà de cette visite.'],
+  'One cookie: your callsign (e.g. BASALT-625), so you find your messages when you come back. Theme and language are kept the same way. No account, no tracking, nothing passed on.':
+    ['Ein Cookie: dein Rufzeichen (z. B. BASALT-625), damit du deine Nachrichten wiederfindest, wenn du zurückkommst. Thema und Sprache werden genauso gemerkt. Kein Konto, kein Tracking, nichts wird weitergegeben.',
+     'Un cookie : votre indicatif (p. ex. BASALT-625), pour retrouver vos messages à votre retour. Thème et langue sont gardés de la même manière. Pas de compte, pas de pistage, rien n’est transmis.'],
+  'Learn more': ['Mehr erfahren', 'En savoir plus'],
+  'Welcome': ['Willkommen', 'Bienvenue'],
+  'To make sure you talk to the Mars habitat under the same call sign every time, please accept. If you do not, you will be given a new name on each visit and cannot see your own messages. We do not track anything.':
+    ['Damit du immer unter demselben Rufzeichen mit dem Mars-Habitat sprichst, stimme bitte zu. Sonst bekommst du bei jedem Besuch einen neuen Namen und kannst deine eigenen Nachrichten nicht sehen. Wir verfolgen nichts.',
+     'Pour parler à l’habitat martien toujours sous le même indicatif, merci d’accepter. Sinon, vous recevrez un nouveau nom à chaque visite et ne pourrez pas voir vos propres messages. Nous ne suivons rien.'],
+  'Agree and close': ['Zustimmen und schließen', 'Accepter et fermer'],
   'Accept': ['Akzeptieren', 'Accepter'],
   'Privacy policy': ['Datenschutz', 'Politique de confidentialité'],
   'Imprint': ['Impressum', 'Mentions légales'],

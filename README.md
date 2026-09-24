@@ -402,8 +402,8 @@ The science and health officers have no other blog: their old per-officer "Daily
 from mission control, and any entry for them in `logbook.json` (or left in the database) is
 dropped on load. The crew log page shows each day's three blogs, filterable by blog.
 
-The foot of every public page links **Privacy policy**, **ZKM** and **Imprint**
-(`https://zkm.de/en/imprint`).
+The foot of every public page links **Privacy policy**, **ZKM** and **Imprint** — the imprint is the
+station's own page, `/imprint` (`src/views/pages/imprint.js`), with ZKM's details in German and English.
 
 ## Who writes what
 
@@ -482,7 +482,7 @@ the page (HEIC, some MOV) is still whole and downloadable — the page says so.
 Photographs kept on the ZKM cloud (`cloud.zkm.de`, a Nextcloud) are shown as a grid on
 **`/media`** — that page is the gallery and nothing else. The station server signs in with
 the display account over **WebDAV**, checks the folder for new images on a set **frequency**
-(`CLOUD_CHECK_SECONDS`, twenty minutes by default), follows its subfolders, and keeps a copy of every image it shows on the `station-data` volume under `/data/cloud`
+(`CLOUD_CHECK_SECONDS`, fifteen minutes by default), follows its subfolders, and keeps a copy of every image it shows on the `station-data` volume under `/data/cloud`
 (beside a `manifest.json`), together with the preview Nextcloud renders for it. The browser
 only ever talks to the station — `/media/cloud/<id>` is the copy, `/media/cloud/<id>/thumb`
 the preview — so the grid stands with the cloud slow, the sign-in changed or the venue
@@ -501,7 +501,7 @@ listed but not copied. The pages carry the **newest `CLOUD_MAX_FILES`** pictures
 a week of one every twenty minutes); whatever the folder holds beyond them stays in the folder
 and is simply not shown. Every transfer has a time limit, so a cloud that stalls mid-picture
 costs one read, not the bridge: the read moves on, and the picture is tried again next time.
-Both gallery heads say when the folder was last read — *checked every 20 min · last at 14:20*
+Both gallery heads say when the folder was last read — *checked every 15 min · last at 14:15*
 — and, when the latest read failed, that the cloud could not be reached and when, so a
 bridge that has gone quiet never looks like a folder that has. Mission control's **Habitat**
 tab ends with the bridge's state — how many images, when the folder was last read, what went
@@ -525,6 +525,14 @@ previews, so the grid draws the originals scaled down. Under Docker the mount ha
 the container: add `- /path/to/your/mountpoint:/cloud:ro` under the station's `volumes:` in
 `docker-compose.yml` and set `CLOUD_DIR=/cloud`. The two ways are the same protocol and the
 same account; WebDAV from the station itself needs nothing installed and is the simpler one.
+
+## One rhythm: every fifteen minutes
+
+Every source the station pulls from is read **every fifteen minutes** by default: the external
+sensor node (`CRITICAL_POLL_MS=900000`), Home Assistant (`HA_POLL_MS=900000`) and the cloud
+folder (`CLOUD_CHECK_SECONDS=900`); open pages ask the station for new readings on the same
+beat. A value set in `.env` overrides its default. The station reads as often as this; the
+sensor node itself still transmits on its own cycle, so its new values arrive as it sends them.
 
 ## Where the readings start
 
@@ -621,7 +629,7 @@ Three things will change, and none of them is code:
   tile also says what today has added) and the decimals to print. The file is re-read on
   every poll, so adding a device is an edit and it is on the station within a minute — no
   restart, no redeploy.
-- **How often** — `HA_POLL_MS` (default 60000); `HA_POLL=false` holds the bridge off
+- **How often** — `HA_POLL_MS` (default 900000, fifteen minutes); `HA_POLL=false` holds the bridge off
   without removing the credentials.
 
 The browser never talks to Home Assistant: the server polls, stores every state change in
@@ -1318,16 +1326,18 @@ nothing else: no account, no name. The same browser gets the same callsign back 
 as the cookie lasts; a cleared browser, private window or second device is a new visitor.
 Unused callsigns are pruned after seven days. The station asks before setting it: on first
 contact every public page carries the **cookie question** (`consent()` in
-`src/views/layout.js`, `POST /consent`), a small card — the facts of the cookie in four
-short lines of small type, nothing more — with Accept and Reject. Until it is answered a page view sets no cookie at all and the composer
-shows *Callsign on sending* in place of the callsign. **Accept** stores the answer
+`src/views/layout.js`, `POST /consent`), a card at the bottom centre of the page that greets the visitor by the
+callsign they will keep (*Welcome OXIDE-569*: the name is picked on arrival and is the one the composer shows and a
+first message is sent under) and says why to accept, with **Learn more** (the ZKM privacy policy, in a new
+tab, the card stays) and **Agree and close**. Until it is answered a page view sets no cookie at all and the composer
+shows *Callsign on sending* in place of the callsign. **Agree and close** stores the answer
 (`mcs_consent`, a year) and the next page view mints the callsign for a year; the theme and
-language cookies last a year as well. **Reject** stores the answer, drops whatever the browser
-held, and keeps nothing beyond the visit: reading needs no cookie; sending a message mints a
-callsign — the message has to carry one — in a cookie without an expiry, gone when the browser
-closes, and the device's head takes the callsign up from the composer fragment
-(`data-callsign`, `public/composer.js`); the theme and language switches work the same way,
-for the visit only. Either answer sends the visitor back to the page they were on, through
+language cookies last a year as well. A visitor who never agrees can still read everything and
+still send: sending mints a callsign — the message has to carry one — in a cookie without an
+expiry, gone when the browser closes, and the device's head takes the callsign up from the
+composer fragment (`data-callsign`, `public/composer.js`); the theme and language switches work
+the same way, for the visit only. (`POST /consent` still accepts the old `choice=no`.)
+Either answer sends the visitor back to the page they were on, through
 the same door — `/messages#write` stays `/messages#write`, the pop-up out (`public/tabbar.js`
 fills the form's `back` field with the address, hash included, which only the browser knows).
 

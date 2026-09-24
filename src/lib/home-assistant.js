@@ -35,9 +35,9 @@ const CFG = {
   host: (process.env.HA_HOST || '').trim(),
   port: String(process.env.HA_PORT || '80').trim(),
   token: (process.env.HA_API_TOKEN || '').trim(),
-  // Read every 20 minutes — the same rhythm as the external node's
-  // transmissions; HA_POLL_MS in .env overrides.
-  pollMs: Math.max(15000, Number(process.env.HA_POLL_MS || 20 * 60 * 1000)),
+  // Read every 15 minutes — the station's one rhythm for every source (the
+  // external node, the cloud folder); HA_POLL_MS in .env overrides.
+  pollMs: Math.max(15000, Number(process.env.HA_POLL_MS || 15 * 60 * 1000)),
   attemptTimeoutMs: Number(process.env.HA_TIMEOUT_MS || 10000),
   attempts: 2,
   // A restart or a quiet spell is backfilled from HA's history endpoint,

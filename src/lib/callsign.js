@@ -35,7 +35,20 @@ function generate() {
  * callsign either way, since the message needs one, kept for the visit only
  * unless they accepted.
  */
-function identify(req, res, { create = true, persist = true } = {}) {
+/** A callsign offered on the cookie card, if it is well formed and still free. */
+function usable(cs) {
+  const m = /^([A-Z]+)-(\d{3,4})$/.exec(String(cs || ''));
+  if (!m || !WORDS.includes(m[1]) && m[1] !== 'RELAY') return null;
+  return db.prepare('SELECT 1 FROM visitor WHERE callsign = ?').get(cs) ? null : cs;
+}
+
+/** Keep the visitor's cookie for a year from now (they agreed to the cookie). */
+function keep(res, visitor) {
+  res.cookie('mcs_id', visitor.token, { httpOnly: true, sameSite: 'lax', maxAge: 1000 * 60 * 60 * 24 * 365,
+    secure: process.env.SECURE_COOKIES === 'true' });
+}
+
+function identify(req, res, { create = true, persist = true, callsign: wanted = null } = {}) {
   const token = req.cookies.mcs_id;
   if (token) {
     const v = db.prepare('SELECT * FROM visitor WHERE token = ?').get(token);
@@ -46,7 +59,7 @@ function identify(req, res, { create = true, persist = true } = {}) {
   }
   if (!create) return null;
   const newToken = crypto.randomBytes(24).toString('hex');
-  const callsign = generate();
+  const callsign = usable(wanted) || generate();
   const stamp = now();
   const info = db.prepare(
     'INSERT INTO visitor (callsign, token, created_at, last_seen) VALUES (?, ?, ?, ?)'
@@ -61,4 +74,4 @@ function identify(req, res, { create = true, persist = true } = {}) {
   return { id: info.lastInsertRowid, callsign, token: newToken, created_at: stamp };
 }
 
-module.exports = { identify, generate, WORDS };
+module.exports = { identify, generate, usable, keep, WORDS };

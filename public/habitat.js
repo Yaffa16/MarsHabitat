@@ -14,7 +14,7 @@
 
   /* ------------------------------------------------------------ config */
   var CFG = {
-    refreshMs: 20 * 60 * 1000,       // the node's transmit cycle
+    refreshMs: 15 * 60 * 1000,       // the station reads the node every 15 minutes
     rangeHours: 24,                  // window feeding the instrument tiles
     // The trend graph: the run itself, 15 to 27 October, every day on the
     // axis. The tile carries the dates (data-run-start / data-run-end), so a

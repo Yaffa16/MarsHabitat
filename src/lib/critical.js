@@ -19,7 +19,7 @@ const CFG = {
   base: process.env.CRITICAL_URL || 'https://critical-sensors.de/srv.php',
   sensorId: String(process.env.CRITICAL_SENSOR_ID || '11'),
   utcSource: process.env.CRITICAL_UTC !== 'false',       // node stamps in UTC
-  pollMs: Number(process.env.CRITICAL_POLL_MS || 20 * 60 * 1000), // transmit cycle
+  pollMs: Number(process.env.CRITICAL_POLL_MS || 15 * 60 * 1000), // every 15 minutes, like every other source
   attemptTimeoutMs: Number(process.env.CRITICAL_TIMEOUT_MS || 12000),
   attempts: 2,
   // Copies of one transmission arrive via several gateways, seconds to a few

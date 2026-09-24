@@ -74,6 +74,14 @@ app.use((req, res, next) => {
       mission: missionLib.state(),
       callsign: visitor ? visitor.callsign : null,
       visitor,
+      // The callsign offered to a visitor who has none yet — greeted by name on
+      // the cookie card, shown in the composer's head and carried in its form,
+      // so the name they see is the name they write under. Picked once per page.
+      get offer() {
+        if (this.visitor) return this.visitor.callsign;
+        if (!this._offer) this._offer = callsign.generate();
+        return this._offer;
+      },
       consent,
       commsUp,
     };
@@ -84,7 +92,7 @@ app.use((req, res, next) => {
   req.writer = () => {
     const ctx = req.ctx();
     if (!ctx.visitor) {
-      ctx.visitor = callsign.identify(req, res, { create: true, persist: consent === 'yes' });
+      ctx.visitor = callsign.identify(req, res, { create: true, persist: consent === 'yes', callsign: req.body && req.body.callsign });
       ctx.callsign = ctx.visitor.callsign;
     }
     return ctx.visitor;
@@ -101,6 +109,14 @@ app.post('/consent', (req, res) => {
   res.cookie('mcs_consent', yes ? 'yes' : 'no', { httpOnly: true, sameSite: 'lax', maxAge: 365 * 86400000,
     secure: process.env.SECURE_COOKIES === 'true' });
   if (!yes) { res.clearCookie('mcs_id'); res.clearCookie('mcs_theme'); res.clearCookie('mcs_lang'); }
+  else {
+    // The name the card greeted them with is the name they keep: a visitor who
+    // has written already keeps theirs, now for a year; anyone else is given
+    // the callsign the card offered (or another, if it was taken meanwhile).
+    const v = callsign.identify(req, res, { create: false });
+    if (v) callsign.keep(res, v);
+    else callsign.identify(req, res, { create: true, persist: true, callsign: req.body.callsign });
+  }
   const back = String(req.body.back || '');
   res.redirect(/^\/[^/\\]*$/.test(back) ? back : '/');
 });
@@ -307,6 +323,9 @@ app.get('/at-a-glance', (req, res) => {
   }
   res.send(GL.page(ctx, { records, rehearsal }));
 });
+
+// The imprint, on the station: ZKM's legal details in German and English.
+app.get('/imprint', (req, res) => res.send(require('./views/pages/imprint').imprintPage(req.ctx())));
 
 app.get('/logbook', (req, res) => {
   const ctx = req.ctx();

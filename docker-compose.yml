@@ -51,7 +51,7 @@ services:
       CRITICAL_POLL: "${CRITICAL_POLL:-true}"
       CRITICAL_URL: "${CRITICAL_URL:-https://critical-sensors.de/srv.php}"
       CRITICAL_SENSOR_ID: "${CRITICAL_SENSOR_ID:-11}"
-      CRITICAL_POLL_MS: "${CRITICAL_POLL_MS:-1200000}"
+      CRITICAL_POLL_MS: "${CRITICAL_POLL_MS:-900000}"
       READINGS_DAYS_BEFORE: "${READINGS_DAYS_BEFORE:-0}"
       READINGS_FROM: "${READINGS_FROM:-}"
       # Rehearsal only: moves the instant the record closes (the end of
@@ -66,7 +66,7 @@ services:
       CLOUD_PASSWORD: "${CLOUD_PASSWORD:-}"
       CLOUD_FOLDER: "${CLOUD_FOLDER:-}"
       CLOUD_TITLE: "${CLOUD_TITLE:-Gallery}"
-      CLOUD_CHECK_SECONDS: "${CLOUD_CHECK_SECONDS:-1200}"
+      CLOUD_CHECK_SECONDS: "${CLOUD_CHECK_SECONDS:-900}"
       CLOUD_POLL: "${CLOUD_POLL:-true}"
       # If the folder is mounted on the host instead (davfs2), add a volume
       # below, e.g.  - /path/to/your/mountpoint:/cloud:ro  and set
@@ -81,7 +81,7 @@ services:
       HA_HOST: "${HA_HOST:-}"
       HA_PORT: "${HA_PORT:-80}"
       HA_API_TOKEN: "${HA_API_TOKEN:-}"
-      HA_POLL_MS: "${HA_POLL_MS:-1200000}"
+      HA_POLL_MS: "${HA_POLL_MS:-900000}"
       HA_POLL: "${HA_POLL:-true}"
     volumes:
       - station-data:/data

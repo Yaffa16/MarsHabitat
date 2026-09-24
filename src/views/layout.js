@@ -188,29 +188,33 @@ function tabbar(current, T = same) {
    the facts of the station's one cookie in a few small lines, and Accept or
    Reject. A form, so it works without a script; the answer sends the visitor
    back to the page. */
-function consent(current, T = same) {
+function consent(current, T = same, callsign = '') {
+  // The callsign the visitor has, or will get on agreeing: the one they were
+  // given for this visit if they have written already, otherwise a free one
+  // picked now and carried in the form, so the name greeted is the name kept.
   return `<aside class="consent" id="consent" role="dialog" aria-labelledby="consent-title" aria-describedby="consent-text">
     <form method="post" action="/consent">
       <input type="hidden" name="back" value="${esc(current || '/')}">
-      <h2 id="consent-title">${T('Cookies')}</h2>
-      <p id="consent-text">${T('One cookie: your callsign (e.g. BASALT-625), so you find your messages when you come back. Theme and language are kept the same way. No account, no tracking, nothing passed on. Reject: nothing is kept beyond this visit.')}</p>
+      ${callsign ? `<input type="hidden" name="callsign" value="${esc(callsign)}">` : ''}
+      <h2 id="consent-title">${T('Welcome')}${callsign ? ` <b class="consent-cs">${esc(callsign)}</b>` : ''}</h2>
+      <p id="consent-text">${T('To make sure you talk to the Mars habitat under the same call sign every time, please accept. If you do not, you will be given a new name on each visit and cannot see your own messages. We do not track anything.')}</p>
       <div class="consent-keys">
-        <button type="submit" name="choice" value="yes" class="btn primary">${T('Accept')}</button>
-        <button type="submit" name="choice" value="no" class="btn">${T('Reject')}</button>
+        <a class="btn" href="https://zkm.de/en/privacy-policy" target="_blank" rel="noopener">${T('Learn more')}</a>
+        <button type="submit" name="choice" value="yes" class="btn primary">${T('Agree and close')}</button>
       </div>
     </form>
   </aside>`;
 }
 
 /* The foot: the wordmark (on the station page), three keys — the privacy
-   statement, ZKM and the imprint, all on zkm.de — and the line that names the house.
+   statement and ZKM on zkm.de, and the station's own imprint page (/imprint) — and the line that names the house.
    The pages themselves are reached from the bar of keys, the ticker's menu
    and the doors above; nothing else is listed here. */
 function foot(ctx, T = ctx.T || same, landing = false) {
   return `<div class="foot">${landing ? `
     <div class="foot-brand-block"><span class="foot-wordmark">MARS<span class="bang">!</span>platz</span></div>` : ''}
     <div class="foot-links">
-      <a href="https://zkm.de/en/privacy-policy">${T('Privacy policy')}</a><a href="https://zkm.de/">ZKM</a><a href="https://zkm.de/en/imprint">${T('Imprint')}</a>
+      <a href="https://zkm.de/en/privacy-policy">${T('Privacy policy')}</a><a href="https://zkm.de/">ZKM</a><a href="/imprint">${T('Imprint')}</a>
     </div>
     <div class="foot-base">
       <span class="foot-brand">ZKM | HERTZLAB — MARS</span>
@@ -272,7 +276,7 @@ ${hideRail ? '' : rail(ctx, bodyClass.includes('landing'), T)}
 ${control || hideNav ? '' : nav(current, T)}
 <main class="shell">${body}</main>
 ${control ? '' : foot(ctx, T, aura)}
-${aura && ctx.consent === null ? consent(current, T) : ''}
+${aura && ctx.consent === null ? consent(current, T, ctx.offer || '') : ''}
 ${control ? '' : tabbar(current, T)}
 ${scripts.concat(control ? [] : ['/tabbar.js']).map((s) => `<script src="${s}?v=${ASSET_V}" defer></script>`).join('')}
 </body></html>`;

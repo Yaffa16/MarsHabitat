@@ -110,7 +110,8 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
   // message, and composer.js writes it into the device's head from here.
   const formHtml = (ghost = false) => `
   <form ${ghost ? 'class="composer ghost" inert aria-hidden="true"' :
-    `method="post" action="/communicate" id="${uid('composer')}" class="composer" data-callsign="${esc(ctx.callsign || '')}"`}>
+    `method="post" action="/communicate" id="${uid('composer')}" class="composer" data-callsign="${esc(ctx.callsign || '')}"`}>${!ghost && !ctx.callsign && ctx.offer ? `
+    <input type="hidden" name="callsign" value="${esc(ctx.offer)}">` : ''}
     <label class="f msgfield"><span class="sr-only">${T('Message')}</span>
       <div class="msgbox">
         <textarea ${ghost ? '' : `name="body" id="${uid('body')}" required`} maxlength="${MAX}"

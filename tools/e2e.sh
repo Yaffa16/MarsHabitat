@@ -37,8 +37,8 @@ bad() { printf "  \033[31m✗\033[0m %s\n" "$1"; FAIL=1; }
 panel() { curl -s $B/ | node -e 'let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const i = s.indexOf("id=\"" + process.argv[1] + "\""); process.stdout.write(i < 0 ? "" : s.slice(i, s.indexOf("</section>", i))); });' "$1"; }
 
 echo "── visitor identity"
-CS=$(curl -s -c $V -b $V $B/ | grep -oE '[A-Z]+-[0-9]{3}' | head -1)
-[ -n "$CS" ] && ok "callsign issued on arrival: $CS" || bad "no callsign"
+CS=$(curl -s -c $V -b $V $B/ | grep -o 'name="callsign" value="[A-Z]*-[0-9]*"' | head -1 | grep -oE '[A-Z]+-[0-9]+')
+[ -n "$CS" ] && ok "a callsign is offered on arrival: $CS" || bad "no callsign"
 
 echo "── writing from the landing page"
 curl -s $B/ | grep -q 'id="composer"' && ok "composer is on the landing page" || bad "no composer on landing"
@@ -70,7 +70,7 @@ let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { process.ex
 ' && ok "the crew's condition reaches the dome as words, never as numbers" || bad "a number in the crew callout"
 
 curl -s -b $V -c $V -X POST --data-urlencode \
-  "body=What is the first thing you miss about Earth?" -d "tags=QUESTION" -o /dev/null $B/communicate
+  "body=What is the first thing you miss about Earth?" -d "tags=QUESTION" -d "callsign=$CS" -o /dev/null $B/communicate
 curl -s -b $V $B/ | grep -qi "message in transit" && ok "message in transit, shown on landing" || bad "no transit view"
 
 curl -s -b $V -X POST --data-urlencode "body=Should be blocked" -o /dev/null $B/communicate
@@ -1026,7 +1026,17 @@ grep -q "window.location.reload" src/views/pages/public.js && grep -q "d.phase !
 echo "── three blogs, the hardware inside the Habitat, the imprint"
 LANDING=$(curl -s $B/)
 echo "$LANDING" | grep -q 'id="ftab-hardware"' && bad "the Habitat hardware tab is still in the folder" || ok "no Habitat hardware tab in the dashboard folder"
-echo "$LANDING" | grep -q 'href="https://zkm.de/en/imprint"' && ok "the foot links the imprint, beside the privacy policy and ZKM" || bad "no imprint link in the foot"
+echo "$LANDING" | grep -q 'href="/imprint"' && ok "the foot links the station's own imprint page" || bad "no imprint link in the foot"
+IMP=$(curl -s $B/imprint)
+echo "$IMP" | grep -q "Lorenzstraße 19" && echo "$IMP" | grep -q "DE 143588970" && echo "$IMP" | grep -q "Kennzeichnung i.S.d. § 5 TMG" && echo "$IMP" | grep -q "Center for Art and Media" \
+  && ok "the imprint page carries ZKM's details in German and English" || bad "imprint page incomplete"
+# the cookie card greets with a callsign, and agreeing keeps exactly that one
+CJ=/tmp/cookie-e2e.jar; rm -f $CJ
+CARD=$(curl -s -c $CJ -b $CJ $B/)
+OFFER=$(echo "$CARD" | grep -o 'name="callsign" value="[A-Z]*-[0-9]*"' | head -1 | grep -o '[A-Z]*-[0-9]*')
+echo "$CARD" | grep -q "consent-cs\">$OFFER<" && ok "the cookie card says Welcome $OFFER" || bad "no callsign on the cookie card"
+curl -s -c $CJ -b $CJ -d choice=yes -d "callsign=$OFFER" -d back=/ -o /dev/null $B/consent
+curl -s -b $CJ $B/ | grep -q "$OFFER" && ok "agreeing keeps the greeted callsign" || bad "agreeing gave a different callsign"
 LB3=$(curl -s $B/logbook)
 for t in "Commander Blog" "Daily Science Findings" "Daily Health Blog"; do echo "$LB3" | grep -q "$t" || bad "the crew log is missing $t"; done
 echo "$LB3" | grep -q 'class="cs">SCIENCE OFFICER\|class="cs">HEALTH OFFICER' && bad "an officer blog is still on the crew log" || ok "the crew log carries the three blogs and nothing else"

@@ -317,6 +317,7 @@ function composerDevice(ctx, { inFlight = null, error = null, draft = '' } = {})
         <div class="dev-head">
           <span>${T('Operator')}</span>
           ${ctx.callsign ? `<span class="dev-chip" title="${esc(T('Your callsign for this visit — no account, no name'))}">${esc(ctx.callsign)}</span>`
+            : ctx.offer ? `<span class="dev-chip dev-chip-later" title="${esc(T('Your callsign for this visit — no account, no name'))}">${esc(ctx.offer)}</span>`
             : `<span class="dev-chip dev-chip-later" title="${esc(T('Your callsign for this visit — no account, no name'))}">${T('Callsign on sending')}</span>`}
           <span class="dev-chan">CH-09 · Uplink</span>
         </div>
