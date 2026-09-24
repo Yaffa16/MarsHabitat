@@ -402,6 +402,30 @@ function daily(localDate, days = 40) {
   });
 }
 
+/* Every device with readings stored inside a window, for the permanent record.
+   The configured sensors come first, in the order of content/home-assistant.json;
+   after them any entity the station stored readings for that day but that has
+   since been taken out of the file — its readings are part of the record and
+   stay in it, labelled by its entity id. The unit is the one Home Assistant
+   reported with the readings (the file's is only a fallback). */
+const entitiesIn = db.prepare('SELECT DISTINCT entity FROM ha_reading WHERE t >= ? AND t < ? AND value IS NOT NULL ORDER BY entity');
+const unitIn = db.prepare("SELECT unit FROM ha_reading WHERE entity = ? AND t >= ? AND t < ? AND unit IS NOT NULL AND unit != '' ORDER BY t DESC LIMIT 1");
+function sensorsFor(a, b) {
+  const list = sensors().map((s) => ({ ...s }));
+  const known = new Set(list.map((s) => s.id));
+  for (const { entity } of entitiesIn.all(a, b)) {
+    if (known.has(entity)) continue;
+    list.push({ id: entity, label: `sensor.${entity} (no longer configured)`, unit: '', kind: 'gauge', decimals: 2, range: null, retired: true });
+  }
+  for (const s of list) {
+    const u = (unitIn.get(s.id, a, b) || {}).unit;
+    if (u) s.unit = u;
+    // a retired meter still reads as one: its energy unit says it only rises
+    if (s.retired && /^k?wh$/i.test(s.unit || '')) s.kind = 'counter';
+  }
+  return list;
+}
+
 /* One mission day of the hardware, summarised for the archive. */
 const dayAgg = db.prepare(
   'SELECT MIN(value) lo, MAX(value) hi, AVG(value) av, COUNT(*) n FROM ha_reading WHERE entity = ? AND t >= ? AND t < ? AND value IS NOT NULL');
@@ -422,7 +446,7 @@ function daySummary(window) {
   const a = Date.parse(window.start), b = Date.parse(window.end);
   if (!Number.isFinite(a) || !Number.isFinite(b)) return [];
   const out = [];
-  for (const s of sensors()) {
+  for (const s of sensorsFor(a, b)) {
     const r = dayAgg.get(s.id, a, b);
     if (!r || !r.n) continue;
     let added = null;
@@ -433,7 +457,7 @@ function daySummary(window) {
       }
     }
     out.push({ id: s.id, label: s.label, unit: s.unit || '', kind: s.kind,
-      low: r.lo, high: r.hi, mean: r.av, samples: r.n, added });
+      low: r.lo, high: r.hi, mean: r.av, samples: r.n, added, ...(s.retired ? { retired: true } : {}) });
   }
   return out;
 }
@@ -448,7 +472,7 @@ function hourly(window) {
   const a = Date.parse(window.start), b = Date.parse(window.end);
   if (!Number.isFinite(a) || !Number.isFinite(b)) return [];
   const out = [];
-  for (const s of sensors()) {
+  for (const s of sensorsFor(a, b)) {
     const rows = windowRows.all(s.id, a).filter((r) => r.t < b);
     const buckets = new Map();
     for (const r of rows) {
@@ -473,4 +497,4 @@ function version(snap) {
     + (snap.down ? '|down' : '') + (snap.frozen ? '|frozen' : '');
 }
 
-module.exports = { start, poll, snapshot, readings, daily, daySummary, hourly, version, clear, sensors, configured, frozen, CFG };
+module.exports = { start, poll, snapshot, readings, daily, daySummary, hourly, version, clear, sensors, sensorsFor, configured, frozen, CFG };

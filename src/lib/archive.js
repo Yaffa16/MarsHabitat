@@ -385,7 +385,9 @@ function dayReadings(start, end) {
   // the hardware: per device, every state HA reported
   const hardware = [];
   try {
-    const sensors = require('./home-assistant').sensors();
+    // every device with readings that day — configured now or taken out of
+    // content/home-assistant.json since: what was pulled stays in the record
+    const sensors = require('./home-assistant').sensorsFor(a, b);
     const q = db.prepare('SELECT t, value, state, unit FROM ha_reading WHERE entity = ? AND t >= ? AND t < ? ORDER BY t, id');
     for (const s of sensors) {
       const rows = q.all(s.id, a, b);

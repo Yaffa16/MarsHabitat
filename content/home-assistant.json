@@ -33,13 +33,6 @@
       "chart": "Air quality"
     },
     {
-      "id": "shelly_steckdose_2_energie",
-      "label": "Socket energy · Shelly plug",
-      "unit": "Wh",
-      "kind": "counter",
-      "decimals": 1
-    },
-    {
       "id": "habitat_power_kitchen_leistung",
       "label": "Kitchen · power draw",
       "unit": "W",
