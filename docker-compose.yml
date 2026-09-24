@@ -60,7 +60,7 @@ services:
       CLOUD_PASSWORD: "${CLOUD_PASSWORD:-}"
       CLOUD_FOLDER: "${CLOUD_FOLDER:-}"
       CLOUD_TITLE: "${CLOUD_TITLE:-Gallery}"
-      CLOUD_CHECK_SECONDS: "${CLOUD_CHECK_SECONDS:-20}"
+      CLOUD_CHECK_SECONDS: "${CLOUD_CHECK_SECONDS:-1200}"
       CLOUD_POLL: "${CLOUD_POLL:-true}"
       # If the folder is mounted on the host instead (davfs2), add a volume
       # below, e.g.  - /path/to/your/mountpoint:/cloud:ro  and set

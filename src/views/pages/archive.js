@@ -126,7 +126,7 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
     ${r.rehearsal ? `<p class="note">A preview of a day's record with what there is today: today's readings from every source and the states filed today, and whatever has been put into the opening day (SOL 001) so far — its plan, entries, counts, figures and media. Not part of the record; gone on the first day of the run, when day 001 takes its place.</p>` : ''}
     <div class="spec">
       <span>${esc(r.date)}</span>
-      <span><b>${r.officers.filter((o) => o.entry).length}</b> daily blogs</span>
+      <span><b>${r.officers.filter((o) => o.entry).length + r.officers.filter((o) => o.reports.length).length}</b> daily blogs</span>
       <span><b>${r.moods.length}</b> states filed</span>
       <span><b>${r.media.length}</b> files sent out</span>
       <span><b>${r.readings.count}</b> readings</span>
@@ -144,12 +144,12 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
 
   ${r.officers.map((o, k) => panel(`CH-5${k} / ${esc(o.designation)}`, `
     ${eyebrow(`${esc(o.designation)}${o.role ? ` · ${esc(o.role)}` : ''}`)}
-    <h3>Daily Blog</h3>
+    ${o.hasBlog ? `<h3>Commander Blog</h3>
     ${o.entry ? `<div class="entry-post">${MV.entryHtml(o.entry.body, o.media, { lookup: mediaLookup })}</div>`
-      : '<p class="note">No blog written for this day.</p>'}
-    ${o.reportKind ? `<h3 style="margin-top:18px">${esc(o.reportLabel)}</h3>
+      : '<p class="note">No Commander Blog written for this day.</p>'}` : ''}
+    ${o.reportKind ? `<h3${o.hasBlog ? ' style="margin-top:18px"' : ''}>${esc(o.reportLabel)}</h3>
     ${o.reports.length ? o.reports.map((x) => `<div class="entry-post">${MV.entryHtml(x.body, [], { lookup: mediaLookup })}</div>`).join('')
-      : `<p class="note">No ${esc(o.reportLabel.toLowerCase().replace('daily ', ''))} written for this day.</p>`}` : ''}
+      : `<p class="note">No ${esc(o.reportLabel)} written for this day.</p>`}` : ''}
     <h3 style="margin-top:18px">Crew state</h3>
     ${o.states.length ? o.states.map((m) => {
       const t = mood.translate(m);

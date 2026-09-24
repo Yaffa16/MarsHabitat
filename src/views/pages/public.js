@@ -5,7 +5,6 @@ const orbital = require('../../lib/orbital');
 const data = require('../../lib/data');
 const { TAGS } = data;
 const { composerBlock } = require('./communicate');
-const { entryCard } = require('./logbook');
 const { aboutSection } = require('./info');
 const { habitatDome, LINE_ICONS } = require('./dome');
 const MV = require('./media');
@@ -956,11 +955,11 @@ const dpanel = ({ id, code, title, meta = '', span = 4, cls = '', href = null, l
   </section>`;
 
 /* The dashboard's panels behind one index: three rows of keys — the habitat's
-   (Habitat, Habitat hardware, Trends), the day's (Today's Schedule, Today's
+   (Habitat, Trends), the day's (Today's Schedule, Today's
    Meal, Crew Moods), the blogs' — each row a track with its name at the left,
    all three of one width, on the head of one glass panel; beneath them the
    folder that is open, showing its panel. The page opens on the first key of
-   the first row, the Habitat. A press on a key brings that folder to the front
+   the first row, the Habitat (which carries the habitat's own hardware too). A press on a key brings that folder to the front
    (public/folder.js); the panels keep their ids, so every link into them —
    #habitat, #crew, #galley, #schedule from the dome's keys and the foot —
    still lands on them: the script opens the right folder and brings the index
@@ -1150,6 +1149,20 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
   const pwrOf = power.days[String(pwrDay)] || {};
   const powerToday = power.categories.map((c) => ({ ...c, kwh: pwrOf[c.key] ?? null }));
 
+  /* ---- the habitat's own hardware, through Home Assistant — the Cricket
+     temperature sensor, the Shelly plug and whatever else is listed in
+     content/home-assistant.json — drawn inside the Habitat panel, under the
+     node's tiles, the stores and the power. Rendered only when the bridge is
+     configured in .env; /public/hardware.js keeps it live from /api/hardware
+     (it looks for #hw-live, wherever that stands). */
+  const hardwareSection = hardware && hardware.configured && (hardware.sensors || []).length
+    ? `<section class="hw-in-habitat" id="hardware">
+        <div class="hw-head"><h3>${T('Habitat hardware')}</h3>
+          <span class="sub">Home Assistant · ${hardware.sensors.length} ${T(hardware.sensors.length === 1 ? 'device' : 'devices')} · ${T('read by the station every')} ${hardware.pollMs >= 120000 ? `${Math.round(hardware.pollMs / 60000)} min` : `${Math.round(hardware.pollMs / 1000)} s`} · ${T('one point per hour')}</span></div>
+        <div class="hbt hw"><div id="hw-live" data-poll="${hardware.pollMs}" data-version="${esc(require('../../lib/home-assistant').version(hardware))}">${hardwareInner(hardware, T)}</div></div>
+      </section>`
+    : '';
+
   const habitat = dpanel({ id: 'habitat', code: 'CH-01', title: T('Habitat'), meta: T('Sensor node · measured live · figures and stores counted by the crew'), span: 12, cls: 'compact',
     live: T('The readings refresh by themselves as the sensors report') }, `
     <!-- The Sensor-11 dashboard. The station server polls the external feed and
@@ -1207,23 +1220,13 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
         </section>
       </div>
       <div id="hbt-notes"></div>
-    </div>`);
+    </div>
+    ${hardwareSection}`);
 
   /* ---- the newest stills out of the cloud folder, as a strip of their own at
      the head of the dashboard — under its heading, above the two doors (At a
      Glance, Media) — kept live by /public/cloud.js on the folder's cadence. */
   const cloudStrip = cloud ? `<div class="cloud-latest" id="cloud-latest" data-version="${esc(cloud.snapshot.version || '')}" data-poll="${(Number(cloud.snapshot.checkSeconds) || 20) * 1000}">${require('./media').cloudLatestInner(T, cloud, { tz: m.timezone })}</div>` : '';
-
-  /* ---- the habitat's own hardware, through Home Assistant: the folder
-     beside the Habitat's. Rendered only when the bridge is configured in
-     .env — without it the folder is left out and its row has two tabs;
-     /public/hardware.js keeps it live from /api/hardware. */
-  const hardwarePanel = hardware && hardware.configured && (hardware.sensors || []).length
-    ? dpanel({ id: 'hardware', code: 'CH-02', title: T('Habitat hardware'), live: T('The readings refresh by themselves as the sensors report'),
-        meta: `Home Assistant · ${hardware.sensors.length} ${T(hardware.sensors.length === 1 ? 'device' : 'devices')} · ${T('read by the station every')} ${hardware.pollMs >= 120000 ? `${Math.round(hardware.pollMs / 60000)} min` : `${Math.round(hardware.pollMs / 1000)} s`} · ${T('one point per hour')} · ${T('one chart per quantity')} · ${T('nothing leaves the venue')}`,
-        span: 12, cls: 'compact' },
-      `<div class="hbt hw"><div id="hw-live" data-poll="${hardware.pollMs}" data-version="${esc(require('../../lib/home-assistant').version(hardware))}">${hardwareInner(hardware, T)}</div></div>`)
-    : '';
 
   /* ---- every trend as a chart: the habitat's channels, each store, the
      crew's counts. habitat.js draws them from the spec above plus its own
@@ -1258,7 +1261,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
     .filter((n) => n.kind === kind).map((n) => post(n.body, [])).filter(Boolean);
   const commander = crew.find((c) => /COMM/i.test(c.designation)) || crew[0] || null;
   const commanderToday = commander ? ((logDays[blogDay - 1] || {}).entries || [])
-    .filter((e) => e.crew_id === commander.id && !e.placeholder).map((e) => post(e.body, e.media || [])).filter(Boolean) : [];
+    .filter((e) => e.blog === 'commander' && !e.placeholder).map((e) => post(e.body, e.media || [])).filter(Boolean) : [];
   // A panel is as tall as the post in it, up to a limit, and scrolls from
   // there (.h-4 and .blog-scroll in the stylesheet) — so with nothing written
   // yet the three make a low row rather than a wall of empty boxes.
@@ -1276,12 +1279,13 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
     posts: commanderToday, empty: 'No commander blog yet for' });
 
   const galley = dpanel({ id: 'galley', code: 'CH-32', title: T('Today’s Meal'), meta: today && today.meals.length
-      ? `${today.kcalPlanned} kcal · ${today.waterPlanned.toFixed(1)} L · ${today.energyPlanned} Wh` : '', span: 4, cls: 'h-3 scroll' },
+      ? `${today.kcalPlanned} kcal · ${today.waterPlanned.toFixed(1)} L · ${today.energyPlanned} Wh${today.co2ePlanned != null ? ` · ${+today.co2ePlanned.toFixed(2)} kg CO₂e` : ''}` : '', span: 4, cls: 'h-3 scroll' },
     today && today.meals.length ? `<div class="meals">${today.meals.map((x) => `
       <div class="meal">
         <span class="meal-slot">${esc(T(slotName[x.slot] || x.slot))}</span>
         <b>${esc(x.name)}</b>
         <span class="meal-figs">${x.kcal} kcal · ${x.water_litres} L · ${x.energy_wh} Wh</span>
+        ${L.mealEco(x, T)}
       </div>`).join('')}</div>` : `<div class="empty">${T('No meals filed for today')}</div>`);
 
   // Each officer with their current condition — the latest state filed from
@@ -1304,31 +1308,6 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
         <div class="officer-note">${c.mood ? esc(T(t.lines[0])) : T('No state filed yet')}</div>
       </div>`;
     }).join('')}</div>`);
-
-  const log = dpanel({ id: 'crewlog', code: 'CH-50', title: T('Crew log'), href: '/logbook',
-    meta: `${entryCounts.published} ${T('of')} ${logDays.reduce((n, d) => n + d.entries.length, 0)} ${T('entries written')} · ${dayWord(T, m.totalDays)} · ${T('written from inside')}`, span: 12, cls: 'h-3 linked' },
-    logDays.length ? `
-      <div class="feed-filter log-filter" id="log-filter" role="group" aria-label="${esc(T('Filter the crew log'))}">
-        <button type="button" class="chip active" data-crew="">${T('ALL')}</button>
-        ${crew.map((c) => `<button type="button" class="chip" data-crew="${c.id}">${esc(c.designation.replace(' OFFICER', ''))}</button>`).join('')}
-      </div>
-      <div class="log-scroll" id="log-days">
-      ${logDays.map((d) => `
-        <div class="log-day" data-day="${d.missionDay}">
-          <div class="log-day-head"><span class="cs">${T('Day')} ${String(d.missionDay).padStart(3, '0')}</span><span>${esc(shortDay(d.date))}</span>
-            <span style="margin-left:auto">${d.written}/${d.entries.length} ${T('written')}</span></div>
-          ${d.entries.map((e) => `<article class="card log-entry${e.placeholder ? ' placeholder' : ''}" id="e${e.id}" data-crew="${e.crew_id}">
-            <div class="card-top"><span class="cs">${esc(e.designation)}</span><span class="card-day">${
-              e.placeholder ? T('placeholder') : esc(e.role)}</span></div>
-            ${e.placeholder ? `<div class="card-body">${esc(e.body)}</div>${
-                e.media && e.media.length ? `<div class="card-body entry-post">${MV.entryHtml('', e.media, { lookup: mediaLookup, T })}</div>` : ''}`
-              : `<div class="card-body entry-post">${MV.entryHtml(e.body, e.media || [], { lookup: mediaLookup, T })}</div>`}
-          </article>`).join('')}
-        </div>`).join('')}
-      </div>
-      <div class="empty" id="log-empty" style="display:none">${T('Nothing written by them yet')}</div>
-      <div class="dpanel-more"><a class="btn" href="/logbook">${T('Open the full crew log — every entry, day by day')} →</a></div>`
-    : `<div class="empty">${T('No entries have been filed yet')}</div>`);
 
   /* ---- media out of the habitat: the newest items, and the door to all of them */
   const mediaPanel = dpanel({ id: 'media', code: 'CH-60', title: T('Media'), href: '/media',
@@ -1387,7 +1366,6 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
       ${folder(T, [
         { label: T('Habitat'), tabs: [
           { id: 'habitat', code: 'CH-01', label: T('Habitat'), html: habitat },
-          hardwarePanel ? { id: 'hardware', code: 'CH-02', label: T('Habitat hardware'), html: hardwarePanel } : null,
           { id: 'trends', code: 'CH-40', label: T('Trends'), html: trends } ] },
         { label: T('Today'), tabs: [
           { id: 'schedule', code: 'CH-30', label: T('Today’s Schedule'), html: schedule },

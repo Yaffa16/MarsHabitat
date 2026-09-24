@@ -1,0 +1,144 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="kit.css"><script src="gfx.js"></script>
+<style>
+body{width:1600px;height:1080px}
+.room{width:1600px;height:1080px;display:flex;align-items:center;justify-content:center;gap:70px}
+.cap{margin-top:22px;font-size:11px;letter-spacing:.2em;color:var(--ink-3);text-transform:uppercase;width:390px;text-align:center}
+.ph{position:relative;width:410px;height:864px;border-radius:58px;padding:10px;background:linear-gradient(145deg,#2c3642,#11161c);box-shadow:0 40px 80px rgba(0,0,0,.6),inset 0 0 0 1px #3d4855}
+.scr{position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:var(--room);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:32px 32px}
+.notch{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:120px;height:32px;border-radius:20px;background:#000;z-index:9}
+.sb{height:50px;display:flex;justify-content:space-between;align-items:center;padding:6px 30px 0;font-size:13px;font-family:system-ui;color:#fff}
+.bar{padding:6px 16px 10px;border-bottom:1px solid var(--rule);background:#0b0f14}
+.bar .r1{display:flex;align-items:center;gap:8px}
+.bar .wm{font-size:20px;font-weight:600}.bar .wm b{color:var(--mars)}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #33404e;border-radius:20px;padding:3px 9px;font-size:10px;letter-spacing:.12em;color:var(--amber);background:#0a0e13}
+.bar .r2{margin-top:7px;font-size:10.5px;letter-spacing:.1em;color:var(--amber);white-space:nowrap;overflow:hidden}
+.bar .r2 i{font-style:normal;color:var(--ink-3);margin:0 8px}
+.tabbar{position:absolute;left:0;right:0;bottom:0;height:84px;background:#0b0f14;border-top:1px solid var(--rule);display:grid;grid-template-columns:repeat(5,1fr);padding:8px 8px 22px;z-index:5}
+.tabbar span{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:9.5px;letter-spacing:.1em;color:var(--ink-3);text-transform:uppercase}
+.tabbar span i{width:22px;height:22px;border:1.5px solid currentColor;border-radius:5px;opacity:.8}
+.tabbar span.on{color:var(--amber)}
+.tabbar span.w{color:#170700}
+.tabbar span.w i{width:50px;height:50px;border-radius:50%;background:var(--mars);border:0;margin-top:-26px;box-shadow:0 0 20px rgba(255,90,31,.6),0 0 0 4px #0b0f14;opacity:1;display:grid;place-items:center;font-style:normal;font-size:20px;color:#170700}
+.tabbar span.w em{font-style:normal;color:var(--mars)}
+.p{padding:14px 16px}
+h3{font-size:30px;font-weight:600;line-height:1}
+.lead{font-size:13.5px;line-height:1.5;color:var(--ink-2);margin-top:10px}
+.doors{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.doors .key{padding:11px 8px;font-size:10px;flex-direction:column;gap:2px;line-height:1.25}
+.hab{margin:12px 16px 0;height:340px}
+.chips{display:flex;gap:6px;overflow:hidden;padding:10px 16px;border-bottom:1px solid var(--rule);background:#0b0f14}
+.chips .key{padding:5px 9px;font-size:9.5px;white-space:nowrap}
+.x{padding:12px 16px;border-bottom:1px dashed #1e2833}
+.x .l1{display:flex;gap:8px;font-size:9.5px;letter-spacing:.12em;color:var(--ink-3)}
+.x .l1 .cs{color:var(--amber)}.x .l1 .st{margin-left:auto;color:var(--nominal)}
+.x .q{margin-top:5px;font-size:14px}
+.x .a{margin-top:5px;font-size:13px;color:var(--mars);line-height:1.4}
+.dock{position:absolute;left:0;right:0;bottom:84px;background:#10151c;border-top:2px solid var(--mars);box-shadow:0 -20px 40px rgba(0,0,0,.6);padding:14px 16px 16px;z-index:4}
+.dock .well{height:112px;padding:12px 14px;font-size:15px;line-height:1.45}
+.dock .tags{display:flex;gap:5px;margin-top:10px}
+.dock .tags .key{padding:5px 7px;font-size:9px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #33404e;border-radius:6px;overflow:hidden;margin:10px 16px 0}
+.seg span{text-align:center;padding:8px;font-size:11px;letter-spacing:.14em;color:var(--ink-2);background:#121820}
+.seg span.on{background:#2b4aa8;color:#fff}
+.utabs{display:flex;gap:18px;padding:10px 16px 0;border-bottom:1px solid var(--rule);font-size:11px;letter-spacing:.12em;color:var(--ink-3)}
+.utabs span{padding-bottom:8px}.utabs span.on{color:var(--amber);box-shadow:inset 0 -2px 0 var(--amber)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px}
+.tile{padding:9px 11px}
+.tile .n{font-size:9px;letter-spacing:.14em;color:var(--ink-3);display:flex;gap:6px;align-items:center}
+.tile .v{font-size:24px;color:var(--amber);margin-top:3px}.tile .v small{font-size:10px;color:var(--ink-3);margin-left:3px}
+</style></head><body>
+<div class="room">
+  <!-- HOME -->
+  <div style="position:relative;display:flex;flex-direction:column;align-items:center"><div class="ph"><div class="scr">
+    <div class="notch"></div><div class="sb"><span>14:22</span><span>●●● ▰</span></div>
+    <div class="bar"><div class="r1"><span class="wm">MARS<b>!</b>platz</span><span class="pill" style="margin-left:auto"><i class="led or" style="width:6px;height:6px"></i>SOL 05</span><span class="pill">14:22:08</span></div>
+      <div class="r2">NOW · SCIENCE BLOCK 2 / HOT WATER PREP WITH BIKE<i>/</i>NEXT · 15:00 KAFFEE</div></div>
+    <div class="p">
+      <div class="lbl">ZKM | Hertzlab · Thu 15 – Tue 27 Oct</div>
+      <div class="lead">Three officers sealed in a habitat for thirteen days. Write to them — your message crosses the gap, and you watch it go.</div>
+      <div class="doors"><span class="key fire">Write to<br>the crew</span><span class="key"><span><i class="led or" style="width:6px;height:6px"></i> Live mission</span>dashboard</span></div>
+    </div>
+    <div class="glass hab"><div data-g="stars" data-w="358" data-h="340" data-o='{"n":90,"seed":2}' style="position:absolute;inset:0;opacity:.6"></div>
+      <div style="position:absolute;left:0;right:0;bottom:0;height:110px;background:linear-gradient(0deg,rgba(255,90,31,.22),transparent)"></div>
+      <div id="d1" style="position:absolute;inset:0"></div>
+      <div style="position:absolute;left:12px;top:10px" class="lbl"><span class="code" style="margin-right:6px">CH-00</span>Habitat one</div>
+      <span class="live" style="position:absolute;right:12px;top:8px"><i></i>LIVE</span></div>
+    <div style="display:flex;gap:6px;padding:10px 16px;flex-wrap:wrap"><span class="key" style="padding:5px 8px;font-size:9px">Crew</span><span class="key" style="padding:5px 8px;font-size:9px">Lab</span><span class="key on" style="padding:5px 8px;font-size:9px">Comms</span><span class="key" style="padding:5px 8px;font-size:9px">Water</span><span class="key" style="padding:5px 8px;font-size:9px">Hydro</span><span class="key" style="padding:5px 8px;font-size:9px">Power</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:0 16px">
+      <div class="glass tile" style="padding:8px 10px"><div class="lbl" style="font-size:8.5px">CO₂ ppm</div><div class="amber" style="font-size:20px">612</div></div>
+      <div class="glass tile" style="padding:8px 10px"><div class="lbl" style="font-size:8.5px">Temp °C</div><div class="amber" style="font-size:20px">21.4</div></div>
+      <div class="glass tile" style="padding:8px 10px"><div class="lbl" style="font-size:8.5px">Water · d</div><div class="amber" style="font-size:20px">12</div></div></div>
+    <div class="tabbar"><span class="on"><i></i>Home</span><span><i></i>Dashboard</span><span class="w"><i>✎</i><em>Write</em></span><span><i></i>Media</span><span><i></i>About</span></div>
+  </div></div><div class="cap">Station · home</div></div>
+
+  <!-- MESSAGES -->
+  <div style="position:relative;display:flex;flex-direction:column;align-items:center"><div class="ph"><div class="scr">
+    <div class="notch"></div><div class="sb"><span>14:22</span><span>●●● ▰</span></div>
+    <div class="bar"><div class="r1"><span class="wm" style="font-size:17px">Message board</span><span class="pill" style="margin-left:auto">ONE-WAY 12′43″</span></div></div>
+    <div class="chips"><span class="key on">All</span><span class="key">My messages · 1</span><span class="key">#Science</span><span class="key">#Habitat</span><span class="key">#Food</span></div>
+    <div class="x"><div class="l1"><span class="cs">AZIMUTH-366</span><span>MINE · 14:21</span><span class="st" style="color:var(--caution)">▲ T−11:02</span></div><div class="q">Is anyone growing anything yet?</div></div>
+    <div class="x"><div class="l1"><span class="cs">CRATER-148</span><span>#HABITAT · 13:55</span><span class="st">● 14:09</span></div><div class="q">Does the water taste different after the membrane swap?</div><div class="a">✧ Flatter. The loop is back to spec, but the first litres taste of nothing at all.</div></div>
+    <div class="x"><div class="l1"><span class="cs">ARCADIA-760</span><span>#RANDOM · 12:12</span><span class="st">● 12:44</span></div><div class="q">What does the habitat sound like at night?</div><div class="a">✧ Pumps, mostly. And one fan that has learned to whistle.</div></div>
+    <div class="dock">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><i class="led or"></i><span class="title" style="font-size:12px">Uplink</span><span class="chip" style="margin-left:auto;font-size:10px;padding:3px 8px">AZIMUTH-366</span></div>
+      <div class="glass well">What is the first thing you will do when the door opens<span style="display:inline-block;width:8px;height:16px;background:var(--amber);vertical-align:-2px;box-shadow:0 0 8px var(--amber)"></span></div>
+      <div class="tags"><span class="key">#Random</span><span class="key">#Health</span><span class="key on">#Personal</span><span class="key">#Food</span><span class="key">#Funny</span></div>
+      <div style="display:flex;justify-content:center;margin-top:12px"><div class="hazard" style="padding:4px;border-radius:26px"><span class="key fire" style="border-radius:22px;padding:12px 46px;letter-spacing:.2em">Transmit →</span></div></div>
+    </div>
+    <div class="tabbar"><span><i></i>Home</span><span><i></i>Dashboard</span><span class="w"><i>✎</i><em>Write</em></span><span><i></i>Media</span><span><i></i>About</span></div>
+  </div></div><div class="cap">/messages · composer out</div></div>
+
+  <!-- DASHBOARD -->
+  <div style="position:relative;display:flex;flex-direction:column;align-items:center"><div class="ph"><div class="scr">
+    <div class="notch"></div><div class="sb"><span>14:22</span><span>●●● ▰</span></div>
+    <div class="bar"><div class="r1"><span class="wm" style="font-size:17px">Mission dashboard</span><span class="pill" style="margin-left:auto">T+004:14:22</span></div></div>
+    <div class="seg"><span class="on">HABITAT</span><span>TODAY</span><span>BLOGS</span></div>
+    <div class="utabs"><span class="on">HABITAT</span><span>HARDWARE</span><span>TRENDS</span></div>
+    <div style="display:flex;gap:14px;align-items:center;padding:12px 16px">
+      <div class="glass" style="width:120px;height:120px;border-radius:50%"><div id="dial"></div></div>
+      <div><div class="lbl">CH-03 · CO₂</div><div style="font-size:36px;color:var(--amber);text-shadow:0 0 14px rgba(255,180,84,.35)">612<span style="font-size:12px;color:var(--ink-3)"> ppm</span></div>
+        <div style="display:flex;gap:6px;align-items:center;font-size:10px;letter-spacing:.14em;color:var(--nominal)"><span class="sym ok"></span>WITHIN BAND</div></div></div>
+    <div class="tiles">
+      <div class="glass tile"><div class="n"><span class="sym ok" style="color:var(--nominal)"></span>TEMP</div><div class="v">21.4<small>°C</small></div><div data-g="spark" data-w="150" data-h="22" data-o='{"seed":5,"base":21,"amp":1.2,"noise":0.4}'></div></div>
+      <div class="glass tile"><div class="n"><span class="sym ok" style="color:var(--nominal)"></span>HUMIDITY</div><div class="v">38.2<small>%</small></div><div data-g="spark" data-w="150" data-h="22" data-o='{"seed":8,"base":38,"amp":3,"noise":0.4}'></div></div>
+      <div class="glass tile"><div class="n"><span class="sym caut" style="color:var(--caution)"></span>AIR QUALITY</div><div class="v" style="color:var(--caution)">57<small>AQI</small></div><div data-g="spark" data-w="150" data-h="22" data-o='{"seed":11,"base":40,"amp":10,"drift":16,"color":"#ffc83d","noise":0.4}'></div></div>
+      <div class="glass tile"><div class="n"><span class="sym ok" style="color:var(--nominal)"></span>WATER</div><div class="v">448<small>L · 12 d</small></div><div data-g="spark" data-w="150" data-h="22" data-o='{"seed":2,"base":700,"amp":6,"drift":-260,"noise":0.2,"color":"#ff5a1f"}'></div></div>
+    </div>
+    <div style="padding:12px 16px 0"><div class="lbl" style="margin-bottom:8px;display:flex;justify-content:space-between"><span>Live images</span><span class="mars">● LIVE</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+        <div class="glass" style="height:78px"><div data-g="cam" data-w="114" data-h="78" data-o='{"scene":"lab","label":"CAM-01","time":"14:20","seed":3}'></div></div>
+        <div class="glass" style="height:78px"><div data-g="cam" data-w="114" data-h="78" data-o='{"scene":"bike","label":"CAM-02","time":"14:16","seed":5}'></div></div>
+        <div class="glass" style="height:78px"><div data-g="cam" data-w="114" data-h="78" data-o='{"scene":"hydro","label":"CAM-03","time":"14:04","seed":7}'></div></div>
+      </div></div>
+    <div style="padding:12px 16px 0"><div class="lbl" style="margin-bottom:8px">Resources · days left</div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;height:62px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;font-size:8px;letter-spacing:.08em;color:var(--ink-3)"><div style="width:14px;flex:1;border:1px solid #2c3845;border-radius:2px;background:#05080b;position:relative"><i style="position:absolute;left:1px;right:1px;bottom:1px;height:64%;background:#ffb454;border-radius:1px;box-shadow:0 0 6px #ffb454"></i></div>H2O</div><div style="display:flex;flex-direction:column;align-items:center;gap:4px;font-size:8px;letter-spacing:.08em;color:var(--ink-3)"><div style="width:14px;flex:1;border:1px solid #2c3845;border-radius:2px;background:#05080b;position:relative"><i style="position:absolute;left:1px;right:1px;bottom:1px;height:62%;background:#ffb454;border-radius:1px;box-shadow:0 0 6px #ffb454"></i></div>FOOD</div><div style="display:flex;flex-direction:column;align-items:center;gap:4px;font-size:8px;letter-spacing:.08em;color:var(--ink-3)"><div style="width:14px;flex:1;border:1px solid #2c3845;border-radius:2px;background:#05080b;position:relative"><i style="position:absolute;left:1px;right:1px;bottom:1px;height:82%;background:#ffb454;border-radius:1px;box-shadow:0 0 6px #ffb454"></i></div>O₂</div><div style="display:flex;flex-direction:column;align-items:center;gap:4px;font-size:8px;letter-spacing:.08em;color:var(--ink-3)"><div style="width:14px;flex:1;border:1px solid #2c3845;border-radius:2px;background:#05080b;position:relative"><i style="position:absolute;left:1px;right:1px;bottom:1px;height:72%;background:#ffb454;border-radius:1px;box-shadow:0 0 6px #ffb454"></i></div>SCRB</div><div style="display:flex;flex-direction:column;align-items:center;gap:4px;font-size:8px;letter-spacing:.08em;color:var(--ink-3)"><div style="width:14px;flex:1;border:1px solid #2c3845;border-radius:2px;background:#05080b;position:relative"><i style="position:absolute;left:1px;right:1px;bottom:1px;height:50%;background:#ffb454;border-radius:1px;box-shadow:0 0 6px #ffb454"></i></div>BATT</div><div style="display:flex;flex-direction:column;align-items:center;gap:4px;font-size:8px;letter-spacing:.08em;color:var(--ink-3)"><div style="width:14px;flex:1;border:1px solid #2c3845;border-radius:2px;background:#05080b;position:relative"><i style="position:absolute;left:1px;right:1px;bottom:1px;height:20%;background:#ff5a1f;border-radius:1px;box-shadow:0 0 6px #ff5a1f"></i></div>TRAY</div>
+      </div></div>
+    <div class="tabbar"><span><i></i>Home</span><span class="on"><i></i>Dashboard</span><span class="w"><i>✎</i><em>Write</em></span><span><i></i>Media</span><span><i></i>About</span></div>
+  </div></div><div class="cap">/dashboard · habitat</div></div>
+</div>
+<script>
+document.getElementById('d1').innerHTML = G.dome(358, 340, { r: .47, nodes: [
+  { name: '', code: '', icon: 'CRW', x: -.4, y: .55, r: 16, to: null },
+  { name: '', code: '', icon: 'LAB', x: -.7, y: .18, r: 16 },
+  { name: '', code: '', icon: 'H2O', x: -.25, y: .12, r: 16 },
+  { name: '', code: '', icon: 'HYD', x: .3, y: .12, r: 16 },
+  { name: '', code: '', icon: 'COM', x: .05, y: .82, r: 16, hot: true },
+  { name: '', code: '', icon: 'PWR', x: .45, y: .55, r: 16 },
+  { name: '', code: '', icon: 'NAP', x: .72, y: .2, r: 16 },
+  { name: '', code: '', icon: 'GEN', x: 0, y: .4, r: 16 },
+].map(n => ({ ...n, to: [0, 0], bare: true })) });
+// drop the leaders for the phone
+document.querySelectorAll('#d1 polyline').forEach(p => p.remove());
+(() => {
+  const S = 120, c = S / 2, r = 46, a0 = Math.PI * .75, a1 = Math.PI * 2.25, v = 612 / 2500;
+  const pt = (a, rr) => [c + rr * Math.cos(a), c + rr * Math.sin(a)];
+  const arc = (f, t, rr) => { const [x0, y0] = pt(f, rr), [x1, y1] = pt(t, rr); return `M${x0} ${y0} A${rr} ${rr} 0 ${t - f > Math.PI ? 1 : 0} 1 ${x1} ${y1}`; };
+  const at = t => a0 + (a1 - a0) * t; const [nx, ny] = pt(at(v), r - 4);
+  document.getElementById('dial').innerHTML = `<svg width="${S}" height="${S}"><path d="${arc(a0, a1, r)}" stroke="#1b232d" stroke-width="8" fill="none"/>
+    <path d="${arc(at(.16), at(.48), r)}" stroke="#5cf2a4" stroke-opacity=".25" stroke-width="8" fill="none"/>
+    <path d="${arc(a0, at(v), r)}" stroke="#ffb454" stroke-width="3" fill="none" style="filter:drop-shadow(0 0 5px #ffb454)"/>
+    <line x1="${c}" y1="${c}" x2="${nx}" y2="${ny}" stroke="#ff5a1f" stroke-width="2"/><circle cx="${c}" cy="${c}" r="4.5" fill="#ff5a1f"/></svg>`;
+})();
+</script></body></html>

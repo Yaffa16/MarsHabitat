@@ -204,10 +204,11 @@ function dayRecord(missionDay) {
 /**
  * The record's shape, by officer and by tab. Added to every day object:
  *
- *   officers  one block per crew member, in the crew's order: their Daily
- *             Blog for the day (the published entry, placeholders left out),
- *             their daily report — the science officer's Daily science
- *             findings, the health officer's Daily health activities, as the
+ *   officers  one block per crew member, in the crew's order: the
+ *             communication officer's Commander Blog for the day (the
+ *             published entry, placeholders left out), the other officers'
+ *             blog — the science officer's Daily Science Findings, the
+ *             health officer's Daily Health Blog, as the
  *             notes of that kind — and every crew state filed for them that
  *             day. A report kind with no officer to hang on goes to
  *             `reportsUnassigned`; notes of other kinds (LOG, ANOMALY …) to
@@ -218,7 +219,7 @@ function dayRecord(missionDay) {
  *             the figures as the tab shows them, each marked counted (filed
  *             that day) or carried (from the day before at its draw).
  */
-const REPORT_OF = [['SCIENCE', /SCIENCE/i, 'Daily science findings'], ['HEALTH', /HEALTH/i, 'Daily health activities']];
+const REPORT_OF = [['SCIENCE', /SCIENCE/i, 'Daily Science Findings'], ['HEALTH', /HEALTH/i, 'Daily Health Blog']];
 function dress(r) {
   const crew = db.prepare('SELECT id, designation, role FROM crew ORDER BY sort_order, id').all();
   const content = require('./content');
@@ -231,7 +232,9 @@ function dress(r) {
     const kind = REPORT_OF.find(([, re]) => re.test(c.designation));
     let reports = [];
     if (kind) { reports = notes.filter((x) => x.kind === kind[0]); reports.forEach((x) => used.add(x.id)); }
-    return { id: c.id, designation: c.designation, role: c.role, entry,
+    // Only the communication officer has a blog of their own — the Commander Blog.
+    const hasBlog = c.designation === content.BLOG_OFFICER;
+    return { id: c.id, designation: c.designation, role: c.role, entry: hasBlog ? entry : null, hasBlog,
       reportKind: kind ? kind[0] : null, reportLabel: kind ? kind[2] : null, reports,
       states: r.moods.filter((m) => m.crew_id === c.id),
       media: r.media.filter((m) => m.crew_id === c.id && !inNotes.has(m.id)) };
@@ -270,7 +273,8 @@ function habitatTab(missionDay) {
   return {
     schedule: day ? day.tasks.map((t) => ({ time: t.time, label: t.label, detail: t.detail, status: t.status })) : [],
     meals: day ? day.meals.map((m) => ({ slot: m.slot, name: m.name, components: m.components, kcal: m.kcal,
-      waterLitres: m.water_litres, prepMinutes: m.prep_minutes, energyWh: m.energy_wh, notes: m.notes || '' })) : [],
+      waterLitres: m.water_litres, prepMinutes: m.prep_minutes, energyWh: m.energy_wh, notes: m.notes || '',
+      recipe: m.recipe || '', nutrients: m.nutrients || null, co2eKg: m.co2e_kg ?? null, waterFootprintL: m.water_footprint_l ?? null })) : [],
     figures: (content.crewFigures() || {})[String(missionDay)] || null,
     stores: storesTable(missionDay, day, filed),
     storesNote: filed.why || '',
@@ -457,7 +461,8 @@ function fullExport() {
           time: t.time, label: t.label, detail: t.detail, status: t.status })) : [],
         meals: r.day ? r.day.meals.map((m) => ({
           slot: m.slot, name: m.name, components: m.components, kcal: m.kcal,
-          waterLitres: m.water_litres, prepMinutes: m.prep_minutes, energyWh: m.energy_wh })) : [],
+          waterLitres: m.water_litres, prepMinutes: m.prep_minutes, energyWh: m.energy_wh,
+          recipe: m.recipe || '', nutrients: m.nutrients || null, co2eKg: m.co2e_kg ?? null, waterFootprintL: m.water_footprint_l ?? null })) : [],
         // the Habitat tab's inventory table: available at the start, used
         // today, left for the future, each figure marked counted (filed that
         // day) or carried (from the day before at its draw)
@@ -468,9 +473,10 @@ function fullExport() {
         storesCounted: r.filed.items.map((v) => ({
           item: v.label, key: v.key, unit: v.unit, quantity: v.quantity, consumption: v.consumption })),
         storesNote: r.filed.why || null,
-        // by officer: the Daily Blog, the daily report and the states filed
+        // by officer: the Commander Blog (communication officer), the Daily Science
+        // Findings / Daily Health Blog (science, health officer) and the states filed
         officers: r.officers.map((o) => ({ crew: o.designation, role: o.role,
-          dailyBlog: o.entry ? { body: o.entry.body, writtenAt: o.entry.written_at, updatedAt: o.entry.updated_at } : null,
+          ...(o.hasBlog ? { commanderBlog: o.entry ? { body: o.entry.body, writtenAt: o.entry.written_at, updatedAt: o.entry.updated_at } : null } : {}),
           report: o.reportKind ? { kind: o.reportKind, label: o.reportLabel, bodies: o.reports.map((x) => x.body) } : null,
           states: o.states.map((m) => ({ effectiveAt: m.effective_at, value: m.calm_tense, condition: require('./mood').condition(m), activity: m.activity, filedBy: m.set_by })) })),
         power: r.power.filed ? {
@@ -515,7 +521,7 @@ function fullExport() {
   };
 }
 
-module.exports = { rollup, rollupPending, dayRecord, index, fullExport, windowFor, recordedUpTo, FAKE_DEVICES, habitatTab };
+module.exports = { mealEcoLine, rollup, rollupPending, dayRecord, index, fullExport, windowFor, recordedUpTo, FAKE_DEVICES, habitatTab };
 
 /* ==================================================================== PROSE */
 
@@ -554,7 +560,7 @@ function recordMarkdown(r, heading, note = null) {
   out.push(heading, '');
   if (note) out.push(note, '');
   if (r.isEmpty) { out.push('_Nothing was recorded on this day._', ''); return out.join('\n'); }
-  const written = r.officers.filter((o) => o.entry).length;
+  const written = r.officers.filter((o) => o.entry).length + r.officers.reduce((n, o) => n + (o.reports.length ? 1 : 0), 0);
   out.push(`${written} daily ${written === 1 ? 'blog' : 'blogs'} · ` +
            `${r.moods.length} ${r.moods.length === 1 ? 'state' : 'states'} filed · ` +
            `${r.media.length} ${r.media.length === 1 ? 'file' : 'files'} sent out · ` +
@@ -567,13 +573,15 @@ function recordMarkdown(r, heading, note = null) {
   /* ---- the officers ---------------------------------------------------- */
   for (const o of r.officers) {
     out.push(`### ${o.designation}${o.role ? ` — ${o.role}` : ''}`, '');
-    out.push('#### Daily Blog', '');
-    if (o.entry) out.push(MV.entryMarkdown(o.entry.body, o.media), '');
-    else out.push('_No blog written for this day._', '');
+    if (o.hasBlog) {
+      out.push('#### Commander Blog', '');
+      if (o.entry) out.push(MV.entryMarkdown(o.entry.body, o.media), '');
+      else out.push('_No Commander Blog written for this day._', '');
+    }
     if (o.reportKind) {
       out.push(`#### ${o.reportLabel}`, '');
       if (o.reports.length) for (const x of o.reports) out.push(MV.entryMarkdown(x.body, []), '');
-      else out.push(`_No ${o.reportLabel.toLowerCase().replace('daily ', '')} written for this day._`, '');
+      else out.push(`_No ${o.reportLabel} written for this day._`, '');
     }
     out.push('#### Crew state', '');
     if (o.states.length) out.push(...stateLines(o.states), '');
@@ -604,6 +612,8 @@ function recordMarkdown(r, heading, note = null) {
       out.push(`**${m.slot === 'RATION' ? 'Other' : m.slot[0] + m.slot.slice(1).toLowerCase()}: ${m.name}**  `);
       if (m.components) out.push(m.components.split('\n').map((l) => `  ${l}`).join('  \n') + '  ');
       out.push(`  ${fmtV(m.kcal)} kcal · ${fmtV(m.water_litres)} L water · ${fmtV(m.prep_minutes)} min · ${fmtV(m.energy_wh)} Wh`);
+      const eco = mealEcoLine(m);
+      if (eco) out.push(`  ${eco}`);
       if (m.notes) out.push(`  _${m.notes}_`);
       out.push('');
     }
@@ -740,4 +750,14 @@ function fullMarkdown() {
 module.exports.dayMarkdown = dayMarkdown;
 module.exports.fullMarkdown = fullMarkdown;
 module.exports.rehearsalMarkdown = rehearsalMarkdown;
+/** One line of the recipe figures of a meal, per serving: nutrients, CO2e, water footprint. */
+function mealEcoLine(m) {
+  const n = m.nutrients || {};
+  const { NUTRIENTS } = require('./content');
+  const parts = NUTRIENTS.filter((x) => n[x.key] != null).map((x) => `${x.label.toLowerCase()} ${+Number(n[x.key]).toFixed(1)} ${x.unit}`);
+  if (m.co2e_kg != null) parts.push(`${+Number(m.co2e_kg).toFixed(3)} kg CO2e`);
+  if (m.water_footprint_l != null) parts.push(`${+Number(m.water_footprint_l).toFixed(1)} L water footprint`);
+  return parts.length ? `Per serving: ${parts.join(' · ')}` : '';
+}
+
 module.exports.rehearsalRecord = rehearsalRecord;

@@ -120,9 +120,9 @@ page load. Everything editable lives here.
 | Tab | Holds |
 |---|---|
 | **Messages** | The reply queue: awaiting reply · published · rejected · everything |
-| **Communication officer** | The **Daily Blog** at the top, then the officer's state |
-| **Science officer** | The **Daily Blog** at the top, then the daily science findings (a post of their own), then the state |
-| **Health officer** | The **Daily Blog** at the top, then the daily health activities (a post of their own), and the state |
+| **Communication officer** | The **Commander Blog** at the top, then the officer's state |
+| **Science officer** | The **Daily Science Findings** at the top, then the state |
+| **Health officer** | The **Daily Health Blog** at the top, then the state |
 | **Habitat** | The daily schedule (a task with its name emptied is removed on save), the meals — Breakfast, Lunch, Dinner, Other — **Steps taken** and **Calories consumed** (one line per officer each, both written to `crew-figures.json`), the inventory levels, and the day's power figures (with the category names, editable in place) |
 
 Every composer is the same: paragraphs and pictures in a column, a ＋ between every two, no
@@ -184,7 +184,7 @@ asks *Are you sure you want to reset?* and takes the word `RESET` typed into a b
 only wakes up once it has been typed, and the word is checked again on the server, so nothing
 can trigger it by accident. Then it starts the station again for the run:
 
-- **every blog slot is emptied** — `logbook.json` becomes one placeholder per day and officer,
+- **every Commander Blog slot is emptied** — `logbook.json` becomes one placeholder per day (communication officer only),
   for the crew to fill in during the mission;
 - **the crew's figures are emptied** — `crew-figures.json` loses its days; the health officer
   files each day's steps and calories, per officer, under Steps taken on the Habitat tab as the run goes;
@@ -319,17 +319,18 @@ the running station.
 |---|---|
 | `crew-and-inventory.json` | Crew designations and roles; the tracked resources and their starting amounts |
 | `schedule.json` | The daily task schedule — as shipped, the crew's typical day (08:00 Shift Change … 22:00 Shift Change / Lights Out, seventeen tasks) written into every one of the thirteen days; change a day in mission control's **Habitat** → Schedule, or here |
-| `meals.json` | Meals per day, with energy, water and power cost |
+| `meals.json` | Meals per day, with energy, water and power cost — ships empty; filled from the Habitat tab, from the recipe book or by hand |
 | `inventory-levels.json` | What is left of each resource at the end of each day |
 | `power.json` | Power consumed per day in kWh, split by editable categories (heating, food, lighting, electronics, other as shipped) — drawn on the Habitat panel, in At a Glance, in the Trends and throughout the record |
 | `logbook.json` | The crew's diary entries, by day and crew member |
 | `notes.json` | Mission notes, science findings, health activities and anomalies |
 | `sensors.json` | The monitored channels, with units, channel codes and thresholds |
 | `templates.json` | The prefilled text of the daily health activities (the `Default` entry under `HEALTH`) |
+| `recipes.json` | The recipe book: twelve recipes (two measured, ten samples) with prep time and per-serving kcal, nutrients, CO₂e and water footprint — what the food plan's dropdowns offer (see *The recipe book*) |
 
-It ships with the plan and nothing invented: 39 diary slots (thirteen days × three officers)
+It ships with the plan and nothing invented: 13 Commander Blog slots (one a day, communication officer only)
 with a cue each for the crew to write into, the typical daily schedule on every day (17 tasks ×
-13 days), 39 meals, nine tracked resources (their carried-in amounts and warning levels ship as
+13 days), an empty food plan (`meals.json` — each day's meals are chosen from the recipe book on the Habitat tab), nine tracked resources (their carried-in amounts and warning levels ship as
 0 — placeholders to be written into `crew-and-inventory.json` before the run, or the day-1 count
 filed on the Habitat tab, which every gauge is then drawn against), and the sensor channels.
 The dailies — the stores' counts (`inventory-levels.json`), the steps and calories
@@ -367,6 +368,42 @@ paragraphs with `[media:12]` lines — for editing by hand, so the file in `cont
 readable, and without JavaScript the box is still a textarea with a file picker. The files go
 into the media archive under that officer and day, so they are also in the gallery, the
 exports and the ZIP. Full guide in `content/README.md`.
+
+## The recipe book
+
+On mission control's **Habitat** tab, **Breakfast**, **Lunch** and **Dinner** each open with a dropdown over the
+recipe book, **`content/recipes.json`**. Choosing a recipe fills the slot's name, kcal, **prep time**, the six
+nutrients (protein, fat, carbohydrate, fibre, sugar, sodium), CO₂e and water footprint — all per serving, all still
+editable before **Save food plan**. The dropdown's first option, **Empty — fill in the fields below by hand**, clears
+the slot to be written on the go: it is saved for that day only and never adds a recipe.
+
+The book ships with twelve recipes: Chili Non Carne and Pfannenbrot with their measured figures, and **ten sample
+recipes** marked `"sample": true` — invented names and figures to fill the list until the real ones are in. Every
+recipe carries a `prep_minutes`. The book is edited **in the file only**; mission control has no recipe editor.
+
+A slot keeps its own copy of the figures in `meals.json` (`recipe`, `nutrients`, `co2e_kg`, `water_footprint_l`),
+so changing the book never rewrites a day already planned. In the file, a meal can also be just
+`{ "slot": "DINNER", "recipe": "pfannenbrot" }` and takes everything else — prep time included — from the book. The
+figures are public: under each meal on the dashboard, in At a Glance, and in the record (Markdown, JSON, PDF).
+`water_total_l` is the recipe's water footprint, not the water drunk — the meal's own `water` figure is untouched.
+
+## Three blogs, and only three
+
+The station carries exactly three blogs, everywhere — the dashboard's Blogs row, the crew log
+(`/logbook`), At a Glance, the archive and the PDF record:
+
+| Blog | Who writes it | Where it is stored |
+|---|---|---|
+| **Commander Blog** | the communication officer, on their tab | `content/logbook.json` (COMMUNICATION OFFICER only) |
+| **Daily Science Findings** | the science officer, on their tab | `content/notes.json`, kind `SCIENCE` |
+| **Daily Health Blog** | the health officer, on their tab | `content/notes.json`, kind `HEALTH` |
+
+The science and health officers have no other blog: their old per-officer "Daily Blog" is gone
+from mission control, and any entry for them in `logbook.json` (or left in the database) is
+dropped on load. The crew log page shows each day's three blogs, filterable by blog.
+
+The foot of every public page links **Privacy policy**, **ZKM** and **Imprint**
+(`https://zkm.de/en/imprint`).
 
 ## Who writes what
 
@@ -556,8 +593,9 @@ Other endpoints: `/api/sensors/latest`, `/api/sensors/history?metric=temperature
 
 The real devices inside the habitat — a smart plug's energy meter, a temperature sensor,
 more as they are installed — hang off a Home Assistant instance on the venue network. The
-station server polls its REST API and draws them on the landing page as **Habitat
-hardware**, the folder beside the Habitat's in the stack: one tile per device with the current
+station server polls its REST API and draws them **inside the Habitat panel**, under a
+*Habitat hardware* heading below the node's tiles, the stores and the power (there is no
+separate Habitat hardware tab): one tile per device with the current
 reading, when it last changed and its last 24 hours as a sparkline, and beneath the tiles
 one combined chart with every device on the same day — each line on its own scale, named at
 its end in its own colour, exactly as the Trends panel does it. The panel refreshes itself

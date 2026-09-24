@@ -1,0 +1,244 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="kit.css"><script src="gfx.js"></script>
+<style>
+body{width:1920px;height:1080px}
+.room{width:1920px;height:1080px;display:grid;grid-template-rows:64px 58px minmax(0,1fr);}
+.clocks{display:flex;align-items:center;background:linear-gradient(180deg,#0e131a,#0a0e13);border-bottom:1px solid var(--rule);padding:0 22px}
+.brand{display:flex;align-items:center;gap:12px;padding-right:22px;font-size:13px;letter-spacing:.2em;color:var(--ink-2)}
+.brand .dot{width:26px;height:26px;border-radius:50%;background:var(--mars);box-shadow:0 0 16px rgba(255,90,31,.6);display:grid;place-items:center;color:#1a0600;font-weight:600;font-size:15px}
+.hr{margin-left:auto;display:flex;gap:10px;align-items:center}
+.index{display:flex;align-items:center;gap:22px;padding:0 22px;border-bottom:1px solid var(--rule);background:#090c11}
+.index h2{font-size:22px;font-weight:600;letter-spacing:.02em}
+.track{display:flex;align-items:center;gap:6px}
+.track .lbl{margin-right:4px}
+.track .key{padding:6px 10px;font-size:10px}
+.sols{display:flex;gap:4px;margin-left:auto}
+.sols span{width:30px;height:24px;display:grid;place-items:center;font-size:10px;border-radius:2px;background:#141a22;color:var(--ink-3);border:1px solid #1f2833}
+.sols span.d{background:#1b2c5c;color:#cfdaff;border-color:#2b4aa8}.sols span.n{background:var(--mars);color:#170700;box-shadow:0 0 12px rgba(255,90,31,.6)}
+
+.wall{display:grid;grid-template-columns:400px 1fr 1fr 420px;grid-template-rows:minmax(0,1fr) minmax(0,1.05fr) 250px;gap:14px;padding:14px 20px 16px}
+.bay{display:flex;flex-direction:column;min-height:0}
+.body{flex:1;min-height:0;padding:12px 14px}
+/* telemetry */
+.tel{grid-column:1;grid-row:1/3}
+.dialwrap{display:flex;gap:14px;align-items:center}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.tile{padding:8px 12px}
+.tile .n{display:flex;gap:6px;align-items:center;font-size:9.5px;letter-spacing:.14em;color:var(--ink-3);text-transform:uppercase}
+.tile .v{font-size:26px;color:var(--amber);margin-top:4px;text-shadow:0 0 12px rgba(255,180,84,.25)}
+.tile .v small{font-size:11px;color:var(--ink-3);margin-left:3px}
+.tile .band{font-size:9px;letter-spacing:.12em;color:var(--ink-3);margin-top:2px}
+.tile .sp{margin-top:6px;height:26px}
+.crewfig{margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.crewfig .row{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.08em;color:var(--ink-2);padding:3px 0;border-bottom:1px dashed #1e2833}
+.crewfig .row b{font-weight:400;color:var(--amber)}
+/* cams */
+.cams{grid-column:2/4;grid-row:1}
+.camgrid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:8px;height:100%}
+.camgrid .glass{position:relative}
+.camgrid .glass>div{position:absolute;inset:0}
+.camgrid .glass.sel{box-shadow:0 0 0 2px var(--mars),0 0 20px rgba(255,90,31,.35)}
+/* trends */
+.trends{grid-column:2/4;grid-row:2}
+.legend{display:flex;gap:14px;font-size:10px;letter-spacing:.12em;color:var(--ink-2)}
+.legend i{display:inline-block;width:14px;height:2px;vertical-align:3px;margin-right:6px}
+/* schedule */
+.sched{grid-column:4;grid-row:1/3}
+.tl{position:relative;padding-left:18px}
+.tl::before{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:1px;background:var(--rule)}
+.ev{position:relative;display:grid;grid-template-columns:48px 1fr;gap:10px;padding:6px 8px;font-size:12.5px;color:var(--ink-3);border-radius:3px}
+.ev::before{content:"";position:absolute;left:-17px;top:11px;width:7px;height:7px;border-radius:50%;background:#1f2833;border:1px solid #33404e}
+.ev.done{color:var(--ink-2)} .ev.done::before{background:#2b4aa8;border-color:#4d7cff}
+.ev.now{background:var(--mars-soft);color:var(--ink);box-shadow:inset 2px 0 0 var(--mars)} .ev.now::before{background:var(--mars);border-color:var(--mars);box-shadow:0 0 10px var(--mars)}
+.ev .tm{color:var(--amber)} .ev.done .tm{color:var(--ink-3)}
+.ev .st{font-size:9px;letter-spacing:.16em;color:var(--mars);display:block;margin-top:2px}
+.meal{margin-top:12px;border-top:1px solid var(--rule);padding-top:10px}
+.meal .m{display:grid;grid-template-columns:70px 1fr auto;gap:8px;font-size:12px;padding:4px 0;color:var(--ink-2)}
+.meal .m .s{font-size:9.5px;letter-spacing:.14em;color:var(--ink-3)}
+.meal .m b{font-weight:400;color:var(--amber);font-size:11px}
+/* bottom row */
+.bottom{grid-column:1/5;grid-row:3;display:grid;grid-template-columns:1.35fr .8fr 1fr 1.25fr;gap:16px;min-height:0}
+.gauges{display:grid;grid-template-columns:repeat(9,1fr);gap:8px;height:100%}
+.g{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:9px;letter-spacing:.08em;color:var(--ink-3);text-align:center}
+.g .tube{width:22px;flex:1;border-radius:3px;background:#05080b;border:1px solid #2c3845;position:relative;overflow:hidden;box-shadow:inset 0 0 8px #000}
+.g .tube i{position:absolute;left:2px;right:2px;bottom:2px;border-radius:2px;background:linear-gradient(0deg,#c8561f,#ffb454);box-shadow:0 0 10px rgba(255,180,84,.4)}
+.g .tube::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 9px,rgba(255,255,255,.08) 9px 10px)}
+.g.low .tube i{background:linear-gradient(0deg,#ff3d0a,#ff5a1f);box-shadow:0 0 12px rgba(255,90,31,.7)}
+.g b{font-weight:400;font-size:13px;color:var(--amber)} .g.low b{color:var(--mars)}
+.pw .r{display:grid;grid-template-columns:78px 1fr 36px;gap:8px;align-items:center;font-size:10px;letter-spacing:.1em;color:var(--ink-2);padding:5px 0}
+.pw .bar{height:10px;background:#05080b;border:1px solid #1f2833;border-radius:1px;position:relative}
+.pw .bar i{position:absolute;inset:1px auto 1px 1px;background:repeating-linear-gradient(90deg,var(--amber) 0 5px,transparent 5px 7px)}
+.pw .r b{font-weight:400;color:var(--amber);text-align:right}
+.crew .o{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:7px 0;border-bottom:1px dashed #1e2833}
+.crew .o .nm{font-size:11px;letter-spacing:.14em}
+.crew .o .sn{grid-column:1/3;font-size:12.5px;color:var(--ink-2)}
+.faces{display:flex;gap:4px}
+.faces i{width:14px;height:14px;border-radius:50%;border:1px solid #33404e;background:#0a0e13}
+.faces i.on{background:var(--amber);border-color:var(--amber);box-shadow:0 0 8px var(--amber)}
+.blogs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;height:100%}
+.blog{padding:10px 12px;display:flex;flex-direction:column;gap:6px;overflow:hidden;position:relative}
+.blog h5{font-size:11px;letter-spacing:.12em;font-weight:600;text-transform:uppercase}
+.blog p{font-size:12px;line-height:1.45;color:var(--ink-2)}
+.blog::after{content:"";position:absolute;left:0;right:0;top:auto;bottom:0;height:36px;background:linear-gradient(0deg,var(--screen),transparent)}
+.head{white-space:nowrap} .blog h5,.blog p{flex-shrink:0} .g span{white-space:nowrap}
+</style></head><body>
+<div class="room">
+  <header class="clocks">
+    <div class="brand"><span class="dot">!</span>MARS!PLATZ · MISSION DASHBOARD</div>
+    <div class="clock"><span><i class="led"></i>&nbsp; Link</span><b style="color:var(--nominal);font-size:16px;margin-top:3px;text-shadow:0 0 12px rgba(92,242,164,.35)">NOMINAL</b></div>
+    <div class="clock"><span>Mission day</span><b>SOL 05<span style="font-size:13px;color:var(--ink-3)"> /13</span></b></div>
+    <div class="clock"><span>Mission elapsed</span><b>T+004:14:22:08</b></div>
+    <div class="clock"><span>Habitat · CEST</span><b>14:22:08</b></div>
+    <div class="clock"><span>UTC</span><b style="color:var(--ink-2);text-shadow:none">12:22:08</b></div>
+    <div class="clock"><span>One-way signal</span><b>12′ 43″</b></div>
+    <div class="clock"><span>Crew aboard</span><b>3 / 3</b></div>
+    <div class="hr"><span class="live"><i></i>WALL · LIVE</span><span class="key">⤢ Full screen</span></div>
+  </header>
+  <nav class="index">
+    <h2>Mission dashboard</h2><span class="code">CH-00</span>
+    <div class="track"><span class="lbl">Habitat</span><span class="key on">Habitat</span><span class="key">Hardware</span><span class="key">Trends</span></div>
+    <div class="track"><span class="lbl">Today</span><span class="key">Schedule</span><span class="key">Meal</span><span class="key">Crew moods</span></div>
+    <div class="track"><span class="lbl">Blogs</span><span class="key">Science</span><span class="key">Health</span><span class="key">Commander</span></div>
+    <div class="sols" id="sols"></div>
+  </nav>
+
+  <div class="wall">
+    <!-- telemetry -->
+    <section class="bay tel">
+      <div class="head"><span class="code">CH-01</span><span class="title">Habitat</span><span class="live"><i></i>LIVE</span><span class="meta">Node · every 20 min</span></div>
+      <div class="body">
+        <div class="dialwrap">
+          <div class="glass" style="width:170px;height:170px;border-radius:50%"><div id="dial"></div></div>
+          <div>
+            <div class="lbl">CH-03 · Carbon dioxide</div>
+            <div style="font-size:44px;color:var(--amber);margin-top:4px;text-shadow:0 0 18px rgba(255,180,84,.35)">612<span style="font-size:14px;color:var(--ink-3)"> ppm</span></div>
+            <div style="display:flex;gap:6px;align-items:center;font-size:11px;letter-spacing:.14em;color:var(--nominal);margin-top:4px"><span class="sym ok"></span>WITHIN BAND</div>
+            <div class="lbl" style="margin-top:8px">Band 400–1200 · 51 readings today</div>
+          </div>
+        </div>
+        <div class="tiles">
+          <div class="glass tile"><div class="n"><span class="sym ok" style="color:var(--nominal)"></span>CH-01 Temp</div><div class="v">21.4<small>°C</small></div><div class="band">18.5 – 24.5</div><div class="sp" data-g="spark" data-w="150" data-h="26" data-o='{"seed":5,"base":21,"amp":1.2,"noise":0.4}'></div></div>
+          <div class="glass tile"><div class="n"><span class="sym ok" style="color:var(--nominal)"></span>CH-02 Humidity</div><div class="v">38.2<small>%</small></div><div class="band">32 – 48</div><div class="sp" data-g="spark" data-w="150" data-h="26" data-o='{"seed":8,"base":38,"amp":3,"noise":0.4}'></div></div>
+          <div class="glass tile"><div class="n"><span class="sym ok" style="color:var(--nominal)"></span>CH-04 Pressure</div><div class="v">1003<small>hPa</small></div><div class="band">990 – 1025</div><div class="sp" data-g="spark" data-w="150" data-h="26" data-o='{"seed":21,"base":1003,"amp":2,"noise":0.5}'></div></div>
+          <div class="glass tile"><div class="n"><span class="sym caut" style="color:var(--caution)"></span>CH-05 Air quality</div><div class="v" style="color:var(--caution)">57<small>AQI</small></div><div class="band">0 – 50 · caution</div><div class="sp" data-g="spark" data-w="150" data-h="26" data-o='{"seed":11,"base":40,"amp":10,"drift":16,"color":"#ffc83d","noise":0.4}'></div></div>
+          <div class="glass tile"><div class="n"><span class="sym ok" style="color:var(--nominal)"></span>CH-08 Radiation</div><div class="v">0.14<small>µSv/h</small></div><div class="band">0 – 0.5</div><div class="sp" data-g="spark" data-w="150" data-h="26" data-o='{"seed":13,"base":0.14,"amp":0.02,"noise":0.8}'></div></div>
+          <div class="glass tile"><div class="n"><span class="sym ok" style="color:var(--nominal)"></span>CH-09 Cum. dose</div><div class="v">14.6<small>µSv</small></div><div class="band">0 – 60 · rising</div><div class="sp" data-g="spark" data-w="150" data-h="26" data-o='{"seed":2,"base":2,"amp":0.3,"drift":12.6,"noise":0.1}'></div></div>
+        </div>
+        <div class="crewfig">
+          <div><div class="lbl" style="margin-bottom:4px">Steps · today</div>
+            <div class="row"><span>COMM</span><b>2 280</b></div><div class="row"><span>SCIENCE</span><b>2 140</b></div><div class="row"><span>HEALTH</span><b>1 540</b></div></div>
+          <div><div class="lbl" style="margin-bottom:4px">kcal · today</div>
+            <div class="row"><span>COMM</span><b>1 600</b></div><div class="row"><span>SCIENCE</span><b>1 470</b></div><div class="row"><span>HEALTH</span><b>1 350</b></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- cameras -->
+    <section class="bay cams">
+      <div class="head"><span class="code">CH-15</span><span class="title">Live images from the habitat</span><span class="live"><i></i>LIVE</span><span class="meta">Cloud folder · checked every 20 min · last 14:20</span></div>
+      <div class="body"><div class="camgrid">
+        <div class="glass sel"><div data-g="cam" data-o='{"scene":"lab","label":"CAM-01 · LAB","time":"14:20","seed":3}'></div></div>
+        <div class="glass"><div data-g="cam" data-o='{"scene":"bike","label":"CAM-02 · GENERATOR","time":"14:16","seed":5}'></div></div>
+        <div class="glass"><div data-g="cam" data-o='{"scene":"hydro","label":"CAM-03 · HYDROPONICS","time":"14:04","seed":7}'></div></div>
+        <div class="glass"><div data-g="cam" data-o='{"scene":"galley","label":"CAM-04 · GALLEY","time":"12:31","seed":9}'></div></div>
+        <div class="glass"><div data-g="cam" data-o='{"scene":"airlock","label":"CAM-05 · AIRLOCK","time":"11:58","seed":11}'></div></div>
+        <div class="glass"><div data-g="cam" data-o='{"scene":"bunk","label":"CAM-06 · NAP POD","time":"09:12","seed":13}'></div></div>
+      </div></div>
+    </section>
+
+    <!-- schedule -->
+    <section class="bay sched">
+      <div class="head"><span class="code">CH-30</span><span class="title">Today's schedule</span><span class="meta">SOL 05 · 7 / 15 done</span></div>
+      <div class="body"><div class="tl" id="tl"></div>
+        <div class="meal"><div style="display:flex;justify-content:space-between"><span class="lbl"><span class="code" style="margin-right:8px">CH-32</span>Today's meal</span><span class="lbl">1 610 kcal · 0.72 L · 350 Wh</span></div>
+          <div class="m"><span class="s">BREAKFAST</span><span>Reduced-water porridge</span><b>430 kcal</b></div>
+          <div class="m"><span class="s">LUNCH</span><span>Bean paste on crispbread</span><b>540 kcal</b></div>
+          <div class="m"><span class="s">DINNER</span><span>Lentil stew, second pressing</span><b>640 kcal</b></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- trends -->
+    <section class="bay trends">
+      <div class="head"><span class="code">CH-16</span><span class="title">Trends · the run</span><div class="legend" style="margin-left:18px"><span><i style="background:#ff5a1f"></i>Water</span><span><i style="background:#ffb454"></i>Food</span><span><i style="background:#4d7cff"></i>Oxygen</span><span><i style="background:#5cf2a4"></i>CO₂</span><span><i style="background:#c9a7ff"></i>Messages</span></div><span class="meta">Solid · happened &nbsp; Dashed · plan</span></div>
+      <div class="body" style="padding:8px 14px 10px"><div class="glass" style="height:100%"><div id="trend" style="position:absolute;inset:0"></div></div></div>
+    </section>
+
+    <!-- bottom row -->
+    <div class="bottom">
+      <section class="bay"><div class="head"><span class="code">CH-13</span><span class="title">Resources</span><span class="meta">Carried in · never resupplied · days left at draw</span></div>
+        <div class="body"><div class="gauges" id="gauges"></div></div></section>
+      <section class="bay pw"><div class="head"><span class="code">CH-14</span><span class="title">Power</span><span class="meta">Today 2.55 kWh</span></div>
+        <div class="body">
+          <div class="r"><span>HEATING</span><div class="bar"><i style="width:86%"></i></div><b>1.10</b></div>
+          <div class="r"><span>FOOD</span><div class="bar"><i style="width:43%"></i></div><b>0.55</b></div>
+          <div class="r"><span>LIGHTING</span><div class="bar"><i style="width:27%"></i></div><b>0.35</b></div>
+          <div class="r"><span>ELECTRONICS</span><div class="bar"><i style="width:35%"></i></div><b>0.45</b></div>
+          <div class="r"><span>OTHER</span><div class="bar"><i style="width:8%"></i></div><b>0.10</b></div>
+          <div class="r" style="border-top:1px solid var(--rule);margin-top:4px;padding-top:8px"><span style="color:var(--mars)">PEDALLED</span><div class="bar"><i style="width:62%;background:repeating-linear-gradient(90deg,var(--mars) 0 5px,transparent 5px 7px)"></i></div><b style="color:var(--mars)">0.80</b></div>
+        </div></section>
+      <section class="bay crew"><div class="head"><span class="code">CH-12</span><span class="title">Crew moods</span><span class="meta">Never as numbers</span></div>
+        <div class="body" style="padding-top:4px">
+          <div class="o"><span class="nm">COMMUNICATION OFFICER</span><span class="faces"><i class="on"></i><i></i><i></i><i></i><i></i></span><span class="sn">Calm, at ease with the day.</span></div>
+          <div class="o"><span class="nm">SCIENCE OFFICER</span><span class="faces"><i></i><i class="on"></i><i></i><i></i><i></i></span><span class="sn">Settled, working steadily.</span></div>
+          <div class="o" style="border:0"><span class="nm">HEALTH OFFICER</span><span class="faces"><i></i><i></i><i></i><i class="on"></i><i></i></span><span class="sn">Tense, short with the others.</span></div>
+        </div></section>
+      <section class="bay"><div class="head"><span class="code">CH-40</span><span class="title">Daily blogs</span><span class="meta">SOL 05 · Mon 19 Oct</span></div>
+        <div class="body"><div class="blogs">
+          <div class="glass blog"><h5 class="amber">Science findings</h5><p>First germination in tray 3 — eleven seedlings, all on the lit side. The membrane swap held overnight; recovery up to 94 %.</p></div>
+          <div class="glass blog"><h5 class="amber">Health blog</h5><p>Morning workout: 25 min intervals on the generator bike. Evening: a shared meal without screens. Sleep is shorter for all three.</p></div>
+          <div class="glass blog"><h5 class="mars">Commander blog</h5><p>Forty-one messages answered. The questions are getting stranger and better. Someone asked what we would bring back.</p></div>
+        </div></div></section>
+    </div>
+  </div>
+</div>
+<script>
+// sols
+const so = document.getElementById('sols');
+for (let i = 1; i <= 13; i++) so.insertAdjacentHTML('beforeend', `<span class="${i < 5 ? 'd' : i === 5 ? 'n' : ''}">${String(i).padStart(2, '0')}</span>`);
+// dial
+(() => {
+  const S = 170, c = S / 2, r = 66, a0 = Math.PI * .75, a1 = Math.PI * 2.25, v = (612 - 0) / 2500;
+  const pt = (a, rr) => [c + rr * Math.cos(a), c + rr * Math.sin(a)];
+  const arc = (from, to, rr) => { const [x0, y0] = pt(from, rr), [x1, y1] = pt(to, rr); return `M${x0} ${y0} A${rr} ${rr} 0 ${to - from > Math.PI ? 1 : 0} 1 ${x1} ${y1}`; };
+  const at = t => a0 + (a1 - a0) * t;
+  let ticks = '';
+  for (let i = 0; i <= 50; i++) { const a = at(i / 50), l = i % 5 ? 5 : 10; const [x0, y0] = pt(a, r + 8), [x1, y1] = pt(a, r + 8 + l); ticks += `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="#5e6b78" stroke-width="${i % 5 ? .8 : 1.4}"/>`; }
+  const [nx, ny] = pt(at(v), r - 6);
+  document.getElementById('dial').innerHTML = `<svg width="${S}" height="${S}">${ticks}
+    <path d="${arc(a0, a1, r)}" stroke="#1b232d" stroke-width="10" fill="none"/>
+    <path d="${arc(at(400 / 2500), at(1200 / 2500), r)}" stroke="#5cf2a4" stroke-opacity=".25" stroke-width="10" fill="none"/>
+    <path d="${arc(a0, at(v), r)}" stroke="#ffb454" stroke-width="4" fill="none" style="filter:drop-shadow(0 0 6px #ffb454)"/>
+    <line x1="${c}" y1="${c}" x2="${nx}" y2="${ny}" stroke="#ff5a1f" stroke-width="2.5"/><circle cx="${c}" cy="${c}" r="6" fill="#ff5a1f"/>
+    <text x="${c}" y="${c + 40}" text-anchor="middle" font-family="ZKM Serendipity" font-size="10" letter-spacing="1.5" fill="#5e6b78">PPM</text></svg>`;
+})();
+// schedule
+const sch = [["08:00","Shift Change"],["08:30","Breakfast / Communal Mission Planning"],["09:30","Science Block 1"],["11:00","Mental Health / Movement"],["11:30","Lunch Prep"],["12:00","Lunch"],["13:00","Science Block 2"],["14:00","Science Block 2 / Hot Water Prep with Bike"],["15:00","Kaffee & Kuchen / Discuss Governance topics"],["16:00","EVA (Extra Vehicular Activity) / Science Block 3"],["17:30","Dinner prep"],["18:00","Dinner / Washing Up"],["19:00","Communication Hour / Report Writing Hour"],["20:00","Social / Personal Time"],["22:00","Shift Change / Lights Out"]];
+document.getElementById('tl').innerHTML = sch.map(([t, l], i) => `<div class="ev ${i < 7 ? 'done' : i === 7 ? 'now' : ''}"><span class="tm">${t}</span><span>${l}${i === 7 ? '<span class="st">● NOW · 22 MIN IN</span>' : i === 8 ? '<span class="st" style="color:var(--ink-3)">NEXT · IN 38 MIN</span>' : ''}</span></div>`).join('');
+// gauges
+const gs = [["Water","448 L",64,"12 d"],["Food","10 d",62,"10 d"],["Oxygen","81.6 %",82,"23 d"],["Scrubbers","18",72,"26 d"],["Battery","50.4",50,"21 d"],["Filters","8",40,"27 d"],["Medical","6",100,"—"],["Repair","43.2 kg",86,"36 d"],["Trays","4",20,"low",1]];
+document.getElementById('gauges').innerHTML = gs.map(([n, v, p, d, low]) => `<div class="g ${low ? 'low' : ''}"><b>${v}</b><div class="tube"><i style="height:${p}%"></i></div><span>${n.toUpperCase()}</span><span style="color:${low ? 'var(--mars)' : 'var(--ink-2)'}">${d}</span></div>`).join('');
+// trend
+(() => {
+  const el = document.getElementById('trend'), W = el.clientWidth, H = el.clientHeight, L = 44, Rr = 34, T = 16, B = 30;
+  const x = i => L + (W - L - Rr) * i / 12, y = v => T + (H - T - B) * (1 - v / 100);
+  let g = '';
+  for (let i = 0; i <= 4; i++) g += `<line x1="${L}" x2="${W - Rr}" y1="${y(i * 25)}" y2="${y(i * 25)}" stroke="#1b232d"/><text x="${L - 8}" y="${y(i * 25) + 3}" text-anchor="end" font-size="9" fill="#5e6b78" font-family="ZKM Serendipity">${i * 25}</text>`;
+  for (let i = 0; i < 13; i++) g += `<line x1="${x(i)}" x2="${x(i)}" y1="${T}" y2="${H - B}" stroke="${i === 4 ? '#ff5a1f' : '#141b23'}" ${i === 4 ? 'stroke-dasharray="2 3"' : ''}/><text x="${x(i)}" y="${H - 10}" text-anchor="middle" font-size="9.5" letter-spacing="1" fill="${i === 4 ? '#ff5a1f' : '#5e6b78'}" font-family="ZKM Serendipity">SOL ${String(i + 1).padStart(2, '0')}</text>`;
+  g += `<rect x="${x(4)}" y="${T}" width="${W - Rr - x(4)}" height="${H - T - B}" fill="#fff" opacity=".015"/>`;
+  const lines = [
+    ['#ff5a1f', [100, 93, 86, 78, 64, 57, 50, 43, 36, 29, 22, 15, 8], 'WATER 64', -74, 18],
+    ['#ffb454', [100, 92, 85, 77, 62, 54, 46, 38, 31, 23, 15, 8, 0], 'FOOD 62', 10, 16],
+    ['#4d7cff', [100, 97, 93, 88, 82, 78, 74, 70, 66, 62, 58, 54, 50], 'O₂ 82', 10, -8],
+    ['#5cf2a4', [30, 34, 29, 37, 26, 30, 30, 30, 30, 30, 30, 30, 30], 'CO₂ 26', 10, -8],
+    ['#c9a7ff', [12, 38, 55, 47, 70, null, null, null, null, null, null, null, null], 'MSG 70', -62, -14],
+  ];
+  const path = (a, from, to) => a.slice(from, to + 1).map((v, k) => v == null ? '' : `${k ? 'L' : 'M'}${x(from + k)} ${y(v)}`).join('');
+  lines.forEach(([c, a, n, dx, dy]) => {
+    g += `<path d="${path(a, 0, 4)}" fill="none" stroke="${c}" stroke-width="2.2" style="filter:drop-shadow(0 0 4px ${c})"/>`;
+    if (a[5] != null) g += `<path d="${path(a, 4, 12)}" fill="none" stroke="${c}" stroke-opacity=".55" stroke-width="1.4" stroke-dasharray="4 5"/>`;
+    g += `<circle cx="${x(4)}" cy="${y(a[4])}" r="3.5" fill="${c}"/><text x="${x(4) + dx}" y="${y(a[4]) + dy}" font-size="10" letter-spacing="1" fill="${c}" font-family="ZKM Serendipity">${n}</text>`;
+  });
+  g += `<text x="${x(4) + 6}" y="${T + 12}" font-size="10" letter-spacing="1.5" fill="#ff5a1f" font-family="ZKM Serendipity">NOW · SOL 05</text>`;
+  el.innerHTML = `<svg width="${W}" height="${H}">${g}</svg>`;
+})();
+</script></body></html>

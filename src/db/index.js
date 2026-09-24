@@ -22,6 +22,16 @@ if (!columns('crew_entry').includes('source')) {
   db.exec("ALTER TABLE crew_entry ADD COLUMN source TEXT NOT NULL DEFAULT 'terminal'");
 }
 
+// The recipe book (content/recipes.json): a meal remembers which recipe it
+// was filled from, with that recipe's nutrients, CO2e and water footprint.
+{
+  const have = columns('meal');
+  if (!have.includes('recipe')) db.exec("ALTER TABLE meal ADD COLUMN recipe TEXT NOT NULL DEFAULT ''");
+  if (!have.includes('nutrients')) db.exec("ALTER TABLE meal ADD COLUMN nutrients TEXT NOT NULL DEFAULT ''");
+  if (!have.includes('co2e_kg')) db.exec('ALTER TABLE meal ADD COLUMN co2e_kg REAL');
+  if (!have.includes('water_footprint_l')) db.exec('ALTER TABLE meal ADD COLUMN water_footprint_l REAL');
+}
+
 const now = () => new Date().toISOString();
 
 function audit(actor, entity, entityId, action, detail = '') {

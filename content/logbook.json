@@ -1,68 +1,42 @@
 {
   "1": {
-    "COMMUNICATION OFFICER": "Today was kind of shit.\r\n\r\n[media:8]",
-    "SCIENCE OFFICER": "[PLACEHOLDER] Day 001 · Science officer — to be written at the end of this day.",
-    "HEALTH OFFICER": "Everyone Had kind of shit healtj.\r\n\r\n[media:2]"
+    "COMMUNICATION OFFICER": "Today was kind of shit.\r\n\r\n[media:8]"
   },
   "2": {
-    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 002 · Communication officer — to be written at the end of this day.",
-    "SCIENCE OFFICER": "Habitat breakdown.\r\n\r\n[media:6]",
-    "HEALTH OFFICER": "[PLACEHOLDER] Day 002 · Health officer — to be written at the end of this day."
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 002 · Commander Blog — to be written at the end of this day."
   },
   "3": {
-    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 003 · Communication officer — to be written at the end of this day.",
-    "SCIENCE OFFICER": "[PLACEHOLDER] Day 003 · Science officer — to be written at the end of this day.",
-    "HEALTH OFFICER": "[PLACEHOLDER] Day 003 · Health officer — to be written at the end of this day."
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 003 · Commander Blog — to be written at the end of this day."
   },
   "4": {
-    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 004 · Communication officer — to be written at the end of this day.",
-    "SCIENCE OFFICER": "[PLACEHOLDER] Day 004 · Science officer — to be written at the end of this day.",
-    "HEALTH OFFICER": "[PLACEHOLDER] Day 004 · Health officer — to be written at the end of this day."
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 004 · Commander Blog — to be written at the end of this day."
   },
   "5": {
-    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 005 · Communication officer — to be written at the end of this day.",
-    "SCIENCE OFFICER": "[PLACEHOLDER] Day 005 · Science officer — to be written at the end of this day.",
-    "HEALTH OFFICER": "[PLACEHOLDER] Day 005 · Health officer — to be written at the end of this day."
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 005 · Commander Blog — to be written at the end of this day."
   },
   "6": {
-    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 006 · Communication officer — to be written at the end of this day.",
-    "SCIENCE OFFICER": "[PLACEHOLDER] Day 006 · Science officer — to be written at the end of this day.",
-    "HEALTH OFFICER": "[PLACEHOLDER] Day 006 · Health officer — to be written at the end of this day."
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 006 · Commander Blog — to be written at the end of this day."
   },
   "7": {
-    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 007 · Communication officer — to be written at the end of this day.",
-    "SCIENCE OFFICER": "[PLACEHOLDER] Day 007 · Science officer — to be written at the end of this day.",
-    "HEALTH OFFICER": "[PLACEHOLDER] Day 007 · Health officer — to be written at the end of this day."
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 007 · Commander Blog — to be written at the end of this day."
   },
   "8": {
-    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 008 · Communication officer — to be written at the end of this day.",
-    "SCIENCE OFFICER": "[PLACEHOLDER] Day 008 · Science officer — to be written at the end of this day.",
-    "HEALTH OFFICER": "[PLACEHOLDER] Day 008 · Health officer — to be written at the end of this day."
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 008 · Commander Blog — to be written at the end of this day."
   },
   "9": {
-    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 009 · Communication officer — to be written at the end of this day.",
-    "SCIENCE OFFICER": "[PLACEHOLDER] Day 009 · Science officer — to be written at the end of this day.",
-    "HEALTH OFFICER": "[PLACEHOLDER] Day 009 · Health officer — to be written at the end of this day."
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 009 · Commander Blog — to be written at the end of this day."
   },
   "10": {
-    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 010 · Communication officer — to be written at the end of this day.",
-    "SCIENCE OFFICER": "[PLACEHOLDER] Day 010 · Science officer — to be written at the end of this day.",
-    "HEALTH OFFICER": "[PLACEHOLDER] Day 010 · Health officer — to be written at the end of this day."
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 010 · Commander Blog — to be written at the end of this day."
   },
   "11": {
-    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 011 · Communication officer — to be written at the end of this day.",
-    "SCIENCE OFFICER": "[PLACEHOLDER] Day 011 · Science officer — to be written at the end of this day.",
-    "HEALTH OFFICER": "[PLACEHOLDER] Day 011 · Health officer — to be written at the end of this day."
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 011 · Commander Blog — to be written at the end of this day."
   },
   "12": {
-    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 012 · Communication officer — to be written at the end of this day.",
-    "SCIENCE OFFICER": "[PLACEHOLDER] Day 012 · Science officer — to be written at the end of this day.",
-    "HEALTH OFFICER": "[PLACEHOLDER] Day 012 · Health officer — to be written at the end of this day."
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 012 · Commander Blog — to be written at the end of this day."
   },
   "13": {
-    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 013 · Communication officer — to be written at the end of this day.",
-    "SCIENCE OFFICER": "[PLACEHOLDER] Day 013 · Science officer — to be written at the end of this day.",
-    "HEALTH OFFICER": "[PLACEHOLDER] Day 013 · Health officer — to be written at the end of this day."
+    "COMMUNICATION OFFICER": "[PLACEHOLDER] Day 013 · Commander Blog — to be written at the end of this day."
   },
-  "_note": "Crew diary entries for the thirteen days of the run (Thursday 15 to Tuesday 27 October 2026), keyed by mission day then by officer: 39 slots. Every slot ships as a PLACEHOLDER: an entry whose text begins with [PLACEHOLDER] is a slot to write into. Its first line is shown greyed on the public crew log, so the shape of the whole log is visible from the start; the 'Cue:' line after it is a prompt for the writer and is shown only in mission control. Replace the text — on the Crew log tab of mission control, on the officer's own tab, or here — and the entry is published for that day the moment it is saved. Saving an entry empty puts the placeholder back. Anything written live from mission control takes that slot over and is never replaced from this file, so you can write ahead here safely."
+  "_note": "The Commander Blog — the communication officer's daily entry — for the thirteen days of the run (Thursday 15 to Tuesday 27 October 2026), keyed by mission day then by officer: 13 slots, COMMUNICATION OFFICER only. The station has three blogs: this one, the Daily Science Findings and the Daily Health Blog (the SCIENCE and HEALTH notes in notes.json, written on the science and health officers' tabs). Entries for any other officer here are ignored. A slot beginning with [PLACEHOLDER] is a slot to write into: its first line is shown greyed on the public crew log, the rest is a cue shown only in mission control. Write over it here or in mission control (Communication officer → Commander Blog); save it empty and the placeholder comes back."
 }

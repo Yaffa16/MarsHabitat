@@ -169,17 +169,32 @@ function load({ quiet = false } = {}) {
     /* ------------------------------------------------------------ meals */
     if (meals) {
       const SLOTS = ['BREAKFAST', 'LUNCH', 'DINNER', 'RATION'];
+      const book = recipeBook();
+      // The file is the food plan: a day the file no longer mentions has no
+      // meals, rather than keeping whatever an older version of the file held.
+      const inFile = new Set(dayKeys(meals));
+      for (let n = 1; n <= total; n++) if (!inFile.has(n)) db.prepare('DELETE FROM meal WHERE mission_day = ?').run(n);
       for (const n of dayKeys(meals)) {
         if (n > total) { skipped.push(`meals.json day ${n}`); continue; }
         db.prepare('DELETE FROM meal WHERE mission_day = ?').run(n);
         (meals[String(n)] || []).forEach((m) => {
           const slot = String(m.slot || '').toUpperCase();
           if (!SLOTS.includes(slot)) { errors.push(`meals.json day ${n}: "${m.slot}" is not a slot`); return; }
-          if (!m.name) { errors.push(`meals.json day ${n} ${slot}: no name`); return; }
+          // A meal naming a recipe takes whatever it does not say itself from
+          // the recipe book, so "recipe": "pfannenbrot" alone is a whole meal.
+          const rec = m.recipe ? book.find((r) => r.slug === m.recipe) : null;
+          if (m.recipe && !rec) errors.push(`meals.json day ${n} ${slot}: recipe "${m.recipe}" is not in recipes.json`);
+          const name = m.name || (rec && !isPlaceholder(rec.name) ? rec.name : '');
+          if (!name) { errors.push(`meals.json day ${n} ${slot}: no name`); return; }
+          const nutr = mealNutrients(m.nutrients) || (rec ? rec.nutrients : null);
+          const numOr = (v, fb) => (v != null && v !== '' && Number.isFinite(Number(v)) ? Number(v) : fb);
           db.prepare(`INSERT INTO meal (mission_day, slot, name, components, kcal, water_litres,
-            prep_minutes, energy_wh, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-            .run(n, slot, m.name, m.components || '', m.kcal || 0, m.water || 0,
-                 m.prep || 0, m.energy || 0, m.notes || '');
+            prep_minutes, energy_wh, notes, recipe, nutrients, co2e_kg, water_footprint_l)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+            .run(n, slot, name, m.components || '', numOr(m.kcal, rec ? Math.round(rec.kcal) : 0), m.water || 0,
+                 numOr(m.prep, rec && rec.prep_minutes != null ? rec.prep_minutes : 0), m.energy || 0, m.notes || '', rec ? rec.slug : String(m.recipe || ''),
+                 nutr ? JSON.stringify(nutr) : '',
+                 numOr(m.co2e_kg, rec ? rec.co2e_kg : null), numOr(m.water_footprint_l, rec ? rec.water_total_l : null));
           counts.meals++;
         });
       }
@@ -222,11 +237,18 @@ function load({ quiet = false } = {}) {
     }
 
     /* ---------------------------------------------------------- logbook */
+    // The station keeps three blogs: the Commander Blog (the communication
+    // officer's entry here) and the science and health officers' daily
+    // reports (notes.json). No other officer has a blog of their own, so any
+    // entry of theirs — in the file or left in the database — is dropped.
+    db.prepare(`DELETE FROM crew_entry WHERE crew_id IN
+      (SELECT id FROM crew WHERE designation != ?)`).run(BLOG_OFFICER);
     if (logbook) {
       for (const n of dayKeys(logbook)) {
         if (n > total) { skipped.push(`logbook.json day ${n}`); continue; }
         for (const [designation, body] of Object.entries(logbook[String(n)] || {})) {
           if (designation.startsWith('_')) continue;
+          if (designation !== BLOG_OFFICER) continue;   // only the Commander Blog lives in logbook.json
           const member = db.prepare('SELECT id FROM crew WHERE designation = ?').get(designation);
           if (!member) { errors.push(`logbook.json day ${n}: no crew member "${designation}"`); continue; }
           const existing = db.prepare('SELECT * FROM crew_entry WHERE crew_id = ? AND mission_day = ?')
@@ -380,7 +402,7 @@ function writeResourceLog(levels, total) {
  */
 const PLAN_DIR = path.join(DIR, 'plan');
 const PLAN_FILES = ['crew-and-inventory.json', 'schedule.json', 'meals.json', 'inventory-levels.json',
-  'logbook.json', 'notes.json', 'sensors.json', 'templates.json', 'crew-figures.json', 'power.json'];
+  'logbook.json', 'notes.json', 'sensors.json', 'templates.json', 'crew-figures.json', 'power.json', 'recipes.json'];
 
 function planStatus() {
   const files = PLAN_FILES.filter((f) => fs.existsSync(path.join(PLAN_DIR, f)));
@@ -488,7 +510,9 @@ function reset(actor = 'control') {
 
   // 1. the blog slots, emptied
   const crewFile = readJson('crew-and-inventory.json', []) || {};
-  const crew = (crewFile.crew || []).map((c) => c.designation).filter(Boolean);
+  // Only the Commander Blog has slots in logbook.json: the science and health
+  // blogs are the officers' daily reports, written into notes.json.
+  const crew = (crewFile.crew || []).map((c) => c.designation).filter((d) => d === BLOG_OFFICER);
   const slots = {};
   for (let n = 1; n <= st.totalDays; n++) {
     slots[String(n)] = {};
@@ -685,6 +709,69 @@ function power() {
   return { categories: categories.length ? categories : POWER_DEFAULTS.map((c) => ({ ...c })), days };
 }
 
+/* ------------------------------------------------------------ recipe book */
+
+/**
+ * The recipe book, content/recipes.json: the dishes the food plan's Breakfast,
+ * Lunch and Dinner dropdowns offer. Each carries its per-serving figures —
+ * kcal, the six nutrients, CO2e and the water footprint — which fill the slot
+ * when the recipe is chosen. Read fresh on every call, like the power file,
+ * so an edit is live the moment it is saved. A slot keeps its own copy of the
+ * figures (meals.json), so changing a recipe never rewrites a planned day.
+ */
+const NUTRIENTS = [
+  { key: 'protein_g', label: 'Protein', unit: 'g' },
+  { key: 'fat_g', label: 'Fat', unit: 'g' },
+  { key: 'carb_g', label: 'Carbohydrate', unit: 'g' },
+  { key: 'fiber_g', label: 'Fibre', unit: 'g' },
+  { key: 'sugar_g', label: 'Sugar', unit: 'g' },
+  { key: 'sodium_mg', label: 'Sodium', unit: 'mg' },
+];
+
+/** Six numbers or nothing: a nutrients object with at least one real value. */
+function mealNutrients(obj) {
+  if (!obj || typeof obj !== 'object') return null;
+  const out = {}; let any = false;
+  for (const { key } of NUTRIENTS) {
+    const v = obj[key];
+    if (v === '' || v == null || !Number.isFinite(Number(v))) continue;
+    out[key] = Number(v); any = true;
+  }
+  return any ? out : null;
+}
+
+const slugify = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/ß/g, 'ss').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'recipe';
+
+/** The raw file: { _note, recipes: [...] } — kept whole so an edit preserves what it does not touch. */
+function recipesFile() {
+  try {
+    const obj = JSON.parse(fs.readFileSync(path.join(DIR, 'recipes.json'), 'utf8')) || {};
+    return { ...obj, recipes: Array.isArray(obj.recipes) ? obj.recipes : [] };
+  } catch { return { recipes: [] }; }
+}
+
+/** The recipes, flattened for the desk and the loader. */
+function recipeBook() {
+  const seen = new Set();
+  return recipesFile().recipes.filter((r) => r && r.name).map((r) => {
+    let slug = String(r.slug || slugify(r.name));
+    while (seen.has(slug)) slug += '-2';
+    seen.add(slug);
+    const ps = r.per_serving || {};
+    const num = (v) => (v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
+    const nutrients = {};
+    for (const { key } of NUTRIENTS) nutrients[key] = num((ps.nutrients || {})[key]);
+    return {
+      slug, name: String(r.name), placeholder: isPlaceholder(String(r.name)),
+      servings: num(r.servings),
+      kcal: num(ps.kcal), nutrients, co2e_kg: num(ps.co2e_kg), water_total_l: num(ps.water_total_l),
+      prep_minutes: num(r.prep_minutes), sample: !!r.sample,
+      coverage: r.coverage || null,
+    };
+  });
+}
+
 /**
  * The stores as they were counted on one day: exactly what inventory-levels.json
  * holds for that day — quantity left at the close and/or the day's use, per
@@ -734,13 +821,15 @@ function powerDay(missionDay, p = power()) {
  * control to be written over, and never reaches the public station.
  */
 const PLACEHOLDER = '[PLACEHOLDER]';
+/** The one officer whose entries are a blog: theirs is the Commander Blog. */
+const BLOG_OFFICER = 'COMMUNICATION OFFICER';
 const isPlaceholder = (body) => String(body || '').trimStart().startsWith(PLACEHOLDER);
 /** The cue shown in an empty box in mission control: the placeholder text without its marker. */
 const placeholderCue = (body) => String(body || '').trimStart().slice(PLACEHOLDER.length).trim();
 /** What the public sees in the slot: the first line only — the writer's cue stays inside. */
 const placeholderPublic = (body) => placeholderCue(body).split('\n')[0].trim();
 const placeholderFor = (day, designation) =>
-  `${PLACEHOLDER} Day ${String(day).padStart(3, '0')} · ${designation.charAt(0) + designation.slice(1).toLowerCase()} — to be written at the end of this day.`;
+  `${PLACEHOLDER} Day ${String(day).padStart(3, '0')} · ${designation === BLOG_OFFICER ? 'Commander Blog' : designation.charAt(0) + designation.slice(1).toLowerCase()} — to be written at the end of this day.`;
 
 function edit(name, mutate) {
   const file = path.join(DIR, name);
@@ -762,4 +851,5 @@ function edit(name, mutate) {
 module.exports = { load, watch, status, edit, templates, crewFigures, power, powerDay, inventoryFiled, DIR,
                    resourceLogRows, resourceLogCsv, LOG_FILE,
                    planStatus, savePlan, ensurePlan, reset, resetLocked, resetEpoch, inventoryStart, PLAN_DIR, PLAN_FILES,
-                   PLACEHOLDER, isPlaceholder, placeholderCue, placeholderPublic, placeholderFor };
+                   PLACEHOLDER, BLOG_OFFICER, isPlaceholder, placeholderCue, placeholderPublic, placeholderFor,
+                   NUTRIENTS, mealNutrients, recipesFile, recipeBook, slugify };

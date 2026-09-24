@@ -86,7 +86,7 @@ function day(missionDay) {
   const d = db.prepare('SELECT * FROM day WHERE mission_day = ?').get(missionDay);
   if (!d) return null;
   d.tasks = db.prepare('SELECT * FROM task WHERE mission_day = ? ORDER BY sort_order, time').all(missionDay);
-  d.meals = db.prepare('SELECT * FROM meal WHERE mission_day = ? ORDER BY CASE slot WHEN \'BREAKFAST\' THEN 1 WHEN \'LUNCH\' THEN 2 WHEN \'DINNER\' THEN 3 ELSE 4 END').all(missionDay);
+  d.meals = db.prepare('SELECT * FROM meal WHERE mission_day = ? ORDER BY CASE slot WHEN \'BREAKFAST\' THEN 1 WHEN \'LUNCH\' THEN 2 WHEN \'DINNER\' THEN 3 ELSE 4 END').all(missionDay).map(mealRow);
   d.notes = db.prepare('SELECT * FROM day_note WHERE mission_day = ? ORDER BY posted_at DESC').all(missionDay);
   // The day-1 figure is the scale each gauge is drawn against.
   d.inventory = db.prepare(
@@ -99,7 +99,25 @@ function day(missionDay) {
   d.waterPlanned = d.meals.reduce((s, m) => s + (m.water_litres || 0), 0);
   d.kcalPlanned = d.meals.reduce((s, m) => s + (m.kcal || 0), 0);
   d.energyPlanned = d.meals.reduce((s, m) => s + (m.energy_wh || 0), 0);
+  // From the recipe book: null when no meal of the day carries the figure,
+  // so a day without recipes says nothing rather than "0 kg".
+  const sumOf = (get) => { const v = d.meals.map(get).filter((x) => x != null); return v.length ? v.reduce((a, b) => a + b, 0) : null; };
+  d.co2ePlanned = sumOf((m) => m.co2e_kg);
+  d.waterFootprintPlanned = sumOf((m) => m.water_footprint_l);
+  d.nutrientsPlanned = null;
+  for (const m of d.meals) {
+    if (!m.nutrients) continue;
+    d.nutrientsPlanned = d.nutrientsPlanned || {};
+    for (const [k, v] of Object.entries(m.nutrients)) d.nutrientsPlanned[k] = (d.nutrientsPlanned[k] || 0) + v;
+  }
   return d;
+}
+
+/** A meal row as the views want it: the nutrients as an object (or null). */
+function mealRow(m) {
+  let nutrients = null;
+  if (m && m.nutrients) { try { nutrients = JSON.parse(m.nutrients); } catch { nutrients = null; } }
+  return { ...m, nutrients: nutrients && Object.keys(nutrients).length ? nutrients : null };
 }
 
 /* ------------------------------------------------------------------- crew */
@@ -272,41 +290,57 @@ function logbook({ includeHeld = false, crewId = null, limit = 400 } = {}) {
 }
 
 /**
- * The crew log as the public sees it now: every day of the run, every
- * officer, the written entry where there is one and its placeholder where
- * there is not — so the shape of the whole log is on the page from the first
- * day, and each slot fills in as it is written. Held entries stay out.
- * Each entry carries `placeholder` (true for a slot not yet written).
+ * The three blogs, as the public sees them now: every day of the run with
+ * its three slots — the Commander Blog (the communication officer's entry),
+ * the Daily Science Findings and the Daily Health Blog (the science and
+ * health officers' reports, SCIENCE and HEALTH notes) — the written post where
+ * there is one and a placeholder where there is not, so the shape of the
+ * whole log is on the page from the first day and each slot fills in as it is
+ * written. Held entries stay out. Each slot carries `blog` (its key),
+ * `title`, and `placeholder` (true for a slot not yet written).
  */
+const BLOGS = [
+  { key: 'commander', title: 'Commander Blog', code: 'CH-53' },
+  { key: 'science', title: 'Daily Science Findings', code: 'CH-51', kind: 'SCIENCE' },
+  { key: 'health', title: 'Daily Health Blog', code: 'CH-52', kind: 'HEALTH' },
+];
 function logSlotsPublic(totalDays, dateForDay) {
   const content = require('./content');
   const mediaLib = require('./media');
-  const crew = db.prepare('SELECT * FROM crew ORDER BY sort_order, id').all();
-  const rows = db.prepare('SELECT * FROM crew_entry').all();
+  const commander = db.prepare('SELECT * FROM crew WHERE designation = ?').get(content.BLOG_OFFICER)
+    || db.prepare('SELECT * FROM crew ORDER BY sort_order, id').get();
+  const rows = commander ? db.prepare('SELECT * FROM crew_entry WHERE crew_id = ?').all(commander.id) : [];
   const media = mediaLib.list();
   const days = [];
   for (let n = 1; n <= totalDays; n++) {
+    const notes = db.prepare('SELECT * FROM day_note WHERE mission_day = ? AND published_at IS NOT NULL ORDER BY posted_at').all(n);
     // media placed in one of the day's reports belongs to that report
-    const inNotes = new Set(db.prepare('SELECT body FROM day_note WHERE mission_day = ?').all(n)
-      .flatMap((r) => [...String(r.body).matchAll(/\[media:(\d+)\]/g)].map((m) => Number(m[1]))));
-    const entries = crew.map((c) => {
-      const e = rows.find((r) => r.crew_id === c.id && r.mission_day === n) || null;
-      const placeholder = !e || content.isPlaceholder(e.body);
-      if (e && !placeholder && e.published !== 1) return null;   // held: not public
-      // An entry is public the moment it is written, whatever the day and
-      // whether or not the mission has started: the log is the crew's to fill.
-      const body = placeholder
-        ? content.placeholderPublic(e ? e.body : content.placeholderFor(n, c.designation))
-        : e.body;
-      return { id: e ? e.id : `p${c.id}-${n}`, crew_id: c.id, designation: c.designation, role: c.role,
-        mission_day: n, body, placeholder, written_at: e ? e.written_at : null,
-        // what this officer sent out that day travels with the entry
-        media: media.filter((m) => m.mission_day === n && m.crew_id === c.id && !inNotes.has(m.id)) };
-    }).filter(Boolean);
+    const inNotes = new Set(notes.flatMap((r) => [...String(r.body).matchAll(/\[media:(\d+)\]/g)].map((m) => Number(m[1]))));
+    const dd = String(n).padStart(3, '0');
+    const entries = [];
+    for (const b of BLOGS) {
+      if (b.key === 'commander') {
+        if (!commander) continue;
+        const e = rows.find((r) => r.mission_day === n) || null;
+        const placeholder = !e || content.isPlaceholder(e.body);
+        if (e && !placeholder && e.published !== 1) continue;   // held: not public
+        entries.push({ id: e ? e.id : `p${commander.id}-${n}`, blog: b.key, title: b.title, crew_id: commander.id,
+          designation: commander.designation, role: commander.role, mission_day: n,
+          body: placeholder ? content.placeholderPublic(e ? e.body : content.placeholderFor(n, commander.designation)) : e.body,
+          placeholder, written_at: e ? e.written_at : null,
+          // what the commander sent out that day travels with the post
+          media: media.filter((m) => m.mission_day === n && m.crew_id === commander.id && !inNotes.has(m.id)) });
+      } else {
+        const body = notes.filter((x) => x.kind === b.kind).map((x) => x.body).join('\n\n').trim();
+        entries.push({ id: `${b.key}-${n}`, blog: b.key, title: b.title, crew_id: null, designation: '', role: '',
+          mission_day: n, body: body || `Day ${dd} · ${b.title} — to be written at the end of this day.`,
+          placeholder: !body, written_at: null, media: [] });
+      }
+    }
     days.push({ missionDay: n, date: dateForDay(n), entries,
       written: entries.filter((e) => !e.placeholder).length,
-      // media of the day not attributed to an officer
-      media: media.filter((m) => m.mission_day === n && !m.crew_id) });
+      // media of the day not carried by a post: unattributed, or an officer's
+      media: media.filter((m) => m.mission_day === n && !inNotes.has(m.id) && (!commander || m.crew_id !== commander.id)) });
   }
   return days;
 }
@@ -340,8 +374,8 @@ const TAGS = ['QUESTION', 'PERSONAL', 'HUMOUR', 'SCIENCE', 'HABITAT'];
 
 module.exports = {
   metrics, latest, history, evaluate, sensorPanels, dailyAverages,
-  day, crewWithMood, moodHistory, moodSeries,
-  entriesForDay, entriesByCrew, entry, logbook, logSlotsPublic, entryCounts,
+  day, mealRow, crewWithMood, moodHistory, moodSeries,
+  entriesForDay, entriesByCrew, entry, logbook, logSlotsPublic, BLOGS, entryCounts,
   settleTransits, published, board, inFlightFor, messagesFor, counts, dailyActivity,
   TAGS, STALE_SECONDS,
 };

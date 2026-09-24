@@ -1,0 +1,81 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="kit.css">
+<style>
+body{width:1920px;height:1080px;overflow:hidden}
+.scene{position:relative;width:1920px;height:1080px;overflow:hidden;perspective:1800px;
+  background:radial-gradient(1400px 700px at 50% 30%,#101a2a,#05070b 70%),#05070b}
+.ceiling{position:absolute;left:0;right:0;top:0;height:120px;background:linear-gradient(180deg,#020305,transparent)}
+.ceiling i{position:absolute;top:34px;width:180px;height:4px;border-radius:2px;background:#6f86ad;opacity:.35;box-shadow:0 0 30px #6f86ad}
+.wall{position:absolute;left:50%;top:92px;transform-style:preserve-3d;transform:translateX(-50%)}
+.scr{position:absolute;background-size:cover;background-position:center;border:6px solid #0d1117;border-radius:4px;
+  box-shadow:0 0 0 1px #2c3845,0 0 80px rgba(77,124,255,.18),0 0 160px rgba(255,90,31,.12)}
+.scr::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px),linear-gradient(170deg,rgba(255,255,255,.07),transparent 40%)}
+.main{left:-560px;top:0;width:1120px;height:630px;background-image:url(../mc-2-dashboard.png)}
+.left{left:-1110px;top:30px;width:520px;height:292px;background-image:url(../mc-1-landing.png);transform:rotateY(24deg);transform-origin:right center}
+.right{left:590px;top:30px;width:520px;height:292px;background-image:url(../mc-3-control.png);transform:rotateY(-24deg);transform-origin:left center}
+.left2{left:-1110px;top:340px;width:520px;height:250px;background-image:url(../mc-2-dashboard.png);background-position:0 100%;transform:rotateY(24deg);transform-origin:right center;opacity:.9}
+.right2{left:590px;top:340px;width:520px;height:250px;background-image:url(../mc-1-landing.png);background-position:100% 100%;transform:rotateY(-24deg);transform-origin:left center;opacity:.9}
+.clockbar{position:absolute;left:50%;top:40px;transform:translateX(-50%);display:flex;gap:26px;padding:8px 26px;background:#07090d;border:1px solid #1f2833;border-radius:3px;box-shadow:0 0 30px rgba(255,180,84,.08)}
+.clockbar div{display:flex;flex-direction:column;align-items:center}
+.clockbar b{font-weight:400;font-size:22px;color:var(--amber);text-shadow:0 0 14px rgba(255,180,84,.6)}
+.clockbar span{font-size:9px;letter-spacing:.22em;color:#5e6b78}
+.floor{position:absolute;left:0;right:0;bottom:0;height:420px;background:linear-gradient(180deg,transparent,#030406 60%)}
+/* consoles */
+.row{position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:10px}
+.desk{position:relative;background:linear-gradient(180deg,#1a222c,#0c1015);border-top:2px solid #2c3845;border-radius:6px 6px 0 0;box-shadow:0 -8px 40px rgba(0,0,0,.6)}
+.desk .mon{position:absolute;bottom:100%;margin-bottom:-6px;border:4px solid #0a0d11;border-radius:3px;background-size:cover;background-position:center;box-shadow:0 0 30px rgba(255,140,60,.2)}
+.desk .mon::after{content:"";position:absolute;inset:0;background:linear-gradient(170deg,rgba(255,255,255,.08),transparent 45%)}
+.desk .strip{position:absolute;left:14px;right:14px;top:10px;height:4px;background:repeating-linear-gradient(90deg,#ff5a1f 0 3px,transparent 3px 9px);opacity:.6}
+.head{position:absolute;bottom:100%;border-radius:50% 50% 40% 40%;background:#020305;box-shadow:0 0 0 1px rgba(255,160,90,.08)}
+.body{position:absolute;bottom:0;border-radius:40% 40% 0 0;background:#020305}
+.label{position:absolute;left:44px;bottom:36px}
+.label h1{font-size:34px;font-weight:600;letter-spacing:-.01em}.label h1 b{color:var(--mars);text-shadow:0 0 24px rgba(255,90,31,.6)}
+.label p{font-size:12px;letter-spacing:.22em;color:#9aa8b6;margin-top:6px}
+.glowfloor{position:absolute;left:50%;bottom:180px;width:1400px;height:200px;transform:translateX(-50%);background:radial-gradient(ellipse at center,rgba(77,124,255,.12),transparent 70%)}
+</style></head><body>
+<div class="scene">
+  <div class="ceiling"><i style="left:300px"></i><i style="left:870px"></i><i style="left:1440px"></i></div>
+  <div class="clockbar">
+    <div><span>SOL</span><b>05 / 13</b></div><div><span>MISSION ELAPSED</span><b>T+004:14:22:08</b></div>
+    <div><span>HABITAT · CEST</span><b>14:22:08</b></div><div><span>UTC</span><b>12:22:08</b></div><div><span>ONE-WAY</span><b>12′43″</b></div>
+  </div>
+  <div class="wall">
+    <div class="scr left"></div><div class="scr left2"></div>
+    <div class="scr main"></div>
+    <div class="scr right"></div><div class="scr right2"></div>
+  </div>
+  <div class="glowfloor"></div>
+  <div class="floor"></div>
+
+  <!-- back row -->
+  <div class="row" style="bottom:250px;width:1500px">
+    <div class="desk" style="width:360px;height:70px"><div class="strip"></div>
+      <div class="mon" style="left:40px;width:130px;height:78px;background-image:url(../mc-3-control.png)"></div><div class="mon" style="left:185px;width:130px;height:78px;background-image:url(../mc-2-dashboard.png);background-position:0 0"></div></div>
+    <div class="desk" style="width:360px;height:70px"><div class="strip"></div>
+      <div class="mon" style="left:40px;width:130px;height:78px;background-image:url(../mc-1-landing.png)"></div><div class="mon" style="left:185px;width:130px;height:78px;background-image:url(../mc-2-dashboard.png);background-position:60% 30%"></div></div>
+    <div class="desk" style="width:360px;height:70px"><div class="strip"></div>
+      <div class="mon" style="left:40px;width:130px;height:78px;background-image:url(../mc-2-dashboard.png);background-position:100% 0"></div><div class="mon" style="left:185px;width:130px;height:78px;background-image:url(../mc-3-control.png);background-position:40% 40%"></div></div>
+    <div class="desk" style="width:360px;height:70px"><div class="strip"></div>
+      <div class="mon" style="left:40px;width:130px;height:78px;background-image:url(../mc-1-landing.png);background-position:100% 0"></div><div class="mon" style="left:185px;width:130px;height:78px;background-image:url(../mc-3-control.png)"></div></div>
+  </div>
+  <!-- operators, back row -->
+  <div style="position:absolute;left:0;right:0;bottom:250px;height:0">
+    <div class="head" style="left:520px;width:34px;height:40px;bottom:36px"></div><div class="body" style="left:500px;width:74px;height:38px;bottom:0"></div>
+    <div class="head" style="left:1010px;width:34px;height:40px;bottom:36px"></div><div class="body" style="left:990px;width:74px;height:38px;bottom:0"></div>
+    <div class="head" style="left:1390px;width:34px;height:40px;bottom:36px"></div><div class="body" style="left:1370px;width:74px;height:38px;bottom:0"></div>
+  </div>
+
+  <!-- front row -->
+  <div class="row" style="bottom:0;width:1900px">
+    <div class="desk" style="width:620px;height:150px"><div class="strip"></div>
+      <div class="mon" style="left:60px;width:240px;height:140px;background-image:url(../mc-3-control.png)"></div><div class="mon" style="left:320px;width:240px;height:140px;background-image:url(../mc-2-dashboard.png)"></div></div>
+    <div class="desk" style="width:620px;height:150px"><div class="strip"></div>
+      <div class="mon" style="left:60px;width:240px;height:140px;background-image:url(../mc-1-landing.png)"></div><div class="mon" style="left:320px;width:240px;height:140px;background-image:url(../mc-3-control.png);background-position:50% 50%"></div></div>
+    <div class="desk" style="width:620px;height:150px"><div class="strip"></div>
+      <div class="mon" style="left:60px;width:240px;height:140px;background-image:url(../mc-2-dashboard.png);background-position:30% 40%"></div><div class="mon" style="left:320px;width:240px;height:140px;background-image:url(../mc-1-landing.png);background-position:80% 50%"></div></div>
+  </div>
+  <div style="position:absolute;left:0;right:0;bottom:0;height:0">
+    <div class="head" style="left:880px;width:64px;height:76px;bottom:120px"></div><div class="body" style="left:840px;width:144px;height:120px;bottom:0"></div>
+    <div class="head" style="left:1510px;width:64px;height:76px;bottom:120px"></div><div class="body" style="left:1470px;width:144px;height:120px;bottom:0"></div>
+  </div>
+  <div class="label" style="top:30px;bottom:auto;left:40px"><h1>MARS<b>!</b>platz</h1><p>MISSION CONTROL · ZKM | HERTZLAB</p></div>
+</div></body></html>

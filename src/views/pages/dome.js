@@ -360,7 +360,7 @@ function labelSvg(h, T) {
 /* What each part of the habitat is — the still text of each pop-up. The
    live sentences come from figures(). */
 const ABOUT = {
-  crew: 'Three officers live sealed inside the habitat for the thirteen days of the run: a communication officer who relays every message from Earth, a science officer who runs the experiments and watches the habitat’s systems, and a health officer who keeps the crew fit and the life support in order. They write a daily blog and file their condition from inside.',
+  crew: 'Three officers live sealed inside the habitat for the thirteen days of the run: a communication officer who relays every message from Earth, a science officer who runs the experiments and watches the habitat’s systems, and a health officer who keeps the crew fit and the life support in order. Between them they write three blogs a day — the Commander Blog, the Daily Science Findings and the Daily Health Blog — and file their condition from inside.',
   science: 'The science bench: the habitat’s own experiments — samples, cultures, readings — and the daily science findings the science officer writes up. The sensor node beside it measures temperature, humidity, carbon dioxide and more every twenty minutes.',
   recycling: 'Nothing is thrown away. Used water passes through a planted filter bed, a screw press and a settling funnel and comes back as water for the plants and the crew. This loop decides how long the stores last.',
   aeroponics: 'Three shelves of plants grown without soil, their roots in nutrient-rich water — the habitat’s fresh food and part of its air. What grows here is counted with the food rations.',

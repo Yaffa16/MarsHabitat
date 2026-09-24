@@ -1,0 +1,97 @@
+/* MARS!platz — mission control kit.
+   Fonts unchanged: ZKM Serendipity for the station, Open Sans for the operator desk. */
+@font-face{font-family:"ZKM Serendipity";src:url(fonts/ZKMSerendipity-Regular.woff2) format("woff2");font-weight:400}
+@font-face{font-family:"ZKM Serendipity";src:url(fonts/ZKMSerendipity-Semibold.woff2) format("woff2");font-weight:600}
+@font-face{font-family:"Open Sans";src:url(fonts/OpenSans-Regular.woff2) format("woff2");font-weight:400}
+@font-face{font-family:"Open Sans";src:url(fonts/OpenSans-Bold.woff2) format("woff2");font-weight:700}
+
+:root{
+  --room:#07090d;          /* the dark of the room */
+  --console:#10151c;       /* console body */
+  --console-2:#151c25;
+  --bezel:#1f2833;         /* raised frame */
+  --bezel-hi:#2c3845;
+  --screen:#05080b;        /* glass */
+  --grid:rgba(120,160,200,.07);
+  --rule:#243040;
+  --ink:#e6edf3;
+  --ink-2:#9aa8b6;
+  --ink-3:#5e6b78;
+  --mars:#ff5a1f;          /* the one orange: Mars, live, press */
+  --mars-soft:rgba(255,90,31,.14);
+  --amber:#ffb454;         /* phosphor readouts */
+  --cobalt:#4d7cff;        /* selection, tracks */
+  --nominal:#5cf2a4;       /* LED only */
+  --caution:#ffc83d;
+  --font:"ZKM Serendipity",ui-sans-serif,system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--room);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased}
+body{font-feature-settings:"tnum" 1}
+
+/* the room: a faint floor glow and a plotting grid */
+.room{position:relative;overflow:hidden;
+  background:
+    radial-gradient(1200px 600px at 50% -10%,rgba(77,124,255,.10),transparent 70%),
+    radial-gradient(900px 500px at 50% 120%,rgba(255,90,31,.08),transparent 70%),
+    linear-gradient(var(--grid) 1px,transparent 1px) 0 0/40px 40px,
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px) 0 0/40px 40px,
+    var(--room);}
+
+/* console panel: a raised bezel with screws */
+.bay{position:relative;background:linear-gradient(180deg,var(--console-2),var(--console));
+  border:1px solid var(--bezel);border-radius:6px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 10px 30px rgba(0,0,0,.45),0 0 0 3px #0b0f14,0 0 0 4px var(--bezel);}
+.bay.screws::before,.bay.screws::after{content:"";position:absolute;width:7px;height:7px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#56626f,#1a2129 70%);top:7px;left:7px;
+  box-shadow:calc(var(--w,0px)) 0 0 0 transparent}
+.bay.screws::after{left:auto;right:7px}
+.screw{position:absolute;width:7px;height:7px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#56626f,#1a2129 70%)}
+.screw::after{content:"";position:absolute;left:1px;right:1px;top:3px;height:1px;background:#0a0d11;transform:rotate(35deg)}
+
+/* glass: a CRT screen set into a bay */
+.glass{position:relative;background:var(--screen);border-radius:4px;overflow:hidden;
+  box-shadow:inset 0 0 0 1px #000,inset 0 0 40px rgba(0,0,0,.9),0 0 0 1px var(--bezel-hi);}
+.glass::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.028) 0 1px,transparent 1px 3px),
+             radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55));mix-blend-mode:normal}
+
+/* stencil head of every bay */
+.head{display:flex;align-items:center;gap:10px;padding:10px 14px 8px;border-bottom:1px solid var(--rule)}
+.code{font-size:10px;letter-spacing:.14em;color:var(--mars);border:1px solid rgba(255,90,31,.45);padding:2px 6px 1px;border-radius:2px}
+.title{font-size:14px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.meta{margin-left:auto;font-size:10px;letter-spacing:.14em;color:var(--ink-3);text-transform:uppercase}
+.lbl{font-size:10px;letter-spacing:.14em;color:var(--ink-3);text-transform:uppercase}
+.amber{color:var(--amber)} .mars{color:var(--mars)} .dim{color:var(--ink-2)} .dimmer{color:var(--ink-3)}
+
+/* LEDs */
+.led{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--nominal);box-shadow:0 0 8px var(--nominal),0 0 2px #fff inset}
+.led.or{background:var(--mars);box-shadow:0 0 10px var(--mars)}
+.led.am{background:var(--caution);box-shadow:0 0 8px var(--caution)}
+.led.off{background:#2a323c;box-shadow:none}
+
+/* status symbols (kept from the station: shape carries state) */
+.sym{display:inline-block;width:11px;height:11px;border-radius:50%;border:1.5px solid currentColor;position:relative;vertical-align:-1px}
+.sym.ok::after{content:"";position:absolute;inset:2px;border-radius:50%;background:currentColor}
+.sym.caut::after{content:"";position:absolute;left:1px;right:1px;top:3.5px;height:1.5px;background:currentColor}
+
+/* live badge */
+.live{display:inline-flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.16em;color:var(--mars);border:1px solid rgba(255,90,31,.5);border-radius:20px;padding:2px 8px 2px 6px}
+.live i{width:6px;height:6px;border-radius:50%;background:var(--mars);box-shadow:0 0 8px var(--mars)}
+
+/* keys: hardware push buttons */
+.key{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;color:var(--ink);
+  background:linear-gradient(180deg,#26303b,#1a212a);border:1px solid #33404e;border-bottom-color:#0c1015;border-radius:4px;
+  padding:7px 12px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;box-shadow:0 2px 0 #06080b,inset 0 1px 0 rgba(255,255,255,.08)}
+.key.on{background:linear-gradient(180deg,#2b4aa8,#1e3580);border-color:#4d7cff;box-shadow:0 2px 0 #06080b,0 0 14px rgba(77,124,255,.35),inset 0 1px 0 rgba(255,255,255,.15)}
+.key.fire{background:linear-gradient(180deg,#ff6a2f,#e24a12);border-color:#ff8a5a;color:#170700;font-weight:600;box-shadow:0 3px 0 #6a1d04,0 0 24px rgba(255,90,31,.45),inset 0 1px 0 rgba(255,255,255,.3)}
+
+/* hazard guard */
+.hazard{background:repeating-linear-gradient(-45deg,#ffc83d 0 8px,#111 8px 16px)}
+
+/* clocks strip */
+.clock{display:flex;flex-direction:column;gap:2px;padding:0 18px;border-left:1px solid var(--rule)}
+.clock b{font-weight:400;font-size:22px;letter-spacing:.04em;color:var(--amber);text-shadow:0 0 12px rgba(255,180,84,.35)}
+.clock span{font-size:9.5px;letter-spacing:.18em;color:var(--ink-3);text-transform:uppercase}
+
+.glow{text-shadow:0 0 14px currentColor}

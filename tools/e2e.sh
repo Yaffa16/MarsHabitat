@@ -111,7 +111,7 @@ ok "the old per-officer addresses land on their tab"
 curl -s -b $A "$B/control?tab=health" | grep -q 'class="tab-pane on" data-pane="health"' \
   && ok "?tab= chooses the open tab server-side" || bad "tab parameter ignored"
 echo "$CTRL" | grep -qi "science findings" || bad "no science findings"
-echo "$CTRL" | grep -qi "health activities" || bad "no health activities"
+echo "$CTRL" | grep -qi "Daily Health Blog" || bad "no Daily Health Blog"
 echo "$CTRL" | grep -q "CH-30 / DAILY MISSION" || bad "no schedule editor"
 node -e '
 const h = require("child_process").execSync("curl -s -b /tmp/admin.jar http://localhost:8080/control").toString();
@@ -121,16 +121,18 @@ process.exit(sched > hab && meals > hab && inv > hab && h.indexOf("CH-36 / UPDAT
   && h.indexOf("data-pane=\"crewlog\"") === -1 && h.indexOf("class=\"tpl\"") === -1 ? 0 : 1);' \
   && ok "the Habitat tab holds the schedule, the food plan and the stores; no Crew log tab, no template buttons anywhere" || bad "habitat tab contents wrong, or the crew log tab / template buttons are still there"
 [ "$(echo "$CTRL" | grep -c 'class="mood-face"')" = "15" ] || bad "expected five faces for each of three officers"
-[ "$(echo "$CTRL" | grep -c 'CH-50 / DAILY BLOG')" = "3" ] || bad "expected a Daily Blog box per officer"
-[ "$(echo "$CTRL" | grep -c '</span>Daily Blog</h2>')" = "3" ] || bad "the blog box is not named Daily Blog"
-[ "$(echo "$CTRL" | grep -c 'class="block-head"')" -ge 8 ] && ok "every block on the officer tabs opens with the same numbered head" || bad "officer blocks lack the shared head"
+[ "$(echo "$CTRL" | grep -c 'CH-53 / COMMANDER BLOG')" = "1" ] && ok "one Commander Blog box — the communication officer's" || bad "expected exactly one Commander Blog box"
+echo "$CTRL" | grep -q 'CH-50 / DAILY BLOG' && bad "a per-officer Daily Blog box is still on the desk" || ok "no other officer has a Daily Blog box"
+[ "$(echo "$CTRL" | grep -c '</span>Commander Blog</h2>')" = "1" ] || bad "the blog box is not named Commander Blog"
+[ "$(echo "$CTRL" | grep -c 'class="block-head"')" -ge 6 ] && ok "every block on the officer tabs opens with the same numbered head" || bad "officer blocks lack the shared head"
 echo "$CTRL" | grep -q 'class="block-state ' && ok "each block says whether anything is live yet" || bad "no live/empty state on the officer blocks"
 node -e '
 const h = require("child_process").execSync("curl -s -b /tmp/admin.jar http://localhost:8080/control").toString();
-for (const t of ["science", "health"]) {
-  const p = h.indexOf("data-pane=\"" + t + "\""); const blog = h.indexOf("CH-50 / DAILY BLOG", p); const rep = h.indexOf("CH-36 / " + t.toUpperCase(), p);
-  if (!(blog > p && rep > blog)) process.exit(1);
-}' && ok "the Daily Blog sits at the top of every officer tab, above the findings and activities" || bad "Daily Blog is not first on the officer tabs"
+const c = h.indexOf("data-pane=\"comms\""), s = h.indexOf("data-pane=\"science\""), he = h.indexOf("data-pane=\"health\""), hab = h.indexOf("data-pane=\"habitat\"");
+const cb = h.indexOf("CH-53 / COMMANDER BLOG");
+const sr = h.indexOf("CH-36 / SCIENCE", s), hr = h.indexOf("CH-36 / HEALTH", he);
+process.exit(cb > c && cb < s && sr > s && sr < he && hr > he && hr < hab && h.indexOf("Daily Science Findings", s) > s && h.indexOf("Daily Health Blog", he) > he ? 0 : 1);
+' && ok "Commander Blog on the communication officer's tab, Daily Science Findings and Daily Health Blog on theirs" || bad "the three blogs are not on their tabs"
 ok "every officer's findings, blog and state are editable from control"
 
 ID=$(curl -s -b $A $B/control | grep -oE '/control/[0-9]+/reply' | head -1 | grep -oE '[0-9]+')
@@ -263,12 +265,19 @@ process.exit(d["2"] && d["2"].water && d["2"].water.quantity===555?0:1);' \
   && ok "an inventory update is written into inventory-levels.json" || bad "inventory not written to file"
 curl -s -b $A $B/archive/day/2 | grep -q "555" && ok "and the record follows it" || bad "inventory edit not live"
 
-curl -s -b $A -X POST -d "day=2" -d "designation=HEALTH OFFICER" \
+curl -s -b $A -X POST -d "day=2" -d "designation=COMMUNICATION OFFICER" \
   --data-urlencode "body=Blog written from mission control." -o /dev/null $B/control/logbook
 node -e '
 const d=require(process.env.CONTENT_DIR+"/logbook.json");
-process.exit(/mission control/.test((d["2"]||{})["HEALTH OFFICER"]||"")?0:1);' \
-  && ok "a daily blog is written into logbook.json" || bad "blog not written to file"
+process.exit(/mission control/.test((d["2"]||{})["COMMUNICATION OFFICER"]||"")?0:1);' \
+  && ok "the Commander Blog is written into logbook.json" || bad "blog not written to file"
+curl -s -b $A -X POST -d "day=2" -d "designation=HEALTH OFFICER" \
+  --data-urlencode "body=A health officer blog that must not exist." -o /dev/null $B/control/logbook
+node -e '
+const d=require(process.env.CONTENT_DIR+"/logbook.json");
+process.exit(Object.values(d).some((v) => v && typeof v === "object" && ("HEALTH OFFICER" in v || "SCIENCE OFFICER" in v)) ? 1 : 0);' \
+  && ! curl -s $B/logbook | grep -q "must not exist" \
+  && ok "no other officer can file a blog of their own" || bad "a science or health officer blog was accepted"
 curl -s $B/logbook | grep -q "Blog written from mission control" && ok "and is live in the crew log" || bad "blog not live"
 
 MOODID=$(curl -s -b $A $B/control | grep -oE 'action="/control/moods/[0-9]+"' | head -1 | grep -oE '[0-9]+')
@@ -285,10 +294,10 @@ ID2=$(curl -s -b $A $B/control | grep -oE '/control/[0-9]+/reply' | head -1 | gr
 curl -s -b $A -X POST --data-urlencode "body=In colour, and always outdoors." -d "action=publish" -o /dev/null $B/control/$ID2/reply
 curl -s -b $A $B/archive/export.md -o /tmp/record.md
 grep -q "^# " /tmp/record.md && ok "the record downloads as readable Markdown" || bad "no Markdown record"
-for section in "### COMMUNICATION OFFICER" "### SCIENCE OFFICER" "### HEALTH OFFICER" "#### Daily Blog" "#### Daily science findings" "#### Daily health activities" "#### Crew state" "### Habitat" "#### Schedule" "#### Meals" "#### Steps taken and calories consumed" "#### Inventory levels" "#### Power consumed" "### Habitat sensors"; do
+for section in "### COMMUNICATION OFFICER" "### SCIENCE OFFICER" "### HEALTH OFFICER" "#### Commander Blog" "#### Daily Science Findings" "#### Daily Health Blog" "#### Crew state" "### Habitat" "#### Schedule" "#### Meals" "#### Steps taken and calories consumed" "#### Inventory levels" "#### Power consumed" "### Habitat sensors"; do
   grep -q "$section" /tmp/record.md || bad "record missing $section"
 done
-ok "each day of the record has the three officers (Daily Blog, daily report, crew state), the Habitat tab and the sensors"
+ok "each day of the record has the three officers (the three blogs, crew state), the Habitat tab and the sensors"
 grep -q "### Exchanges\|Do you still dream in colour\|In colour, and always outdoors" /tmp/record.md && bad "the readable record still carries messages" || ok "no message from Earth and no reply in the readable record"
 grep -q "Mission day 001" /tmp/record.md && grep -q "Mission day 00$TODAY" /tmp/record.md && ! grep -q "Mission day 013" /tmp/record.md \
   && grep -q "have not happened yet" /tmp/record.md \
@@ -323,7 +332,7 @@ grep -qi "content-type: application/pdf" /tmp/pdf.h && head -c 5 /tmp/record.pdf
 [ "$(grep -ac '/Type /Page$\|/Type /Page ' /tmp/record.pdf)" -ge 13 ] && ok "it has a page for every day and more" || bad "PDF has too few pages"
 grep -aq "/Outlines" /tmp/record.pdf && ok "and bookmarks by section and day" || bad "PDF has no bookmarks"
 PDFTXT=$(pdftext /tmp/record.pdf)
-for needle in "Contents" "The mission" "Day 001" "Day 00$TODAY" "The crew log" "Media" "Communication officer" "Science officer" "Health officer" "Daily Blog" "Daily science findings" "Daily health activities" "Crew state" "Schedule" "Meals" "Inventory levels" "Steps taken and calories consumed" "Habitat sensors" "Potable water"; do
+for needle in "Contents" "The mission" "Day 001" "Day 00$TODAY" "The crew log" "Media" "Communication officer" "Science officer" "Health officer" "Commander Blog" "Daily Science Findings" "Daily Health Blog" "Crew state" "Schedule" "Meals" "Inventory levels" "Steps taken and calories consumed" "Habitat sensors" "Potable water"; do
   echo "$PDFTXT" | grep -q "$needle" || bad "PDF record missing: $needle"
 done
 ok "the PDF holds the mission, every day that has happened, the whole crew log and the media"
@@ -371,7 +380,7 @@ curl -s $B/ | grep -q "Revised after supper" && bad "an empty save left the entr
 CB=$(panel blog-commander)
 echo "$CB" | grep -q "to be written at the end of this day" && bad "a placeholder reached the Commander Blog" || ok "placeholders stay out of the Commander Blog"
 echo "$CB" | grep -q "No commander blog yet for SOL" && ok "with today's entry cleared the Commander Blog says nothing is written for the day" || bad "no empty line in the Commander Blog"
-[ "$(curl -s -b $A -o /dev/null -w '%{redirect_url}' -X POST -d "day=3" -d "designation=SCIENCE OFFICER" -d "back=science" -d "body=Day three." $B/control/logbook)" = "$B/control?tab=science&day=3#work" ] \
+[ "$(curl -s -b $A -o /dev/null -w '%{redirect_url}' -X POST -d "day=3" -d "designation=COMMUNICATION OFFICER" -d "back=comms" -d "body=Day three." $B/control/logbook)" = "$B/control?tab=comms&day=3#work" ] \
   && ok "a save returns to the tab and day it came from" || bad "save landed somewhere else"
 
 curl -s -b $A -X POST -d "calm_tense=100" \
@@ -592,7 +601,7 @@ curl -s -b $LJ -c $LJ -X POST -d "to=de" -o /dev/null $B/lang
 LOG=$(curl -s -b $LJ $B/logbook)
 echo "$LOG" | grep -q '<html lang="de"' && ok "the crew log page is in German" || bad "crew log page not German"
 echo "$LOG" | grep -q "to be written at the end of this day" && ok "the crew's placeholder text stays untranslated" || bad "logbook content was translated or lost"
-echo "$LOG" | grep -q "COMMUNICATION OFFICER" && ok "crew designations stay as written" || bad "designation translated"
+echo "$LOG" | grep -q "Commander-Blog" && echo "$LOG" | grep -q "Täglicher Gesundheitsblog" && ok "the three blogs are named in German" || bad "blog titles not translated"
 GL=$(curl -s -b $LJ $B/at-a-glance)
 echo "$GL" | grep -q '<html lang="de"' && echo "$GL" | grep -q "Tagesplan" && ok "At a Glance chrome is in German" || bad "At a Glance not German"
 echo "$GL" | grep -qE '<span class="dot (ok|warn)"></span> VERBINDUNG (NOMINAL|GESTÖRT)' && ok "the rail's link state reads in German" || bad "rail not translated"
@@ -700,6 +709,10 @@ echo "$HP" | grep -q "_energy" && bad "a power field is still on the food plan" 
 echo "$HP" | grep -q "Physical readings" && bad "the physical readings template is still offered" \
   || ok "the physical readings template is gone"
 
+node -e '
+const fs = require("fs"), p = process.env.CONTENT_DIR + "/meals.json";
+const d = JSON.parse(fs.readFileSync(p, "utf8")); d["3"] = [{ slot: "BREAKFAST", name: "Oats", kcal: 400, water: 0.35 }]; fs.writeFileSync(p, JSON.stringify(d, null, 2));'
+sleep 2
 WATER_BEFORE=$(node -e '
 const d = require(process.env.CONTENT_DIR + "/meals.json");
 const b = (d["3"] || []).find((m) => m.slot === "BREAKFAST");
@@ -713,6 +726,39 @@ const d = require(process.env.CONTENT_DIR + "/meals.json");
 const b = (d["3"] || []).find((m) => m.slot === "BREAKFAST");
 console.log(b ? b.water : "none");')" ] \
   && ok "the water figure it no longer shows is preserved, not zeroed" || bad "saving wiped the water figure"
+
+echo "── the recipe book"
+[ -f "$CONTENT_DIR/recipes.json" ] && ok "content/recipes.json ships" || bad "no recipes.json"
+HB=$(curl -s -b $A "$B/control?tab=habitat&day=3")
+for S in BREAKFAST LUNCH DINNER; do echo "$HB" | grep -q "name=\"${S}_recipe\"" || bad "no recipe dropdown on $S"; done
+echo "$HB" | grep -q 'name="RATION_recipe"' && bad "Other has a recipe dropdown" || ok "Breakfast, Lunch and Dinner have a recipe dropdown, Other does not"
+echo "$HB" | grep -q 'value="__edit"' && bad "the dropdown still offers to edit the book" || ok "no edit entry in the dropdown"
+echo "$HB" | grep -q 'CH-33 / RECIPE BOOK' && bad "the recipe book editor is still on the desk" || ok "no recipe book editor on the desk"
+echo "$HB" | grep -q '<option value="" hidden selected>Choose meal</option>' && ok "the dropdown opens on Choose meal" || bad "no Choose meal default in the dropdown"
+echo "$HB" | grep -q '<option value="__empty">Empty</option>' && ok "the dropdown carries Empty, to fill in on the go" || bad "no Empty entry in the dropdown"
+echo "$HB" | grep -q 'fill in the fields below by hand' && bad "the old empty-slot wording is still in the dropdown" || ok "the old empty-slot wording is gone"
+[ "$(node -e 'console.log(require(process.env.CONTENT_DIR + "/recipes.json").recipes.filter((r) => r.sample && r.prep_minutes > 0).length)')" = "10" ] && ok "ten sample recipes ship, each with a prep time" || bad "sample recipes missing"
+echo "$HB" | grep -q '"prep_minutes":' && ok "the dropdown fills the prep time too" || bad "prep time not carried to the dropdown"
+echo "$HB" | grep -q '<option value="chili-non-carne"' && ok "the dropdown offers the book's recipes" || bad "recipes missing from the dropdown"
+echo "$HB" | grep -q 'id="recipe-book"' && ok "the book is carried for the dropdown" || bad "recipe data missing"
+curl -s -b $A -X POST -d "day=4" -d "LUNCH_recipe=chili-non-carne" -d "LUNCH_name=Chili Non Carne" -d "LUNCH_kcal=468" \
+  -d "LUNCH_protein_g=22.85" -d "LUNCH_fat_g=16.55" -d "LUNCH_carb_g=37.88" -d "LUNCH_fiber_g=20" -d "LUNCH_sugar_g=18.41" -d "LUNCH_sodium_mg=1425.89" \
+  -d "LUNCH_co2e=0.5351" -d "LUNCH_wfp=979" -d "BREAKFAST_name=Custom porridge" -d "BREAKFAST_recipe=__empty" -d "BREAKFAST_kcal=400" \
+  -o /dev/null $B/control/meals
+node -e '
+const d = require(process.env.CONTENT_DIR + "/meals.json")["4"];
+const l = d.find((m) => m.slot === "LUNCH"), b = d.find((m) => m.slot === "BREAKFAST");
+process.exit(l.recipe === "chili-non-carne" && l.nutrients.protein_g === 22.85 && l.co2e_kg === 0.5351 && l.water_footprint_l === 979 && !b.recipe && !b.nutrients ? 0 : 1);
+' && ok "a recipe-filled slot saves its recipe, nutrients, CO2e and water footprint; a custom one saves none" || bad "meal recipe figures not saved"
+sleep 1.5
+GL=$(curl -s $B/at-a-glance); echo "$GL" | grep -q "0.535" && echo "$GL" | grep -q "Protein 22.9 g" && ok "the figures are public in At a Glance" || bad "recipe figures not in At a Glance"
+curl -s -b $A "$B/control?tab=habitat&day=4" | grep -q '<option value="chili-non-carne" selected' && ok "the slot reopens on its recipe" || bad "slot does not remember its recipe"
+[ "$(curl -s -b $A -o /dev/null -w '%{http_code}' -X POST -d "count=0" $B/control/recipes)" = "404" ] && ok "the book cannot be edited from the desk" || bad "the recipe editor route still answers"
+MB=$(node -e 'console.log(JSON.stringify(require(process.env.CONTENT_DIR + "/recipes.json").recipes.map((r) => r.slug)))')
+curl -s -b $A -X POST -d "day=6" -d "DINNER_recipe=__empty" -d "DINNER_name=Improvised stew" -d "DINNER_kcal=500" -d "DINNER_protein_g=20" -o /dev/null $B/control/meals
+[ "$(node -e 'console.log(JSON.stringify(require(process.env.CONTENT_DIR + "/recipes.json").recipes.map((r) => r.slug)))')" = "$MB" ] \
+  && node -e 'const d = require(process.env.CONTENT_DIR + "/meals.json")["6"].find((m) => m.slot === "DINNER"); process.exit(d.name === "Improvised stew" && d.nutrients.protein_g === 20 && !d.recipe ? 0 : 1);' \
+  && ok "a slot filled by hand is saved for its day and adds no recipe" || bad "hand-filled slot wrong, or it touched the book"
 
 echo "── crew figures"
 curl -s -b $A -X POST -d "day=3" -d "calories=4999" -d "steps=8123" -o /dev/null $B/control/crew-figures
@@ -737,9 +783,20 @@ curl -s $B/ | grep -q 'stroke-dasharray="2 3"' \
 echo "── editable content"
 curl -s $B/api/content | grep -q '"ok":true' && ok "content files loaded cleanly" || bad "content failed to load"
 curl -s $B/at-a-glance | grep -q "Hatch seal and pressure hold" && ok "authored schedule is live" || bad "schedule missing"
-curl -s $B/at-a-glance | grep -q "Rehydrated oats" && ok "authored meal plan is live" || bad "meals missing"
+node -e 'const d = require("./content/meals.json"); process.exit(Object.keys(d).some((k) => /^\d+$/.test(k)) ? 1 : 0);' \
+  && ok "the food plan ships empty" || bad "meals.json ships with days in it"
+node -e '
+const fs = require("fs"), p = process.env.CONTENT_DIR + "/meals.json";
+const d = JSON.parse(fs.readFileSync(p, "utf8")); d["2"] = [{ slot: "DINNER", recipe: "black-bean-soup" }]; fs.writeFileSync(p, JSON.stringify(d, null, 2));'
+sleep 2
+curl -s $B/at-a-glance | grep -q "Black Bean Soup" && ok "a meal written into the file by recipe is live, named from the book" || bad "meals missing"
+node -e '
+const fs = require("fs"), p = process.env.CONTENT_DIR + "/meals.json";
+const d = JSON.parse(fs.readFileSync(p, "utf8")); delete d["2"]; fs.writeFileSync(p, JSON.stringify(d, null, 2));'
+sleep 2
+curl -s $B/at-a-glance | grep -q "Black Bean Soup" && bad "a day taken out of meals.json kept its meals" || ok "a day taken out of the file loses its meals"
 curl -s $B/ | grep -q "PLACEHOLDER\|Cue:" && bad "the placeholder marker or a writer's cue reached the public station" || ok "placeholder slots are shown publicly by their first line only; the marker and the cues stay inside"
-curl -s -b $A -X POST -d "day=$((TODAY + 1))" -d "designation=SCIENCE OFFICER" -d "back=science" --data-urlencode "body=Written ahead of its day." -o /dev/null $B/control/logbook
+curl -s -b $A -X POST -d "day=$((TODAY + 1))" -d "designation=COMMUNICATION OFFICER" -d "back=comms" --data-urlencode "body=Written ahead of its day." -o /dev/null $B/control/logbook
 curl -s $B/logbook | grep -q "Written ahead of its day." && ok "an entry written for a day ahead is public at once — the log does not wait for the clock" || bad "an entry written ahead is not public"
 curl -s $B/at-a-glance | grep -q "Written ahead of its day." && ok "and its day in At a Glance shows it too" || bad "entry written ahead missing from At a Glance"
 for d in 1 7 13; do curl -s -b $A "$B/control?tab=health&day=$d" | grep -q "day $(printf %03d $d)" || bad "the Daily Blog cannot be opened for day $d"; done
@@ -751,9 +808,9 @@ echo "$CTRLPAGE" | grep -q 'class="officer-stack"' && ok "an officer's blocks st
 echo "$CTRLPAGE" | grep -q 'class="blog-box"' && grep -q "textarea.blog-box { min-height: 340px" public/station.css && ok "the blog boxes are tall enough to write in" || bad "blog boxes not enlarged"
 [ "$(echo "$CTRLPAGE" | grep -o 'data-day="[0-9]*"' | sort -u | wc -l)" = "13" ] \
   && ok "every officer tab offers all thirteen days of the run" || bad "the day picker does not offer thirteen days"
-curl -s -b $A -X POST -d "day=2" -d "designation=HEALTH OFFICER" -d "back=health" --data-urlencode "body=First full sleep period logged." -o /dev/null $B/control/logbook
+curl -s -b $A -X POST -d "day=2" -d "designation=COMMUNICATION OFFICER" -d "back=comms" --data-urlencode "body=First full sleep period logged." -o /dev/null $B/control/logbook
 curl -s $B/logbook | grep -q "First full sleep period logged." && ok "writing over a placeholder publishes the entry for its day" || bad "written entry not public"
-curl -s -b $A -X POST -d "day=2" -d "designation=HEALTH OFFICER" -d "back=health" -d "action=clear" -d "body=ignored" -o /dev/null $B/control/logbook
+curl -s -b $A -X POST -d "day=2" -d "designation=COMMUNICATION OFFICER" -d "back=comms" -d "action=clear" -d "body=ignored" -o /dev/null $B/control/logbook
 curl -s $B/logbook | grep -q "First full sleep period logged." && bad "cleared entry still public" || ok "clearing puts the placeholder back and takes the entry down"
 grep -q "PLACEHOLDER" "$CONTENT_DIR/logbook.json" && ok "the placeholder is written back into logbook.json" || bad "placeholder not restored in the file"
 
@@ -807,7 +864,7 @@ grep -aq "/Subtype /Image" /tmp/record2.pdf && ok "the PDF record carries the ph
 pdftext /tmp/record2.pdf | grep -q "$PSHA" && ok "and lists it with its full hash" || bad "hash missing from the PDF media index"
 [ -f "$DATA_DIR/media/manifest.json" ] && node tools/verify-media.js "$DATA_DIR/media" >/dev/null && ok "manifest.json sits beside the files and tools/verify-media.js checks it" || bad "on-disk manifest or verify tool failed"
 # an entry with media attached, through the plain form (no script)
-curl -s -b $A -F "day=$((TODAY - 1))" -F "designation=HEALTH OFFICER" -F "back=health" -F "body=Entry with a photograph." -F "media_caption=Attached to the entry" -F "file=@/tmp/e2e-photo.png" -o /dev/null -w '%{redirect_url}' $B/control/logbook | grep -q "tab=health" \
+curl -s -b $A -F "day=$((TODAY - 1))" -F "designation=COMMUNICATION OFFICER" -F "back=comms" -F "body=Entry with a photograph." -F "media_caption=Attached to the entry" -F "file=@/tmp/e2e-photo.png" -o /dev/null -w '%{redirect_url}' $B/control/logbook | grep -q "tab=comms" \
   && ok "an officer can send media with a blog entry" || bad "blog post with a file failed"
 LOGX=$(curl -s $B/logbook)
 echo "$LOGX" | grep -q "Entry with a photograph." && echo "$LOGX" | grep -q "Attached to the entry" && ok "the entry and its media are public together" || bad "entry or its media missing from /logbook"
@@ -849,15 +906,15 @@ curl -s -b $A $B/archive/day/3 | grep -q "left carried" && ok "a day with no cou
 curl -s -b $A $B/archive/day/1 | grep -q "left counted" && ok "and a counted figure marked counted" || bad "the record does not mark a counted figure"
 
 # Control and the file are the same record now: whichever wrote last wins.
-curl -s -b $A -X POST -d "day=4" -d "designation=SCIENCE OFFICER" --data-urlencode "body=WRITTEN FROM CONTROL." -o /dev/null $B/control/logbook
+curl -s -b $A -X POST -d "day=4" -d "designation=COMMUNICATION OFFICER" --data-urlencode "body=WRITTEN FROM CONTROL." -o /dev/null $B/control/logbook
 node -e '
 const d=require(process.env.CONTENT_DIR+"/logbook.json");
-process.exit(d["4"] && d["4"]["SCIENCE OFFICER"]==="WRITTEN FROM CONTROL." ? 0 : 1);' \
+process.exit(d["4"] && d["4"]["COMMUNICATION OFFICER"]==="WRITTEN FROM CONTROL." ? 0 : 1);' \
   && ok "an entry written from control lands in logbook.json" || bad "control entry not in the file"
 node -e '
 const fs=require("fs"),p=process.env.CONTENT_DIR+"/logbook.json";
 const d=JSON.parse(fs.readFileSync(p));
-d["4"]["SCIENCE OFFICER"]="EDITED IN THE FILE AFTERWARDS.";
+d["4"]["COMMUNICATION OFFICER"]="EDITED IN THE FILE AFTERWARDS.";
 fs.writeFileSync(p,JSON.stringify(d,null,2));'
 sleep 2
 curl -s $B/at-a-glance | grep -q "EDITED IN THE FILE AFTERWARDS" \
@@ -961,6 +1018,14 @@ curl -s $B/api/ticker | grep -q '"opensAt":"' && ok "/api/ticker says when the r
 curl -s $B/ | grep -q 'data-opens="' && curl -s $B/ | grep -q 'data-phase="' && ok "the ticker carries the phase and the opening instant, and turns the page over when they move" || bad "ticker lacks phase/opens"
 grep -q "window.location.reload" src/views/pages/public.js && grep -q "d.phase !== phase" src/views/pages/public.js && ok "a page left open into 15 October (or across a reset) reloads itself into the run" || bad "no turn-over on phase change"
 
+echo "── three blogs, the hardware inside the Habitat, the imprint"
+LANDING=$(curl -s $B/)
+echo "$LANDING" | grep -q 'id="ftab-hardware"' && bad "the Habitat hardware tab is still in the folder" || ok "no Habitat hardware tab in the dashboard folder"
+echo "$LANDING" | grep -q 'href="https://zkm.de/en/imprint"' && ok "the foot links the imprint, beside the privacy policy and ZKM" || bad "no imprint link in the foot"
+LB3=$(curl -s $B/logbook)
+for t in "Commander Blog" "Daily Science Findings" "Daily Health Blog"; do echo "$LB3" | grep -q "$t" || bad "the crew log is missing $t"; done
+echo "$LB3" | grep -q 'class="cs">SCIENCE OFFICER\|class="cs">HEALTH OFFICER' && bad "an officer blog is still on the crew log" || ok "the crew log carries the three blogs and nothing else"
+
 echo "── the hardware readings endpoint"
 curl -s "$B/api/hardware/readings" | grep -q '"sensors":\[' && ok "/api/hardware/readings hands out the devices' readings as JSON" || bad "no hardware readings endpoint"
 curl -s "$B/api/hardware/readings?hours=48" | grep -q '"since":"' && ok "and reaches back as far as asked" || bad "hours parameter ignored"
@@ -1038,7 +1103,7 @@ curl -s -b $A $B/archive | grep -q "day by day" && ok "archive contents page lis
 DAYN=$(curl -s -b $A $B/archive | grep -oE "archive/day/[0-9]+" | tail -1 | grep -oE "[0-9]+")
 REC=$(curl -s -b $A $B/archive/day/$DAYN)
 MISSING=""
-for section in "COMMUNICATION OFFICER" "SCIENCE OFFICER" "HEALTH OFFICER" "Daily Blog" "Crew state" "SCHEDULE" "MEALS" "INVENTORY LEVELS" "STEPS TAKEN" "POWER" "HABITAT"; do
+for section in "COMMUNICATION OFFICER" "SCIENCE OFFICER" "HEALTH OFFICER" "Commander Blog" "Daily Science Findings" "Daily Health Blog" "Crew state" "SCHEDULE" "MEALS" "INVENTORY LEVELS" "STEPS TAKEN" "POWER" "HABITAT"; do
   echo "$REC" | grep -q "$section" || MISSING="$MISSING $section"
 done
 [ -z "$MISSING" ] && ok "day record has the three officers, the Habitat tab and the sensors" \
@@ -1170,7 +1235,7 @@ process.exit(fs.existsSync(path.join(dir, f)) ? 0 : 1);
 # reloads the mission from the files — so a rehearsal leaves nothing behind
 # for 15 October. content/plan/ is a snapshot kept as a backup.
 [ "$(ls "$CONTENT_DIR/plan" 2>/dev/null | wc -l)" -ge 9 ] && ok "a snapshot of the files was saved at boot" || bad "no content/plan/ after boot"
-curl -s -b $A -F "designation=SCIENCE OFFICER" -F "day=3" -F "body=Rehearsal words that must not survive" -F "back=science" -o /dev/null $B/control/logbook
+curl -s -b $A -F "designation=COMMUNICATION OFFICER" -F "day=3" -F "body=Rehearsal words that must not survive" -F "back=comms" -o /dev/null $B/control/logbook
 curl -s $B/logbook | grep -q "Rehearsal words" && ok "a rehearsal entry is live before the reset" || bad "rehearsal entry not written"
 # the inventory file as edited now is what the reset reloads — not a stale copy
 node -e '
@@ -1247,12 +1312,13 @@ curl -s -b $A -d "confirm=RESET" -o /dev/null $B/control/reset
 curl -s $B/api/status | grep -q '"total":0' && ok "reset clears every message from Earth" || bad "messages survived the reset"
 curl -s $B/logbook | grep -q "Rehearsal words" && bad "the rehearsal entry survived the reset" || ok "the rehearsal entry is gone from the crew log"
 grep -q "Rehearsal words" "$CONTENT_DIR/logbook.json" && bad "the rehearsal entry survived in logbook.json" || ok "logbook.json holds no entry"
-[ "$(grep -c PLACEHOLDER "$CONTENT_DIR/logbook.json")" -ge 39 ] && ok "every blog slot is empty for the crew — 39 placeholders" || bad "placeholders missing after reset"
+[ "$(grep -c PLACEHOLDER "$CONTENT_DIR/logbook.json")" -ge 13 ] && ! grep -q "SCIENCE OFFICER\|HEALTH OFFICER" "$CONTENT_DIR/logbook.json" && ok "every Commander Blog slot is empty — 13 placeholders, no other officer's" || bad "placeholders missing after reset"
 curl -s -b $A "$B/control?tab=habitat" | grep -q "The station has been reset for 15 October" && ok "mission control reports the reset" || bad "no reset report"
 curl -s -b $A "$B/control?tab=habitat" | grep -q "Start again from 15 October" && ok "the reset panel is on the Habitat tab" || bad "no reset panel"
 curl -s -b $A -o /dev/null -w '%{http_code}' $B/control | grep -q 200 && ok "the sign-in survives the reset" || bad "signed out by the reset"
 curl -s $B/ | grep -q 'class="gauges' && ok "the inventory is rebuilt" || bad "no gauges after reset"
-curl -s $B/at-a-glance | grep -q "555" && ok "and read from inventory-levels.json as it is now — day $TODAY's page carries the edited figure" || bad "inventory did not come from the file"
+node -e 'const d = require(process.env.CONTENT_DIR + "/inventory-levels.json"); process.exit(Object.keys(d).some((k) => /^\d+$/.test(k)) ? 1 : 0);' \
+  && ! curl -s $B/at-a-glance | grep -q ">555 " && ok "and the counted stores are emptied — the edited count is gone, the stores start from what was carried in" || bad "a counted store survived the reset"
 [ "$(curl -s $B/api/habitat/data | grep -o '"t":' | wc -l)" = "0" ] && ok "every habitat reading is gone — the node refills the last three days on its next poll" || bad "readings survived the reset"
 node -e '
 const c = require("./src/lib/critical");

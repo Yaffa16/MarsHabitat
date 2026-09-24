@@ -38,7 +38,7 @@ const ICONS = {
   chevron: '<svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>',
 };
 
-const KIND_LABEL = { science: 'Science findings', health: 'Health activities' };
+const KIND_LABEL = { science: 'Daily Science Findings', health: 'Daily Health Blog' };
 
 function postPage(ctx, { user, f, crew: c, day, date, entry, report = '', kind = null, media, tpl, totalDays, counts, otherBodies = [] }) {
   const isReport = !!kind;

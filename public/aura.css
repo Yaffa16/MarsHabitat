@@ -612,6 +612,11 @@ body.landing .cloud-latest > .empty { flex: 1 1 auto; }
 /* the hardware: one day chart per quantity */
 body.landing #hardware.dpanel { padding: 22px 28px; }
 body.landing .hw-charts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+/* the habitat's own hardware (Home Assistant), inside the Habitat panel under the tiles */
+body.landing .hw-in-habitat { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--hair); }
+body.landing .hw-in-habitat .hw-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-bottom: 12px; }
+body.landing .hw-in-habitat .hw-head h3 { font-family: var(--display); font-weight: 600; font-size: 14.5px; letter-spacing: -.005em; color: var(--ink); margin: 0; }
+body.landing .hw-in-habitat .hw-head .sub { font-family: var(--display); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); line-height: 1.5; }
 body.landing .hw-chart { margin: 0; padding: 14px 16px; border-radius: 18px; background: var(--tile); border: 1px solid rgba(var(--cobalt-rgb),.12); box-shadow: none; }
 body.landing .hw-chart svg { max-height: 200px; }
 body.landing .hw-title { font-family: var(--display); font-size: 11px; letter-spacing: .16em; color: var(--cobalt); }

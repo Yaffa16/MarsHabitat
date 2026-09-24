@@ -75,7 +75,11 @@ CREATE TABLE IF NOT EXISTS meal (
   water_litres REAL NOT NULL DEFAULT 0,
   prep_minutes INTEGER NOT NULL DEFAULT 0,
   energy_wh    INTEGER NOT NULL DEFAULT 0,
-  notes        TEXT NOT NULL DEFAULT ''
+  notes        TEXT NOT NULL DEFAULT '',
+  recipe       TEXT NOT NULL DEFAULT '',        -- slug in content/recipes.json it was filled from, '' for a custom dish
+  nutrients    TEXT NOT NULL DEFAULT '',        -- JSON: protein_g, fat_g, carb_g, fiber_g, sugar_g, sodium_mg (per serving)
+  co2e_kg      REAL,                            -- per serving; NULL when not known
+  water_footprint_l REAL                        -- per serving; the recipe's water footprint, not water drunk
 );
 CREATE INDEX IF NOT EXISTS idx_meal_day ON meal(mission_day);
 

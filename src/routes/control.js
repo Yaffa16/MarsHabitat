@@ -228,7 +228,8 @@ router.get('/', (req, res) => {
     officers,
     tasks: db.prepare('SELECT * FROM task WHERE mission_day = ? ORDER BY sort_order, time').all(day),
     meals: db.prepare(`SELECT * FROM meal WHERE mission_day = ? ORDER BY
-      CASE slot WHEN 'BREAKFAST' THEN 1 WHEN 'LUNCH' THEN 2 WHEN 'DINNER' THEN 3 ELSE 4 END`).all(day),
+      CASE slot WHEN 'BREAKFAST' THEN 1 WHEN 'LUNCH' THEN 2 WHEN 'DINNER' THEN 3 ELSE 4 END`).all(day).map(data.mealRow),
+    recipes: content.recipeBook(),
     notes: notesFor(day),
     figures: content.crewFigures(),
     power: content.power(),
@@ -285,7 +286,7 @@ router.post('/report', (req, res, next) => upload.array('file', 50)(req, res, (e
   audit(req.user.username, 'DayNote', day, kind.toLowerCase() + (text ? '' : ' cleared'));
   noteEdits(`report:${kindKey}`, day, same(wasReport, text) ? [] : ['body'], req.user.username);
   dropDraft(`report:${kindKey}`, day);
-  const label = kind === 'SCIENCE' ? 'Science findings' : 'Health activities';
+  const label = kind === 'SCIENCE' ? 'Daily Science Findings' : 'Daily Health Blog';
   setFlash(req, r.ok ? `${label} ${text ? 'published' : 'cleared'} for day ${day}.` + (attached ? ` ${attached} file${attached === 1 ? '' : 's'} added.` : '') + (mediaError ? ` One file was refused: ${mediaError}` : '')
     : `Saved, but: ${r.error}`, !r.ok || !!mediaError);
   toTab(res, tabOf(req.body.back) === 'messages' ? kindKey : req.body.back, day);
@@ -447,6 +448,13 @@ router.post('/logbook', (req, res, next) => upload.array('file', 50)(req, res, (
   const tab = tabOf(req.body.back);
   const dropFiles = () => { for (const f of req.files || []) { try { require('fs').unlinkSync(f.path); } catch (e) { /* gone */ } } };
   if (!member) { dropFiles(); setFlash(req, 'No such crew member.', true); return toTab(res, tab, day); }
+  // The Commander Blog is the only blog kept in the log: the science and
+  // health officers write the Daily Science Findings and the Daily Health
+  // Blog, which are their reports (POST /control/report).
+  if (member.designation !== content.BLOG_OFFICER) {
+    dropFiles(); setFlash(req, 'Only the communication officer has a blog here — the Commander Blog. The science and health officers write the Daily Science Findings and the Daily Health Blog on their tabs.', true);
+    return toTab(res, tab, day);
+  }
   const draft = req.body.action === 'draft';
 
   // Media sent with the entry goes into the archive under this officer and
@@ -714,19 +722,38 @@ router.post('/meals', (req, res) => {
 
   // Water and power are not edited here, so they are carried through from the
   // existing meal rather than quietly zeroed.
-  const current = db.prepare('SELECT * FROM meal WHERE mission_day = ?').all(day);
+  const current = db.prepare('SELECT * FROM meal WHERE mission_day = ?').all(day).map(data.mealRow);
+  const book = content.recipeBook();
+  // Blank stays blank: a recipe figure not given is not known, never 0.
+  const opt = (v) => (v === '' || v == null || !Number.isFinite(Number(v)) ? null : Number(v));
   const rows = [];
   for (const slot of SLOTS) {
     const name = String(req.body[`${slot}_name`] || '').trim();
     if (!name) continue;   // a slot with no name is a slot that is not served
     const was = current.find((m) => m.slot === slot) || {};
+    // The recipe the slot was filled from — only if it is in the book.
+    const slug = String(req.body[`${slot}_recipe`] ?? was.recipe ?? '').trim();
+    const recipe = slug && book.some((r) => r.slug === slug) ? slug : '';
+    // Fields the form did not carry (an older page, a script) keep what the meal had.
+    const has = (k) => Object.prototype.hasOwnProperty.call(req.body, `${slot}_${k}`);
+    const nutrients = {};
+    for (const { key } of content.NUTRIENTS) {
+      const v = has(key) ? opt(req.body[`${slot}_${key}`]) : (was.nutrients ? was.nutrients[key] ?? null : null);
+      if (v != null) nutrients[key] = v;
+    }
+    const co2e = has('co2e') ? opt(req.body[`${slot}_co2e`]) : was.co2e_kg ?? null;
+    const wfp = has('wfp') ? opt(req.body[`${slot}_wfp`]) : was.water_footprint_l ?? null;
     rows.push({
       slot, name,
+      ...(recipe ? { recipe } : {}),
       components: String(req.body[`${slot}_components`] || ''),
       kcal: num(req.body[`${slot}_kcal`]),
       water: was.water_litres || 0,
       prep: num(req.body[`${slot}_prep`]),
       energy: was.energy_wh || 0,
+      ...(Object.keys(nutrients).length ? { nutrients } : {}),
+      ...(co2e != null ? { co2e_kg: co2e } : {}),
+      ...(wfp != null ? { water_footprint_l: wfp } : {}),
       ...(String(req.body[`${slot}_notes`] || '').trim()
         ? { notes: String(req.body[`${slot}_notes`]).trim() } : {}),
     });
@@ -745,6 +772,12 @@ router.post('/meals', (req, res) => {
     if (!same(was.kcal || 0, is.kcal || 0)) changed.push(`${slot}_kcal`);
     if (!same(was.prep_minutes || 0, is.prep || 0)) changed.push(`${slot}_prep`);
     if (!same(was.notes, is.notes)) changed.push(`${slot}_notes`);
+    if (!same(was.recipe || '', is.recipe || '')) changed.push(`${slot}_recipe`);
+    for (const { key } of content.NUTRIENTS) {
+      if (!same((was.nutrients || {})[key], (is.nutrients || {})[key])) changed.push(`${slot}_${key}`);
+    }
+    if (!same(was.co2e_kg, is.co2e_kg)) changed.push(`${slot}_co2e`);
+    if (!same(was.water_footprint_l, is.water_footprint_l)) changed.push(`${slot}_wfp`);
   }
   noteEdits('meals', day, changed, req.user.username);
   setFlash(req, r.ok ? `Day ${day} food plan saved — ${rows.length} slots.` : `Saved, but: ${r.error}`, !r.ok);

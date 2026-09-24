@@ -208,12 +208,12 @@ function blockHead(n, title, sub, { live = null, liveText = 'Live', draft = null
   </div>`;
 }
 
-/** That officer's Daily Blog for the chosen day, as a composer in place. */
+/** The Commander Blog — the communication officer's entry — for the chosen day, as a composer in place. */
 function blogBlock(c, tab, day, entry, n = 1, e = null, draft = null) {
   const live = entry && !isPlaceholder(entry.body);
   const text = draft ? draft.body : live ? entry.body : '';
-  return panel('CH-50 / DAILY BLOG', `
-    ${blockHead(n, 'Daily Blog', `${esc(c.designation)} · day ${dd(day)}`, { live, liveText: 'Live', draft })}
+  return panel('CH-53 / COMMANDER BLOG', `
+    ${blockHead(n, 'Commander Blog', `${esc(c.designation)} · day ${dd(day)}`, { live, liveText: 'Live', draft })}
     <form method="post" action="/control/logbook" enctype="multipart/form-data" data-attach-media data-crew-id="${c.id}" class="${mark(e, 'body').trim()}"
           data-media="${editorMedia(c.media, text, c.otherBodies || [])}">
       <input type="hidden" name="day" value="${day}">
@@ -315,21 +315,68 @@ const stepsBlock = (day, figures, crew, e) => figureBlock(day, figures, crew, e,
 const caloriesBlock = (day, figures, crew, e) => figureBlock(day, figures, crew, e,
   { key: 'calories', chan: 'CH-14 / CALORIES CONSUMED', title: 'Calories consumed', label: 'kcal', unit: 'kcal', button: 'Save calories' });
 
-function mealsBlock(day, meals, e = null) {
+/* The recipe book's figures, per serving, as the food plan and the book show them. */
+const { NUTRIENTS } = require('../../lib/content');
+const RECIPE_SLOTS = ['BREAKFAST', 'LUNCH', 'DINNER'];     // the three slots with a dropdown; Other stays free text
+const numVal = (v) => (v == null || v === '' ? '' : String(+Number(v).toFixed(4)));
+
+function mealsBlock(day, meals, e = null, recipes = []) {
   const SLOTS = [['BREAKFAST', 'Breakfast'], ['LUNCH', 'Lunch'],
                  ['DINNER', 'Dinner'], ['RATION', 'Other']];
   const find = (slot) => meals.find((m) => m.slot === slot) || {};
   const kcal = meals.reduce((a, m) => a + (m.kcal || 0), 0);
+  const sum = (get) => { const v = meals.map(get).filter((x) => x != null); return v.length ? v.reduce((a, b) => a + b, 0) : null; };
+  const co2 = sum((m) => m.co2e_kg), wfp = sum((m) => m.water_footprint_l);
+  // The book, for control.js to fill a slot from: '<' escaped so no name can close the script.
+  const book = JSON.stringify(recipes.filter((r) => !r.placeholder)
+    .map((r) => ({ slug: r.slug, name: r.name, kcal: r.kcal, prep_minutes: r.prep_minutes, nutrients: r.nutrients, co2e_kg: r.co2e_kg, water_total_l: r.water_total_l })))
+    .replace(/</g, '\\u003c');
+
+  const picker = (slot, m) => {
+    const inBook = m.recipe && recipes.some((r) => r.slug === m.recipe);
+    return `<label class="f recipe-pick-f${mark(e, `${slot}_recipe`)}"><span>From the recipe book</span>
+      <select name="${slot}_recipe" class="recipe-pick" data-slot="${slot}">
+        <option value="" hidden${inBook ? '' : ' selected'}>Choose meal</option>
+        <option value="__empty">Empty</option>
+        <optgroup label="Recipe book">
+        ${recipes.filter((r) => !r.placeholder).map((r) => `<option value="${esc(r.slug)}"${m.recipe === r.slug ? ' selected' : ''}>${esc(r.name)}${r.kcal ? ` · ${Math.round(r.kcal)} kcal` : ''}${r.prep_minutes ? ` · ${r.prep_minutes} min` : ''}</option>`).join('')}
+        </optgroup>
+      </select></label>
+      ${m.recipe && !inBook ? `<p class="note">Filled from “${esc(m.recipe)}”, which is no longer in the recipe book — the figures below are kept.</p>` : ''}`;
+  };
+
+  const figures = (slot, m) => {
+    const n = m.nutrients || {};
+    const any = m.co2e_kg != null || m.water_footprint_l != null || Object.keys(n).length;
+    return `<details class="meal-recipe-figs"${any ? ' open' : ''}>
+      <summary>Nutrients, CO₂e and water footprint · per serving</summary>
+      <div class="grid g3" style="gap:0 8px">
+        ${NUTRIENTS.map((x) => `<label class="f${mark(e, `${slot}_${x.key}`)}"><span>${x.label} ${x.unit}</span>
+          <input type="number" step="any" min="0" name="${slot}_${x.key}" value="${numVal(n[x.key])}"></label>`).join('')}
+        <label class="f${mark(e, `${slot}_co2e`)}"><span>CO₂e kg</span>
+          <input type="number" step="any" min="0" name="${slot}_co2e" value="${numVal(m.co2e_kg)}"></label>
+        <label class="f${mark(e, `${slot}_wfp`)}"><span>Water footprint L</span>
+          <input type="number" step="any" min="0" name="${slot}_wfp" value="${numVal(m.water_footprint_l)}"></label>
+      </div>
+    </details>`;
+  };
 
   return panel('CH-32 / DAILY FOOD PLAN', `
     ${eyebrow(`Meals · day ${dd(day)}`)}
-    <form method="post" action="/control/meals">
+    <p class="note block-hint">Choose Breakfast, Lunch or Dinner from the recipe book and its name, kcal, prep time, nutrients,
+    CO₂e and water footprint are filled in — every field stays editable. <b>Empty</b> clears the slot to fill in by hand, on the
+    go; it is saved for that day only and never adds a recipe. The recipes are in <b>content/recipes.json</b>.
+    Everything shown here is public on the station.</p>
+    <script type="application/json" id="recipe-book">${book}</script>
+    <form method="post" action="/control/meals" class="meals-form">
       <input type="hidden" name="day" value="${day}">
       <div class="grid g2">
       ${SLOTS.map(([slot, label]) => {
         const m = find(slot);
-        return `<div>
+        const withBook = RECIPE_SLOTS.includes(slot);
+        return `<div class="meal-slot-edit" data-slot="${slot}">
           <h3 class="slot-name">${label}</h3>
+          ${withBook ? picker(slot, m) : ''}
           <label class="f${mark(e, `${slot}_name`)}"><span>Name</span>
             <input type="text" name="${slot}_name" value="${esc(m.name || '')}"
               placeholder="${slot === 'RATION' ? 'Leave blank if none' : 'Dish'}"></label>
@@ -341,13 +388,15 @@ function mealsBlock(day, meals, e = null) {
             <label class="f${mark(e, `${slot}_prep`)}"><span>Prep min</span>
               <input type="number" name="${slot}_prep" value="${m.prep_minutes || ''}"></label>
           </div>
+          ${withBook ? figures(slot, m) : ''}
           <label class="f${mark(e, `${slot}_notes`)}"><span>Note (shown publicly)</span>
             <input type="text" name="${slot}_notes" value="${esc(m.notes || '')}"></label>
         </div>`;
       }).join('')}
       </div>
       <div class="kv" style="margin-top:6px"><dt>Day total</dt>
-        <dd>${kcal} kcal offered across ${meals.length} slot${meals.length === 1 ? '' : 's'}</dd></div>
+        <dd>${kcal} kcal offered across ${meals.length} slot${meals.length === 1 ? '' : 's'}${
+          co2 != null ? ` · ${+co2.toFixed(3)} kg CO₂e` : ''}${wfp != null ? ` · ${+wfp.toFixed(1)} L water footprint` : ''}</dd></div>
       <div class="actions"><button class="primary">Save food plan for day ${dd(day)}</button>${savedNote(e)}</div>
     </form>`, 'mars-side');
 }
@@ -508,7 +557,7 @@ function resetDialog(locked) {
  */
 function page(ctx, model) {
   const { user, f, content, show, tab, day, totalDays, tpl, plan = { exists: false }, resetLocked = false, edits = {}, drafts = {},
-          list, crew, counts, officers, tasks, meals, notes, figures, items, power = { categories: [], days: {} },
+          list, crew, counts, officers, tasks, meals, recipes = [], notes, figures, items, power = { categories: [], days: {} },
           media: mediaItems = [], mediaCounts = { total: 0, bytes: 0 }, mediaAccept = '', mediaMaxMb = 0, filter = 'all' } = model;
 
   const dayPicker = `<nav class="filters daypick daypick-dates" aria-label="Mission day">
@@ -531,20 +580,18 @@ function page(ctx, model) {
       </div>`,
     science: `
       <div class="officer-stack">
-        ${blogBlock(officers.science, 'science', day, officers.science.entry, 1, edits[`blog:${officers.science.id}`], drafts[`blog:${officers.science.id}`])}
-        ${reportBlock(officers.science, 'science', 'Daily science findings',
-          'Samples, measurements, the greenhouse, anything the habitat did that was worth recording.', day, tpl.SCIENCE, 'science', 2, edits['report:science'], drafts['report:science'])}
-        ${moodBlock(officers.science, 3, edits[`mood:${officers.science.id}`])}
+        ${reportBlock(officers.science, 'science', 'Daily Science Findings',
+          'Samples, measurements, the greenhouse, anything the habitat did that was worth recording.', day, tpl.SCIENCE, 'science', 1, edits['report:science'], drafts['report:science'])}
+        ${moodBlock(officers.science, 2, edits[`mood:${officers.science.id}`])}
       </div>`,
     health: `
       <div class="officer-stack">
-        ${blogBlock(officers.health, 'health', day, officers.health.entry, 1, edits[`blog:${officers.health.id}`], drafts[`blog:${officers.health.id}`])}
-        ${reportBlock(officers.health, 'health', 'Daily health activities', '', day, tpl.HEALTH, 'health', 2, edits['report:health'], drafts['report:health'])}
-        ${moodBlock(officers.health, 3, edits[`mood:${officers.health.id}`])}
+        ${reportBlock(officers.health, 'health', 'Daily Health Blog', '', day, tpl.HEALTH, 'health', 1, edits['report:health'], drafts['report:health'])}
+        ${moodBlock(officers.health, 2, edits[`mood:${officers.health.id}`])}
       </div>`,
     habitat: `
       ${scheduleBlock(day, tasks, edits.schedule)}
-      ${mealsBlock(day, meals, edits.meals)}
+      ${mealsBlock(day, meals, edits.meals, recipes)}
       ${stepsBlock(day, figures, crew, edits.steps)}
       ${caloriesBlock(day, figures, crew, edits.calories)}
       ${inventoryBlock(day, items, edits.inventory)}

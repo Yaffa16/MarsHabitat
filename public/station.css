@@ -1493,6 +1493,9 @@ body.landing .foot { margin-top: 44px; margin-bottom: 44px; }
 .hbt .tile { padding: 22px 24px; position: relative; overflow: hidden; min-width: 0; }
 .hbt .tile h3 { font-family: var(--sans); font-weight: 500; font-size: 15px; letter-spacing: -0.01em; margin: 0 0 2px; }
 .hbt .sub { font-family: var(--mono); font-size: 10px; color: var(--faint); letter-spacing: 0.06em; }
+.hw-in-habitat { margin-top: 18px; }
+.hw-in-habitat .hw-head h3 { margin: 0 0 2px; font-size: 15px; }
+.hw-in-habitat .hw-head .sub { font-family: var(--mono); font-size: 10px; color: var(--faint); letter-spacing: 0.06em; }
 .hbt .t-co2 { grid-column: span 2; grid-row: span 2; display: flex; flex-direction: column; }
 .hbt .t-temp { grid-column: span 1; grid-row: span 2; display: flex; flex-direction: column; }
 .hbt .t-hum { grid-column: span 1; }
@@ -2025,6 +2028,13 @@ body.control .block-title .fold-chev { margin-left: 10px; }
 body.control .block-state.draft { border-color: var(--c-line-strong); color: var(--c-text); font-weight: 600; }
 /* the meals: the four slots named large */
 body.control .slot-name { margin: 0 0 10px; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; color: var(--c-text); }
+/* the recipe book: a dropdown over each of Breakfast, Lunch and Dinner, the per-serving figures folded beneath */
+body.control .recipe-pick { width: 100%; }
+body.control .meal-slot-edit { min-width: 0; }
+body.control .meal-recipe-figs { margin: 4px 0 12px; border: 1px solid var(--c-line); border-radius: 2px; padding: 0 12px; background: var(--c-panel); }
+body.control .meal-recipe-figs > summary { cursor: pointer; padding: 10px 0; font-size: 13.5px; color: var(--c-muted); list-style-position: inside; }
+body.control .meal-recipe-figs[open] > summary { border-bottom: 1px solid var(--c-line-soft); margin-bottom: 10px; }
+body.control .meal-recipe-figs.just-filled { outline: 2px solid var(--orange); outline-offset: 2px; }
 /* the message card: who wrote and what they wrote first, in a larger hand; the state, the time and the quiet actions in the
    top line at the right; the reply beneath with its own head — "Reply as …" — one box and one orange button */
 body.control .msg { padding: 18px 22px 18px; margin-bottom: 16px; }

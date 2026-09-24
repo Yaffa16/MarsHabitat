@@ -42,7 +42,7 @@ const CFG = {
   checkSeconds: Math.max(5, Number(process.env.CLOUD_CHECK_SECONDS || (Number(process.env.CLOUD_POLL_MS) ? Number(process.env.CLOUD_POLL_MS) / 1000 : 1200))),
   timeoutMs: Number(process.env.CLOUD_TIMEOUT_MS || 20000),
   maxBytes: Number(process.env.CLOUD_MAX_MB || 60) * 1048576,
-  maxFiles: Number(process.env.CLOUD_MAX_FILES || 500),
+  maxFiles: Number(process.env.CLOUD_MAX_FILES || 50000),
   depth: Number(process.env.CLOUD_DEPTH || 3),            // subfolders followed this deep
   thumb: Number(process.env.CLOUD_THUMB || 960),           // preview width, px (16:9 → 960×540)
   sort: process.env.CLOUD_SORT === 'name' ? 'name' : 'newest',

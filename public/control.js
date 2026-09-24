@@ -236,3 +236,64 @@
     });
   });
 })();
+
+/* ---------------------------------------------------------- recipe book */
+/* Breakfast, Lunch and Dinner each have a dropdown over the recipe book
+   (content/recipes.json, carried into the page as #recipe-book). Choosing a
+   recipe fills the slot's name, kcal, prep time, nutrients, CO2e and water
+   footprint; every field stays editable, and the save keeps what the fields
+   hold. The dropdown opens on "Choose meal"; "Empty" clears the slot to be filled in by hand — saved for that
+   day only, never added to the book. Without JavaScript the dropdown is still posted, and the
+   server records the recipe the slot names. */
+(function () {
+  'use strict';
+  var src = document.getElementById('recipe-book');
+  if (!src) return;
+  var book = [];
+  try { book = JSON.parse(src.textContent || '[]') || []; } catch (e) { book = []; }
+  var NUTR = ['protein_g', 'fat_g', 'carb_g', 'fiber_g', 'sugar_g', 'sodium_mg'];
+  var round = function (v, dp) { return v == null || v === '' || isNaN(v) ? '' : String(+Number(v).toFixed(dp)); };
+
+  function set(form, name, value) {
+    var el = form.querySelector('[name="' + name + '"]');
+    if (!el) return;
+    el.value = value;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  document.querySelectorAll('select.recipe-pick').forEach(function (sel) {
+    var slot = sel.getAttribute('data-slot');
+    var form = sel.form;
+        sel.addEventListener('change', function () {
+      var v = sel.value;
+      var figs = form.querySelector('.meal-slot-edit[data-slot="' + slot + '"] .meal-recipe-figs');
+      if (v === '__empty') {                                          // a one-off: the recipe's figures go, the name is typed
+        set(form, slot + '_name', '');
+        set(form, slot + '_components', '');
+        set(form, slot + '_kcal', '');
+        set(form, slot + '_prep', '');
+        NUTR.forEach(function (k) { set(form, slot + '_' + k, ''); });
+        set(form, slot + '_co2e', ''); set(form, slot + '_wfp', '');
+        var name = form.querySelector('[name="' + slot + '_name"]'); if (name) name.focus();
+        return;
+      }
+      var r = null;
+      for (var i = 0; i < book.length; i++) if (book[i].slug === v) { r = book[i]; break; }
+      if (!r) return;
+      set(form, slot + '_name', r.name);
+      set(form, slot + '_components', '');                   // the previous dish's components are not this recipe's
+      set(form, slot + '_kcal', r.kcal == null ? '' : String(Math.round(r.kcal)));
+      set(form, slot + '_prep', r.prep_minutes == null ? '' : String(r.prep_minutes));
+      NUTR.forEach(function (k) { set(form, slot + '_' + k, round((r.nutrients || {})[k], 2)); });
+      set(form, slot + '_co2e', round(r.co2e_kg, 4));
+      set(form, slot + '_wfp', round(r.water_total_l, 1));
+      if (figs) {
+        figs.open = true;
+        figs.classList.add('just-filled');
+        setTimeout(function () { figs.classList.remove('just-filled'); }, 1200);
+      }
+    });
+  });
+
+})();

@@ -86,6 +86,16 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
   const state = m.phase === 'PRE_LAUNCH' ? 'planned' : n < m.clampedDay ? 'past' : n === m.clampedDay ? 'today' : 'planned';
   const written = r.entries.filter((e) => !content.isPlaceholder(e.body));
   const day = r.day;
+  // The three blogs of the day, each a card of its own: the Commander Blog
+  // (the communication officer's entry, with what they sent out that day),
+  // the Daily Science Findings and the Daily Health Blog (the reports).
+  const findings = day ? day.notes.filter((x) => x.published_at && x.kind === 'SCIENCE') : [];
+  const health = day ? day.notes.filter((x) => x.published_at && x.kind === 'HEALTH') : [];
+  const posts = [
+    ...written.map((e) => ({ title: 'Commander Blog', html: MV.entryHtml(e.body, (r.media || []).filter((x) => x.crew_id === e.crew_id), { lookup: mediaLookup, T }) })),
+    ...findings.map((x) => ({ title: 'Daily Science Findings', html: MV.entryHtml(x.body, [], { lookup: mediaLookup, T }) })),
+    ...health.map((x) => ({ title: 'Daily Health Blog', html: MV.entryHtml(x.body, [], { lookup: mediaLookup, T }) })),
+  ];
   // one state per officer: the last filed that day
   const lastMood = new Map();
   for (const s of r.moods) lastMood.set(s.designation, s);
@@ -100,28 +110,30 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
     </header>
     ${rehearsal ? `<p class="note" style="margin:0 0 14px">${T('A preview, not the record: a run day’s page as it will look, filled with what there is')} <b>${T('today')}</b> — ${T('the habitat’s readings as the sensors are sending them now, the plan for SOL 001 (schedule, meals, consumption, power), whatever the crew have already written into the opening day, and any states filed today. This page disappears on 15 October, when SOL 001 takes its place.')}</p>` : ''}
     <div class="spec glance-spec">
-      <span><b>${written.length}</b> ${T('crew entries')}</span>
+      <span><b>${posts.length}</b> ${T('blog posts')}</span>
       <span><b>${r.messages.length}</b> ${T('exchanges')}</span>
       <span><b>${r.traffic.sent}</b> ${T('messages from Earth')}</span>
       <span><b>${r.media.length}</b> ${T('media sent out')}</span>
     </div>`;
 
-  const blog = written.length ? `
+  const blog = posts.length ? `
     <div class="glance-block">
       ${eyebrow(T('Blogs'))}
-      <div class="cards">${written.map((e) => `<article class="card">
-        <div class="card-top"><span class="cs">${esc(e.designation)}</span><span class="card-day">${esc(e.role || '')}</span></div>
-        <div class="card-body entry-post">${MV.entryHtml(e.body, (r.media || []).filter((x) => x.crew_id === e.crew_id), { lookup: mediaLookup, T })}</div>
+      <div class="cards">${posts.map((p) => `<article class="card">
+        <div class="card-top"><span class="cs">${esc(T(p.title))}</span></div>
+        <div class="card-body entry-post">${p.html}</div>
       </article>`).join('')}</div>
     </div>` : (state !== 'planned' ? `<div class="glance-block">${eyebrow(T('Blogs'))}<div class="empty">${T('No blog written by the crew on this day')}</div></div>` : '');
 
   const meals = day && day.meals.length ? `
     <div class="glance-block">
-      ${eyebrow(`${T('Meals')}${state === 'planned' ? ` · ${T('planned')}` : ''} · ${day.kcalPlanned} kcal · ${day.waterPlanned.toFixed(1)} L ${T('water')} · ${day.energyPlanned} Wh`)}
+      ${eyebrow(`${T('Meals')}${state === 'planned' ? ` · ${T('planned')}` : ''} · ${day.kcalPlanned} kcal · ${day.waterPlanned.toFixed(1)} L ${T('water')} · ${day.energyPlanned} Wh${
+        day.co2ePlanned != null ? ` · ${+day.co2ePlanned.toFixed(2)} kg CO₂e` : ''}${day.waterFootprintPlanned != null ? ` · ${+day.waterFootprintPlanned.toFixed(0)} L ${T('water footprint')}` : ''}`)}
       <div class="tw"><table>
-        <thead><tr><th>${T('Slot')}</th><th>${T('Meal')}</th><th class="n">kcal</th><th class="n">${T('Water')} L</th><th class="n">Wh</th></tr></thead>
-        <tbody>${day.meals.map((x) => `<tr><th>${esc(T(slotName[x.slot] || x.slot))}</th><td>${esc(x.name)}</td>
-          <td class="n">${x.kcal}</td><td class="n">${x.water_litres}</td><td class="n">${x.energy_wh}</td></tr>`).join('')}</tbody>
+        <thead><tr><th>${T('Slot')}</th><th>${T('Meal')}</th><th class="n">kcal</th><th class="n">${T('Water')} L</th><th class="n">Wh</th><th class="n">kg CO₂e</th><th class="n">${T('Water footprint')} L</th></tr></thead>
+        <tbody>${day.meals.map((x) => { const nutr = L.mealEcoText(x, T).nutr; return `<tr><th>${esc(T(slotName[x.slot] || x.slot))}</th><td>${esc(x.name)}${nutr ? `<br><small class="meal-nutr">${esc(nutr)}</small>` : ''}</td>
+          <td class="n">${x.kcal}</td><td class="n">${x.water_litres}</td><td class="n">${x.energy_wh}</td>
+          <td class="n">${x.co2e_kg != null ? +Number(x.co2e_kg).toFixed(3) : '—'}</td><td class="n">${x.water_footprint_l != null ? +Number(x.water_footprint_l).toFixed(1) : '—'}</td></tr>`; }).join('')}</tbody>
       </table></div>
     </div>` : '';
 
@@ -221,13 +233,6 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
         </div>`).join('')}</div>
     </div>` : '';
 
-  const findings = day ? day.notes.filter((x) => x.published_at && x.kind === 'SCIENCE') : [];
-  const health = day ? day.notes.filter((x) => x.published_at && x.kind === 'HEALTH') : [];
-  const reportBlock = (label, list) => (list.length ? `
-    <div class="glance-block">
-      ${eyebrow(T(label))}
-      ${list.map((x) => `<div class="entry-post">${MV.entryHtml(x.body, [], { lookup: mediaLookup, T })}</div>`).join('')}
-    </div>` : '');
   const notes = day ? day.notes.filter((x) => x.published_at && x.kind !== 'SCIENCE' && x.kind !== 'HEALTH') : [];
   const notesBlock = notes.length ? `
     <div class="glance-block">
@@ -244,7 +249,7 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
   const mediaBlock = loose.length ? `
     <div class="glance-block">${eyebrow(T('Also sent out'))}${MV.strip(loose)}</div>` : '';
 
-  const body = head + blog + reportBlock('Science findings', findings) + reportBlock('Health activities', health) + exchanges + schedule + meals + consumption + power + habitat + states + notesBlock + mediaBlock;
+  const body = head + blog + exchanges + schedule + meals + consumption + power + habitat + states + notesBlock + mediaBlock;
   if (rehearsal) {
     return `<div class="bk-page" id="today" data-day="0" role="group" aria-roledescription="${esc(T('page'))}" aria-label="${esc(T('Rehearsal · today, before the run'))}">${
       panel(T('REHEARSAL · NOT THE RECORD'), body, 'mars-side glance-day')

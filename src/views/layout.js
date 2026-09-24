@@ -202,15 +202,15 @@ function consent(current, T = same) {
   </aside>`;
 }
 
-/* The foot: the wordmark (on the station page), two keys — the privacy
-   statement and ZKM, both on zkm.de — and the line that names the house.
+/* The foot: the wordmark (on the station page), three keys — the privacy
+   statement, ZKM and the imprint, all on zkm.de — and the line that names the house.
    The pages themselves are reached from the bar of keys, the ticker's menu
    and the doors above; nothing else is listed here. */
 function foot(ctx, T = ctx.T || same, landing = false) {
   return `<div class="foot">${landing ? `
     <div class="foot-brand-block"><span class="foot-wordmark">MARS<span class="bang">!</span>platz</span></div>` : ''}
     <div class="foot-links">
-      <a href="https://zkm.de/en/privacy-policy">${T('Privacy policy')}</a><a href="https://zkm.de/">ZKM</a>
+      <a href="https://zkm.de/en/privacy-policy">${T('Privacy policy')}</a><a href="https://zkm.de/">ZKM</a><a href="https://zkm.de/en/imprint">${T('Imprint')}</a>
     </div>
     <div class="foot-base">
       <span class="foot-brand">ZKM | HERTZLAB — MARS</span>
@@ -446,8 +446,32 @@ function scaleStrip(mission) {
   }).join('')}</div>`;
 }
 
+/**
+ * A meal's recipe figures, per serving, for the public pages: CO2e and water
+ * footprint on one line, the nutrients on the next. Nothing when the meal
+ * carries none (a custom dish, or a plan written before the recipe book).
+ * The same order and names as NUTRIENTS in src/lib/content.js.
+ */
+const MEAL_NUTRIENTS = [['protein_g', 'Protein', 'g'], ['fat_g', 'Fat', 'g'], ['carb_g', 'Carbohydrate', 'g'],
+  ['fiber_g', 'Fibre', 'g'], ['sugar_g', 'Sugar', 'g'], ['sodium_mg', 'Sodium', 'mg']];
+const trim = (v, dp) => String(+Number(v).toFixed(dp));
+function mealEcoText(m, T = (x) => x) {
+  const eco = [];
+  if (m.co2e_kg != null) eco.push(`${trim(m.co2e_kg, 3)} kg CO₂e`);
+  if (m.water_footprint_l != null) eco.push(`${trim(m.water_footprint_l, 1)} L ${T('water footprint')}`);
+  const n = m.nutrients || {};
+  const nutr = MEAL_NUTRIENTS.filter(([k]) => n[k] != null).map(([k, label, unit]) => `${T(label)} ${trim(n[k], k === 'sodium_mg' ? 0 : 1)} ${unit}`);
+  return { eco: eco.join(' · '), nutr: nutr.join(' · ') };
+}
+function mealEco(m, T = (x) => x) {
+  const { eco, nutr } = mealEcoText(m, T);
+  return (eco ? `<span class="meal-figs meal-eco">${esc(eco)} · ${esc(T('per serving'))}</span>` : '')
+    + (nutr ? `<span class="meal-figs meal-nutr">${esc(nutr)}</span>` : '');
+}
+
 module.exports = {
   masthead, pageNav,
   page, panel, eyebrow, readout, orbitPlot, sparkline, pipeline, scaleStrip,
   statusStrip, langSwitch, themeSwitch, sym, legend, SYMBOL_KEY, esc, NAV, MESSAGE_STATES,
+  mealEco, mealEcoText, MEAL_NUTRIENTS,
 };

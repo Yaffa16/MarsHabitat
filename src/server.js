@@ -310,12 +310,12 @@ app.get('/at-a-glance', (req, res) => {
 
 app.get('/logbook', (req, res) => {
   const ctx = req.ctx();
-  // All thirteen days, each with its three slots: the written entry, or the
+  // All thirteen days, each with its three blogs: the written post, or the
   // placeholder that shows where one will go.
   const days = data.logSlotsPublic(ctx.mission.totalDays, missionLib.dateForDay);
   const counts = { published: days.reduce((n, d) => n + d.written, 0), days: days.filter((d) => d.written).length,
     slots: days.reduce((n, d) => n + d.entries.length, 0) };
-  res.send(LB.logPage(ctx, { days, crew: data.crewWithMood(), counts, mediaLookup: mediaLib.get }));
+  res.send(LB.logPage(ctx, { days, crew: data.crewWithMood(), counts, blogs: data.BLOGS, mediaLookup: mediaLib.get }));
 });
 
 /**

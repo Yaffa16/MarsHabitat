@@ -355,7 +355,7 @@ function daySection(L, G, r, { asChapter = true } = {}) {
   if (asChapter) { L.section = title; L.newPage(); L.pdf.bookmark(title, L.pageIndex, 40, 1); L.pdf.rect(L.page, M.left, L.y, CW, 3, { fill: n === today || r.rehearsal ? ORANGE : INK }); L.y += 26; for (const line of L.pdf.wrap(title, 'bold', 22, CW)) { L.pdf.text(L.page, M.left, L.y, line, { font: 'bold', size: 22 }); L.y += 26; } L.y += 4; }
   else L.h1(title);
   const status = r.rehearsal ? 'before the run' : n < today ? (r.sealed ? 'sealed' : 'past, not yet sealed') : 'today — in progress';
-  const written = r.officers.filter((o) => o.entry).length;
+  const written = r.officers.filter((o) => o.entry).length + r.officers.reduce((n, o) => n + (o.reports.length ? 1 : 0), 0);
   L.para(`${r.rehearsal ? `Today, ${st.today}` : `Mission day ${ddd(n)} of ${ddd(st.totalDays)}`} · ${status} · ${written} daily ${written === 1 ? 'blog' : 'blogs'} · ${r.moods.length} ${r.moods.length === 1 ? 'state' : 'states'} filed · ${r.media.length} ${r.media.length === 1 ? 'file' : 'files'} sent out · ${r.readings.count.toLocaleString('en-GB')} ${r.readings.count === 1 ? 'reading' : 'readings'}`, { color: GREY, size: 8.5, after: 10 });
   if (r.rehearsal) L.para(`REHEARSAL, NOT THE RECORD. A preview of a day's record with what there is today: today's readings from every source and the states filed today, and whatever has been put into the opening day (SOL 001) so far — its plan, blogs, reports, counts, figures and media. This chapter disappears on ${st.startLabel}, when day 001 takes its place.`, { font: 'italic', color: ORANGE, size: 8.5, after: 10 });
   if (r.isEmpty) { L.para('Nothing was recorded on this day.', { font: 'italic', color: GREY }); return; }
@@ -363,18 +363,20 @@ function daySection(L, G, r, { asChapter = true } = {}) {
   const placed = new Set();
   const when = (iso) => (iso ? `${mission.localDate(new Date(iso), st.timezone)} ${localHM(iso, st)}` : '');
 
-  /* ---- the officers: Daily Blog, daily report, crew state ------------- */
+  /* ---- the officers: the three blogs, crew state ----------------------- */
   for (const o of r.officers) {
     L.h2(`${cap(o.designation)}${o.role ? ` · ${o.role}` : ''}`, { keep: 120 });
-    L.h3('Daily Blog', { keep: 80 });
-    if (o.entry) {
-      L.para(`Written ${when(o.entry.written_at)}${o.entry.updated_at && o.entry.updated_at !== o.entry.written_at ? ` · last edited ${when(o.entry.updated_at)}` : ''} habitat time`, { color: GREY, size: 7.5, after: 4 });
-      entryBlock(L, G, o.entry.body, o.media, { used: placed });
-    } else L.para('No blog written for this day.', { font: 'italic', color: GREY, size: 9 });
+    if (o.hasBlog) {
+      L.h3('Commander Blog', { keep: 80 });
+      if (o.entry) {
+        L.para(`Written ${when(o.entry.written_at)}${o.entry.updated_at && o.entry.updated_at !== o.entry.written_at ? ` · last edited ${when(o.entry.updated_at)}` : ''} habitat time`, { color: GREY, size: 7.5, after: 4 });
+        entryBlock(L, G, o.entry.body, o.media, { used: placed });
+      } else L.para('No Commander Blog written for this day.', { font: 'italic', color: GREY, size: 9 });
+    }
     if (o.reportKind) {
       L.h3(o.reportLabel, { keep: 80 });
       if (o.reports.length) for (const x of o.reports) entryBlock(L, G, x.body, [], { used: placed });
-      else L.para(`No ${o.reportLabel.toLowerCase().replace('daily ', '')} written for this day.`, { font: 'italic', color: GREY, size: 9 });
+      else L.para(`No ${o.reportLabel} written for this day.`, { font: 'italic', color: GREY, size: 9 });
     }
     L.h3('Crew state', { keep: 60 });
     if (o.states.length) {
@@ -404,7 +406,7 @@ function daySection(L, G, r, { asChapter = true } = {}) {
   L.h3('Meals', { keep: 70 });
   if (day && day.meals.length) {
     L.table([{ label: 'Slot', w: 0.7, font: 'bold' }, { label: 'Meal', w: 2.4 }, { label: 'kcal', w: 0.5, align: 'right' }, { label: 'Water L', w: 0.6, align: 'right' }, { label: 'Prep min', w: 0.6, align: 'right' }, { label: 'Wh', w: 0.5, align: 'right' }],
-      day.meals.map((m) => [m.slot === 'RATION' ? 'Other' : cap(m.slot), m.components ? `${m.name}\n${m.components.split('\n').join(' · ')}${m.notes ? `\n${m.notes}` : ''}` : m.name, asIs(m.kcal), asIs(m.water_litres), asIs(m.prep_minutes), asIs(m.energy_wh)]));
+      day.meals.map((m) => { const eco = archive.mealEcoLine(m); return [m.slot === 'RATION' ? 'Other' : cap(m.slot), [m.name, m.components ? m.components.split('\n').join(' · ') : '', m.notes || '', eco].filter(Boolean).join('\n'), asIs(m.kcal), asIs(m.water_litres), asIs(m.prep_minutes), asIs(m.energy_wh)]; }));
   } else L.para('No meals entered for this day.', { font: 'italic', color: GREY, size: 9 });
   L.h3('Steps taken and calories consumed', { keep: 70 });
   if (r.figures && r.figures.crew && Object.keys(r.figures.crew).length) {
