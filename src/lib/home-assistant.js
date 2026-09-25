@@ -60,7 +60,7 @@ let cfgCache = { mtimeMs: -1, sensors: [], habitat: {}, error: null };
 /* The habitat sensor's channels, and the entity that feeds each: the keys
    the station knows (src/lib/critical.js), each mapped in the file's
    `habitat` block to an entity id without the `sensor.` prefix. */
-const HABITAT_CHANNELS = ['co2', 'temp', 'hum', 'pres', 'voc', 'iaq', 'iaqc'];
+const HABITAT_CHANNELS = ['co2', 'temp', 'hum', 'pres', 'light', 'voc', 'iaq', 'iaqc'];
 
 /** The sensor list from content/home-assistant.json, re-read when the file
  *  changes. A broken file keeps the last good list serving and says so. */

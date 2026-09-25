@@ -1282,6 +1282,12 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
           <div class="big" id="vocVal" style="margin-top:12px">—<em>ppm</em></div>
           <div id="hbt-voc"></div>
         </section>
+        <section class="tile t-light spk">
+          <h3>${T('Light')}</h3>
+          <span class="sub">${T('Illuminance')} · ${T('Scale')} 0–1000 lx</span>
+          <div class="big" id="lightVal" style="margin-top:12px">—<em>lx</em></div>
+          <div id="hbt-light"></div>
+        </section>
       </div>
       <div class="bento aux">
         <section class="tile t-res">

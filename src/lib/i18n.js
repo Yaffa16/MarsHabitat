@@ -792,6 +792,7 @@ const D = {
   'as the sensor classifies it': ['wie der Sensor sie einstuft', 'telle que le capteur la classe'],
   'Volatile organic compounds': ['Flüchtige organische Verbindungen', 'Composés organiques volatils'],
   'Breath-VOC equivalent': ['Atem-VOC-Äquivalent', 'Équivalent COV respiratoire'],
+  'Illuminance': ['Beleuchtungsstärke', 'Éclairement'],
   'Excellent': ['Ausgezeichnet', 'Excellente'],
   'Good': ['Gut', 'Bonne'],
   'Lightly polluted': ['Leicht belastet', 'Légèrement polluée'],

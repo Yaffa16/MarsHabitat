@@ -2,7 +2,7 @@
 /**
  * A stand-in Home Assistant for rehearsing the habitat feed without the
  * venue network: answers /api/states/sensor.<id> and /api/history/period
- * for the M5 ENV Pro's seven entities (and any other sensor named) with
+ * for the M5 ENV Pro's seven entities, the light sensor and the kitchen socket with
  * plausible, slowly moving values. Not part of the station; a tool.
  *
  *   node tools/mock-home-assistant.js 8123
@@ -18,6 +18,7 @@ const ENT = {
   m5_env_pro_env_pro_pressure: { unit: 'hPa', base: 1008.3, swing: 2.5, period: 9000, dec: 2 },
   m5_env_pro_env_pro_breath_voc_equivalent: { unit: 'ppm', base: 1.1, swing: 0.7, period: 2700, dec: 2 },
   m5_env_pro_env_pro_iaq: { unit: '', base: 85, swing: 60, period: 3000, dec: 0 },
+  environment_light_illuminance: { unit: 'lx', base: 320, swing: 260, period: 7200, dec: 0 },
   habitat_power_kitchen_energie: { unit: 'kWh', base: 0.5, swing: 0, period: 1, dec: 3, rising: 0.00002 },
   habitat_power_kitchen_leistung: { unit: 'W', base: 9.2, swing: 4, period: 600, dec: 1 },
 };

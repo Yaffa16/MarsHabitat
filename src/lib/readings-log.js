@@ -219,7 +219,7 @@ const CSV = {
   /* One row per reading stored from the habitat sensor (through Home
      Assistant): every channel at its minute, with the poll that stored it. */
   habitat: function* () {
-    const keys = ['co2', 'temp', 'hum', 'pres', 'voc', 'iaq', 'iaqc'];
+    const keys = ['co2', 'temp', 'hum', 'pres', 'light', 'voc', 'iaq', 'iaqc'];
     yield line(['pulledAt', 'at', 't', ...keys]);
     for (const o of records('habitat')) {
       for (const r of o.readings || []) yield line([o.pulledAt, r.at, r.t, ...keys.map((k) => r[k])]);

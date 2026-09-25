@@ -536,19 +536,20 @@ sensor node itself still transmits on its own cycle, so its new values arrive as
 
 ## The habitat sensor
 
-The Habitat panel — the CO₂ dial, the temperature ruler, the humidity level, the air pressure
-and volatile-organic-compounds sparklines, and the air quality index as a banded level with
-the sensor's own classification (*Excellent* … *Extremely polluted*) as its verdict — is read
-from **the habitat sensor**, an M5 ENV Pro (a Bosch BME688 running BSEC) inside the habitat,
-through Home Assistant. Seven entities feed seven channels, mapped in **`content/home-assistant.json`**
-under `habitat`:
+The Habitat panel — the CO₂ dial, the temperature ruler, the humidity level, the air pressure,
+volatile-organic-compounds and light sparklines, and the air quality index as a banded level
+with the sensor's own classification (*Excellent* … *Extremely polluted*) as its verdict — is
+read from **the habitat sensors** — an M5 ENV Pro (a Bosch BME688 running BSEC) inside the
+habitat, and a light sensor beside it — through Home Assistant. Eight entities feed eight
+channels, mapped in **`content/home-assistant.json`** under `habitat`:
 
 | Channel | Entity | Drawn as |
 |---|---|---|
 | `co2` | `sensor.m5_env_pro_env_pro_co2_equivalent` | the 24-hour dial, ppm |
 | `temp` | `sensor.m5_env_pro_env_pro_temperature` | the ruler, °C |
 | `hum` | `sensor.m5_env_pro_env_pro_humidity` | the level, %RH |
-| `pres` | `sensor.m5_env_pro_env_pro_pressure` | a sparkline, hPa (in the light tile's place) |
+| `pres` | `sensor.m5_env_pro_env_pro_pressure` | a sparkline, hPa |
+| `light` | `sensor.environment_light_illuminance` | a sparkline, lux — the light sensor beside the ENV Pro |
 | `voc` | `sensor.m5_env_pro_env_pro_breath_voc_equivalent` | a sparkline, ppm |
 | `iaq` | `sensor.m5_env_pro_env_pro_iaq` | a level from 0 to 500, ticked at the sensor's bands |
 | `iaqc` | `sensor.m5_env_pro_env_pro_iaq_classification` | the verdict under the index, in the visitor's language |

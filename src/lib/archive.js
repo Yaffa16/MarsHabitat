@@ -36,7 +36,7 @@ const NOT_FAKE = `device_id NOT IN (${FAKE_DEVICES.map(() => '?').join(', ')})`;
 const EXTERNAL_KEYS = [['co2', 'Carbon dioxide', 'ppm'], ['temp', 'Temperature', '°C'],
   ['hum', 'Humidity', '%'], ['pres', 'Pressure', 'hPa'],
   ['voc', 'Volatile organic compounds', 'ppm'], ['iaq', 'Air quality index', 'IAQ'],
-  ['light', 'Light', 'raw'], ['bat', 'Node battery', 'V'], ['rssi', 'Signal', 'dBm']];
+  ['light', 'Light', 'lx'], ['bat', 'Node battery', 'V'], ['rssi', 'Signal', 'dBm']];
 // The air quality index's classification, as the sensor names it — text,
 // beside the numbers in the day's every-reading table.
 const EXTERNAL_TEXT = [['iaqc', 'Air quality class', '']];

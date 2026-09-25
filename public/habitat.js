@@ -1,8 +1,8 @@
 /* Habitat dashboard — the habitat's readings as instruments, drawn from the
    station's own /api/habitat/data: CO₂ on a 24-hour dial, temperature on a
-   ruler, humidity as a level, air pressure and the volatile organic
-   compounds as sparklines, the air quality index as a banded level with its
-   readable classification. The station server does the polling and the
+   ruler, humidity as a level, air pressure, the volatile organic compounds
+   and the light as sparklines, the air quality index as a banded level with
+   its readable classification. The station server does the polling and the
    saving (SQLite) — from the habitat sensor through Home Assistant, or from
    the external node; this script does not know which — and this script
    additionally merges each read into localStorage so a phone that loses the
@@ -58,7 +58,9 @@
     // severely to 350, extremely beyond. The sensor names the band itself
     // (the `iaqc` channel); the bands here draw the ticks.
     { key: 'iaq', name: tr('Air quality'), unit: 'IAQ', decimals: 0, domain: [0, 500], step: 100, bands: [50, 100, 150, 200, 250, 350], alertAbove: 150 },
-    { key: 'light', name: tr('Light'), unit: 'raw', decimals: 0, domain: [0, 1000], step: 250 }
+    // The light sensor beside it: illuminance in lux — dim indoors is a few
+    // dozen, a lit room a few hundred; the scale widens when a reading passes it.
+    { key: 'light', name: tr('Light'), unit: 'lx', decimals: 0, domain: [0, 1000], step: 250 }
   ];
   var KEYS = ['co2', 'temp', 'hum', 'light', 'pres', 'bat', 'rssi', 'voc', 'iaq', 'iaqc'];
   var DAY = 86400000;
@@ -291,8 +293,8 @@
 
   /* ------------------------------------ tiles 4 and 5: the sparklines */
   /* One channel over the day as a line with its area beneath, the newest
-     reading marked: the air pressure, and the volatile organic compounds.
-     The scale is the instrument's, widened when a reading passes it. */
+     reading marked: the air pressure, the volatile organic compounds and the
+     light. The scale is the instrument's, widened when a reading passes it. */
   function renderSpark(view, key, hostId, valId) {
     var ch = chan(key);
     var host = $(hostId); if (!host) return; host.innerHTML = '';
@@ -435,8 +437,8 @@
     { key: 'pres', name: tr('Air pressure'), unit: 'hPa', domain: [950, 1050] },
     { key: 'voc', name: tr('Volatile organic compounds'), unit: 'ppm', domain: [0, 10] },
     { key: 'iaq', name: tr('Air quality'), unit: 'IAQ', domain: [0, 500] },
+    { key: 'light', name: tr('Light'), unit: 'lx', domain: [0, 1000] },
     // the external node's own channels — drawn only while something reports them
-    { key: 'light', name: tr('Light'), unit: 'raw', domain: [0, 1000] },
     { key: 'bat', name: tr('Node battery'), unit: 'V', domain: [3, 4.5] },
     { key: 'rssi', name: tr('Node signal'), unit: 'dBm', domain: [-100, -30] }
   ];
@@ -791,11 +793,11 @@
      live. The history stays on the trend graph, which is where history
      belongs. */
   function clearTiles() {
-    ['hbt-dial', 'hbt-ruler', 'hbt-level', 'hbt-pres', 'hbt-voc', 'hbt-iaq'].forEach(function (id) { var h = $(id); if (h) h.innerHTML = ''; });
+    ['hbt-dial', 'hbt-ruler', 'hbt-level', 'hbt-pres', 'hbt-voc', 'hbt-iaq', 'hbt-light'].forEach(function (id) { var h = $(id); if (h) h.innerHTML = ''; });
     var set = function (id, html) { var e = $(id); if (e) { e.innerHTML = html; e.classList.remove('hot'); } };
     set('co2Val', '—<em>ppm</em>'); set('co2Verdict', tr('No current reading')); set('co2Sub', '');
     set('tempVal', '—<em>°C</em>'); set('tempVerdict', tr('No current reading'));
-    set('humVal', '—<em>%</em>'); set('presVal', '—<em>hPa</em>'); set('vocVal', '—<em>ppm</em>');
+    set('humVal', '—<em>%</em>'); set('presVal', '—<em>hPa</em>'); set('vocVal', '—<em>ppm</em>'); set('lightVal', '—<em>lx</em>');
     set('iaqVal', '—<em>IAQ</em>'); set('iaqVerdict', tr('No current reading'));
   }
   /* The tiles are today: readings since midnight at the venue, and only
@@ -833,6 +835,7 @@
     renderLevel(view);
     renderSpark(view, 'pres', 'hbt-pres', 'presVal');
     renderSpark(view, 'voc', 'hbt-voc', 'vocVal');
+    renderSpark(view, 'light', 'hbt-light', 'lightVal');
     renderIaq(view);
     renderSpanCharts();
     $('hbt-notes').innerHTML = notesHTML();

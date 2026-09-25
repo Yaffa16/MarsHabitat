@@ -1,8 +1,8 @@
 'use strict';
 /**
- * The habitat's readings — CO₂, temperature, humidity, air pressure, and
- * from the new sensor the volatile organic compounds and the air quality
- * index with its readable classification — and where they start.
+ * The habitat's readings — CO₂, temperature, humidity, air pressure, light,
+ * and from the new sensor the volatile organic compounds and the air
+ * quality index with its readable classification — and where they start.
  *
  * Two sources feed the one table (external_reading), and the rest of the
  * station — the tiles on the landing page, the ticker, the booklet, the
@@ -52,11 +52,12 @@ const CFG = {
 };
 const frozen = () => Number.isFinite(CFG.freezeAt) && Date.now() > CFG.freezeAt;
 
-// The numeric channels of a reading. The node sends the first seven (light,
-// battery and signal strength are its own); the habitat sensor fills co2,
-// temp, hum and pres and adds voc (breath-VOC equivalent) and iaq (the air
-// quality index, 0–500). `iaqc` is the index's readable classification —
-// "Excellent", "Good", "Lightly polluted" … — kept as text beside it.
+// The numeric channels of a reading. The node sends the first seven (its
+// light is a raw count; battery and signal strength are its own); the
+// habitat sensors fill co2, temp, hum, pres and light (in lux) and add voc
+// (breath-VOC equivalent) and iaq (the air quality index, 0–500). `iaqc` is
+// the index's readable classification — "Excellent", "Good", "Lightly
+// polluted" … — kept as text beside it.
 const KEYS = ['co2', 'temp', 'hum', 'light', 'pres', 'bat', 'rssi', 'voc', 'iaq'];
 const TEXT_KEYS = ['iaqc'];
 

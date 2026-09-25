@@ -5,7 +5,8 @@
  * An M5 ENV Pro (a Bosch BME688 running BSEC) sits inside the habitat and
  * reports, through Home Assistant, the CO₂ equivalent, the temperature, the
  * humidity, the air pressure, the breath-VOC equivalent, the air quality
- * index (0–500) and that index as a readable classification. This module
+ * index (0–500) and that index as a readable classification; a light sensor
+ * beside it reports the illuminance in lux. This module
  * reads those entities and writes them into the station's one table of
  * habitat readings (external_reading, src/lib/critical.js) as full rows —
  * every channel at its minute — so the tiles, the ticker, the booklet, the
@@ -30,7 +31,7 @@
 const ha = require('./home-assistant');
 const critical = require('./critical');
 
-const CHANNELS = ha.HABITAT_CHANNELS;               // co2 temp hum pres voc iaq iaqc
+const CHANNELS = ha.HABITAT_CHANNELS;               // co2 temp hum pres light voc iaq iaqc
 const NUMERIC = CHANNELS.filter((k) => k !== 'iaqc');
 const DEAD = new Set(['unavailable', 'unknown', 'none', '']);
 const num = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : null; };

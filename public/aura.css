@@ -578,9 +578,10 @@ body.landing .hbt .t-hum { grid-column: 11 / span 4; grid-row: 1; padding: 12px 
 body.landing .hbt .t-pres { grid-column: 11 / span 4; grid-row: 2; padding: 12px 16px; }
 /* the third row, the habitat sensor's two new channels: the air quality
    index with its classification, and the volatile organic compounds */
-body.landing .hbt .t-iaq { grid-column: 1 / span 12; grid-row: 3; padding: 12px 16px; }
-body.landing .hbt .t-voc { grid-column: 13 / span 12; grid-row: 3; padding: 12px 16px; }
-body.landing .hbt .t-iaq svg, body.landing .hbt .t-voc svg { max-width: 460px; }
+body.landing .hbt .t-iaq { grid-column: 1 / span 10; grid-row: 3; padding: 12px 16px; }
+body.landing .hbt .t-voc { grid-column: 11 / span 7; grid-row: 3; padding: 12px 16px; }
+body.landing .hbt .t-light { grid-column: 18 / span 7; grid-row: 3; padding: 12px 16px; }
+body.landing .hbt .t-iaq svg, body.landing .hbt .t-voc svg, body.landing .hbt .t-light svg { max-width: 460px; }
 /* the crew's counted figures: two narrow tiles side by side, each two rows tall — the day's figure for every officer, one under the other,
    the crew's total and the run as a sparkline beneath */
 body.landing .hbt .t-fig { grid-column: span 5; grid-row: 1 / span 2; padding: 12px 14px 10px; }
@@ -972,7 +973,8 @@ body.landing .dpanel-code { white-space: nowrap; }
      the stores and the power one under the other */
   body.landing .hbt .bento { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   body.landing .hbt .t-fig, body.landing .hbt .aux .t-res, body.landing .hbt .aux .t-pwr { grid-column: 1 / -1; grid-row: auto; }
-  body.landing .hbt .t-co2, body.landing .hbt .t-hum, body.landing .hbt .t-iaq { grid-column: 1; grid-row: auto; } body.landing .hbt .t-temp, body.landing .hbt .t-pres, body.landing .hbt .t-voc { grid-column: 2; grid-row: auto; }
+  body.landing .hbt .t-co2, body.landing .hbt .t-hum, body.landing .hbt .t-iaq, body.landing .hbt .t-light { grid-column: 1; grid-row: auto; } body.landing .hbt .t-temp, body.landing .hbt .t-pres, body.landing .hbt .t-voc { grid-column: 2; grid-row: auto; }
+  body.landing .hbt .t-light { grid-column: 1 / -1; }
   body.landing .hbt .dial-wrap { min-height: 150px; } body.landing .hbt .dial-wrap svg { width: 100%; height: auto; max-width: 100%; } body.landing .hbt .dial-center .big { font-size: 26px; }
   body.landing .hbt .ruler-wrap, body.landing .hbt .ruler-wrap svg { height: 120px; }
   body.landing .gauges.rounds { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 6px; }

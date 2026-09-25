@@ -1419,10 +1419,10 @@ echo "$HAB" | grep -q '"source":"home-assistant"' && ok "with Home Assistant con
 echo "$HAB" | node -e '
 let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
   const d = JSON.parse(s); const r = d.rows[d.rows.length - 1] || {};
-  const ok = d.rows.length > 10 && ["co2", "temp", "hum", "pres", "voc", "iaq"].every((k) => typeof r[k] === "number") && /polluted|Excellent|Good/.test(String(r.iaqc));
+  const ok = d.rows.length > 10 && ["co2", "temp", "hum", "pres", "light", "voc", "iaq"].every((k) => typeof r[k] === "number") && /polluted|Excellent|Good/.test(String(r.iaqc));
   process.exit(ok ? 0 : 1);
-});' && ok "every row carries CO₂, temperature, humidity, pressure, VOC, the IAQ index and its classification as text" || bad "the sensor's rows are incomplete"
-echo "$HAB" | grep -q '"light":null' && ok "the node's own channels (light, battery, signal) are empty, not invented" || bad "light is not null"
+});' && ok "every row carries CO₂, temperature, humidity, pressure, light in lux, VOC, the IAQ index and its classification as text" || bad "the sensor's rows are incomplete"
+echo "$HAB" | grep -q '"bat":null' && echo "$HAB" | grep -q '"rssi":null' && ok "the node's own channels (battery, signal) are empty, not invented" || bad "battery or signal not null"
 echo "$HAB" | grep -q '"pollMs":15000' && echo "$HAB" | grep -q '"staleMs":300000' && ok "the station tells the page how often it reads and how fresh is fresh" || bad "cadence not served"
 echo "$HAB" | node -e '
 let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
@@ -1430,7 +1430,7 @@ let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
   process.exit(e.co2 && e.co2.id === "m5_env_pro_env_pro_co2_equivalent" && e.iaqc && e.iaqc.state && !e.iaqc.missing ? 0 : 1);
 });' && ok "each channel's entity is reported as Home Assistant last returned it" || bad "entities missing from the feed"
 LAND3=$(curl -s $B3/)
-echo "$LAND3" | grep -q 'id="hbt-pres"' && ! echo "$LAND3" | grep -q 'id="hbt-spark"' && ok "air pressure has taken the light tile's place" || bad "light tile still there, or no pressure tile"
+echo "$LAND3" | grep -q 'id="hbt-pres"' && echo "$LAND3" | grep -q 'id="hbt-light"' && echo "$LAND3" | grep -q '<em>lx</em>' && ok "air pressure has a tile of its own and the light is back, in lux" || bad "pressure or light tile missing"
 echo "$LAND3" | grep -q 'id="hbt-iaq"' && echo "$LAND3" | grep -q 'id="hbt-voc"' && echo "$LAND3" | grep -q 'id="iaqVerdict"' && ok "the air quality and VOC tiles are on the panel, the classification as the verdict" || bad "new tiles missing"
 curl -s -c /tmp/a3.jar -b /tmp/a3.jar -o /dev/null -X POST -d "username=control&password=control123" $B3/control/login
 GL3=$(curl -s -b /tmp/a3.jar $B3/at-a-glance)
@@ -1440,7 +1440,7 @@ echo "$DAY3" | grep -q 'Volatile organic compounds' && echo "$DAY3" | grep -q 'A
 curl -s -b /tmp/a3.jar $B3/archive/readings/habitat.csv | python3 -c '
 import csv, sys
 rows = list(csv.reader(sys.stdin))
-sys.exit(0 if rows and rows[0] == ["pulledAt", "at", "t", "co2", "temp", "hum", "pres", "voc", "iaq", "iaqc"] and len(rows) > 10 and any("polluted" in r[9] or r[9] in ("Excellent", "Good") for r in rows[1:]) else 1)
+sys.exit(0 if rows and rows[0] == ["pulledAt", "at", "t", "co2", "temp", "hum", "pres", "light", "voc", "iaq", "iaqc"] and len(rows) > 10 and any("polluted" in r[10] or r[10] in ("Excellent", "Good") for r in rows[1:]) else 1)
 ' && ok "the readings log keeps every stored row, with the classification, and hands it over as CSV" || bad "habitat CSV wrong"
 [ "$(ls "$DATA3"/readings/habitat/*/ 2>/dev/null | grep -c json)" -ge 1 ] && ok "every poll of the sensor is a JSON file in readings/habitat/" || bad "no habitat poll files"
 curl -s -b /tmp/a3.jar -o /tmp/record3.pdf -w '%{http_code}' $B3/archive/export.pdf | grep -q 200 && pdftext /tmp/record3.pdf > /tmp/record3.txt && grep -q "the habitat sensor" /tmp/record3.txt && ok "the PDF record names the habitat sensor as the source" || bad "PDF does not name the sensor"

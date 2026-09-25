@@ -1187,10 +1187,11 @@ body.landing .foot { margin-top: 44px; margin-bottom: 44px; }
 .dpanel .hbt .t-pres { grid-column: 4; grid-row: 2; }
 .dpanel .hbt .t-calories { grid-column: 5 / 7; grid-row: 1; }
 .dpanel .hbt .t-steps { grid-column: 5 / 7; grid-row: 2; }
-/* the third row: the air quality index and the volatile organic compounds */
-.dpanel .hbt .t-iaq { grid-column: 1 / 4; grid-row: 3; }
-.dpanel .hbt .t-voc { grid-column: 4 / 7; grid-row: 3; }
-.dpanel .hbt .t-iaq svg, .dpanel .hbt .t-voc svg { max-width: 420px; }
+/* the third row: the air quality index, the volatile organic compounds, the light */
+.dpanel .hbt .t-iaq { grid-column: 1 / 3; grid-row: 3; }
+.dpanel .hbt .t-voc { grid-column: 3 / 5; grid-row: 3; }
+.dpanel .hbt .t-light { grid-column: 5 / 7; grid-row: 3; }
+.dpanel .hbt .t-iaq svg, .dpanel .hbt .t-voc svg, .dpanel .hbt .t-light svg { max-width: 420px; }
 .dpanel .hbt .t-iaq .verdict { margin-top: 2px; }
 .dpanel .hbt .aux { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
 .dpanel .hbt .aux .t-res, .dpanel .hbt .aux .t-days, .dpanel .hbt .aux .t-pwr { grid-column: auto; grid-row: auto; }
@@ -1283,8 +1284,8 @@ body.landing .foot { margin-top: 44px; margin-bottom: 44px; }
 @media (max-width: 1100px) {
   .dpanel .hbt .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dpanel .hbt .t-co2, .dpanel .hbt .t-temp, .dpanel .hbt .t-fig, .dpanel .hbt .t-days, .dpanel .hbt .t-res,
-  .dpanel .hbt .t-hum, .dpanel .hbt .t-pres, .dpanel .hbt .t-iaq, .dpanel .hbt .t-voc { grid-column: span 2; grid-row: auto; }
-  .dpanel .hbt .t-hum, .dpanel .hbt .t-pres, .dpanel .hbt .t-iaq, .dpanel .hbt .t-voc { grid-column: span 1; }
+  .dpanel .hbt .t-hum, .dpanel .hbt .t-pres, .dpanel .hbt .t-iaq, .dpanel .hbt .t-voc, .dpanel .hbt .t-light { grid-column: span 2; grid-row: auto; }
+  .dpanel .hbt .t-hum, .dpanel .hbt .t-pres, .dpanel .hbt .t-iaq, .dpanel .hbt .t-voc, .dpanel .hbt .t-light { grid-column: span 1; }
   /* The resources row keeps the whole width: nine gauges wrap in threes. */
   .dpanel .hbt .bento.aux { grid-template-columns: minmax(0, 1fr); }
   .dpanel .hbt .aux .t-res, .dpanel .hbt .aux .t-pwr { grid-column: 1 / -1; }
@@ -1504,7 +1505,7 @@ body.landing .foot { margin-top: 44px; margin-bottom: 44px; }
 .hbt .t-co2 { grid-column: span 2; grid-row: span 2; display: flex; flex-direction: column; }
 .hbt .t-temp { grid-column: span 1; grid-row: span 2; display: flex; flex-direction: column; }
 .hbt .t-hum { grid-column: span 1; }
-.hbt .t-pres, .hbt .t-iaq, .hbt .t-voc { grid-column: span 1; }
+.hbt .t-pres, .hbt .t-iaq, .hbt .t-voc, .hbt .t-light { grid-column: span 1; }
 .hbt .t-days { grid-column: span 4; }
 .hbt .big { font-family: var(--mono); font-weight: 400; letter-spacing: -0.04em; line-height: 0.92; font-variant-numeric: tabular-nums; }
 .hbt .big em { font-style: normal; font-size: 0.34em; font-weight: 400; letter-spacing: 0; color: var(--dim); margin-left: 0.18em; }
@@ -1546,7 +1547,7 @@ body.landing .foot { margin-top: 44px; margin-bottom: 44px; }
 }
 @media (max-width: 520px) {
   .hbt .bento { grid-template-columns: 1fr; }
-  .hbt .t-co2, .hbt .t-temp, .hbt .t-hum, .hbt .t-pres, .hbt .t-iaq, .hbt .t-voc, .hbt .t-days { grid-column: span 1; }
+  .hbt .t-co2, .hbt .t-temp, .hbt .t-hum, .hbt .t-pres, .hbt .t-iaq, .hbt .t-voc, .hbt .t-light, .hbt .t-days { grid-column: span 1; }
   .hbt .dkey, .hbt .daxis .dkey { width: 74px; }
   .hbt .dtick { font-size: 8.5px; }
   .hbt .dtick .mo { display: none; }
