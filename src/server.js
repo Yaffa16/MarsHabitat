@@ -66,7 +66,8 @@ app.use((req, res, next) => {
     // interface string into it. Mission control and the archive ignore both.
     const lang = i18n.pick(req);
     cached = {
-      theme: req.cookies.mcs_theme === 'dark' ? 'dark' : 'light',
+      // dark unless the visitor has chosen light with the switch
+      theme: req.cookies.mcs_theme === 'light' ? 'light' : 'dark',
       lang,
       T: i18n.of(lang),
       logo: logo(),
@@ -250,11 +251,17 @@ const SECTION = {
   '/habitat': '#habitat', '/crew': '#crew',
   '/day': '#mission', '/schedule': '#mission',
   '/board': '#exchanges', '/communicate': '#write',
-  '/what': '#what', '/about': '#about', '/who-we-are': '#who-we-are',
 };
 for (const [from, to] of Object.entries(SECTION)) {
   app.get(from, (req, res) => res.redirect(301, '/' + to));
 }
+/* About, What this is and Who we are: the reading matter, a page of its own
+   (views/pages/info.js) — the About key of a phone's bar and the rows of the
+   ticker's menu lead here; the old addresses of the other two land on their
+   section of it. */
+app.get('/about', (req, res) => res.send(require('./views/pages/info').aboutPage(req.ctx(), { crew: data.crewWithMood() })));
+app.get('/what', (req, res) => res.redirect(301, '/about#what'));
+app.get('/who-we-are', (req, res) => res.redirect(301, '/about#who-we-are'));
 app.get('/day/:n', (req, res) => res.redirect(301, '/#mission'));
 
 /* The crew log as a page of its own: every day of the run, every officer's
@@ -791,10 +798,13 @@ app.get('/api/cloud', (req, res) => {
   // the grid itself, rendered for the visitor's language, so the media page
   // can swap it in the moment the folder changes — the same pattern as the board
   const M = require('./views/pages/media');
-  const model = { title: cloud.CFG.title, items: cloud.gallery(), snapshot: snap, limit: 6 };
-  const opts = { tz: req.ctx().mission.timezone };      // for a file whose name carries no time: its own date, in the venue's time
-  const html = snap.configured ? M.cloudGridInner(req.ctx().T, model, opts) : '';
-  const latestHtml = snap.configured ? M.cloudLatestInner(req.ctx().T, model, opts) : '';
+  const model = { title: cloud.CFG.title, items: cloud.gallery(), snapshot: snap, limit: 6, sort: cloud.CFG.sort };
+  const ctx = req.ctx();
+  // the venue's zone, for a file whose name carries no time (its own date, in the venue's time); the run and the language,
+  // for the gallery's day heads
+  const opts = { tz: ctx.mission.timezone, mission: ctx.mission, lang: ctx.lang };
+  const html = snap.configured ? M.cloudGridInner(ctx.T, model, opts) : '';
+  const latestHtml = snap.configured ? M.cloudLatestInner(ctx.T, model, opts) : '';
   res.set('Cache-Control', 'no-store').json({ ...snap, html, latestHtml });
 });
 

@@ -4,6 +4,7 @@ const { esc, panel, eyebrow } = L;
 const mood = require('../../lib/mood');
 const MV = require('./media');
 const mediaLookup = require('../../lib/media').get;
+const officer = require('../../lib/officer');
 
 const dd = (n) => String(n).padStart(3, '0');
 /** A figure exactly as it was entered — no rounding, no formatting. */
@@ -142,8 +143,8 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
     </div>
   </div>
 
-  ${r.officers.map((o, k) => panel(`CH-5${k} / ${esc(o.designation)}`, `
-    ${eyebrow(`${esc(o.designation)}${o.role ? ` · ${esc(o.role)}` : ''}`)}
+  ${r.officers.map((o, k) => panel(`CH-5${k} / ${esc(officer.shown(o.designation))}`, `
+    ${eyebrow(`${esc(officer.shown(o.designation))}${o.role ? ` · ${esc(o.role)}` : ''}`)}
     ${o.hasBlog ? `<h3>Commander Blog</h3>
     ${o.entry ? `<div class="entry-post">${MV.entryHtml(o.entry.body, o.media, { lookup: mediaLookup })}</div>`
       : '<p class="note">No Commander Blog written for this day.</p>'}` : ''}

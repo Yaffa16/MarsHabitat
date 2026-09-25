@@ -739,9 +739,9 @@ const D = {
   'not yet counted': ['noch nicht gezählt', 'pas encore compté'],
 
   'Water recycling': ['Wasserrecycling', 'Recyclage de l’eau'],
-  'The uplink. Every message written on this station crosses the distance to the habitat and waits for the communication officer, who reads it and answers from inside; the reply comes back to the board on every open phone. The real light-time between Earth and Mars is shown beside the composer.': [
-    'Der Uplink. Jede auf dieser Station geschriebene Nachricht überquert die Distanz zum Habitat und wartet auf die Kommunikationsoffizierin, die sie von innen liest und beantwortet; die Antwort kommt auf jedem geöffneten Telefon zurück aufs Board. Die reale Lichtlaufzeit zwischen Erde und Mars steht neben dem Composer.',
-    'La liaison. Chaque message écrit sur cette station traverse la distance jusqu’à l’habitat et attend l’officier de communication, qui le lit et y répond depuis l’intérieur ; la réponse revient sur le tableau de chaque téléphone ouvert. Le vrai temps-lumière entre la Terre et Mars est affiché à côté du composeur.'],
+  'The uplink. Every message written on this station crosses the distance to the habitat and waits for the commanding officer, who reads it and answers from inside; the reply comes back to the board on every open phone. The real light-time between Earth and Mars is shown beside the composer.': [
+    'Der Uplink. Jede auf dieser Station geschriebene Nachricht überquert die Distanz zum Habitat und wartet auf die Kommandantin, die sie von innen liest und beantwortet; die Antwort kommt auf jedem geöffneten Telefon zurück aufs Board. Die reale Lichtlaufzeit zwischen Erde und Mars steht neben dem Composer.',
+    'La liaison. Chaque message écrit sur cette station traverse la distance jusqu’à l’habitat et attend le commandant, qui le lit et y répond depuis l’intérieur ; la réponse revient sur le tableau de chaque téléphone ouvert. Le vrai temps-lumière entre la Terre et Mars est affiché à côté du composeur.'],
   'Hydroponics': ['Hydroponik', 'Hydroponie'],
   'Communication': ['Kommunikation', 'Communication'],
   'Nap pod': ['Schlafkapsel', 'Capsule de repos'],
@@ -763,9 +763,9 @@ const D = {
   'Latest exchange': ['Letzter Austausch', 'Dernier échange'],
   'The loop runs whenever there is grey water to pass; the crew count the tank at the end of the day.': ['Der Kreislauf läuft, sobald Grauwasser anfällt; die Crew zählt den Tank am Ende des Tages.', 'La boucle tourne dès qu’il y a des eaux grises à traiter ; l’équipage compte le réservoir en fin de journée.'],
   'First harvest planned for SOL 10.': ['Erste Ernte geplant für SOL 10.', 'Première récolte prévue pour SOL 10.'],
-  'Three officers live sealed inside the habitat for the thirteen days of the run: a communication officer who relays every message from Earth, a science officer who runs the experiments and watches the habitat’s systems, and a health officer who keeps the crew fit and the life support in order. Between them they write three blogs a day — the Commander Blog, the Daily Science Findings and the Daily Health Blog — and file their condition from inside.': [
-    'Drei Offiziere leben die dreizehn Tage des Laufs abgeschlossen im Habitat: eine Kommunikationsoffizierin, die jede Nachricht von der Erde weiterleitet, ein Wissenschaftsoffizier, der die Experimente durchführt und die Systeme des Habitats beobachtet, und ein Gesundheitsoffizier, der die Crew fit und die Lebenserhaltung in Ordnung hält. Zusammen schreiben sie jeden Tag drei Blogs — den Commander-Blog, die täglichen wissenschaftlichen Befunde und den täglichen Gesundheitsblog — und melden ihren Zustand von innen.',
-    'Trois officiers vivent enfermés dans l’habitat pendant les treize jours de la mission : un officier de communication qui relaie chaque message de la Terre, un officier scientifique qui mène les expériences et surveille les systèmes de l’habitat, et un officier de santé qui garde l’équipage en forme et le support de vie en ordre. Ensemble, ils écrivent trois blogs par jour — le blog du commandement, les observations scientifiques quotidiennes et le blog santé quotidien — et déclarent leur état depuis l’intérieur.'],
+  'Three officers live sealed inside the habitat for the thirteen days of the run: a commanding officer who relays every message from Earth, a science officer who runs the experiments and watches the habitat’s systems, and a health officer who keeps the crew fit and the life support in order. Between them they write three blogs a day — the Commander Blog, the Daily Science Findings and the Daily Health Blog — and file their condition from inside.': [
+    'Drei Offiziere leben die dreizehn Tage des Laufs abgeschlossen im Habitat: eine Kommandantin, die jede Nachricht von der Erde weiterleitet, ein Wissenschaftsoffizier, der die Experimente durchführt und die Systeme des Habitats beobachtet, und ein Gesundheitsoffizier, der die Crew fit und die Lebenserhaltung in Ordnung hält. Zusammen schreiben sie jeden Tag drei Blogs — den Commander-Blog, die täglichen wissenschaftlichen Befunde und den täglichen Gesundheitsblog — und melden ihren Zustand von innen.',
+    'Trois officiers vivent enfermés dans l’habitat pendant les treize jours de la mission : un commandant qui relaie chaque message de la Terre, un officier scientifique qui mène les expériences et surveille les systèmes de l’habitat, et un officier de santé qui garde l’équipage en forme et le support de vie en ordre. Ensemble, ils écrivent trois blogs par jour — le blog du commandement, les observations scientifiques quotidiennes et le blog santé quotidien — et déclarent leur état depuis l’intérieur.'],
   'The science bench: the habitat’s own experiments — samples, cultures, readings — and the daily science findings the science officer writes up. The sensor node beside it measures temperature, humidity, carbon dioxide and more every twenty minutes.': [
     'Der Laborplatz: die Experimente des Habitats – Proben, Kulturen, Messungen – und die täglichen wissenschaftlichen Befunde, die der Wissenschaftsoffizier festhält. Der Sensorknoten daneben misst alle zwanzig Minuten Temperatur, Luftfeuchte, Kohlendioxid und mehr.',
     'La paillasse scientifique : les expériences de l’habitat – échantillons, cultures, mesures – et les résultats scientifiques quotidiens que rédige l’officier scientifique. Le nœud de capteurs à côté mesure toutes les vingt minutes la température, l’humidité, le dioxyde de carbone et plus.'],
@@ -834,6 +834,93 @@ const D = {
   'Its last reading was': ['Sein letzter Messwert war', 'Sa dernière mesure date de'],
   'The tiles stay empty until it transmits again — earlier readings are on the trend graph.':
     ['Die Kacheln bleiben leer, bis er wieder sendet — frühere Messwerte stehen im Trenddiagramm.', 'Les tuiles restent vides jusqu’à sa prochaine transmission — les mesures antérieures sont sur le graphique des tendances.'],
+
+  // ---- the landing page on a phone: the world's slowest chat (src/views/pages/slowchat.js).
+  // {range}, {now} and {time} are put in by the page — keep them in the translation, wherever the language wants them.
+  'Wait, what is this?': ['Moment, was ist das?', 'Attendez, qu’est-ce que c’est ?'],
+  'The world’s slowest chat.': ['Der langsamste Chat der Welt.', 'Le chat le plus lent du monde.'],
+  'Communicate with the crew.': ['Kommuniziere mit der Crew.', 'Communiquez avec l’équipage.'],
+  'How a message reaches the crew': ['Wie eine Nachricht die Crew erreicht', 'Comment un message parvient à l’équipage'],
+  'Habitat entry': ['Einzug ins Habitat', 'Entrée dans l’habitat'],
+  'Three crew members enter the Mars habitat at Marktplatz.': ['Drei Crewmitglieder ziehen in das Mars-Habitat auf dem Marktplatz ein.', 'Trois membres d’équipage entrent dans l’habitat martien, sur la Marktplatz.'],
+  'Uplink received': ['Uplink empfangen', 'Liaison montante reçue'],
+  'What does it smell like in there?': ['Wie riecht es da drin?', 'Ça sent quoi, là-dedans ?'],
+  'A message from Earth enters the communications queue. It will take time to reach the crew.':
+    ['Eine Nachricht von der Erde reiht sich in die Warteschlange ein. Es dauert, bis sie die Crew erreicht.', 'Un message de la Terre entre dans la file d’attente des communications. Il lui faudra du temps pour atteindre l’équipage.'],
+  'Signal in transit': ['Signal unterwegs', 'Signal en transit'],
+  'M km': ['Mio. km', 'M km'],
+  'The signal is on its way.': ['Das Signal ist unterwegs.', 'Le signal est en route.'],
+  'Under real conditions, a message can take {range} to reach Mars — today it takes {now}.':
+    ['Unter realen Bedingungen braucht eine Nachricht {range} bis zum Mars — heute sind es {now}.', 'Dans des conditions réelles, un message met {range} pour atteindre Mars — aujourd’hui, {now}.'],
+  '4 to 22 minutes': ['4 bis 22 Minuten', '4 à 22 minutes'],
+  'Each chat response will require {range}.': ['Jede Antwort im Chat braucht {range}.', 'Chaque réponse demandera {range}.'],
+  '8 to 44 minutes': ['8 bis 44 Minuten', '8 à 44 minutes'],
+  'For this simulation, the transmission takes {time}.': ['In dieser Simulation dauert die Übertragung {time}.', 'Dans cette simulation, la transmission prend {time}.'],
+  'second': ['Sekunde', 'seconde'],
+  'seconds': ['Sekunden', 'secondes'],
+  'Crew response': ['Die Crew antwortet', 'L’équipage répond'],
+  'Downlink received': ['Downlink empfangen', 'Liaison descendante reçue'],
+  'Lentils. Mostly lentils.': ['Linsen. Vor allem Linsen.', 'Des lentilles. Surtout des lentilles.'],
+  'At {time}, the communications window opens. Messages from Earth are answered by the crew.':
+    ['Um {time} öffnet sich das Kommunikationsfenster. Dann beantwortet die Crew die Nachrichten von der Erde.', 'À {time}, la fenêtre de communication s’ouvre. L’équipage répond alors aux messages de la Terre.'],
+  'When the communications window opens, messages from Earth are answered by the crew.':
+    ['Wenn sich das Kommunikationsfenster öffnet, beantwortet die Crew die Nachrichten von der Erde.', 'Quand la fenêtre de communication s’ouvre, l’équipage répond aux messages de la Terre.'],
+  // ---- the reference sheet: the landing page after the design handoff (src/views/pages/landing.js, dome.js, sky.js),
+  // the header's running line (public.js) and the theme key (layout.js). {date} and {time} are put in by the page.
+  'Ref. sheet': ['Ref.-Blatt', 'Fiche de réf.'],
+  'Mission layout': ['Missionsplan', 'Plan de mission'],
+  'Note 00': ['Notiz 00', 'Note 00'],
+  'Durational performance': ['Langzeitperformance', 'Performance de longue durée'],
+  'MARS is a durational performance in which three officers live inside the habitat for thirteen consecutive days.':
+    ['MARS ist eine Langzeitperformance, in der drei Offiziere dreizehn Tage am Stück im Habitat leben.',
+      'MARS est une performance de longue durée : trois officiers vivent dans l’habitat pendant treize jours consécutifs.'],
+  'This website is your portal into the mission: a space to communicate with the astronauts, follow their activities, and observe life inside the habitat throughout the duration of the performance.':
+    ['Diese Website ist dein Portal zur Mission: ein Ort, um mit den Astronautinnen und Astronauten zu kommunizieren, ihren Tätigkeiten zu folgen und das Leben im Habitat während der ganzen Performance zu beobachten.',
+      'Ce site est votre portail vers la mission : un espace pour communiquer avec les astronautes, suivre leurs activités et observer la vie dans l’habitat pendant toute la durée de la performance.'],
+  'The mission': ['Die Mission', 'La mission'],
+  'Three astronauts in front of the habitat': ['Drei Astronauten vor dem Habitat', 'Trois astronautes devant l’habitat'],
+  'Three astronauts land on Mars': ['Drei Astronauten landen auf dem Mars', 'Trois astronautes se posent sur Mars'],
+  'Commanding officer': ['Kommandantin', 'Commandant'],
+  'Science officer': ['Wissenschaftsoffizier', 'Officier scientifique'],
+  'Health officer': ['Gesundheitsoffizier', 'Officier de santé'],
+  'On {date}, three astronauts enter the Habitat at MARS!platz: a Commanding Officer, a Science Officer and a Health Officer. Life on Mars becomes the experiment.':
+    ['Am {date} betreten drei Astronauten das Habitat auf dem MARS!platz: eine Kommandantin, ein Wissenschaftsoffizier und ein Gesundheitsoffizier. Das Leben auf dem Mars wird zum Experiment.',
+      'Le {date}, trois astronautes entrent dans l’habitat du MARS!platz : un commandant, un officier scientifique et un officier de santé. La vie sur Mars devient l’expérience.'],
+  'An astronaut shading their eyes in front of the golden habitat': ['Ein Astronaut hält vor dem goldenen Habitat Ausschau', 'Un astronaute scrute l’horizon devant l’habitat doré'],
+  'An astronaut in red light at the habitat’s foil wall': ['Ein Astronaut im roten Licht an der Folienwand des Habitats', 'Un astronaute dans la lumière rouge, contre la paroi de feuille de l’habitat'],
+  'Part 1 of 2': ['Teil 1 von 2', 'Partie 1 sur 2'],
+  'Part 2 of 2': ['Teil 2 von 2', 'Partie 2 sur 2'],
+  'An astronaut on an EVA in front of a historic building': ['Ein Astronaut beim Außeneinsatz vor einem historischen Gebäude', 'Un astronaute en sortie extravéhiculaire devant un bâtiment historique'],
+  'Life on Mars becomes the experiment': ['Das Leben auf dem Mars wird zum Experiment', 'La vie sur Mars devient l’expérience'],
+  'Food & growing': ['Nahrung & Anbau', 'Alimentation & culture'],
+  'Mental health': ['Psychische Gesundheit', 'Santé mentale'],
+  'Governance': ['Governance', 'Gouvernance'],
+  'Inside the Habitat, the crew lives under the conditions of a long-duration mission: isolation, limited space and resources. Each day brings new experiments — from growing food to resource management, EVAs, mental health, governance and understanding how people live together in an unfamiliar environment.':
+    ['Im Habitat lebt die Crew unter den Bedingungen einer Langzeitmission: Isolation, wenig Raum und knappe Ressourcen. Jeder Tag bringt neue Experimente — vom Anbau von Nahrung über Ressourcenmanagement, Außeneinsätze (EVAs), psychische Gesundheit und Governance bis zu der Frage, wie Menschen in einer fremden Umgebung zusammenleben.',
+      'Dans l’habitat, l’équipage vit dans les conditions d’une mission de longue durée : isolement, espace et ressources limités. Chaque jour apporte de nouvelles expériences — de la culture de la nourriture à la gestion des ressources, des sorties extravéhiculaires (EVA) à la santé mentale et à la gouvernance, jusqu’à comprendre comment des personnes vivent ensemble dans un environnement inconnu.'],
+  'Every day, the astronauts also leave the Habitat in their spacesuits for an EVA on the Mars landscape of Karlsruhe’s Marktplatz.':
+    ['Jeden Tag verlassen die Astronauten das Habitat außerdem in ihren Raumanzügen für einen Außeneinsatz (EVA) in der Marslandschaft des Karlsruher Marktplatzes.',
+      'Chaque jour, les astronautes quittent aussi l’habitat en combinaison spatiale pour une sortie extravéhiculaire (EVA) dans le paysage martien de la Marktplatz de Karlsruhe.'],
+  'Welcome to the World’s Slowest Chat': ['Willkommen im langsamsten Chat der Welt', 'Bienvenue dans le chat le plus lent du monde'],
+  'Communicate': ['Kommunizieren', 'Communiquer'],
+  'A listener with headphones in the crowd': ['Eine Zuhörerin mit Kopfhörern in der Menge', 'Une auditrice avec un casque dans la foule'],
+  'Every day at {time}, the Habitat opens its communication window. Come to MARS!platz at Karlsruhe’s Marktplatz or connect through the online portal to speak with the astronauts and discover what is happening inside the Habitat.':
+    ['Jeden Tag um {time} öffnet das Habitat sein Kommunikationsfenster. Komm auf den MARS!platz am Karlsruher Marktplatz oder verbinde dich über das Online-Portal, um mit den Astronauten zu sprechen und zu erfahren, was im Habitat geschieht.',
+      'Chaque jour à {time}, l’habitat ouvre sa fenêtre de communication. Venez au MARS!platz sur la Marktplatz de Karlsruhe ou connectez-vous au portail en ligne pour parler avec les astronautes et découvrir ce qui se passe dans l’habitat.'],
+  'Transit': ['Transit', 'Transit'],
+  'Downlink': ['Downlink', 'Liaison descendante'],
+  'Send a message': ['Eine Nachricht senden', 'Envoyer un message'],
+  'Now in the habitat': ['Jetzt im Habitat', 'En ce moment dans l’habitat'],
+  'Earth–Mars distance': ['Distanz Erde–Mars', 'Distance Terre–Mars'],
+  'million km': ['Mio. km', 'millions de km'],
+  'at the speed of light': ['mit Lichtgeschwindigkeit', 'à la vitesse de la lumière'],
+  'Habitat reading': ['Messwert im Habitat', 'Mesure dans l’habitat'],
+  'Sol': ['Sol', 'Sol'],
+  'sol to go': ['Sol verbleibt', 'sol restant'],
+  'sols to go': ['Sols verbleiben', 'sols restants'],
+  'the last day': ['der letzte Tag', 'le dernier jour'],
+  'Communication window daily': ['Kommunikationsfenster täglich', 'Fenêtre de communication tous les jours à'],
+  'Switch between light and dark': ['Zwischen hell und dunkel wechseln', 'Basculer entre clair et sombre'],
 };
 
 /** T for one language: exact English in, that language out; unknown stays English. */

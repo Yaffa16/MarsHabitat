@@ -861,7 +861,7 @@ function powerDay(missionDay, p = power()) {
  */
 const PLACEHOLDER = '[PLACEHOLDER]';
 /** The one officer whose entries are a blog: theirs is the Commander Blog. */
-const BLOG_OFFICER = 'COMMUNICATION OFFICER';
+const BLOG_OFFICER = 'COMMUNICATION OFFICER';   // the commanding officer, filed under their old title: the key stays (lib/officer.js shows the new one)
 const isPlaceholder = (body) => String(body || '').trimStart().startsWith(PLACEHOLDER);
 /** The cue shown in an empty box in mission control: the placeholder text without its marker. */
 const placeholderCue = (body) => String(body || '').trimStart().slice(PLACEHOLDER.length).trim();

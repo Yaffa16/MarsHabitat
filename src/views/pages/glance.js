@@ -19,6 +19,7 @@ const MV = require('./media');
 const content = require('../../lib/content');
 const mediaLookup = require('../../lib/media').get;
 const { inventoryGauges } = require('./public');
+const officer = require('../../lib/officer');
 
 const ddd = (n) => String(n).padStart(3, '0');
 const slotName = { BREAKFAST: 'Breakfast', LUNCH: 'Lunch', DINNER: 'Dinner', RATION: 'Ration' };
@@ -87,7 +88,7 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
   const written = r.entries.filter((e) => !content.isPlaceholder(e.body));
   const day = r.day;
   // The three blogs of the day, each a card of its own: the Commander Blog
-  // (the communication officer's entry, with what they sent out that day),
+  // (the commanding officer's entry, with what they sent out that day),
   // the Daily Science Findings and the Daily Health Blog (the reports).
   const findings = day ? day.notes.filter((x) => x.published_at && x.kind === 'SCIENCE') : [];
   const health = day ? day.notes.filter((x) => x.published_at && x.kind === 'HEALTH') : [];
@@ -208,7 +209,7 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
       ${eyebrow(T('Crew condition · as reported, never as numbers'))}
       <div class="rows">${[...lastMood.values()].map((s) => { const t = mood.translate(s); return `
         <div class="row"><div class="t">${esc(T(t.condition))}</div>
-          <div class="m"><b>${esc(s.designation)}</b><span>${esc(t.lines.map(T).join('; '))}${s.activity ? ` — ${esc(s.activity)}` : ''}</span></div>
+          <div class="m"><b>${esc(officer.shown(s.designation))}</b><span>${esc(t.lines.map(T).join('; '))}${s.activity ? ` — ${esc(s.activity)}` : ''}</span></div>
         </div>`; }).join('')}</div>
     </div>` : '';
 
@@ -219,7 +220,7 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
         <div class="card-top"><span class="cs">${esc(x.callsign)}</span>
           <span class="card-day">${orbital.formatLightTime(x.light_seconds)}</span></div>
         <div class="card-body">${esc(x.body)}</div>
-        ${x.response_body ? `<div class="card-reply"><div class="who">${esc(x.responder || T('Mars habitat'))}</div><p>${esc(x.response_body)}</p></div>` : ''}
+        ${x.response_body ? `<div class="card-reply"><div class="who">${esc(x.responder ? officer.shown(x.responder) : T('Mars habitat'))}</div><p>${esc(x.response_body)}</p></div>` : ''}
       </article>`).join('')}</div>
     </div>` : '';
 
@@ -337,6 +338,23 @@ function page(ctx, { records, rehearsal = null }) {
     var m0 = /#day-(\\d+)/.exec(location.hash);
     go(location.hash === '#today' ? indexOfDay(0) : indexOfDay(m0 ? Number(m0[1]) : ${openOn}), false);
     mark();
+  })();
+  (function () {
+    // A day's charts are drawn 560 wide and scaled to the page — on a phone to about half, and their figures with them:
+    // each figure is given back the size the page is read at (--fs-tag), whatever the chart's scale.
+    function fit() {
+      var px = parseFloat(getComputedStyle(document.body).getPropertyValue('--fs-tag')) || 11;
+      [].forEach.call(document.querySelectorAll('svg.gc-svg'), function (svg) {
+        var m = svg.getScreenCTM && svg.getScreenCTM(); if (!m || !m.a) return;
+        svg.style.overflow = 'visible';
+        [].forEach.call(svg.querySelectorAll('text'), function (tx) {
+          if (tx.__drawn == null) tx.__drawn = parseFloat(getComputedStyle(tx).fontSize) || 8.5;
+          tx.style.fontSize = Math.max(tx.__drawn, px / m.a).toFixed(2) + 'px';
+        });
+      });
+    }
+    fit();
+    var rz; window.addEventListener('resize', function () { clearTimeout(rz); rz = setTimeout(fit, 150); });
   })();
   </script>`;
   return L.page({ title: 'At a Glance', ctx, body, current: '/at-a-glance' });

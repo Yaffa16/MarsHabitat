@@ -31,7 +31,7 @@ The station is built for the actual run: **Thursday 15 to Tuesday 27 October 202
 thirteen days, Europe/Berlin** — fixed in `src/lib/run.js`, not in `.env`, and applied to the
 database at every start. Until 15 October it comes up in its pre-launch state. The run
 is named plainly under the wordmark on the station ("Thu 15 – Tue 27 Oct 2026 · 13 days in the
-habitat"), in the dashboard header, in the About pop-up and in the countdown pill.
+habitat"), in the dashboard header, on the About page and in the countdown pill.
 
 ### Seeing it full before the sensors exist
 
@@ -90,18 +90,21 @@ which is mission control's, sits behind the same login.
 
 | Page | Route | Holds |
 |---|---|---|
-| The station | `/` | **The ticker** across the top — the habitat's clock and a running line of the current activity, the next one and the habitat sensor's reading · composer and orbital plot · the live message board · the mission dashboard (schedule, meal, mood, habitat, resources, trends, and below the trends **the three daily blogs** — Daily Science Findings, Daily Health Blog, Commander Blog) · **about** (the project, how the station behaves, who we are). The crew log, the media and the whole mission day by day live on their own pages (`/logbook`, `/media`, `/at-a-glance`) |
-| Dashboard | `/dashboard` | The mission dashboard on a page of its own — the same section the station page carries on a desk: the head, the live images, the two doors, the strip of sols and the nine panels behind their index. Drawn for a phone first; the phone's bar of keys leads here with **Dashboard**, and on a phone the station page keeps only the habitat and the doors |
-| Messages | `/messages` | The portal on a page of its own — the composer and the live message board, the same pieces the station page shows on a desk. Drawn for a phone first: the exchanges flow with the page, the composer is a dock at the foot of the screen; the phone's bar of keys leads here with **Write**, and on a phone the station page keeps only the doors |
+| The station | `/` | **The header** across the top — the wordmark, the run's badge, the habitat's clock and a running line of the current activity, the next one, the habitat sensor's reading and the daily communication window · **four pages**: the habitat with its sky, the note, the mission's chapters and the world's slowest chat (see *The landing page: four pages in the glass dress*) · on a wider screen then the composer · the live message board · the mission dashboard (schedule, meal, mood, habitat, resources, trends, and below the trends **the three daily blogs** — Daily Science Findings, Daily Health Blog, Commander Blog). The crew log, the media, the whole mission day by day and the reading matter live on their own pages (`/logbook`, `/media`, `/at-a-glance`, `/about`) |
+| About | `/about` | The reading matter, one page: **About** (the habitat, the distance, the archive), **What this is** (how the station behaves, in plain terms) and **Who we are** (crew, company, production credits), one after another under a row of three pills that jump to them (`src/views/pages/info.js`). A phone's **About** key opens it; on a desk the ticker's three-lines menu leads to each part of it |
+| Dashboard | `/dashboard` | The mission dashboard on a page of its own — the same section the station page carries on a desk: the head, the live images, the two doors, the strip of sols and the nine panels behind their index. Drawn for a phone first — where it leaves the strip of live images out (the newest pictures rise over the habitat instead, and fill the Media page); the phone's bar of keys leads here with **Dashboard**, and on a phone the station page keeps its four pages alone |
+| Messages | `/messages` | The portal on a page of its own — the composer and the live message board, the same pieces the station page shows on a desk. Drawn for a phone first: the exchanges flow with the page, the composer is a dock at the foot of the screen; the phone's bar of keys leads here with **Write**, and so does the door at the foot of the station page's sheet |
 | Mission control | `/control` | Five tabs: **Messages** (the reply queue) first, then one per officer, and the habitat — which ends with the plan and the reset |
 | At a Glance | `/at-a-glance` | **A booklet: one day per page, turned by scrolling or swiping sideways** — arrows either side, ← → on a keyboard, a day strip to jump, a `#day-n` link opens on that day. Each page: each day's crew log with its photographs, the exchanges published, the schedule as run, the meals and their cost, the consumption of every store, the habitat summary, the crew's condition as sentences, the mission notes and the media. Days ahead show the plan, and each page scrolls on its own like a page being read. Opened from the button under the mission dashboard, and from the navigation |
 | Crew log | `/logbook` | All thirteen days in order, each officer's entry where written and its placeholder where not — a day strip to jump by, a chip per voice. Opened from the Crew log panel on the station, and from the nav |
 | Media | `/media` | Everything the crew send out — photographs and video — by day, with filters; `/media/:id` one item; `/media/export.zip` everything as one ZIP; `/media/manifest.json` every file with its SHA-256 |
 | Archive | `/archive` | **Mission control only.** Day-by-day permanent record — no messages, every reading; `/archive/day/:n`, **`/archive/export.pdf`** (the whole mission as one document), `/archive/export.md`, `/archive/export.json`, **`/archive/readings.zip`** (every reading ever pulled). `/archive/messages` is a separate, unlinked search over the message queue and is not part of the record |
 
-Every address the public subpages used to have (`/messages`, `/crew`, `/day`, `/schedule`,
-`/what`, `/about`, `/who-we-are`) redirects to its section on the landing page, so old links
-and printed material still land somewhere. The footer of the landing page is the navigation.
+Every address the public subpages used to have (`/crew`, `/day`, `/schedule`, `/board`,
+`/communicate`) redirects to its section on the landing page, and `/what` and `/who-we-are` to
+their section of the About page, so old links and printed material still land somewhere; the
+landing page's own old `#about`, `#what` and `#who-we-are` (when the reading matter was three
+pop-ups over it) lead to the About page too. The footer of the landing page is the navigation.
 
 ### Mission control
 
@@ -120,7 +123,7 @@ page load. Everything editable lives here.
 | Tab | Holds |
 |---|---|
 | **Messages** | The reply queue: awaiting reply · published · rejected · everything |
-| **Communication officer** | The **Commander Blog** at the top, then the officer's state |
+| **Commanding officer** | The **Commander Blog** at the top, then the officer's state |
 | **Science officer** | The **Daily Science Findings** at the top, then the state |
 | **Health officer** | The **Daily Health Blog** at the top, then the state |
 | **Habitat** | The daily schedule (a task with its name emptied is removed on save), the meals — Breakfast, Lunch, Dinner, Other — **Steps taken** and **Calories consumed** (one line per officer each, both written to `crew-figures.json`), the inventory levels, and the day's power figures (with the category names, editable in place) |
@@ -184,7 +187,7 @@ asks *Are you sure you want to reset?* and takes the word `RESET` typed into a b
 only wakes up once it has been typed, and the word is checked again on the server, so nothing
 can trigger it by accident. Then it starts the station again for the run:
 
-- **every Commander Blog slot is emptied** — `logbook.json` becomes one placeholder per day (communication officer only),
+- **every Commander Blog slot is emptied** — `logbook.json` becomes one placeholder per day (commanding officer only),
   for the crew to fill in during the mission;
 - **the crew's figures are emptied** — `crew-figures.json` loses its days; the health officer
   files each day's steps and calories, per officer, under Steps taken on the Habitat tab as the run goes;
@@ -256,9 +259,9 @@ each (see *The mission page*):
 |---|---|---|
 | **Daily Science Findings** (`#blog-science`) | the day's science findings — the `SCIENCE` note in `content/notes.json` | **Science officer** → Daily science findings |
 | **Daily Health Blog** (`#blog-health`) | the day's health activities — the `HEALTH` note in `content/notes.json` | **Health officer** → Daily health activities |
-| **Commander Blog** (`#blog-commander`) | the communication officer's **Daily Blog** — their entry in `content/logbook.json` | **Communication officer** → Daily Blog |
+| **Commander Blog** (`#blog-commander`) | the commanding officer's **Daily Blog** — their entry in `content/logbook.json` | **Commanding officer** → Daily Blog |
 
-**The Commander Blog is the communication officer's blog**, under the name the station gives
+**The Commander Blog is the commanding officer's blog**, under the name the station gives
 it; nothing else about that officer is renamed, and it is still written on their tab.
 
 **Each panel shows the current day's post, and only that.** The day is the one the schedule
@@ -328,7 +331,7 @@ the running station.
 | `templates.json` | The prefilled text of the daily health activities (the `Default` entry under `HEALTH`) |
 | `recipes.json` | The recipe book: twelve recipes (two measured, ten samples) with prep time and per-serving kcal, nutrients, CO₂e and water footprint — what the food plan's dropdowns offer (see *The recipe book*) |
 
-It ships with the plan and nothing invented: 13 Commander Blog slots (one a day, communication officer only)
+It ships with the plan and nothing invented: 13 Commander Blog slots (one a day, commanding officer only)
 with a cue each for the crew to write into, the typical daily schedule on every day (17 tasks ×
 13 days), an empty food plan (`meals.json` — each day's meals are chosen from the recipe book on the Habitat tab), nine tracked resources (their carried-in amounts and warning levels ship as
 0 — placeholders to be written into `crew-and-inventory.json` before the run, or the day-1 count
@@ -394,7 +397,7 @@ The station carries exactly three blogs, everywhere — the dashboard's Blogs ro
 
 | Blog | Who writes it | Where it is stored |
 |---|---|---|
-| **Commander Blog** | the communication officer, on their tab | `content/logbook.json` (COMMUNICATION OFFICER only) |
+| **Commander Blog** | the commanding officer, on their tab | `content/logbook.json` (filed under COMMUNICATION OFFICER) |
 | **Daily Science Findings** | the science officer, on their tab | `content/notes.json`, kind `SCIENCE` |
 | **Daily Health Blog** | the health officer, on their tab | `content/notes.json`, kind `HEALTH` |
 
@@ -409,11 +412,19 @@ station's own page, `/imprint` (`src/views/pages/imprint.js`), with ZKM's detail
 
 Two kinds of content, with a hard line between them.
 
+**The Commanding Officer.** The first officer is shown everywhere — the public pages in all
+three languages, mission control, the PDF record and the archive's exports — as the
+**Commanding Officer**, the same person in the same role (they relay and answer the messages
+from Earth). The station still files them under their old title, `COMMUNICATION OFFICER`: it is
+the key their Commander Blog, their daily figures, their mood and their answers are stored
+under, in `content/` and in the database, so nothing filed under it can be lost;
+`src/lib/officer.js` turns the stored title into the one on the page.
+
 **Preset, and edited in files.** The daily schedule, the meal plan and the inventory live in
 `content/` and are prepared in advance for the days of the run. They can also be edited on the
 matching tab of mission control, which writes into the same files.
 
-**Written daily, in the crew's voice.** The communication, science and health officers each
+**Written daily, in the crew's voice.** The commanding, science and health officers each
 have a daily blog entry and a state (mood and energy, two sliders). Both are filed from their
 tab in mission control — there is no separate terminal inside the habitat, and no second
 login. Entries go straight to the public crew log on the landing page, and the latest one
@@ -480,7 +491,12 @@ the page (HEIC, some MOV) is still whole and downloadable — the page says so.
 ## Photographs from the cloud
 
 Photographs kept on the ZKM cloud (`cloud.zkm.de`, a Nextcloud) are shown as a grid on
-**`/media`** — that page is the gallery and nothing else. The station server signs in with
+**`/media`** — that page is the gallery and nothing else, **day by day**: the pictures grouped by
+the day they were taken (read from the file's name, or its own date), the newest day first,
+each day under its head — the sol it was during the run in Mars orange, the day written out in
+the page's language (*Friday, 25 September 2026*), *Today* marked, how many pictures — and its
+pictures in a grid of rounded tiles, two to a row on a phone and as many as fit on a desk, the
+time each was taken under it. The station server signs in with
 the display account over **WebDAV**, checks the folder for new images on a set **frequency**
 (`CLOUD_CHECK_SECONDS`, fifteen minutes by default), follows its subfolders, and keeps a copy of every image it shows on the `station-data` volume under `/data/cloud`
 (beside a `manifest.json`), together with the preview Nextcloud renders for it. The browser
@@ -494,7 +510,8 @@ Everything is in **`.env`**: `CLOUD_URL` (default `https://cloud.zkm.de`), `CLOU
 empty for its root), `CLOUD_TITLE` (the heading, default *Gallery*), **`CLOUD_CHECK_SECONDS`**
 (the frequency — how often the folder is checked, and how often an open `/media` asks the
 station for the grid; a picture put in the folder is on every open page within about that
-long, with no reload, the same way the board updates) and `CLOUD_POLL=false` to hold the
+long, with no reload, the same way the board updates — tile by tile, a new day sliding in where
+it belongs) and `CLOUD_POLL=false` to hold the
 bridge off. Without user and password the
 bridge is off and the section is not on the page. Files over `CLOUD_MAX_MB` (default 60) are
 listed but not copied. The pages carry the **newest `CLOUD_MAX_FILES`** pictures (default 500 —
@@ -719,40 +736,123 @@ files do not hold.
 
 ---
 
-## The habitat, as a picture
+## The landing page: four pages in the glass dress
 
-Between the About row and the composer sits **the habitat dome** — a screen set into a pale slab,
-as the board is, but this screen is a sky: by day a grained sunrise from periwinkle at the top
-through lavender and peach to Mars orange at the floor; by night (the dark theme) the night,
-black and starred at the top, down through indigo to a band of gold and red at the horizon. The
-dome stands on it as translucent white glass — whiter at the apex than at the floor, the sky
-showing faintly through, a fine wireframe of facets that carry a whisper of shade, a soft
-shadow beneath — with a hexagon set into it for each system
-inside — the crew, the science lab, the water recycling loop, the hydroponic shelves
-(*Hydroponics*), the communication uplink, the power store, the nap pod and the bicycle
-(*Power generator*) — each named on a
-leader line beside the dome with its channel code, as every panel of the station is. The
-pictograms are traced from the mission's own icon set (`src/views/pages/dome-icons.json`). A
-hexagon turns orange under the hand, together with its name; a hexagon under the pointer stands still so it can be pressed, and pressing it (or its name, or on a
-phone the chip beneath the picture) opens a pop-up — headed by the hexagon itself — that says what that part of the habitat is
-and, in an orange **Now** line, what is happening in it at this minute: the task on the
-schedule, each officer's condition as words, the water and food stores and their days left, the
-latest exchange, today's kWh by category, the steps pedalled. The sentences are asked for again
-every twenty seconds from **`/api/dome`**, so a reply published from mission control or a figure
-filed on a tab reaches every open pop-up without a reload.
-**The hexagons float about the whole interior.** Each has a destination somewhere inside the
-shell — chosen evenly by height, so the top of the dome is visited as often as the wide floor,
-and away from where the others are heading — and glides towards it on a slow spring; arriving,
-it picks another. Two that would sit on each other on the screen ease apart. Each is projected
-with the dome's own camera and comes forward or recedes a little with depth. Its label follows:
-the leader is redrawn every frame, the name slides along its column to stay level with the
-hexagon, the names on a side keep clear of one another, and when a hexagon crosses to the other
-half of the dome its name crosses too, fading out on one side and in on the other. Everything
-stands still under `prefers-reduced-motion`, and without JavaScript the hexagons stand where
-the server placed them. `src/views/pages/dome.js` holds the
-geometry (a frequency-3 icosahedral dome, front faces only, computed once at start), the hexagons and their
-positions, the still text of each pop-up (`ABOUT`), and the one function that writes the
-live sentences for both the page and the API.
+The landing page keeps the layout of the design handoff of September 2026 — four pages, one
+under the other: the habitat, the note (`P02 / 04 · Note 00`) and then **the two parts the page is
+about**, each opening on a heading of its own — its page, which part it is in an orange pill
+(`P03 / 04` **Part 1 of 2**, `P04 / 04` **Part 2 of 2**), its name large and bold, a short orange
+rule — *The mission* and *Welcome to the World's Slowest Chat*, a line across the page setting
+the second apart from the first. It is drawn in the station's own dress: the drafting paper with
+its fine grid, cobalt ink, **frosted glass floating on soft shadows**, rounded cards and round
+pills, the orange keys, and the habitat as it was before (`src/views/pages/landing.js`,
+`dome.js`, `sky.js`; `public/aura.css`, `public/sheet.css`, `public/sky.js`). Dark is the
+default; by day the page is near-white and **the only grey on it is the habitat's sheet**, the
+grey of the reference sheet.
+
+**On a phone held upright the landing goes a page a swipe**, in the swipe's direction — the
+habitat, the name and the note, the mission, the chat, then the foot (CSS scroll snapping, each
+page a stop the scroll cannot fly past). Each page fills the screen between the header and the
+bar of keys (with the browser's own bars folded away, as they are once the page is scrolled); a
+page that does not fit as drawn is set a little closer, and one that still does not (a small
+phone, a long language, the chat's three steps) stops at each of its parts as well — the note,
+the second chapter, the card of steps and each step after the first — so nothing on it is passed
+over; two stops closer than a flick of the thumb become one (`public/sky.js` measures and marks
+them). A mouse wheel or a touchpad in a window that narrow turns one stop a turn. While a pop-up
+is open the page stays where it is. **On a desk the page scrolls freely**, each page about a
+window tall with its cards in the middle and air around them, a margin at both sides as before.
+
+- **P01, the habitat.** On a desk the name comes first, in a low band across the top: the
+  wordmark *MARS!platz*, the run at the right — its dates in Mars orange, the thirteen sols, and
+  *opens in N days* before the run (*SOL 05 of 13* during it) — and *Communication Station ·
+  ZKM | Hertzlab* under it; then the habitat, the dome kept to a moderate size so the sky around
+  it has room. **On a phone the habitat has the whole first screen to itself**, the width of the
+  screen and its height between the header and the bar of keys; the name opens the next page.
+  **The habitat** stands on a **sheet drawn after a sequencer's layout sheet**: ruled in the
+  run's thirteen sols, four fine lines to each, a ruler of their numbers across the top, and **the
+  day of the performance** marked — its number in Mars orange and **an orange line down its
+  column** from under the number to the ground line (moved on at midnight; before and after the
+  run there is none); tracks across it, dashed, doubled, dotted, one carrying a wave, one a square
+  wave, one a row of steps; one small figure of the station's own, the crew and the sol (no
+  Earth–Mars distance on the habitat). **The dome** is filled with colour rim to rim — a pale blue
+  at its left edge, ultramarine, violet, red and orange at its right, a little lighter towards
+  the crown — spilling softly past the rim onto the sheet; it is glass over it: white lines of a
+  geodesic wireframe, a thin sheen whiter at the crown.
+- **The keys.** The eight parts of the habitat — the crew, the science lab, the water recycling
+  loop, the growing shelves (*Hydroponics*), the uplink (*Communication*), the power store
+  (*Power*), the *Nap pod* and the bicycle (*Power generator*) — are round keys with line icons,
+  white by day and dark by night, each with its name on a tag beneath it on a wider screen (a
+  phone shows the icons alone). They **float about the dome**: each glides on a slow spring
+  towards a destination inside the shell, and two that would sit on each other ease apart; a key
+  under the hand, or with its pop-up open, stands still and turns cobalt. Pressing one opens its
+  **pop-up** — what that part of the habitat is and, after **Now**, what is happening in it at
+  this minute (the task on the schedule, each officer's condition as words, the stores and their
+  days left, the latest exchange, today's kWh, the steps pedalled), asked for again every twenty
+  seconds from **`/api/dome`**. It opens in the room above the dome, on a phone too, fading in.
+- **The sky over the dome.** On the sheet around the dome the newest exchanges with Earth come
+  and go one after another — a visitor's question under its callsign and time, the crew's
+  answer under ✧ and the officer, **the words in white** as the reference's labels are (by day
+  with a soft dark edge), a track drawn under them — and the **newest pictures from the cloud
+  folder** appear as small snapshots, grey as print until the hand is on them, each under the
+  moment it was taken as its file name writes it (`greenhouse_trays_2026_09_25-16-41.jpg` →
+  *25.09.2026 · 16:41*; the file's own date when the name has none); a press opens the picture.
+  Each **fades in, stands and fades out — nothing moves** (the fade stays even where a phone
+  asks for less motion: it is not a movement) — and **comes somewhere else each time, on the
+  sheet's grid**: starting on a column's line, as wide as a whole number of columns (a snapshot
+  five on a phone, two on a desk; a line as wide as its words, up to nine or four), inside the
+  sheet, **clear of the dome and of everything else in the sky** — every line and snapshot still
+  there, even while it fades, and the sheet's small figure — and away from where the last few
+  were. No place free: that turn passes. **Nothing in the sky is ever drawn over anything
+  else.** Only published exchanges — the board's own — never a message still waiting for
+  mission control or one it turned down; a sky with nothing to show stays empty. The sky asks for
+  nothing on its own: the board is read again only when the dome's refresh says there is a new
+  exchange, and the snapshots follow the Habitat panel's strip of pictures that
+  `public/cloud.js` keeps current (`sky.js`, `public/sky.js`).
+- **The line under the dome.** The sheet ends at the ground line the dome stands on — its columns,
+  tracks and the day's line with it — and under it lies its floor, plain, carrying one line that
+  always says something and turns every six seconds: what the crew are doing now (the header's
+  running line has it), the signal's one-way time, the habitat's latest reading, the sol (or the
+  countdown before the run), the last three answered exchanges — question, then answer — and a
+  few older published messages, picked afresh for every page. An exchange the sky is showing at
+  that moment is passed over (`underLine()` in `landing.js`, `public/sky.js`). On a desk the
+  hint *Press a part of the habitat to see what is happening in it* stands beside it.
+- **P02, the note**, on a card of glass: *MARS is a durational performance in which three
+  officers live inside the habitat for thirteen consecutive days* — and what this website is for.
+  On a phone the page opens with the station's name — the wordmark, *Communication Station ·
+  ZKM | Hertzlab* and the run (*Thu 15 – Tue 27 Oct 2026 · 13 sols in the habitat · opens in N
+  days*) — with room around it.
+- **P03, part 1 of 2: the mission.** Two chapters, each a card of glass with its photograph in a
+  rounded frame: **01 Three astronauts land on Mars** — *On 15 October, three astronauts enter
+  the Habitat at MARS!platz: a Commanding Officer, a Science Officer and a Health Officer. Life
+  on Mars becomes the experiment.* (the date is the run's first day) — and **02 Life on Mars
+  becomes the experiment** — *Inside the Habitat, the crew lives under the conditions of a
+  long-duration mission: isolation, limited space and resources. Each day brings new experiments
+  — from growing food to resource management, EVAs, mental health, governance and understanding
+  how people live together in an unfamiliar environment.* The photographs are the production's
+  own (`public/mission/mission-01.jpg`, the astronaut before the golden habitat;
+  `mission-02.jpg`, the astronaut in red light at the foil wall). **On a phone both chapters are
+  on one screen**: the photograph at the chapter's side, taking turns left and right, the number
+  and the title beside it, the text beneath; on a wider screen they stand side by side, each
+  photograph with Mars glowing behind it and the chapter's subjects beside it as pills.
+- **P04, part 2 of 2: the world's slowest chat.** Its heading with the welcome under it — *Every
+  day at 16:00, the Habitat opens its communication window…* — and no photograph; then what
+  becomes of a message in three steps on one card of glass, each step's sign in a small tinted
+  disc of its own colour — Earth's blue, the crossing's violet red, Mars orange — on a dashed
+  thread: **01 Uplink** *Send a message* (the visitor's words in a bubble under their own
+  callsign), **02 Transit** *Signal in transit*, **a dot crossing from Earth to Mars** in the
+  time the station takes (`TRANSIT_SECONDS`), the way it has come lit behind it, with today's
+  distance and light-time — the page moves it itself, frame by frame, so a phone set to less
+  motion (or saving power) still sees the signal on its way — **03 Downlink** *Crew response* —
+  the crew answering from **16:00** every day of the run (`WINDOW_TIME` in `landing.js`),
+  written with the venue's zone of the day, CEST until the clocks go back on 25 October, CET
+  after. On a phone the page ends in the orange key **Write to the crew →** (the messages page,
+  composer open); on a wider screen the portal and the dashboard follow instead.
+
+**On a wider screen** the first screen is P01: the name in its band, then the habitat the width
+of the page with the sky around the dome, and the line under it. Then the note in two columns,
+the two chapters side by side, the chat's heading and welcome and the three steps in a row, each
+page about a window tall. Then the portal — the composer and the board — and the dashboard, as
+before.
 
 ## Communication is the point
 
@@ -892,30 +992,58 @@ not an afterthought:
 - there is a print stylesheet, because the archive is the artwork and somebody will
   eventually want it on paper
 
-**A phone held upright** (up to 760 px across, more than 520 px tall) gets its own chrome on
-the public pages, drawn from the same markup — nothing is served twice, and the desk and a
-phone held sideways are untouched (the block at the end of `public/aura.css`):
+**Every public page opens with the same header**, which stays at the top of the window: a row
+with the wordmark (the way home), the run's badge with its pulsing dot — the countdown before
+the run, the sol during it —, the habitat's clock, the round theme key, the language (the
+current one filled, the others under it) and, on a wider screen, the three-lines menu at its
+right end (About, What this is, Who we are); under it the **running line** — what the crew are
+doing, what is next, the habitat's latest reading, and *Communication window daily 16:00*
+(`ticker()` in `src/views/pages/public.js`). Anything a link brings into view lands under it
+(`scroll-padding-top` on the root). It is a band of frosted glass, its keys round pills — the
+theme key, the language in cobalt, the menu an orange key — and the page scrolls under it.
 
-- the ticker becomes a **top bar that stays**: the wordmark, the sol as a pill with the live
-  dot (the countdown before the run), the habitat's clock, the theme and language switches,
-  and the running line as a second row beneath them. Its three-lines button is hidden; what
-  it opened is reached from the bar at the foot. Anything a link brings into view — the
-  portal, the dashboard, a folder, a day of the booklet or of the log — lands under the bar
-  (`scroll-padding-top` on the root), and `public/folder.js` places the index under it.
+**A phone held upright** (up to 760 px across, more than 520 px tall) gets its own chrome on
+the public pages, drawn from the same markup — nothing is served twice (the phone blocks of
+`public/aura.css` and `public/sheet.css`):
+
+- the header's row keeps to one line — the menu button is hidden; what it opened is reached
+  from the bar at the foot — and `public/folder.js` places the dashboard's index under it.
 - a **bar of five keys fixed at the foot** — Home, Dashboard, Write, Media, About — with
-  Write raised in orange (`tabbar()` in `src/views/layout.js`, `public/tabbar.js`). Each key
-  is a page and the lit key names the page you are on. **About** opens
-  the ticker's menu as a sheet from the foot — About, What this is, Who we are, each with
-  its sign; the reading pop-ups open as sheets too.
-- the station page keeps the wordmark, the lead, the **two doors** — Write to the crew and
-  Live Mission Dashboard, side by side in one row under the lead, each a pill of two lines
-  — the habitat, and then the foot: nothing else. The masthead's rows stand a little closer
-  than on a desk (the wordmark 50 px, the lead at 1.45 lines), so that on a 360 × 744 screen
-  — a common phone with the browser's own bar showing — the doors and the whole habitat are
-  on the first screen above the keys.
+  Write raised as an orange disc with a paper plane (`tabbar()` in `src/views/layout.js`,
+  `public/tabbar.js`). Each key is a page and the lit key, in blue, names the page you are on.
+  **About** opens the About page — About, What this is and Who we are, one after another.
+- the station page is its four pages, **a swipe from one to the next** — the habitat alone on
+  the first screen, with its sky and the line under the dome; the station's name and the note;
+  part 1, the mission's two chapters together on one screen; part 2, the world's slowest chat,
+  ending in the orange key **Write to the crew →** — and then the foot (see *The landing page:
+  four pages in the glass dress*). The portal and the dashboard are pages of their own. The
+  pages keep air between them and around their words: the cards are set in from the edge of the
+  glass, the reading text is at the reading size and spacing, and nothing a visitor reads is
+  drawn over anything else.
+- the dashboard page leaves out the strip of live pictures at its head: they rise over the
+  habitat and fill the Media page (the strip stays in the page, unshown, for the sky to follow).
+- the **running line runs** whatever the phone does: on a phone the page moves it itself, a
+  little every frame, rather than leaving it to the stylesheet's animation — which a phone's
+  browser can hold still in more than one way (a tap leaves the line "hovered", the setting for
+  less motion, a saver mode) — at a steady pace, gentler where less motion is asked for, and
+  resting while the page is out of sight (`ticker()` in `src/views/pages/public.js`).
+- **the type is set to be read**: the sizes are five variables at the head of
+  `public/aura.css` — the smallest thing written (a ruler's numbers, a stamp), the small capitals
+  that name things, a second line, the name of a thing in a list, reading text — a little larger
+  on a phone; the charts' figures (the habitat's instruments, the trend graph, the hardware's
+  charts, the booklet's day charts) are given back that size on the screen whatever the chart's
+  scale, and on a phone the trend graph is drawn at its real width with the names of its lines
+  in a legend beneath it (`public/habitat.js`).
+- **the habitat** at a phone's width fills the first screen: its sheet the width of the screen
+  and the height between the header and the bar of keys, the sky over the dome — the lines and
+  snapshots coming and going on the sheet's grid, never over one another — the dome as wide as
+  the page, its keys icons only, and under the ground line the floor with the line under the
+  dome; a key's pop-up opens over the dome. The sky runs only while the habitat is on the
+  screen, and the page's small print — the snapshots' times among it — never goes under the
+  type floor below.
 - the **dashboard is a page of its own, `/dashboard`** (`dashboardPage()` in
   `src/views/pages/public.js`, built from the same data as the station page): the bar's
-  Dashboard key, the second door and the dome's keys all lead there
+  Dashboard key and the dome's pop-ups all lead there
   (`public/tabbar.js`), a link into a panel — `/dashboard#galley` — opening its folder.
   Its index is **two rows of tabs**: a segmented control of the three tracks (Habitat ·
   Today · Blogs) and, beneath it, that track's three folders as underlined tabs; both stay
@@ -924,8 +1052,8 @@ phone held sideways are untouched (the block at the end of `public/aura.css`):
 - the portal's head puts the one-way signal small at the right of the title, so the
   composer's Transmit key is on the portal's first screen.
 - the portal — the composer and the board — is a **page of its own, `/messages`**
-  (`messages()` in `src/views/pages/public.js`): the station page drops it and its first
-  door and the bar's Write key lead there (`public/tabbar.js`). On that page the board is the page: its filter chips stick
+  (`messages()` in `src/views/pages/public.js`): the station page drops it, and the door at
+  the foot of the sheet and the bar's Write key lead there (`public/tabbar.js`). On that page the board is the page: its filter chips stick
   under the top bar in one sideways row, the exchanges flow beneath — twenty of the current
   view at a time, a **Show more** key beneath them bringing the next twenty
   (`public/board.js`) — and the composer is a **pop-up over the foot of the screen**, above
@@ -959,8 +1087,8 @@ phone held sideways are untouched (the block at the end of `public/aura.css`):
   jumps; the fresh form afterwards has its own size again. Without JavaScript the pop-up
   simply stands there.
 - the page's side margin is 16 px rather than the desk's proportional gutter.
-- **the paper dress** (the last block of `public/aura.css`): the same design drawn without what
-  costs a phone the most. The surfaces are opaque paper instead of blurred glass — a backdrop
+- **the paper dress** (the last phone block of `public/aura.css`): the same design drawn without
+  what costs a phone the most. The surfaces are opaque paper instead of blurred glass — a backdrop
   blur is redrawn every frame, and eight of them shared one screen — the film grain is not
   blended over the screen, the habitat's keys carry a stroke instead of an SVG filter, every
   panel has one short shadow instead of three, the running line is clipped instead of masked,
@@ -971,15 +1099,24 @@ phone held sideways are untouched (the block at the end of `public/aura.css`):
 
 ## Visual language
 
-A soft instrument. A pale grey ground lit from above; the things you touch are raised off it as
-pale slabs with deep, soft shadows; the things you read are dark glass screens set into them.
-One orange, kept for what is live, what is Mars, and what wants pressing.
+**Glass floating over drafting paper** (`public/aura.css`, with the new layout drawn in the same
+dress by `public/sheet.css`, loaded last on every public page): a pale paper ruled in a fine
+cobalt grid by day, a near-black one with a few stars by night, a warm light behind the habitat
+and a cool one at the foot of the page, a film of grain over it all. What is read or touched
+**floats** on it — the panels, the cards, the header, the pop-ups are frosted glass with rounded
+corners and soft, deep shadows beneath; the keys are **round pills**, outlined in cobalt, the one
+that is on filled; the actions are **orange** keys with a glow under them (*Write to the crew*,
+*Transmit*, the menu). Cobalt is the ink by day; Mars orange marks codes, stamps and the run;
+the habitat's colour is the one great glow of the page. The station is dark until a visitor
+chooses light (*Light and dark*). Nothing a visitor reads is drawn under the type floor at the
+head of `public/aura.css` — the handoff's smallest labels are set at that floor rather than at
+its 7.5–10 px, the bar of keys' names and the language key with them.
 
 The parts are working parts, not decoration:
 
-- **The composer is a device.** An orange LED, a ribbed orange grip at the top edge, a knob and
-  a row of vents; then the operator's callsign in an inset chip and the channel it writes on
-  (`CH-09 · UPLINK`). The writing surface is an inset well; the one orange button transmits.
+- **The composer is a device.** An orange light (it pulses while a message crosses), a ribbed
+  orange grip at the top edge, a soft knob and a row of vents; then the operator's callsign and
+  the channel it writes on (`CH-09 · UPLINK`). The one orange key transmits.
 - **The board is a second slab.** A pale raised panel beside the composer, nearly its width, so
   the correspondence gets as much room as the writing: callsigns in orange, the crew's replies
   in orange with a `✧`, an orange scrollbar, the counts and the filter chips in the foot.
@@ -992,19 +1129,22 @@ The parts are working parts, not decoration:
   switch — are a row of small inset pills under the wordmark.
 - **Channel tags** still stamp every panel with the data channel it renders, now as a small
   grey code in the corner.
-- **The foot** (`foot()` in `src/views/layout.js`) carries the wordmark, two keys — *Privacy
-  policy*, to zkm.de/en/privacy-policy, and *ZKM*, to zkm.de — and the house's name,
-  nothing else; the pages are reached from the bar of keys, the ticker's menu and the doors.
+- **The foot** (`foot()` in `src/views/layout.js`) carries the wordmark, three keys — *Privacy
+  policy*, to zkm.de/en/privacy-policy, *ZKM*, to zkm.de, and the *Imprint* — and the house's
+  name, nothing else; the pages are reached from the bar of keys and the header's menu. It takes
+  the theme's colours: **by night a dark card** with two lights in it, Mars orange rising at its
+  left foot and a teal light at its right, the words in white; **by day a pane of light glass**,
+  white going over into peach, the same orange glow at its left foot, the words in ink and the
+  keys drawn in cobalt.
   On a phone held upright it is a low band the width of the page: the wordmark and the house
   at the left, the two keys one above the other at the right.
 - **The one-way signal time is read where a message is written** — the messages page's head,
   the composer's crossing, the `/communicate` fallback — and nowhere else: the ticker, the
-  foot, the About panel and the mission-complete page leave it out (the About text still
+  foot, the About page and the mission-complete page leave it out (the About text still
   explains the compressed crossing in a sentence).
 - **Empty states** are dashed wells rather than crossed boxes.
 
-Orange is the only colour. It marks Mars, live state, and anything wanting action. Status is
-still carried by **symbol** as well — filled centre is nominal, single bar is caution, crossed
+Status is carried by **symbol** as well as colour — filled centre is nominal, single bar is caution, crossed
 ring is out of range, empty ring is no signal — so it survives print and colourblindness.
 
 Type is ZKM Serendipity throughout the station — the wordmark, headings, every code, label
@@ -1116,8 +1256,8 @@ a label, a unit, a channel code and thresholds.
 The landing page opens on the **MARS!platz** wordmark on the grey ground, one line beneath it,
 and the station's readings as a row of pills on the right; there is no photograph and no black
 rail. (`public/hero.jpg` is no longer referenced and can be deleted.) About · What this is ·
-Who we are open from the ticker's menu as reading dialogs on solid paper (nothing of the page
-shows through the text; the dome's small pop-ups keep their glass). The landing page
+Who we are are a page of their own, `/about`, which the ticker's menu leads to, a row to each
+part. The landing page
 carries no top bar; its navigation lives in the dark footer slab. Subpages keep the status rail
 and **Mission · Messages · Crew log · About**.
 
@@ -1128,7 +1268,8 @@ third attempt" — switching to the next as its time comes), what is next, the n
 reading (or *no current reading*). Every five minutes it fetches
 the day's schedule again from `/api/ticker`, so an edit made in mission control — or midnight
 turning to a new day — reaches every open phone without a reload. It scrolls like a wire
-ticker, holds while hovered, and stands still under reduced motion.
+ticker and holds while a mouse rests on it; under reduced motion it stands still on a desk and
+drifts more slowly on a phone, and a tap on a phone never holds it.
 
 **The ticker is always now.** Before 15 October it counts down, to the second, to 00:00 at
 the venue on the first day. The moment that instant passes — and likewise when **Reset to 15
@@ -1251,11 +1392,12 @@ kept as written.
 
 ## Light and dark
 
-Light is the default, matching the reference. The toggle is the last pill in the masthead
-readings (the last cell of the rail on the inner pages) and is remembered in a cookie, resolved
-on the server and applied to `<html>` before first paint — no flash of the wrong ground on
-load. Dark turns the ground to charcoal and keeps the same orange, the same raised slabs and
-the same soft shadows, deeper.
+**The station is dark.** Every visitor first sees it by night — the near-black paper with its
+few stars, the glass smoked, the ink light, the habitat's sheet a dark grey under the dome's
+colour — whatever their phone or computer is set to. The theme key in the header (*Light*)
+turns it to day, and the choice is remembered in a cookie (`mcs_theme`) and resolved on the
+server, so there is no flash of the wrong ground; the key (*Dark*) turns it back. A visitor
+who declines cookies keeps the dark. Mission control's switch follows the same rule.
 
 ## Three phases
 
@@ -1347,7 +1489,7 @@ computed, 0.37272 au actual). The station keeps working if the venue loses its c
 2. Set `CONTROL_PASSWORD`, `SENSOR_TOKEN` and `IP_SALT`.
 3. Set `SECURE_COOKIES=true` if serving over HTTPS.
 4. Replace the placeholder credits in `src/views/pages/info.js` (`CREDITS`, production and
-   contact blocks on `/who-we-are`).
+   contact blocks under Who we are on the About page, `/about#who-we-are`).
 5. Check all thirteen days on the landing page's **whole mission** fold — every day ships written
    in `content/`; change anything there or on the matching tab in mission control.
 6. Walk whoever will sit at mission control through `/control` once: the queue, Ctrl+Enter,
@@ -1370,7 +1512,8 @@ nothing else: no account, no name. The same browser gets the same callsign back 
 as the cookie lasts; a cleared browser, private window or second device is a new visitor.
 Unused callsigns are pruned after seven days. The station asks before setting it: on first
 contact every public page carries the **cookie question** (`consent()` in
-`src/views/layout.js`, `POST /consent`), a card at the bottom centre of the page that greets the visitor by the
+`src/views/layout.js`, `POST /consent`), a card over the page — at its head a strip of night with
+the stars drifting and a dashed orbit round *Incoming transmission* — that greets the visitor by the
 callsign they will keep (*Welcome OXIDE-569*: the name is picked on arrival and is the one the composer shows and a
 first message is sent under) and says why to accept, with **Learn more** (the ZKM privacy policy, in a new
 tab, the card stays) and **Agree and close**. Until it is answered a page view sets no cookie at all and the composer
@@ -1430,7 +1573,15 @@ src/
   routes/control.js      all admin write paths
   routes/media.js        the public media pages and downloads
   views/                 server-rendered templates
-  views/pages/dome.js    the habitat dome: geometry, hexagons, callouts, and /api/dome's figures
-public/                  stylesheet + the page scripts (board, composer, habitat, media, entry editor)
+  lib/officer.js         the first officer's title as shown (Commanding Officer; stored as COMMUNICATION OFFICER)
+  views/pages/landing.js the landing page's four pages: the name, P02 the note, P03 part 1 (the mission's two
+                         chapters), P04 part 2 (the slowest chat), and the line under the dome
+  views/pages/dome.js    the habitat: the dome filled with its colour, its floating keys, the pop-ups, /api/dome's figures
+  views/pages/sky.js     the sky over the dome (the newest exchanges and pictures) and the sequencer sheet under it
+                         (public/sky.js places them on the grid and fades them in and out, moves the day's line,
+                         turns the line under the dome, moves the signal in transit and pages a phone's scroll)
+  views/pages/info.js    the About page: About, What this is, Who we are
+public/                  the stylesheets (station.css, aura.css, sheet.css over them), the page scripts (board,
+                         composer, habitat, media, sky, entry editor) and the chapters' photographs (mission/)
 tools/                   sensor simulator, mock Home Assistant, backup script, media verifier, end-to-end test
 ```

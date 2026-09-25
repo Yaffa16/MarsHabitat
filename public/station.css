@@ -2336,7 +2336,7 @@ body.landing.inner .cloud-gallery:first-child { margin-top: 26px; }
 .tk-clock-label { font-size: 8.5px; opacity: .8; }
 .tk-window { flex: 1; min-width: 0; overflow: hidden; display: flex; align-items: center; }
 .tk-track { display: inline-flex; white-space: nowrap; animation: tk-run 40s linear infinite; will-change: transform; }
-.tk-window:hover .tk-track { animation-play-state: paused; }
+@media (hover: hover) and (pointer: fine) { .tk-window:hover .tk-track { animation-play-state: paused; } }   /* a real pointer resting on the line holds it; a tap on a phone (whose :hover then sticks) does not */
 .tk-line { display: inline-flex; align-items: center; padding-right: 48px; }
 .tk-cell { padding: 10px 0; white-space: nowrap; }
 .tk-cell b { color: var(--orange); font-weight: 600; }
@@ -2685,3 +2685,6 @@ textarea.ed-source:focus { outline: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .dome-hex-body, .dome-hex polygon { transition: none; } }
 @media print { .dome-screen { background: #fff; box-shadow: none; } .dome-screen::before, .dome-screen::after { display: none; } .dome-popup { display: none; } }
+/* the sky over the dome and the world's slowest chat (sky.js, slowchat.js) are drawn only in the landing page's own dress
+   (aura.css) — without that stylesheet the page is as it was */
+.dome-sky, .dome-seq, .slow-chat { display: none; }

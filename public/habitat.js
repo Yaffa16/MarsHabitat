@@ -128,6 +128,50 @@
     for (var k in (extra || {})) a[k] = extra[k];
     return el('svg', a);
   }
+  /* The text in a drawing is set in the drawing's own units, and a drawing is scaled to the room it is given — on a phone
+     to half its size or less, and its figures with it. fitText sets every text of a drawing to the size it is to be read at
+     on the screen (the page's --fs-tag, never smaller than it was drawn); in a drawing stretched to its box
+     (preserveAspectRatio none) the text is unstretched as well. Labels that would then run into each other along one line
+     (a scale's numbers on a narrow tile) are thinned, the first and the last always kept. Run again whenever the drawing
+     is redrawn or the page is resized. */
+  function readPx() { return parseFloat(getComputedStyle(document.body).getPropertyValue('--fs-tag')) || 11; }
+  function fitText(svg, px) {
+    if (!svg || !svg.getScreenCTM || !svg.isConnected) return;
+    var m = svg.getScreenCTM(); if (!m) return;
+    var sx = Math.sqrt(m.a * m.a + m.b * m.b), sy = Math.sqrt(m.c * m.c + m.d * m.d);
+    if (!(sx > 0) || !(sy > 0)) return;                                           // not drawn (a folder not open): next time
+    px = px || readPx();
+    svg.style.overflow = 'visible';                                               // a label enlarged at a scale's end may pass its edge by a little
+    var texts = [].slice.call(svg.querySelectorAll('text'));
+    texts.forEach(function (t) {
+      if (t.__drawn == null) t.__drawn = parseFloat(getComputedStyle(t).fontSize) || 9;
+      var fs = Math.max(t.__drawn, px / sy);
+      t.style.fontSize = fs.toFixed(2) + 'px';
+      var x = parseFloat(t.getAttribute('x')), y = parseFloat(t.getAttribute('y'));
+      if (Math.abs(sx - sy) / sy > 0.02 && isFinite(x) && isFinite(y)) {
+        var k = sy / sx;
+        t.setAttribute('transform', 'translate(' + x + ' ' + y + ') scale(' + k.toFixed(4) + ' 1) translate(' + -x + ' ' + -y + ')');
+      } else t.removeAttribute('transform');
+      t.style.visibility = '';
+    });
+    // along each line of labels (the same baseline), a label that would touch the one before it is left out
+    var rows = {};
+    texts.forEach(function (t) { var y = t.getAttribute('y'); if (y != null) (rows[Math.round(parseFloat(y))] = rows[Math.round(parseFloat(y))] || []).push(t); });
+    Object.keys(rows).forEach(function (k) {
+      var row = rows[k]; if (row.length < 3) return;
+      var boxes = row.map(function (t) { return { t: t, r: t.getBoundingClientRect() }; }).sort(function (a, b) { return a.r.left - b.r.left; });
+      var last = boxes[0].r, end = boxes[boxes.length - 1];
+      for (var i = 1; i < boxes.length - 1; i++) {
+        var b = boxes[i];
+        if (b.r.left < last.right + 6 || b.r.right > end.r.left - 6) b.t.style.visibility = 'hidden';
+        else last = b.r;
+      }
+    });
+  }
+  function fitAll(scope) {
+    [].forEach.call((scope || document).querySelectorAll('.hw-chart svg, .gauge.round svg'), function (svg) { fitText(svg); });
+  }
+
   function chan(k) { return CHANNELS.find(function (c) { return c.key === k; }); }
   function isHot(ch, v) { return ch.alertAbove != null && v !== null && v > ch.alertAbove; }
   function scaler(ch, h, padTop, padBottom) {
@@ -168,8 +212,8 @@
         x2: C + Math.cos(a0) * (R0 - (q ? 18 : 14)), y2: C + Math.sin(a0) * (R0 - (q ? 18 : 14)),
         stroke: HAIR, 'stroke-width': q ? 1.4 : 1
       }));
-      if (q) {
-        var lx = C + Math.cos(a0) * (R0 - 28), ly = C + Math.sin(a0) * (R0 - 28);
+      if (q && h % 12 === 0) {                                                    // midnight and noon: the figure in the middle takes the width
+        var lx = C + Math.cos(a0) * (R0 - 30), ly = C + Math.sin(a0) * (R0 - 30);
         var lbl = el('text', { x: lx, y: ly + 3, 'text-anchor': 'middle', fill: INK, opacity: '.45',
           'font-family': '"ZKM Serendipity", ui-monospace, monospace', 'font-size': '9', 'letter-spacing': '.08em' });
         lbl.textContent = (h < 10 ? '0' : '') + h;
@@ -178,7 +222,7 @@
     }
 
     var pts = view.filter(function (r) { return r.co2 !== null; });
-    if (!pts.length) { host.appendChild(svg); return; }
+    if (!pts.length) { host.appendChild(svg); fitText(svg); return; }
     if (pts.length > 144) {
       var stride = Math.ceil(pts.length / 144);
       pts = pts.filter(function (_, i) { return i % stride === 0 || i === pts.length - 1; });
@@ -205,6 +249,7 @@
       svg.appendChild(el('circle', { cx: x2, cy: y2, r: newest ? 5.5 : 3, fill: col, opacity: newest ? 1 : 0.9 }));
     });
     host.appendChild(svg);
+    fitText(svg);
 
     var last = vals[vals.length - 1];
     var hotNow = isHot(ch, last);
@@ -254,6 +299,7 @@
       }
     }
     host.appendChild(svg);
+    fitText(svg);
 
     if (val !== null) {
       $('tempVal').innerHTML = val.toFixed(ch.decimals) + '<em>°C</em>';
@@ -288,6 +334,7 @@
       svg.appendChild(t);
     }
     host.appendChild(svg);
+    fitText(svg);
     if (val !== null) $('humVal').innerHTML = val.toFixed(ch.decimals) + '<em>%RH</em>';
   }
 
@@ -358,6 +405,7 @@
       svg.appendChild(t);
     });
     host.appendChild(svg);
+    fitText(svg);
     if (val !== null) {
       var hotNow = isHot(ch, val);
       $('iaqVal').innerHTML = val.toFixed(ch.decimals) + '<em>IAQ</em>';
@@ -598,20 +646,25 @@
   }
 
   function narrow() { var h = $('hbt-tcharts'); return !!h && h.clientWidth > 0 && h.clientWidth < 700; }
+  /* On a desk the graph is drawn in a box 1200 wide and scaled to the panel (about its own size), every line named at its
+     right-hand end. On a phone it is drawn at the width it is shown at — one unit a pixel, so its figures are read at the
+     size they are set — with the sols along the foot as their numbers, and the names of the lines in a legend under it
+     (renderTrends), where a touch on a name lifts its line. */
   function drawAll(series, win) {
-    // A phone gets a squarer drawing, so the graph is not a ribbon.
-    // The right margin holds a name at the end of every line, and the drawing
-    // grows taller with the number of lines so every name has a row of its own.
+    var slim = narrow(), host = $('hbt-tcharts');
     var visible = series.filter(function (s) { return !hidden[s.id] && s.lo !== null; }).length;
-    var padL = 40, padR = narrow() ? 130 : 190, padT = 16, padB = narrow() ? 30 : 40;
-    var rowH = narrow() ? 15 : 14;
-    var W = narrow() ? 640 : 1200, H = Math.max(narrow() ? 400 : 360, visible * rowH + padT + padB + 8);
-    var labelFont = (narrow() ? 12 : 11) + 'px ui-monospace, Menlo, Consolas, monospace';
+    var W = slim ? Math.max(260, Math.round(host.clientWidth)) : 1200;
+    var padL = slim ? 38 : 50, padR = slim ? 10 : 250, padT = slim ? 14 : 18, padB = slim ? 34 : 50;
+    var rowH = 17;
+    var H = slim ? Math.round(Math.min(320, Math.max(220, W * 0.72))) : Math.max(380, visible * rowH + padT + padB + 8);
+    var labelFont = '13px ui-monospace, Menlo, Consolas, monospace';
+    var axisPx = slim ? readPx() : 13, datePx = 12, tagPx = slim ? readPx() - 1 : 11.5;
     var n = win.total;
     var x = function (i) { return padL + (n === 1 ? (W - padL - padR) / 2 : (i / (n - 1)) * (W - padL - padR)); };
     var y = function (p) { return padT + (H - padT - padB) * (1 - Math.min(100, Math.max(0, p)) / 100); };
 
-    var svg = svgRoot(W, H, { 'class': 'tchart-svg tone' + (narrow() ? ' narrow' : ''), role: 'img', 'aria-label': win.run ? 'Every trend across the ' + n + ' days of the run' : 'The habitat over ' + n + ' days before the run' });
+    var svg = svgRoot(W, H, { 'class': 'tchart-svg tone' + (slim ? ' narrow' : ''), role: 'img', 'aria-label': win.run ? 'Every trend across the ' + n + ' days of the run' : 'The habitat over ' + n + ' days before the run' });
+    if (slim) { svg.setAttribute('width', W); svg.style.width = W + 'px'; svg.style.height = H + 'px'; }
     var defs = el('defs', {});
     svg.appendChild(defs);
 
@@ -619,34 +672,41 @@
     [0, 25, 50, 75, 100].forEach(function (p) {
       var gy = y(p);
       svg.appendChild(el('line', { x1: padL, x2: W - padR, y1: gy.toFixed(1), y2: gy.toFixed(1), 'class': 'tgrid' + (p === 0 ? ' base' : '') }));
-      var t = el('text', { x: padL - 8, y: (gy + 3).toFixed(1), 'text-anchor': 'end', 'class': 'taxis-t' });
+      var t = el('text', { x: padL - 8, y: (gy + 4).toFixed(1), 'text-anchor': 'end', 'class': 'taxis-t', style: 'font-size:' + axisPx + 'px' });
       t.textContent = p + '%';
       svg.appendChild(t);
     });
     // today's column, faintly
     var onAxis = win.today >= 1 && win.today <= n;
     if (onAxis) svg.appendChild(el('rect', { x: (x(win.today - 1) - 10).toFixed(1), y: padT, width: 20, height: H - padT - padB, 'class': 'ttoday' }));
-    // SOL 1–14 along the foot, the date in small type beneath each; today's
-    // in orange with a tag above it. A phone drops the dates to fit.
+    // The sols along the foot: on a desk "SOL 01" with the date beneath each, on a phone the number alone (every other one
+    // where the day is narrower than a number), today's in orange with a tag above it.
+    var every = slim && (W - padL - padR) / Math.max(1, n - 1) < 22 ? 2 : 1;
     for (var i = 0; i < n; i++) {
       var isTodayCol = i + 1 === win.today && !frozen();
+      if (slim && i % every && !isTodayCol && i !== n - 1) continue;
       var anchor = i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle';
-      var tx = el('text', { x: x(i).toFixed(1), y: H - (narrow() ? 9 : 16), 'text-anchor': anchor,
-        'class': 'taxis-t' + (isTodayCol ? ' today' : ''), style: 'font-weight:600' });
-      tx.textContent = win.run ? 'SOL ' + (i + 1 < 10 ? '0' : '') + (i + 1) : fmtDate(win.days[i].start);
+      var tx = el('text', { x: x(i).toFixed(1), y: H - (slim ? 12 : 22), 'text-anchor': slim ? 'middle' : anchor,
+        'class': 'taxis-t' + (isTodayCol ? ' today' : ''), style: 'font-weight:600;font-size:' + axisPx + 'px' });
+      tx.textContent = win.run ? (slim ? pad2(i + 1) : 'SOL ' + pad2(i + 1)) : (slim ? String(new Date(win.days[i].start).getDate()) : fmtDate(win.days[i].start));
       svg.appendChild(tx);
-      if (!narrow() && win.run) {
+      if (!slim && win.run) {
         var dx2 = el('text', { x: x(i).toFixed(1), y: H - 5, 'text-anchor': anchor,
-          'class': 'taxis-t' + (isTodayCol ? ' today' : ''), style: 'font-size:9px;opacity:.75' });
+          'class': 'taxis-t' + (isTodayCol ? ' today' : ''), style: 'font-size:' + datePx + 'px;opacity:.75' });
         dx2.textContent = fmtDate(win.days[i].start);
         svg.appendChild(dx2);
       }
       if (isTodayCol) {
-        var tag = el('text', { x: x(i).toFixed(1), y: H - (narrow() ? 20 : 27), 'text-anchor': anchor,
-          'class': 'taxis-t today', style: 'font-size:9px;letter-spacing:.08em' });
+        var tag = el('text', { x: x(i).toFixed(1), y: H - (slim ? 29 : 38), 'text-anchor': slim ? 'middle' : anchor,
+          'class': 'taxis-t today', style: 'font-size:' + tagPx + 'px;letter-spacing:.06em' });
         tag.textContent = tr('TODAY');
         svg.appendChild(tag);
       }
+    }
+    if (slim && win.run) {                                                        // the axis named once, at its start
+      var solK = el('text', { x: 2, y: H - 12, 'text-anchor': 'start', 'class': 'taxis-t', style: 'font-size:' + (axisPx - 1) + 'px;opacity:.75' });
+      solK.textContent = 'SOL';
+      svg.appendChild(solK);
     }
 
     var drawn = 0, labels = [];
@@ -674,7 +734,7 @@
         r.forEach(function (pt) {
           var i = pt[2], isToday = i + 1 === win.today, heldFrom = s.held[i];
           var dot = n > 40 ? 2.2 : 3;
-          var c = el('circle', { cx: pt[0].toFixed(1), cy: pt[1].toFixed(1), r: (isToday ? 4.5 : dot) * (narrow() ? 1.4 : 1),
+          var c = el('circle', { cx: pt[0].toFixed(1), cy: pt[1].toFixed(1), r: (isToday ? 4.5 : dot) * (slim ? 1.1 : 1),
             'class': 'tpt' + (isToday ? ' today' : '') + (heldFrom !== null ? ' held' : ''), stroke: s.colour,
             'stroke-dasharray': heldFrom !== null ? '2 2' : 'none',
             fill: isToday && heldFrom === null ? s.colour : 'var(--well)' });
@@ -686,15 +746,15 @@
           g.appendChild(c);
         });
       });
-      // Where the line ends, its name goes.
+      // Where the line ends, its name goes (on a desk; a phone lists the names under the graph).
       var last = run[run.length - 1];
-      labels.push({ id: s.id, name: s.name, colour: s.colour, x: last[0], y: last[1], ty: last[1] });
+      if (!slim) labels.push({ id: s.id, name: s.name, colour: s.colour, x: last[0], y: last[1], ty: last[1] });
       svg.appendChild(g);
     });
     // Every line is named at its right-hand end, in its own colour. Lines that
     // end close together have their names pushed apart, and a short leader
     // joins a moved name back to its line so nothing is ambiguous.
-    var gap = narrow() ? 14 : 13, top = padT + 5, bottom = H - padB - 3;
+    var gap = 16, top = padT + 5, bottom = H - padB - 3;
     labels.sort(function (a, b) { return a.y - b.y; });
     labels.forEach(function (l, i) { if (i && l.ty < labels[i - 1].ty + gap) l.ty = labels[i - 1].ty + gap; });
     for (var li = labels.length - 1; li >= 0; li--) {
@@ -732,20 +792,45 @@
     var chart = document.createElement('div');
     chart.className = 'tchart tone';
     chart.appendChild(drawAll(series, win));
+    // on a phone the names of the lines are a legend under the graph: a touch (or the hand) on one lifts its line
+    if (narrow()) {
+      var legend = document.createElement('ul');
+      legend.className = 'tlegend';
+      series.forEach(function (s) {
+        if (hidden[s.id] || s.lo === null) return;
+        var li = document.createElement('li');
+        li.setAttribute('data-series', s.id);
+        li.innerHTML = '<i></i><span></span>';
+        li.firstChild.style.background = s.colour;
+        li.lastChild.textContent = s.name;
+        var lift = function (on) { if (on) host.setAttribute('data-lift', s.id); else host.removeAttribute('data-lift'); };
+        li.addEventListener('mouseenter', function () { lift(true); });
+        li.addEventListener('mouseleave', function () { lift(false); });
+        li.addEventListener('click', function () { lift(host.getAttribute('data-lift') !== s.id); });
+        legend.appendChild(li);
+      });
+      chart.appendChild(legend);
+    }
     // the lifted line: hovering a line's name raises it above the others
     var style = document.createElement('style');
     style.textContent = series.map(function (s) {
       return '#hbt-tcharts[data-lift="' + s.id + '"] .tseries:not([data-series="' + s.id + '"]) { opacity: .12; }' +
-             '#hbt-tcharts[data-lift="' + s.id + '"] .tseries[data-series="' + s.id + '"] .tcurve { stroke-width: 3; }';
+             '#hbt-tcharts[data-lift="' + s.id + '"] .tseries[data-series="' + s.id + '"] .tcurve { stroke-width: 3; }' +
+             '#hbt-tcharts[data-lift="' + s.id + '"] .tlegend li:not([data-series="' + s.id + '"]) { opacity: .4; }';
     }).join('\n');
     host.appendChild(style);
     host.appendChild(chart);
   }
   function renderSpanCharts() { renderTrends(); }
-  var wasNarrow = narrow(), resizeTimer = null;
+  var wasNarrow = narrow(), wasWide = 0, resizeTimer = null;
   window.addEventListener('resize', function () {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(function () { if (narrow() !== wasNarrow) { wasNarrow = narrow(); renderTrends(); } }, 150);
+    resizeTimer = setTimeout(function () {
+      var h = $('hbt-tcharts'), w = h ? h.clientWidth : 0;
+      // a phone's graph is drawn at its width: again when that changes (the phone turned, the folder opened)
+      if (narrow() !== wasNarrow || (narrow() && Math.abs(w - wasWide) > 4)) { wasNarrow = narrow(); wasWide = w; renderTrends(); }
+      fitAll();
+    }, 150);
   });
 
   /* ----------------------------------------------------------- notes */
@@ -827,6 +912,7 @@
       clearTiles();
       $('hbt-notes').innerHTML = notesHTML();
       renderTrends();
+      fitAll();
       return;
     }
     HOST.hidden = false;
@@ -838,6 +924,7 @@
     renderSpark(view, 'light', 'hbt-light', 'lightVal');
     renderIaq(view);
     renderSpanCharts();
+    fitAll();
     $('hbt-notes').innerHTML = notesHTML();
   }
 

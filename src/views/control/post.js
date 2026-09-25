@@ -8,12 +8,13 @@
  * every two. Reached from the Posts list on the Crew log tab.
  */
 const L = require('../layout');
+const officer = require('../../lib/officer');
 const { esc } = L;
 const { isPlaceholder, placeholderCue } = require('../../lib/content');
 const mediaLib = require('../../lib/media');
 
 const dd = (n) => String(n).padStart(3, '0');
-const title = (c, day) => `${c.designation.charAt(0) + c.designation.slice(1).toLowerCase()} · Day ${dd(day)}`;
+const title = (c, day) => { const d = officer.shown(c.designation); return `${d.charAt(0) + d.slice(1).toLowerCase()} · Day ${dd(day)}`; };
 
 const editorMedia = (list, body, otherBodies = []) => {
   // media placed in another text of the same officer and day (the entry, or
@@ -118,8 +119,8 @@ function postPage(ctx, { user, f, crew: c, day, date, entry, report = '', kind =
         </details>
         <details open>
           <summary>Author ${ICONS.chevron}</summary>
-          <div class="post-side-body"><b>${esc(c.designation)}</b><span>${esc(c.role)}</span>
-            ${isReport ? '' : `<div class="post-side-authors">${counts.crew.map((x) => `<a href="/control/post/${day}/${x.id}" class="${x.id === c.id ? 'on' : ''}">${esc(x.designation.replace(' OFFICER', ''))}</a>`).join('')}</div>`}
+          <div class="post-side-body"><b>${esc(officer.shown(c.designation))}</b><span>${esc(c.role)}</span>
+            ${isReport ? '' : `<div class="post-side-authors">${counts.crew.map((x) => `<a href="/control/post/${day}/${x.id}" class="${x.id === c.id ? 'on' : ''}">${esc(officer.shown(x.designation).replace(' OFFICER', ''))}</a>`).join('')}</div>`}
           </div>
         </details>
         <details>

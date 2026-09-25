@@ -31,6 +31,7 @@ const moodLib = require('./mood');
 const content = require('./content');
 const readingsLog = require('./readings-log');
 const critical = require('./critical');
+const { shown } = require('./officer');   // the first officer is shown as the Commanding Officer (the stored key stays)
 // What the Habitat panel is read from: the habitat sensor through Home
 // Assistant, or the external node.
 const habitatSource = () => (critical.source() === 'home-assistant' ? 'the habitat sensor' : 'the sensor node');
@@ -213,7 +214,7 @@ class Layout {
     const avail = CW - (tx - M.left) - 10;
     const kind = m.kind === 'video' ? 'Video' : m.kind === 'audio' ? 'Sound' : m.kind === 'document' ? 'Document' : 'File';
     this.pdf.text(this.page, tx, this.y + 20, this.fit(`${kind} · ${m.filename}`, 'bold', 9.5, avail), { font: 'bold', size: 9.5 });
-    const meta = [fmtBytes(m.bytes), m.duration_s ? `${Math.floor(m.duration_s / 60)}:${dd(Math.round(m.duration_s % 60))} min` : null, m.width && m.height ? `${m.width}×${m.height}` : null, m.designation || null].filter(Boolean).join(' · ');
+    const meta = [fmtBytes(m.bytes), m.duration_s ? `${Math.floor(m.duration_s / 60)}:${dd(Math.round(m.duration_s % 60))} min` : null, m.width && m.height ? `${m.width}×${m.height}` : null, m.designation ? shown(m.designation) : null].filter(Boolean).join(' · ');
     this.pdf.text(this.page, tx, this.y + 33, this.fit(meta, 'regular', 8.5, avail), { size: 8.5, color: GREY });
     if (m.caption) for (const [i, l] of this.pdf.wrap(m.caption, 'italic', 8.5, avail).slice(0, 2).entries()) this.pdf.text(this.page, tx, this.y + 46 + i * 11, l, { font: 'italic', size: 8.5 });
     this.pdf.text(this.page, tx, this.y + boxH - 8, this.fit(`SHA-256 ${m.sha256} · the original is in the media ZIP`, 'mono', 6.5, avail), { font: 'mono', size: 6.5, color: GREY });
@@ -338,7 +339,7 @@ function missionSection(L, G) {
   L.h1('The mission');
   L.para(`${st.name}. ${st.runLabelLong}, ${st.totalDays} days, on ${st.timezone} time. Three people inside a sealed habitat, and a channel between them and everyone outside it.`);
   L.h2('Crew');
-  L.table([{ label: 'Designation', w: 1.2, font: 'bold' }, { label: 'Role', w: 2 }], crew.map((c) => [c.designation, c.role]));
+  L.table([{ label: 'Designation', w: 1.2, font: 'bold' }, { label: 'Role', w: 2 }], crew.map((c) => [shown(c.designation), c.role]));
   L.h2('The stores tracked');
   L.para('What the habitat set out with, as written in crew-and-inventory.json. Each day\'s counts are in that day\'s record; a store not counted on a day has no figure for it.', { color: GREY, size: 8.5 });
   L.table([{ label: 'Store', w: 1.6, font: 'bold' }, { label: 'Category', w: 1 }, { label: 'Carried in', w: 0.8, align: 'right' }, { label: 'Unit', w: 0.5 }, { label: 'Warning below', w: 0.8, align: 'right' }, { label: 'Critical', w: 0.5 }],
@@ -369,7 +370,7 @@ function daySection(L, G, r, { asChapter = true } = {}) {
 
   /* ---- the officers: the three blogs, crew state ----------------------- */
   for (const o of r.officers) {
-    L.h2(`${cap(o.designation)}${o.role ? ` · ${o.role}` : ''}`, { keep: 120 });
+    L.h2(`${cap(shown(o.designation))}${o.role ? ` · ${o.role}` : ''}`, { keep: 120 });
     if (o.hasBlog) {
       L.h3('Commander Blog', { keep: 80 });
       if (o.entry) {
@@ -456,7 +457,7 @@ function daySection(L, G, r, { asChapter = true } = {}) {
   if (r.media.length) {
     L.h2('Media sent out');
     L.table([{ label: 'File', w: 2, font: 'bold' }, { label: 'Kind', w: 0.6 }, { label: 'Size', w: 0.6, align: 'right' }, { label: 'Officer', w: 1.2 }, { label: 'Caption', w: 1.8 }, { label: 'SHA-256 (full hash in Media)', w: 1.2, font: 'mono' }],
-      r.media.map((m) => [m.filename, m.kind, fmtBytes(m.bytes), m.designation || '—', m.caption || '', m.sha256.slice(0, 16) + '…']), { size: 7.5 });
+      r.media.map((m) => [m.filename, m.kind, fmtBytes(m.bytes), m.designation ? shown(m.designation) : '—', m.caption || '', m.sha256.slice(0, 16) + '…']), { size: 7.5 });
   }
 }
 
@@ -519,7 +520,7 @@ function loadImage(L, m) {
 }
 function placeMedia(L, G, m) {
   if (m.hidden) { L.para(`[${m.kind} withdrawn: ${m.filename}]`, { font: 'italic', color: GREY, size: 8.5 }); return; }
-  const label = `${m.filename}${m.caption ? ` — ${m.caption}` : ''}${m.designation ? ` · ${m.designation}` : ''} · ${fmtBytes(m.bytes)} · SHA-256 ${m.sha256.slice(0, 16)}…`;
+  const label = `${m.filename}${m.caption ? ` — ${m.caption}` : ''}${m.designation ? ` · ${shown(m.designation)}` : ''} · ${fmtBytes(m.bytes)} · SHA-256 ${m.sha256.slice(0, 16)}…`;
   if (m.kind === 'image') {
     const img = loadImage(L, m);
     if (img) { L.image(img, { maxW: CW * 0.8, maxH: 320, caption: label }); return; }
@@ -542,7 +543,7 @@ function crewLogSection(L, G) {
     L.h2(`Day ${ddd(n)} · ${longDate(r.date)}`, { keep: 100 });
     for (const e of entries) {
       any++;
-      L.h3(`${e.designation}${e.published ? '' : ' — held, not public'}`, { keep: 80 });
+      L.h3(`${shown(e.designation)}${e.published ? '' : ' — held, not public'}`, { keep: 80 });
       L.para(`Written ${e.written_at ? `${mission.localDate(new Date(e.written_at), st.timezone)} ${localHM(e.written_at, st)}` : ''}${e.updated_at && e.updated_at !== e.written_at ? ` · last edited ${mission.localDate(new Date(e.updated_at), st.timezone)} ${localHM(e.updated_at, st)}` : ''} habitat time${e.held_reason ? ` · held: ${e.held_reason}` : ''}`, { color: GREY, size: 7.5, after: 4 });
       entryBlock(L, G, e.body, r.media.filter((m) => m.crew_id === e.crew_id && !inNotes.has(m.id)));
     }
@@ -562,7 +563,7 @@ function mediaSection(L, G) {
     L.pdf.text(L.page, M.left, L.y, `${m.filename}${m.hidden ? '  (withdrawn from view)' : ''}`, { font: 'bold', size: 9 });
     L.pdf.text(L.page, M.left + CW, L.y, `${m.kind} · ${fmtBytes(m.bytes)}${m.width && m.height ? ` · ${m.width}×${m.height}` : ''}${m.duration_s ? ` · ${Math.round(m.duration_s)} s` : ''}`, { size: 8, color: GREY, align: 'right' });
     L.y += 12;
-    L.pdf.text(L.page, M.left, L.y, `${m.designation || 'unattributed'} · sent ${mission.localDate(new Date(m.uploaded_at), st.timezone)} ${localHM(m.uploaded_at, st)} habitat time${m.caption ? ` · ${m.caption}` : ''}`, { size: 8, color: GREY });
+    L.pdf.text(L.page, M.left, L.y, `${m.designation ? shown(m.designation) : 'unattributed'} · sent ${mission.localDate(new Date(m.uploaded_at), st.timezone)} ${localHM(m.uploaded_at, st)} habitat time${m.caption ? ` · ${m.caption}` : ''}`, { size: 8, color: GREY });
     L.y += 11;
     L.pdf.text(L.page, M.left, L.y, `SHA-256 ${m.sha256}`, { font: 'mono', size: 7.5 });
     L.y += 14;
@@ -683,7 +684,7 @@ function messagesPdf() {
     L.y += 14;
     L.para(m.body, { size: 9.5, after: 4 });
     if (m.response_body) {
-      L.quote(`${m.responder || 'Mars habitat'} — ${m.response_body}${m.response_at ? '' : '  [draft, not published]'}`, { color: ORANGE, fill: WASH });
+      L.quote(`${m.responder ? shown(m.responder) : 'Mars habitat'} — ${m.response_body}${m.response_at ? '' : '  [draft, not published]'}`, { color: ORANGE, fill: WASH });
     } else if (m.state === 'REJECTED') L.para(`Rejected without a reply${m.reject_reason ? `: ${m.reject_reason}` : ''}${m.reviewed_by ? ` · by ${m.reviewed_by}` : ''}${m.reviewed_at ? ` · ${localHM(m.reviewed_at, st)}` : ''}.`, { font: 'italic', color: GREY, size: 8.5 });
     else L.para('No reply yet.', { font: 'italic', color: GREY, size: 8.5 });
     L.para(`Signal delay stored with the message: ${fmtLight(m.light_seconds)} one way at ${m.distance_au != null ? m.distance_au.toFixed(3) : '—'} au${m.response_at ? ` · reply published day ${ddd(dayOf(m.response_at, st))} ${localHM(m.response_at, st)}` : ''}`, { size: 7.5, color: GREY, after: 12 });

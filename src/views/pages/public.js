@@ -5,8 +5,10 @@ const orbital = require('../../lib/orbital');
 const data = require('../../lib/data');
 const { TAGS } = data;
 const { composerBlock } = require('./communicate');
-const { aboutSection } = require('./info');
 const { habitatDome, LINE_ICONS } = require('./dome');
+const { habitatSky, habitatSheet } = require('./sky');
+const LP = require('./landing');
+const { WINDOW_TIME } = LP;
 const MV = require('./media');
 const mediaGet = require('../../lib/media').get;
 const moodLib = require('../../lib/mood');
@@ -14,6 +16,7 @@ const { shortDay } = require('../../lib/mission');
 
 const fmtTime = (iso) => new Date(iso).toISOString().slice(11, 16) + ' UTC';
 const missionLib = require('../../lib/mission');
+const officer = require('../../lib/officer');
 /* English through, for the places that have no visitor: the archive. */
 const same = (s) => s;
 const dayWord = (T, n) => `${n} ${T(n === 1 ? 'day' : 'days')}`;
@@ -39,7 +42,7 @@ function complete(ctx, { counts, recent }) {
     <h1>${T('The habitat is empty.')}<br>${T('What was said is still here.')}</h1>
     <p class="lede">${T('The crew went in on')} ${esc(m.startLabel)} ${T('and came out on')} ${esc(m.endLabel)}.
     ${T('Over the course of')} ${dayWord(T, m.totalDays)}, ${counts.published} ${T('exchanges crossed the distance between an audience on Earth and three people who could not be reached any other way.')}</p>
-    <p><a class="btn" href="/archive">${T('Read the archive')}</a><a class="btn" href="/#about">${T('About the project')}</a></p>
+    <p><a class="btn" href="/archive">${T('Read the archive')}</a><a class="btn" href="/about">${T('About the project')}</a></p>
   </div>
 
   <div class="grid g-hero">
@@ -93,8 +96,8 @@ function inventoryGauges(inventory, { compact = false, strip = false, cells = fa
           <circle cx="30" cy="30" r="${R}" class="round-track"/>
           <circle cx="30" cy="30" r="${R}" class="round-arc" stroke-dasharray="${C.toFixed(1)}"
             stroke-dashoffset="${(C * (1 - pct / 100)).toFixed(1)}" transform="rotate(-90 30 30)"/>
-          <text x="30" y="32" class="round-num">${num}</text>
-          <text x="30" y="41" class="round-unit">${esc(i.unit)}</text>
+          <text x="30" y="33.5" class="round-num">${num}</text>
+          <text x="30" y="44" class="round-unit">${esc(i.unit)}</text>
         </svg>
         <span class="cell-name">${esc(i.label)}</span>
         <span class="cell-days">${daysLeft != null ? (daysLeft < 99 ? `${daysLeft.toFixed(0)} ${T('days')}` : T('ample')) : T('no draw')}</span>
@@ -429,14 +432,15 @@ function messages(ctx, { recent = [], inFlight = null, error = null, draft = '' 
  * readings. The line is rendered twice and scrolled by CSS so it runs
  * continuously; a small script keeps the clock ticking, moves to the next
  * task as its time comes, and refreshes the readings on the node's cycle.
- * Under prefers-reduced-motion it stands still.
+ * Under prefers-reduced-motion it stands still on a desk and drifts more
+ * slowly on a phone (aura.css), where it is how the station says what is
+ * happening now.
  */
-function ticker(ctx, { today, links = false } = {}) {
+function ticker(ctx, { today } = {}) {
   const m = ctx.mission, T = ctx.T;
   const pre = m.phase === 'PRE_LAUNCH', over = m.phase === 'COMPLETE';
   // On the inner pages (layout.js draws the ticker there too) the day's
-  // schedule is read here, and the menu's rows are links to the landing
-  // page's pop-ups, which open from the hash.
+  // schedule is read here.
   if (today === undefined) today = m.phase === 'ACTIVE' ? data.day(m.clampedDay) : null;
   const tasks = (today && today.tasks ? today.tasks : []).map((t) => ({ time: t.time, label: t.label, detail: t.detail || '' }));
   const hm = m.venueTime.slice(0, 5);
@@ -452,14 +456,15 @@ function ticker(ctx, { today, links = false } = {}) {
     cells.push(`${T('Next:')} <b id="tk-next">${nextTask ? say(nextTask) : T('nothing more today')}</b>`);
   }
   cells.push(`${T('Habitat:')} <b id="tk-hab">${T('awaiting reading')}</b>`);   // the one-way signal is read where a message is written, and nowhere else
+  if (!over) cells.push(`${T('Communication window daily')} <b>${esc(WINDOW_TIME)}</b>`);   // when the crew answer (landing.js)
   const line = cells.map((c) => `<span class="tk-cell">${c}</span>`).join('<span class="tk-sep">·</span>');
-  /* The three-lines menu at the ticker's left end drops the reading matter
-     — About, What this is, Who we are — as a short list; a row opens the
-     same pop-up the About buttons open (info.js binds .fold-btn[data-popup]),
-     so the texts live in one place. The theme and language switches sit at
-     the ticker's right end. */
-  // On a phone the list is a sheet from the foot of the screen, opened by the bar's More key (layout.js, tabbar()): it gets a
-  // head and a sign on every row, which the wider screens hide.
+  /* The header of every public page, after the design handoff's reference sheet: a row with the wordmark (the way home),
+     the run's badge — the countdown before it, the sol during it —, the habitat's clock, the theme and language switches
+     and, on a wider screen, the three-lines menu at its right end; under it the running line. The menu drops the reading
+     matter — About, What this is, Who we are — as a short list; a row leads to its section of the About page (/about,
+     info.js), where the texts live. */
+  // Drawn as a sheet from the foot of the screen where the menu is a phone's (a head and a sign on every row, which the
+  // wider screens hide); a phone held upright has no menu button — its bar's About key opens the page itself.
   const sign = (d) => `<svg class="tk-ic" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
   const MENU_ICONS = { 'about-project': '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><path d="M12 7.8h.01"/>', what: TAB_ICONS.habitat, 'who-we-are': LINE_ICONS.crew };
   const menu = `
@@ -467,21 +472,22 @@ function ticker(ctx, { today, links = false } = {}) {
     <div class="tk-dropdown" id="tk-dropdown" hidden>
       <div class="tk-sheet-head"><b>${T('About')}</b><span>${T('Everything else on the station')}</span></div>
       ${[['about-project', 'About', 'The habitat, the distance, the archive'], ['what', 'What this is', 'How the station behaves, in plain terms'], ['who-we-are', 'Who we are', 'Crew, company, production credits']]
-        .map(([id, title, sub]) => links
-          ? `<a class="tk-row" href="/#${id}">${sign(MENU_ICONS[id])}<span class="fold-title">${esc(T(title))}</span><span class="fold-sub">${esc(T(sub))}</span></a>`
-          : `<button type="button" class="fold-btn tk-row" data-popup="${id}" aria-haspopup="dialog" aria-controls="${id}">${sign(MENU_ICONS[id])}<span class="fold-title">${esc(T(title))}</span><span class="fold-sub">${esc(T(sub))}</span></button>`).join('')}
+        .map(([id, title, sub]) => `<a class="tk-row" href="/about#${id}">${sign(MENU_ICONS[id])}<span class="fold-title">${esc(T(title))}</span><span class="fold-sub">${esc(T(sub))}</span></a>`).join('')}
     </div>`;
   return `
-  <div class="ticker" role="marquee" aria-label="${esc(T('What is happening in the habitat'))}"
+  <header class="ticker"
        data-tz="${esc(m.timezone)}" data-tasks="${esc(JSON.stringify(tasks))}"${over ? ' data-over="1"' : ''}
        data-phase="${esc(m.phase)}" data-opens="${esc(m.opensAt)}" data-epoch="${esc(String(require('../../lib/content').resetEpoch() || ''))}">
-    ${menu}
-    <a class="tk-brand" href="/" aria-label="MARS!platz">MARS<span class="bang">!</span>platz</a>
-    <span class="tk-sol"><i aria-hidden="true"></i>${pre ? `T−${m.countdown.days}d` : over ? T('Complete') : `SOL ${String(m.clampedDay).padStart(2, '0')}/${String(m.totalDays).padStart(2, '0')}`}</span>
-    <div class="tk-clock"><span class="tk-clock-label">${T('HABITAT TIME')}</span> <b id="tk-clock">${esc(m.venueTime)}</b></div>
-    <div class="tk-window"><div class="tk-track" id="tk-track"><div class="tk-line">${line}</div><div class="tk-line" aria-hidden="true">${line}</div></div></div>
-    <div class="tk-right">${L.statusStrip(ctx)}</div>
-  </div>
+    <div class="tk-bar">
+      <a class="tk-brand" href="/" aria-label="MARS!platz">MARS<span class="bang">!</span>platz</a>
+      <span class="tk-sol"><i aria-hidden="true"></i>${pre ? `T−${m.countdown.days}d` : over ? T('Complete') : `SOL ${String(m.clampedDay).padStart(2, '0')}/${String(m.totalDays).padStart(2, '0')}`}</span>
+      <span class="tk-gap"></span>
+      <div class="tk-clock"><span class="tk-clock-label">${T('HABITAT TIME')}</span> <b id="tk-clock">${esc(m.venueTime)}</b></div>
+      <div class="tk-right">${L.statusStrip(ctx)}</div>
+      ${menu}
+    </div>
+    <div class="tk-window" role="marquee" aria-label="${esc(T('What is happening in the habitat'))}"><div class="tk-track" id="tk-track"><div class="tk-line">${line}</div><div class="tk-line" aria-hidden="true">${line}</div></div></div>
+  </header>
   <script>
   (function () {
     var b = document.getElementById('tk-menu'), d = document.getElementById('tk-dropdown');
@@ -491,6 +497,38 @@ function ticker(ctx, { today, links = false } = {}) {
     d.querySelectorAll('.tk-row').forEach(function (r) { r.addEventListener('click', function () { set(false); }); });
     document.addEventListener('click', function (e) { if (!d.hidden && !d.contains(e.target) && e.target !== b && !b.contains(e.target)) set(false); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !d.hidden) { set(false); b.focus(); } });
+  })();
+  (function () {
+    // The running line on a phone is moved by the page itself, a little every frame, rather than left to the stylesheet's
+    // animation: a phone's browser has more than one way of holding a CSS animation still — a tap leaves the line
+    // "hovered", the setting for less motion stops it, a saver mode or an old stylesheet in the cache can too — and on a
+    // phone the line is how the station says what is happening now. It keeps a steady pace whatever the line's length, a
+    // gentler one where less motion is asked for; it rests while the page is out of sight. A wider screen keeps the
+    // stylesheet's animation, which holds while a mouse rests on the line.
+    var track = document.getElementById('tk-track');
+    if (!track || !window.matchMedia || !window.requestAnimationFrame) return;
+    var phone = window.matchMedia('(max-width: 760px), (max-height: 520px)');
+    var calm = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var x = 0, last = 0, raf = 0, on = false, span = 0, age = 0;
+    function length() { var line = track.firstElementChild; return line ? line.getBoundingClientRect().width : 0; }   // one copy of the line
+    function frame(t) {
+      raf = requestAnimationFrame(frame);
+      var dt = last ? Math.min(100, t - last) : 0; last = t;
+      if (!span || ++age > 60) { span = length(); age = 0; }          // the line changes as the clock and the schedule do
+      if (!span) return;
+      x -= (calm.matches ? 16 : 28) * dt / 1000;                        // pixels a second
+      if (-x >= span) x += span;                                        // the second copy has come to where the first began
+      track.style.transform = 'translate3d(' + x.toFixed(2) + 'px,0,0)';
+    }
+    function set() {
+      if (phone.matches === on) return;
+      on = phone.matches;
+      if (on) { track.style.setProperty('animation', 'none', 'important'); last = 0; span = 0; raf = requestAnimationFrame(frame); }
+      else { cancelAnimationFrame(raf); track.style.removeProperty('animation'); track.style.transform = ''; x = 0; }
+    }
+    set();
+    if (phone.addEventListener) phone.addEventListener('change', set); else if (phone.addListener) phone.addListener(set);
+    document.addEventListener('visibilitychange', function () { last = 0; });
   })();
   (function () {
     // the language drop-down (layout.js draws it in the status strip): a press elsewhere, or Escape, closes it again
@@ -597,21 +635,9 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
                         media = [], mediaCounts = { total: 0, bytes: 0 }, mediaLookup = () => null,
                         hardware = null, hardwareDaily = [], cloud = null }) {
   const pre = ctx.mission.phase === 'PRE_LAUNCH', T = ctx.T;
-  /* The masthead: the wordmark, one line under it, the run, and the
-     station's readings as a row of small pills on the right — shared with
-     every other public page so they read as one station. */
+  /* The header every public page shares (ticker): the wordmark, the run's badge, the habitat's clock, the switches, the
+     running line. */
   const hero = ticker(ctx, { today });
-  const lead = T('MARS is a durational performance. Three officers live sealed inside the habitat for the thirteen days of the run; visitors to the exhibition can see the habitat from outside. What they cannot do is walk in and talk to the people inside it. Here a message has to travel. You watch it go. You wait.');
-  // Two doors under the lead: the composer (the orange button) and, beside
-  // it, the Mission dashboard further down the page (#mission, where the
-  // foot's "Daily mission" also leads).
-  // On a phone held upright the portal and the dashboard are pages of their own (/messages, /dashboard), so the doors
-  // lead there instead (aura.css shows one of each pair).
-  const cta = `<a class="btn primary masthead-btn" href="#write">${T('Write to the crew')} <span aria-hidden="true">↓</span></a>
-      <a class="btn primary masthead-btn masthead-btn-page" href="/messages#write">${T('Write to the crew')} <span aria-hidden="true">→</span></a>
-      <a class="btn masthead-btn masthead-btn-live" href="#mission"><i class="live-dot" aria-hidden="true"></i>${T('Live Mission Dashboard')} <span aria-hidden="true">↓</span></a>
-      <a class="btn masthead-btn masthead-btn-live masthead-btn-page" href="/dashboard"><i class="live-dot" aria-hidden="true"></i>${T('Live Mission Dashboard')} <span aria-hidden="true">→</span></a>`;
-  const masthead = L.masthead(ctx, { home: true, status: true, lead, cta });   // the strip is drawn in the ticker on wide screens; aura.css shows this one on phones
 
   /* The days of the run, spelled down the right-hand margin. */
   const dayRail = `<aside class="day-rail" aria-hidden="true">
@@ -623,12 +649,25 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
     <span class="day-rail-cap">SOL</span>
   </aside>`;
 
+  /* The landing page (landing.js): P01 the habitat — its sky of the latest exchanges and the newest pictures from the
+     cloud folder, the line under the dome — with the name over it on a wider screen; P02 the note (a phone has the name at
+     its head); part 1, P03, the mission in two chapters; part 2, P04, the world's slowest chat; then, on a wider screen,
+     the portal and the dashboard (a phone has them as pages of their own, aura.css, sheet.css). On a phone every
+     data-page is a page of the scroll: a swipe goes to the next (sheet.css, public/sky.js). */
   const body = `
-  ${aboutSection(ctx, { crew })}
-  <div class="hero-grid">
-    ${masthead}
-    ${habitatDome(ctx, { today, crew, recent, power, counts, crewFigures, pods: true })}
-  </div>
+  <script>
+  // the reading matter was three pop-ups over this page once, opened from the address: those addresses — /#about,
+  // /#about-project, /#what, /#who-we-are — lead to the About page, where it is now; by way of /about?from=home, which no
+  // browser can have kept as the permanent redirect back to /#about that /about used to be
+  (function () { var h = location.hash; if (/^#(about|about-project|what|who-we-are)$/.test(h)) location.replace('/about?from=home' + (h === '#about' ? '' : h)); })();
+  </script>
+  <section class="sheet sheet-p1" id="top" aria-label="${esc(T('The habitat'))}" data-page>
+    ${LP.intro(ctx, 'desk')}
+    ${habitatDome(ctx, { today, crew, recent, power, counts, crewFigures, pods: true, sky: habitatSky(ctx, { recent, cloud }), sheet: habitatSheet(ctx), line: LP.underLine(ctx, { recent, today }) })}
+  </section>
+  ${LP.note(ctx)}
+  ${LP.chapters(ctx)}
+  ${LP.slowChat(ctx)}
   <section class="portal" id="write" data-stop>
   <!-- The portal's heading, in the dress of the dashboard's: the channel's
        code, the title, the line beneath; at the right the one-way light-time
@@ -656,7 +695,7 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
   `;
   return L.page({
     title: 'Mission', ctx, body, hero, hideNav: true, hideRail: true, bodyClass: 'landing',
-    current: '/', scripts: ['/composer.js', '/board.js', '/habitat.js', '/hardware.js', '/section-scroll.js', '/folder.js'].concat(cloud ? ['/cloud.js'] : []),
+    current: '/', scripts: ['/composer.js', '/board.js', '/habitat.js', '/hardware.js', '/folder.js'].concat(cloud ? ['/cloud.js'] : [], ['/sky.js']),   // the page scrolls freely: no stops
     styles: ['/aura.css'],
   });
 }
@@ -704,8 +743,8 @@ function figureTile(figures, mission, { key, label, unit, colour, fmt, T = same,
           fill="${days[i] === n0 ? colour : 'var(--well)'}" stroke="${colour}" stroke-width="${days[i] === n0 ? 2 : 1.5}">
           <title>${T('Day')} ${String(days[i]).padStart(3, '0')}: ${v.toLocaleString('en-GB')} ${unit}</title></circle>`).join('')}
   </svg>` : '';
-  // the officer's name as the station writes it: COMMUNICATION, SCIENCE, HEALTH
-  const who = (c) => T(String(c.designation || '').replace(/\s*OFFICER$/i, '').trim());
+  // the officer's name as the station writes it: COMMANDING, SCIENCE, HEALTH
+  const who = (c) => T(officer.shown(c.designation).replace(/\s*OFFICER$/i, '').trim());
   const rows = crew.map((c) => { const v = perOf(d, c); return `<div class="fig-r"><span class="fig-who">${esc(who(c))}</span><span class="fig-v">${v != null ? fmt(v) : '—'}<em>${esc(unit)}</em></span></div>`; }).join('');
   return `<section class="tile t-fig t-${key}" role="group" aria-label="${esc(T(label))}${total != null ? `: ${fmt(total)} ${esc(unit)} ${T('crew total')}` : ''}">
     <h3>${T(label)}</h3>
@@ -1321,9 +1360,9 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
   /* ---- the three daily blogs, the front row of the stack of folders: the science
      officer's Daily Science Findings, the health officer's Daily Health Blog
      (the day's health activities) and the Commander Blog — which is the
-     communication officer's Daily Blog, under the name the station gives it.
+     commanding officer's Daily Blog, under the name the station gives it.
      All three are written in mission control (the Science, Health and
-     Communication officer tabs) and are public the moment they are saved, as
+     Commanding officer tabs) and are public the moment they are saved, as
      everywhere else on the station.
 
      Each panel shows the CURRENT DAY's post and nothing else — the day the
@@ -1382,7 +1421,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
       return `<div class="officer">
         <span class="officer-face band-${face ? moodLib.FACES.indexOf(face) : 'none'}" aria-hidden="true">${face ? moodLib.faceSvg(face) : moodLib.faceSvg({ mouth: 'M11 20 h10', eyes: 'dot' })}</span>
         <div class="officer-id">
-          <b>${esc(c.designation)}</b>
+          <b>${esc(officer.shown(c.designation))}</b>
           <span class="officer-role">${esc(c.role)}</span>
         </div>
         <span class="badge${c.mood ? ' ok' : ''}">${esc(T(t.condition))}</span>
@@ -1513,7 +1552,7 @@ function messageCard(m, tz, T = same) {
     ${m.response_body ? `<div class="card-reply">
       <div class="who">${T('Crew answer')}</div>
       <p>${esc(m.response_body)}</p>
-      <div class="card-reply-meta">${esc(m.responder ? T(m.responder) : T('Mars habitat'))} · ${esc(home)} · <time datetime="${esc(m.response_at)}">${esc(replied)}</time></div>
+      <div class="card-reply-meta">${esc(m.responder ? T(officer.shown(m.responder)) : T('Mars habitat'))} · ${esc(home)} · <time datetime="${esc(m.response_at)}">${esc(replied)}</time></div>
     </div>` : `<div class="card-state-line"><span class="badge card-state ${st.cls}">${T(st.label)}</span></div>`}
     <div class="card-foot">
       <span>${orbital.formatLightTime(m.light_seconds)}</span>

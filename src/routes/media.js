@@ -20,7 +20,7 @@ const router = express.Router();
 router.get('/', (req, res) => {
   const ctx = req.ctx();
   res.send(M.gallery(ctx, {
-    cloud: cloud.configured() ? { title: cloud.CFG.title, items: cloud.gallery(), snapshot: cloud.snapshot() } : null,
+    cloud: cloud.configured() ? { title: cloud.CFG.title, items: cloud.gallery(), snapshot: cloud.snapshot(), sort: cloud.CFG.sort } : null,
   }));
 });
 

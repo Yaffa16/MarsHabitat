@@ -2,12 +2,12 @@
  * and the little a phone held upright needs besides.
  *
  * Five keys under the thumb: Home (the landing page), Dashboard, Write (the
- * messages page — the composer and the board) and Media, which are pages of
- * their own — the landing page keeps the dashboard and the portal for wider
- * screens only — and More, which opens the ticker's menu — the same list the
- * three-lines button opens on a wider screen — as a sheet from the foot of
- * the screen. The bar is drawn on every public page; the stylesheet shows it
- * only on a phone held upright, and what follows runs only there:
+ * messages page — the composer and the board), Media and About (the page of
+ * the reading matter — the same texts the three-lines menu leads to on a
+ * wider screen), which are pages of their own — the landing page keeps the
+ * dashboard and the portal for wider screens only. The bar is drawn on every
+ * public page; the stylesheet shows it only on a phone held upright, and
+ * what follows runs only there:
  *  - every door into the portal or the dashboard (the dome's keys, a link
  *    into #write or #habitat) leads to the messages page or the dashboard
  *    page instead, since the landing page shows neither;
@@ -29,14 +29,6 @@
   if (back) back.value = location.pathname + location.search + location.hash;
 
   var bar = document.querySelector('.tabbar');
-  // More: the ticker's menu, opened and closed through its own button so the two never disagree
-  var more = bar && bar.querySelector('.tab-more'), menu = document.getElementById('tk-menu'), drop = document.getElementById('tk-dropdown');
-  if (more && menu && drop) {
-    more.addEventListener('click', function (e) { e.stopPropagation(); menu.click(); });
-    var sync = function () { more.setAttribute('aria-expanded', drop.hidden ? 'false' : 'true'); more.classList.toggle('is-open', !drop.hidden); };
-    new MutationObserver(sync).observe(drop, { attributes: true, attributeFilter: ['hidden'] });
-    sync();
-  }
 
   // the doors into the portal and the dashboard lead to their pages on a phone held upright — the composer's doors with it open
   var DASH = /^\/?#(mission|habitat|hardware|trends|schedule|galley|crew|blog-commander|blog-health|blog-science)$/;
@@ -44,7 +36,7 @@
     if (!phone() || document.body.classList.contains('dashboard')) return;      // on the dashboard page a link into a panel is right as it is
     [].forEach.call(document.querySelectorAll('a[href^="#"], a[href^="/#"]'), function (a) {
       var href = a.getAttribute('href');
-      if (a.closest('.tabbar') || a.classList.contains('masthead-btn')) return;   // the masthead's doors have twins for the phone (aura.css)
+      if (a.closest('.tabbar')) return;
       if (/^\/?#write$/.test(href)) a.setAttribute('href', '/messages#write');
       else if (/^\/?#exchanges$/.test(href)) a.setAttribute('href', '/messages');
       else if (DASH.test(href)) a.setAttribute('href', '/dashboard' + href.replace(/^\//, ''));

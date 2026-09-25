@@ -6,12 +6,13 @@ const { esc, panel, eyebrow } = L;
 const orbital = require('../../lib/orbital');
 const mood = require('../../lib/mood');
 const missionLib = require('../../lib/mission');
+const officer = require('../../lib/officer');
 
 const dd = (n) => String(n).padStart(3, '0');
 
 /**
  * Mission control is one page. The top bar chooses the officer; the message
- * queue sits inside the communication officer's tab, first, because
+ * queue sits inside the commanding officer's tab, first, because
  * answering Earth is the job that cannot wait; everything else the crew and
  * the habitat need edited lives underneath, organised by who does the work —
  * one tab per officer, plus the habitat — and switched without a page load.
@@ -22,7 +23,7 @@ const dd = (n) => String(n).padStart(3, '0');
  */
 const TABS = [
   ['messages', 'Messages'],
-  ['comms', 'Communication officer'],
+  ['comms', 'Commanding officer'],
   ['science', 'Science officer'],
   ['health', 'Health officer'],
   ['habitat', 'Habitat'],
@@ -115,7 +116,7 @@ function messageCard(m, crew, show) {
           <label class="reply-label" for="reply-${m.id}">${m.state === 'PUBLISHED' ? 'The reply' : 'Reply'}</label>
           <label class="reply-as">as <select name="crew_id" aria-label="Reply attributed to">
             <option value="">Mars habitat</option>
-            ${crew.map((c) => `<option value="${c.id}"${m.crew_id === c.id ? ' selected' : ''}>${esc(c.designation)}</option>`).join('')}
+            ${crew.map((c) => `<option value="${c.id}"${m.crew_id === c.id ? ' selected' : ''}>${esc(officer.shown(c.designation))}</option>`).join('')}
           </select></label>
         </div>
         <textarea name="body" id="reply-${m.id}" rows="4" required minlength="2" class="reply-box"
@@ -160,7 +161,7 @@ function moodBlock(c, n = 2, e = null) {
   const t = mood.translate(c.mood);
   const current = c.mood ? mood.FACES.reduce((best, f) => (Math.abs(f.v - c.mood.calm_tense) < Math.abs(best.v - c.mood.calm_tense) ? f : best), mood.FACES[0]).v : null;
   return panel('CH-12 / MOOD', `
-    ${blockHead(n, 'Crew state', `${esc(c.designation)} · mood, calm to angry`,
+    ${blockHead(n, 'Crew state', `${esc(officer.shown(c.designation))} · mood, calm to angry`,
       { live: !!c.mood, liveText: `Filed: ${esc(t.condition)}`, emptyText: 'Not filed yet' })}
     <form method="post" action="/control/moods/${c.id}">
       <div class="poles mood-poles"><span>${mood.AXES[0].low}</span><span>${mood.AXES[0].label}</span><span>${mood.AXES[0].high}</span></div>
@@ -208,12 +209,12 @@ function blockHead(n, title, sub, { live = null, liveText = 'Live', draft = null
   </div>`;
 }
 
-/** The Commander Blog — the communication officer's entry — for the chosen day, as a composer in place. */
+/** The Commander Blog — the commanding officer's entry — for the chosen day, as a composer in place. */
 function blogBlock(c, tab, day, entry, n = 1, e = null, draft = null) {
   const live = entry && !isPlaceholder(entry.body);
   const text = draft ? draft.body : live ? entry.body : '';
   return panel('CH-53 / COMMANDER BLOG', `
-    ${blockHead(n, 'Commander Blog', `${esc(c.designation)} · day ${dd(day)}`, { live, liveText: 'Live', draft })}
+    ${blockHead(n, 'Commander Blog', `${esc(officer.shown(c.designation))} · day ${dd(day)}`, { live, liveText: 'Live', draft })}
     <form method="post" action="/control/logbook" enctype="multipart/form-data" data-attach-media data-crew-id="${c.id}" class="${mark(e, 'body').trim()}"
           data-media="${editorMedia(c.media, text, c.otherBodies || [])}">
       <input type="hidden" name="day" value="${day}">
@@ -233,7 +234,7 @@ function reportBlock(c, kindKey, label, hint, day, tpl, tab, n = 2, e = null, dr
   const preset = (tpl || []).find((t) => String(t.name).toLowerCase() === 'default');
   const text = draft ? draft.body : live ? c.report : (preset ? preset.body : '');
   return panel(`CH-36 / ${kindKey.toUpperCase()}`, `
-    ${blockHead(n, label, `${esc(c.designation)} · day ${dd(day)}`, { live, liveText: 'Live', draft })}
+    ${blockHead(n, label, `${esc(officer.shown(c.designation))} · day ${dd(day)}`, { live, liveText: 'Live', draft })}
     ${hint ? `<p class="note block-hint">${hint}</p>` : ''}
     <form method="post" action="/control/report" enctype="multipart/form-data" data-attach-media data-crew-id="${c.id}" class="${mark(e, 'body').trim()}"
           data-media="${editorMedia(c.media, text, c.reportOtherBodies || [])}">
@@ -260,7 +261,7 @@ function attachRow() {
   </div>`;
 }
 
-/** The day's schedule, kept by the communication officer. */
+/** The day's schedule, kept by the commanding officer. */
 function scheduleBlock(day, tasks, e = null) {
   const rowKey = (t) => `row:${t.time}|${t.label}|${t.detail || ''}`;
   return panel('CH-30 / DAILY MISSION', `
@@ -303,7 +304,7 @@ function figureBlock(day, figures, crew, e, { key, chan, title, label, unit, but
       <input type="hidden" name="day" value="${day}">
       <div class="grid g3 fig-grid">
       ${crew.map((c) => { const v = per[c.designation] || {}; return `
-        <label class="f fig-officer${mark(e, `${key}_${c.id}`)}"><span>${esc(short(c.designation))} · ${label}</span>
+        <label class="f fig-officer${mark(e, `${key}_${c.id}`)}"><span>${esc(short(officer.shown(c.designation)))} · ${label}</span>
           <input type="number" min="0" name="${key}_${c.id}" value="${v[key] ?? ''}" placeholder="${unit}"></label>`; }).join('')}
       </div>
       <p class="note">Crew total on record for this day: <b>${fmt(f[key])}</b> ${unit}${Object.keys(per).length ? '' : f[key] != null ? ' — filed as a total, before the officers were counted separately' : ''}.</p>

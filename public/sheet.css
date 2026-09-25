@@ -1,0 +1,573 @@
+/* ==========================================================================
+   MARS!platz — the new layout, in the aura dress.
+
+   Loaded after station.css and aura.css on every public page (layout.js puts
+   it last). aura.css draws the look — the drafting paper, cobalt ink, frosted
+   glass floating on soft shadows, round pills, the orange keys and the
+   habitat's colour — and this sheet lays the pages out as the design handoff
+   has them: the header in two rows (the name, the sol, the habitat's clock,
+   the switches and the menu; the running line under them), and the landing
+   page as four pages (src/views/pages/landing.js) — P01 the name and the
+   habitat, P02 the note, P03 the mission in two chapters, P04 the world's
+   slowest chat — each drawn in that same dress: the note and the chapters as
+   glass cards lifted off the paper, the photographs in rounded frames with
+   Mars glowing behind them, the steps of a message's crossing on a dashed
+   thread, each sign in its own colour. It also draws the foot, one for the
+   light and one for the dark. Nothing a visitor reads is drawn smaller than
+   the type floor aura.css sets (--fs-tag). It changes how the pages look,
+   never what they do: every id and every hook of the scripts stays as it was.
+   ========================================================================== */
+
+@keyframes step-hop { from { left: 0; } to { left: calc(100% - 7px); } }
+
+/* ------------------------------------------------------------ the header: two rows */
+/* A glass band across the top of the window that stays there while the page scrolls under it: the first row carries the
+   name (the way home), the sol, the habitat's clock, the switches and — on a wider screen — the orange menu key at its right
+   end; under a hairline, the running line, fading out at both edges. */
+body.landing .ticker {
+  position: sticky; top: 0; z-index: 40; display: block; height: auto; min-height: 0; padding: 0; gap: 0;
+}
+body.landing .tk-bar { display: flex; align-items: center; gap: 10px; height: 64px; padding: 0 var(--tk-inset); box-sizing: border-box; }
+body.landing .tk-brand { display: inline-block; flex: none; font-family: var(--display); font-size: 19px; font-weight: 600; line-height: 1; letter-spacing: -.03em;
+  text-transform: none; color: var(--ink); text-decoration: none; border: 0; white-space: nowrap; }
+body.landing .tk-brand .bang { color: var(--mars); }
+body.landing .tk-sol { display: inline-flex; align-items: center; gap: 7px; flex: none; min-height: 30px; padding: 0 12px; box-sizing: border-box; border-radius: 999px;
+  border: 1px solid var(--mars); background: rgba(255,90,31,.07); color: var(--mars-ink);
+  font-family: var(--display); font-size: var(--fs-label); font-weight: 600; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
+body.landing .tk-sol i { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--mars); box-shadow: 0 0 8px 2px rgba(255,90,31,.7); animation: live 2.4s ease-in-out infinite; }
+body.landing .tk-gap { flex: 1 1 auto; min-width: 0; }
+body.landing .tk-clock { flex: none; margin: 0; padding: 0 4px 0 0; align-items: baseline; }
+body.landing .tk-clock b { font-variant-numeric: tabular-nums; }
+body.landing .tk-right { flex: none; padding: 0; }
+body.landing .tk-menu { flex: none; width: 54px; height: 40px; }
+body.landing .tk-dropdown { left: auto; right: var(--tk-inset); top: 72px; background: var(--glass-solid); }   /* solid enough that the page under it does not read through */
+/* the running line: the width of the window, its words starting where the page's content does */
+body.landing .tk-window {
+  display: flex; align-items: center; height: 36px; margin: 0; padding: 0 var(--tk-inset); box-sizing: border-box; overflow: hidden;
+  border-top: 1px solid var(--glass-edge);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--tk-inset), #000 calc(100% - var(--tk-inset)), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 var(--tk-inset), #000 calc(100% - var(--tk-inset)), transparent 100%);
+}
+body.landing .tk-cell { font-size: 12px; }
+@media (min-width: 761px) and (min-height: 521px) {
+  body.landing .tk-clock-label { display: inline; }
+  html { scroll-padding-top: 112px; }                                                  /* what a link brings into view lands under the header */
+}
+
+/* a phone held upright: the bar's row and the running line under it, 83 px in all (the index of folders and the board's
+   chips stick under it at that height, aura.css); no menu key — the bar of keys at the foot opens the reading matter */
+@media (max-width: 760px) and (min-height: 521px) {
+  body.landing .ticker { padding: 0; }
+  body.landing .tk-bar { height: 52px; gap: 8px; padding: 0 16px; }
+  body.landing .tk-brand { font-size: 17px; line-height: 52px; }
+  body.landing .tk-sol { min-height: 28px; padding: 0 10px; font-size: 11.5px; letter-spacing: .1em; }
+  body.landing .tk-clock { margin: 0; padding: 0; }
+  body.landing .tk-clock b { font-size: 12.5px; letter-spacing: .06em; }
+  body.landing .tk-window { height: 30px; margin: 0; padding: 0 16px; }
+  body.landing .tk-window::before { background: linear-gradient(90deg, var(--paper-2), rgba(247,248,252,0)); }
+  body.landing .tk-window::after { background: linear-gradient(270deg, var(--paper-2), rgba(247,248,252,0)); }
+  :root[data-theme="dark"] body.landing .tk-window::before { background: linear-gradient(90deg, var(--paper-2), rgba(31,31,36,0)); }
+  :root[data-theme="dark"] body.landing .tk-window::after { background: linear-gradient(270deg, var(--paper-2), rgba(31,31,36,0)); }
+}
+@media (max-width: 400px) and (min-height: 521px) {
+  body.landing .tk-bar { gap: 6px; padding: 0 12px; }
+  body.landing .tk-brand { font-size: 16px; }
+  body.landing .tk-sol { padding: 0 8px; gap: 5px; letter-spacing: .04em; }
+  body.landing .tk-clock b { font-size: 11.5px; letter-spacing: .04em; }
+  body.landing .tk-window { padding: 0 12px; }
+}
+/* the language key and its list, and the bar of keys' names: at the type floor, never under it */
+@media (max-width: 760px) and (min-height: 521px) {
+  body.landing .status .lang-menu > summary, body.landing .status .lang button { font-size: var(--fs-tag); }
+  body.landing .tab { font-size: var(--fs-tag); letter-spacing: .03em; }
+  body.landing .tab span { max-width: 100%; }
+  html[lang="fr"] body.landing .tab span { font-size: var(--fs-tag); letter-spacing: .01em; line-height: 1.08; }   /* "Tableau de bord" in two lines */
+}
+@media (max-width: 370px) and (min-height: 521px) {
+  body.landing .tab { letter-spacing: 0; }
+  body.landing .tabbar { padding-left: 2px; padding-right: 2px; }
+  body.landing .tk-bar { gap: 4px; padding: 0 10px; }
+  body.landing .tk-sol { padding: 0 7px; }
+}
+@media (max-width: 349px) and (min-height: 521px) {
+  body.landing .tk-sol { display: none; }
+}
+/* a phone held sideways: one row as on a desk, a little lower, the menu key at its end */
+@media (max-height: 520px) {
+  body.landing .tk-bar { height: 50px; gap: 8px; padding: 0 16px; }
+  body.landing .tk-brand { font-size: 16px; }
+  body.landing .tk-window { height: 30px; padding: 0 16px; }
+  body.landing .tk-dropdown { top: 56px; right: 16px; }
+}
+
+/* the cross that closes a pop-up, by night as well as by day */
+:root[data-theme="dark"] body.landing .popup-close { background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.3); color: #e6e6ec; }
+:root[data-theme="dark"] body.landing .popup-close:hover { background: rgba(255,255,255,.14); color: #fff; }
+
+/* ====================================================================== the landing page */
+body.landing:not(.inner) .shell { padding-top: 0; }
+body.landing .sheet { position: relative; }
+/* a page's label row: its number and name at the left in Mars, its subject at the right — the small capitals of a panel's
+   channel code and meta line */
+body.landing .sheet-meta { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px 18px; margin: 0;
+  font-family: var(--display); font-size: var(--fs-label); line-height: 1.4; letter-spacing: .12em; text-transform: uppercase; font-weight: 500; color: var(--dim); }
+body.landing .sheet-meta > span:first-child { color: var(--mars-ink); }
+body.landing .sheet-meta.is-ruled { padding-bottom: 16px; border-bottom: 1px solid var(--hair); }
+
+/* ---- the name, the line under it and the run: over the habitat on a wider screen, at the head of the note on a phone */
+body.landing .sheet-intro { position: relative; z-index: 1; }
+body.landing .sheet-intro.is-phone { display: none; }
+body.landing .sheet-intro .run-now { color: var(--ink); }
+
+/* ---- P01: the habitat */
+body.landing .sheet-p1 { display: flex; flex-direction: column; }
+/* its sheet in the grey of the reference by day (by night its own dark grey, aura.css) */
+body.landing .dome-panel { --seq-ground: #d7d7d7; }
+/* the day the performance is on: its number in Mars, and an orange line down its column from under the number to the
+   ground line (sky.js draws it on the day, public/sky.js moves it on at midnight; before and after the run there is none) */
+body.landing .seq-n.is-now { background: rgba(255,90,31,.16); color: var(--mars-ink); font-weight: 700; }
+body.landing .seq-head { left: calc(100% * (var(--day, 1) - 1) / var(--seq-days, 13) + 12px); top: 24px; bottom: 0; width: 2px; margin-left: -1px;
+  background: var(--mars); box-shadow: 0 0 10px rgba(255,90,31,.55); }
+body.landing .seq-head::before { top: 0; left: -4px; }
+
+/* the line under the dome: the sheet ends at the ground line the dome stands on (its columns, tracks and the day's line
+   with it), and under it lies its floor, plain — what is happening in the habitat, one thing at a time, on it (public/
+   sky.js turns it); beside it, on a wider screen, the hint to press a part of the habitat */
+body.landing .dome-panel.has-line { --foot-h: 104px; }
+body.landing .dome-panel.has-line .dome-seq { bottom: 0; }
+body.landing .dome-foot { position: relative; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px 32px;
+  height: var(--foot-h); box-sizing: border-box; margin: 0; padding: 16px 0 0; background: var(--seq-ground); }
+body.landing .dome-foot::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--cobalt-fill); }   /* the ground line */
+body.landing .dome-foot .dome-caption { flex: none; margin: 0; padding-top: 3px; text-align: right; white-space: nowrap; }
+body.landing .dome-foot .dome-caption::before { display: none; }
+body.landing .hab-line { flex: 1 1 auto; min-width: 0; }
+body.landing .hab-line-item { display: flex; flex-direction: column; gap: 5px; margin: 0; transition: opacity .35s ease, transform .35s ease; }
+body.landing .hab-line-item.is-out { opacity: 0; transform: translateY(4px); }
+body.landing .hab-line-meta { display: block; font-family: var(--display); font-size: var(--fs-label); line-height: 1.3; letter-spacing: .12em; text-transform: uppercase; font-weight: 500;
+  color: var(--mars-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.landing .hab-line-text { font-family: var(--display); font-size: 18px; line-height: 1.32; font-weight: 600; letter-spacing: -.01em; color: var(--ink);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+
+/* the sky: the pictures and the exchanges come and go on the sheet's grid, each somewhere else each time, clear of the
+   dome and of one another (public/sky.js) — fading in, standing, fading out, nothing moving. A line is white, as the
+   reference's labels are, its sender and time small above it; a snapshot is grey as print, its time over it. They fade
+   even where a phone asks for less motion (station.css stops every transition there): a fade is not a movement. */
+body.landing .sky-msg, body.landing .sky-pic { opacity: 0; animation: none !important; transition: opacity 1.2s ease-in-out; }
+body.landing .sky-msg.is-on, body.landing .sky-pic.is-on { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  body.landing .sky-msg, body.landing .sky-pic { transition-duration: 1.2s !important; }
+  body.landing .hab-line-item { transition-duration: .35s !important; }
+  body.landing .hab-line-item.is-out { transform: none; }
+}
+body.landing .sky-msg { max-width: none; gap: 4px; }
+body.landing .sky-msg::after { left: 0; right: 0; }                                      /* its track: under its own words */
+body.landing .sky-text { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.42), 0 0 14px rgba(0,0,0,.2); }
+/* by day, on the light grey, white words keep a soft dark edge so they read as the reference's labels do */
+:root[data-theme="light"] body.landing .sky-text { text-shadow: 0 1px 1.5px rgba(16,16,28,.62), 0 0 2px rgba(16,16,28,.3), 0 0 14px rgba(16,16,28,.3); }
+body.landing .sky-who, body.landing .sky-msg.is-crew .sky-who { color: #1c1c22; text-shadow: none; }
+body.landing .sky-msg.is-crew .sky-who { color: var(--mars-ink); }
+:root[data-theme="dark"] body.landing .sky-who { color: rgba(255,255,255,.8); }
+:root[data-theme="dark"] body.landing .sky-msg.is-crew .sky-who { color: #ffb08c; }
+body.landing .sky-pic { display: flex; flex-direction: column; gap: 4px; outline: 0; background: none; }
+body.landing .sky-pic .sky-when { position: static; flex: none; margin: 0; height: 14px; line-height: 14px; overflow: hidden; }
+body.landing .sky-frame { display: block; flex: 1 1 auto; min-height: 0; overflow: hidden; background: var(--seq-ground); outline: 1px solid var(--seq-track); }
+body.landing .sky-pic:hover .sky-frame, body.landing .sky-pic:active .sky-frame { outline-color: var(--mars); }
+
+/* ---- P02: the note, a card of glass (on a phone, under the station's name) */
+body.landing .note-card, body.landing .chapter, body.landing .steps {
+  background: var(--glass); -webkit-backdrop-filter: blur(26px) saturate(1.35); backdrop-filter: blur(26px) saturate(1.35);
+  border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); border-radius: var(--r-lg); color: var(--ink);
+}
+body.landing .sheet-p2 { margin: 64px 0 0; }
+body.landing .note-card { padding: 26px 22px 30px; }
+body.landing .note-lead { margin: 24px 0 0; font-size: 22px; line-height: 1.42; letter-spacing: -.012em; color: var(--ink); text-wrap: pretty; }
+body.landing .note-lead b { font-weight: 600; }
+body.landing .note-more { margin: 18px 0 0; font-size: var(--fs-read); line-height: 1.62; color: var(--dim); text-wrap: pretty; }
+
+/* ---- the two parts: each opens with its heading — which page and which part in small capitals, its name large and
+   bold, a short orange rule, and for the chat its welcome under it */
+body.landing .sheet-p3, body.landing .sheet-p4 { margin: 72px 0 0; }
+body.landing .part-head { display: grid; justify-items: start; gap: 12px; padding: 0 4px 24px; }
+body.landing .part-tag { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; font-family: var(--display); font-size: var(--fs-label); line-height: 1.3; letter-spacing: .14em; text-transform: uppercase; font-weight: 500; color: var(--dim); }
+/* which of the two parts, in an orange pill — the mark that tells the two parts apart at a glance */
+body.landing .part-tag b { display: inline-flex; align-items: center; min-height: 26px; padding: 0 12px; box-sizing: border-box; border: 1px solid var(--mars); border-radius: 999px;
+  background: rgba(255,90,31,.09); font-weight: 600; letter-spacing: .14em; color: var(--mars-ink); white-space: nowrap; }
+body.landing .part-title { margin: 0; font-family: var(--display); font-size: 34px; line-height: 1.04; font-weight: 600; letter-spacing: -.028em; color: var(--ink); text-wrap: balance; }
+body.landing .part-rule { display: block; width: 56px; height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--mars), rgba(255,90,31,.2)); }
+body.landing .part-lead { margin: 6px 0 0; max-width: 64ch; font-size: var(--fs-read); line-height: 1.62; color: var(--dim); text-wrap: pretty; }
+/* the chat is the second part: a line across the page sets it apart from the first */
+body.landing .sheet-p4::before { content: ""; display: block; height: 1px; margin: 0 0 40px; background: linear-gradient(90deg, transparent, var(--hair) 12%, var(--hair) 88%, transparent); }
+
+/* ---- the chapters of the mission, each a card: the photograph in a rounded frame with Mars glowing behind it, the
+   chapter's subjects, its number, its title, a short orange rule and the text */
+body.landing .chapters { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+body.landing .chapter { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 20px; padding: 14px 14px 28px; }
+body.landing .ch-media { position: relative; display: flex; flex-direction: column; gap: 14px; }
+body.landing .ch-glow { position: absolute; left: 10%; right: 10%; top: 18%; height: 70%; z-index: 0; pointer-events: none; opacity: .75; filter: blur(30px);
+  background: radial-gradient(50% 50% at 50% 60%, #ff7a2a 0%, rgba(255,90,31,.6) 42%, rgba(255,90,31,0) 75%); }
+:root[data-theme="dark"] body.landing .ch-glow { opacity: .55; }
+body.landing .ch-photo { position: relative; z-index: 1; margin: 0; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 22px; background: var(--tile);
+  box-shadow: 0 26px 46px -24px rgba(214,74,30,.6), 0 2px 6px rgba(30,40,120,.1); }
+body.landing .ch-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+body.landing #ch-01 .ch-photo img { object-position: 42% 62%; }                     /* the astronaut, whatever the frame's shape */
+body.landing #ch-02 .ch-photo img { object-position: 55% 62%; }
+body.landing .ch-tags { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+body.landing .ch-tags li { display: inline-flex; align-items: center; min-height: 30px; padding: 0 12px; box-sizing: border-box; border-radius: 999px;
+  border: 1px solid rgba(var(--cobalt-rgb),.38); background: rgba(255,255,255,.55); color: var(--cobalt);
+  font-family: var(--display); font-size: var(--fs-label); font-weight: 500; line-height: 1.2; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+:root[data-theme="dark"] body.landing .ch-tags li { background: rgba(255,255,255,.06); color: #e6e6ec; border-color: rgba(255,255,255,.26); }
+body.landing .ch-text { display: grid; gap: 12px; padding: 0 8px; }
+body.landing .ch-n { font-family: var(--display); font-size: var(--fs-label); font-weight: 600; letter-spacing: .14em; color: var(--mars-ink); }
+body.landing .ch-text h3 { margin: 0; font-family: var(--display); font-size: 25px; line-height: 1.14; font-weight: 600; letter-spacing: -.02em; color: var(--ink); text-wrap: balance; }
+body.landing .ch-rule { display: block; width: 44px; height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--mars), rgba(255,90,31,.2)); }
+body.landing .ch-text p { margin: 0; font-size: var(--fs-read); line-height: 1.62; color: var(--dim); text-wrap: pretty; }
+
+/* ---- the world's slowest chat: the three steps of a message on one card of glass — each step's sign in a small tinted
+   disc in its own colour (Earth's blue, the crossing's violet red, Mars orange), a dashed thread on to the next; the
+   visitor's words and the crew's answer as bubbles; the signal crossing from Earth to Mars in the time the station takes
+   to carry a message across (public/sky.js moves it) */
+body.landing .steps { margin: 8px 0 0; padding: 28px 20px 6px; list-style: none; }
+body.landing .step { --c: #2f45e8; --c-soft: rgba(47,69,232,.12); --c-edge: rgba(47,69,232,.4); --c-halo: rgba(47,69,232,.06); --c-glow: rgba(47,69,232,.62);
+  position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 16px; padding: 0 0 30px; }
+body.landing .step.s-transit { --c: #b24f8f; --c-soft: rgba(178,79,143,.12); --c-edge: rgba(178,79,143,.4); --c-halo: rgba(178,79,143,.06); --c-glow: rgba(178,79,143,.62); }
+body.landing .step.s-down { --c: #e5501a; --c-soft: rgba(255,90,31,.12); --c-edge: rgba(255,90,31,.42); --c-halo: rgba(255,90,31,.06); --c-glow: rgba(255,90,31,.62); }
+:root[data-theme="dark"] body.landing .step { --c: #93a0ff; --c-soft: rgba(147,160,255,.14); --c-edge: rgba(147,160,255,.42); --c-halo: rgba(147,160,255,.07); --c-glow: rgba(0,0,0,.7); }
+:root[data-theme="dark"] body.landing .step.s-transit { --c: #e38bc4; --c-soft: rgba(227,139,196,.14); --c-edge: rgba(227,139,196,.42); --c-halo: rgba(227,139,196,.07); }
+:root[data-theme="dark"] body.landing .step.s-down { --c: #ff7a45; --c-soft: rgba(255,122,69,.14); --c-edge: rgba(255,122,69,.42); --c-halo: rgba(255,122,69,.07); }
+body.landing .step-k { display: contents; }
+body.landing .step-ic { grid-column: 1; grid-row: 1 / span 2; align-self: start; display: grid; place-items: center; width: 44px; height: 44px; box-sizing: border-box; border-radius: 50%;
+  color: var(--c); border: 1px solid var(--c-edge); background: radial-gradient(circle at 35% 30%, var(--tile), var(--c-soft));
+  box-shadow: 0 10px 22px -12px var(--c-glow), 0 0 0 5px var(--c-halo); }
+body.landing .step-ic svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+body.landing .step-l { grid-column: 2; align-self: center; min-height: 44px; display: flex; align-items: center; gap: 10px;
+  font-family: var(--display); font-size: var(--fs-label); line-height: 1.3; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; color: var(--c); }
+body.landing .step-l b { font-weight: 700; }
+body.landing .step:not(:last-child)::before { content: ""; position: absolute; left: 21px; top: 58px; bottom: 10px; width: 1.5px;
+  background-image: linear-gradient(var(--c) 50%, transparent 0); background-size: 1.5px 6px; opacity: .5; }
+body.landing .step-body { grid-column: 2; min-width: 0; }
+body.landing .step-body h3 { margin: 4px 0 0; font-family: var(--display); font-size: 21px; line-height: 1.22; font-weight: 600; letter-spacing: -.015em; color: var(--ink); }
+body.landing .step-body p { margin: 12px 0 0; font-size: var(--fs-read); line-height: 1.62; color: var(--dim); text-wrap: pretty; }
+body.landing .step-body p b { font-weight: 600; color: var(--ink); }
+body.landing .step-card { margin: 14px 0 0; padding: 11px 15px 13px; border: 1px solid var(--hair); border-radius: 18px 18px 18px 5px; background: var(--tile);
+  font-family: var(--display); font-size: 17px; line-height: 1.38; color: var(--ink); box-shadow: 0 10px 24px -18px rgba(15,21,64,.35); }
+body.landing .step-card.is-crew { border-radius: 18px 18px 5px 18px; border-color: rgba(255,90,31,.32); background: #fff6f1; }
+:root[data-theme="dark"] body.landing .step-card { box-shadow: none; }
+:root[data-theme="dark"] body.landing .step-card.is-crew { background: #2e221d; border-color: rgba(255,122,69,.34); }
+body.landing .step-who { display: block; margin: 0 0 5px; font-family: var(--display); font-size: var(--fs-tag); line-height: 1.3; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; color: var(--cobalt); }
+body.landing .step-card.is-crew .step-who { color: var(--mars-ink); }
+body.landing .step-body .step-flag { margin: 6px 0 0; font-family: var(--display); font-size: var(--fs-label); line-height: 1.35; letter-spacing: .12em; text-transform: uppercase; font-weight: 500; color: var(--mars-ink); }
+body.landing .steps .transit { display: flex; align-items: center; gap: 10px; margin: 14px 0 0; padding: 0; font-family: var(--display); font-size: var(--fs-label); letter-spacing: .12em; text-transform: uppercase; font-weight: 500; white-space: nowrap; }
+body.landing .steps .transit-earth { color: var(--cobalt); }
+body.landing .steps .transit-mars { color: var(--mars-ink); }
+body.landing .steps .transit-track { position: relative; flex: 1 1 auto; max-width: 200px; min-width: 60px; height: 1.5px; background-image: linear-gradient(90deg, var(--c) 50%, transparent 0); background-size: 6px 1.5px; }
+body.landing .steps .transit-track i { position: absolute; top: -3px; left: 0; width: 7px; height: 7px; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px 2px var(--c-soft); animation: step-hop 12s linear infinite; will-change: transform; }
+html.transit-js body.landing .steps .transit-track i { animation: none !important; }                /* the page moves it (public/sky.js) */
+/* the way the signal has come, lit from Earth's blue to the crossing's colour behind the dot */
+html.transit-js body.landing .steps .transit-track::before { content: ""; position: absolute; left: 0; top: -.5px; width: calc(var(--p, 0) * (100% - 7px) + 3px); height: 2.5px;
+  border-radius: 2px; background: linear-gradient(90deg, rgba(47,69,232,.1), var(--c)); opacity: .9; pointer-events: none; }
+:root[data-theme="dark"].transit-js body.landing .steps .transit-track::before { background: linear-gradient(90deg, rgba(147,160,255,.1), var(--c)); }
+body.landing .step-body .transit-meta { margin: 8px 0 0; font-family: var(--display); font-size: var(--fs-label); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+/* the door to the composer at the end, where the page has no portal of its own (a phone held upright): the orange key */
+body.landing .p4-cta { margin: 0; padding: 30px 0 0; }
+body.landing .sheet-cta { display: flex; align-items: center; justify-content: center; gap: 14px; width: 100%; min-height: 58px; padding: 0 28px; box-sizing: border-box; border: 0; border-radius: 999px;
+  background: linear-gradient(180deg, #ff8a3d, #ff5a1f); color: #0f1540; font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; text-decoration: none;
+  box-shadow: 0 18px 40px -14px rgba(255,70,0,.75), 0 1px 0 rgba(255,255,255,.55) inset; transition: transform .15s ease, box-shadow .15s ease; }
+body.landing .sheet-cta:hover { transform: translateY(-1px); color: #0f1540; box-shadow: 0 22px 44px -14px rgba(255,70,0,.85), 0 1px 0 rgba(255,255,255,.55) inset; }
+:root[data-theme="dark"] body.landing .sheet-cta, :root[data-theme="dark"] body.landing .sheet-cta:hover { color: #1a0a02; }
+body.landing .sheet-cta span[aria-hidden] { font-size: 16px; letter-spacing: 0; }
+
+/* ====================================================================== the station's own surfaces */
+/* the composer as the device it was drawn as: the orange light at its top left (it pulses while a message crosses), the
+   ribbed grip at the middle of its top edge, the soft knob and the vents at its top right (station.css draws them) */
+body.landing .dev-led, body.landing .dev-grip, body.landing .dev-knob, body.landing .dev-vents { display: block; }
+body.landing .composer-device { padding-top: 70px; }
+@media (max-width: 760px), (max-height: 520px) {
+  body.landing .composer-device { padding-top: 56px; }
+  body.landing .dev-led { left: 22px; top: 20px; }
+  body.landing .dev-knob { display: none; }
+  body.landing .dev-vents { right: 22px; top: 16px; width: 36px; height: 24px; }
+  /* the pop-up on the messages page: the cross that closes it keeps the top right corner; the vents step in beside it */
+  html.js body.landing.messages .dev-vents { right: 62px; }
+  body.landing.messages .composer-device { padding-top: 52px; }
+}
+/* the cloud gallery on the narrowest phones: a column never wider than the room it has */
+body.landing .cloud-grid { grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); }
+/* the Media page: the pictures day by day — each day under its head (the sol in Mars, the day written out, today marked,
+   how many), its pictures in a grid of rounded tiles lifted off the glass, the time each was taken under it */
+body.landing .cloud-days { display: grid; gap: 34px; margin-top: 22px; }
+body.landing .cloud-day { transition: opacity .28s ease; }
+body.landing .cloud-day.is-arriving, body.landing .cloud-day.is-leaving { opacity: 0; }
+body.landing .cloud-day-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 14px; padding: 0 0 12px; border-bottom: 1px solid var(--hair); }
+body.landing.inner .cloud-day-head .cs { font-family: var(--display); font-size: var(--fs-label); font-weight: 600; letter-spacing: .12em; color: var(--mars-ink); }
+body.landing .cloud-day-date { margin: 0; font-family: var(--display); font-size: 19px; line-height: 1.25; font-weight: 600; letter-spacing: -.01em; color: var(--ink); text-transform: none; }
+body.landing .cloud-day-now { display: inline-flex; align-items: center; min-height: 24px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--mars);
+  font-family: var(--display); font-size: var(--fs-tag); font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--mars-ink); }
+body.landing.inner .cloud-day-head .count { margin-left: auto; font-family: var(--display); font-size: var(--fs-label); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+body.landing .cloud-days .cloud-grid { grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr)); gap: 16px; }
+body.landing .cloud-days .mtile { border-radius: 16px; background: var(--tile); border: 1px solid rgba(var(--cobalt-rgb),.12); box-shadow: 0 14px 30px -20px rgba(15,21,64,.5); }
+:root[data-theme="dark"] body.landing .cloud-days .mtile { border-color: rgba(255,255,255,.08); box-shadow: 0 14px 30px -20px rgba(0,0,0,.8); }
+body.landing .cloud-days .mtile:hover { transform: translateY(-2px); box-shadow: 0 20px 36px -20px rgba(15,21,64,.6); }
+body.landing .cloud-days .mtile-stamp { padding: 8px 12px 10px; }
+body.landing .cloud-days .mtile-when { font-size: var(--fs-label); letter-spacing: .08em; color: var(--dim); }
+@media (max-width: 760px), (max-height: 520px) {
+  body.landing .cloud-days { gap: 30px; margin-top: 18px; }
+  body.landing .cloud-days .cloud-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  body.landing .cloud-days .mtile { border-radius: 14px; }
+  body.landing .cloud-days .mtile-stamp { padding: 7px 10px 8px; }
+  body.landing .cloud-day-date { font-size: 17px; }
+}
+@media (max-width: 760px) and (min-height: 521px) {
+  body.landing.inner .cloud-gallery { padding: 20px 16px 22px; }
+}
+/* the small print of the station's own panels — a panel's channel, a table's heads, a list's names, the states of a
+   message, a dashboard panel's code — at the type floor, never under it (station.css drew some at 8 px) */
+body.landing :is(.panel > .chan, .kv dt, th, .pipe > div, .dpanel-code) { font-size: var(--fs-tag); }
+body.landing.inner :is(.card-top, .card-top .cs, .card-top .card-day, .eyebrow, .eyebrow .brk, .glance-n, .badge, .spec > span,
+  .gt-label, .gt-range, .gc-note, .gc-head span, .card-reply .who, .card-reply-meta, .log-day-head, .log-day-head span) { font-size: var(--fs-label); }
+body.landing.inner :is(.logpage-strip i, .logpage-strip span) { font-size: var(--fs-tag); }
+body.landing :is(.sky-when, .seq-fig) { font-size: var(--fs-tag); }
+body.landing .round-unit { font-size: 10px; }                                          /* drawn in a gauge's own units: 11 px and more on the page */
+body.landing.inner .gt-value em { font-size: var(--fs-tag); }
+@media (max-width: 760px), (max-height: 520px) {
+  body.landing .run-n, body.landing .run-strip .run-n, body.landing .ftab .ftab-n, body.landing .portal-head .dash-clock-label,
+  body.landing.inner .logpage-strip i, body.landing.inner .logpage-strip span { font-size: var(--fs-tag); }
+}
+
+/* ====================================================================== the foot: one for the dark, one for the light */
+/* by night the dark card with its two lights, Mars orange rising at its left foot and a teal light at its right; by day
+   a pane of light glass, white going over into peach, the same orange glow at its left foot, the words in ink and the
+   keys drawn in cobalt */
+body.landing .foot {
+  background:
+    radial-gradient(ellipse 560px 290px at 60px 100%, rgba(255,122,0,.92) 0, rgba(255,122,0,.4) 46%, rgba(255,122,0,0) 100%),
+    radial-gradient(ellipse 420px 260px at calc(100% - 130px) 42%, rgba(68,101,107,.95) 0, rgba(68,101,107,0) 100%),
+    #0d0302;
+  color: #fff; box-shadow: 0 50px 80px -40px rgba(0,0,0,.85);
+}
+body.landing .foot .foot-base, body.landing .foot .foot-brand, body.landing .foot .foot-base span:last-child { color: rgba(255,255,255,.78); }
+:root[data-theme="light"] body.landing .foot {
+  background:
+    radial-gradient(ellipse 560px 300px at 50px 100%, rgba(255,122,0,.6) 0, rgba(255,122,0,.24) 48%, rgba(255,122,0,0) 100%),
+    linear-gradient(150deg, rgba(255,255,255,.94) 0%, rgba(255,247,240,.9) 50%, rgba(255,226,198,.92) 100%);
+  -webkit-backdrop-filter: blur(26px) saturate(1.35); backdrop-filter: blur(26px) saturate(1.35);
+  border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); color: var(--ink);
+}
+:root[data-theme="light"] body.landing .foot-wordmark { color: var(--ink); }
+:root[data-theme="light"] body.landing .foot .foot-links a { color: var(--cobalt); border-color: rgba(var(--cobalt-rgb),.45); background: rgba(255,255,255,.6); }
+:root[data-theme="light"] body.landing .foot .foot-links a:hover { color: var(--ink); background: #fff; }
+:root[data-theme="light"] body.landing .foot .foot-base, :root[data-theme="light"] body.landing .foot .foot-brand,
+:root[data-theme="light"] body.landing .foot .foot-base span:last-child { color: #3a1a05; }
+@media (max-width: 760px) and (min-height: 521px) {
+  body.landing .foot {
+    background:
+      radial-gradient(ellipse 280px 150px at 30px 100%, rgba(255,122,0,.88) 0, rgba(255,122,0,.32) 55%, rgba(255,122,0,0) 100%),
+      radial-gradient(ellipse 240px 140px at calc(100% - 60px) 60%, rgba(68,101,107,.9) 0, rgba(68,101,107,0) 100%),
+      #0d0302; }
+  :root[data-theme="light"] body.landing .foot {
+    background:
+      radial-gradient(ellipse 280px 160px at 20px 100%, rgba(255,122,0,.55) 0, rgba(255,122,0,.2) 55%, rgba(255,122,0,0) 100%),
+      linear-gradient(150deg, #ffffff 0%, #fff6ee 55%, #ffe3c8 100%); }
+}
+
+/* the foot on a phone in French: the privacy key's name is long — the keys go under the name, in a row, rather than
+   beside it, so the name keeps its room */
+@media (max-width: 760px), (max-height: 520px) {
+  html[lang="fr"] body.landing .foot { grid-template-columns: minmax(0, 1fr); grid-template-areas: "brand" "base" "keys"; row-gap: 10px; }
+  html[lang="fr"] body.landing .foot .foot-links { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; margin-top: 6px; }
+}
+
+/* ====================================================================== the cookie card */
+/* its strip of night: the stars drifting and a dashed orbit round the incoming transmission — nobody in it */
+body.landing .consent-sky { height: 118px; }
+body.landing .consent-orbit { width: 300px; height: 74px; margin: -37px 0 0 -150px; }
+body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: translate(-50%, -50%); white-space: nowrap; }
+@media (max-width: 760px) and (min-height: 521px) {
+  body.landing .consent-sky { height: 104px; }
+  body.landing .consent-orbit { width: 250px; height: 64px; margin: -32px 0 0 -125px; }
+  body.landing .consent-signal { top: 50%; bottom: auto; }
+}
+
+/* ====================================================================== the paper by day */
+/* by day the page is near-white: the only grey on it is the habitat's sheet (the reference's grey); the grid and the
+   lights stay on it, and the cards of glass keep a hairline so they still stand off the page */
+:root[data-theme="light"] { --paper: #f6f7f8; --ground-2: #eceef1; }
+:root[data-theme="light"] body.landing :is(.note-card, .chapter, .steps) { border-color: rgba(15,21,64,.07); }
+
+/* ====================================================================== a wider screen */
+@media (min-width: 761px) and (min-height: 521px) {
+  /* P01 is the first screen: the name in a low band across its top, then the habitat — its dome kept to a moderate size,
+     so the sheet around and above it has the room for the pictures and the exchanges */
+  body.landing .sheet-p1 { height: max(660px, calc(100vh - 101px)); padding: 0 20px; box-sizing: border-box; }
+  body.landing .sheet-intro { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name run" "name tag"; column-gap: 48px; align-items: end; padding-top: 18px; }
+  body.landing .sheet-intro .wordmark { grid-area: name; margin: 0; font-size: clamp(52px, 4.6vw, 72px); }
+  body.landing .sheet-intro .run-dates { grid-area: run; margin: 0; text-align: right; white-space: nowrap; }
+  body.landing .sheet-intro .tagline { grid-area: tag; margin: 10px 0 6px; text-align: right; }
+  body.landing:not(.inner) .dome-panel { flex: 1 1 auto; margin-top: 10px; }
+  body.landing:not(.inner) .dome-stage { flex: 0 0 auto; height: clamp(220px, 36vh, 400px); max-height: 50cqw; min-height: 0; }
+  html.js body.landing .dome-panel.has-sky .dome-sky { top: calc(32px - var(--room)); }        /* the sky: from under the ruler to the ground line */
+  body.landing .dome-panel.has-line { --foot-h: 100px; padding-bottom: 0; }
+  body.landing .dome-foot { padding: 18px 20px 0; }
+  body.landing .dome-foot::before { left: -20px; right: -20px; }                     /* the ground line out to the frame's corners */
+  body.landing .hab-line-text { font-size: 20px; line-height: 1.3; }
+  /* the pages after it are each about a window tall, their cards in the middle, with air around them */
+  body.landing .sheet-p2, body.landing .sheet-p3, body.landing .sheet-p4 { min-height: calc(100vh - 101px); box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; margin: 0; padding: clamp(40px, 6vh, 88px) 0; }
+  body.landing .sheet-p4::before { position: absolute; left: 0; right: 0; top: 0; margin: 0; }
+  /* P02: the note, the lead at the left, the rest beside it */
+  body.landing .note-card { padding: 44px 52px 52px; }
+  body.landing .note-body { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 64px; align-items: start; }
+  body.landing .note-lead { margin-top: 34px; font-size: clamp(26px, 2.4vw, 38px); line-height: 1.3; }
+  body.landing .note-more { margin-top: 38px; font-size: clamp(17px, 1.3vw, 20px); }
+  /* the parts' headings, larger */
+  body.landing .part-head { gap: 14px; padding: 0 4px 28px; }
+  body.landing .part-title { font-size: clamp(38px, 3.6vw, 58px); }
+  body.landing .part-lead { font-size: clamp(17px, 1.3vw, 20px); }
+  /* P03: the two chapters side by side, each its photograph and its subjects beside it — on the chapter's own side */
+  body.landing .chapters { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+  body.landing .chapter { gap: 22px; padding: 18px 18px 30px; }
+  body.landing .ch-media { flex-direction: row; align-items: stretch; gap: 18px; height: clamp(200px, min(18vw, 26vh), 330px); }
+  body.landing .chapter.is-right .ch-media { flex-direction: row-reverse; }
+  body.landing .ch-photo { flex: 0 0 62%; aspect-ratio: auto; height: 100%; }
+  body.landing ul.ch-tags { flex: 1 1 auto; min-width: 0; flex-direction: column; flex-wrap: nowrap; justify-content: flex-end; align-items: flex-start; }
+  body.landing .chapter.is-right ul.ch-tags { align-items: flex-end; }
+  body.landing .ch-tags li { max-width: 100%; white-space: normal; padding: 5px 12px; }
+  body.landing .ch-text { gap: 12px; padding: 0 12px; }
+  body.landing .ch-text h3 { font-size: clamp(25px, 2vw, 32px); }
+  body.landing .ch-text p { font-size: 17px; }
+  /* P04: the chat's heading and welcome, then the three steps in a row on one card, the thread running from each sign to
+     the next; the portal follows, so no door */
+  body.landing .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 52px; margin-top: 8px; padding: 40px 44px 44px; }
+  body.landing .step { display: flex; flex-direction: column; padding: 0; }
+  body.landing .step-k { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+  body.landing .step-ic { width: 56px; height: 56px; box-shadow: 0 14px 28px -14px var(--c-glow), 0 0 0 7px var(--c-halo); }
+  body.landing .step-ic svg { width: 26px; height: 26px; }
+  body.landing .step-l { align-self: flex-start; min-height: 0; }
+  body.landing .step:not(:last-child)::before { left: 76px; right: -36px; top: 28px; bottom: auto; width: auto; height: 1.5px;
+    background-image: linear-gradient(90deg, var(--c) 50%, transparent 0); background-size: 7px 1.5px; opacity: .55; }
+  body.landing .step-body h3 { margin-top: 12px; font-size: 23px; }
+  body.landing .p4-cta { display: none; }
+  /* the foot: the dark card (or the light pane) a little taller, its keys at its top right */
+  body.landing .foot { min-height: 280px; }
+}
+/* a narrower desk: the name's band in one column, the note in one column, the chapters one under the other, the steps as
+   a column on their card as a phone has them */
+@media (min-width: 761px) and (max-width: 1100px) and (min-height: 521px) {
+  body.landing .sheet-intro { grid-template-columns: minmax(0, 1fr); grid-template-areas: "name" "tag" "run"; }
+  body.landing .sheet-intro .tagline, body.landing .sheet-intro .run-dates { text-align: left; }
+  body.landing .sheet-intro .tagline { margin-top: 10px; }
+  body.landing .sheet-intro .run-dates { margin: 6px 0 2px; white-space: normal; }
+  body.landing .note-body { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  body.landing .chapters { grid-template-columns: minmax(0, 1fr); }
+  body.landing .steps { grid-template-columns: minmax(0, 1fr); row-gap: 0; padding: 36px 36px 10px; }
+  body.landing .step { display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: 20px; padding: 0 0 34px; }
+  body.landing .step-k { display: contents; }
+  body.landing .step-l { align-self: center; min-height: 56px; }
+  body.landing .step:not(:last-child)::before { left: 27px; right: auto; top: 72px; bottom: 10px; width: 1.5px; height: auto;
+    background-image: linear-gradient(var(--c) 50%, transparent 0); background-size: 1.5px 6px; }
+  body.landing .step-body h3 { margin-top: 4px; }
+  body.landing .dome-foot .dome-caption { display: none; }
+}
+/* a desk not quite wide enough for the hint on one line beside the line: the hint in two */
+@media (min-width: 1101px) and (max-width: 1320px) and (min-height: 521px) {
+  body.landing .dome-foot .dome-caption { flex: 0 1 auto; max-width: 34%; white-space: normal; line-height: 1.6; }
+}
+
+/* ====================================================================== a phone */
+@media (max-width: 760px), (max-height: 520px) {
+  /* the habitat's foot: the ground line and the line under it; the hint is the keys themselves */
+  body.landing .dome-panel.has-line { padding-bottom: 0; }
+  body.landing .dome-foot .dome-caption { display: none; }
+  body.landing .hab-line-text { font-size: 18px; }
+}
+/* a phone held upright: the landing page is a few pages, one a screen, a swipe from one to the next — the habitat, the
+   name and the note, the mission, the chat — then the foot */
+@media (max-width: 760px) and (min-height: 521px) {
+  /* the habitat has the first screen to itself, the width of the screen and its height between the header and the bar of
+     keys: the sheet with its ruler, the sky over the dome (as tall as the rest of the screen leaves), the dome standing on
+     its ground line, and the floor with the line under the dome. The name moves to the next page. */
+  body.landing .sheet-intro.is-desk { display: none; }
+  :root body.landing:not(.inner) .dome-panel { order: 1; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); box-sizing: border-box; display: flex; flex-direction: column;
+    height: max(440px, calc(100vh - 149px)); height: max(440px, calc(100svh - 149px - env(safe-area-inset-bottom, 0px))); }
+  body.landing:not(.inner) .dome-head { display: none; }
+  html.js body.landing .dome-panel.has-sky .dome-screen, body.landing:not(.inner) .dome-screen { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; padding-top: 25px; }
+  body.landing:not(.inner) .dome-stage { flex: none; }
+  html.js body.landing .dome-panel.has-sky .dome-sky { inset: 25px calc(-1 * var(--gutter)) 0; }
+  body.landing .dome-panel.has-line { --foot-h: 92px; }
+  body.landing .dome-foot { margin: 0 calc(-1 * var(--gutter)); padding: 14px var(--gutter) 0; }
+  body.landing .dome-foot::before { left: var(--gutter); right: var(--gutter); }
+  /* a part's pop-up opens over the dome, in its sky (dome.js), fading in */
+  body.landing dialog.dome-popup[open] { animation: dome-in .3s ease-out both; }
+  @keyframes dome-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+  /* the second and third pages fill the screen between the header and the bar of keys — with the browser's own bars
+     folded away, as they are once the page is scrolled (lvh) — what is on them in its middle: the next page never peeks
+     in under them */
+  body.landing .sheet-p2, body.landing .sheet-p3 { box-sizing: border-box; display: flex; flex-direction: column; justify-content: center;
+    min-height: calc(100vh - 149px); min-height: calc(100lvh - 149px - env(safe-area-inset-bottom, 0px)); }
+  /* the second page: the station's name, the line under it and the run, then the note — with room around them */
+  body.landing .sheet-p2 { margin: 0; padding: 28px 0 24px; }
+  body.landing .sheet-intro.is-phone { display: block; padding: 0 4px 30px; }
+  body.landing .sheet-intro.is-phone .wordmark { margin: 0; font-size: 52px; line-height: .95; letter-spacing: -.035em; font-weight: 600; color: var(--ink); }
+  body.landing .sheet-intro.is-phone .tagline { margin: 14px 0 0; }
+  body.landing .sheet-intro.is-phone .run-dates { margin: 12px 0 0; line-height: 1.6; }
+  /* the parts: each its own page */
+  body.landing .sheet-p3, body.landing .sheet-p4 { margin: 0; padding: 16px 0 12px; }
+  body.landing .sheet-p4 { padding-top: 30px; }
+  body.landing .part-head { gap: 8px; padding: 0 4px 14px; }
+  body.landing .part-title { font-size: 30px; }
+  body.landing .sheet-p4::before { margin: -30px 0 30px; }
+  /* the mission's two chapters on one screen, taking turns as on a wider screen: the photograph at the chapter's side,
+     the number and the title beside it, the text beneath the width of the card. The subjects are not drawn here — the
+     text says them — so that both chapters are on the screen at once. */
+  body.landing .chapters { gap: 10px; }
+  body.landing .chapter { grid-template-columns: 34% minmax(0, 1fr); grid-template-rows: auto 1fr auto; column-gap: 12px; row-gap: 0; align-items: start; padding: 10px 10px 13px; }
+  body.landing .chapter.is-right { grid-template-columns: minmax(0, 1fr) 34%; }
+  body.landing .ch-media, body.landing .ch-text { display: contents; }
+  body.landing .ch-glow, body.landing ul.ch-tags, body.landing .ch-rule { display: none; }
+  body.landing .ch-photo { grid-column: 1; grid-row: 1 / span 2; align-self: start; aspect-ratio: auto; height: clamp(80px, 11.5svh, 100px); border-radius: 14px;
+    box-shadow: 0 16px 30px -18px rgba(214,74,30,.65), 0 2px 5px rgba(30,40,120,.1); }
+  body.landing .ch-n { grid-column: 2; grid-row: 1; padding: 4px 2px 0; }
+  body.landing .ch-text h3 { grid-column: 2; grid-row: 2; margin: 6px 0 0; padding: 0 2px; font-size: 20px; line-height: 1.16; }
+  body.landing .chapter.is-right .ch-photo { grid-column: 2; }
+  body.landing .chapter.is-right .ch-n, body.landing .chapter.is-right .ch-text h3 { grid-column: 1; }
+  body.landing .ch-text p { grid-column: 1 / -1; grid-row: 3; margin: 10px 4px 0; font-size: 15px; line-height: 1.5; }
+  /* a screen too short for a page as it is drawn above (public/sky.js marks it snug): the same page set a little closer,
+     so that it still fits — the gaps and the photographs smaller, the type a step down */
+  body.landing .sheet-p2.is-snug { padding: 16px 0 12px; }
+  body.landing .sheet-p2.is-snug .sheet-intro.is-phone { padding-bottom: 20px; }
+  body.landing .sheet-p2.is-snug .sheet-intro.is-phone .wordmark { font-size: 44px; }
+  body.landing .sheet-p2.is-snug .sheet-intro.is-phone .tagline { margin-top: 10px; }
+  body.landing .sheet-p2.is-snug .sheet-intro.is-phone .run-dates { margin-top: 8px; line-height: 1.5; }
+  body.landing .sheet-p2.is-snug .note-card { padding: 20px 18px 22px; }
+  body.landing .sheet-p2.is-snug .sheet-meta.is-ruled { padding-bottom: 12px; }
+  body.landing .sheet-p2.is-snug .note-lead { margin-top: 16px; font-size: 20px; line-height: 1.38; }
+  body.landing .sheet-p2.is-snug .note-more { margin-top: 12px; font-size: 16px; line-height: 1.55; }
+  body.landing .sheet-p3.is-snug { padding: 10px 0 8px; }
+  body.landing .sheet-p3.is-snug .part-head { gap: 6px; padding-bottom: 10px; }
+  body.landing .sheet-p3.is-snug .part-title { font-size: 27px; }
+  body.landing .sheet-p3.is-snug .chapter { padding: 8px 8px 11px; }
+  body.landing .sheet-p3.is-snug .ch-photo { height: 76px; }
+  body.landing .sheet-p3.is-snug .ch-text h3 { font-size: 18.5px; }
+  body.landing .sheet-p3.is-snug .ch-text p { margin-top: 8px; font-size: 14.5px; line-height: 1.46; }
+  /* the pages of the scroll: a swipe goes to the next; a page taller than the screen (public/sky.js marks it) stops at
+     each of its parts too — the note, the second chapter, the card of steps and each step after the first — so nothing on
+     it is passed over; the foot ends the scroll. While a pop-up is open the page stays where it is. */
+  html:has(body.landing:not(.inner)) { scroll-snap-type: y mandatory; scroll-padding-top: 83px; scroll-padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
+  html:has(body.landing:not(.inner) dialog[open]) { scroll-snap-type: none; }
+  body.landing:not(.inner) [data-page] { scroll-snap-align: start; scroll-snap-stop: always; }
+  body.landing:not(.inner) [data-page].is-tall :is(.note-card, .chapter + .chapter, .steps, .step + .step) { scroll-snap-align: start; }
+  body.landing:not(.inner) [data-page].is-tall :is(.note-card, .chapter, .steps, .step).no-stop { scroll-snap-align: none; }   /* too near the next stop (sky.js) */
+  body.landing:not(.inner) .foot { scroll-snap-align: end; content-visibility: visible; }   /* laid out from the start (aura.css
+     leaves it for later on a phone): the end of the scroll stays where it is */
+  body.landing.messages .composer-device { padding-top: 52px; }
+}
+@media (max-width: 360px) {
+  body.landing .note-card { padding: 24px 18px 26px; }
+  body.landing .note-lead { font-size: 20px; }
+  body.landing .steps { padding: 24px 16px 4px; }
+  body.landing .step { column-gap: 14px; }
+  body.landing .part-title { font-size: 28px; }
+}
+/* a phone held sideways: the pages under one another, the habitat no taller than the screen */
+@media (max-height: 520px) {
+  body.landing .sheet-p2 { margin-top: 44px; }
+  body.landing .sheet-p3, body.landing .sheet-p4 { margin-top: 52px; }
+}

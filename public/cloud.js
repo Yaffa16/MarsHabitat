@@ -17,18 +17,8 @@
   var pollMs = Math.max(5000, Number(targets[0].el.getAttribute('data-poll')) || 20000);
   var version = targets[0].el.getAttribute('data-version') || '';
 
-  /** Bring `box` into line with `html`, keeping every tile that is still there. */
-  function reconcile(box, html) {
-    var tpl = document.createElement('template'); tpl.innerHTML = html;
-    var next = tpl.content;
-    var oldGrid = box.querySelector('.mgrid, .mstrip'), newGrid = next.querySelector('.mgrid, .mstrip');
-    // the head line (count, frequency): swap only if its words changed
-    var oldHead = box.querySelector('.log-day-head, .cloud-latest-head'), newHead = next.querySelector('.log-day-head, .cloud-latest-head');
-    if (oldHead && newHead && oldHead.innerHTML !== newHead.innerHTML) oldHead.innerHTML = newHead.innerHTML;
-    if (!oldGrid || !newGrid) {
-      // empty ↔ pictures: the one case where the whole thing is replaced
-      box.innerHTML = html; return;
-    }
+  /** Bring the tiles of `oldGrid` into line with those of `newGrid`, keeping every tile that is still there. */
+  function reconcileGrid(oldGrid, newGrid) {
     var want = [].slice.call(newGrid.children);
     var have = {};
     [].slice.call(oldGrid.children).forEach(function (el) { have[el.getAttribute('data-id')] = el; });
@@ -37,8 +27,7 @@
     // take away what has gone, gently
     Object.keys(have).forEach(function (id) {
       if (keep[id]) return;
-      var el = have[id]; el.classList.add('is-leaving');
-      setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 260);
+      leave(have[id]);
       delete have[id];
     });
     // put every wanted tile in its place, reusing the element already on the page
@@ -46,12 +35,52 @@
     want.forEach(function (w) {
       var id = w.getAttribute('data-id');
       var el = have[id];
-      if (!el) { el = w; el.classList.add('is-arriving'); requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.remove('is-arriving'); }); }); }
+      if (!el) { el = w; arrive(el); }
       // skip over tiles on their way out
       while (cursor && cursor.classList.contains('is-leaving')) cursor = cursor.nextElementSibling;
       if (el !== cursor) oldGrid.insertBefore(el, cursor);
       else cursor = cursor.nextElementSibling;
     });
+  }
+  function arrive(el) { el.classList.add('is-arriving'); requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.remove('is-arriving'); }); }); }
+  function leave(el) { el.classList.add('is-leaving'); setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 260); }
+
+  /** Bring `box` into line with `html`, keeping every tile that is still there — in the gallery day by day (a day's
+      head and its tiles; a new day slides in where it belongs, a day with nothing left in it fades away), in the
+      dashboard's strip as one row. */
+  function reconcile(box, html) {
+    var tpl = document.createElement('template'); tpl.innerHTML = html;
+    var next = tpl.content;
+    // the head line (count, frequency): swap only if its words changed
+    var oldHead = box.querySelector('.log-day-head, .cloud-latest-head'), newHead = next.querySelector('.log-day-head, .cloud-latest-head');
+    if (oldHead && newHead && oldHead.innerHTML !== newHead.innerHTML) oldHead.innerHTML = newHead.innerHTML;
+    var oldDays = box.querySelector('.cloud-days'), newDays = next.querySelector('.cloud-days');
+    if (oldDays && newDays) {
+      var want = [].slice.call(newDays.children), have = {}, keep = {};
+      [].slice.call(oldDays.children).forEach(function (el) { have[el.getAttribute('data-day')] = el; });
+      want.forEach(function (w) { keep[w.getAttribute('data-day')] = true; });
+      Object.keys(have).forEach(function (d) { if (!keep[d]) { leave(have[d]); delete have[d]; } });
+      var cursor = oldDays.firstElementChild;
+      want.forEach(function (w) {
+        var el = have[w.getAttribute('data-day')];
+        if (el) {
+          var oh = el.querySelector('.cloud-day-head'), nh = w.querySelector('.cloud-day-head');
+          if (oh && nh && oh.innerHTML !== nh.innerHTML) oh.innerHTML = nh.innerHTML;
+          var og = el.querySelector('.mgrid'), ng = w.querySelector('.mgrid');
+          if (og && ng) reconcileGrid(og, ng);
+        } else { el = w; arrive(el); }
+        while (cursor && cursor.classList.contains('is-leaving')) cursor = cursor.nextElementSibling;
+        if (el !== cursor) oldDays.insertBefore(el, cursor);
+        else cursor = cursor.nextElementSibling;
+      });
+      return;
+    }
+    var oldGrid = box.querySelector('.mgrid, .mstrip'), newGrid = next.querySelector('.mgrid, .mstrip');
+    if (!oldGrid || !newGrid || !!oldDays !== !!newDays) {
+      // empty ↔ pictures: the one case where the whole thing is replaced
+      box.innerHTML = html; return;
+    }
+    reconcileGrid(oldGrid, newGrid);
   }
 
   function tick() {

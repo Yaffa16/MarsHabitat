@@ -2,11 +2,13 @@
 const L = require('../layout');
 const { esc, panel, eyebrow, pipeline } = L;
 const orbital = require('../../lib/orbital');
+const officer = require('../../lib/officer');
 
 /**
- * The project, the station's behaviour and the credits — one section at the
- * foot of the landing page, in three folds. The landing page is the only
- * public page, so this is where the reading matter lives.
+ * The project, the station's behaviour and the credits — About, What this is
+ * and Who we are — as one page of their own, /about (aboutPage, below): the
+ * About key on a phone's bar of keys and the rows of the ticker's menu lead
+ * there, each row to its section.
  */
 
 const CREDITS = [
@@ -117,7 +119,7 @@ function whatFold(ctx) {
   ${panel('CH-40 / STATES', `${eyebrow(T('Message states as shown in the interface'))}${pipeline('IN_TRANSIT', T)}`)}`;
 }
 
-function whoFold(crew, T) {
+function whoFold(crew, T, write = '#write') {
   return `
   ${panel('CH-42 / CREW', `
     ${eyebrow(T('Inside the habitat'))}
@@ -126,7 +128,7 @@ function whoFold(crew, T) {
     ${crew.map((c) => `
       <div>
         <div class="eyebrow">${esc(c.role)}</div>
-        <h3 style="font-family:var(--mono);letter-spacing:.06em">${esc(c.designation)}</h3>
+        <h3 style="font-family:var(--mono);letter-spacing:.06em">${esc(officer.shown(c.designation))}</h3>
         <p class="note">${esc(c.status)} · ${T('currently')} ${esc(c.activity ? c.activity.toLowerCase() : T('unlogged'))}</p>
       </div>`).join('')}
     </div>`, 'mars-side')}
@@ -149,67 +151,46 @@ function whoFold(crew, T) {
       ${panel('CH-42 / CONTACT', `
         ${eyebrow(T('Reach the production'))}
         <p class="note">${T('Press and production enquiries reach a person, not this station. Messages sent through the communication channel reach the habitat and are answered there. The two do not mix.')}</p>
-        <p><a class="btn" href="#write">${T('Write to the habitat instead')}</a></p>`, 'earth-side')}
+        <p><a class="btn" href="${write}">${T('Write to the habitat instead')}</a></p>`, 'earth-side')}
     </div>
   </div>`;
 }
 
 /**
- * The whole reading section, three pop-ups. At the top of the landing page
- * three buttons sit in a row directly under the masthead; each opens its text
- * in a dialog over the page, closed by its ×, by Escape, or by pressing the
- * dimmed ground, so the composer never moves. A link to `#what` (or
- * `#about-project`, `#who-we-are`) opens the matching one, which keeps the
- * old subpage redirects and the composer's "How it will work" working.
+ * The reading matter as a page: About, What this is and Who we are one after
+ * another, each under its own head — the channel's code, its name, the line
+ * beneath, in the dress of the dashboard's heads — with a row of three pills
+ * at the top that jump to them. Once three pop-ups over the landing page; now
+ * the page the About key opens (layout.js, tabbar()), where the ticker's menu
+ * rows lead (public.js, ticker()) and where the old addresses land: /what and
+ * /who-we-are (server.js), and the landing page's #about, #about-project,
+ * #what and #who-we-are (public.js, mission()). The door to the composer
+ * under Who we are is the landing page's (/#write), which a phone held
+ * upright turns into the messages page's (tabbar.js).
  */
-function aboutSection(ctx, { crew }) {
+const PARTS = [
+  ['about-project', 'CH-41', 'About', 'The habitat, the distance, the archive'],
+  ['what', 'CH-40', 'What this is', 'How the station behaves, in plain terms'],
+  ['who-we-are', 'CH-42', 'Who we are', 'Crew, company, production credits'],
+];
+
+function aboutPage(ctx, { crew = [] } = {}) {
   const T = ctx.T;
-  const popup = (id, title, sub, inner) => `
-    <button type="button" class="fold-btn" data-popup="${id}" aria-haspopup="dialog" aria-controls="${id}">
-      <span class="fold-title">${esc(T(title))}</span><span class="fold-sub">${esc(T(sub))}</span></button>
-    <dialog class="popup" id="${id}" aria-labelledby="${id}-title">
-      <div class="popup-head">
-        <div><span class="fold-title" id="${id}-title">${esc(T(title))}</span><span class="fold-sub">${esc(T(sub))}</span></div>
-        <button type="button" class="popup-close" data-close aria-label="${esc(T('Close'))}">×</button>
-      </div>
-      <div class="popup-body">${inner}</div>
-    </dialog>`;
-  return `
-  <div class="about-top" id="about" aria-label="${esc(T('About'))}">
-  ${popup('about-project', 'About', 'The habitat, the distance, the archive', aboutFold(ctx))}
-  ${popup('what', 'What this is', 'How the station behaves, in plain terms', whatFold(ctx))}
-  ${popup('who-we-are', 'Who we are', 'Crew, company, production credits', whoFold(crew, T))}
-  </div>
-  <script>
-  (function () {
-    var ids = ['about-project', 'what', 'who-we-are'];
-    function dialogOf(id) { var d = document.getElementById(id); return d && d.tagName === 'DIALOG' ? d : null; }
-    function open(id) {
-      var d = dialogOf(id); if (!d || d.open) return;
-      if (typeof d.showModal === 'function') d.showModal(); else d.setAttribute('open', '');
-      d.querySelector('.popup-body').scrollTop = 0;
-    }
-    function closeAll() { ids.forEach(function (id) { var d = dialogOf(id); if (d && d.open) d.close(); }); }
-    document.querySelectorAll('.fold-btn[data-popup]').forEach(function (b) {
-      b.addEventListener('click', function () { open(b.getAttribute('data-popup')); });
-    });
-    ids.forEach(function (id) {
-      var d = dialogOf(id); if (!d) return;
-      d.querySelector('[data-close]').addEventListener('click', function () { d.close(); });
-      // A press on the dimmed ground, outside the slab, closes it.
-      d.addEventListener('click', function (e) { if (e.target === d) d.close(); });
-      d.addEventListener('close', function () {
-        if (location.hash === '#' + id && history.replaceState) history.replaceState(null, '', location.pathname + location.search);
-      });
-    });
-    function fromHash() {
-      var id = (location.hash || '').slice(1);
-      if (ids.indexOf(id) !== -1) { closeAll(); open(id); }
-    }
-    window.addEventListener('hashchange', fromHash);
-    fromHash();
-  })();
-  </script>`;
+  const inner = { 'about-project': () => aboutFold(ctx), what: () => whatFold(ctx), 'who-we-are': () => whoFold(crew, T, '/#write') };
+  const body = `
+  <nav class="about-jump" aria-label="${esc(T('About, What this is, Who we are'))}">
+    ${PARTS.map(([id, , title]) => `<a href="#${id}">${esc(T(title))}</a>`).join('')}
+  </nav>
+  ${PARTS.map(([id, code, title, sub]) => `
+  <section class="about-sec" id="${id}" aria-labelledby="${id}-title">
+    <header class="about-sec-head">
+      <span class="dash-code">${code}</span>
+      <h2 class="bigsec" id="${id}-title">${esc(T(title))}</h2>
+      <p class="dash-sub">${esc(T(sub))}</p>
+    </header>
+    ${inner[id]()}
+  </section>`).join('')}`;
+  return L.page({ title: 'About', ctx, body, current: '/about', bodyClass: 'about' });   // layout.js dresses it as an inner page
 }
 
-module.exports = { aboutSection };
+module.exports = { aboutPage };

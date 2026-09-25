@@ -6,6 +6,7 @@ const data = require('../lib/data');
 const V = require('../views/control');
 const content = require('../lib/content');
 const missionLib = require('../lib/mission');
+const officer = require('../lib/officer');
 const media = require('../lib/media');
 const multer = require('multer');
 
@@ -412,7 +413,7 @@ router.post('/moods/:id', (req, res) => {
         activity, member.status, now(), req.user.username);
   audit(req.user.username, 'CrewMood', id, 'file');
   noteEdits(`mood:${id}`, 0, before && same(before.calm_tense, v('calm_tense')) ? [] : ['calm_tense'], req.user.username);
-  setFlash(req, `State filed for ${member.designation}. The mission page has been updated.`);
+  setFlash(req, `State filed for ${officer.shown(member.designation)}. The mission page has been updated.`);
   toTab(res, TAB_OF_OFFICER[member.designation] || 'comms', dayParam(req, ctx));
 });
 
@@ -452,7 +453,7 @@ router.post('/logbook', (req, res, next) => upload.array('file', 50)(req, res, (
   // health officers write the Daily Science Findings and the Daily Health
   // Blog, which are their reports (POST /control/report).
   if (member.designation !== content.BLOG_OFFICER) {
-    dropFiles(); setFlash(req, 'Only the communication officer has a blog here — the Commander Blog. The science and health officers write the Daily Science Findings and the Daily Health Blog on their tabs.', true);
+    dropFiles(); setFlash(req, 'Only the commanding officer has a blog here — the Commander Blog. The science and health officers write the Daily Science Findings and the Daily Health Blog on their tabs.', true);
     return toTab(res, tab, day);
   }
   const draft = req.body.action === 'draft';
@@ -474,7 +475,7 @@ router.post('/logbook', (req, res, next) => upload.array('file', 50)(req, res, (
   if (draft) {                                                               // kept on the desk; what is live stays live
     keepDraft(`blog:${member.id}`, day, text, req.user.username);
     audit(req.user.username, 'CrewEntry', `${designation} day ${day}`, 'draft');
-    setFlash(req, `Draft saved for ${designation}, day ${day} — not public until it is published.`
+    setFlash(req, `Draft saved for ${officer.shown(designation)}, day ${day} — not public until it is published.`
       + (attached ? ` ${attached} file${attached === 1 ? '' : 's'} added to the archive with it.` : '') + (mediaError ? ` One file was refused: ${mediaError}` : ''), !!mediaError);
     return toTab(res, tab, day);
   }

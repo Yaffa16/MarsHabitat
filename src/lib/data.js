@@ -291,7 +291,7 @@ function logbook({ includeHeld = false, crewId = null, limit = 400 } = {}) {
 
 /**
  * The three blogs, as the public sees them now: every day of the run with
- * its three slots — the Commander Blog (the communication officer's entry),
+ * its three slots — the Commander Blog (the commanding officer's entry),
  * the Daily Science Findings and the Daily Health Blog (the science and
  * health officers' reports, SCIENCE and HEALTH notes) — the written post where
  * there is one and a placeholder where there is not, so the shape of the

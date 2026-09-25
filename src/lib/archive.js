@@ -4,6 +4,7 @@ const mission = require('./mission');
 const data = require('./data');
 const mediaLib = require('./media');
 const MV = require('../views/pages/media');
+const { shown } = require('./officer');   // the first officer is shown as the Commanding Officer (the stored key stays)
 
 /**
  * The archive is the work, so nothing on this site is allowed to be transient.
@@ -212,7 +213,7 @@ function dayRecord(missionDay) {
  * The record's shape, by officer and by tab. Added to every day object:
  *
  *   officers  one block per crew member, in the crew's order: the
- *             communication officer's Commander Blog for the day (the
+ *             commanding officer's Commander Blog for the day (the
  *             published entry, placeholders left out), the other officers'
  *             blog — the science officer's Daily Science Findings, the
  *             health officer's Daily Health Blog, as the
@@ -239,7 +240,7 @@ function dress(r) {
     const kind = REPORT_OF.find(([, re]) => re.test(c.designation));
     let reports = [];
     if (kind) { reports = notes.filter((x) => x.kind === kind[0]); reports.forEach((x) => used.add(x.id)); }
-    // Only the communication officer has a blog of their own — the Commander Blog.
+    // Only the commanding officer has a blog of their own — the Commander Blog.
     const hasBlog = c.designation === content.BLOG_OFFICER;
     return { id: c.id, designation: c.designation, role: c.role, entry: hasBlog ? entry : null, hasBlog,
       reportKind: kind ? kind[0] : null, reportLabel: kind ? kind[2] : null, reports,
@@ -483,7 +484,7 @@ function fullExport() {
         storesCounted: r.filed.items.map((v) => ({
           item: v.label, key: v.key, unit: v.unit, quantity: v.quantity, consumption: v.consumption })),
         storesNote: r.filed.why || null,
-        // by officer: the Commander Blog (communication officer), the Daily Science
+        // by officer: the Commander Blog (commanding officer), the Daily Science
         // Findings / Daily Health Blog (science, health officer) and the states filed
         officers: r.officers.map((o) => ({ crew: o.designation, role: o.role,
           ...(o.hasBlog ? { commanderBlog: o.entry ? { body: o.entry.body, writtenAt: o.entry.written_at, updatedAt: o.entry.updated_at } : null } : {}),
@@ -582,7 +583,7 @@ function recordMarkdown(r, heading, note = null) {
 
   /* ---- the officers ---------------------------------------------------- */
   for (const o of r.officers) {
-    out.push(`### ${o.designation}${o.role ? ` — ${o.role}` : ''}`, '');
+    out.push(`### ${shown(o.designation)}${o.role ? ` — ${o.role}` : ''}`, '');
     if (o.hasBlog) {
       out.push('#### Commander Blog', '');
       if (o.entry) out.push(MV.entryMarkdown(o.entry.body, o.media), '');
@@ -713,7 +714,7 @@ function recordMarkdown(r, heading, note = null) {
     out.push('### Media sent out', '');
     for (const m of r.media) {
       out.push(`- **${m.filename}** — ${m.kind}, ${m.bytes.toLocaleString('en-GB')} bytes` +
-        `${m.designation ? `, ${m.designation}` : ''}${m.caption ? ` — ${m.caption}` : ''}  `);
+        `${m.designation ? `, ${shown(m.designation)}` : ''}${m.caption ? ` — ${m.caption}` : ''}  `);
       out.push(`  SHA-256 \`${m.sha256}\` · ${mediaLib.fileUrl(m)}`);
     }
     out.push('');
@@ -733,7 +734,7 @@ function fullMarkdown() {
   out.push(`# ${st.name}`, '');
   out.push(`Mars Communication Station — complete mission record.`, '');
   out.push(`- Mission: ${st.start_date} to ${st.end_date} (${st.totalDays} days, ${st.timezone})`);
-  out.push(`- Crew: ${crew.map((c) => `${c.designation} (${c.role})`).join('; ')}`);
+  out.push(`- Crew: ${crew.map((c) => `${shown(c.designation)} (${c.role})`).join('; ')}`);
   out.push(`- Days recorded: ${upTo === 0 ? 'none yet — the run has not begun' : `${upTo} of ${st.totalDays}`}`);
   out.push(`- Exported: ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC`, '');
   out.push('Every day below holds what was entered on the station that day and what its sensors',

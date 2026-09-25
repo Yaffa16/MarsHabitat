@@ -3,6 +3,7 @@ const L = require('../layout');
 const { esc } = L;
 const media = require('../../lib/media');
 const missionLib = require('../../lib/mission');
+const officer = require('../../lib/officer');
 
 const dd = (n) => String(n).padStart(3, '0');
 const fmtBytes = (b) => b >= 1073741824 ? (b / 1073741824).toFixed(2) + ' GB' : b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : b >= 1024 ? Math.round(b / 1024) + ' kB' : b + ' B';
@@ -140,12 +141,64 @@ function cloudWhen(x, tz = 'Europe/Berlin') {
 }
 
 /** One picture from the cloud folder as a tile: the preview, and under it the
- *  date and the time it was taken. */
-function cloudTile(x, tz) {
+ *  date and the time it was taken — or, in the gallery, where the day heads
+ *  its row of pictures already, the time alone (`timeOnly`). */
+function cloudTile(x, tz, { timeOnly = false } = {}) {
   const when = cloudWhen(x, tz);
+  const text = when ? (timeOnly ? when.text.split(' · ').pop() : when.text) : '';
   return `<a class="mtile kind-image" href="${x.url}" data-id="${x.id}" title="${esc(x.name)}" target="_blank" rel="noopener">
       <span class="mtile-visual"><img src="${x.thumb}" alt="${esc(x.name)}" loading="lazy" decoding="async"></span>${
-      when ? `<span class="mtile-text mtile-stamp"><time class="mtile-when" datetime="${esc(when.iso)}">${esc(when.text)}</time></span>` : ''}</a>`;
+      when ? `<span class="mtile-text mtile-stamp"><time class="mtile-when" datetime="${esc(when.iso)}">${esc(text)}</time></span>` : ''}</a>`;
+}
+
+/** The day a cloud picture was taken, 'YYYY-MM-DD' in the venue's clock: from
+ *  its name, or else from the file's own date. */
+function cloudDay(x, tz = 'Europe/Berlin') {
+  if (x.taken) return x.taken.date;
+  const d = new Date(x.modified || NaN);
+  if (Number.isNaN(d.getTime())) return '';
+  try { return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d); }
+  catch { return d.toISOString().slice(0, 10); }
+}
+
+const DAY_LOCALE = { en: 'en-GB', de: 'de-DE', fr: 'fr-FR' };
+/** A day's head in the gallery: the sol it was during the run, the day written
+ *  out in the page's language ("Friday 25 September 2026"), today marked, and
+ *  how many pictures it has. */
+function cloudDayHead(T, day, n, { mission = null, lang = 'en' } = {}) {
+  let date = day;
+  try {
+    date = new Date(day + 'T12:00:00Z').toLocaleDateString(DAY_LOCALE[lang] || 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+    date = date.charAt(0).toUpperCase() + date.slice(1);
+  } catch { /* the day as it is */ }
+  let sol = 0;
+  if (mission && mission.start_date) {
+    const k = Math.round((Date.parse(day + 'T12:00:00Z') - Date.parse(mission.start_date + 'T12:00:00Z')) / 864e5) + 1;
+    if (k >= 1 && k <= mission.totalDays) sol = k;
+  }
+  const today = mission && mission.today === day;
+  return `<header class="cloud-day-head">${sol ? `<span class="cs">SOL ${String(sol).padStart(2, '0')}</span>` : ''}<h3 class="cloud-day-date">${esc(date)}</h3>${
+    today ? `<span class="cloud-day-now">${T('Today')}</span>` : ''}<span class="count">${plural(T, n, 'photograph', 'photographs')}</span></header>`;
+}
+
+/** The pictures by the day they were taken — the newest day first (the oldest
+ *  when the folder is read in name order, CLOUD_SORT=name) — each day under its
+ *  head, its pictures in the gallery's own order. */
+function cloudDays(T, items, opts = {}) {
+  const tz = opts.tz, order = [], by = {};
+  for (const x of items) {
+    const d = cloudDay(x, tz) || '0000-00-00';
+    if (!by[d]) { by[d] = []; order.push(d); }
+    by[d].push(x);
+  }
+  const asc = opts.sort === 'name';
+  order.sort((a, b) => (asc ? a.localeCompare(b) : b.localeCompare(a)));
+  return `<div class="cloud-days">${order.map((d) => `
+      <section class="cloud-day" data-day="${esc(d)}">
+        ${cloudDayHead(T, d, by[d].length, opts)}
+        <div class="mgrid cloud-grid">${by[d].map((x) => cloudTile(x, tz, { timeOnly: true })).join('')}</div>
+      </section>`).join('')}
+    </div>`;
 }
 
 /** The cloud folder as a grid: every image, newest first, each opening the
@@ -155,11 +208,12 @@ function cloudGrid(T, cloud, opts) {
   return `<section class="logpage-day media-day cloud-gallery" id="gallery" data-version="${esc(cloud.snapshot.version || '')}" data-poll="${(Number(cloud.snapshot.checkSeconds) || 20) * 1000}">${cloudGridInner(T, cloud, opts)}</section>`;
 }
 
-/** The grid's inside — the head and the tiles — on its own so the page can
- *  swap it in as the folder changes (public/cloud.js polls /api/cloud).
- *  `tz` is the venue's time zone, for a file whose name carries no time. */
-function cloudGridInner(T, cloud, { tz } = {}) {
-  const n = cloud.items.length, s = cloud.snapshot, line = checkedLine(T, s, tz);
+/** The grid's inside — the head and the pictures, day by day — on its own so
+ *  the page can swap it in as the folder changes (public/cloud.js polls
+ *  /api/cloud). `tz` is the venue's time zone, for a file whose name carries
+ *  no time; `mission` and `lang` write the days' heads. */
+function cloudGridInner(T, cloud, opts = {}) {
+  const tz = opts.tz, n = cloud.items.length, s = cloud.snapshot, line = checkedLine(T, s, tz);
   return `
     <div class="log-day-head">
       <span class="cs">${esc(T(cloud.title))}</span>
@@ -167,7 +221,7 @@ function cloudGridInner(T, cloud, { tz } = {}) {
       ${line.failed}
       <span class="cloud-live" title="${esc(T('Updates by itself as pictures arrive'))}"><i></i>${T('LIVE')}</span>
     </div>
-    ${n ? `<div class="mgrid cloud-grid">${cloud.items.map((x) => cloudTile(x, tz)).join('')}</div>`
+    ${n ? cloudDays(T, cloud.items, { ...opts, sort: cloud.sort })
     : `<div class="empty" style="padding:28px">${T('Nothing in the folder yet')}.</div>`}`;
 }
 
@@ -191,7 +245,7 @@ function gallery(ctx, { cloud = null }) {
   // /media is the cloud gallery and nothing else: what the crew send out of
   // the habitat is shown where it belongs — in their entries on the crew
   // log, in At a Glance and on each item's own page.
-  const body = cloud ? cloudGrid(T, cloud, { tz: ctx.mission && ctx.mission.timezone })
+  const body = cloud ? cloudGrid(T, cloud, { tz: ctx.mission && ctx.mission.timezone, mission: ctx.mission, lang: ctx.lang })
     : `<div class="empty" style="padding:40px;margin-top:26px">${T('The gallery is not connected yet')}.</div>`;
 
   return L.page({ title: 'Media', ctx, body, current: '/media', scripts: cloud ? ['/cloud.js'] : [],
@@ -219,7 +273,7 @@ function item(ctx, { item: m, date, prev, next, position }) {
   <div class="logpage-top mview-top">
     <div class="eyebrow">${T('Channel group')} 60 · ${T('Media')} · ${T('Day')} ${dd(m.mission_day)} · ${esc(missionLib.dayLabel(date))} <span class="brk">${position.i} ${T('of')} ${position.n} ${T('that day')}</span></div>
     <h1>${esc(m.caption || m.filename)}</h1>
-    <p class="lede">${m.designation ? esc(m.designation) : T('Habitat')} · ${esc(T(m.kind))} · ${fmtBytes(m.bytes)}${m.width && m.height ? ` · ${m.width}×${m.height}` : ''}${m.duration_s ? ` · ${fmtDur(m.duration_s)}` : ''}${m.taken_at ? ` · ${T('made')} ${esc(m.taken_at)}` : ''}</p>
+    <p class="lede">${m.designation ? esc(officer.shown(m.designation)) : T('Habitat')} · ${esc(T(m.kind))} · ${fmtBytes(m.bytes)}${m.width && m.height ? ` · ${m.width}×${m.height}` : ''}${m.duration_s ? ` · ${fmtDur(m.duration_s)}` : ''}${m.taken_at ? ` · ${T('made')} ${esc(m.taken_at)}` : ''}</p>
     <div class="actions">
       <a class="btn" href="/media#day-${m.mission_day}">${T('All media')}</a>
       <a class="btn" href="/logbook#day-${m.mission_day}">${T('That day’s log')}</a>
@@ -240,4 +294,4 @@ function item(ctx, { item: m, date, prev, next, position }) {
     hero: L.masthead(ctx) + L.pageNav('/media', T), hideRail: true, hideNav: true, bodyClass: 'landing inner' });
 }
 
-module.exports = { gallery, item, tile, strip, figure, entryHtml, entryText, entryMarkdown, fmtBytes, cloudGridInner, cloudLatestInner };
+module.exports = { gallery, item, tile, strip, figure, entryHtml, entryText, entryMarkdown, fmtBytes, cloudGridInner, cloudLatestInner, cloudWhen, cloudDay };

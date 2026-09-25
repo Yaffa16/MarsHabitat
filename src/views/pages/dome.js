@@ -20,6 +20,7 @@
  */
 const { esc } = require('../layout');
 const moodLib = require('../../lib/mood');
+const { shown: shownTitle } = require('../../lib/officer');   // the crew's titles as the station shows them
 
 const same = (s) => s;
 
@@ -149,36 +150,36 @@ function domeSvgInner(aura = false) {
     ${aura ? `<g class="dome-mesh" transform="translate(${CX - R} ${CY - R}) scale(${(R / 350).toFixed(5)})">${MESH}</g>` : ''}
 `;
 }
-/* The aura layout's dome, as the mock-up drew it: a flat half-disc filled with
-   colour — sky blue at the crown, lilac, pink, then the orange of the ground,
-   a red glow low in the middle — under the white glass of the shell, with
-   the mock-up's few great-circle lines for a wireframe (the mesh is in the
-   mock-up's 700 × 350 box and is scaled onto the dome). All of it is clipped
-   to the half-disc and drawn only when the page asks for `pods`. */
+/* The aura layout's dome: the half-disc filled with colour from rim to rim — the landing page's sheet (sky.js,
+   habitatSheet) takes its ground from a sequencer's reference sheet, whose one great glow goes from a pale sky blue at its
+   left edge through ultramarine and violet into red and orange at its right; here that glow fills the whole habitat, a
+   little lighter towards the crown and the rim, hottest low in the middle — under the white glass of the shell and the
+   mock-up's few great-circle lines for a wireframe (the mesh is in the mock-up's 700 × 350 box and is scaled onto the
+   dome). Gradients only, nothing blurred; all of it clipped to the half-disc and drawn only when the page asks for
+   `pods`. aura.css lets the glow spill softly onto the sheet around it. */
 const MESH = '<path d="M350 0 L175 47 L47 175 L0 350"/><path d="M350 0 L525 47 L653 175 L700 350"/><path d="M175 47 L350 118 L525 47"/>'
   + '<path d="M47 175 L210 222 L350 118 L490 222 L653 175"/><path d="M175 47 L210 222 L120 350"/><path d="M525 47 L490 222 L580 350"/>'
   + '<path d="M210 222 L350 262 L490 222"/><path d="M350 118 L350 262 L350 350"/><path d="M47 175 L120 350 L210 222"/>'
   + '<path d="M653 175 L580 350 L490 222"/><path d="M120 350 L350 262 L580 350"/>';
 function auraLayers() {
-  const k = R / 350;                                   // the mock-up's box → the dome
   const half = `M${CX - R} ${CY} A${R} ${R} 0 0 1 ${CX + R} ${CY} Z`;
-  const orb = { cx: CX, cy: CY, r: R + 2 };            // the mock-up's orb, centred on the dome's base and reaching its rim
-  const glow = { cx: CX - R + 430 * k, cy: CY - R + 380 * k, r: 260 * k };
+  const box = `x="${CX - R}" y="${CY - R}" width="${2 * R}" height="${R}"`;
   return `<defs>
       <clipPath id="dome-half"><path d="${half}"/></clipPath>
-      <linearGradient id="dome-aura-base" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#abd6f1"/><stop offset=".2" stop-color="#c9a9de"/><stop offset=".35" stop-color="#ef86b8"/><stop offset=".5" stop-color="#ff8d3e"/><stop offset="1" stop-color="#ff8d3e"/></linearGradient>
-      <radialGradient id="dome-aura-sky" cx=".5" cy=".06" r=".32"><stop offset="0" stop-color="#a9dcf6"/><stop offset="1" stop-color="#a9dcf6" stop-opacity="0"/></radialGradient>
-      <radialGradient id="dome-aura-rose" cx=".3" cy=".4" r=".38"><stop offset="0" stop-color="#f27fc6"/><stop offset="1" stop-color="#f27fc6" stop-opacity="0"/></radialGradient>
-      <radialGradient id="dome-aura-gold" cx=".84" cy=".36" r=".3"><stop offset="0" stop-color="#ffc04a"/><stop offset="1" stop-color="#ffc04a" stop-opacity="0"/></radialGradient>
-      <radialGradient id="dome-aura-mars" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ff3a00"/><stop offset=".42" stop-color="#ff3a00" stop-opacity=".8"/><stop offset=".7" stop-color="#ff3a00" stop-opacity="0"/></radialGradient>
-      <filter id="dome-aura-blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="${(34 * k).toFixed(1)}"/></filter>
+      <linearGradient id="dome-aura-base" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#a8e0ff"/><stop offset=".13" stop-color="#5d6cff"/><stop offset=".29" stop-color="#2f1fff"/>
+        <stop offset=".45" stop-color="#6419ff"/><stop offset=".55" stop-color="#b31bef"/><stop offset=".67" stop-color="#ff2b57"/>
+        <stop offset=".82" stop-color="#ff4d24"/><stop offset="1" stop-color="#ffb46a"/>
+      </linearGradient>
+      <radialGradient id="dome-aura-core" cx=".53" cy="1" r=".62"><stop offset="0" stop-color="#ff2f6a" stop-opacity=".55"/><stop offset=".55" stop-color="#b21cf0" stop-opacity=".18"/><stop offset="1" stop-color="#b21cf0" stop-opacity="0"/></radialGradient>
+      <radialGradient id="dome-aura-rim" cx=".5" cy="1" r="1"><stop offset=".48" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".34"/></radialGradient>
+      <linearGradient id="dome-aura-crown" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".3"/><stop offset=".42" stop-color="#fff" stop-opacity="0"/></linearGradient>
     </defs>
     <g class="dome-aura" clip-path="url(#dome-half)">
-      <circle class="dome-orb" cx="${orb.cx}" cy="${orb.cy}" r="${orb.r.toFixed(1)}" fill="url(#dome-aura-base)"/>
-      <circle class="dome-orb" cx="${orb.cx}" cy="${orb.cy}" r="${orb.r.toFixed(1)}" fill="url(#dome-aura-sky)"/>
-      <circle class="dome-orb" cx="${orb.cx}" cy="${orb.cy}" r="${orb.r.toFixed(1)}" fill="url(#dome-aura-rose)"/>
-      <circle class="dome-orb" cx="${orb.cx}" cy="${orb.cy}" r="${orb.r.toFixed(1)}" fill="url(#dome-aura-gold)"/>
-      <circle class="dome-orb dome-orb-glow" cx="${glow.cx.toFixed(1)}" cy="${glow.cy.toFixed(1)}" r="${glow.r.toFixed(1)}" fill="url(#dome-aura-mars)" filter="url(#dome-aura-blur)"/>
+      <rect class="dome-aura-base" ${box} fill="url(#dome-aura-base)"/>
+      <rect class="dome-aura-core" ${box} fill="url(#dome-aura-core)"/>
+      <rect class="dome-aura-rim" ${box} fill="url(#dome-aura-rim)"/>
+      <rect class="dome-aura-crown" ${box} fill="url(#dome-aura-crown)"/>
     </g>`;
 }
 const DOME_SVG = domeSvgInner(false), DOME_SVG_AURA = domeSvgInner(true);
@@ -233,7 +234,7 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
   const cond = (c) => (c && c.mood ? titled(T(moodLib.translate(c.mood).condition)) : T('no state filed'));
   const officer = (re, i) => crew.find((c) => re.test(c.designation)) || crew[i];
   const comm = officer(/COMM/i, 0), sci = officer(/SCIENCE/i, 1), health = officer(/HEALTH/i, 2);
-  const name = (c) => (c ? titled(c.designation.replace(' OFFICER', '')) : '');
+  const name = (c) => (c ? titled(T(shownTitle(c.designation).replace(' OFFICER', ''))) : '');   // the first officer as the Commanding Officer (lib/officer.js)
 
   // The stores.
   const inv = today ? today.inventory : [];
@@ -331,14 +332,14 @@ function hexSvg(h, T, pods = false) {
   // The name on a tag beneath the hexagon, carried with it as it floats
   // (the aura stylesheet shows it and hides the leader labels; the station
   // stylesheet does the reverse). The tag's width is estimated from the name.
-  const tag = T(h.label), tw = Math.round(tag.length * 6.4 + 20);
+  const tag = T(h.label), tw = Math.round(tag.length * 7 + 24);
   return `<g class="dome-hex" data-hex="${h.id}" data-at="${h.at.join(',')}" transform="translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="dome-${h.id}">
       <title>${esc(T(h.label))}</title>
       <g class="dome-hex-body">${pods ? podBody(h.id) : `
         <polygon points="${pts}"/>
         <g class="dome-ic" transform="translate(${ox.toFixed(1)} ${oy.toFixed(1)}) scale(${sc.toFixed(4)}) translate(0 ${ic.h}) scale(0.1 -0.1)"><path d="${ic.d}"/></g>`}
       </g>
-      <g class="dome-tag" aria-hidden="true"><rect x="${(-tw / 2).toFixed(1)}" y="${S + 6}" width="${tw}" height="22" rx="11"/><text x="0" y="${S + 21}" text-anchor="middle">${esc(tag)}</text></g>
+      <g class="dome-tag" aria-hidden="true"><rect x="${(-tw / 2).toFixed(1)}" y="${S + 6}" width="${tw}" height="24" rx="12"/><text x="0" y="${S + 22.5}" text-anchor="middle">${esc(tag)}</text></g>
     </g>`;
 }
 
@@ -366,13 +367,13 @@ function labelSvg(h, T) {
 /* What each part of the habitat is — the still text of each pop-up. The
    live sentences come from figures(). */
 const ABOUT = {
-  crew: 'Three officers live sealed inside the habitat for the thirteen days of the run: a communication officer who relays every message from Earth, a science officer who runs the experiments and watches the habitat’s systems, and a health officer who keeps the crew fit and the life support in order. Between them they write three blogs a day — the Commander Blog, the Daily Science Findings and the Daily Health Blog — and file their condition from inside.',
+  crew: 'Three officers live sealed inside the habitat for the thirteen days of the run: a commanding officer who relays every message from Earth, a science officer who runs the experiments and watches the habitat’s systems, and a health officer who keeps the crew fit and the life support in order. Between them they write three blogs a day — the Commander Blog, the Daily Science Findings and the Daily Health Blog — and file their condition from inside.',
   science: 'The science bench: the habitat’s own experiments — samples, cultures, readings — and the daily science findings the science officer writes up. The sensor node beside it measures temperature, humidity, carbon dioxide and more every twenty minutes.',
   recycling: 'Nothing is thrown away. Used water passes through a planted filter bed, a screw press and a settling funnel and comes back as water for the plants and the crew. This loop decides how long the stores last.',
   aeroponics: 'Three shelves of plants grown without soil, their roots in nutrient-rich water — the habitat’s fresh food and part of its air. What grows here is counted with the food rations.',
   power: 'Everything in the habitat runs on what the crew can make and store. Heating, the galley, lighting and electronics draw on one battery, and the crew count the kilowatt-hours by category every day.',
   nappod: 'One enclosed pod for rest. The crew sleep in shifts so that someone is always awake for a communication window, and the air in the pod during the sleep period is the reading watched most closely.',
-  comms: 'The uplink. Every message written on this station crosses the distance to the habitat and waits for the communication officer, who reads it and answers from inside; the reply comes back to the board on every open phone. The real light-time between Earth and Mars is shown beside the composer.',
+  comms: 'The uplink. Every message written on this station crosses the distance to the habitat and waits for the commanding officer, who reads it and answers from inside; the reply comes back to the board on every open phone. The real light-time between Earth and Mars is shown beside the composer.',
   generator: 'A bicycle generator: pedalling charges the battery. The health officer’s workout is also the habitat’s power plant — the steps and the kilowatt-hours are the same effort.',
 };
 
@@ -399,13 +400,19 @@ function habitatDome(ctx, args) {
         <p><a class="btn" href="${h.href}" data-close>${T('Open its panel on the dashboard')} →</a></p>
       </div>
     </dialog>`;
+  // The sky over the dome, when the page brings one (sky.js: the latest exchanges and pictures rising and fading above it),
+  // and the sheet under it all (sky.js, habitatSheet: the run's sols as a sequencer's sheet, the glow behind the dome)
+  const sky = args.sky || null, sheet = args.sheet || '';
+  // and the line that turns under the dome (landing.js, underLine): on the ground line, beside the caption, in the foot of the
+  // sheet (sheet.css)
+  const line = args.line || '';
   return `
-  <section class="dome-panel" id="habitat-dome" aria-label="${esc(T('The habitat'))}">
+  <section class="dome-panel${sky && sky.on ? ' has-sky' : ''}${line ? ' has-line' : ''}" id="habitat-dome" aria-label="${esc(T('The habitat'))}">
     <header class="dome-head">
       <div class="dome-title"><span class="dpanel-code">CH-00</span><h2>${T('The habitat')}</h2></div>
       <span class="dome-meta">HABITAT ONE · R75-2<span class="dome-meta-hint"> · ${T('press a part of the habitat to see what is happening in it')}</span></span>
     </header>
-    <div class="dome-screen">
+    <div class="dome-screen">${sheet}${sky ? sky.html : ''}
       <div class="dome-stage">
         <svg class="dome-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(T('The habitat as a dome, with what is inside it'))}">
           ${pods ? DOME_SVG_AURA : DOME_SVG}
@@ -416,7 +423,9 @@ function habitatDome(ctx, args) {
       <div class="dome-legend" role="group" aria-label="${esc(T('The parts of the habitat'))}">${HEXES.map((h) => `
         <button type="button" class="chip" data-hex="${h.id}"><span class="chip-code">${esc(h.code)}</span>${esc(T(h.label))}</button>`).join('')}</div>
     </div>
-    <p class="dome-caption" aria-hidden="true">${T('press a part of the habitat to see what is happening in it')}</p>
+    ${line ? `<div class="dome-foot">${line}
+      <p class="dome-caption" aria-hidden="true">${T('press a part of the habitat to see what is happening in it')}</p>
+    </div>` : `<p class="dome-caption" aria-hidden="true">${T('press a part of the habitat to see what is happening in it')}</p>`}
     ${HEXES.map(popup).join('')}
     <script>
     (function () {
@@ -435,47 +444,36 @@ function habitatDome(ctx, args) {
       // stands there, over the page's own ground; otherwise it is centred.
       function place(d, el) {
         var screen = root.querySelector('.dome-screen'), room = parseFloat(getComputedStyle(root).getPropertyValue('--pop-room')) || 0;
-        if (screen && upright()) { under(d); return; }                        // a phone held upright: under the dome
+        if (screen && upright()) { above(d); return; }                        // a phone held upright: over the dome, in its sky
         if (!screen || !room) { beside(d, el); return; }
-        var r = screen.getBoundingClientRect(), head = root.querySelector('.dome-head'), hb = head ? head.getBoundingClientRect() : r;
+        var head = root.querySelector('.dome-head'), hb = head ? head.getBoundingClientRect() : screen.getBoundingClientRect();
         var hp = head ? parseFloat(getComputedStyle(head).paddingLeft) || 0 : 0;
-        var w = Math.max(280, hb.width - 2 * hp), hl = hb.left + hp;         // the heading's line, from its first word to its last
+        // as wide as the heading's line, from its first word to its last — but no wider than a card is read at, now that
+        // the habitat spans the page
+        var w = Math.max(280, Math.min(760, hb.width - 2 * hp));
         d.style.width = w + 'px';                                             // the width first: the height follows from it
-        var h = d.getBoundingClientRect().height;
-        // The dome's apex on the screen: the drawing is centred in its box and
-        // scaled by the box's height (the box may be wider than the drawing).
-        var svg = root.querySelector('.dome-svg'), vb = (svg.getAttribute('viewBox') || '').trim().split(/[ ,]+/).map(Number), sr = svg.getBoundingClientRect();
-        var scale = vb.length === 4 && vb[3] ? sr.height / vb[3] : 1;
-        var apexX = sr.left + sr.width / 2, apexY = vb.length === 4 ? sr.top + (CY - R - vb[1]) * scale : r.top;
-        var top = apexY - 10 - h, left = head ? hl : apexX - w / 2;
-        if (top < 8) top = 8;
-        d.style.left = Math.max(8, left) + 'px'; d.style.top = top + 'px';
+        var h = d.getBoundingClientRect().height, ap = apex();
+        var top = ap.y - 10 - h, left = ap.x - w / 2;                         // over the dome, centred on its apex
+        top = Math.max(below() + 8, top);                                     // never under the header
+        d.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, left)) + 'px'; d.style.top = top + 'px';
       }
-      // A phone held upright: the pop-up rises from the foot of the screen
-      // into the space under the dome, the page moving up a little first so
-      // the whole dome stays in view above it (aura.css draws the rise).
+      // The dome's apex on the screen: the drawing is centred in its box and scaled to fit it (the box may be wider than the
+      // drawing, or taller).
+      function apex() {
+        var svg = root.querySelector('.dome-svg'), vb = (svg.getAttribute('viewBox') || '').trim().split(/[ ,]+/).map(Number), sr = svg.getBoundingClientRect();
+        var scale = vb.length === 4 && vb[2] && vb[3] ? Math.min(sr.width / vb[2], sr.height / vb[3]) : 1;
+        return { x: sr.left + sr.width / 2, y: vb.length === 4 ? sr.top + (sr.height - vb[3] * scale) / 2 + (CY - R - vb[1]) * scale : sr.top };
+      }
+      function below() { var t = document.querySelector('.ticker'); return t ? Math.max(0, t.getBoundingClientRect().bottom) : 0; }   // the header's foot
+      // A phone held upright: the habitat has the screen to itself, with a room over the dome for its sky — the pop-up
+      // opens there, over the dome, as wide as the screen less a margin, never under the header; the page stays where it is
+      // (a page of the scroll, sheet.css). A pop-up taller than the room reaches down over the crown.
       function upright() { return window.matchMedia && window.matchMedia('(max-width: 760px) and (min-height: 521px)').matches; }
-      function under(d) {
-        var vw = window.innerWidth, vh = window.innerHeight, m = 8;
-        var bar = document.querySelector('.tabbar'), bh = bar && getComputedStyle(bar).display !== 'none' ? bar.getBoundingClientRect().height : 0;
-        var top0 = document.querySelector('.ticker');
-        var over = top0 ? Math.max(0, top0.getBoundingClientRect().bottom) : 0;       // the bar at the top of the screen
+      function above(d) {
+        var vw = window.innerWidth, m = 8;
         var w = Math.min(vw - 2 * m, 560); d.style.width = w + 'px'; d.style.margin = '0';
-        var h = d.getBoundingClientRect().height;
-        var stage = root.querySelector('.dome-stage').getBoundingClientRect(), head = root.querySelector('.dome-head');
-        var first = head ? head.getBoundingClientRect().top : stage.top;
-        var floor = vh - bh - m;                                                     // the lowest the pop-up may reach
-        var shift = stage.bottom + 10 + h - floor;                                   // how far the page has to move up
-        shift = Math.min(shift, first - over - m);                                   // never past the habitat's heading
-        var most = document.documentElement.scrollHeight - vh - window.scrollY;
-        if (shift > most) {                                                          // the page ends too soon: room is lent at its foot while the pop-up is open
-          var body = document.body, was = body.style.paddingBottom, pad = parseFloat(getComputedStyle(body).paddingBottom) || 0;
-          body.style.paddingBottom = (pad + shift - most + 2) + 'px';
-          d.addEventListener('close', function back() { d.removeEventListener('close', back); body.style.paddingBottom = was; });
-        }
-        if (shift < 0) shift = Math.max(shift, first - over - m, -window.scrollY);   // a dome half off the top comes down into view
-        if (Math.abs(shift) > 1) window.scrollTo({ top: window.scrollY + shift, behavior: 'smooth' });
-        var top = Math.max(over + m, Math.min(floor - h, stage.bottom - shift + 10));
+        var h = d.getBoundingClientRect().height, ap = apex();
+        var top = Math.max(below() + m, ap.y - 10 - h);
         d.style.left = Math.round((vw - w) / 2) + 'px'; d.style.top = Math.round(top) + 'px';
       }
       // On a phone (no room kept above the picture) the pop-up opens beside
@@ -630,12 +628,25 @@ function habitatDome(ctx, args) {
       hexes.forEach(function (h) { h.to = somewhere(h); });
       var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       var minGap = 52, top = 0.10 * H, bottom = 0.92 * H, last = null, clock = 0;
+      // A key's name is set in the drawing's units, and the drawing is scaled to the room the page gives it: where the dome
+      // is drawn small (a short window) the names are enlarged again, about the top of their tag, so they read at no less
+      // than TAG_PX on the screen — never made smaller than drawn. The keys keep their names clear of each other at that size.
+      var TAG_PX = 13, TAG_UNITS = 11.5, tagK = 1, tagAge = 0, drawing = root.querySelector('.dome-svg');
+      function tagScale() {
+        var m = drawing && drawing.getScreenCTM ? drawing.getScreenCTM() : null, px = m ? Math.sqrt(m.a * m.a + m.b * m.b) : 0;
+        var k = px > 0 ? Math.min(1.45, Math.max(1, TAG_PX / (TAG_UNITS * px))) : 1;
+        if (Math.abs(k - tagK) < 0.01) return;
+        tagK = k;
+        root.querySelectorAll('.dome-tag').forEach(function (g) {
+          g.setAttribute('transform', k === 1 ? '' : 'translate(0 ' + (S + 6) + ') scale(' + k.toFixed(3) + ') translate(0 ' + -(S + 6) + ')');
+        });
+      }
       function discs(h, p) {
         var sc = h.s || 1;
         if (h.tw == null) { var tr = h.n.querySelector('.dome-tag rect'); h.tw = tr && getComputedStyle(tr.parentNode).display !== 'none' ? +tr.getAttribute('width') : 0; }   // no room kept for a name that is not shown (phones)
         var out = [{ x: p.x, y: p.y, r: S * sc + (h.tw ? 4 : 10) }];                                                                   // without a name beneath, a little more air around the disc
         if (h.tw) {
-          var th = 22 * sc, ty = p.y + (S + 8) * sc + th / 2, tw = h.tw * sc, m = Math.max(1, Math.ceil((tw - th) / 16));
+          var th = 24 * sc * tagK, ty = p.y + (S + 6) * sc + th / 2, tw = h.tw * sc * tagK, m = Math.max(1, Math.ceil((tw - th) / 16));
           for (var i = 0; i <= m; i++) out.push({ x: p.x - tw / 2 + th / 2 + (tw - th) * (i / m), y: ty, r: th / 2 + 3 });
         }
         return out;
@@ -655,6 +666,7 @@ function habitatDome(ctx, args) {
       }
       function frame(now) {
         var dt = last == null ? 0.016 : Math.min(0.05, (now - last) / 1000); last = now; clock += dt;
+        if (tagged && --tagAge <= 0) { tagScale(); tagAge = 30; }             // the drawing's size, now and then (a window resized, the page laid out)
         hexes.forEach(function (h) {
           // Towards the destination, on a soft spring; a new one when there.
           var d = [h.to[0] - h.pos[0], h.to[1] - h.pos[1], h.to[2] - h.pos[2]];

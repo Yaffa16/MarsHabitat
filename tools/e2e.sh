@@ -51,9 +51,9 @@ process.exit(c > -1 && (s < 0 || c < s) ? 0 : 1);
 echo "── the habitat dome"
 node -e '
 const h = require("child_process").execSync("curl -s http://localhost:8080/").toString();
-const a = h.indexOf("id=\"about\""), d = h.indexOf("id=\"habitat-dome\""), w = h.indexOf("id=\"write\"");
+const a = h.indexOf("class=\"sheet-intro is-desk\""), d = h.indexOf("id=\"habitat-dome\""), w = h.indexOf("id=\"write\"");
 process.exit(a > -1 && d > a && w > d ? 0 : 1);
-' && ok "the dome sits between the About row and the composer" || bad "dome out of place"
+' && ok "the dome sits between the sheet's head and the composer" || bad "dome out of place"
 DOME=$(curl -s $B/)
 [ "$(echo "$DOME" | grep -o 'class="dome-hex"' | wc -l)" -ge 8 ] && ok "eight hexagons in the dome — crew, lab, recycling, hydroponics, communication, power, nap pod, power generator" || bad "hexagons missing"
 for H in crew science recycling aeroponics comms power nappod generator; do echo "$DOME" | grep -q "id=\"dome-$H\"" || bad "no pop-up for $H"; done; ok "every hexagon has its pop-up"
@@ -294,7 +294,7 @@ ID2=$(curl -s -b $A $B/control | grep -oE '/control/[0-9]+/reply' | head -1 | gr
 curl -s -b $A -X POST --data-urlencode "body=In colour, and always outdoors." -d "action=publish" -o /dev/null $B/control/$ID2/reply
 curl -s -b $A $B/archive/export.md -o /tmp/record.md
 grep -q "^# " /tmp/record.md && ok "the record downloads as readable Markdown" || bad "no Markdown record"
-for section in "### COMMUNICATION OFFICER" "### SCIENCE OFFICER" "### HEALTH OFFICER" "#### Commander Blog" "#### Daily Science Findings" "#### Daily Health Blog" "#### Crew state" "### Habitat" "#### Schedule" "#### Meals" "#### Steps taken and calories consumed" "#### Inventory levels" "#### Power consumed" "### Habitat sensors"; do
+for section in "### COMMANDING OFFICER" "### SCIENCE OFFICER" "### HEALTH OFFICER" "#### Commander Blog" "#### Daily Science Findings" "#### Daily Health Blog" "#### Crew state" "### Habitat" "#### Schedule" "#### Meals" "#### Steps taken and calories consumed" "#### Inventory levels" "#### Power consumed" "### Habitat sensors"; do
   grep -q "$section" /tmp/record.md || bad "record missing $section"
 done
 ok "each day of the record has the three officers (the three blogs, crew state), the Habitat tab and the sensors"
@@ -332,7 +332,7 @@ grep -qi "content-type: application/pdf" /tmp/pdf.h && head -c 5 /tmp/record.pdf
 [ "$(grep -ac '/Type /Page$\|/Type /Page ' /tmp/record.pdf)" -ge 13 ] && ok "it has a page for every day and more" || bad "PDF has too few pages"
 grep -aq "/Outlines" /tmp/record.pdf && ok "and bookmarks by section and day" || bad "PDF has no bookmarks"
 PDFTXT=$(pdftext /tmp/record.pdf)
-for needle in "Contents" "The mission" "Day 001" "Day 00$TODAY" "The crew log" "Media" "Communication officer" "Science officer" "Health officer" "Commander Blog" "Daily Science Findings" "Daily Health Blog" "Crew state" "Schedule" "Meals" "Inventory levels" "Steps taken and calories consumed" "Habitat sensors" "Potable water"; do
+for needle in "Contents" "The mission" "Day 001" "Day 00$TODAY" "The crew log" "Media" "Commanding officer" "Science officer" "Health officer" "Commander Blog" "Daily Science Findings" "Daily Health Blog" "Crew state" "Schedule" "Meals" "Inventory levels" "Steps taken and calories consumed" "Habitat sensors" "Potable water"; do
   echo "$PDFTXT" | grep -q "$needle" || bad "PDF record missing: $needle"
 done
 ok "the PDF holds the mission, every day that has happened, the whole crew log and the media"
@@ -405,14 +405,16 @@ NAV2=$(curl -s -b $A $B/archive | grep -oP '(?<=class="nav">).*?(?=</nav>)' | gr
 [ "$NAV2" = "Mission Messages At a Glance Crew log About " ] \
   && ok "the archive's top bar points into the landing page" || bad "archive top bar is: $NAV2"
 FOOT=$(curl -s $B/)
-for l in "/#exchanges" "/#mission" "/#crew" "/#about" "/at-a-glance" "/media"; do
+for l in "/#exchanges" "/#mission" "/#crew" "/about" "/at-a-glance" "/media"; do
   echo "$FOOT" | grep -q "href=\"$l\"" || bad "landing page missing link: $l"
 done
 ok "the landing footer carries the navigation"
-for u in /crew /day /day/3 /schedule /what /about /who-we-are; do
+for u in /crew /day /day/3 /schedule; do
   [ "$(curl -s -o /dev/null -w '%{http_code}' $B$u)" = "301" ] || bad "$u is not redirected"
 done
 ok "every old public address redirects into the landing page"
+[ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' $B/what)" = "301 $B/about#what" ] && [ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' $B/who-we-are)" = "301 $B/about#who-we-are" ] \
+  && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/about)" = "200" ] && ok "/about is a page of its own; /what and /who-we-are land on their section of it" || bad "the About page's addresses are wrong"
 LOGPAGE=$(curl -s $B/logbook)
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/logbook)" = "200" ] || bad "/logbook is not a page"
 echo "$LOGPAGE" | grep -q "id=\"day-$TODAY\"" || bad "/logbook has no section for today (day $TODAY)"
@@ -423,10 +425,22 @@ echo "$LOGPAGE" | grep -q 'log-entry placeholder' || bad "/logbook shows no plac
 echo "$LOGPAGE" | grep -q "Day three." || bad "/logbook is missing the day-3 entry filed from control"
 echo "$FOOT" | grep -q 'href="/control"' && bad "the footer still offers mission control to visitors" || ok "no mission-control or crew-log buttons in the footer bar"
 ok "the crew log is a page of its own: all thirteen days, placeholders where nothing is written yet, reached from the panel"
-for sec in write exchanges mission habitat crew about what who-we-are; do
+for sec in write exchanges mission habitat crew; do
   echo "$FOOT" | grep -q "id=\"$sec\"" || bad "landing page has no #$sec section"
 done
-ok "the landing page carries every section: composer, board, mission, habitat, crew, about"
+ok "the landing page carries every section: composer, board, mission, habitat, crew"
+ABOUT=$(curl -s $B/about)
+for sec in about-project what who-we-are; do
+  echo "$ABOUT" | grep -q "<section class=\"about-sec\" id=\"$sec\"" || bad "the About page has no #$sec section"
+done
+echo "$ABOUT" | grep -q 'Distance as the material' && echo "$ABOUT" | grep -q 'What happens when you send something' && echo "$ABOUT" | grep -q 'Outside the habitat' \
+  && ok "the About page carries all three texts — About, What this is, Who we are" || bad "the About page is missing a text"
+echo "$FOOT" | grep -q '<dialog class="popup" id="what"' && bad "the reading matter is still a pop-up on the landing page" || ok "no pop-ups for the reading matter on the landing page"
+echo "$FOOT" | grep -q '<a class="tab tab-more" data-tab="more" href="/about">' && echo "$ABOUT" | grep -q '<a class="tab tab-more is-on" data-tab="more" href="/about">' \
+  && ok "a phone's About key opens the page, and is lit there" || bad "the About key does not lead to the page"
+echo "$FOOT" | grep -q 'class="tk-row" href="/about#what"' && echo "$ABOUT" | grep -q 'class="tk-row" href="/about#who-we-are"' \
+  && ok "the ticker's menu rows lead to their section of the page" || bad "the menu rows do not lead to the About page"
+echo "$FOOT" | grep -q "location.replace('/about?from=home'" && ok "the landing page's old #about, #what and #who-we-are lead there too" || bad "old About addresses lost"
 echo "$FOOT" | grep -q 'id="crewlog"' && bad "the crew log panel is still on the landing page" || ok "no crew log panel on the landing page — the log lives at /logbook and in At a Glance"
 echo "$FOOT" | grep -q 'id="media"' && bad "the media panel is still on the landing page" || ok "no media panel — the media lives at /media and in At a Glance"
 echo "$FOOT" | grep -q 'id="whole"' && bad "the whole-mission panel is still on the landing page" || ok "no whole-mission panel — the run day by day lives in At a Glance"
@@ -515,7 +529,7 @@ for s in "Communication Portal" "Message Board"; do
 done
 echo "$PAGE" | grep -q 'id="habitat"' || bad "no habitat panel on the dashboard"
 ok "portal and board are headed; the habitat is a panel of the dashboard"
-echo "$PAGE" | grep -q 'class="masthead"' && ok "the masthead leads the page" || bad "no masthead"
+echo "$PAGE" | grep -q 'class="sheet-intro is-desk"' && ok "the sheet's head leads the page" || bad "no sheet head"
 echo "$PAGE" | grep -q 'class="wordmark">MARS<span class="bang">!</span>platz' && ok "the Mars!platz wordmark is on the masthead" || bad "no wordmark on the masthead"
 echo "$PAGE" | grep -q 'class="device composer-device' && ok "the composer is a device" || bad "no composer device"
 echo "$PAGE" | grep -q 'class="screen board"' && ok "the board is a screen" || bad "no board screen"
@@ -549,8 +563,8 @@ echo "$PAGE" | grep -q 'class="badge' && ok "crew conditions on the mission page
 echo "$PAGE" | grep -qE "Hatch seal|Wake and habitat check" && ok "daily schedule on the mission page" || bad "no daily schedule"
 
 echo "── crew and env"
-curl -s $B/ | grep -q "COMMUNICATION OFFICER" && curl -s $B/ | grep -q "HEALTH OFFICER" \
-  && ok "the three officers are communication, science and health" || bad "crew roles wrong"
+curl -s $B/ | grep -q "COMMANDING OFFICER" && curl -s $B/ | grep -q "HEALTH OFFICER" && ! curl -s $B/ | grep -qi "communication officer" \
+  && ok "the three officers are the commanding, science and health officers — the first shown by the new title everywhere" || bad "crew roles wrong"
 curl -s $B/ | grep -q "CAPTAIN" && bad "the captain is still in the crew" || ok "no captain left over"
 curl -s $B/ | grep -q 'class="logo"' && bad "the mark is back in the top right" \
   || ok "no mark in the top right of the mission page"
@@ -558,11 +572,13 @@ curl -s $B/ | grep -q 'class="logo"' && bad "the mark is back in the top right" 
 node -e 'require("./src/lib/env"); process.exit((process.env.CONTROL_USER||process.env.ADMIN_USER)?0:1)' \
   && ok ".env loads for a plain node run, not just Docker" || bad ".env not loaded"
 
-echo "── light mode"
-curl -s -c $T $B/ | grep -q 'data-theme="light"' && ok "light is the default" || bad "no theme attribute"
+echo "── dark and light"
+curl -s -c $T $B/ | grep -q 'data-theme="dark"' && ok "dark is the default" || bad "no theme attribute, or not dark by default"
+curl -s -b $T -c $T -X POST -d "to=light" -o /dev/null $B/theme
+curl -s -b $T $B/ | grep -q 'data-theme="light"' && ok "light mode applies" || bad "light mode did not apply"
+curl -s -b $T $B/control/login | grep -q 'data-theme="light"' && ok "theme persists across pages" || bad "theme did not persist"
 curl -s -b $T -c $T -X POST -d "to=dark" -o /dev/null $B/theme
-curl -s -b $T $B/ | grep -q 'data-theme="dark"' && ok "dark mode applies" || bad "dark mode did not apply"
-curl -s -b $T $B/control/login | grep -q 'data-theme="dark"' && ok "theme persists across pages" || bad "theme did not persist"
+curl -s -b $T $B/ | grep -q 'data-theme="dark"' && ok "and the switch turns it back to dark" || bad "dark mode did not come back"
 grep -q 'data-theme="dark"' public/station.css && ok "dark palette defined in one place" || bad "no dark palette"
 
 echo "── three languages"
@@ -1080,6 +1096,21 @@ process.exit(s.checkSeconds === 7 && typeof s.version === "string" ? 0 : 1);
 ' && ok "the frequency is one number, CLOUD_CHECK_SECONDS, and the grid carries a version stamp" || bad "frequency setting not honoured"
 grep -q 'data-version' src/views/pages/media.js && grep -q "fetch('/api/cloud'" public/cloud.js && grep -q "CLOUD_CHECK_SECONDS" docker-compose.yml \
   && ok "an open /media polls /api/cloud on that beat and swaps the grid in as the folder changes" || bad "live gallery wiring missing"
+node -e '
+const M = require("./src/views/pages/media");
+const T = (s) => s;
+const it = (id, date, time) => ({ id, name: `p_${date.replace(/-/g, "_")}-${time.replace(":", "-")}.jpg`, url: "/media/cloud/" + id, thumb: "/media/cloud/" + id + "/thumb", taken: { date, time, iso: date + "T" + time } });
+const items = [it("a1", "2026-09-22", "12:15"), it("b2", "2026-09-24", "19:40"), it("c3", "2026-09-24", "11:05")];
+const html = M.cloudGridInner(T, { title: "Gallery", items, snapshot: { checkSeconds: 20, version: "v" } },
+  { tz: "Europe/Berlin", mission: { start_date: "2026-09-21", totalDays: 13, today: "2026-09-24" }, lang: "en" });
+const days = [...html.matchAll(/class="cloud-day" data-day="([^"]+)"/g)].map((m) => m[1]);
+const ok = days.join() === "2026-09-24,2026-09-22"
+  && /SOL 04<\/span><h3 class="cloud-day-date">Thursday,? 24 September 2026<\/h3><span class="cloud-day-now">Today/.test(html) && /SOL 02</.test(html)
+  && /2 photographs/.test(html) && />19:40</.test(html) && !/24\.09\.2026 · 19:40/.test(html);
+process.exit(ok ? 0 : 1);
+' && ok "the Media page shows the pictures day by day, the newest day first — each under its sol and its date, today marked, the time under each picture" || bad "the gallery is not grouped by day"
+grep -q "querySelector('.cloud-days')" public/cloud.js && grep -q "function reconcileGrid(oldGrid, newGrid)" public/cloud.js \
+  && ok "and keeps them live day by day, a picture at a time" || bad "the live gallery does not know the days"
 grep -q 'id="cloud-latest"' src/views/pages/public.js && grep -q "cloud-latest" public/cloud.js && grep -q "slice(0, 6)" src/server.js && grep -q "Live images from the Habitat" src/views/pages/media.js \
   && ok "the Habitat panel carries Live images from the Habitat — the newest six from the cloud, on the same live beat" || bad "live-images strip missing"
 curl -s $B/ | grep -q 'cloud-latest' && bad "the latest strip shows without the bridge" || ok "no latest strip on the landing page until the bridge is configured"
@@ -1118,7 +1149,7 @@ curl -s -b $A $B/archive | grep -q "day by day" && ok "archive contents page lis
 DAYN=$(curl -s -b $A $B/archive | grep -oE "archive/day/[0-9]+" | tail -1 | grep -oE "[0-9]+")
 REC=$(curl -s -b $A $B/archive/day/$DAYN)
 MISSING=""
-for section in "COMMUNICATION OFFICER" "SCIENCE OFFICER" "HEALTH OFFICER" "Commander Blog" "Daily Science Findings" "Daily Health Blog" "Crew state" "SCHEDULE" "MEALS" "INVENTORY LEVELS" "STEPS TAKEN" "POWER" "HABITAT"; do
+for section in "COMMANDING OFFICER" "SCIENCE OFFICER" "HEALTH OFFICER" "Commander Blog" "Daily Science Findings" "Daily Health Blog" "Crew state" "SCHEDULE" "MEALS" "INVENTORY LEVELS" "STEPS TAKEN" "POWER" "HABITAT"; do
   echo "$REC" | grep -q "$section" || MISSING="$MISSING $section"
 done
 [ -z "$MISSING" ] && ok "day record has the three officers, the Habitat tab and the sensors" \
@@ -1141,6 +1172,116 @@ let s=""; process.stdin.on("data",d=>s+=d).on("end",()=>{
 });')
 [ "$U" = "0" ] && ok "every table scrolls instead of clipping" || bad "$U unwrapped tables"
 grep -q "min-height: 44px" public/station.css && ok "touch targets meet 44px" || bad "touch targets too small"
+
+echo "── the landing page: the design handoff's four pages (P01–P04) in the glass dress, on a phone and on a desk"
+LAND=$(curl -s $B/)
+echo "$LAND" | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
+  const at = (x) => s.indexOf(x);
+  const order = ["class=\"sheet-intro is-desk\"", "id=\"habitat-dome\"", "id=\"note\"", "class=\"sheet-intro is-phone\"", "class=\"note-card\"", "id=\"story\"", "id=\"slowest-chat\"", "id=\"write\""].map(at);
+  process.exit(order.every((v, i) => v > -1 && (i === 0 || v > order[i - 1])) ? 0 : 1);
+});' && ok "P01 the name and the habitat (on a phone the name heads the note), P02 the note, P03 the chapters, P04 the slowest chat — then the portal" || bad "the sheet's pages are out of order"
+! echo "$LAND" | grep -q 'P01 / 04' && ! echo "$LAND" | grep -q 'Mission layout' && ! echo "$LAND" | grep -q 'Ref. sheet' && echo "$LAND" | grep -q '<span>P02 / 04 · Note 00</span>' \
+  && echo "$LAND" | grep -q '<span class="part-tag"><span>P03 / 04</span><b>Part 1 of 2</b></span>' && echo "$LAND" | grep -q '<span class="part-tag"><span>P04 / 04</span><b>Part 2 of 2</b></span>' \
+  && echo "$LAND" | grep -q '<h2 class="part-title" id="part-1-title">The mission</h2>' && echo "$LAND" | grep -q '<h2 class="part-title" id="ch-03-title">Welcome to the World’s Slowest Chat</h2>' \
+  && ok "no P01 label over the habitat; the note is P02; the mission and the chat are the two parts, each under a bold heading with its part in an orange pill" || bad "the pages' labels or the two parts' headings are wrong"
+[ "$(echo "$LAND" | grep -o ' data-page>' | wc -l)" = "4" ] && ok "the four pages are marked as the pages of a phone's scroll" || bad "the phone's pages are not marked"
+! echo "$LAND" | grep -q 'masthead-btn' && ok "no Write or Mission doors on the first screen" || bad "the doors are still on the first screen"
+echo "$LAND" | grep -q 'class="sheet-cta" href="/messages#write"' && grep -q 'body.landing .p4-cta { display: none; }' public/sheet.css \
+  && ok "the door to the composer closes the sheet on a phone, and a wider screen goes on to the portal instead" || bad "the slowest chat's door is wrong"
+PHONESHEET=$(awk '/^@media \(max-width: 760px\) and \(min-height: 521px\) \{/,/^}/' public/sheet.css)
+! echo "$LAND" | grep -q 'section-scroll.js' && echo "$PHONESHEET" | grep -q 'html:has(body.landing:not(.inner)) { scroll-snap-type: y mandatory;' \
+  && echo "$PHONESHEET" | grep -q 'body.landing:not(.inner) \[data-page\] { scroll-snap-align: start; scroll-snap-stop: always; }' \
+  && [ "$(grep -c 'scroll-snap-type: y' public/sheet.css)" = "1" ] && grep -q "p.classList.add('is-tall')" public/sky.js && grep -q "window.addEventListener('wheel'" public/sky.js \
+  && ok "a phone held upright goes a page a swipe (a page taller than the screen stops at its parts; a wheel turns one stop a turn); a desk scrolls freely" || bad "the phone's pages do not snap"
+echo "$LAND" | grep -q 'id="dome-sky-data"' && echo "$LAND" | grep -q 'src="/sky.js' && ok "the sky is drawn into the habitat's sheet and set going by public/sky.js" || bad "no sky over the dome"
+echo "$LAND" | grep -q 'class="dome-panel has-sky has-line"' && ok "with exchanges to show, the dome panel keeps the room above the dome" || bad "no room kept for the sky"
+grep -q "function spot(w, h)" public/sky.js && grep -q "function clash(a, b)" public/sky.js && grep -q "function inDome(a, c)" public/sky.js && grep -q "ci \* col + INSET" public/sky.js \
+  && grep -q "body.landing .sky-msg, body.landing .sky-pic { opacity: 0; animation: none !important; transition: opacity 1.2s ease-in-out; }" public/sheet.css \
+  && ok "each line and snapshot comes somewhere else each time, on a column of the grid, clear of the dome and of one another — fading in and out" || bad "the sky's items can crowd one another"
+PUB=$(curl -s $B/api/board)
+curl -s -b $V $B/ | PUB="$PUB" node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
+  const m = s.match(/id="dome-sky-data">([^<]*)</); if (!m) process.exit(1);
+  const sky = JSON.parse(m[1]), cards = JSON.parse(process.env.PUB).cards.replace(/\s+/g, " ");
+  const q = sky.msgs.filter((x) => x.k === "q"), a = sky.msgs.filter((x) => x.k === "a");
+  const esc = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/\x27/g, "&#39;");
+  const onBoard = (t) => cards.includes(esc(t.replace(/…$/, "")).slice(0, 40));
+  const off = sky.msgs.filter((x) => !onBoard(x.text));
+  if (off.length) console.error("    not on the public board:", JSON.stringify(off));
+  process.exit(q.length >= 1 && q.length <= 4 && a.length >= 1 && !off.length ? 0 : 1);
+});' && ok "the sky carries the newest published exchanges and their answers — nothing the public board does not show" || bad "the sky shows something the board does not"
+curl -s -b $V $B/ | PUB="$PUB" node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
+  const m = s.match(/id="hab-line-data">([^<]*)</); if (!m) process.exit(1);
+  const pool = JSON.parse(m[1]), cards = JSON.parse(process.env.PUB).cards;
+  const ids = pool.ex.map((p) => p[0].id).concat(pool.old.map((x) => x.id));
+  const published = ids.every((id) => cards.includes("id=\"m" + id + "\"") && !new RegExp("id=\"m" + id + "\"[^>]*data-pending").test(cards));
+  const first = s.match(/class="hab-line-item"><span class="hab-line-meta">([^<]*)</);
+  process.exit(published && pool.ex.length <= 3 && pool.data.length === 3 && !pool.data.some((d) => /distance/i.test(d.meta)) && pool.now && first && first[1] === "Now in the habitat" ? 0 : 1);
+});' && ok "the line under the dome opens with what is happening now and takes turns through the figures, the last answered exchanges and older ones — published only" || bad "the line under the dome is wrong"
+grep -c "fetch(" public/sky.js | grep -qx 1 && grep -q "data-field=\"comms-text\"" public/sky.js && grep -q "cloud-latest" public/sky.js && grep -q "MCS_SKY_NOW" public/sky.js \
+  && ok "it asks the board again only when the dome says there is a new exchange, follows the Habitat panel's strip of pictures, and the line passes over what the sky shows" || bad "the sky polls on its own"
+echo "$LAND" | grep -q 'For this simulation, the transmission takes <b>3 seconds</b>' && echo "$LAND" | grep -q 'animation-duration:3s' && echo "$LAND" | grep -q 'class="transit" aria-hidden="true" data-seconds="3"' && ok "the slowest chat gives the crossing as the station runs it (TRANSIT_SECONDS)" || bad "the crossing time is not the station's"
+grep -q "document.documentElement.classList.add('transit-js')" public/sky.js && grep -q "html.transit-js body.landing .steps .transit-track i { animation: none !important; }" public/sheet.css \
+  && ok "the signal's dot is moved by the page itself, so a phone set to less motion still sees it cross" || bad "the signal in transit can stand still on a phone"
+echo "$LAND" | grep -Eq 'today it takes <b>[0-9]+ min [0-9]{2} s</b>' && echo "$LAND" | grep -Eq 'class="transit-meta">[0-9]+ M km · [0-9]+ min [0-9]{2} s<' && ok "and today's distance and one-way light-time" || bad "no live distance or light-time"
+echo "$LAND" | grep -Eq 'At <b>16:00 (CEST|CET)</b>, the communications window opens' && echo "$LAND" | grep -q 'Every day at 16:00, the Habitat opens its communication window' && ok "the crew answer from 16:00, in the venue's zone of the day" || bad "the communication window is not 16:00"
+echo "$LAND" | grep -Eq 'Communication window daily <b>16:00</b>' && ok "and the running line says so" || bad "the running line does not name the window"
+curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q 'Willkommen im langsamsten Chat der Welt' && curl -s -H "Cookie: mcs_lang=fr" $B/ | grep -q 'Bienvenue dans le chat le plus lent du monde' \
+  && ok "in German and French as well" || bad "the slowest chat is not translated"
+SKYCSS=$(awk '/the sky over the habitat, and the world.s slowest chat/,0' public/aura.css)
+grep -q '\.dome-sky, \.dome-seq, \.slow-chat { display: none; }' public/station.css && echo "$SKYCSS" | grep -q 'top: calc(12px - var(--room))' && echo "$SKYCSS" | grep -q ':has(dialog.dome-popup\[open\]) .dome-sky { opacity: 0; }' \
+  && ok "the sky fills the room the dome keeps above itself on a desk, and steps aside while a pop-up is there; without the landing dress neither is drawn" || bad "the desk's sky is not wired"
+echo "$LAND" | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
+  const f = s.indexOf("class=\"dome-foot\""), l = s.indexOf("id=\"hab-line\""), c = s.indexOf("class=\"dome-caption\"", f), e = s.indexOf("</section>", f);
+  process.exit(f > -1 && l > f && c > l && e > c ? 0 : 1);
+});' && grep -q 'body.landing .dome-panel.has-line .dome-seq { bottom: 0; }' public/sheet.css \
+  && ok "the line under the dome turns on the floor under the ground line, the hint beside it" || bad "the line under the dome is out of place"
+grep -q 'stepHead(.up., .01.' src/views/pages/landing.js && [ "$(echo "$LAND" | grep -o 'class="step-ic"' | wc -l)" = "3" ] \
+  && ok "the three steps carry their signs, each in its own colour" || bad "the steps have no signs"
+echo "$LAND" | grep -Eq 'On [0-9]+ [A-Z][a-z]+, three astronauts enter the Habitat at MARS!platz: a Commanding Officer, a Science Officer and a Health Officer. Life on Mars becomes the experiment.<' \
+  && echo "$LAND" | grep -q 'Inside the Habitat, the crew lives under the conditions of a long-duration mission: isolation, limited space and resources. Each day brings new experiments — from growing food to resource management, EVAs, mental health, governance and understanding how people live together in an unfamiliar environment.' \
+  && ! echo "$LAND" | grep -q 'a small outpost on a simulated Mars' && ! echo "$LAND" | grep -q 'Communicate with the crew.' \
+  && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q 'und ein Gesundheitsoffizier. Das Leben auf dem Mars wird zum Experiment.' \
+  && ok "the chapters say what they were given to say, in German too; no outpost, and nothing under the chat's welcome but the welcome" || bad "the chapters' words are not the ones given"
+echo "$LAND" | grep -q 'src="/mission/mission-01.jpg"' && echo "$LAND" | grep -q 'src="/mission/mission-02.jpg"' && ! echo "$LAND" | grep -q 'mission-03' \
+  && [ -s public/mission/mission-01.jpg ] && [ -s public/mission/mission-02.jpg ] \
+  && ok "the two chapters carry the two new photographs; the chat has none" || bad "the chapters' photographs are wrong"
+grep -q ':root\[data-theme="light"\] { --paper: #f6f7f8; --ground-2: #eceef1; }' public/sheet.css && grep -q 'body.landing .dome-panel { --seq-ground: #d7d7d7; }' public/sheet.css \
+  && grep -q 'body.landing .sky-text { color: #fff;' public/sheet.css \
+  && ok "by day the page is near-white and only the habitat's sheet is grey, the reference's grey, its lines of talk in white" || bad "the light page is not the reference's"
+
+echo "── the habitat's sheet, the dome, the header, the theme, the foot, the cookie card, the running line"
+LAND=$(curl -s $B/)
+echo "$LAND" | grep -q 'class="dome-seq has-day" id="dome-seq" aria-hidden="true" style="--seq-days:13"' && [ "$(echo "$LAND" | grep -o 'class="seq-n[ "]' | wc -l)" = "13" ] \
+  && [ "$(echo "$LAND" | grep -o 'class="seq-n is-now"' | wc -l)" = "1" ] && echo "$LAND" | grep -q 'class="seq-head" style="--day:5"' \
+  && ok "the habitat stands on a sheet of the run's thirteen sols — the day of the performance marked, an orange line down its column" || bad "no sheet under the habitat"
+! echo "$LAND" | grep -q 'DISTANCE [0-9.]* M KM' && echo "$LAND" | grep -Eq 'class="seq-fig"[^>]*>CH-00 · CREW 3 · SOL 05/13<' \
+  && ! echo "$LAND" | grep -Eq 'class="seq-fig"[^>]*>[^<]*One-way' && ok "its one small figure is the crew and the sol — no Earth–Mars distance on the habitat" || bad "the sheet's figures are not the station's"
+grep -q "seq.style.setProperty('--orb-r'" public/sky.js && echo "$LAND" | grep -q 'class="dome-aura-base"' && echo "$LAND" | grep -q '<linearGradient id="dome-aura-base" x1="0" y1="0" x2="1" y2="0">' \
+  && ok "the colour fills the dome rim to rim — blue to violet to red — and spills softly onto the sheet around it" || bad "the dome is not filled with the colour"
+echo "$LAND" | grep -q '<html lang="en" data-theme="dark">' && ! echo "$LAND" | grep -q 'data-theme-auto' \
+  && [ "$(curl -s -H 'Cookie: mcs_theme=light' $B/ | grep -o '<html lang="en" data-theme="light">' | wc -l)" = "1" ] \
+  && curl -s -D - -o /dev/null -d "to=light" $B/theme | grep -qi "set-cookie: mcs_theme=light" \
+  && ok "the station is dark until a visitor chooses light with the switch, and keeps that choice" || bad "the station is not dark by default"
+! echo "$LAND" | grep -q 'class="orbits"' && echo "$LAND" | grep -q 'class="consent-sky"' && ! echo "$LAND" | grep -q 'consent-astro\|consent-planet' \
+  && ok "no orbits behind the page; the cookie card's strip of night has nobody in it and no planet" || bad "the orbits or the cookie card's astronaut are still there"
+echo "$LAND" | grep -q '<div class="tk-bar">' && echo "$LAND" | grep -q 'class="tk-sol"' && echo "$LAND" | grep -q 'id="tk-clock"' \
+  && ok "the header: the wordmark, the run's badge, the habitat's clock, the switches, the running line" || bad "the header is not the handoff's"
+! grep -q 'border-radius: 0 !important' public/sheet.css && ! grep -q 'backdrop-filter: none !important' public/sheet.css \
+  && grep -q 'border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); border-radius: var(--r-lg); color: var(--ink);' public/sheet.css \
+  && ok "the pages float on glass again — rounded, frosted, softly shadowed" || bad "the flat dress is still on"
+grep -q '^body.landing .foot {' public/sheet.css && grep -q ':root\[data-theme="light"\] body.landing .foot {' public/sheet.css \
+  && ok "the foot is a dark card with two lights by night and a pane of light glass by day" || bad "the foot is the same by day and by night"
+PHONECSS=$(awk '/^@media \(max-width: 760px\), \(max-height: 520px\) \{/,/^}/' public/aura.css)
+echo "$PHONECSS" | grep -q 'body.landing .dash > .cloud-latest { display: none; }' && grep -q "getElementById('cloud-latest')" public/sky.js \
+  && ok "the dashboard on a phone leaves out the strip of live pictures (kept on the page for the sky)" || bad "the live pictures are still on the phone's dashboard"
+grep -q '@media (hover: hover) and (pointer: fine) { .tk-window:hover .tk-track { animation-play-state: paused; } }' public/station.css \
+  && grep -q 'body.landing .tk-track { animation: tk-run 64s linear infinite !important; }' public/aura.css \
+  && grep -q "var phone = window.matchMedia('(max-width: 760px), (max-height: 520px)');" src/views/pages/public.js && grep -q "translate3d(' + x.toFixed(2)" src/views/pages/public.js \
+  && ok "the running line runs on a phone — moved by the page itself, a tap does not hold it, and asking for less motion only slows it" || bad "the running line can stop on a phone"
 
 echo "── power consumed by category, and the stores as rings"
 LAND=$(curl -s $B/)

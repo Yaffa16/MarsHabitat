@@ -90,7 +90,7 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
         <p class="note" style="margin-top:12px">${T('There is nobody in the habitat to read this yet.')}
         ${T('The channel opens on')} ${esc(ctx.mission.start_date)} ${T('at')} 00:00 ${esc(ctx.mission.timezone)},
         ${T('and stays open for')} ${ctx.mission.totalDays} ${T(ctx.mission.totalDays === 1 ? 'day' : 'days')}.</p>
-        <p><a class="btn" href="#what">${T('How it will work')}</a></p>`
+        <p><a class="btn" href="/about#what">${T('How it will work')}</a></p>`
       : `
         <p class="note" style="margin-top:12px">${T('The crew left the habitat on')}
         ${esc(ctx.mission.end_date)}. ${T('Nothing sent now would reach anyone.')}</p>
