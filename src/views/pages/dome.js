@@ -244,10 +244,16 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
 
   // Today's power, all categories.
   const pwrDay = pre ? 1 : m.clampedDay;
-  const d = power.days[String(pwrDay)] || null;
+  let d = power.days[String(pwrDay)] || null;
+  if (pre) {                                                     // before the run a metered category reads the meter today
+    for (const c of power.categories.filter((x) => x.sensor)) {
+      let v = null; try { v = require('../../lib/home-assistant').counterToday(c.sensor); } catch { /* no meter */ }
+      if (v != null) d = { ...(d || {}), [c.key]: v };
+    }
+  }
   const parts = d ? power.categories.filter((c) => d[c.key] != null).map((c) => `${c.label} ${d[c.key]}`) : [];
   const total = parts.length ? Math.round(power.categories.reduce((s, c) => s + (d[c.key] || 0), 0) * 100) / 100 : null;
-  const powerLine = total != null ? `${pre ? T('Planned for day 01') : `SOL ${sol}`}: ${total} kWh — ${parts.join(', ')}.` : T('Today’s power has not been counted yet.');
+  const powerLine = total != null ? `${pre ? (power.categories.some((c) => c.sensor) ? T('Today · before the run') : T('Planned for day 01')) : `SOL ${sol}`}: ${total} kWh — ${parts.join(', ')}.` : T('Today’s power has not been counted yet.');
 
   // The crew's figures.
   const fig = crewFigures[String(pwrDay)] || {};

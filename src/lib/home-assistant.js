@@ -438,6 +438,18 @@ function sensorsFor(a, b) {
    or null when the day holds no reading yet (a day still ahead). */
 const lastBefore = db.prepare(
   'SELECT value, unit FROM ha_reading WHERE entity = ? AND t < ? AND value IS NOT NULL ORDER BY t DESC LIMIT 1');
+/* The same for the calendar day running now at the venue — before the run,
+   when there is no mission day for it yet. */
+function counterToday(entity) {
+  const a = dayStartMs(Date.now()), b = a + 24 * 3600000;
+  const last = db.prepare('SELECT value, unit FROM ha_reading WHERE entity = ? AND t >= ? AND t < ? AND value IS NOT NULL ORDER BY t DESC LIMIT 1').get(entity, a, b);
+  if (!last) return null;
+  const before = lastBefore.get(entity, a) || dayFirst.get(entity, a, b);
+  if (!before || before.value == null) return null;
+  const kwh = Math.max(0, last.value - before.value) / (/^wh$/i.test(String(last.unit || '')) ? 1000 : 1);
+  return Math.round(kwh * 100) / 100;
+}
+
 function counterDay(entity, missionDay) {
   let a, b;
   try {
@@ -525,4 +537,4 @@ function version(snap) {
     + (snap.down ? '|down' : '') + (snap.frozen ? '|frozen' : '');
 }
 
-module.exports = { start, poll, snapshot, readings, daily, daySummary, hourly, version, clear, sensors, sensorsFor, configured, frozen, counterDay, CFG };
+module.exports = { start, poll, snapshot, readings, daily, daySummary, hourly, version, clear, sensors, sensorsFor, configured, frozen, counterDay, counterToday, CFG };

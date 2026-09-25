@@ -132,7 +132,7 @@ function inventoryGauges(inventory, { compact = false, strip = false, cells = fa
 function powerBars(categories, T = same) {
   const filed = categories.filter((c) => c.kwh != null);
   if (!filed.length) {
-    return `<div class="empty" style="margin-top:10px">${T('Nothing filed for this day — the crew count the day’s power as it ends')}</div>`;
+    return `<div class="empty" style="margin-top:10px">${T(categories.some((c) => c.sensor) ? 'No reading from the meter yet today, and nothing filed by the crew' : 'Nothing filed for this day — the crew count the day’s power as it ends')}</div>`;
   }
   const max = Math.max(...filed.map((c) => c.kwh), 0.001);
   const total = filed.reduce((s, c) => s + c.kwh, 0);
@@ -1190,7 +1190,13 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
   // The day the power tile shows: today during the run, day 1's plan before it.
   const pwrDay = pre ? 1 : m.clampedDay;
   const pwrOf = power.days[String(pwrDay)] || {};
-  const powerToday = power.categories.map((c) => ({ ...c, kwh: pwrOf[c.key] ?? null }));
+  // Before the run a category tied to a meter shows what the meter has counted today (a rehearsal day), not day 1's plan.
+  const meterNow = (c) => { try { return require('../../lib/home-assistant').counterToday(c.sensor); } catch { return null; } };
+  const powerToday = power.categories.map((c) => ({ ...c, kwh: pre && c.sensor ? meterNow(c) : pwrOf[c.key] ?? null }));
+  const pwrMetered = power.categories.some((c) => c.sensor);
+  const pwrSub = pre
+    ? (pwrMetered ? T('Today · before the run') : T('Planned for day 01'))
+    : `${T('Today')} · SOL ${String(m.clampedDay).padStart(2, '0')}`;
 
   /* ---- the habitat's own hardware, through Home Assistant — the Cricket
      temperature sensor, the Shelly plug and whatever else is listed in
@@ -1258,7 +1264,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
         </section>
         <section class="tile t-pwr">
           <h3>${T('Power consumed')}</h3>
-          <span class="sub">${pre ? T('Planned for day 01') : `${T('Today')} · SOL ${String(m.clampedDay).padStart(2, '0')}`} · ${T('counted by the crew')} · kWh</span>
+          <span class="sub">${pwrSub} · ${T(pwrMetered ? 'from the meter and the crew' : 'counted by the crew')} · kWh</span>
           ${powerBars(powerToday, T)}
         </section>
       </div>
