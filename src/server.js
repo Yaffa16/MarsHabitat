@@ -777,6 +777,8 @@ app.get('/api/hardware', (req, res) => {
     frozen: snap.frozen,
     pollMs: snap.pollMs,
     html: snap.configured && snap.sensors.length ? P.hardwareInner(snap, req.ctx().T) : '',
+    // the power tile, whose metered category moves with the readings
+    power: P.powerTileInner(req.ctx(), content.powerLive()),
   });
 });
 

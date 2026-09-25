@@ -430,26 +430,35 @@ function sensorsFor(a, b) {
   return list;
 }
 
-/* A meter's consumption on one mission day. The meter only ever grows, so the
-   day's own amount is its last reading of the day less where it stood when the
-   day began — its last reading of the day before (yesterday's total). With no
-   reading from before the day (the first day it was polled) the day's first
-   reading stands in. Returned in kWh (a meter reporting Wh is divided by 1000),
-   or null when the day holds no reading yet (a day still ahead). */
-const lastBefore = db.prepare(
-  'SELECT value, unit FROM ha_reading WHERE entity = ? AND t < ? AND value IS NOT NULL ORDER BY t DESC LIMIT 1');
 /* The same for the calendar day running now at the venue — before the run,
    when there is no mission day for it yet. */
 function counterToday(entity) {
-  const a = dayStartMs(Date.now()), b = a + 24 * 3600000;
-  const last = db.prepare('SELECT value, unit FROM ha_reading WHERE entity = ? AND t >= ? AND t < ? AND value IS NOT NULL ORDER BY t DESC LIMIT 1').get(entity, a, b);
-  if (!last) return null;
-  const before = lastBefore.get(entity, a) || dayFirst.get(entity, a, b);
-  if (!before || before.value == null) return null;
-  const kwh = Math.max(0, last.value - before.value) / (/^wh$/i.test(String(last.unit || '')) ? 1000 : 1);
-  return Math.round(kwh * 100) / 100;
+  const a = dayStartMs(Date.now());
+  return counterBetween(entity, a, a + 24 * 3600000);
 }
 
+/* A meter's consumption inside a window: its newest reading in the window
+   less its last reading before the window opened (yesterday's total) — with
+   no reading from before, the window's first reading. Should the meter have
+   been reset on the way (a plug that lost power starts again from zero), the
+   amount counted up to the reset is kept and counting goes on from zero,
+   rather than the day reading as nothing. kWh; null with no reading yet. */
+const windowAll = db.prepare('SELECT value, unit FROM ha_reading WHERE entity = ? AND t >= ? AND t < ? AND value IS NOT NULL ORDER BY t');
+function counterBetween(entity, a, b) {
+  const rows = windowAll.all(entity, a, b);
+  if (!rows.length) return null;
+  const before = lastBefore.get(entity, a);
+  let prev = before && before.value != null ? before.value : rows[0].value, sum = 0;
+  for (const r of rows) { sum += r.value >= prev ? r.value - prev : r.value; prev = r.value; }
+  const wh = /^wh$/i.test(String(rows[rows.length - 1].unit || ''));
+  return Math.round((sum / (wh ? 1000 : 1)) * 100) / 100;
+}
+
+/* A meter's consumption on one mission day. The meter only ever grows, so the
+   day's own amount is its last reading of the day less where it stood when the
+   day began — its last reading of the day before (yesterday's total). */
+const lastBefore = db.prepare(
+  'SELECT value, unit FROM ha_reading WHERE entity = ? AND t < ? AND value IS NOT NULL ORDER BY t DESC LIMIT 1');
 function counterDay(entity, missionDay) {
   let a, b;
   try {
@@ -457,13 +466,7 @@ function counterDay(entity, missionDay) {
     a = mission.venueMidnightUtc(mission.dateForDay(missionDay), m.timezone);
     b = mission.venueMidnightUtc(mission.dateForDay(missionDay + 1), m.timezone);
   } catch { return null; }
-  const last = db.prepare('SELECT value, unit FROM ha_reading WHERE entity = ? AND t >= ? AND t < ? AND value IS NOT NULL ORDER BY t DESC LIMIT 1').get(entity, a, b);
-  if (!last) return null;
-  const before = lastBefore.get(entity, a) || dayFirst.get(entity, a, b);
-  if (!before || before.value == null) return null;
-  const wh = /^wh$/i.test(String(last.unit || ''));
-  const kwh = Math.max(0, last.value - before.value) / (wh ? 1000 : 1);
-  return Math.round(kwh * 100) / 100;
+  return counterBetween(entity, a, b);
 }
 
 /* One mission day of the hardware, summarised for the archive. */

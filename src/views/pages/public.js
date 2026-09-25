@@ -954,6 +954,28 @@ function hwCharts(hw, tz, T = same) {
 }
 
 /**
+ * The power tile's figures: today during the run (a filed figure, or for a
+ * category tied to a meter the meter's day — its reading now less its last
+ * reading of yesterday), day 1's plan before the run except that a metered
+ * category then reads the meter today. Rendered here and by /api/hardware,
+ * which the page polls on the hardware's own cycle, so the figure moves with
+ * the other readings.
+ */
+function powerTileInner(ctx, power) {
+  const m = ctx.mission, T = ctx.T || same, pre = m.phase === 'PRE_LAUNCH';
+  const pwrDay = pre ? 1 : m.clampedDay;
+  const pwrOf = power.days[String(pwrDay)] || {};
+  const meterNow = (c) => { try { return require('../../lib/home-assistant').counterToday(c.sensor); } catch { return null; } };
+  const powerToday = power.categories.map((c) => ({ ...c, kwh: pre && c.sensor ? meterNow(c) : pwrOf[c.key] ?? null }));
+  const pwrMetered = power.categories.some((c) => c.sensor);
+  const pwrSub = pre
+    ? (pwrMetered ? T('Today · before the run') : T('Planned for day 01'))
+    : `${T('Today')} · SOL ${String(m.clampedDay).padStart(2, '0')}`;
+  return `<span class="sub">${pwrSub} · ${T(pwrMetered ? 'from the meter and the crew' : 'counted by the crew')} · kWh</span>
+          ${powerBars(powerToday, T)}`;
+}
+
+/**
  * The panel's whole inner HTML: tiles, then the combined chart. Rendered
  * here and by /api/hardware alike, so what the browser swaps in is exactly
  * what the server would have served.
@@ -1187,16 +1209,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
   // prepared lines — useful while the mission is being written.
   if (!fromBuild) for (const s of trendSpec.series) s.planned = {};
 
-  // The day the power tile shows: today during the run, day 1's plan before it.
-  const pwrDay = pre ? 1 : m.clampedDay;
-  const pwrOf = power.days[String(pwrDay)] || {};
-  // Before the run a category tied to a meter shows what the meter has counted today (a rehearsal day), not day 1's plan.
-  const meterNow = (c) => { try { return require('../../lib/home-assistant').counterToday(c.sensor); } catch { return null; } };
-  const powerToday = power.categories.map((c) => ({ ...c, kwh: pre && c.sensor ? meterNow(c) : pwrOf[c.key] ?? null }));
-  const pwrMetered = power.categories.some((c) => c.sensor);
-  const pwrSub = pre
-    ? (pwrMetered ? T('Today · before the run') : T('Planned for day 01'))
-    : `${T('Today')} · SOL ${String(m.clampedDay).padStart(2, '0')}`;
+
 
   /* ---- the habitat's own hardware, through Home Assistant — the Cricket
      temperature sensor, the Shelly plug and whatever else is listed in
@@ -1264,8 +1277,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
         </section>
         <section class="tile t-pwr">
           <h3>${T('Power consumed')}</h3>
-          <span class="sub">${pwrSub} · ${T(pwrMetered ? 'from the meter and the crew' : 'counted by the crew')} · kWh</span>
-          ${powerBars(powerToday, T)}
+          <div id="pwr-live">${powerTileInner(ctx, power)}</div>
         </section>
       </div>
       <div id="hbt-notes"></div>
@@ -1577,5 +1589,5 @@ function single(ctx, { message }) {
 
 module.exports = {
   mission, messages, dashboardPage, complete, inventoryGauges, boardCards, boardVersion, archive, single, messageCard,
-  hardwareInner, ticker,
+  hardwareInner, powerTileInner, ticker,
 };

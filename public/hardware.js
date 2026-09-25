@@ -22,6 +22,8 @@
       .then(function (j) {
         if (!j) return;
         if (j.frozen) { stop(); }
+        var pw = document.getElementById('pwr-live');                        // the power tile, on the same cycle
+        if (pw && j.power && pw.innerHTML !== j.power) pw.innerHTML = j.power;
         if (j.html && j.version && j.version !== version) {
           version = j.version;
           box.innerHTML = j.html;
