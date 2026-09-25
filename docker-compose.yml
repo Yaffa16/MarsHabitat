@@ -46,6 +46,12 @@ services:
       WATCH_CONTENT: "${WATCH_CONTENT:-true}"
 
       # --- the habitat readings --------------------------------------------
+      # Which source feeds the habitat's readings: "auto" (the habitat sensor
+      # through Home Assistant whenever HA_HOST and HA_API_TOKEN are set and
+      # content/home-assistant.json maps the entities, the node otherwise),
+      # "home-assistant", or "node"; and how often the sensor is read.
+      HABITAT_SOURCE: "${HABITAT_SOURCE:-auto}"
+      HABITAT_POLL_MS: "${HABITAT_POLL_MS:-60000}"
       # The external node (critical-sensors.de) and where the readings start;
       # see README "Where the readings start". Set in .env.
       CRITICAL_POLL: "${CRITICAL_POLL:-true}"

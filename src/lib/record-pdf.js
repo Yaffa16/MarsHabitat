@@ -30,6 +30,10 @@ const mediaLib = require('./media');
 const moodLib = require('./mood');
 const content = require('./content');
 const readingsLog = require('./readings-log');
+const critical = require('./critical');
+// What the Habitat panel is read from: the habitat sensor through Home
+// Assistant, or the external node.
+const habitatSource = () => (critical.source() === 'home-assistant' ? 'the habitat sensor' : 'the sensor node');
 
 /* ---------------------------------------------------------------- palette */
 const INK = [26, 26, 26], GREY = [107, 107, 107], LIGHT = [160, 160, 160], ORANGE = [232, 83, 26];
@@ -294,7 +298,7 @@ function cover(L, G) {
   line('Readings log', G.log.total ? `${G.log.total.toLocaleString('en-GB')} files · ${fmtBytes(G.log.bytes)} · every reading ever pulled, in /archive/readings.zip` : 'empty');
   line('This record', `generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC`);
   y += 30;
-  for (const t of pdf.wrap('This record holds only what was entered on the station and what its sensors measured, day by day: the schedule as it was run, the meals, the stores as they were counted, the power and the crew\'s figures as they were filed, what the crew wrote and sent out, the states filed for them, and every reading of every day — the station\'s channels, the external node and the hardware, each as it was stored. Nothing in it is generated — no chart, no projection, no total, no figure carried from one day to the next, and no plan for a day that has not come. The messages from Earth and the crew\'s replies are not part of the record. The photographs are placed in the entries they were sent with; the originals, byte for byte, are in the media ZIP under the hashes printed here.', 'regular', 9.5, CW - 60)) { pdf.text(p, M.left, y, t, { size: 9.5, color: INK }); y += 13.5; }
+  for (const t of pdf.wrap('This record holds only what was entered on the station and what its sensors measured, day by day: the schedule as it was run, the meals, the stores as they were counted, the power and the crew\'s figures as they were filed, what the crew wrote and sent out, the states filed for them, and every reading of every day — the station\'s channels, the habitat sensor (or the external node) and the hardware, each as it was stored. Nothing in it is generated — no chart, no projection, no total, no figure carried from one day to the next, and no plan for a day that has not come. The messages from Earth and the crew\'s replies are not part of the record. The photographs are placed in the entries they were sent with; the originals, byte for byte, are in the media ZIP under the hashes printed here.', 'regular', 9.5, CW - 60)) { pdf.text(p, M.left, y, t, { size: 9.5, color: INK }); y += 13.5; }
   pdf.text(p, M.left, PAGE.h - 70, 'Mission control only. The archive is part of the work.', { size: 8, color: GREY });
 }
 
@@ -344,7 +348,7 @@ function missionSection(L, G) {
   L.table([{ label: 'Channel', w: 0.6, font: 'mono' }, { label: 'Metric', w: 1.6 }, { label: 'Unit', w: 0.6 }, { label: 'Expected band', w: 1, align: 'right' }, { label: 'Hard limits', w: 1, align: 'right' }, { label: 'Shown', w: 0.5 }],
     channels.map((c) => [c.channel || '—', c.label, c.unit, c.warn_min != null ? `${fmtNum(c.warn_min)} – ${fmtNum(c.warn_max)}` : '—', c.ok_min != null ? `${fmtNum(c.ok_min)} – ${fmtNum(c.ok_max)}` : '—', c.visible ? 'yes' : 'no']));
   L.h2('How to read this record');
-  L.para('Days run in order, and only the days that have happened are here. Each holds the schedule with every task\'s status as it stands, the meals as entered, the stores counted that day with the figures as they were written, the power and the steps and calories as they were filed, the mission notes, the crew log with its photographs in place, the states filed for the crew with the value chosen and the sentence the station shows for it, what was sent out, the day\'s sensor summary — each channel\'s lowest, highest and mean reading and how many readings that is — and then every reading of the day: the station\'s channels as one row per instant with a column per channel, the external node one row per reading, the hardware one table per device, every value as it was stored, times in habitat time to the second. No figure is totalled, projected or carried from one day to the next, and the messages from Earth and the crew\'s replies are not part of this record. "The crew log" gathers every blog entry in full, in order; "Media" lists every file with its SHA-256, which can be checked against the ZIP at /media/export.zip with sha256sum. The same readings, as the station received them — one JSON file per pull, with the stores and figures as they changed and each day\'s summary — are in the readings log, downloadable whole at /archive/readings.zip.', { size: 9 });
+  L.para('Days run in order, and only the days that have happened are here. Each holds the schedule with every task\'s status as it stands, the meals as entered, the stores counted that day with the figures as they were written, the power and the steps and calories as they were filed, the mission notes, the crew log with its photographs in place, the states filed for the crew with the value chosen and the sentence the station shows for it, what was sent out, the day\'s sensor summary — each channel\'s lowest, highest and mean reading and how many readings that is — and then every reading of the day: the station\'s channels as one row per instant with a column per channel, the habitat sensor (or the external node) one row per reading, the hardware one table per device, every value as it was stored, times in habitat time to the second. No figure is totalled, projected or carried from one day to the next, and the messages from Earth and the crew\'s replies are not part of this record. "The crew log" gathers every blog entry in full, in order; "Media" lists every file with its SHA-256, which can be checked against the ZIP at /media/export.zip with sha256sum. The same readings, as the station received them — one JSON file per pull, with the stores and figures as they changed and each day\'s summary — are in the readings log, downloadable whole at /archive/readings.zip.', { size: 9 });
 }
 
 /** One mission day, whole. */
@@ -429,9 +433,9 @@ function daySection(L, G, r, { asChapter = true } = {}) {
 
   /* ---- the sensors: names as on the dashboard ------------------------ */
   L.h2('Habitat sensors', { keep: 100 });
-  L.para('Every channel as it is named on the dashboard: the sensor node (the Habitat panel), the station\'s own channels, and the habitat hardware (the Habitat hardware panel). First each channel\'s lowest, highest and mean reading over the day and how many readings that is; then every reading, as stored.', { color: GREY, size: 8.5 });
+  L.para(`Every channel as it is named on the dashboard: ${habitatSource()} (the Habitat panel), the station's own channels, and the habitat hardware (the Habitat hardware panel). First each channel's lowest, highest and mean reading over the day and how many readings that is; then every reading, as stored.`, { color: GREY, size: 8.5 });
   if (r.external.length) {
-    L.h3('Habitat · sensor node', { keep: 70 });
+    L.h3(`Habitat · ${habitatSource()}`, { keep: 70 });
     L.table([{ label: 'Channel', w: 2, font: 'bold' }, { label: 'Low', w: 0.7, align: 'right' }, { label: 'High', w: 0.7, align: 'right' }, { label: 'Mean', w: 0.7, align: 'right' }, { label: 'Unit', w: 0.6 }, { label: 'Readings', w: 0.7, align: 'right' }],
       r.external.map((h) => [h.label, fmtNum(h.low, 2), fmtNum(h.high, 2), fmtNum(h.mean, 2), h.unit || '', h.samples]));
   }
@@ -478,7 +482,7 @@ function readingsSection(L, R) {
     L.table(cols, R.station.rows.map((row) => [row.at, ...R.station.columns.map((c) => asIs(row.values[c.metric]))]), opts);
   }
   if (R.external.rows.length) {
-    L.h3(`Habitat · sensor node · every reading · ${R.external.readings.toLocaleString('en-GB')} readings`, { keep: 70 });
+    L.h3(`Habitat · ${habitatSource()} · every reading · ${R.external.readings.toLocaleString('en-GB')} readings`, { keep: 70 });
     const cols = [{ label: 'Time', w: 1.1, font: 'mono' }, ...R.external.columns.map((c) => ({ label: `${c.label} ${c.unit}`, w: 1, align: 'right' }))];
     L.table(cols, R.external.rows.map((row) => [row.at, ...R.external.columns.map((c) => asIs(row.values[c.key]))]), opts);
   }

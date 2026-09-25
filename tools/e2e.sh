@@ -1399,6 +1399,56 @@ process.exit(!moved && after === before ? 0 : 1);
 ' && ok "a Docker image built after the close does not move the floor — the run's readings stay" || bad "a rebuild after the close touched the readings"
 rm -rf "$DATA2" "$CONT2"
 
+echo "── the habitat sensor through Home Assistant"
+# A third station against a stand-in Home Assistant (tools/mock-home-assistant.js)
+# that answers for the M5 ENV Pro's seven entities: the Habitat panel's
+# readings come from it — full rows, every channel, the classification as
+# text — and every consumer of the table reads them as it read the node's.
+DATA3=$(mktemp -d); CONT3=$(mktemp -d); cp content/*.json "$CONT3"/
+node tools/mock-home-assistant.js 8125 > /tmp/mockha.log 2>&1 &
+MOCK=$!
+sleep 1
+DATA_DIR="$DATA3" CONTENT_DIR="$CONT3" node src/db/seed.js > /dev/null 2>&1
+DATA_DIR="$DATA3" CONTENT_DIR="$CONT3" PORT=8083 CRITICAL_POLL=true HABITAT_SOURCE=auto HABITAT_POLL_MS=15000 \
+  HA_HOST=localhost HA_PORT=8125 HA_API_TOKEN=test-token HA_POLL=false node src/server.js > /tmp/srv3.log 2>&1 &
+SRV3=$!
+sleep 6
+B3=http://localhost:8083
+HAB=$(curl -s "$B3/api/habitat/data?days=1")
+echo "$HAB" | grep -q '"source":"home-assistant"' && ok "with Home Assistant configured and the entities mapped, the habitat is read from the sensor" || bad "source is not home-assistant"
+echo "$HAB" | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
+  const d = JSON.parse(s); const r = d.rows[d.rows.length - 1] || {};
+  const ok = d.rows.length > 10 && ["co2", "temp", "hum", "pres", "voc", "iaq"].every((k) => typeof r[k] === "number") && /polluted|Excellent|Good/.test(String(r.iaqc));
+  process.exit(ok ? 0 : 1);
+});' && ok "every row carries CO₂, temperature, humidity, pressure, VOC, the IAQ index and its classification as text" || bad "the sensor's rows are incomplete"
+echo "$HAB" | grep -q '"light":null' && ok "the node's own channels (light, battery, signal) are empty, not invented" || bad "light is not null"
+echo "$HAB" | grep -q '"pollMs":15000' && echo "$HAB" | grep -q '"staleMs":300000' && ok "the station tells the page how often it reads and how fresh is fresh" || bad "cadence not served"
+echo "$HAB" | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
+  const d = JSON.parse(s); const e = d.entities || {};
+  process.exit(e.co2 && e.co2.id === "m5_env_pro_env_pro_co2_equivalent" && e.iaqc && e.iaqc.state && !e.iaqc.missing ? 0 : 1);
+});' && ok "each channel's entity is reported as Home Assistant last returned it" || bad "entities missing from the feed"
+LAND3=$(curl -s $B3/)
+echo "$LAND3" | grep -q 'id="hbt-pres"' && ! echo "$LAND3" | grep -q 'id="hbt-spark"' && ok "air pressure has taken the light tile's place" || bad "light tile still there, or no pressure tile"
+echo "$LAND3" | grep -q 'id="hbt-iaq"' && echo "$LAND3" | grep -q 'id="hbt-voc"' && echo "$LAND3" | grep -q 'id="iaqVerdict"' && ok "the air quality and VOC tiles are on the panel, the classification as the verdict" || bad "new tiles missing"
+curl -s -c /tmp/a3.jar -b /tmp/a3.jar -o /dev/null -X POST -d "username=control&password=control123" $B3/control/login
+GL3=$(curl -s -b /tmp/a3.jar $B3/at-a-glance)
+echo "$GL3" | grep -q 'Air quality index' && echo "$GL3" | grep -q 'VOC' && ok "the booklet summarises the new channels with the rest" || bad "booklet lacks the new channels"
+DAY3=$(curl -s -b /tmp/a3.jar "$B3/archive/day/$(curl -s $B3/api/status | node -e 'let s="";process.stdin.on("data",(c)=>s+=c).on("end",()=>process.stdout.write(String(JSON.parse(s).missionDay||1)))')")
+echo "$DAY3" | grep -q 'Volatile organic compounds' && echo "$DAY3" | grep -q 'Air quality index' && echo "$DAY3" | grep -q 'Air quality class' && ok "the archive's day page carries them with the rest, the classification as text" || bad "the day page lacks the new channels"
+curl -s -b /tmp/a3.jar $B3/archive/readings/habitat.csv | python3 -c '
+import csv, sys
+rows = list(csv.reader(sys.stdin))
+sys.exit(0 if rows and rows[0] == ["pulledAt", "at", "t", "co2", "temp", "hum", "pres", "voc", "iaq", "iaqc"] and len(rows) > 10 and any("polluted" in r[9] or r[9] in ("Excellent", "Good") for r in rows[1:]) else 1)
+' && ok "the readings log keeps every stored row, with the classification, and hands it over as CSV" || bad "habitat CSV wrong"
+[ "$(ls "$DATA3"/readings/habitat/*/ 2>/dev/null | grep -c json)" -ge 1 ] && ok "every poll of the sensor is a JSON file in readings/habitat/" || bad "no habitat poll files"
+curl -s -b /tmp/a3.jar -o /tmp/record3.pdf -w '%{http_code}' $B3/archive/export.pdf | grep -q 200 && pdftext /tmp/record3.pdf > /tmp/record3.txt && grep -q "the habitat sensor" /tmp/record3.txt && ok "the PDF record names the habitat sensor as the source" || bad "PDF does not name the sensor"
+echo "$LAND3" | grep -q 'id="tk-hab"' && ok "the ticker still carries the habitat's reading" || bad "ticker lost the habitat"
+kill $SRV3 2>/dev/null; wait $SRV3 2>/dev/null
+kill $MOCK 2>/dev/null; wait $MOCK 2>/dev/null
+rm -rf "$DATA3" "$CONT3"
+
 echo
 [ $FAIL -eq 0 ] && echo "ALL CHECKS PASSED" || echo "SOME CHECKS FAILED"
 exit $FAIL

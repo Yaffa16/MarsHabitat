@@ -55,17 +55,31 @@ const configured = () => !!(CFG.host && CFG.token);
 
 const DIR = process.env.CONTENT_DIR || path.join(__dirname, '../../content');
 const FILE = path.join(DIR, 'home-assistant.json');
-let cfgCache = { mtimeMs: -1, sensors: [], error: null };
+let cfgCache = { mtimeMs: -1, sensors: [], habitat: {}, error: null };
+
+/* The habitat sensor's channels, and the entity that feeds each: the keys
+   the station knows (src/lib/critical.js), each mapped in the file's
+   `habitat` block to an entity id without the `sensor.` prefix. */
+const HABITAT_CHANNELS = ['co2', 'temp', 'hum', 'pres', 'voc', 'iaq', 'iaqc'];
 
 /** The sensor list from content/home-assistant.json, re-read when the file
  *  changes. A broken file keeps the last good list serving and says so. */
-function sensors() {
+function sensors() { return config().sensors; }
+/** The habitat sensor's mapping, channel → entity id, from the same file. */
+function habitatMap() { return config().habitat; }
+
+function config() {
   let st = null;
   try { st = fs.statSync(FILE); } catch { /* no file: no sensors */ }
-  if (!st) { cfgCache = { mtimeMs: -1, sensors: [], error: null }; return []; }
-  if (st.mtimeMs === cfgCache.mtimeMs) return cfgCache.sensors;
+  if (!st) { cfgCache = { mtimeMs: -1, sensors: [], habitat: {}, error: null }; return cfgCache; }
+  if (st.mtimeMs === cfgCache.mtimeMs) return cfgCache;
   try {
     const raw = JSON.parse(fs.readFileSync(FILE, 'utf8'));
+    const habitat = {};
+    for (const k of HABITAT_CHANNELS) {
+      const v = raw && raw.habitat && raw.habitat[k];
+      if (v && typeof v === 'string' && v.trim()) habitat[k] = v.trim().replace(/^sensor\./, '');
+    }
     const list = (Array.isArray(raw) ? raw : raw.sensors || [])
       .filter((s) => s && s.id)
       .map((s) => ({
@@ -89,14 +103,15 @@ function sensors() {
         // reading has room to move (oxygen: 2 percentage points).
         span: Number.isFinite(Number(s.span)) && Number(s.span) > 0 ? Number(s.span) : null,
       }));
-    cfgCache = { mtimeMs: st.mtimeMs, sensors: list, error: null };
-    console.log(`[home-assistant] ${list.length} sensor${list.length === 1 ? '' : 's'} configured in content/home-assistant.json`);
+    cfgCache = { mtimeMs: st.mtimeMs, sensors: list, habitat, error: null };
+    const mapped = Object.keys(habitat).length;
+    console.log(`[home-assistant] ${list.length} sensor${list.length === 1 ? '' : 's'} configured in content/home-assistant.json${mapped ? `, ${mapped} habitat channel${mapped === 1 ? '' : 's'} mapped` : ''}`);
   } catch (e) {
     if (cfgCache.error !== e.message) console.warn(`[home-assistant] content/home-assistant.json is broken (${e.message}) — the last good list keeps serving`);
     cfgCache.error = e.message;
     cfgCache.mtimeMs = st.mtimeMs;
   }
-  return cfgCache.sensors;
+  return cfgCache;
 }
 
 /* ------------------------------------------------------------------- floor */
@@ -540,4 +555,4 @@ function version(snap) {
     + (snap.down ? '|down' : '') + (snap.frozen ? '|frozen' : '');
 }
 
-module.exports = { start, poll, snapshot, readings, daily, daySummary, hourly, version, clear, sensors, sensorsFor, configured, frozen, counterDay, counterToday, CFG };
+module.exports = { start, poll, snapshot, readings, daily, daySummary, hourly, version, clear, sensors, sensorsFor, habitatMap, HABITAT_CHANNELS, fetchJson, configured, frozen, counterDay, counterToday, CFG };

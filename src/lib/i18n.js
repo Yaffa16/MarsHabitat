@@ -785,6 +785,27 @@ const D = {
     'Ein Fahrradgenerator: Treten lädt die Batterie. Das Training des Gesundheitsoffiziers ist zugleich das Kraftwerk des Habitats – die Schritte und die Kilowattstunden sind dieselbe Anstrengung.',
     'Un générateur à vélo : pédaler charge la batterie. L’entraînement de l’officier de santé est aussi la centrale de l’habitat – les pas et les kilowattheures sont le même effort.'],
 
+  // ---- the habitat sensor (src/lib/habitat-feed.js, public/habitat.js)
+  'Habitat sensor · measured live · figures and stores counted by the crew': ['Habitatsensor · live gemessen · Zahlen und Vorräte von der Crew gezählt', 'Capteur de l’habitat · mesuré en direct · chiffres et réserves comptés par l’équipage'],
+  'Air quality': ['Luftqualität', 'Qualité de l’air'],
+  'IAQ index': ['IAQ-Index', 'Indice IAQ'],
+  'as the sensor classifies it': ['wie der Sensor sie einstuft', 'telle que le capteur la classe'],
+  'Volatile organic compounds': ['Flüchtige organische Verbindungen', 'Composés organiques volatils'],
+  'Breath-VOC equivalent': ['Atem-VOC-Äquivalent', 'Équivalent COV respiratoire'],
+  'Excellent': ['Ausgezeichnet', 'Excellente'],
+  'Good': ['Gut', 'Bonne'],
+  'Lightly polluted': ['Leicht belastet', 'Légèrement polluée'],
+  'Moderately polluted': ['Mässig belastet', 'Modérément polluée'],
+  'Heavily polluted': ['Stark belastet', 'Fortement polluée'],
+  'Severely polluted': ['Sehr stark belastet', 'Sévèrement polluée'],
+  'Extremely polluted': ['Extrem belastet', 'Extrêmement polluée'],
+  'Unknown': ['Unbekannt', 'Inconnue'],
+  'Waiting for the station’s first read of the habitat sensor.': ['Warte auf den ersten Abruf des Habitatsensors durch die Station.', 'En attente de la première lecture du capteur de l’habitat par la station.'],
+  'No current reading from the habitat sensor.': ['Kein aktueller Messwert vom Habitatsensor.', 'Aucune mesure actuelle du capteur de l’habitat.'],
+  'No reading has arrived in the last': ['Kein Messwert eingetroffen in den letzten', 'Aucune mesure reçue au cours des dernières'],
+  'Home Assistant has no reading for': ['Home Assistant hat keinen Messwert für', 'Home Assistant n’a aucune mesure pour'],
+  'Check the entity ids in content/home-assistant.json, and that the habitat sensor is on.': ['Prüfe die Entity-IDs in content/home-assistant.json und ob der Habitatsensor eingeschaltet ist.', 'Vérifiez les identifiants d’entité dans content/home-assistant.json et que le capteur de l’habitat est allumé.'],
+
   // ---- the habitat tiles (public/habitat.js)
   'No current reading': ['Kein aktueller Messwert', 'Aucune mesure actuelle'],
   'Within limit': ['Innerhalb des Grenzwerts', 'Dans la limite'],

@@ -1116,8 +1116,8 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
 
   /* ---- the trend graph: what habitat.js draws, as data. Every series is a
      map of venue date → value, so the browser can lay it on its fifteen-day
-     axis. The station's own ingest channels come from here (the Sensor-11
-     feed is added in the browser, which already holds its rows), then each
+     axis. The station's own ingest channels come from here (the habitat
+     sensor's channels are added in the browser, which already holds its rows), then each
      store — with what was carried in, the scale it is drawn against — and
      the crew's counts. Stores and counts are indexed by mission day, so they
      have nothing to plot until day one; they are still listed, so the legend
@@ -1225,11 +1225,12 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
       </section>`
     : '';
 
-  const habitat = dpanel({ id: 'habitat', code: 'CH-01', title: T('Habitat'), meta: T('Sensor node · measured live · figures and stores counted by the crew'), span: 12, cls: 'compact',
+  const habitat = dpanel({ id: 'habitat', code: 'CH-01', title: T('Habitat'), meta: T('Habitat sensor · measured live · figures and stores counted by the crew'), span: 12, cls: 'compact',
     live: T('The readings refresh by themselves as the sensors report') }, `
-    <!-- The Sensor-11 dashboard. The station server polls the external feed and
-         stores every reading in its own database; /public/habitat.js draws these
-         tiles from /api/habitat/data and refreshes on the node's cycle. -->
+    <!-- The habitat's instruments. The station server polls the habitat sensor
+         (through Home Assistant — or the external node, src/lib/critical.js)
+         and stores every reading in its own database; /public/habitat.js draws
+         these tiles from /api/habitat/data and refreshes on the station's cycle. -->
     <div class="hbt">
       <div class="bento" id="hbt-bento" hidden>
         <section class="tile t-co2">
@@ -1260,14 +1261,27 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
           <div class="big" id="humVal" style="margin-top:12px">—<em>%</em></div>
           <div id="hbt-level"></div>
         </section>
-        <section class="tile t-light spk">
-          <h3>${T('Light')}</h3>
-          <span class="sub">${T('Scale')} 0–1000 raw</span>
-          <div class="big" id="lightVal" style="margin-top:12px">—<em>raw</em></div>
-          <div id="hbt-spark"></div>
+        <section class="tile t-pres spk">
+          <h3>${T('Air pressure')}</h3>
+          <span class="sub">${T('Scale')} 950–1050 hPa</span>
+          <div class="big" id="presVal" style="margin-top:12px">—<em>hPa</em></div>
+          <div id="hbt-pres"></div>
         </section>
         ${figureTile(crewFigures, m, { key: 'calories', label: 'Calories consumed', unit: 'kcal', colour: 'var(--orange)', fmt: (v) => v.toLocaleString('en-GB'), T, crew })}
         ${figureTile(crewFigures, m, { key: 'steps', label: 'Steps taken', unit: T('steps'), colour: 'var(--ink)', fmt: (v) => v.toLocaleString('en-GB'), T, crew })}
+        <section class="tile t-iaq lvl">
+          <h3>${T('Air quality')}</h3>
+          <span class="sub">${T('IAQ index')} · ${T('Scale')} 0–500 · ${T('as the sensor classifies it')}</span>
+          <div class="big" id="iaqVal" style="margin-top:12px">—<em>IAQ</em></div>
+          <div class="verdict" id="iaqVerdict"></div>
+          <div id="hbt-iaq"></div>
+        </section>
+        <section class="tile t-voc spk">
+          <h3>${T('Volatile organic compounds')}</h3>
+          <span class="sub">${T('Breath-VOC equivalent')} · ${T('Scale')} 0–10 ppm</span>
+          <div class="big" id="vocVal" style="margin-top:12px">—<em>ppm</em></div>
+          <div id="hbt-voc"></div>
+        </section>
       </div>
       <div class="bento aux">
         <section class="tile t-res">
@@ -1291,7 +1305,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
 
   /* ---- every trend as a chart: the habitat's channels, each store, the
      crew's counts. habitat.js draws them from the spec above plus its own
-     Sensor-11 rows, and redraws when the period selector changes. */
+     habitat rows, and redraws when the period selector changes. */
   const trends = dpanel({ id: 'trends', code: 'CH-40', title: T('Trends'),
     span: 12 }, `
     <div class="trends" id="hbt-trends" data-date="${esc(m.today)}" data-day-start="${missionLib.venueMidnightUtc(m.today, m.timezone)}" data-axis-start="${esc(axis.start)}" data-axis-end="${esc(axis.end)}" data-axis-run="${axis.run ? '1' : '0'}" data-spec="${esc(JSON.stringify(trendSpec))}">

@@ -90,7 +90,7 @@ which is mission control's, sits behind the same login.
 
 | Page | Route | Holds |
 |---|---|---|
-| The station | `/` | **The ticker** across the top — the habitat's clock and a running line of the current activity, the next one and the node's reading · composer and orbital plot · the live message board · the mission dashboard (schedule, meal, mood, habitat, resources, trends, and below the trends **the three daily blogs** — Daily Science Findings, Daily Health Blog, Commander Blog) · **about** (the project, how the station behaves, who we are). The crew log, the media and the whole mission day by day live on their own pages (`/logbook`, `/media`, `/at-a-glance`) |
+| The station | `/` | **The ticker** across the top — the habitat's clock and a running line of the current activity, the next one and the habitat sensor's reading · composer and orbital plot · the live message board · the mission dashboard (schedule, meal, mood, habitat, resources, trends, and below the trends **the three daily blogs** — Daily Science Findings, Daily Health Blog, Commander Blog) · **about** (the project, how the station behaves, who we are). The crew log, the media and the whole mission day by day live on their own pages (`/logbook`, `/media`, `/at-a-glance`) |
 | Dashboard | `/dashboard` | The mission dashboard on a page of its own — the same section the station page carries on a desk: the head, the live images, the two doors, the strip of sols and the nine panels behind their index. Drawn for a phone first; the phone's bar of keys leads here with **Dashboard**, and on a phone the station page keeps only the habitat and the doors |
 | Messages | `/messages` | The portal on a page of its own — the composer and the live message board, the same pieces the station page shows on a desk. Drawn for a phone first: the exchanges flow with the page, the composer is a dock at the foot of the screen; the phone's bar of keys leads here with **Write**, and on a phone the station page keeps only the doors |
 | Mission control | `/control` | Five tabs: **Messages** (the reply queue) first, then one per officer, and the habitat — which ends with the plan and the reset |
@@ -534,9 +534,50 @@ folder (`CLOUD_CHECK_SECONDS=900`); open pages ask the station for new readings 
 beat. A value set in `.env` overrides its default. The station reads as often as this; the
 sensor node itself still transmits on its own cycle, so its new values arrive as it sends them.
 
+## The habitat sensor
+
+The Habitat panel — the CO₂ dial, the temperature ruler, the humidity level, the air pressure
+and volatile-organic-compounds sparklines, and the air quality index as a banded level with
+the sensor's own classification (*Excellent* … *Extremely polluted*) as its verdict — is read
+from **the habitat sensor**, an M5 ENV Pro (a Bosch BME688 running BSEC) inside the habitat,
+through Home Assistant. Seven entities feed seven channels, mapped in **`content/home-assistant.json`**
+under `habitat`:
+
+| Channel | Entity | Drawn as |
+|---|---|---|
+| `co2` | `sensor.m5_env_pro_env_pro_co2_equivalent` | the 24-hour dial, ppm |
+| `temp` | `sensor.m5_env_pro_env_pro_temperature` | the ruler, °C |
+| `hum` | `sensor.m5_env_pro_env_pro_humidity` | the level, %RH |
+| `pres` | `sensor.m5_env_pro_env_pro_pressure` | a sparkline, hPa (in the light tile's place) |
+| `voc` | `sensor.m5_env_pro_env_pro_breath_voc_equivalent` | a sparkline, ppm |
+| `iaq` | `sensor.m5_env_pro_env_pro_iaq` | a level from 0 to 500, ticked at the sensor's bands |
+| `iaqc` | `sensor.m5_env_pro_env_pro_iaq_classification` | the verdict under the index, in the visitor's language |
+
+The mapping is hot-read: change an entity id in the file and the next poll follows. The
+station reads the sensor every **`HABITAT_POLL_MS`** (a minute by default) — the current
+state of every entity, and Home Assistant's history since the newest reading the station
+holds, so every change between two polls is kept however often the sensor reports. What is
+stored is one row per minute at most, each a full snapshot of every channel (a channel that
+did not change carries its last value forward; one Home Assistant reports `unavailable`
+carries nothing), into the same table the external node wrote — so the ticker, the trend
+graph, the booklet, the archive, the PDF record and the readings ZIP all carry the sensor
+exactly as they carried the node, with the two new channels beside the old. A reading counts
+as current for five minutes (or three polls, whichever is longer); after that the tiles
+clear and say so, as they always have.
+
+The source is chosen by **`HABITAT_SOURCE`**: `auto` (the default) reads the sensor whenever
+`HA_HOST` and `HA_API_TOKEN` are set in `.env` and the `habitat` block is filled, and the
+external node otherwise; `node` forces the node; `home-assistant` forces the sensor. Every
+poll of the sensor is a file in the readings log (`habitat/`), and the log's ZIP carries it
+flattened as `habitat.csv` (one row per stored reading) and `habitat-polls.csv` (each
+entity's state as fetched, every poll). `tools/mock-home-assistant.js` stands in for Home
+Assistant on a machine without the venue network, so the whole path can be rehearsed —
+the test suite does.
+
 ## Where the readings start
 
-The external node (critical-sensors.de) hands back its last thirty days on every poll. The
+The external node (critical-sensors.de) hands back its last thirty days on every poll, and
+the habitat sensor's history reaches back a day. The
 station keeps only what is stamped after its **readings floor**, and serves nothing older, so the
 dashboard and the record never carry weeks of history from before anyone was in the habitat.
 The floor is set in one of two ways:
@@ -658,6 +699,7 @@ volume beside the database and the media, under `readings/<source>/<day>/<time>.
 
 | Source | One file per |
 |---|---|
+| `habitat/` | every poll of the habitat sensor through Home Assistant — each entity's state as fetched, the history call's reach and count, and the rows the poll stored; a failed poll is a file too, with the error |
 | `node/` | every poll of the external sensor node — the readings that poll added (the node repeats its whole last thirty days each time; only what the station did not already hold is written), with the counts of what came back, what was a duplicate and what was before the floor; a failed poll is a file too, with the error |
 | `home-assistant/` | every poll of the habitat's hardware — every entity as returned, whether or not it changed, plus history rows fetched |
 | `ingest/` | every batch posted to `/api/sensors/ingest`, as posted |
@@ -666,7 +708,8 @@ volume beside the database and the media, under `readings/<source>/<day>/<time>.
 
 All of it downloads from mission control: **`/archive/readings.zip`** is the whole log with
 `index.json` and a `README.txt`, and inside it `csv/` holds the same log flattened for a
-spreadsheet — `home-assistant.csv` (one row per entity per poll), `ingest.csv` (one row per
+spreadsheet — `habitat.csv` (one row per reading stored from the habitat sensor) and
+`habitat-polls.csv` (each entity's state as fetched, every poll), `home-assistant.csv` (one row per entity per poll), `ingest.csv` (one row per
 reading posted), `node-polls.csv` (one row per poll of the node) and `node.csv` (one row per
 reading the node ever sent, with the poll that brought it in). Each
 table is also on its own at **`/archive/readings/<name>.csv`**, and `/archive/readings.json`
@@ -1380,10 +1423,13 @@ src/
   lib/pdf.js             dependency-free PDF writer: pages, standard fonts, vector, JPEG/PNG, bookmarks
   lib/record-pdf.js      the complete mission record as one PDF, composed from the archive queries
   lib/readings-log.js    every reading ever pulled, one JSON file per pull, kept forever
+  lib/critical.js        the habitat's readings: the one table, the readings floor, the external node
+  lib/habitat-feed.js    the habitat sensor (M5 ENV Pro) through Home Assistant, into that table
+  lib/home-assistant.js  the Home Assistant bridge: the hardware panel, and the habitat mapping
   routes/control.js      all admin write paths
   routes/media.js        the public media pages and downloads
   views/                 server-rendered templates
   views/pages/dome.js    the habitat dome: geometry, hexagons, callouts, and /api/dome's figures
 public/                  stylesheet + the page scripts (board, composer, habitat, media, entry editor)
-tools/                   sensor simulator, backup script, media verifier, end-to-end test
+tools/                   sensor simulator, mock Home Assistant, backup script, media verifier, end-to-end test
 ```

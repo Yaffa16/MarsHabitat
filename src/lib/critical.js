@@ -1,17 +1,27 @@
 'use strict';
 /**
- * The external habitat sensor feed (critical-sensors.de, "Sensor 11" node).
+ * The habitat's readings — CO₂, temperature, humidity, air pressure, and
+ * from the new sensor the volatile organic compounds and the air quality
+ * index with its readable classification — and where they start.
  *
- * The station server polls srv.php on the node's own transmit cycle, dedupes
- * the gateway copies, and merges every successful read into its SQLite
- * database — so the history accumulates past the 30 days the server returns,
+ * Two sources feed the one table (external_reading), and the rest of the
+ * station — the tiles on the landing page, the ticker, the booklet, the
+ * archive, the PDF record — reads the table and never asks which:
+ *
+ *   - "home-assistant": the M5 ENV Pro (a BME688 running BSEC) inside the
+ *     habitat, read through Home Assistant. WHICH entities feed which
+ *     channel lives in content/home-assistant.json under `habitat`; WHERE
+ *     Home Assistant is lives in .env (HA_HOST, HA_API_TOKEN). This is the
+ *     source whenever both are set (src/lib/habitat-feed.js).
+ *   - "node": the external critical-sensors.de feed ("Sensor 11"), polled
+ *     on the node's own transmit cycle, the gateway copies deduped, kept
+ *     for a venue with no sensor of its own. HABITAT_SOURCE=node forces it.
+ *
+ * Either way the server polls and stores, so the history accumulates,
  * survives restarts, is shared by every visitor, and keeps serving when the
- * venue loses its internet connection. The browser never talks to
- * critical-sensors.de directly (no CORS proxies on gallery phones): it reads
- * /api/habitat/data from the station itself.
- *
- * Everything is env-tunable and fails soft: an unreachable feed logs, backs
- * off, and leaves the last good data serving.
+ * venue loses its network; the browser reads /api/habitat/data from the
+ * station itself. Everything is env-tunable and fails soft: an unreachable
+ * source logs, backs off, and leaves the last good data serving.
  */
 const { db } = require('../db');
 
@@ -31,10 +41,24 @@ const CFG = {
   // not polled again, nothing is stored again, and what is stored is the
   // record. CRITICAL_FREEZE_AT overrides it for a rehearsal.
   freezeAt: Date.parse(process.env.CRITICAL_FREEZE_AT || '2026-10-27T23:59:59+01:00'),
+  // Which source feeds the table: "home-assistant", "node", or "auto" —
+  // Home Assistant whenever it is configured and the habitat entities are
+  // mapped in content/home-assistant.json, the node otherwise.
+  source: String(process.env.HABITAT_SOURCE || 'auto').trim().toLowerCase(),
+  // The habitat feed reads Home Assistant every minute by default (the
+  // sensor itself reports every few seconds; the history call between two
+  // polls brings every change in between); HABITAT_POLL_MS overrides.
+  habitatPollMs: Math.max(15000, Number(process.env.HABITAT_POLL_MS || 60 * 1000)),
 };
 const frozen = () => Number.isFinite(CFG.freezeAt) && Date.now() > CFG.freezeAt;
 
-const KEYS = ['co2', 'temp', 'hum', 'light', 'pres', 'bat', 'rssi'];
+// The numeric channels of a reading. The node sends the first seven (light,
+// battery and signal strength are its own); the habitat sensor fills co2,
+// temp, hum and pres and adds voc (breath-VOC equivalent) and iaq (the air
+// quality index, 0–500). `iaqc` is the index's readable classification —
+// "Excellent", "Good", "Lightly polluted" … — kept as text beside it.
+const KEYS = ['co2', 'temp', 'hum', 'light', 'pres', 'bat', 'rssi', 'voc', 'iaq'];
+const TEXT_KEYS = ['iaqc'];
 
 db.exec(`CREATE TABLE IF NOT EXISTS external_reading (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,6 +68,13 @@ db.exec(`CREATE TABLE IF NOT EXISTS external_reading (
   UNIQUE(t, sig)
 );
 CREATE INDEX IF NOT EXISTS idx_external_t ON external_reading(t);`);
+// A database made before the habitat sensor gains its columns in place.
+{
+  const have = new Set(db.prepare('PRAGMA table_info(external_reading)').all().map((c) => c.name));
+  for (const [col, type] of [['voc', 'REAL'], ['iaq', 'REAL'], ['iaqc', 'TEXT']]) {
+    if (!have.has(col)) db.exec(`ALTER TABLE external_reading ADD COLUMN ${col} ${type}`);
+  }
+}
 
 /**
  * Where the readings start. The node's own feed hands back its last thirty
@@ -153,7 +184,7 @@ function buildStamp() {
   try { return require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'BUILD'), 'utf8').trim() || null; } catch { return null; }
 }
 
-const status = { lastReadAt: null, lastError: null, source: null, stored: 0, dropped: 0, before: 0, nodeRows: null, nodeNewest: null };
+const status = { lastReadAt: null, lastError: null, source: null, stored: 0, dropped: 0, before: 0, nodeRows: null, nodeNewest: null, entities: null };
 
 /* ------------------------------------------------------------------ fetch */
 
@@ -201,8 +232,11 @@ function shape(raw) {
 /* -------------------------------------------------------------- persisting */
 
 const insert = db.prepare(
-  `INSERT OR IGNORE INTO external_reading (t, ${KEYS.join(', ')}, sig)
-   VALUES (?, ${KEYS.map(() => '?').join(', ')}, ?)`);
+  `INSERT OR IGNORE INTO external_reading (t, ${KEYS.join(', ')}, ${TEXT_KEYS.join(', ')}, sig)
+   VALUES (?, ${KEYS.map(() => '?').join(', ')}, ${TEXT_KEYS.map(() => '?').join(', ')}, ?)`);
+const lastStored = db.prepare(
+  `SELECT t, ${KEYS.join(', ')}, ${TEXT_KEYS.join(', ')} FROM external_reading ORDER BY t DESC LIMIT 1`);
+const sigOfAll = (row) => KEYS.concat(TEXT_KEYS).map((k) => row[k] == null ? '' : row[k]).join('|');
 const nearTwin = db.prepare(
   'SELECT 1 FROM external_reading WHERE sig = ? AND t BETWEEN ? AND ? LIMIT 1');
 
@@ -230,7 +264,7 @@ const persist = db.transaction((rows) => {
     if (nearTwin.get(sig, row.t - CFG.dedupeWindowMs, row.t + CFG.dedupeWindowMs)) {
       dropped++; continue;
     }
-    const r = insert.run(row.t, ...KEYS.map((k) => row[k]), sig);
+    const r = insert.run(row.t, ...KEYS.map((k) => row[k]), ...TEXT_KEYS.map((k) => row[k] == null ? null : String(row[k])), sig);
     if (r.changes) { stored++; fresh.push(row); } else dropped++;
   }
   db.prepare('DELETE FROM external_reading WHERE t < ?')
@@ -238,7 +272,39 @@ const persist = db.transaction((rows) => {
   return { stored, dropped, before, fresh };
 });
 
+/**
+ * Merge the habitat feed's rows: each is a full snapshot of every channel
+ * at its minute, in time order, newest last. There are no gateway copies
+ * to dedupe here; a row identical to the one stored before it is kept only
+ * when five minutes have passed, so a steady sensor still leaves a
+ * heartbeat and the tiles know it is current. Nothing before the floor is
+ * stored.
+ */
+const persistHabitat = db.transaction((rows) => {
+  let stored = 0, dropped = 0, before = 0;
+  const fresh = [];
+  const floor = floorMs();
+  let prev = lastStored.get() || null;
+  for (const row of rows) {
+    if (row.t < floor) { before++; continue; }
+    if (prev && row.t <= prev.t) { dropped++; continue; }
+    const sig = sigOfAll(row);
+    if (prev && sigOfAll(prev) === sig && row.t - prev.t < 5 * 60 * 1000) { dropped++; continue; }
+    const r = insert.run(row.t, ...KEYS.map((k) => row[k] == null ? null : row[k]), ...TEXT_KEYS.map((k) => row[k] == null ? null : String(row[k])), sig);
+    if (r.changes) { stored++; fresh.push(row); prev = row; } else dropped++;
+  }
+  db.prepare('DELETE FROM external_reading WHERE t < ?')
+    .run(Math.max(Date.now() - CFG.maxDays * 86400000, floor));
+  return { stored, dropped, before, fresh };
+});
+
 /* ----------------------------------------------------------------- polling */
+
+/** Which source feeds the table right now. */
+function source() {
+  if (CFG.source === 'node' || CFG.source === 'home-assistant') return CFG.source;
+  try { return require('./habitat-feed').configured() ? 'home-assistant' : 'node'; } catch { return 'node'; }
+}
 
 async function poll() {
   if (frozen()) {
@@ -291,6 +357,18 @@ let timer = null;
 function start() {
   if (timer) return;
   applyBuild(buildStamp());
+  status.source = source();
+  if (status.source === 'home-assistant') {
+    // The habitat sensor, through Home Assistant: src/lib/habitat-feed.js
+    // polls and hands its rows to persistHabitat.
+    const feed = require('./habitat-feed');
+    if (frozen()) { feed.poll(); return; }
+    console.log(`[habitat] readings come from the habitat sensor through Home Assistant, read every ${Math.round(CFG.habitatPollMs / 1000)} s`);
+    timer = setInterval(() => feed.poll().catch(() => {}), CFG.habitatPollMs);
+    timer.unref();
+    feed.poll().catch(() => {});
+    return;
+  }
   if (frozen()) { poll(); return; }   // logs that the record is closed, and that is all
   timer = setInterval(poll, CFG.pollMs);
   timer.unref();
@@ -304,17 +382,26 @@ function rows(days = 30) {
   // passed, so the closed record does not slide out of view.
   const since = Math.min(Date.now(), Number.isFinite(CFG.freezeAt) ? CFG.freezeAt : Infinity) - days * 86400000;
   return db.prepare(
-    `SELECT t, ${KEYS.join(', ')} FROM external_reading WHERE t >= ? ORDER BY t`
+    `SELECT t, ${KEYS.join(', ')}, ${TEXT_KEYS.join(', ')} FROM external_reading WHERE t >= ? ORDER BY t`
   ).all(Math.max(since, floorMs()));
 }
 
 function snapshot(days = 30) {
+  const src = status.source || source();
+  const ha = src === 'home-assistant' ? (() => { try { return require('./habitat-feed').status(); } catch { return null; } })() : null;
   return {
-    sensorId: CFG.sensorId,
-    pollMs: CFG.pollMs,
+    source: src,
+    sensorId: src === 'node' ? CFG.sensorId : null,
+    pollMs: src === 'home-assistant' ? CFG.habitatPollMs : CFG.pollMs,
+    // How old the newest reading may be and still count as current: the
+    // node transmits every twenty minutes, so thirty; the habitat sensor is
+    // read every minute, so five — or three polls, whichever is longer.
+    staleMs: src === 'home-assistant' ? Math.max(5 * 60 * 1000, 3 * CFG.habitatPollMs) : 30 * 60 * 1000,
     frozen: frozen(),
-    lastReadAt: status.lastReadAt,
-    lastError: status.lastError,
+    lastReadAt: ha ? ha.lastReadAt : status.lastReadAt,
+    lastError: ha ? ha.lastError : status.lastError,
+    // the habitat sensor's entities as Home Assistant last reported them
+    entities: ha ? ha.entities : null,
     // what the node itself holds: how many readings the feed carried for
     // this sensor on the last poll, and when its newest one is from
     nodeRows: status.nodeRows == null ? null : status.nodeRows,
@@ -328,4 +415,4 @@ function snapshot(days = 30) {
   };
 }
 
-module.exports = { start, poll, rows, snapshot, persist, floorMs, floorMode, anchorMs, runStartMs, todayStartMs, setFloor, applyBuild, buildStamp, DAYS_BEFORE, CFG, frozen };
+module.exports = { start, poll, rows, snapshot, persist, persistHabitat, lastStored: () => lastStored.get() || null, source, floorMs, floorMode, anchorMs, runStartMs, todayStartMs, setFloor, applyBuild, buildStamp, DAYS_BEFORE, CFG, KEYS, TEXT_KEYS, frozen };

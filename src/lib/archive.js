@@ -30,9 +30,16 @@ const NOT_FAKE = `device_id NOT IN (${FAKE_DEVICES.map(() => '?').join(', ')})`;
 // them (Carbon dioxide, Temperature, Humidity, Light) and, for the three the
 // panel does not show as tiles, as At a Glance does (Pressure, Node battery,
 // Signal).
+// The habitat's channels as stored in external_reading — the habitat
+// sensor's (co2, temp, hum, pres, voc, iaq) and the external node's own
+// (light, bat, rssi); a channel nothing reported is left out of a day.
 const EXTERNAL_KEYS = [['co2', 'Carbon dioxide', 'ppm'], ['temp', 'Temperature', '°C'],
   ['hum', 'Humidity', '%'], ['pres', 'Pressure', 'hPa'],
+  ['voc', 'Volatile organic compounds', 'ppm'], ['iaq', 'Air quality index', 'IAQ'],
   ['light', 'Light', 'raw'], ['bat', 'Node battery', 'V'], ['rssi', 'Signal', 'dBm']];
+// The air quality index's classification, as the sensor names it — text,
+// beside the numbers in the day's every-reading table.
+const EXTERNAL_TEXT = [['iaqc', 'Air quality class', '']];
 
 /** The last day that has a record: today, or the last day of the run once
     it is over; 0 before the run has begun. */
@@ -367,14 +374,15 @@ function dayReadings(start, end) {
   };
 
   // the external node: one row per reading
-  let external = { columns: EXTERNAL_KEYS.map(([key, label, unit]) => ({ key, label, unit })), rows: [], readings: 0 };
+  const ALL_KEYS = EXTERNAL_KEYS.concat(EXTERNAL_TEXT);
+  let external = { columns: ALL_KEYS.map(([key, label, unit]) => ({ key, label, unit })), rows: [], readings: 0 };
   try {
     const rows = db.prepare(
-      `SELECT t, ${EXTERNAL_KEYS.map(([k]) => k).join(', ')} FROM external_reading
+      `SELECT t, ${ALL_KEYS.map(([k]) => k).join(', ')} FROM external_reading
        WHERE t >= ? AND t < ? AND (sig IS NULL OR sig NOT LIKE 'demo:%') ORDER BY t, id`
     ).all(a, b);
     const present = new Set();
-    for (const r of rows) for (const [k] of EXTERNAL_KEYS) if (r[k] != null) present.add(k);
+    for (const r of rows) for (const [k] of ALL_KEYS) if (r[k] != null) present.add(k);
     external = {
       columns: external.columns.filter((c) => present.has(c.key)),
       rows: rows.map((r) => ({ iso: new Date(r.t).toISOString(), at: hms(r.t), values: r })),

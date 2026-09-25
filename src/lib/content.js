@@ -568,7 +568,12 @@ function reset(actor = 'control') {
   try {
     const critical = require('./critical');
     critical.setFloor('reset', 'run');
-    if (process.env.CRITICAL_POLL !== 'false') setTimeout(() => critical.poll().catch(() => {}), 500);
+    // and the source is read again straight away — the habitat sensor
+    // through Home Assistant, or the node, whichever feeds the station
+    if (process.env.CRITICAL_POLL !== 'false') setTimeout(() => {
+      const p = critical.source() === 'home-assistant' ? require('./habitat-feed').poll() : critical.poll();
+      p.catch(() => {});
+    }, 500);
   } catch (e) { console.warn('[content] readings floor not moved:', e.message); }
   // The habitat's own hardware starts again with the run too.
   try {

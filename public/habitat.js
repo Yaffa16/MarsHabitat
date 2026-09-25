@@ -1,8 +1,13 @@
-/* Habitat dashboard — the Sensor-11 visualizations, drawn from the station's
-   own /api/habitat/data. The station server does the polling and the saving
-   (SQLite); this script additionally merges each read into localStorage so a
-   phone that loses the venue network keeps showing the last good data.
-   No framework, no external requests. */
+/* Habitat dashboard — the habitat's readings as instruments, drawn from the
+   station's own /api/habitat/data: CO₂ on a 24-hour dial, temperature on a
+   ruler, humidity as a level, air pressure and the volatile organic
+   compounds as sparklines, the air quality index as a banded level with its
+   readable classification. The station server does the polling and the
+   saving (SQLite) — from the habitat sensor through Home Assistant, or from
+   the external node; this script does not know which — and this script
+   additionally merges each read into localStorage so a phone that loses the
+   venue network keeps showing the last good data. No framework, no external
+   requests. */
 (function () {
   'use strict';
 
@@ -14,7 +19,7 @@
 
   /* ------------------------------------------------------------ config */
   var CFG = {
-    refreshMs: 15 * 60 * 1000,       // the station reads the node every 15 minutes
+    refreshMs: 60 * 1000,            // until the station says how often it reads (data.pollMs)
     rangeHours: 24,                  // window feeding the instrument tiles
     // The trend graph: the run itself, 15 to 27 October, every day on the
     // axis. The tile carries the dates (data-run-start / data-run-end), so a
@@ -25,7 +30,7 @@
     dedupeWindowMs: 5 * 60 * 1000,
     localKey: 'mcs-habitat-rows',
     localMaxDays: 365,
-    staleAfterMs: 30 * 60 * 1000,    // a reading counts as current for this long
+    staleAfterMs: 30 * 60 * 1000,    // a reading counts as current for this long (the station sends its own, data.staleMs)
     // The record closes with the run. From the end of 27 October 2026 — the
     // run's last day — the page stops asking for new readings and the graph
     // stands still on the run. (The server stops polling the node at the
@@ -46,9 +51,16 @@
     { key: 'co2', name: 'CO₂', unit: 'ppm', decimals: 0, domain: [0, 2000], step: 500, alertAbove: 800 },
     { key: 'temp', name: tr('Temperature'), unit: '°C', decimals: 1, domain: [0, 40], step: 10 },
     { key: 'hum', name: tr('Humidity'), unit: '%RH', decimals: 0, domain: [0, 100], step: 25 },
+    { key: 'pres', name: tr('Air pressure'), unit: 'hPa', decimals: 1, domain: [950, 1050], step: 25 },
+    { key: 'voc', name: tr('Volatile organic compounds'), unit: 'ppm', decimals: 2, domain: [0, 10], step: 2.5 },
+    // The air quality index, 0–500, in BSEC's bands: excellent to 50, good
+    // to 100, lightly polluted to 150, moderately to 200, heavily to 250,
+    // severely to 350, extremely beyond. The sensor names the band itself
+    // (the `iaqc` channel); the bands here draw the ticks.
+    { key: 'iaq', name: tr('Air quality'), unit: 'IAQ', decimals: 0, domain: [0, 500], step: 100, bands: [50, 100, 150, 200, 250, 350], alertAbove: 150 },
     { key: 'light', name: tr('Light'), unit: 'raw', decimals: 0, domain: [0, 1000], step: 250 }
   ];
-  var KEYS = ['co2', 'temp', 'hum', 'light', 'pres', 'bat', 'rssi'];
+  var KEYS = ['co2', 'temp', 'hum', 'light', 'pres', 'bat', 'rssi', 'voc', 'iaq', 'iaqc'];
   var DAY = 86400000;
 
   var state = { rows: [], lastReadAt: null, nextReadAt: Date.now(), inFlight: false, failure: null, polledAt: undefined, nodeRows: null, nodeNewest: null, floor: null, sensorId: null };
@@ -277,28 +289,81 @@
     if (val !== null) $('humVal').innerHTML = val.toFixed(ch.decimals) + '<em>%RH</em>';
   }
 
-  /* ------------------------------------------------ tile 4: the spark */
-  function renderSpark(view) {
-    var ch = chan('light');
-    var host = $('hbt-spark'); host.innerHTML = '';
+  /* ------------------------------------ tiles 4 and 5: the sparklines */
+  /* One channel over the day as a line with its area beneath, the newest
+     reading marked: the air pressure, and the volatile organic compounds.
+     The scale is the instrument's, widened when a reading passes it. */
+  function renderSpark(view, key, hostId, valId) {
+    var ch = chan(key);
+    var host = $(hostId); if (!host) return; host.innerHTML = '';
     var W = 300, H = 76, pad = 6;
-    var svg = svgRoot(W, H, { 'aria-label': 'Light over time', preserveAspectRatio: 'none' });
-    var pts = view.filter(function (r) { return r.light !== null; });
+    var svg = svgRoot(W, H, { 'aria-label': ch.name + ' over time', preserveAspectRatio: 'none' });
+    var pts = view.filter(function (r) { return r[key] !== null && r[key] !== undefined; });
     if (!pts.length) { host.appendChild(svg); return; }
     var t0 = pts[0].t, t1 = pts[pts.length - 1].t;
     var x = function (t) { return t1 === t0 ? W : ((t - t0) / (t1 - t0)) * W; };
-    var y = scaler(ch, H, pad, pad);
+    var top = Math.max.apply(null, pts.map(function (p) { return p[key]; }));
+    var scaled = { domain: [ch.domain[0], Math.max(ch.domain[1], niceMax(top))] };
+    var y = scaler(scaled, H, pad, pad);
 
     var d = pts.map(function (p, i) {
-      return (i ? 'L' : 'M') + x(p.t).toFixed(1) + ',' + y(p.light).toFixed(1);
+      return (i ? 'L' : 'M') + x(p.t).toFixed(1) + ',' + y(p[key]).toFixed(1);
     }).join('');
     svg.appendChild(el('path', { d: d + 'L' + W + ',' + (H - pad) + 'L0,' + (H - pad) + 'Z',
       fill: HAIR, opacity: '.5', stroke: 'none' }));
     svg.appendChild(el('path', { d: d, fill: 'none', stroke: INK, 'stroke-width': 1.4 }));
     var last = pts[pts.length - 1];
-    svg.appendChild(el('circle', { cx: x(last.t), cy: y(last.light), r: 4, fill: ACCENT }));
+    svg.appendChild(el('circle', { cx: x(last.t), cy: y(last[key]), r: 4, fill: ACCENT }));
     host.appendChild(svg);
-    $('lightVal').innerHTML = last.light.toFixed(ch.decimals) + '<em>raw</em>';
+    var v = $(valId); if (v) v.innerHTML = last[key].toFixed(ch.decimals) + '<em>' + ch.unit + '</em>';
+  }
+
+  /* ------------------------------------ tile 6: the air quality index */
+  /* The index on a level bar from 0 to 500, the sensor's own bands ticked
+     along it, and the band's name — the sensor says it in words — as the
+     verdict. Over 150 (lightly polluted and beyond) the figure turns hot. */
+  function iaqClass(view) {
+    for (var i = view.length - 1; i >= 0; i--) {
+      var c = view[i].iaqc;
+      if (c !== null && c !== undefined && String(c).trim()) return String(c).trim();
+    }
+    return null;
+  }
+  function titled(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }
+  function renderIaq(view) {
+    var ch = chan('iaq');
+    var host = $('hbt-iaq'); if (!host) return; host.innerHTML = '';
+    var W = 300, H = 54;
+    var svg = svgRoot(W, H, { 'aria-label': 'Air quality index', preserveAspectRatio: 'none' });
+    var pts = view.filter(function (r) { return r.iaq !== null && r.iaq !== undefined; });
+    var val = pts.length ? pts[pts.length - 1].iaq : null;
+    var lo = ch.domain[0], hi = ch.domain[1];
+    var by = 8, bh = 18;
+    var px = function (v) { return W * (Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo); };
+
+    svg.appendChild(el('rect', { x: 0, y: by, width: W, height: bh, rx: 9, fill: HAIR }));
+    if (val !== null) {
+      var hot = isHot(ch, val);
+      svg.appendChild(el('rect', { x: 0, y: by, width: Math.max(6, px(val)), height: bh, rx: 9, fill: hot ? ALERT : ACCENT }));
+    }
+    // The bands' edges, ticked and numbered; the scale's ends as well.
+    [lo].concat(ch.bands, [hi]).forEach(function (v) {
+      var x = px(v);
+      svg.appendChild(el('line', { x1: x, x2: x, y1: by + bh + 5, y2: by + bh + 9, stroke: HAIR }));
+      var t = el('text', { x: Math.min(W - 10, Math.max(10, x)), y: by + bh + 20, 'text-anchor': 'middle',
+        fill: '#8B8B84', 'font-family': 'var(--mono)', 'font-size': '9' });
+      t.textContent = v;
+      svg.appendChild(t);
+    });
+    host.appendChild(svg);
+    if (val !== null) {
+      var hotNow = isHot(ch, val);
+      $('iaqVal').innerHTML = val.toFixed(ch.decimals) + '<em>IAQ</em>';
+      $('iaqVal').classList.toggle('hot', hotNow);
+      var cls = iaqClass(view);
+      $('iaqVerdict').textContent = cls ? tr(titled(cls)) : (hotNow ? tr('Over') + ' ' + ch.alertAbove : tr('Within limit'));
+      $('iaqVerdict').classList.toggle('hot', hotNow);
+    }
   }
 
   /* --------------------------------- tile 5: daily averages over 15 days */
@@ -367,8 +432,11 @@
     { key: 'co2', name: 'CO₂', unit: 'ppm', domain: [0, 2000] },
     { key: 'temp', name: tr('Temperature'), unit: '°C', domain: [0, 40] },
     { key: 'hum', name: tr('Humidity'), unit: '%RH', domain: [0, 100] },
-    { key: 'light', name: tr('Light'), unit: 'raw', domain: [0, 1000] },
     { key: 'pres', name: tr('Air pressure'), unit: 'hPa', domain: [950, 1050] },
+    { key: 'voc', name: tr('Volatile organic compounds'), unit: 'ppm', domain: [0, 10] },
+    { key: 'iaq', name: tr('Air quality'), unit: 'IAQ', domain: [0, 500] },
+    // the external node's own channels — drawn only while something reports them
+    { key: 'light', name: tr('Light'), unit: 'raw', domain: [0, 1000] },
     { key: 'bat', name: tr('Node battery'), unit: 'V', domain: [3, 4.5] },
     { key: 'rssi', name: tr('Node signal'), unit: 'dBm', domain: [-100, -30] }
   ];
@@ -694,17 +762,28 @@
     if (!state.rows.length) {
       // Nothing to draw. Say which of the possible reasons it is, so nobody
       // stands in front of empty dials wondering whether the page is broken.
-      if (state.polledAt === null) return '<div class="note"><b>' + tr('Waiting for the station\u2019s first read of the sensor node.') + '</b> ' + tr('It polls on start and every') + ' ' + Math.round(CFG.refreshMs / 60000) + ' ' + tr('minutes') + '.</div>';
+      if (state.polledAt === null) return '<div class="note"><b>' + tr(state.source === 'home-assistant' ? 'Waiting for the station\u2019s first read of the habitat sensor.' : 'Waiting for the station\u2019s first read of the sensor node.') + '</b> ' + tr('It polls on start and every') + ' ' + cadence() + '.</div>';
+      if (state.source === 'home-assistant' && state.entities) {
+        var dark = Object.keys(state.entities).filter(function (k) { var e = state.entities[k]; return e && (e.missing || e.error || e.state === null || e.state === 'unavailable' || e.state === 'unknown'); });
+        if (dark.length) return '<div class="note alert"><b>' + tr('Home Assistant has no reading for') + ' ' + dark.map(function (k) { return 'sensor.' + (state.entities[k].id || k); }).join(', ') + '.</b> ' + tr('Check the entity ids in content/home-assistant.json, and that the habitat sensor is on.') + '</div>';
+      }
       if (state.nodeRows === 0) return '<div class="note alert"><b>The sensor feed carries no readings for node ' + (state.sensorId || '?') + '.</b> Check CRITICAL_SENSOR_ID in .env — the node may be off, or registered under another id.</div>';
       if (state.nodeNewest && state.floor && state.nodeNewest < state.floor) return '<div class="note alert"><b>No reading from the node since ' + fmtDateTime(state.nodeNewest) + '.</b> The station\'s readings start ' + fmtDateTime(state.floor) + '; nothing the node has sent falls after that.</div>';
       return '<div class="note"><b>' + tr('No readings yet.') + '</b> ' + tr('The station\u2019s readings start') + ' ' + (state.floor ? fmtDateTime(state.floor) : tr('now')) + '; ' + tr('the node\u2019s next transmission will appear here.') + '</div>';
     }
     if (newest && !isCurrent()) {
-      var why = newest < dayStart() ? tr('No reading has arrived today.') : tr('No reading has arrived in the last 30 minutes.');
-      return '<div class="note alert"><b>' + tr('No current reading from the sensor node.') + '</b> ' + why + ' ' + tr('Its last reading was') + ' ' + fmtDateTime(newest) + ' (' + fmtAgo(Date.now() - newest) + '). ' + tr('The tiles stay empty until it transmits again — earlier readings are on the trend graph.') + '</div>';
+      var why = newest < dayStart() ? tr('No reading has arrived today.') : (tr('No reading has arrived in the last') + ' ' + Math.round(staleMs() / 60000) + ' ' + tr('minutes') + '.');
+      return '<div class="note alert"><b>' + tr(state.source === 'home-assistant' ? 'No current reading from the habitat sensor.' : 'No current reading from the sensor node.') + '</b> ' + why + ' ' + tr('Its last reading was') + ' ' + fmtDateTime(newest) + ' (' + fmtAgo(Date.now() - newest) + '). ' + tr('The tiles stay empty until it transmits again — earlier readings are on the trend graph.') + '</div>';
     }
     return '';
   }
+  /* How often the station reads its source, and how old a reading may be
+     and still count as current — both said by the station itself. */
+  function cadence() {
+    var ms = state.pollMs || CFG.refreshMs;
+    return ms >= 120000 ? Math.round(ms / 60000) + ' ' + tr('minutes') : Math.round(ms / 1000) + ' s';
+  }
+  function staleMs() { return state.staleMs || CFG.staleAfterMs; }
 
   /* The tiles are the habitat now, or nothing. Put them back to their
      empty state — a dash in every figure, no drawing — when there is no
@@ -712,11 +791,12 @@
      live. The history stays on the trend graph, which is where history
      belongs. */
   function clearTiles() {
-    ['hbt-dial', 'hbt-ruler', 'hbt-level', 'hbt-spark'].forEach(function (id) { var h = $(id); if (h) h.innerHTML = ''; });
+    ['hbt-dial', 'hbt-ruler', 'hbt-level', 'hbt-pres', 'hbt-voc', 'hbt-iaq'].forEach(function (id) { var h = $(id); if (h) h.innerHTML = ''; });
     var set = function (id, html) { var e = $(id); if (e) { e.innerHTML = html; e.classList.remove('hot'); } };
     set('co2Val', '—<em>ppm</em>'); set('co2Verdict', tr('No current reading')); set('co2Sub', '');
     set('tempVal', '—<em>°C</em>'); set('tempVerdict', tr('No current reading'));
-    set('humVal', '—<em>%</em>'); set('lightVal', '—<em>raw</em>');
+    set('humVal', '—<em>%</em>'); set('presVal', '—<em>hPa</em>'); set('vocVal', '—<em>ppm</em>');
+    set('iaqVal', '—<em>IAQ</em>'); set('iaqVerdict', tr('No current reading'));
   }
   /* The tiles are today: readings since midnight at the venue, and only
      while the newest of them is less than thirty minutes old. Anything else
@@ -733,7 +813,7 @@
   }
   function isCurrent() {
     var newest = state.rows.length ? state.rows[state.rows.length - 1].t : null;
-    return newest !== null && newest >= dayStart() && Date.now() - newest <= CFG.staleAfterMs;
+    return newest !== null && newest >= dayStart() && Date.now() - newest <= staleMs();
   }
 
   /* ---------------------------------------------------------- render */
@@ -751,7 +831,9 @@
     renderDial(view);
     renderRuler(view);
     renderLevel(view);
-    renderSpark(view);
+    renderSpark(view, 'pres', 'hbt-pres', 'presVal');
+    renderSpark(view, 'voc', 'hbt-voc', 'vocVal');
+    renderIaq(view);
     renderSpanCharts();
     $('hbt-notes').innerHTML = notesHTML();
   }
@@ -787,10 +869,15 @@
         state.nodeNewest = data.nodeNewest || null;
         state.floor = Number(data.floor) || null;
         state.sensorId = data.sensorId || null;
+        state.source = data.source || 'node';
+        state.entities = data.entities || null;
+        state.pollMs = Number(data.pollMs) > 0 ? Math.max(15000, Number(data.pollMs)) : null;
+        state.staleMs = Number(data.staleMs) > 0 ? Number(data.staleMs) : null;
         saveLocal();
         // After the record closes, this one read of what the station holds
-        // is the last: nothing is asked for again.
-        state.nextReadAt = frozen() ? Infinity : Date.now() + CFG.refreshMs;
+        // is the last: nothing is asked for again. Otherwise the page asks
+        // again on the station's own cadence.
+        state.nextReadAt = frozen() ? Infinity : Date.now() + (state.pollMs || CFG.refreshMs);
         render();
       })
       .catch(function () {

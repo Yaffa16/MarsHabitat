@@ -269,7 +269,7 @@ app.get('/at-a-glance', (req, res) => {
   // The external node's day, summarised per channel, so each page of the
   // booklet carries the habitat as it was that day — every channel the node
   // transmits, its own battery and signal strength included.
-  const KEYS = ['co2', 'temp', 'hum', 'light', 'pres', 'bat', 'rssi'];
+  const KEYS = ['co2', 'temp', 'hum', 'light', 'pres', 'bat', 'rssi', 'voc', 'iaq'];
   const stmt = db.prepare(`SELECT ${KEYS.map((k) => `MIN(${k}) ${k}_lo, MAX(${k}) ${k}_hi, AVG(${k}) ${k}_av, COUNT(${k}) ${k}_n`).join(', ')}
     FROM external_reading WHERE t >= ? AND t < ?`);
   // And every reading of the day whole — each poll of the node and each
@@ -758,7 +758,8 @@ app.get('/api/content', (req, res) => {
   res.status(s.ok ? 200 : 500).json(s);
 });
 
-/* The external habitat feed (critical-sensors.de), served station-local so
+/* The habitat's readings — from the habitat sensor through Home Assistant,
+   or from the external node (src/lib/critical.js) — served station-local so
    visitors' phones never need CORS proxies. The server polls and stores;
    this endpoint hands the browser everything it needs to draw. */
 app.get('/api/habitat/data', (req, res) => {

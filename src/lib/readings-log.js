@@ -8,7 +8,9 @@
  * Sources: `node` — every poll of the external sensor node: the readings
  * that poll added (the node repeats its whole last thirty days each time;
  * only what was not already held is written) and the counts of what came
- * back; `ingest` — every POST to
+ * back; `habitat` — every poll of the habitat sensor through Home
+ * Assistant (src/lib/habitat-feed.js): each entity's state as fetched and
+ * the rows the poll stored; `ingest` — every POST to
  * /api/sensors/ingest; `resources` — the stores as the content files put
  * them, every time they change; `figures` — the crew's calories and steps,
  * every time they change; `daily` — each day's habitat summary as it is
@@ -36,7 +38,7 @@ const crypto = require('crypto');
 const { DATA_DIR } = require('../db');
 
 const DIR = path.join(DATA_DIR, 'readings');
-const SOURCES = ['node', 'ingest', 'resources', 'figures', 'daily', 'home-assistant'];
+const SOURCES = ['node', 'habitat', 'ingest', 'resources', 'figures', 'daily', 'home-assistant'];
 const last = new Map();      // source → hash of the last snapshot written
 
 const stamp = (d) => {
@@ -149,7 +151,8 @@ async function sendZip(res, { writeZip, mission }) {
     'Every reading the station pulled or received, one JSON file per pull, kept',
     'forever: node/ is every poll of the external sensor node (the readings that',
     'poll added — the node repeats its last thirty days each time — with the',
-    'counts of what came back), ingest/ every batch',
+    'counts of what came back), habitat/ every poll of the habitat sensor through',
+    'Home Assistant (each entity\'s state as fetched, and the rows stored), ingest/ every batch',
     'posted to /api/sensors/ingest, resources/ the stores as the content files put',
     'them each time they changed, figures/ the crew\'s calories and steps each time',
     'they changed, daily/ each day\'s habitat summary as it was rolled up, and',
@@ -211,6 +214,27 @@ const CSV = {
       for (const h of o.history || []) {
         for (const r of h.rows || []) yield line([o.pulledAt, 'history', r.entity, r.at, r.state, Number.isFinite(parseFloat(r.state)) ? parseFloat(r.state) : null, '', r.stored ?? '', '', '', '', h.error, '']);
       }
+    }
+  },
+  /* One row per reading stored from the habitat sensor (through Home
+     Assistant): every channel at its minute, with the poll that stored it. */
+  habitat: function* () {
+    const keys = ['co2', 'temp', 'hum', 'pres', 'voc', 'iaq', 'iaqc'];
+    yield line(['pulledAt', 'at', 't', ...keys]);
+    for (const o of records('habitat')) {
+      for (const r of o.readings || []) yield line([o.pulledAt, r.at, r.t, ...keys.map((k) => r[k])]);
+    }
+  },
+  /* One row per poll of the habitat sensor: what each entity's state was
+     as fetched, whether or not it moved, and what the poll stored. */
+  'habitat-polls': function* () {
+    yield line(['pulledAt', 'channel', 'entity', 'at', 'state', 'value', 'unit', 'lastChanged', 'lastUpdated', 'error', 'historyFrom', 'historyRows', 'storedInDb']);
+    for (const o of records('habitat')) {
+      for (const f of o.fetched || []) {
+        yield line([o.pulledAt, f.channel, f.entity, f.at, f.state, f.value, f.unit, f.lastChanged, f.lastUpdated, f.error,
+          o.history && o.history.from, o.history && o.history.rows, o.stored]);
+      }
+      if (!(o.fetched || []).length) yield line([o.pulledAt, '', '', '', '', '', '', '', '', Array.isArray(o.error) ? o.error.join(' · ') : (o.error || ''), '', '', o.stored]);
     }
   },
   /* One row per reading per batch posted to /api/sensors/ingest. */

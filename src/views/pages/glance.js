@@ -32,7 +32,7 @@ const same = (s) => s;
 /* The habitat tile bank, shared by the run's day pages and the rehearsal
    page: the node's channels labelled, and one tile per channel with the
    day's mean large, its low–high range and reading count beneath. */
-const NODE_LABELS = { co2: ['CO₂', 'ppm', 0], temp: ['Temperature', '°C', 1], hum: ['Humidity', '%', 0], light: ['Light', 'raw', 0], pres: ['Pressure', 'hPa', 0], bat: ['Node battery', 'V', 2], rssi: ['Signal', 'dBm', 0] };
+const NODE_LABELS = { co2: ['CO₂', 'ppm', 0], temp: ['Temperature', '°C', 1], hum: ['Humidity', '%', 0], light: ['Light', 'raw', 0], pres: ['Pressure', 'hPa', 0], bat: ['Node battery', 'V', 2], rssi: ['Signal', 'dBm', 0], voc: ['VOC', 'ppm', 2], iaq: ['Air quality index', '', 0] };
 const tile = (label, unit, av, lo, hi, n, dec, T = same) => `<div class="glance-tile">
     <span class="gt-label">${esc(T(label))}</span>
     <span class="gt-value">${av == null ? '—' : Number(av).toFixed(dec)}<em>${esc(unit)}</em></span>
