@@ -682,7 +682,7 @@ function templates(kind) {
  * an edit to the file is live the moment it is saved.
  */
 const POWER_DEFAULTS = [
-  { key: 'heating', label: 'Heating' },
+  { key: 'heating', label: 'habitat_power_kitchen_energie', sensor: 'habitat_power_kitchen_energie' },
   { key: 'food', label: 'Food' },
   { key: 'lighting', label: 'Lighting' },
   { key: 'electronics', label: 'Electronics' },
@@ -695,7 +695,8 @@ function power() {
   catch { /* defaults below */ }
   const categories = (Array.isArray(obj.categories) ? obj.categories : [])
     .filter((c) => c && c.key && /^[a-z0-9_-]+$/i.test(String(c.key)))
-    .map((c) => ({ key: String(c.key), label: String(c.label || c.key) }));
+    .map((c) => ({ key: String(c.key), label: String(c.label || c.key),
+      ...(c.sensor && /^[a-z0-9_]+$/i.test(String(c.sensor)) ? { sensor: String(c.sensor) } : {}) }));
   const days = {};
   for (const [k, v] of Object.entries(obj.days && typeof obj.days === 'object' ? obj.days : {})) {
     if (!/^\d+$/.test(k) || !v || typeof v !== 'object') continue;
@@ -801,9 +802,42 @@ function inventoryFiled(missionDay) {
 }
 
 /** One day of it: each category with its kWh, the day total, and whether anything was filed. */
+/* A category read from a meter (its "sensor" in power.json names a Home
+   Assistant counter): the day's kWh as the meter has it — today's reading less
+   yesterday's total. null when the meter has nothing for that day. */
+function powerSensorKwh(c, missionDay) {
+  if (!c || !c.sensor) return null;
+  try { return require('./home-assistant').counterDay(c.sensor, Number(missionDay)); } catch { return null; }
+}
+
+/* The power file as the station shows it: each day's figures, with a metered
+   category filled in from its meter wherever no figure was filed by hand. */
+function powerLive() {
+  const p = power();
+  const metered = p.categories.filter((c) => c.sensor);
+  if (!metered.length) return p;
+  let total = 13;
+  try { total = require('./mission').state().totalDays || total; } catch { /* the run's usual length */ }
+  for (let n = 1; n <= total; n++) {
+    for (const c of metered) {
+      const d = p.days[String(n)] || {};
+      if (d[c.key] != null) continue;
+      const v = powerSensorKwh(c, n);
+      if (v == null) continue;
+      p.days[String(n)] = { ...d, [c.key]: v };
+    }
+  }
+  return p;
+}
+
 function powerDay(missionDay, p = power()) {
   const d = p.days[String(missionDay)] || {};
-  const categories = p.categories.map((c) => ({ ...c, kwh: d[c.key] ?? null }));
+  // A figure filed by hand wins; a category tied to a meter otherwise reads the meter.
+  const categories = p.categories.map((c) => {
+    const manual = d[c.key] ?? null;
+    const metered = manual == null ? powerSensorKwh(c, missionDay) : null;
+    return { ...c, kwh: manual ?? metered, source: manual != null ? 'manual' : metered != null ? 'sensor' : null };
+  });
   const filed = categories.some((c) => c.kwh != null);
   const total = categories.reduce((s, c) => s + (c.kwh || 0), 0);
   return { categories, total: Math.round(total * 100) / 100, filed };
@@ -848,7 +882,7 @@ function edit(name, mutate) {
   return { ok: result.ok, error: result.errors[0] || null };
 }
 
-module.exports = { load, watch, status, edit, templates, crewFigures, power, powerDay, inventoryFiled, DIR,
+module.exports = { load, watch, status, edit, templates, crewFigures, power, powerDay, powerSensorKwh, powerLive, inventoryFiled, DIR,
                    resourceLogRows, resourceLogCsv, LOG_FILE,
                    planStatus, savePlan, ensurePlan, reset, resetLocked, resetEpoch, inventoryStart, PLAN_DIR, PLAN_FILES,
                    PLACEHOLDER, BLOG_OFFICER, isPlaceholder, placeholderCue, placeholderPublic, placeholderFor,

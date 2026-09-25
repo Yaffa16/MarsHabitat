@@ -431,24 +431,83 @@ function inventoryBlock(day, items, e = null) {
  */
 function powerBlock(day, power, e = null) {
   const d = power.days[String(day)] || {};
-  const filed = power.categories.filter((c) => d[c.key] != null);
-  const total = filed.reduce((s, c) => s + d[c.key], 0);
+  const meter = (c) => (c.sensor ? require('../../lib/content').powerSensorKwh(c, day) : null);
+  // What each row stands at: a figure filed by hand, else — for a row tied to a meter — the meter's day.
+  const rows = power.categories.map((c) => {
+    const m = meter(c), manual = d[c.key] ?? null;
+    return { c, m, manual, value: manual ?? m };
+  });
+  const filed = rows.filter((r) => r.value != null);
+  const total = filed.reduce((s, r) => s + r.value, 0);
+  const fmt = (v) => (v == null ? '' : (Math.round(v * 100) / 100).toFixed(2));
+  const row = ({ c, m, manual, value }) => {
+    const cls = (mark(e, `name_${c.key}`) || mark(e, `kwh_${c.key}`)).trim();
+    const name = `<td><input type="text" name="name_${esc(c.key)}" value="${esc(c.label)}" aria-label="Category name" class="${mark(e, `name_${c.key}`).trim()}"></td>`;
+    if (!c.sensor) {
+      return `<tr class="${cls}">${name}
+          <td><input type="number" step="0.01" min="0" name="kwh_${esc(c.key)}" value="${d[c.key] ?? ''}"
+               placeholder="nothing recorded" aria-label="${esc(c.label)} kWh" class="${mark(e, `kwh_${c.key}`).trim()}"></td></tr>`;
+    }
+    // A metered row: the meter's figure by default, locked; Edit asks first, and a figure typed by hand wins over the meter.
+    return `<tr class="${cls} pw-metered" data-key="${esc(c.key)}" data-label="${esc(c.label)}">${name}
+          <td>
+            <div class="pw-meter">
+              <input type="number" step="0.01" min="0" name="kwh_${esc(c.key)}" value="${fmt(value)}" readonly
+                     data-meter="${fmt(m)}" placeholder="${m == null ? 'the meter has nothing yet' : ''}"
+                     aria-label="${esc(c.label)} kWh" class="${mark(e, `kwh_${c.key}`).trim()}">
+              <input type="hidden" name="meter_${esc(c.key)}" value="${fmt(m)}">
+              <input type="hidden" name="edited_${esc(c.key)}" value="">
+              <button type="button" class="ghost pw-edit">Edit</button>
+              ${manual != null && m != null ? `<button type="button" class="ghost pw-back">Use the meter (${fmt(m)})</button>` : ''}
+            </div>
+            <p class="note pw-src" style="margin:4px 0 0">${manual != null
+              ? `<b>Edited by hand.</b> The meter reads ${m == null ? 'nothing for this day' : `<b>${fmt(m)} kWh</b>`}.`
+              : m != null ? `From the meter <code>sensor.${esc(c.sensor)}</code>: this day's last reading less the day before's total (the meter only grows).`
+              : `From the meter <code>sensor.${esc(c.sensor)}</code> — no reading for this day yet.`}</p>
+          </td></tr>`;
+  };
   return panel('CH-35 / POWER', `
     ${eyebrow(`Power consumed · day ${dd(day)}`)}
-    <form method="post" action="/control/power">
+    <form method="post" action="/control/power" class="pw-form">
       <input type="hidden" name="day" value="${day}">
       <div class="tw"><table>
         <thead><tr><th>Category</th><th>kWh that day</th></tr></thead>
-        <tbody>${power.categories.map((c) => `<tr class="${(mark(e, `name_${c.key}`) || mark(e, `kwh_${c.key}`)).trim()}">
-          <td><input type="text" name="name_${esc(c.key)}" value="${esc(c.label)}" aria-label="Category name" class="${mark(e, `name_${c.key}`).trim()}"></td>
-          <td><input type="number" step="0.01" min="0" name="kwh_${esc(c.key)}" value="${d[c.key] ?? ''}"
-               placeholder="nothing recorded" aria-label="${esc(c.label)} kWh" class="${mark(e, `kwh_${c.key}`).trim()}"></td>
-        </tr>`).join('')}</tbody>
+        <tbody>${rows.map(row).join('')}</tbody>
       </table></div>
       <div class="kv" style="margin-top:6px"><dt>Day total</dt>
         <dd>${filed.length ? `${total.toFixed(2)} kWh across ${filed.length} categor${filed.length === 1 ? 'y' : 'ies'}` : 'nothing recorded for this day'}</dd></div>
       <div class="actions"><button class="primary">Save power for day ${dd(day)}</button>${savedNote(e)}</div>
-    </form>`, 'mars-side');
+    </form>
+    <script>
+    (function () {
+      var form = document.currentScript.previousElementSibling;
+      if (!form) return;
+      form.querySelectorAll('.pw-metered').forEach(function (tr) {
+        var box = tr.querySelector('input[type=number]'), flag = tr.querySelector('input[name^="edited_"]'), label = tr.getAttribute('data-label');
+        var edit = tr.querySelector('.pw-edit'), back = tr.querySelector('.pw-back');
+        edit.addEventListener('click', function () {
+          if (!box.readOnly) { box.focus(); return; }
+          if (!confirm('Are you sure you want to edit ' + label + '?\\n\\nThis value comes from the meter. A figure typed by hand replaces the meter\\'s for this day.')) return;
+          box.readOnly = false; flag.value = '1'; edit.textContent = 'Editing'; box.focus(); box.select();
+        });
+        if (back) back.addEventListener('click', function () {
+          if (!confirm('Are you sure you want to go back to the meter\\'s value (' + box.getAttribute('data-meter') + ' kWh) for ' + label + '?')) return;
+          box.value = box.getAttribute('data-meter'); flag.value = '1'; box.readOnly = true;
+        });
+      });
+      form.addEventListener('submit', function (ev) {
+        var asks = [];
+        form.querySelectorAll('.pw-metered').forEach(function (tr) {
+          var box = tr.querySelector('input[type=number]'), flag = tr.querySelector('input[name^="edited_"]');
+          if (flag.value !== '1') return;
+          var m = box.getAttribute('data-meter');
+          if (box.value !== '' && (m === '' || Number(box.value).toFixed(2) !== Number(m).toFixed(2)))
+            asks.push(tr.getAttribute('data-label') + ': ' + box.value + ' kWh by hand' + (m === '' ? '' : ' instead of the meter\\'s ' + m + ' kWh'));
+        });
+        if (asks.length && !confirm('Are you sure you want to save?\\n\\n' + asks.join('\\n'))) ev.preventDefault();
+      });
+    })();
+    </script>`, 'mars-side');
 }
 
 /* Start again. The files in content/ are the plan; the reset empties the

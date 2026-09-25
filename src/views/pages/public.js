@@ -843,14 +843,12 @@ function hwTicks(lo, hi, n = 4, fromZero = false) {
  * current reading. A thin mark stands on the current time.
  */
 function hwChart(hw, group, members, tz, T = same) {
-  // Half the panel wide: the charts stand side by side, so the names and
-  // readings go in a legend beneath the plot rather than at the line ends.
-  const W = 500, H = 250, padL = 50, padR = 18, padT = 22, padB = 30;
-  const iw = W - padL - padR, ih = H - padT - padB;
+  // Half the panel wide: the charts stand side by side, the names and
+  // readings in a legend beneath the plot.
+  const W = 500, H = 250, padL = 44, padR = 16, padT = 26, padB = 30;
+  const iw = W - padL - padR, ih = H - padT - padB, bottom = padT + ih;
   const span = Math.max(1, hw.now - hw.since);
   const sx = (t) => padL + ((t - hw.since) / span) * iw;
-  // A counter is drawn from its first reading of the day, so the axis is
-  // what today has added; a gauge is drawn as it is.
   // kWh on the Wh axis and kW on the W axis are scaled into it.
   const scale = (s) => ((group.unit === 'Wh' && /^kwh$/i.test(s.unit)) || (group.unit === 'W' && /^kw$/i.test(s.unit)) ? 1000 : 1);
   const val = (s, v) => (s.kind === 'counter' && s.base != null ? Math.max(0, v - s.base) : v) * scale(s);
@@ -860,61 +858,93 @@ function hwChart(hw, group, members, tz, T = same) {
   // The axis: the fixed range of the group (widened by any device's own
   // range from the file), or, with no range set, round bounds round the data.
   const ranges = members.map((m) => m.s.range).filter(Boolean).concat(group.range ? [group.range] : []);
-  // A fixed range is the least the axis shows: readings beyond it widen the
-  // axis (a kitchen's day of energy outgrows 300 Wh) rather than being cut off.
   const rlo = ranges.length ? Math.min(...ranges.map((r) => r[0])) : null, rhi = ranges.length ? Math.max(...ranges.map((r) => r[1])) : null;
-  const dlo = Math.min(...all), dhi = Math.max(...all);
+  let dlo = Math.min(...all), dhi = Math.max(...all);
+  // A device's `span` is the least height the axis keeps round its readings,
+  // centred on them — a steady reading then has room to move.
+  const least = Math.max(0, ...members.map((m) => m.s.span || 0));
+  if (least && dhi - dlo < least) { const mid = (dlo + dhi) / 2; dlo = mid - least / 2; dhi = mid + least / 2; }
   const ax = ranges.length && dlo >= rlo && dhi <= rhi
     ? hwFixedTicks(rlo, rhi)
     : hwTicks(ranges.length ? Math.min(rlo, dlo) : dlo, ranges.length ? Math.max(rhi, dhi) : dhi, 4, group.zero);
-  // A reading outside a fixed axis is held at its edge rather than drawn off the chart.
   const clamp = (v) => Math.min(ax.hi, Math.max(ax.lo, v));
   const sy = (v) => padT + ih - ((clamp(v) - ax.lo) / (ax.hi - ax.lo)) * ih;
-  const series = drawn.map((m) => {
+  const gid = 'hwg-' + group.key.replace(/[^a-z0-9]+/gi, '-');
+  // A soft curve through the hourly points (Catmull–Rom, held inside the plot).
+  const curve = (pts) => {
+    if (pts.length < 3) return pts.map(([x, y], k) => `${k ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join('');
+    const cy = (y) => Math.min(bottom, Math.max(padT, y));
+    let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+      const c1 = [p1[0] + (p2[0] - p0[0]) / 6, cy(p1[1] + (p2[1] - p0[1]) / 6)];
+      const c2 = [p2[0] - (p3[0] - p1[0]) / 6, cy(p2[1] - (p3[1] - p1[1]) / 6)];
+      d += `C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+    }
+    return d;
+  };
+  const series = drawn.map((m, i) => {
     const { s, colour } = m;
-    const d = s.points.map((p, k) => `${k ? 'L' : 'M'}${sx(p[0]).toFixed(1)},${sy(val(s, p[1])).toFixed(1)}`).join('');
-    // Every hourly value is a visible point on the line.
-    const dots = s.points.map((p) => [sx(p[0]), sy(val(s, p[1]))]);
-    const [et, ev] = s.points[s.points.length - 1];
-    return { s, colour, d, dots, ex: sx(et), ey: sy(val(s, ev)) };
+    const pts = s.points.map((p) => [sx(p[0]), sy(val(s, p[1]))]);
+    const d = curve(pts);
+    const area = `${d}L${pts[pts.length - 1][0].toFixed(1)},${bottom}L${pts[0][0].toFixed(1)},${bottom}Z`;
+    const raw = s.points.map((p) => p[1]);
+    const lo = Math.min(...raw), hi = Math.max(...raw);
+    const [ex, ey] = pts[pts.length - 1];
+    return { s, colour, d, area, pts, ex, ey, lo, hi, id: `${gid}-${i}` };
   });
-  // The time axis: every hour of the day, 00 to 24, a gridline each and a
-  // label on the three-hour marks — the six-hour marks drawn stronger. The
-  // first and last labels anchor inward so nothing clips at the edges.
   const ticks = Array.from({ length: 25 }, (_, k) => ({ t: hw.since + k * 3600000, k }));
   const unit = group.unit ? esc(group.unit) : '';
   const yLabel = (v) => v.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: ax.dec });
+  const u = (s) => (s.unit ? ' ' + esc(s.unit) : '');
   const reading = (s) => s.kind === 'counter' && s.today != null
-    ? `+${hwNum(s.today, s.decimals)}${s.unit ? ' ' + esc(s.unit) : ''} ${T('today')} · ${hwNum(s.value, s.decimals)}${s.unit ? ' ' + esc(s.unit) : ''}`
-    : `${hwNum(s.value, s.decimals)}${s.unit ? ' ' + esc(s.unit) : ''}`;
+    ? `+${hwNum(s.today, s.decimals)}${u(s)} ${T('today')}`
+    : `${hwNum(s.value, s.decimals)}${u(s)}`;
+  // The night, 22:00 to 06:00 at the venue, a darker band either side of the day.
+  const band = (h0, h1) => `<rect x="${sx(hw.since + h0 * 3600000).toFixed(1)}" y="${padT}" width="${(sx(hw.since + h1 * 3600000) - sx(hw.since + h0 * 3600000)).toFixed(1)}" height="${ih}" class="hw-night"/>`;
+  const now = hw.liveNow && hw.liveNow > hw.since && hw.liveNow < hw.now ? sx(hw.liveNow) : null;
+  // The newest reading of the first line, in a tag above its end.
+  const lead = series[0];
+  const tagText = `${hwNum(lead.s.kind === 'counter' && lead.s.today != null ? lead.s.today : lead.s.value, lead.s.decimals)}${lead.s.unit ? ' ' + lead.s.unit : ''}`;
+  const tagW = 12 + tagText.length * 6.6, tagX = Math.min(W - padR - tagW, Math.max(padL, lead.ex - tagW / 2)), tagY = Math.max(2, lead.ey - 30);
   return `<figure class="hw-chart hw-${esc(group.key.replace(/[^a-z0-9]+/gi, '-'))}">
-  <figcaption class="hw-title"><b>${esc(T(group.title))}</b>${unit ? ` <span class="hw-unit">${unit}${group.key.startsWith('energy') ? ` · ${T('added since midnight')}` : group.key === 'power' ? ` · ${T('hourly average')}` : ''}</span>` : ''}</figcaption>
+  <figcaption class="hw-title"><b>${esc(T(group.title))}</b>${unit ? ` <span class="hw-unit">${unit}${group.key === 'power' ? ` · ${T('hourly average')}` : ''}</span>` : ''}</figcaption>
   <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(T(group.title))} — ${esc(T('today, midnight to midnight venue time, one line per device, on one scale in'))} ${unit || '—'}">
-    ${ax.ticks.map((v) => `<line x1="${padL}" y1="${sy(v).toFixed(1)}" x2="${W - padR}" y2="${sy(v).toFixed(1)}" stroke="var(--rule)" stroke-width="1"/>
+    <defs>${series.map((r) => `
+      <linearGradient id="${r.id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${r.colour}" stop-opacity="${series.length > 1 ? 0.16 : 0.3}"/><stop offset="1" stop-color="${r.colour}" stop-opacity="0"/></linearGradient>`).join('')}
+    </defs>
+    ${band(0, 6)}${band(22, 24)}
+    ${ax.ticks.map((v) => `<line x1="${padL}" y1="${sy(v).toFixed(1)}" x2="${W - padR}" y2="${sy(v).toFixed(1)}" class="hw-grid"/>
       <text x="${padL - 7}" y="${(sy(v) + 3.5).toFixed(1)}" text-anchor="end" class="hw-ax">${yLabel(v)}</text>`).join('')}
-    ${ticks.map(({ t, k }) => `<line x1="${sx(t).toFixed(1)}" y1="${padT}" x2="${sx(t).toFixed(1)}" y2="${H - padB}" stroke="var(--rule)" stroke-width="1"${k % 6 ? ' opacity="0.45"' : ''}/>${
-      k % 3 ? '' : `<text x="${sx(t).toFixed(1)}" y="${H - padB + 15}" text-anchor="${k === 0 ? 'start' : k === ticks.length - 1 ? 'end' : 'middle'}" class="hw-ax"${k % 6 ? ' opacity="0.6"' : ''}>${String(k).padStart(2, '0')}</text>`}`).join('')}
-    ${hw.liveNow && hw.liveNow > hw.since && hw.liveNow < hw.now ? `<line x1="${sx(hw.liveNow).toFixed(1)}" y1="${padT}" x2="${sx(hw.liveNow).toFixed(1)}" y2="${H - padB}" stroke="#ff6a1a" stroke-width="1" stroke-dasharray="2 4" opacity="0.6"><title>${T('now')} · ${hwClock(hw.liveNow, tz)}</title></line>` : ''}
-    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H - padB}" stroke="var(--rule-hard)" stroke-width="1"/>
-    <line x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}" stroke="var(--rule-hard)" stroke-width="1"/>
-    ${unit ? `<text x="${padL - 7}" y="${padT - 9}" text-anchor="end" class="hw-ax">${unit}</text>` : ''}
-    ${series.map((r) => `<path d="${r.d}" class="hw-line" stroke="${r.colour}"><title>${esc(r.s.label)}</title></path>
-      ${r.dots.map(([dx, dy]) => `<circle cx="${dx.toFixed(1)}" cy="${dy.toFixed(1)}" r="2.5" fill="${r.colour}" stroke="var(--well)" stroke-width="1"/>`).join('')}
-      <circle cx="${r.ex.toFixed(1)}" cy="${r.ey.toFixed(1)}" r="3.5" fill="${r.colour}" stroke="var(--well)" stroke-width="1.5"/>`).join('')}
+    ${ticks.map(({ t, k }) => (k % 3 ? '' : `<text x="${sx(t).toFixed(1)}" y="${H - padB + 16}" text-anchor="${k === 0 ? 'start' : k === ticks.length - 1 ? 'end' : 'middle'}" class="hw-ax"${k % 6 ? ' opacity="0.55"' : ''}>${String(k).padStart(2, '0')}</text>`)).join('')}
+    ${unit ? `<text x="${padL - 7}" y="${padT - 12}" text-anchor="end" class="hw-ax hw-ax-unit">${unit}</text>` : ''}
+    ${now != null ? `<rect x="${now.toFixed(1)}" y="${padT}" width="${(W - padR - now).toFixed(1)}" height="${ih}" class="hw-ahead"/>
+      <line x1="${now.toFixed(1)}" y1="${padT}" x2="${now.toFixed(1)}" y2="${bottom}" class="hw-now"><title>${T('now')} · ${hwClock(hw.liveNow, tz)}</title></line>
+      <text x="${now.toFixed(1)}" y="${padT - 12}" text-anchor="middle" class="hw-ax hw-now-t">${hwClock(hw.liveNow, tz)}</text>` : ''}
+    ${series.map((r) => `<path d="${r.area}" fill="url(#${r.id})" class="hw-area"/>`).join('')}
+    ${series.map((r) => `<path d="${r.d}" class="hw-line" stroke="${r.colour}" style="color:${r.colour}" pathLength="1"><title>${esc(r.s.label)}</title></path>
+      ${r.pts.slice(0, -1).map(([x, y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.8" fill="${r.colour}" class="hw-dot"/>`).join('')}
+      <circle cx="${r.ex.toFixed(1)}" cy="${r.ey.toFixed(1)}" r="9" fill="${r.colour}" class="hw-pulse"/>
+      <circle cx="${r.ex.toFixed(1)}" cy="${r.ey.toFixed(1)}" r="4.2" fill="${r.colour}" class="hw-end"/>`).join('')}
+    <g class="hw-tag"><rect x="${tagX.toFixed(1)}" y="${tagY.toFixed(1)}" width="${tagW.toFixed(1)}" height="20" rx="10" fill="${lead.colour}"/>
+      <text x="${(tagX + tagW / 2).toFixed(1)}" y="${(tagY + 13.8).toFixed(1)}" text-anchor="middle">${esc(tagText)}</text></g>
   </svg>
   <ul class="hw-legend">${series.map((r) => `
-    <li><i style="background:${r.colour}"></i><span class="hw-name" style="color:${r.colour}">${esc(r.s.label)}</span><span class="hw-val" style="color:${r.colour}">${reading(r.s)}</span></li>`).join('')}
+    <li><i style="background:${r.colour}"></i><span class="hw-name">${esc(r.s.label)}</span><span class="hw-val" style="color:${r.colour}">${reading(r.s)}</span>${
+      r.s.kind === 'counter' ? '' : `<span class="hw-range">${T('low')} ${hwNum(r.lo, r.s.decimals)} · ${T('high')} ${hwNum(r.hi, r.s.decimals)}</span>`}</li>`).join('')}
   </ul>
 </figure>`;
 }
 
 /** The devices sorted onto their charts, in the order they first appear in
  *  content/home-assistant.json; a device keeps its colour by its position
- *  in that list, whichever chart it lands on. */
+ *  in that list, whichever chart it lands on. Energy meters are not drawn
+ *  here: their day's kWh is on the Power panel (content/power.json). */
 function hwCharts(hw, tz, T = same) {
   const groups = new Map();
   (hw.sensors || []).forEach((s, i) => {
     const g = hwGroupOf(s);
+    if (g.key.startsWith('energy')) return;
     let e = groups.get(g.key);
     if (!e) groups.set(g.key, e = { group: g, members: [] });
     e.members.push({ s, colour: hwColour(i) });

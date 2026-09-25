@@ -1,9 +1,10 @@
 {
-  "_note": "Power consumed inside the habitat, in kWh per day, split by category. The categories are yours to shape: rename a label, add one, remove one — the key is the stable name in the record, the label is what the station shows. Days are filed as \"1\": { \"heating\": 1.1, \"food\": 0.5, ... } — on the Habitat tab of mission control or here; a save is live within a couple of seconds. Emptied of its days by the reset; the categories stay.",
+  "_note": "Power consumed inside the habitat, in kWh per day, split by category. The categories are yours to shape: rename a label, add one, remove one — the key is the stable name in the record, the label is what the station shows. Days are filed as \"1\": { \"heating\": 1.1, \"food\": 0.5, ... } — on the Habitat tab of mission control or here; a save is live within a couple of seconds. Emptied of its days by the reset; the categories stay. A category may name a Home Assistant energy meter as \"sensor\" (the entity id without \"sensor.\"): its day then reads that meter — the day's last reading less the day before's last, since the meter only grows — unless a figure is filed by hand for that day, which wins.",
   "categories": [
     {
       "key": "heating",
-      "label": "Heating"
+      "label": "habitat_power_kitchen_energie",
+      "sensor": "habitat_power_kitchen_energie"
     },
     {
       "key": "food",

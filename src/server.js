@@ -183,7 +183,7 @@ function stationData(ctx) {
     latestEntries: data.entriesForDay(ctx.mission.clampedDay),
     crewFigures: content.crewFigures(),
     // Power consumed by category, kWh per day, from content/power.json.
-    power: content.power(),
+    power: content.powerLive(),
     // Daily averages of anything posted to /api/sensors/ingest, for the
     // trend charts, keyed by venue date.
     ingest: data.dailyAverages(40, (d) => missionLib.localDate(d, ctx.mission.timezone)),
@@ -704,7 +704,7 @@ app.get('/api/dome', (req, res) => {
     today: data.day(ctx.mission.clampedDay),
     crew: data.crewWithMood(),
     recent: data.published(20),
-    power: content.power(),
+    power: content.powerLive(),
     counts: data.counts(),
     crewFigures: content.crewFigures(),
   }));

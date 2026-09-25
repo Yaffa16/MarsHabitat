@@ -879,12 +879,24 @@ router.post('/power', (req, res) => {
     // The names, as the form has them now. An emptied name keeps the old one.
     obj.categories = cats.map((c) => {
       const name = String(req.body[`name_${c.key}`] ?? '').trim();
-      return { key: c.key, label: name || c.label };
+      return { key: c.key, label: name || c.label, ...(c.sensor ? { sensor: c.sensor } : {}) };
     });
     obj.days = obj.days && typeof obj.days === 'object' ? obj.days : {};
     const entry = {};
     for (const c of cats) {
       const v = String(req.body[`kwh_${c.key}`] ?? '').trim();
+      if (c.sensor) {
+        // A metered row: untouched, it keeps what it had (the meter, or a figure filed by hand before). Opened
+        // with Edit (and confirmed in the browser), a figure other than the meter's is kept by hand; the
+        // meter's own figure, or a blank, hands the row back to the meter.
+        if (req.body[`edited_${c.key}`] !== '1') { if (wasDay[c.key] != null) entry[c.key] = wasDay[c.key]; continue; }
+        const meter = String(req.body[`meter_${c.key}`] ?? '').trim();
+        const n = Number(v);
+        if (v === '' || !Number.isFinite(n) || n < 0) continue;
+        if (meter !== '' && Math.abs(n - Number(meter)) < 0.005) continue;
+        entry[c.key] = Math.round(n * 100) / 100;
+        continue;
+      }
       if (v === '') continue;              // blank records nothing, not zero
       const n = Number(v);
       if (Number.isFinite(n) && n >= 0) entry[c.key] = Math.round(n * 100) / 100;

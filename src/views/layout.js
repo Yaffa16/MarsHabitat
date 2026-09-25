@@ -196,15 +196,47 @@ function consent(current, T = same, callsign = '') {
   // aura.css), so it is read before anything else.
   return `<div class="consent-veil" id="consent-veil">
   <aside class="consent" id="consent" role="dialog" aria-modal="true" aria-labelledby="consent-title" aria-describedby="consent-text">
+    <div class="consent-sky" aria-hidden="true">
+      <span class="consent-stars"></span>
+      <span class="consent-planet"></span>
+      <span class="consent-orbit"></span>
+      <svg class="consent-astro" viewBox="0 0 160 170">
+        <defs>
+          <linearGradient id="ca-suit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d9dcea"/></linearGradient>
+          <radialGradient id="ca-helmet" cx=".38" cy=".3" r=".8"><stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#e8eaf4"/><stop offset="1" stop-color="#c3c8dc"/></radialGradient>
+          <linearGradient id="ca-visor" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2b3a9e"/><stop offset=".55" stop-color="#121a52"/><stop offset="1" stop-color="#070a26"/></linearGradient>
+          <radialGradient id="ca-mars" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffb07a"/><stop offset=".6" stop-color="#ff5a1f"/><stop offset="1" stop-color="#b8330a"/></radialGradient>
+          <clipPath id="ca-vclip"><path d="M50 62c0-17 13-28 30-28s30 11 30 28c0 15-12 25-30 25S50 77 50 62z"/></clipPath>
+        </defs>
+        <path d="M22 170c2-34 22-52 58-52s56 18 58 52z" fill="url(#ca-suit)" stroke="#b9bfd6" stroke-width="1.2"/>
+        <path d="M58 124l22 12 22-12" fill="none" stroke="#c3c8dc" stroke-width="1.5"/>
+        <rect x="62" y="138" width="36" height="22" rx="5" fill="#eef0f8" stroke="#b9bfd6"/>
+        <circle cx="70" cy="149" r="3" fill="#ff5a1f"/><circle cx="80" cy="149" r="3" fill="#2f45e8"/><circle cx="90" cy="149" r="3" fill="#3fbf8f" class="consent-blink"/>
+        <circle cx="40" cy="146" r="9" fill="#2f45e8"/><circle cx="40" cy="146" r="4.5" fill="#ff5a1f"/>
+        <ellipse cx="80" cy="116" rx="30" ry="8" fill="#c9cee2"/>
+        <line x1="112" y1="34" x2="122" y2="12" stroke="#b9bfd6" stroke-width="2.4" stroke-linecap="round"/>
+        <circle cx="122" cy="11" r="4" fill="#ff5a1f" class="consent-blink"/>
+        <circle cx="80" cy="64" r="48" fill="url(#ca-helmet)" stroke="#b9bfd6" stroke-width="1.2"/>
+        <path d="M50 62c0-17 13-28 30-28s30 11 30 28c0 15-12 25-30 25S50 77 50 62z" fill="url(#ca-visor)"/>
+        <g clip-path="url(#ca-vclip)">
+          <circle cx="96" cy="76" r="15" fill="url(#ca-mars)" opacity=".9"/>
+          <circle cx="62" cy="50" r="1" fill="#fff"/><circle cx="72" cy="72" r=".8" fill="#fff" opacity=".7"/><circle cx="88" cy="46" r=".9" fill="#fff" opacity=".8"/>
+          <path d="M56 50c5-9 14-13 24-13" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" opacity=".55"/>
+        </g>
+        <rect x="30" y="56" width="8" height="18" rx="3" fill="#d4d8e8"/><rect x="122" y="56" width="8" height="18" rx="3" fill="#d4d8e8"/>
+      </svg>
+      <span class="consent-signal"><i></i>${T('Incoming transmission')}</span>
+    </div>
     <form method="post" action="/consent">
       <input type="hidden" name="back" value="${esc(current || '/')}">
       ${callsign ? `<input type="hidden" name="callsign" value="${esc(callsign)}">` : ''}
       <h2 id="consent-title">${T('Welcome')}${callsign ? ` <b class="consent-cs">${esc(callsign)}</b>` : ''}</h2>
       <p id="consent-text">${T('To make sure you talk to the Mars habitat under the same call sign every time, please accept. If you do not, you will be given a new name on each visit and cannot see your own messages. We do not track anything.')}</p>
       <div class="consent-keys">
-        <a class="btn" href="https://zkm.de/en/privacy-policy" target="_blank" rel="noopener">${T('Learn more')}</a>
+        <button type="submit" name="choice" value="no" class="btn">${T('Reject')}</button>
         <button type="submit" name="choice" value="yes" class="btn primary">${T('Agree and close')}</button>
       </div>
+      <a class="consent-more" href="https://zkm.de/en/privacy-policy" target="_blank" rel="noopener">${T('Privacy policy')}</a>
     </form>
   </aside>
   </div>`;

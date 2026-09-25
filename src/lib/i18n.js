@@ -459,6 +459,7 @@ const D = {
      'Un cookie : votre indicatif (p. ex. BASALT-625), pour retrouver vos messages à votre retour. Thème et langue sont gardés de la même manière. Pas de compte, pas de pistage, rien n’est transmis.'],
   'Learn more': ['Mehr erfahren', 'En savoir plus'],
   'Welcome': ['Willkommen', 'Bienvenue'],
+  'Incoming transmission': ['Eingehende Übertragung', 'Transmission entrante'],
   'To make sure you talk to the Mars habitat under the same call sign every time, please accept. If you do not, you will be given a new name on each visit and cannot see your own messages. We do not track anything.':
     ['Damit du immer unter demselben Rufzeichen mit dem Mars-Habitat sprichst, stimme bitte zu. Sonst bekommst du bei jedem Besuch einen neuen Namen und kannst deine eigenen Nachrichten nicht sehen. Wir verfolgen nichts.',
      'Pour parler à l’habitat martien toujours sous le même indicatif, merci d’accepter. Sinon, vous recevrez un nouveau nom à chaque visite et ne pourrez pas voir vos propres messages. Nous ne suivons rien.'],
@@ -467,6 +468,8 @@ const D = {
   'Privacy policy': ['Datenschutz', 'Politique de confidentialité'],
   'Imprint': ['Impressum', 'Mentions légales'],
   'hourly average': ['Stundenmittel', 'moyenne horaire'],
+  'low': ['Tief', 'min'],
+  'high': ['Hoch', 'max'],
   'Reject': ['Ablehnen', 'Refuser'],
   'Callsign on sending': ['Rufzeichen beim Senden', 'Indicatif à l’envoi'],
   'You will get a callsign': ['Du bekommst ein Rufzeichen', 'Vous recevrez un indicatif'],

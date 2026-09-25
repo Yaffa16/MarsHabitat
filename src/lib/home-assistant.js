@@ -84,6 +84,10 @@ function sensors() {
         // An optional chart name: devices sharing one are drawn on the same
         // chart under that title (e.g. "Air quality"), whatever their unit.
         chart: s.chart ? String(s.chart) : null,
+        // An optional least height of the chart's Y axis, in the unit: the axis
+        // always spans at least this much round the readings, so a steady
+        // reading has room to move (oxygen: 2 percentage points).
+        span: Number.isFinite(Number(s.span)) && Number(s.span) > 0 ? Number(s.span) : null,
       }));
     cfgCache = { mtimeMs: st.mtimeMs, sensors: list, error: null };
     console.log(`[home-assistant] ${list.length} sensor${list.length === 1 ? '' : 's'} configured in content/home-assistant.json`);
@@ -353,7 +357,7 @@ function snapshot(hours = 24) {
       if (cur && cur.value != null && base != null && cur.value >= base) today = cur.value - base;
     }
     return {
-      id: s.id, label: s.label, kind: s.kind, decimals: s.decimals, range: s.range || null, chart: s.chart || null,
+      id: s.id, label: s.label, kind: s.kind, decimals: s.decimals, range: s.range || null, chart: s.chart || null, span: s.span || null,
       unit: (cur && cur.unit) || s.unit || '',
       value: cur ? cur.value : null,
       state: cur ? cur.state : null,
@@ -424,6 +428,30 @@ function sensorsFor(a, b) {
     if (s.retired && /^k?wh$/i.test(s.unit || '')) s.kind = 'counter';
   }
   return list;
+}
+
+/* A meter's consumption on one mission day. The meter only ever grows, so the
+   day's own amount is its last reading of the day less where it stood when the
+   day began — its last reading of the day before (yesterday's total). With no
+   reading from before the day (the first day it was polled) the day's first
+   reading stands in. Returned in kWh (a meter reporting Wh is divided by 1000),
+   or null when the day holds no reading yet (a day still ahead). */
+const lastBefore = db.prepare(
+  'SELECT value, unit FROM ha_reading WHERE entity = ? AND t < ? AND value IS NOT NULL ORDER BY t DESC LIMIT 1');
+function counterDay(entity, missionDay) {
+  let a, b;
+  try {
+    const mission = require('./mission'), m = mission.config();
+    a = mission.venueMidnightUtc(mission.dateForDay(missionDay), m.timezone);
+    b = mission.venueMidnightUtc(mission.dateForDay(missionDay + 1), m.timezone);
+  } catch { return null; }
+  const last = db.prepare('SELECT value, unit FROM ha_reading WHERE entity = ? AND t >= ? AND t < ? AND value IS NOT NULL ORDER BY t DESC LIMIT 1').get(entity, a, b);
+  if (!last) return null;
+  const before = lastBefore.get(entity, a) || dayFirst.get(entity, a, b);
+  if (!before || before.value == null) return null;
+  const wh = /^wh$/i.test(String(last.unit || ''));
+  const kwh = Math.max(0, last.value - before.value) / (wh ? 1000 : 1);
+  return Math.round(kwh * 100) / 100;
 }
 
 /* One mission day of the hardware, summarised for the archive. */
@@ -497,4 +525,4 @@ function version(snap) {
     + (snap.down ? '|down' : '') + (snap.frozen ? '|frozen' : '');
 }
 
-module.exports = { start, poll, snapshot, readings, daily, daySummary, hourly, version, clear, sensors, sensorsFor, configured, frozen, CFG };
+module.exports = { start, poll, snapshot, readings, daily, daySummary, hourly, version, clear, sensors, sensorsFor, configured, frozen, counterDay, CFG };
