@@ -109,7 +109,112 @@ const D = {
   'PUBLISHED': ['VERÖFFENTLICHT', 'PUBLIÉ'],
   'REJECTED': ['ABGELEHNT', 'REJETÉ'],
   'IN TRANSIT': ['UNTERWEGS', 'EN TRANSIT'],
-  'REACHED MARS': ['MARS ERREICHT', 'MARS ATTEINT'],
+  'AWAITING REPLY': ['WARTET AUF ANTWORT', 'EN ATTENTE DE RÉPONSE'],       // on Mars, not yet answered (public.js, cardStatus)
+  // ---- the card's line into space (public.js spaceLine, board.js): how far the message has got since it left Earth
+  'This message is currently {miles} miles ({km} km) from Earth!':
+    ['Diese Nachricht ist jetzt {km} km ({miles} Meilen) von der Erde entfernt!', 'Ce message est maintenant à {km} km ({miles} miles) de la Terre !'],
+  'Launched': ['Gestartet', 'Lancé'],
+  'Follow its journey': ['Seine Reise verfolgen', 'Suivre son voyage'],
+  // the big figures' words (fmtBig in public.js / board.js): the English billion is the German Milliarde, the French milliard —
+  // and the English trillion the German Billion, the French billion
+  'million': ['Million', 'million'], 'millions': ['Millionen', 'millions'],
+  'billion': ['Milliarde', 'milliard'], 'billions': ['Milliarden', 'milliards'],
+  'trillion': ['Billion', 'billion'], 'trillions': ['Billionen', 'billions'],
+  'quadrillion': ['Billiarde', 'billiard'], 'quadrillions': ['Billiarden', 'billiards'],
+  // ---- the journey (board.js): a message's way out, stop by stop — where it has got to, with the facts of each stop
+  'Where this message has got to': ['Wo diese Nachricht jetzt ist', 'Où en est ce message'],
+  'The message of': ['Die Nachricht von', 'Le message de'],
+  'left Earth {ago} and has covered {km} ({mi}) — as far as light travels in {span}.':
+    ['hat die Erde {ago} verlassen und {km} ({mi}) zurückgelegt — so weit, wie das Licht in {span} kommt.',
+     'a quitté la Terre {ago} et a parcouru {km} ({mi}) — la distance que la lumière parcourt en {span}.'],
+  'miles': ['Meilen', 'miles'],
+  'It goes out as radio waves, at the speed of light, and will not stop.': ['Sie ist als Funkwelle unterwegs, mit Lichtgeschwindigkeit, und wird nicht anhalten.', 'Elle voyage sous forme d’ondes radio, à la vitesse de la lumière, et ne s’arrêtera pas.'],
+  'reached after': ['erreicht nach', 'atteint après'],
+  'of the way': ['des Weges', 'du chemin'],
+  'of the way to': ['des Weges bis', 'du chemin vers'],
+  'Your message is': ['Deine Nachricht ist', 'Votre message est'],
+  'ahead': ['voraus', 'à venir'],
+  'On Wikipedia': ['Bei Wikipedia', 'Sur Wikipédia'],
+  'the distance to Mars that day': ['die Entfernung zum Mars an dem Tag', 'la distance de Mars ce jour-là'],
+  // the stops
+  'The Moon': ['Der Mond', 'La Lune'],
+  'Earth’s only natural satellite, 384,400 km away on average — light crosses that in 1.3 seconds. The only other world people have walked on, from 1969 to 1972.':
+    ['Der einzige natürliche Satellit der Erde, im Mittel 384.400 km entfernt — das Licht schafft das in 1,3 Sekunden. Die einzige andere Welt, auf der Menschen gegangen sind, von 1969 bis 1972.',
+     'Le seul satellite naturel de la Terre, à 384 400 km en moyenne — la lumière franchit cette distance en 1,3 seconde. Le seul autre monde où des humains ont marché, de 1969 à 1972.'],
+  'The Sun': ['Die Sonne', 'Le Soleil'],
+  'The star the Solar System turns around, 149.6 million km away — one astronomical unit (au), the yardstick of the Solar System. Its light takes 8 minutes 19 seconds to reach Earth.':
+    ['Der Stern, um den sich das Sonnensystem dreht, 149,6 Millionen km entfernt — eine Astronomische Einheit (au), das Maß des Sonnensystems. Sein Licht braucht 8 Minuten 19 Sekunden bis zur Erde.',
+     'L’étoile autour de laquelle tourne le Système solaire, à 149,6 millions de km — une unité astronomique (ua), l’étalon du Système solaire. Sa lumière met 8 minutes 19 secondes pour atteindre la Terre.'],
+  'Where this station’s habitat stands in the story. On the day this message was sent, Mars was {au} au from Earth — {km} — and a radio signal needed {lt} to get there; the distance changes through the year as the two planets move.':
+    ['Wo das Habitat dieser Station in der Geschichte steht. Am Tag, an dem diese Nachricht gesendet wurde, war der Mars {au} au von der Erde entfernt — {km} — und ein Funksignal brauchte {lt} dorthin; die Entfernung ändert sich übers Jahr, weil sich beide Planeten bewegen.',
+     'Là où se trouve l’habitat de cette station dans l’histoire. Le jour où ce message a été envoyé, Mars était à {au} ua de la Terre — {km} — et un signal radio mettait {lt} pour y arriver ; la distance change au fil de l’année, les deux planètes se déplaçant.'],
+  'The orbit of Jupiter': ['Die Bahn des Jupiter', 'L’orbite de Jupiter'],
+  'The largest planet, eleven times Earth’s width, orbiting 778 million km from the Sun (5.2 au). Its Great Red Spot is a storm wider than Earth that has raged for centuries.':
+    ['Der größte Planet, elfmal so breit wie die Erde, 778 Millionen km von der Sonne entfernt (5,2 au). Sein Großer Roter Fleck ist ein Sturm, breiter als die Erde, der seit Jahrhunderten tobt.',
+     'La plus grande planète, onze fois plus large que la Terre, à 778 millions de km du Soleil (5,2 ua). Sa Grande Tache rouge est une tempête plus large que la Terre qui fait rage depuis des siècles.'],
+  'The orbit of Saturn': ['Die Bahn des Saturn', 'L’orbite de Saturne'],
+  'The ringed planet, 1.43 billion km from the Sun (9.5 au). Its rings are mostly water ice, hundreds of thousands of km across and mostly less than a kilometre thick.':
+    ['Der Ringplanet, 1,43 Milliarden km von der Sonne entfernt (9,5 au). Seine Ringe bestehen vor allem aus Wassereis, Hunderttausende km breit und meist weniger als einen Kilometer dick.',
+     'La planète aux anneaux, à 1,43 milliard de km du Soleil (9,5 ua). Ses anneaux sont surtout faits de glace d’eau, larges de centaines de milliers de km et le plus souvent épais de moins d’un kilomètre.'],
+  'The orbit of Uranus': ['Die Bahn des Uranus', 'L’orbite d’Uranus'],
+  'An ice giant 2.87 billion km from the Sun (19.2 au), tipped almost on its side: its axis leans 98°, so each pole gets 42 years of sunlight, then 42 of dark.':
+    ['Ein Eisriese, 2,87 Milliarden km von der Sonne entfernt (19,2 au), fast auf die Seite gekippt: Seine Achse ist um 98° geneigt, sodass jeder Pol 42 Jahre Sonne bekommt und dann 42 Jahre Dunkelheit.',
+     'Une géante de glace à 2,87 milliards de km du Soleil (19,2 ua), presque couchée sur le côté : son axe est incliné de 98°, si bien que chaque pôle reçoit 42 ans de soleil, puis 42 ans d’obscurité.'],
+  'The orbit of Neptune': ['Die Bahn des Neptun', 'L’orbite de Neptune'],
+  'The outermost planet, 4.5 billion km from the Sun (30.1 au), with the strongest winds in the Solar System — around 2,000 km/h. Sunlight takes 4 hours 10 minutes to reach it.':
+    ['Der äußerste Planet, 4,5 Milliarden km von der Sonne entfernt (30,1 au), mit den stärksten Winden im Sonnensystem — rund 2.000 km/h. Das Sonnenlicht braucht 4 Stunden 10 Minuten bis dorthin.',
+     'La planète la plus lointaine, à 4,5 milliards de km du Soleil (30,1 ua), aux vents les plus violents du Système solaire — environ 2 000 km/h. La lumière du Soleil met 4 heures 10 minutes pour l’atteindre.'],
+  'The orbit of Pluto': ['Die Bahn des Pluto', 'L’orbite de Pluton'],
+  'The dwarf planet of the Kuiper belt, on average 5.9 billion km from the Sun (39.5 au). New Horizons flew past it in July 2015, the only visit so far.':
+    ['Der Zwergplanet des Kuipergürtels, im Mittel 5,9 Milliarden km von der Sonne entfernt (39,5 au). New Horizons flog im Juli 2015 an ihm vorbei — der bislang einzige Besuch.',
+     'La planète naine de la ceinture de Kuiper, à 5,9 milliards de km du Soleil en moyenne (39,5 ua). New Horizons l’a survolée en juillet 2015, la seule visite à ce jour.'],
+  'The heliopause': ['Die Heliopause', 'L’héliopause'],
+  'Where the Sun’s wind gives way to the gas between the stars — the edge of the heliosphere, about 121 au (18 billion km) out. Voyager 1 crossed it in August 2012, Voyager 2 in November 2018.':
+    ['Wo der Sonnenwind dem Gas zwischen den Sternen weicht — der Rand der Heliosphäre, etwa 121 au (18 Milliarden km) entfernt. Voyager 1 hat sie im August 2012 überquert, Voyager 2 im November 2018.',
+     'Là où le vent du Soleil cède la place au gaz entre les étoiles — la limite de l’héliosphère, à environ 121 ua (18 milliards de km). Voyager 1 l’a franchie en août 2012, Voyager 2 en novembre 2018.'],
+  'Voyager 1': ['Voyager 1', 'Voyager 1'],
+  'Launched in 1977 and still sending data, the most distant human-made object — now about {km} from Earth, moving away at 17 km/s. On 15 November 2026 it will be a full light-day away.':
+    ['1977 gestartet und noch immer auf Sendung, das fernste von Menschen gebaute Objekt — jetzt etwa {km} von der Erde entfernt, mit 17 km/s unterwegs. Am 15. November 2026 wird es einen ganzen Lichttag entfernt sein.',
+     'Lancée en 1977 et émettant toujours, l’objet humain le plus lointain — aujourd’hui à environ {km} de la Terre, s’éloignant à 17 km/s. Le 15 novembre 2026, elle sera à un jour-lumière entier.'],
+  'One light-day': ['Ein Lichttag', 'Un jour-lumière'],
+  'The distance light — and this message — covers in 24 hours: 25.9 billion km. Voyager 1 reaches it in November 2026, after 49 years of flight.':
+    ['Die Strecke, die das Licht — und diese Nachricht — in 24 Stunden zurücklegt: 25,9 Milliarden km. Voyager 1 erreicht sie im November 2026, nach 49 Jahren Flug.',
+     'La distance que la lumière — et ce message — parcourt en 24 heures : 25,9 milliards de km. Voyager 1 l’atteint en novembre 2026, après 49 ans de vol.'],
+  'The Oort cloud': ['Die Oortsche Wolke', 'Le nuage d’Oort'],
+  'The cloud of icy bodies around the whole Solar System, where long-period comets come from. Its inner edge is thought to lie some 2,000 au out — 300 billion km, 11.6 light-days; its outer reaches may stretch halfway to the nearest star.':
+    ['Die Wolke aus Eiskörpern rund um das ganze Sonnensystem, aus der die langperiodischen Kometen kommen. Ihr innerer Rand liegt vermutlich rund 2.000 au entfernt — 300 Milliarden km, 11,6 Lichttage; ihr äußerer Rand reicht womöglich bis zur Hälfte des Weges zum nächsten Stern.',
+     'Le nuage de corps glacés qui entoure tout le Système solaire, d’où viennent les comètes à longue période. Son bord interne se situerait à quelque 2 000 ua — 300 milliards de km, 11,6 jours-lumière ; ses confins pourraient s’étendre à mi-chemin de l’étoile la plus proche.'],
+  'Proxima Centauri': ['Proxima Centauri', 'Proxima Centauri'],
+  'The nearest star to the Sun, 4.25 light-years away: a small red dwarf in the Alpha Centauri system, too faint to see without a telescope. At least one planet, Proxima b, orbits in its habitable zone. This message needs 4 years and 3 months to get there.':
+    ['Der sonnennächste Stern, 4,25 Lichtjahre entfernt: ein kleiner Roter Zwerg im Alpha-Centauri-System, ohne Teleskop nicht zu sehen. Mindestens ein Planet, Proxima b, kreist in seiner habitablen Zone. Diese Nachricht braucht 4 Jahre und 3 Monate dorthin.',
+     'L’étoile la plus proche du Soleil, à 4,25 années-lumière : une petite naine rouge du système d’Alpha du Centaure, invisible sans télescope. Au moins une planète, Proxima b, orbite dans sa zone habitable. Ce message met 4 ans et 3 mois pour y arriver.'],
+  'Alpha Centauri': ['Alpha Centauri', 'Alpha du Centaure'],
+  'Alpha Centauri A and B, 4.37 light-years away — the nearest Sun-like stars, a pair orbiting each other every 80 years; with Proxima they form the closest star system, and the third-brightest star in the night sky.':
+    ['Alpha Centauri A und B, 4,37 Lichtjahre entfernt — die nächsten sonnenähnlichen Sterne, ein Paar, das einander alle 80 Jahre umkreist; mit Proxima bilden sie das nächste Sternsystem und den dritthellsten Stern am Nachthimmel.',
+     'Alpha du Centaure A et B, à 4,37 années-lumière — les étoiles semblables au Soleil les plus proches, un couple qui tourne sur lui-même tous les 80 ans ; avec Proxima, elles forment le système stellaire le plus proche et la troisième étoile la plus brillante du ciel nocturne.'],
+  'Barnard’s Star': ['Barnards Stern', 'L’étoile de Barnard'],
+  'A red dwarf 5.96 light-years away, the nearest star in the northern sky — and the star that moves fastest across it, the width of the Moon every 180 years.':
+    ['Ein Roter Zwerg, 5,96 Lichtjahre entfernt, der nächste Stern am Nordhimmel — und der Stern, der sich am schnellsten über ihn bewegt: alle 180 Jahre um die Breite des Mondes.',
+     'Une naine rouge à 5,96 années-lumière, l’étoile la plus proche du ciel boréal — et celle qui s’y déplace le plus vite : la largeur de la Lune tous les 180 ans.'],
+  'Sirius': ['Sirius', 'Sirius'],
+  'The brightest star in the night sky, in Canis Major, the great dog, 8.6 light-years away — nearly twice as bright as Canopus, the next brightest. A binary: Sirius A, a hot white star of twice the Sun’s mass, and Sirius B, a white dwarf the size of Earth with the mass of the Sun.':
+    ['Der hellste Stern am Nachthimmel, im Großen Hund (Canis Major), 8,6 Lichtjahre entfernt — fast doppelt so hell wie Canopus, der nächsthellste. Ein Doppelstern: Sirius A, ein heißer weißer Stern mit der doppelten Masse der Sonne, und Sirius B, ein Weißer Zwerg von der Größe der Erde mit der Masse der Sonne.',
+     'L’étoile la plus brillante du ciel nocturne, dans le Grand Chien (Canis Major), à 8,6 années-lumière — près de deux fois plus brillante que Canopus, la suivante. Une binaire : Sirius A, une étoile blanche et chaude de deux fois la masse du Soleil, et Sirius B, une naine blanche de la taille de la Terre et de la masse du Soleil.'],
+  'Vega': ['Wega', 'Véga'],
+  'The brightest star of Lyra and the fifth-brightest in the night sky, 25 light-years away — around 12,000 BC it was the northern pole star, as it will be again in about 13,700 AD.':
+    ['Der hellste Stern der Leier und der fünfthellste am Nachthimmel, 25 Lichtjahre entfernt — um 12.000 v. Chr. war er der Polarstern des Nordens, und um 13.700 n. Chr. wird er es wieder sein.',
+     'L’étoile la plus brillante de la Lyre et la cinquième du ciel nocturne, à 25 années-lumière — vers 12 000 av. J.-C. elle était l’étoile polaire du nord, et le sera de nouveau vers 13 700 apr. J.-C.'],
+  'light-years': ['Lichtjahre', 'années-lumière'],
+  'hours': ['Stunden', 'heures'], 'hour': ['Stunde', 'heure'], 'minute': ['Minute', 'minute'], 'second': ['Sekunde', 'seconde'],
+  'just now': ['gerade eben', 'à l’instant'],
+  'a minute ago': ['vor einer Minute', 'il y a une minute'],
+  '{n} minutes ago': ['vor {n} Minuten', 'il y a {n} minutes'],
+  'an hour ago': ['vor einer Stunde', 'il y a une heure'],
+  '{n} hours ago': ['vor {n} Stunden', 'il y a {n} heures'],
+  'a day ago': ['vor einem Tag', 'il y a un jour'],
+  '{n} days ago': ['vor {n} Tagen', 'il y a {n} jours'],
+  'Every message is also beamed into space by radio.':
+    ['Jede Nachricht wird außerdem per Funk ins All gesendet.', 'Chaque message est aussi envoyé dans l’espace par radio.'],
   'Sent': ['Gesendet', 'Envoyé'],
   'replied': ['beantwortet', 'répondu'],
 
@@ -154,6 +259,17 @@ const D = {
   'The whole mission': ['Die ganze Mission', 'Toute la mission'],
 
   'Today’s Schedule': ['Heutiger Tagesplan', 'Programme du jour'],
+  // the day's scientific mission at the head of the dashboard (public.js, missionPanel; content/missions.json)
+  'Today’s Mission': ['Heutige Mission', 'Mission du jour'],
+  'Mission No.': ['Mission Nr.', 'Mission n°'],
+  'Central question': ['Zentrale Frage', 'Question centrale'],
+  'Morning': ['Vormittag', 'Matin'],
+  'Afternoon': ['Nachmittag', 'Après-midi'],
+  'Question for the community hour': ['Frage für die Community-Stunde', 'Question pour l’heure de la communauté'],
+  // the day's question over the composer (public.js, composerPrompt)
+  'The crew’s question today': ['Die Frage der Crew heute', 'La question de l’équipage aujourd’hui'],
+  'Answer it below — or ask the crew something of your own.': ['Antworte unten — oder frag die Crew etwas Eigenes.', 'Répondez ci-dessous — ou posez votre propre question à l’équipage.'],
+  'No mission filed for': ['Keine Mission eingetragen für', 'Aucune mission inscrite pour'],
   'No schedule filed for today': ['Für heute kein Plan erfasst', 'Aucun programme saisi pour aujourd’hui'],
   'Photographs and video — the gallery, and everything the crew send out of the habitat':
     ['Fotografien und Video — die Galerie und alles, was die Crew aus dem Habitat sendet', 'Photographies et vidéo — la galerie, et tout ce que l’équipage envoie depuis l’habitat'],
@@ -452,6 +568,17 @@ const D = {
   'Everything else on the station': ['Alles Weitere auf der Station', 'Tout le reste de la station'],
   'Show more': ['Mehr anzeigen', 'Afficher plus'],
   'Crew answer': ['Antwort der Crew', 'Réponse de l’équipage'],
+  // the sky over the dome names each part of an exchange (sky.js)
+  'Question': ['Frage', 'Question'],
+  'Answer': ['Antwort', 'Réponse'],
+  // the notes a touch on the sky brings (sky.js, skyNotes; public/sky.js), and the LIVE mark on the sheet (sky.js, habitatSheet)
+  'LIVE FEED': ['LIVE-FEED', 'FLUX EN DIRECT'],
+  'Live feed from the habitat': ['Live-Feed aus dem Habitat', 'Le flux en direct de l’habitat'],
+  'Media Gallery': ['Mediengalerie', 'Galerie médias'],
+  'LATEST COMMUNICATION': ['NEUESTE KOMMUNIKATION', 'DERNIÈRE COMMUNICATION'],
+  'The latest communication from the habitat': ['Die neueste Kommunikation aus dem Habitat', 'La dernière communication de l’habitat'],
+  'Live — the habitat as it is now: its readings, the newest pictures and the latest exchanges':
+    ['Live — das Habitat, wie es jetzt ist: seine Messwerte, die neuesten Bilder und die letzten Austausche', 'En direct — l’habitat tel qu’il est maintenant : ses mesures, les dernières images et les derniers échanges'],
   'Home': ['Start', 'Accueil'],
   'Cookies': ['Cookies', 'Cookies'],
   'One cookie: your callsign (e.g. BASALT-625), so you find your messages when you come back. Theme and language are kept the same way. No account, no tracking, nothing passed on.':
@@ -488,9 +615,6 @@ const D = {
   'Expand': ['Ausklappen', 'Déplier'],
   'Commander · Health · Science': ['Commander · Gesundheit · Wissenschaft', 'Commandement · Santé · Science'],
   'About, What this is, Who we are': ['Über, Worum es geht, Wer wir sind', 'À propos, De quoi il s’agit, Qui nous sommes'],
-  'MARS is a durational performance. Three officers live sealed inside the habitat for the thirteen days of the run; visitors to the exhibition can see the habitat from outside. What they cannot do is walk in and talk to the people inside it. Here a message has to travel. You watch it go. You wait.':
-    ['MARS ist eine Durational Performance. Drei Offiziere leben die dreizehn Tage des Laufs abgeschlossen im Habitat; die Besucher der Ausstellung können das Habitat von außen sehen. Was sie nicht können, ist hineingehen und mit den Menschen darin sprechen. Hier muss eine Nachricht reisen. Man sieht sie gehen. Man wartet.',
-     'MARS est une performance de longue durée. Trois officiers vivent enfermés dans l’habitat pendant les treize jours de la mission ; les visiteurs de l’exposition peuvent voir l’habitat de l’extérieur. Ce qu’ils ne peuvent pas faire, c’est y entrer et parler aux personnes qui s’y trouvent. Ici, un message doit voyager. On le regarde partir. On attend.'],
 
   // ---- crew condition (src/lib/mood.js)
   'CALM': ['RUHIG', 'CALME'],
@@ -507,16 +631,31 @@ const D = {
   'No report has been received from this crew member.': ['Von diesem Crewmitglied ist kein Bericht eingegangen.', 'Aucun rapport n’a été reçu de ce membre de l’équipage.'],
 
   // ---- About / info
-  'The habitat, the distance, the archive': ['Das Habitat, die Distanz, das Archiv', 'L’habitat, la distance, l’archive'],
+  'The project, the distance, the archive': ['Das Projekt, die Distanz, das Archiv', 'Le projet, la distance, l’archive'],
   'How the station behaves, in plain terms': ['Wie die Station sich verhält, in einfachen Worten', 'Comment la station se comporte, en termes simples'],
   'Crew, company, production credits': ['Crew, Kompanie, Produktionscredits', 'Équipage, compagnie, crédits de production'],
   'Close': ['Schließen', 'Fermer'],
-  'MARS is a durational performance. For the length of the mission the crew do not leave the habitat. They follow a schedule, eat what has been planned for them, work through a set of tasks, and draw down a finite inventory. Visitors to the exhibition can see the habitat from outside. What they cannot do is walk in and talk to the people inside it.':
-    ['MARS ist eine Langzeitperformance. Für die Dauer der Mission verlässt die Crew das Habitat nicht. Sie folgt einem Tagesplan, isst, was für sie geplant wurde, arbeitet eine Reihe von Aufgaben ab und zehrt von einem endlichen Vorrat. Besucherinnen und Besucher der Ausstellung können das Habitat von außen sehen. Was sie nicht können: hineingehen und mit den Menschen darin sprechen.',
-     'MARS est une performance de longue durée. Pendant toute la mission, l’équipage ne quitte pas l’habitat. Il suit un programme, mange ce qui a été prévu pour lui, accomplit une série de tâches et puise dans des réserves finies. Les visiteurs de l’exposition peuvent voir l’habitat de l’extérieur. Ce qu’ils ne peuvent pas faire, c’est y entrer et parler aux personnes qui s’y trouvent.'],
-  'The sensors that produce the readings on this page are mounted in that structure. When the habitat warms up because a room full of people is standing around it, the number moves. The data is not a simulation of a Mars habitat; it is a measurement of a real enclosed space with three people in it.':
-    ['Die Sensoren, die die Messwerte auf dieser Seite liefern, sind in dieser Struktur montiert. Wenn sich das Habitat erwärmt, weil ein Raum voller Menschen darum herumsteht, bewegt sich die Zahl. Die Daten sind keine Simulation eines Mars-Habitats; sie sind die Messung eines realen, geschlossenen Raums mit drei Menschen darin.',
-     'Les capteurs qui produisent les mesures de cette page sont montés dans cette structure. Quand l’habitat se réchauffe parce qu’une salle pleine de monde se tient autour, le chiffre bouge. Les données ne sont pas la simulation d’un habitat martien ; elles sont la mesure d’un espace clos réel avec trois personnes à l’intérieur.'],
+  'A durational performance on Karlsruhe’s Marktplatz, Thursday 15 to Tuesday 27 October 2026. Admission is free.':
+    ['Eine Dauerperformance auf dem Karlsruher Marktplatz, Donnerstag, 15. bis Dienstag, 27. Oktober 2026. Der Eintritt ist frei.',
+     'Une performance de longue durée sur la Marktplatz de Karlsruhe, du jeudi 15 au mardi 27 octobre 2026. L’entrée est libre.'],
+  'Large space agencies and private companies are hard at work on a future for people on Mars. What would that future look like — and shouldn’t the people be part of designing it? MARS!platz asks exactly that.':
+    ['Große Raumfahrtagenturen und private Unternehmen arbeiten mit Hochdruck an einer Zukunft der Menschen auf dem Mars. Wie sähe diese Zukunft aus — und sollten die Menschen sie nicht selbst mitgestalten? Genau das fragt der MARS!platz.',
+     'Les grandes agences spatiales et des entreprises privées travaillent d’arrache-pied à un avenir des humains sur Mars. À quoi ressemblerait cet avenir — et les gens ne devraient-ils pas participer à le concevoir ? C’est exactement la question que pose MARS!platz.'],
+  'For six months Hertzlab, the artistic research and development department of the ZKM, worked with artists, experts and the citizen scientists of the open group Red Dust Society on how people could live on Mars: how to build and use a habitat, how to keep a crew mentally well, how to feed it and grow food, how to organise living together, and how to keep track of and save resources. What came out of it now goes into an analogue simulation — a large public experiment that tests which of the ideas hold up.':
+    ['Sechs Monate lang hat das Hertzlab, die Abteilung für künstlerische Forschung und Entwicklung des ZKM, mit Künstlerinnen und Künstlern, Expertinnen und Experten und den Citizen Scientists der offenen Gruppe Red Dust Society daran gearbeitet, wie Menschen auf dem Mars leben könnten: wie man ein Habitat baut und nutzt, wie eine Crew psychisch gesund bleibt, wie man sie ernährt und Nahrung anbaut, wie man das Zusammenleben organisiert und wie man Ressourcen dokumentiert und schont. Was dabei entstanden ist, geht jetzt in eine analoge Simulation — ein großes öffentliches Experiment, das prüft, welche der Ideen sich bewähren.',
+     'Pendant six mois, le Hertzlab, le département de recherche et de développement artistiques du ZKM, a travaillé avec des artistes, des experts et les citoyens scientifiques du groupe ouvert Red Dust Society sur la façon dont des humains pourraient vivre sur Mars : comment construire et utiliser un habitat, comment garder un équipage en bonne santé mentale, comment le nourrir et cultiver de la nourriture, comment organiser la vie commune et comment tenir le compte des ressources et les économiser. Ce qui en est sorti entre maintenant dans une simulation analogique — une grande expérience publique qui teste lesquelles de ces idées tiennent.'],
+  'A white dome on the Marktplatz marks the outpost of the first people to land: Red Dust City. For the thirteen days of the run three crew members are always in the habitat — a Commanding Officer, a Science Officer and a Health Officer — living and working under the conditions of a long-duration mission and testing what visitors of the ZKM and citizens of Karlsruhe have developed: the design and use of the habitat, strategies for the crew’s mental health, a balanced plan for food and growing, rules for organising a community, and the documenting and saving of resources.':
+    ['Eine weiße Kuppel auf dem Marktplatz markiert den Außenposten der ersten Gelandeten: Red Dust City. Während der dreizehn Tage des Laufs sind immer drei Crewmitglieder im Habitat — eine Kommandantin, ein Wissenschaftsoffizier und ein Gesundheitsoffizier —, die unter den Bedingungen einer Langzeitmission leben und arbeiten und erproben, was Besucherinnen und Besucher des ZKM und Karlsruher Bürgerinnen und Bürger entwickelt haben: die Gestaltung und Nutzung des Habitats, Strategien für die psychische Gesundheit der Crew, einen ausgewogenen Ernährungs- und Anbauplan, Regeln für das Zusammenleben und die Dokumentation und Schonung von Ressourcen.',
+     'Un dôme blanc sur la Marktplatz marque l’avant-poste des premiers arrivants : Red Dust City. Pendant les treize jours de la mission, trois membres d’équipage sont toujours dans l’habitat — un commandant, un officier scientifique et un officier de santé — ; ils y vivent et y travaillent dans les conditions d’une mission de longue durée et testent ce que les visiteurs du ZKM et les habitants de Karlsruhe ont développé : la conception et l’usage de l’habitat, des stratégies pour la santé mentale de l’équipage, un plan équilibré d’alimentation et de culture, des règles pour organiser une communauté, et la documentation et l’économie des ressources.'],
+  'Every day the crew go out in their spacesuits on an EVA — an extra-vehicular activity — to run experiments on the Marktplatz. A detailed hourly programme says what is being tested when, and what came of it.':
+    ['Jeden Tag geht die Crew in ihren Raumanzügen zu einem Außeneinsatz (EVA — Extra Vehicular Activity) hinaus, um Experimente auf dem Marktplatz durchzuführen. Ein detailliertes Stundenprogramm sagt, was wann erprobt wird und was dabei herausgekommen ist.',
+     'Chaque jour, l’équipage sort en combinaison spatiale pour une EVA — une sortie extravéhiculaire — afin de mener des expériences sur la Marktplatz. Un programme horaire détaillé dit ce qui est testé à quel moment, et ce qu’il en est ressorti.'],
+  'You can talk to the crew: online, right here, through the world’s slowest chat; over the radio; at the ZKM; or on the Marktplatz itself. How would you live on Mars? Help design a possible future — solutions for Mars are also solutions for life on Earth.':
+    ['Ihr könnt mit der Crew sprechen: online, hier, im langsamsten Chat der Welt; über Funk; im ZKM; oder direkt auf dem Marktplatz. Wie würdet ihr auf dem Mars leben? Helft mit, diese mögliche Zukunft zu gestalten — Lösungen für den Mars sind auch Lösungen für das Leben auf der Erde.',
+     'Vous pouvez parler à l’équipage : en ligne, ici même, par le chat le plus lent du monde ; par radio ; au ZKM ; ou sur la Marktplatz elle-même. Comment vivriez-vous sur Mars ? Aidez à concevoir cet avenir possible — les solutions pour Mars sont aussi des solutions pour la vie sur Terre.'],
+  'MARS!platz: Red Dust City is part of MARS! Mobilizing Awareness for Resilient Societies!, the ZKM’s programme for 2026, which the exhibition MARS! opened at the ZKM from 6 June to 13 September 2026. The opening on the Marktplatz is on Thursday 15 October 2026 from 16:00 to 17:00.':
+    ['MARS!platz: Red Dust City ist Teil von MARS! Mobilizing Awareness for Resilient Societies!, dem Programm des ZKM für 2026, das die Ausstellung MARS! vom 6. Juni bis 13. September 2026 im ZKM eröffnet hat. Die Eröffnung auf dem Marktplatz ist am Donnerstag, 15. Oktober 2026, von 16:00 bis 17:00 Uhr.',
+     'MARS!platz: Red Dust City fait partie de MARS! Mobilizing Awareness for Resilient Societies!, le programme du ZKM pour 2026, ouvert par l’exposition MARS! au ZKM du 6 juin au 13 septembre 2026. L’ouverture sur la Marktplatz a lieu le jeudi 15 octobre 2026 de 16h00 à 17h00.'],
   'Networked communication is built to remove distance. A message is written and delivered in the same breath, and the gap between two people becomes invisible. That invisibility is the thing this piece takes apart.':
     ['Vernetzte Kommunikation ist gebaut, um Distanz aufzuheben. Eine Nachricht wird im selben Atemzug geschrieben und zugestellt, und der Abstand zwischen zwei Menschen wird unsichtbar. Diese Unsichtbarkeit ist es, die dieses Werk auseinandernimmt.',
      'La communication en réseau est faite pour abolir la distance. Un message s’écrit et se livre dans le même souffle, et l’écart entre deux personnes devient invisible. C’est cette invisibilité que cette œuvre démonte.'],
@@ -525,12 +664,16 @@ const D = {
      'Ici, un message doit voyager. Vous le regardez partir. Vous attendez. Quelqu’un le lit et décide s’il va plus loin. Une réponse s’écrit et revient par l’autre chemin. L’échange qu’une messagerie aurait bouclé en moins d’une seconde s’étire jusqu’à ce que vous en sentiez la forme — et le chiffre dans la barre au-dessus vous rappelle que la vraie traversée est plus longue encore.'],
   'The delay is not friction added for effect. It is the subject.':
     ['Die Verzögerung ist keine Reibung, die des Effekts wegen hinzugefügt wurde. Sie ist das Thema.', 'Le délai n’est pas une friction ajoutée pour l’effet. C’est le sujet.'],
-  'Every published exchange stays here. Over the run the archive accumulates into something neither the artists nor the audience wrote alone: a record of what people on Earth wanted to ask three strangers in a sealed room, and how those questions shifted as the mission went on.':
-    ['Jeder veröffentlichte Nachrichtenwechsel bleibt hier. Über den Lauf hinweg wächst das Archiv zu etwas, das weder die Künstlerinnen und Künstler noch das Publikum allein geschrieben haben: eine Aufzeichnung dessen, was Menschen auf der Erde drei Fremde in einem versiegelten Raum fragen wollten, und wie sich diese Fragen im Verlauf der Mission verschoben.',
-     'Chaque échange publié reste ici. Au fil de la période, l’archive s’accumule en quelque chose que ni les artistes ni le public n’ont écrit seuls : la trace de ce que des gens sur Terre ont voulu demander à trois inconnus dans une pièce scellée, et de la façon dont ces questions ont changé au cours de la mission.'],
-  'Hertzlab is the research and production laboratory of the ZKM | Center for Art and Media Karlsruhe, working across performance, sound, media technology and installation. MARS is produced within that context, and this station was built as part of the production rather than as documentation of it.':
-    ['Das Hertzlab ist das Forschungs- und Produktionslabor des ZKM | Zentrum für Kunst und Medien Karlsruhe und arbeitet über Performance, Klang, Medientechnologie und Installation hinweg. MARS entsteht in diesem Kontext, und diese Station wurde als Teil der Produktion gebaut, nicht als deren Dokumentation.',
-     'Le Hertzlab est le laboratoire de recherche et de production du ZKM | Centre d’art et de médias de Karlsruhe, à la croisée de la performance, du son, des technologies des médias et de l’installation. MARS est produit dans ce contexte, et cette station a été construite comme partie de la production plutôt que comme sa documentation.'],
+  'Every published exchange stays here. Over the run the archive accumulates into something neither the artists nor the audience wrote alone: a record of what people on Earth wanted to ask the three crew members in the habitat, and how those questions shifted as the mission went on.':
+    ['Jeder veröffentlichte Nachrichtenwechsel bleibt hier. Über den Lauf hinweg wächst das Archiv zu etwas, das weder die Künstlerinnen und Künstler noch das Publikum allein geschrieben haben: eine Aufzeichnung dessen, was Menschen auf der Erde die drei Crewmitglieder im Habitat fragen wollten, und wie sich diese Fragen im Verlauf der Mission verschoben.',
+     'Chaque échange publié reste ici. Au fil de la période, l’archive s’accumule en quelque chose que ni les artistes ni le public n’ont écrit seuls : la trace de ce que des gens sur Terre ont voulu demander aux trois membres d’équipage dans l’habitat, et de la façon dont ces questions ont changé au cours de la mission.'],
+  'The readings': ['Die Messwerte', 'Les mesures'],
+  'The sensors that produce the readings on this page are mounted in the habitat on the Marktplatz. When the habitat warms up because a crowd is standing around it, the number moves. The data is not a simulation of a Mars habitat; it is a measurement of the real one, with the crew in it.':
+    ['Die Sensoren, die die Messwerte auf dieser Seite liefern, sind im Habitat auf dem Marktplatz montiert. Wenn sich das Habitat erwärmt, weil eine Menschenmenge darum herumsteht, bewegt sich die Zahl. Die Daten sind keine Simulation eines Mars-Habitats; sie sind die Messung des echten, mit der Crew darin.',
+     'Les capteurs qui produisent les mesures de cette page sont montés dans l’habitat sur la Marktplatz. Quand l’habitat se réchauffe parce qu’une foule se tient autour, le chiffre bouge. Les données ne sont pas la simulation d’un habitat martien ; elles sont la mesure du vrai, avec l’équipage à l’intérieur.'],
+  'Supported by the Innovationsfonds Kunst of the Ministry of Science, Research and the Arts Baden-Württemberg, the E.ON Stiftung and the LBBW Stiftung.':
+    ['Gefördert durch den Innovationsfonds Kunst des Ministeriums für Wissenschaft, Forschung und Kunst Baden-Württemberg, die E.ON Stiftung und die LBBW Stiftung.',
+     'Avec le soutien de l’Innovationsfonds Kunst du ministère des Sciences, de la Recherche et des Arts du Bade-Wurtemberg, de la E.ON Stiftung et de la LBBW Stiftung.'],
   'DESIGNATION': ['BEZEICHNUNG', 'DÉSIGNATION'],
   'RUN': ['LAUF', 'PÉRIODE'],
   'START': ['BEGINN', 'DÉBUT'],
@@ -581,9 +724,9 @@ const D = {
      'Votre indicatif, le texte de votre message, vos étiquettes et l’heure d’envoi. Un hachage à sens unique de votre adresse IP est conservé pour limiter le débit et n’est jamais affiché. Pas d’analytique, pas de scripts tiers, aucun pistage d’aucune sorte. Les échanges publiés restent sur cette page comme partie de l’œuvre ; l’archive complète, jour par jour, est détenue par le contrôle de mission et n’est pas publique.'],
   'Message states as shown in the interface': ['Nachrichtenzustände, wie die Oberfläche sie zeigt', 'Les états d’un message, tels qu’affichés dans l’interface'],
   'Inside the habitat': ['Im Habitat', 'Dans l’habitat'],
-  'The crew are addressed by designation for the length of the mission. That is a condition of the piece, not an administrative convenience — the audience meets them as a role, and the names are published only once the habitat opens.':
-    ['Die Crew wird für die Dauer der Mission mit ihrer Bezeichnung angesprochen. Das ist eine Bedingung des Werks, keine Verwaltungsbequemlichkeit — das Publikum begegnet ihnen als Rolle, und die Namen werden erst veröffentlicht, wenn das Habitat sich öffnet.',
-     'L’équipage est désigné par sa fonction pendant toute la mission. C’est une condition de l’œuvre, pas une commodité administrative — le public les rencontre comme un rôle, et les noms ne sont publiés qu’à l’ouverture de l’habitat.'],
+  'The crew are addressed by designation for the length of the mission. That is a condition of the piece, not an administrative convenience — the audience meets them as a role, and the names are published after the run.':
+    ['Die Crew wird für die Dauer der Mission mit ihrer Bezeichnung angesprochen. Das ist eine Bedingung des Werks, keine Verwaltungsbequemlichkeit — das Publikum begegnet ihnen als Rolle, und die Namen werden nach dem Lauf veröffentlicht.',
+     'L’équipage est désigné par sa fonction pendant toute la mission. C’est une condition de l’œuvre, pas une commodité administrative — le public les rencontre comme un rôle, et les noms sont publiés après la mission.'],
   'currently': ['gerade', 'actuellement'],
   'unlogged': ['nicht erfasst', 'non consigné'],
   'Outside the habitat': ['Außerhalb des Habitats', 'Hors de l’habitat'],
@@ -729,7 +872,6 @@ const D = {
   'Stores': ['Vorräte', 'Réserves'],
   'Up next': ['Als Nächstes', 'Ensuite'],
   'Day 01 opens with': ['Tag 01 beginnt mit', 'Le jour 01 s’ouvre sur'],
-  'Hatch not yet sealed': ['Luke noch nicht verschlossen', 'Écoutille pas encore scellée'],
   'Off the schedule': ['Ausserhalb des Plans', 'Hors programme'],
   'AS REPORTED': ['WIE GEMELDET', 'TEL QUE RAPPORTÉ'],
   'no state': ['kein Zustand', 'aucun état'],
@@ -744,13 +886,17 @@ const D = {
     'La liaison. Chaque message écrit sur cette station traverse la distance jusqu’à l’habitat et attend le commandant, qui le lit et y répond depuis l’intérieur ; la réponse revient sur le tableau de chaque téléphone ouvert. Le vrai temps-lumière entre la Terre et Mars est affiché à côté du composeur.'],
   'Hydroponics': ['Hydroponik', 'Hydroponie'],
   'Communication': ['Kommunikation', 'Communication'],
-  'Nap pod': ['Schlafkapsel', 'Capsule de repos'],
   'Power generator': ['Stromgenerator', 'Générateur électrique'],
   'press a part of the habitat to see what is happening in it': ['einen Teil des Habitats drücken, um zu sehen, was darin geschieht', 'appuyer sur une partie de l’habitat pour voir ce qui s’y passe'],
+  // the nudge under the dome (landing.js)
+  'Scroll down': ['Nach unten scrollen', 'Faire défiler'],
   'The parts of the habitat': ['Die Teile des Habitats', 'Les parties de l’habitat'],
+  // a store with no figure yet (public.js, inventoryGauges; dome.js)
+  'Placeholder': ['Platzhalter', 'Espace réservé'],
+  'no figure filed yet': ['noch keine Zahl erfasst', 'aucun chiffre saisi pour l’instant'],
   'Open its panel on the dashboard': ['Sein Feld auf dem Dashboard öffnen', 'Ouvrir son panneau sur le tableau de bord'],
   'Now': ['Jetzt', 'Maintenant'],
-  'Hatch not yet sealed.': ['Luke noch nicht verschlossen.', 'Écoutille pas encore scellée.'],
+  'The run has not begun yet.': ['Der Lauf hat noch nicht begonnen.', 'La mission n’a pas encore commencé.'],
   'Off the schedule.': ['Ausserhalb des Plans.', 'Hors programme.'],
   'no state filed': ['kein Zustand erfasst', 'aucun état saisi'],
   'under a day at this draw': ['weniger als ein Tag bei diesem Verbrauch', 'moins d’un jour à ce rythme'],
@@ -763,9 +909,9 @@ const D = {
   'Latest exchange': ['Letzter Austausch', 'Dernier échange'],
   'The loop runs whenever there is grey water to pass; the crew count the tank at the end of the day.': ['Der Kreislauf läuft, sobald Grauwasser anfällt; die Crew zählt den Tank am Ende des Tages.', 'La boucle tourne dès qu’il y a des eaux grises à traiter ; l’équipage compte le réservoir en fin de journée.'],
   'First harvest planned for SOL 10.': ['Erste Ernte geplant für SOL 10.', 'Première récolte prévue pour SOL 10.'],
-  'Three officers live sealed inside the habitat for the thirteen days of the run: a commanding officer who relays every message from Earth, a science officer who runs the experiments and watches the habitat’s systems, and a health officer who keeps the crew fit and the life support in order. Between them they write three blogs a day — the Commander Blog, the Daily Science Findings and the Daily Health Blog — and file their condition from inside.': [
-    'Drei Offiziere leben die dreizehn Tage des Laufs abgeschlossen im Habitat: eine Kommandantin, die jede Nachricht von der Erde weiterleitet, ein Wissenschaftsoffizier, der die Experimente durchführt und die Systeme des Habitats beobachtet, und ein Gesundheitsoffizier, der die Crew fit und die Lebenserhaltung in Ordnung hält. Zusammen schreiben sie jeden Tag drei Blogs — den Commander-Blog, die täglichen wissenschaftlichen Befunde und den täglichen Gesundheitsblog — und melden ihren Zustand von innen.',
-    'Trois officiers vivent enfermés dans l’habitat pendant les treize jours de la mission : un commandant qui relaie chaque message de la Terre, un officier scientifique qui mène les expériences et surveille les systèmes de l’habitat, et un officier de santé qui garde l’équipage en forme et le support de vie en ordre. Ensemble, ils écrivent trois blogs par jour — le blog du commandement, les observations scientifiques quotidiennes et le blog santé quotidien — et déclarent leur état depuis l’intérieur.'],
+  'Three crew members are always in the habitat for the thirteen days of the run: a commanding officer who relays every message from Earth, a science officer who runs the experiments and watches the habitat’s systems, and a health officer who keeps the crew fit and the life support in order. Between them they write three blogs a day — the Commander Blog, the Daily Science Findings and the Daily Health Blog — and file their condition from inside.': [
+    'Drei Crewmitglieder sind die dreizehn Tage des Laufs immer im Habitat: eine Kommandantin, die jede Nachricht von der Erde weiterleitet, ein Wissenschaftsoffizier, der die Experimente durchführt und die Systeme des Habitats beobachtet, und ein Gesundheitsoffizier, der die Crew fit und die Lebenserhaltung in Ordnung hält. Zusammen schreiben sie jeden Tag drei Blogs — den Commander-Blog, die täglichen wissenschaftlichen Befunde und den täglichen Gesundheitsblog — und melden ihren Zustand von innen.',
+    'Trois membres d’équipage sont toujours dans l’habitat pendant les treize jours de la mission : un commandant qui relaie chaque message de la Terre, un officier scientifique qui mène les expériences et surveille les systèmes de l’habitat, et un officier de santé qui garde l’équipage en forme et le support de vie en ordre. Ensemble, ils écrivent trois blogs par jour — le blog du commandement, les observations scientifiques quotidiennes et le blog santé quotidien — et déclarent leur état depuis l’intérieur.'],
   'The science bench: the habitat’s own experiments — samples, cultures, readings — and the daily science findings the science officer writes up. The sensor node beside it measures temperature, humidity, carbon dioxide and more every twenty minutes.': [
     'Der Laborplatz: die Experimente des Habitats – Proben, Kulturen, Messungen – und die täglichen wissenschaftlichen Befunde, die der Wissenschaftsoffizier festhält. Der Sensorknoten daneben misst alle zwanzig Minuten Temperatur, Luftfeuchte, Kohlendioxid und mehr.',
     'La paillasse scientifique : les expériences de l’habitat – échantillons, cultures, mesures – et les résultats scientifiques quotidiens que rédige l’officier scientifique. Le nœud de capteurs à côté mesure toutes les vingt minutes la température, l’humidité, le dioxyde de carbone et plus.'],
@@ -778,15 +924,26 @@ const D = {
   'Everything in the habitat runs on what the crew can make and store. Heating, the galley, lighting and electronics draw on one battery, and the crew count the kilowatt-hours by category every day.': [
     'Alles im Habitat läuft mit dem, was die Crew erzeugen und speichern kann. Heizung, Küche, Licht und Elektronik hängen an einer Batterie, und die Crew zählt die Kilowattstunden täglich nach Kategorie.',
     'Tout dans l’habitat fonctionne avec ce que l’équipage peut produire et stocker. Chauffage, cuisine, éclairage et électronique puisent dans une seule batterie, et l’équipage compte chaque jour les kilowattheures par catégorie.'],
-  'One enclosed pod for rest. The crew sleep in shifts so that someone is always awake for a communication window, and the air in the pod during the sleep period is the reading watched most closely.': [
-    'Eine geschlossene Kapsel zum Ausruhen. Die Crew schläft in Schichten, damit immer jemand für ein Kommunikationsfenster wach ist, und die Luft in der Kapsel während der Schlafphase ist der am genauesten beobachtete Messwert.',
-    'Une capsule fermée pour le repos. L’équipage dort par roulement pour que quelqu’un soit toujours éveillé pour une fenêtre de communication, et l’air de la capsule pendant le sommeil est la mesure la plus surveillée.'],
   'A bicycle generator: pedalling charges the battery. The health officer’s workout is also the habitat’s power plant — the steps and the kilowatt-hours are the same effort.': [
     'Ein Fahrradgenerator: Treten lädt die Batterie. Das Training des Gesundheitsoffiziers ist zugleich das Kraftwerk des Habitats – die Schritte und die Kilowattstunden sind dieselbe Anstrengung.',
     'Un générateur à vélo : pédaler charge la batterie. L’entraînement de l’officier de santé est aussi la centrale de l’habitat – les pas et les kilowattheures sont le même effort.'],
+  // the EVA key: the crew's daily walk outside (dome.js, ABOUT.eva and figures)
+  'An EVA — an extra-vehicular activity — is the walk outside, in the suit, on the square. Its hour is on the day’s schedule, and the pictures of it are on the Media page.':
+    ['Ein EVA — eine Extravehicular Activity, ein Außeneinsatz — ist der Gang nach draußen, im Anzug, auf dem Platz. Seine Stunde steht im Tagesplan, und die Bilder davon sind auf der Medienseite.',
+     'Une EVA — une activité extravéhiculaire — est la sortie dehors, en combinaison, sur la place. Son heure figure au programme du jour, et les images en sont sur la page Médias.'],
+  'Day 01’s EVA is at': ['Der Außeneinsatz an Tag 01 ist um', 'L’EVA du jour 01 est à'],
+  'Today’s EVA is at': ['Der heutige Außeneinsatz ist um', 'L’EVA d’aujourd’hui est à'],
+  'Today’s EVA was at': ['Der heutige Außeneinsatz war um', 'L’EVA d’aujourd’hui était à'],
+  'No EVA on today’s schedule.': ['Kein Außeneinsatz im heutigen Plan.', 'Pas d’EVA au programme d’aujourd’hui.'],
+  // the Dashboard key: what the mission dashboard is, and the key to it (dome.js, ABOUT.dashboard and figures)
+  'The Mission Dashboard is the station’s instrument panel: the habitat’s live readings, today’s schedule and meal, the crew’s condition, the trends over the run and the three daily blogs — everything the sensors measure and the crew report, on one page, refreshed as it comes in.':
+    ['Das Missions-Dashboard ist die Instrumententafel der Station: die Live-Messwerte des Habitats, der heutige Plan und die Mahlzeit, der Zustand der Crew, die Verläufe über den Lauf und die drei täglichen Blogs — alles, was die Sensoren messen und die Crew berichtet, auf einer Seite, aktualisiert, sobald es eintrifft.',
+     'Le tableau de bord de mission est le panneau d’instruments de la station : les mesures en direct de l’habitat, le programme et le repas du jour, l’état de l’équipage, les tendances sur la durée de la mission et les trois blogs quotidiens — tout ce que les capteurs mesurent et ce que l’équipage rapporte, sur une page, actualisée au fur et à mesure.'],
+  'Open the Mission Dashboard': ['Das Missions-Dashboard öffnen', 'Ouvrir le tableau de bord de mission'],
+  'tasks done today': ['Aufgaben heute erledigt', 'tâches faites aujourd’hui'],
 
   // ---- the habitat sensor (src/lib/habitat-feed.js, public/habitat.js)
-  'Habitat sensor · measured live · figures and stores counted by the crew': ['Habitatsensor · live gemessen · Zahlen und Vorräte von der Crew gezählt', 'Capteur de l’habitat · mesuré en direct · chiffres et réserves comptés par l’équipage'],
+  'Live sensors and Habitat measurements': ['Live-Sensoren und Habitat-Messwerte', 'Capteurs en direct et mesures de l’habitat'],
   'Air quality': ['Luftqualität', 'Qualité de l’air'],
   'IAQ index': ['IAQ-Index', 'Indice IAQ'],
   'as the sensor classifies it': ['wie der Sensor sie einstuft', 'telle que le capteur la classe'],
@@ -861,49 +1018,29 @@ const D = {
   'Crew response': ['Die Crew antwortet', 'L’équipage répond'],
   'Downlink received': ['Downlink empfangen', 'Liaison descendante reçue'],
   'Lentils. Mostly lentils.': ['Linsen. Vor allem Linsen.', 'Des lentilles. Surtout des lentilles.'],
-  'At {time}, the communications window opens. Messages from Earth are answered by the crew.':
-    ['Um {time} öffnet sich das Kommunikationsfenster. Dann beantwortet die Crew die Nachrichten von der Erde.', 'À {time}, la fenêtre de communication s’ouvre. L’équipage répond alors aux messages de la Terre.'],
+  'At {time}, the communications window opens. Messages from Earth are answered by the crew; answered questions can be seen on the Message Board.':
+    ['Um {time} öffnet sich das Kommunikationsfenster. Dann beantwortet die Crew die Nachrichten von der Erde; die beantworteten Fragen sind auf dem Nachrichtenboard zu sehen.', 'À {time}, la fenêtre de communication s’ouvre. L’équipage répond alors aux messages de la Terre ; les questions ayant reçu une réponse sont visibles sur le tableau des messages.'],
   'When the communications window opens, messages from Earth are answered by the crew.':
     ['Wenn sich das Kommunikationsfenster öffnet, beantwortet die Crew die Nachrichten von der Erde.', 'Quand la fenêtre de communication s’ouvre, l’équipage répond aux messages de la Terre.'],
   // ---- the reference sheet: the landing page after the design handoff (src/views/pages/landing.js, dome.js, sky.js),
   // the header's running line (public.js) and the theme key (layout.js). {date} and {time} are put in by the page.
-  'Ref. sheet': ['Ref.-Blatt', 'Fiche de réf.'],
-  'Mission layout': ['Missionsplan', 'Plan de mission'],
-  'Note 00': ['Notiz 00', 'Note 00'],
   'Durational performance': ['Langzeitperformance', 'Performance de longue durée'],
-  'MARS is a durational performance in which three officers live inside the habitat for thirteen consecutive days.':
-    ['MARS ist eine Langzeitperformance, in der drei Offiziere dreizehn Tage am Stück im Habitat leben.',
-      'MARS est une performance de longue durée : trois officiers vivent dans l’habitat pendant treize jours consécutifs.'],
+  'Know more': ['Mehr erfahren', 'En savoir plus'],                        // the note's key to the About page
+  'MARS is a durational performance in which three crew members are always in the habitat for the thirteen days of the run.':
+    ['MARS ist eine Langzeitperformance, bei der während der dreizehn Tage des Laufs immer drei Crewmitglieder im Habitat sind.',
+      'MARS est une performance de longue durée : pendant les treize jours de la mission, trois membres d’équipage sont toujours dans l’habitat.'],
   'This website is your portal into the mission: a space to communicate with the astronauts, follow their activities, and observe life inside the habitat throughout the duration of the performance.':
     ['Diese Website ist dein Portal zur Mission: ein Ort, um mit den Astronautinnen und Astronauten zu kommunizieren, ihren Tätigkeiten zu folgen und das Leben im Habitat während der ganzen Performance zu beobachten.',
       'Ce site est votre portail vers la mission : un espace pour communiquer avec les astronautes, suivre leurs activités et observer la vie dans l’habitat pendant toute la durée de la performance.'],
   'The mission': ['Die Mission', 'La mission'],
-  'Three astronauts in front of the habitat': ['Drei Astronauten vor dem Habitat', 'Trois astronautes devant l’habitat'],
-  'Three astronauts land on Mars': ['Drei Astronauten landen auf dem Mars', 'Trois astronautes se posent sur Mars'],
   'Commanding officer': ['Kommandantin', 'Commandant'],
   'Science officer': ['Wissenschaftsoffizier', 'Officier scientifique'],
   'Health officer': ['Gesundheitsoffizier', 'Officier de santé'],
-  'On {date}, three astronauts enter the Habitat at MARS!platz: a Commanding Officer, a Science Officer and a Health Officer. Life on Mars becomes the experiment.':
-    ['Am {date} betreten drei Astronauten das Habitat auf dem MARS!platz: eine Kommandantin, ein Wissenschaftsoffizier und ein Gesundheitsoffizier. Das Leben auf dem Mars wird zum Experiment.',
-      'Le {date}, trois astronautes entrent dans l’habitat du MARS!platz : un commandant, un officier scientifique et un officier de santé. La vie sur Mars devient l’expérience.'],
-  'An astronaut shading their eyes in front of the golden habitat': ['Ein Astronaut hält vor dem goldenen Habitat Ausschau', 'Un astronaute scrute l’horizon devant l’habitat doré'],
-  'An astronaut in red light at the habitat’s foil wall': ['Ein Astronaut im roten Licht an der Folienwand des Habitats', 'Un astronaute dans la lumière rouge, contre la paroi de feuille de l’habitat'],
-  'Part 1 of 2': ['Teil 1 von 2', 'Partie 1 sur 2'],
-  'Part 2 of 2': ['Teil 2 von 2', 'Partie 2 sur 2'],
-  'An astronaut on an EVA in front of a historic building': ['Ein Astronaut beim Außeneinsatz vor einem historischen Gebäude', 'Un astronaute en sortie extravéhiculaire devant un bâtiment historique'],
-  'Life on Mars becomes the experiment': ['Das Leben auf dem Mars wird zum Experiment', 'La vie sur Mars devient l’expérience'],
-  'Food & growing': ['Nahrung & Anbau', 'Alimentation & culture'],
-  'Mental health': ['Psychische Gesundheit', 'Santé mentale'],
-  'Governance': ['Governance', 'Gouvernance'],
-  'Inside the Habitat, the crew lives under the conditions of a long-duration mission: isolation, limited space and resources. Each day brings new experiments — from growing food to resource management, EVAs, mental health, governance and understanding how people live together in an unfamiliar environment.':
-    ['Im Habitat lebt die Crew unter den Bedingungen einer Langzeitmission: Isolation, wenig Raum und knappe Ressourcen. Jeder Tag bringt neue Experimente — vom Anbau von Nahrung über Ressourcenmanagement, Außeneinsätze (EVAs), psychische Gesundheit und Governance bis zu der Frage, wie Menschen in einer fremden Umgebung zusammenleben.',
-      'Dans l’habitat, l’équipage vit dans les conditions d’une mission de longue durée : isolement, espace et ressources limités. Chaque jour apporte de nouvelles expériences — de la culture de la nourriture à la gestion des ressources, des sorties extravéhiculaires (EVA) à la santé mentale et à la gouvernance, jusqu’à comprendre comment des personnes vivent ensemble dans un environnement inconnu.'],
   'Every day, the astronauts also leave the Habitat in their spacesuits for an EVA on the Mars landscape of Karlsruhe’s Marktplatz.':
     ['Jeden Tag verlassen die Astronauten das Habitat außerdem in ihren Raumanzügen für einen Außeneinsatz (EVA) in der Marslandschaft des Karlsruher Marktplatzes.',
       'Chaque jour, les astronautes quittent aussi l’habitat en combinaison spatiale pour une sortie extravéhiculaire (EVA) dans le paysage martien de la Marktplatz de Karlsruhe.'],
   'Welcome to the World’s Slowest Chat': ['Willkommen im langsamsten Chat der Welt', 'Bienvenue dans le chat le plus lent du monde'],
   'Communicate': ['Kommunizieren', 'Communiquer'],
-  'A listener with headphones in the crowd': ['Eine Zuhörerin mit Kopfhörern in der Menge', 'Une auditrice avec un casque dans la foule'],
   'Every day at {time}, the Habitat opens its communication window. Come to MARS!platz at Karlsruhe’s Marktplatz or connect through the online portal to speak with the astronauts and discover what is happening inside the Habitat.':
     ['Jeden Tag um {time} öffnet das Habitat sein Kommunikationsfenster. Komm auf den MARS!platz am Karlsruher Marktplatz oder verbinde dich über das Online-Portal, um mit den Astronauten zu sprechen und zu erfahren, was im Habitat geschieht.',
       'Chaque jour à {time}, l’habitat ouvre sa fenêtre de communication. Venez au MARS!platz sur la Marktplatz de Karlsruhe ou connectez-vous au portail en ligne pour parler avec les astronautes et découvrir ce qui se passe dans l’habitat.'],
@@ -920,17 +1057,20 @@ const D = {
   'sols to go': ['Sols verbleiben', 'sols restants'],
   'the last day': ['der letzte Tag', 'le dernier jour'],
   'Communication window daily': ['Kommunikationsfenster täglich', 'Fenêtre de communication tous les jours à'],
+  // whose clock the window's hour is in, after the hour and its zone: "16:00 CEST (Berlin time)" (landing.js, windowWhen)
+  'Berlin time': ['Berliner Zeit', 'heure de Berlin'],
   'Switch between light and dark': ['Zwischen hell und dunkel wechseln', 'Basculer entre clair et sombre'],
 };
 
 /** T for one language: exact English in, that language out; unknown stays English. */
 function of(lang) {
   const i = lang === 'de' ? 0 : lang === 'fr' ? 1 : -1;
-  if (i < 0) return (s) => s;
-  return (s) => {
+  // the function carries its language (T.lang), for the few places that format a number or a date for it
+  if (i < 0) return Object.assign((s) => s, { lang: 'en' });
+  return Object.assign((s) => {
     const row = D[s];
     return row && row[i] ? row[i] : s;
-  };
+  }, { lang });
 }
 
 /** The visitor's language, from the cookie; anything unknown is English. */

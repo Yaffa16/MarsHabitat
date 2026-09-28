@@ -749,6 +749,37 @@ function mealNutrients(obj) {
 const slugify = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
   .replace(/ß/g, 'ss').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'recipe';
 
+/**
+ * The scientific missions — one a day — from content/missions.json: each
+ * sheet's words (its number, its title, the central question, the Morning,
+ * Afternoon and EVA parts as lines, the question for the community hour in
+ * English and German, the material it needs, its PDF's file name in the
+ * missions/ folder, served at /missions/<file>) and the day → mission map.
+ * Read fresh like the crew figures, so an edit to the file is live the moment
+ * it is saved; a missing or broken file is no mission on any day.
+ */
+function missionsFile() {
+  try {
+    const obj = JSON.parse(fs.readFileSync(path.join(DIR, 'missions.json'), 'utf8')) || {};
+    return { days: obj.days && typeof obj.days === 'object' ? obj.days : {}, missions: Array.isArray(obj.missions) ? obj.missions : [] };
+  } catch { return { days: {}, missions: [] }; }
+}
+/** The mission the crew are on that day of the run, or null where the file names none. */
+function missionForDay(missionDay) {
+  const { days, missions } = missionsFile();
+  const no = days[String(missionDay)];
+  if (no == null) return null;
+  const m = missions.find((x) => x && Number(x.no) === Number(no));
+  if (!m) return null;
+  const lines = (v) => (Array.isArray(v) ? v.map((l) => String(l)) : typeof v === 'string' && v ? [v] : []);
+  return {
+    no: Number(m.no), title: String(m.title || `Mission ${m.no}`), question: String(m.question || ''),
+    morning: lines(m.morning), afternoon: lines(m.afternoon), eva: lines(m.eva),
+    community: { en: String((m.community || {}).en || ''), de: String((m.community || {}).de || '') },
+    materials: String(m.materials || ''), file: m.file && /^[\w.-]+\.pdf$/i.test(String(m.file)) ? String(m.file) : null,
+  };
+}
+
 /** The raw file: { _note, recipes: [...] } — kept whole so an edit preserves what it does not touch. */
 function recipesFile() {
   try {
@@ -891,4 +922,4 @@ module.exports = { load, watch, status, edit, templates, crewFigures, power, pow
                    resourceLogRows, resourceLogCsv, LOG_FILE,
                    planStatus, savePlan, ensurePlan, reset, resetLocked, resetEpoch, inventoryStart, PLAN_DIR, PLAN_FILES,
                    PLACEHOLDER, BLOG_OFFICER, isPlaceholder, placeholderCue, placeholderPublic, placeholderFor,
-                   NUTRIENTS, mealNutrients, recipesFile, recipeBook, slugify };
+                   NUTRIENTS, mealNutrients, recipesFile, recipeBook, slugify, missionsFile, missionForDay };

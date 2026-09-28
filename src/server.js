@@ -18,6 +18,7 @@ const readingsLog = require('./lib/readings-log');
 const { writeZip } = require('./lib/zip');
 const content = require('./lib/content');
 const critical = require('./lib/critical');
+const spacespeak = require('./lib/spacespeak');
 const homeAssistant = require('./lib/home-assistant');
 const AR = require('./views/pages/archive');
 const GL = require('./views/pages/glance');
@@ -32,6 +33,11 @@ app.use(express.urlencoded({ extended: false, limit: '64kb' }));
 app.use(express.json({ limit: '256kb' }));
 app.use(require('./lib/cookies'));
 app.use(express.static(path.join(__dirname, '../public'), { maxAge: '1h' }));
+// The scientific missions' sheets, one PDF a mission, from the missions/ folder beside content/ (the Today's Mission
+// panel links to the day's; content/missions.json says which sheet is which day's). PDFs only; nothing else in the
+// folder is served.
+app.use('/missions', (req, res, next) => (/\.pdf$/i.test(req.path) ? next() : res.status(404).end()),
+  express.static(path.join(__dirname, '../missions'), { maxAge: '1h', index: false }));
 
 /* --------------------------------------------------------------- geometry
    Recomputed at most once a minute. The planets do not move fast enough to
@@ -180,6 +186,8 @@ function stationData(ctx) {
     logDays,
     entryCounts: { published: logDays.reduce((n, d) => n + d.written, 0), days: logDays.filter((d) => d.written).length },
     today: data.day(ctx.mission.clampedDay),
+    // The day's scientific mission, from content/missions.json (Today's Mission, at the head of the dashboard).
+    mission: content.missionForDay(ctx.mission.clampedDay),
     counts: data.counts(),
     latestEntries: data.entriesForDay(ctx.mission.clampedDay),
     crewFigures: content.crewFigures(),
@@ -220,6 +228,22 @@ app.get('/', (req, res) => {
     inFlight: ctx.visitor ? data.inFlightFor(ctx.visitor.id) : null,
     error: req.query.err ? String(req.query.err).slice(0, 160) : null,
   }));
+});
+
+/* The installation's screens (views/pages/screens.js): one piece of the station a screen, full screen, nothing to
+   scroll — /screen/<name>, the list at /screens. Dark and in German unless the address says otherwise (?theme=light,
+   ?lang=en|de|fr): the cookies do not reach a screen in the square. */
+function screenCtx(req) {
+  const base = req.ctx();
+  const lang = i18n.LANGS.includes(req.query.lang) ? req.query.lang : 'de';
+  return { ...base, lang, T: i18n.of(lang), theme: req.query.theme === 'light' ? 'light' : 'dark', offer: '' };
+}
+app.get('/screens', (req, res) => res.set('Cache-Control', 'no-store').send(require('./views/pages/screens').index(screenCtx(req))));
+app.get('/screen/:name', (req, res, next) => {
+  const ctx = screenCtx(req);
+  const html = require('./views/pages/screens').render(req.params.name, ctx, { ...stationData(ctx), recent: data.board(400, null) });
+  if (!html) return next();
+  res.set('Cache-Control', 'no-store').send(html);
 });
 
 /* The dashboard page: the mission dashboard — the nine panels behind their
@@ -509,9 +533,10 @@ app.get('/archive/messages', requireControl, (req, res) => {
 app.get('/archive/message/:id', requireControl, (req, res, next) => {
   data.settleTransits();
   const m = db.prepare(
-    `SELECT m.*, r.body AS response_body, r.published_at AS response_at, c.designation AS responder
+    `SELECT m.*, r.body AS response_body, r.published_at AS response_at, c.designation AS responder, s.launched_at
      FROM message m LEFT JOIN response r ON r.message_id = m.id
      LEFT JOIN crew c ON c.id = r.crew_id
+     LEFT JOIN space_relay s ON s.message_id = m.id AND s.state = 'SENT'
      WHERE m.id = ? AND m.state = 'PUBLISHED'`
   ).get(Number(req.params.id));
   if (!m) return next();
@@ -623,6 +648,7 @@ app.post('/communicate', (req, res) => {
   ).run(visitor.id, visitor.callsign, body, tags.join(','),
         ctx.mission.phase === 'PRE_LAUNCH' ? 0 : ctx.mission.clampedDay,
         submitted.toISOString(), arrival.toISOString(), geo.lightSeconds, geo.distanceAu, ip);
+  // (out of the atmosphere it goes only once the crew have replied — routes/control.js hands it to the relay then)
 
   if (isLive(req)) return composerFragment(req, res);
   res.redirect('/#write');
@@ -803,7 +829,8 @@ app.get('/api/cloud', (req, res) => {
   // the venue's zone, for a file whose name carries no time (its own date, in the venue's time); the run and the language,
   // for the gallery's day heads
   const opts = { tz: ctx.mission.timezone, mission: ctx.mission, lang: ctx.lang };
-  const html = snap.configured ? M.cloudGridInner(ctx.T, model, opts) : '';
+  // ?flat=1: the installation's media screen, which shows every picture in one grid (views/pages/screens.js)
+  const html = !snap.configured ? '' : req.query.flat === '1' ? M.cloudScreenInner(ctx.T, model, opts) : M.cloudGridInner(ctx.T, model, opts);
   const latestHtml = snap.configured ? M.cloudLatestInner(ctx.T, model, opts) : '';
   res.set('Cache-Control', 'no-store').json({ ...snap, html, latestHtml });
 });
@@ -910,6 +937,7 @@ if (process.env.CRITICAL_POLL !== 'false') critical.start(); else critical.apply
    Off until HA_HOST and HA_API_TOKEN are set in .env; HA_POLL=false holds it off. */
 if (process.env.HA_POLL !== 'false') homeAssistant.start();
 if (process.env.CLOUD_POLL !== 'false') require('./lib/cloud').start();
+spacespeak.start();                                        // the relay to space — on when the account is set
 
 const PORT = Number(process.env.PORT || 8080);
 // Which address to listen on. 0.0.0.0 (every address) is right inside a

@@ -42,6 +42,12 @@ const when = (iso) => {
   const tz = (missionLib.config() || {}).timezone || 'Europe/Berlin';
   return new Date(iso).toLocaleString('en-GB', { timeZone: tz, day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
+/** The moment a message was sent, in full: the day, the time and the zone, on the venue's clock — "28 Sept 2026, 16:28 CEST". */
+const whenFull = (iso) => {
+  const tz = (missionLib.config() || {}).timezone || 'Europe/Berlin';
+  try { return new Date(iso).toLocaleString('en-GB', { timeZone: tz, day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' }); }
+  catch { return when(iso); }
+};
 const mark = (e, key) => (e && e.keys && e.keys[key] ? ' was-edited' : '');
 const savedNote = (e) => (e && e.savedAt
   ? `<span class="saved-at" title="${esc(e.savedAt)}">Last saved ${esc(when(e.savedAt))}${e.actor ? ` · ${esc(e.actor)}` : ''}</span>`
@@ -51,7 +57,7 @@ const savedNote = (e) => (e && e.savedAt
 
 function login(ctx, error) {
   const body = `<div style="max-width:400px;margin:12vh auto 0">
-    ${panel('CH-99 / ACCESS', `
+    ${panel('ACCESS', `
       ${eyebrow('Mission control')}
       <h1 style="font-size:26px">Sign in</h1>
       ${error ? `<div class="flash err">${esc(error)}</div>` : ''}
@@ -84,9 +90,10 @@ const stateBadge = (m) => ({
  * replies. The quieter things — the state, when it came, rejecting, deleting
  * — sit in the card's top line, out of the way of the writing.
  */
-function messageCard(m, crew, show) {
+function messageCard(m, crew, show, space = null) {
   const tags = (m.tags || '').split(',').filter(Boolean);
   const q = `?show=${show}`;
+  const sp = space && space.enabled ? spaceMark(m) : '';
   const small = (action, label, cls = 'ghost', confirm = '') =>
     `<form method="post" action="/control/${m.id}/${action}${q}"${confirm ? ` data-confirm="${esc(confirm)}"` : ''}>
       <button class="${cls} small">${label}</button></form>`;
@@ -99,9 +106,10 @@ function messageCard(m, crew, show) {
         <span class="cs">${esc(m.callsign)}</span>
         ${tags.map((t) => `<span class="badge earth">#${esc(t)}</span>`).join('')}
         ${stateBadge(m)}
+        ${sp}
       </div>
       <div class="msg-side">
-        <span class="msg-meta" title="Message ${String(m.id).padStart(5, '0')}">MSG ${String(m.id).padStart(5, '0')} · day ${dd(m.mission_day)} · ${esc(m.submitted_at.slice(11, 16))} UTC</span>
+        <span class="msg-meta" title="Message ${String(m.id).padStart(5, '0')} · sent ${esc(m.submitted_at)} (UTC)">MSG ${String(m.id).padStart(5, '0')} · day ${dd(m.mission_day)} · <b class="msg-sent">sent ${esc(whenFull(m.submitted_at))}</b></span>
         <div class="msg-actions">
           ${m.state === 'REJECTED' ? small('restore', 'Restore to the queue')
             : m.state === 'PUBLISHED' ? small('unpublish', 'Unpublish') : small('reject', 'Reject')}
@@ -129,7 +137,40 @@ function messageCard(m, crew, show) {
   </article>`;
 }
 
-function queue({ list, crew, counts, show }) {
+/** The relay to space, as it stands: on or off, what is queued, sent, failed — over the queue. */
+function spaceStatus(sp) {
+  if (!sp) return '';
+  const c = sp.counts;
+  const line = !sp.enabled
+    ? 'Off — set <b>SPACESPEAK_USER</b> and <b>SPACESPEAK_PASSWORD</b> in <b>.env</b> and restart, and every message you reply to is also beamed into space by radio.'
+    : `${sp.dryRun ? '<b>Dry run</b> — every step but the last; nothing is pressed. ' : ''}${sp.configured ? '' : '<b>No account set</b> — every send will fail. '}A message is handed to <b>${esc(sp.site.replace(/^https?:\/\//, ''))}</b> when its reply is published — nothing else is ever sent; one every ${sp.gapSeconds} s at most · `
+      + `<b>${c.sent}</b> sent${c.dryRun ? ` · ${c.dryRun} dry-run` : ''} · <b>${c.queued + c.sending}</b> queued · <b class="${c.failed ? 'space-bad' : ''}">${c.failed}</b> failed${c.skipped ? ` · ${c.skipped} skipped (unpublished before their turn)` : ''}`
+      + (sp.lastError ? `<span class="space-last">Last trouble, message ${sp.lastError.messageId} at ${esc(when(sp.lastError.at))}: ${esc(sp.lastError.error)}</span>` : '');
+  return `<div class="space-status ${sp.enabled ? 'on' : 'off'}" id="space-status">
+    <span class="space-status-k">${sp.enabled ? '<i></i>Beamed into space' : 'Relay to space'}</span>
+    <span class="space-status-v">${line}</span>
+  </div>`;
+}
+
+/** How one message stands with SpaceSpeak — a mark in its top line. Only a replied, published message is ever handed
+ *  over (routes/control.js), so a message still waiting carries no mark; a published one without a row was published
+ *  while the relay was off. */
+function spaceMark(m) {
+  const r = m.relay;
+  if (!r) return m.state === 'PUBLISHED' ? '<span class="badge space-none" title="Not handed to SpaceSpeak — the relay was off when the reply was published">Not beamed</span>' : '';
+  const tries = r.attempts >= 1 ? ` · try ${r.attempts} failed` : '';                 // a queued message with tries behind it
+  switch (r.state) {
+    case 'SENT': return `<a class="badge space-sent" href="${esc(r.remote_url || '#')}" target="_blank" rel="noopener" title="Beamed into space by SpaceSpeak at ${esc(whenFull(r.launched_at || r.sent_at))}">Beamed${r.remote_id ? ` · No. ${esc(r.remote_id)}` : ''}</a>`;
+    case 'DRY_RUN': return `<span class="badge space-dry" title="${esc(r.steps)}">Dry run · not pressed</span>`;
+    case 'SENDING': return '<span class="badge space-wait" title="The browser is on the site now">Beaming…</span>';
+    case 'QUEUED': return `<span class="badge space-wait" title="${esc(r.error ? `Last try: ${r.error}` : 'Waiting its turn')}">Queued for space${tries}</span>`;
+    case 'FAILED': return `<span class="badge bad space-bad" title="${esc(r.error)}">Not beamed · ${esc(r.error.slice(0, 80))}${r.error.length > 80 ? '…' : ''}</span>`;
+    case 'SKIPPED': return `<span class="badge space-none" title="${esc(r.error || 'Not published when its turn came')}">Not beamed · ${esc(r.error || 'skipped')}</span>`;
+    default: return '';
+  }
+}
+
+function queue({ list, crew, counts, show, space = null }) {
   const waiting = counts.pending + counts.awaitingResponse;
   const FILTERS = [
     ['pending', 'Awaiting reply', counts.pending],
@@ -149,7 +190,8 @@ function queue({ list, crew, counts, show }) {
       <span id="queue-new-text">New messages have arrived.</span>
       <a class="btn" href="/control?show=pending#queue">Show them</a>
     </div>
-    ${list.length ? list.map((m) => messageCard(m, crew, show)).join('')
+    ${spaceStatus(space)}
+    ${list.length ? list.map((m) => messageCard(m, crew, show, space)).join('')
       : `<div class="empty">${show === 'pending' ? 'Nothing waiting — every message has been answered' : 'Nothing in this view'}</div>`}
   </section>`;
 }
@@ -160,7 +202,7 @@ function queue({ list, crew, counts, show }) {
 function moodBlock(c, n = 2, e = null) {
   const t = mood.translate(c.mood);
   const current = c.mood ? mood.FACES.reduce((best, f) => (Math.abs(f.v - c.mood.calm_tense) < Math.abs(best.v - c.mood.calm_tense) ? f : best), mood.FACES[0]).v : null;
-  return panel('CH-12 / MOOD', `
+  return panel('MOOD', `
     ${blockHead(n, 'Crew state', `${esc(officer.shown(c.designation))} · mood, calm to angry`,
       { live: !!c.mood, liveText: `Filed: ${esc(t.condition)}`, emptyText: 'Not filed yet' })}
     <form method="post" action="/control/moods/${c.id}">
@@ -174,8 +216,38 @@ function moodBlock(c, n = 2, e = null) {
       <div class="axis-read" id="read-${c.id}-calm_tense">${c.mood ? `“${esc(t.lines[0])}”` : ''}</div>
       <div class="actions"><button class="primary">Publish</button>${savedNote(e)}</div>
     </form>
+    ${moodRecord(c)}
 `, 'mars-side officer-block');
 }
+
+/** The record under an officer's state: every state filed for them — the day and time it was filed (the venue's clock),
+ *  the sol, the mood and its words, who filed it — the newest first. Nothing is ever taken out of it: a state filed
+ *  again is one more row. The three officers' records together go out as CSV. */
+const SHOWN_STATES = 12;
+function moodRecord(c) {
+  const rows = c.record || [];
+  const row = (m) => `<tr>
+        <td class="mr-when"><b>${esc(m.date ? fmtDay(m.date) : '—')}</b><span>${esc(m.time)}</span></td>
+        <td class="mr-sol">${m.sol != null && m.sol >= 1 ? `SOL ${dd(m.sol)}` : '—'}</td>
+        <td class="mr-mood"><b>${esc(m.condition)}</b><span>${esc(m.text)}</span></td>
+        <td class="mr-by">${esc(m.set_by)}</td>
+      </tr>`;
+  return `<div class="mood-record">
+    <div class="mood-record-head">
+      ${eyebrow('Record')}
+      <span class="note">${rows.length ? `${rows.length} ${rows.length === 1 ? 'state' : 'states'} filed for ${esc(officer.shown(c.designation))} — every filing, the newest first` : `Every state filed for ${esc(officer.shown(c.designation))} will be listed here — the day and time, the mood, who filed it.`}</span>
+      <a class="mood-record-csv" href="/control/moods.csv" title="Every state filed for every officer, oldest first">CSV · all officers</a>
+    </div>
+    ${rows.length ? `<table class="mood-table">
+      <thead><tr><th>Date · time</th><th>Sol</th><th>Mood</th><th>Filed by</th></tr></thead>
+      <tbody>${rows.slice(0, SHOWN_STATES).map(row).join('')}</tbody>
+    </table>${rows.length > SHOWN_STATES ? `<p class="note">${rows.length - SHOWN_STATES} earlier ${rows.length - SHOWN_STATES === 1 ? 'state is' : 'states are'} in the CSV.</p>` : ''}` : ''}
+  </div>`;
+}
+const fmtDay = (ymd) => {
+  try { return new Date(ymd + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }); }
+  catch { return ymd; }
+};
 
 /** What the entry composer needs to know about the media already on an
  *  officer's day: enough to show each one and caption it. */
@@ -213,7 +285,7 @@ function blockHead(n, title, sub, { live = null, liveText = 'Live', draft = null
 function blogBlock(c, tab, day, entry, n = 1, e = null, draft = null) {
   const live = entry && !isPlaceholder(entry.body);
   const text = draft ? draft.body : live ? entry.body : '';
-  return panel('CH-53 / COMMANDER BLOG', `
+  return panel('COMMANDER BLOG', `
     ${blockHead(n, 'Commander Blog', `${esc(officer.shown(c.designation))} · day ${dd(day)}`, { live, liveText: 'Live', draft })}
     <form method="post" action="/control/logbook" enctype="multipart/form-data" data-attach-media data-crew-id="${c.id}" class="${mark(e, 'body').trim()}"
           data-media="${editorMedia(c.media, text, c.otherBodies || [])}">
@@ -233,7 +305,7 @@ function reportBlock(c, kindKey, label, hint, day, tpl, tab, n = 2, e = null, dr
   const live = !!(c.report && c.report.trim());
   const preset = (tpl || []).find((t) => String(t.name).toLowerCase() === 'default');
   const text = draft ? draft.body : live ? c.report : (preset ? preset.body : '');
-  return panel(`CH-36 / ${kindKey.toUpperCase()}`, `
+  return panel(`${kindKey.toUpperCase()}`, `
     ${blockHead(n, label, `${esc(officer.shown(c.designation))} · day ${dd(day)}`, { live, liveText: 'Live', draft })}
     ${hint ? `<p class="note block-hint">${hint}</p>` : ''}
     <form method="post" action="/control/report" enctype="multipart/form-data" data-attach-media data-crew-id="${c.id}" class="${mark(e, 'body').trim()}"
@@ -264,7 +336,7 @@ function attachRow() {
 /** The day's schedule, kept by the commanding officer. */
 function scheduleBlock(day, tasks, e = null) {
   const rowKey = (t) => `row:${t.time}|${t.label}|${t.detail || ''}`;
-  return panel('CH-30 / DAILY MISSION', `
+  return panel('DAILY MISSION', `
     ${eyebrow(`Schedule · day ${dd(day)}`)}
     <form method="post" action="/control/schedule">
       <input type="hidden" name="day" value="${day}">
@@ -294,7 +366,6 @@ function scheduleBlock(day, tasks, e = null) {
  *  the crew's totals are the sums, worked out on save. */
 function figureBlock(day, figures, crew, e, { key, chan, title, label, unit, button }) {
   const f = figures[String(day)] || {}, per = f.crew || {};
-  const short = (d) => String(d || '').replace(/\s*OFFICER$/i, '').trim();
   const fmt = (v) => (v == null ? '—' : Number(v).toLocaleString('en-GB'));
   return panel(chan, `
     ${eyebrow(`${title} · day ${dd(day)}`)}
@@ -304,7 +375,7 @@ function figureBlock(day, figures, crew, e, { key, chan, title, label, unit, but
       <input type="hidden" name="day" value="${day}">
       <div class="grid g3 fig-grid">
       ${crew.map((c) => { const v = per[c.designation] || {}; return `
-        <label class="f fig-officer${mark(e, `${key}_${c.id}`)}"><span>${esc(short(officer.shown(c.designation)))} · ${label}</span>
+        <label class="f fig-officer${mark(e, `${key}_${c.id}`)}"><span>${esc(officer.shown(c.designation))} · ${label}</span>
           <input type="number" min="0" name="${key}_${c.id}" value="${v[key] ?? ''}" placeholder="${unit}"></label>`; }).join('')}
       </div>
       <p class="note">Crew total on record for this day: <b>${fmt(f[key])}</b> ${unit}${Object.keys(per).length ? '' : f[key] != null ? ' — filed as a total, before the officers were counted separately' : ''}.</p>
@@ -312,9 +383,9 @@ function figureBlock(day, figures, crew, e, { key, chan, title, label, unit, but
     </form>`, 'mars-side');
 }
 const stepsBlock = (day, figures, crew, e) => figureBlock(day, figures, crew, e,
-  { key: 'steps', chan: 'CH-13 / STEPS TAKEN', title: 'Steps taken', label: 'steps', unit: 'steps', button: 'Save steps' });
+  { key: 'steps', chan: 'STEPS TAKEN', title: 'Steps taken', label: 'steps', unit: 'steps', button: 'Save steps' });
 const caloriesBlock = (day, figures, crew, e) => figureBlock(day, figures, crew, e,
-  { key: 'calories', chan: 'CH-14 / CALORIES CONSUMED', title: 'Calories consumed', label: 'kcal', unit: 'kcal', button: 'Save calories' });
+  { key: 'calories', chan: 'CALORIES CONSUMED', title: 'Calories consumed', label: 'kcal', unit: 'kcal', button: 'Save calories' });
 
 /* The recipe book's figures, per serving, as the food plan and the book show them. */
 const { NUTRIENTS } = require('../../lib/content');
@@ -362,7 +433,7 @@ function mealsBlock(day, meals, e = null, recipes = []) {
     </details>`;
   };
 
-  return panel('CH-32 / DAILY FOOD PLAN', `
+  return panel('DAILY FOOD PLAN', `
     ${eyebrow(`Meals · day ${dd(day)}`)}
     <p class="note block-hint">Choose Breakfast, Lunch or Dinner from the recipe book and its name, kcal, prep time, nutrients,
     CO₂e and water footprint are filled in — every field stays editable. <b>Empty</b> clears the slot to fill in by hand, on the
@@ -403,7 +474,7 @@ function mealsBlock(day, meals, e = null, recipes = []) {
 }
 
 function inventoryBlock(day, items, e = null) {
-  return panel('CH-34 / INVENTORY', `
+  return panel('INVENTORY', `
     ${eyebrow(`Levels at the end of day ${dd(day)}`)}
     <form method="post" action="/control/inventory">
       <input type="hidden" name="day" value="${day}">
@@ -467,7 +538,7 @@ function powerBlock(day, power, e = null) {
               : `From the meter <code>sensor.${esc(c.sensor)}</code> — no reading for this day yet.`}</p>
           </td></tr>`;
   };
-  return panel('CH-35 / POWER', `
+  return panel('POWER', `
     ${eyebrow(`Power consumed · day ${dd(day)}`)}
     <form method="post" action="/control/power" class="pw-form">
       <input type="hidden" name="day" value="${day}">
@@ -519,7 +590,7 @@ function powerBlock(day, power, e = null) {
 function cloudBlock() {
   const s = require('../../lib/cloud').snapshot();
   const when = (iso) => (iso ? iso.slice(0, 16).replace('T', ' ') + ' UTC' : '—');
-  return panel('CH-61 / CLOUD GALLERY', `
+  return panel('CLOUD GALLERY', `
     <div id="cloud"></div>
     ${eyebrow('Gallery from the cloud')}
     ${!s.configured
@@ -541,7 +612,7 @@ function cloudBlock() {
 
 function resetBlock(day, plan, locked) {
   const when = plan.savedAt ? new Date(plan.savedAt).toLocaleString('en-GB', { timeZone: 'Europe/Berlin', dateStyle: 'medium', timeStyle: 'short' }) : null;
-  return panel('CH-00 / START AGAIN', `
+  return panel('START AGAIN', `
     ${eyebrow('Start again from 15 October')}
     <p class="note"><b>Reset to 15 October</b> — the button at the top of this page, on every tab — asks you to
       type <code>RESET</code>, then: empties every blog slot for every day and officer (the crew fill them
@@ -618,7 +689,7 @@ function resetDialog(locked) {
 function page(ctx, model) {
   const { user, f, content, show, tab, day, totalDays, tpl, plan = { exists: false }, resetLocked = false, edits = {}, drafts = {},
           list, crew, counts, officers, tasks, meals, recipes = [], notes, figures, items, power = { categories: [], days: {} },
-          media: mediaItems = [], mediaCounts = { total: 0, bytes: 0 }, mediaAccept = '', mediaMaxMb = 0, filter = 'all' } = model;
+          media: mediaItems = [], mediaCounts = { total: 0, bytes: 0 }, mediaAccept = '', mediaMaxMb = 0, filter = 'all', space = null } = model;
 
   const dayPicker = `<nav class="filters daypick daypick-dates" aria-label="Mission day">
     ${Array.from({ length: totalDays }, (_, i) => i + 1).map((n) => {
@@ -630,7 +701,7 @@ function page(ctx, model) {
   </nav>`;
 
   const panes = {
-    messages: queue({ list, crew, counts, show }),
+    messages: queue({ list, crew, counts, show, space }),
     // Every officer's blocks in one column, full width, the blog first —
     // the writing gets the room, and nothing sits beside anything.
     comms: `

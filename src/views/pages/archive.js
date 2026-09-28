@@ -41,7 +41,7 @@ function contents(ctx, { days, counts, entryCounts, rehearsal = null }) {
     <h1>Archive</h1>
   </div>
 
-  ${panel('CH-21 / TAKE A COPY', `
+  ${panel('TAKE A COPY', `
     ${eyebrow('Download the record')}
     <div class="dl-grid">
       ${card({ fmt: 'PDF · one document', title: 'The full record',
@@ -76,7 +76,7 @@ function contents(ctx, { days, counts, entryCounts, rehearsal = null }) {
     </div>
 `, 'mars-side')}
 
-  ${panel('CH-21 / CONTENTS', `
+  ${panel('CONTENTS', `
     ${eyebrow('The mission, day by day')}
     <div class="tw"><table class="daylist">
       <thead><tr><th>Day</th><th>Date</th><th>State</th>
@@ -143,7 +143,7 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
     </div>
   </div>
 
-  ${r.officers.map((o, k) => panel(`CH-5${k} / ${esc(officer.shown(o.designation))}`, `
+  ${r.officers.map((o, k) => panel(`${esc(officer.shown(o.designation))}`, `
     ${eyebrow(`${esc(officer.shown(o.designation))}${o.role ? ` · ${esc(o.role)}` : ''}`)}
     ${o.hasBlog ? `<h3>Commander Blog</h3>
     ${o.entry ? `<div class="entry-post">${MV.entryHtml(o.entry.body, o.media, { lookup: mediaLookup })}</div>`
@@ -166,21 +166,21 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
       </div>`;
     }).join('') : '<p class="note">No state filed for this day.</p>'}`, 'mars-side')).join('')}
 
-  ${r.reportsUnassigned.length ? panel('CH-36 / DAILY REPORTS', `
+  ${r.reportsUnassigned.length ? panel('DAILY REPORTS', `
     ${eyebrow('Reports with no officer to hang on')}
     <div class="rows">${r.reportsUnassigned.map((n) => `
       <div class="row"><div class="t">${esc(n.posted_at.slice(11, 16))}</div>
       <div class="m entry-post">${MV.entryHtml(n.body, [], { lookup: mediaLookup })}</div>
       <span class="badge">${esc(n.kind)}</span></div>`).join('')}</div>`, 'mars-side') : ''}
 
-  ${r.notesOther.length ? panel('CH-36 / NOTES', `
+  ${r.notesOther.length ? panel('NOTES', `
     ${eyebrow('Mission notes')}
     <div class="rows">${r.notesOther.map((n) => `
       <div class="row"><div class="t">${esc(n.posted_at.slice(11, 16))}</div>
       <div class="m entry-post">${MV.entryHtml(n.body, [], { lookup: mediaLookup })}</div>
       <span class="badge">${esc(n.kind)}</span></div>`).join('')}</div>`, 'mars-side') : ''}
 
-  ${r.media && r.media.length ? panel('CH-60 / MEDIA', `
+  ${r.media && r.media.length ? panel('MEDIA', `
     ${eyebrow('What the crew sent out')}
     ${MV.strip(r.media)}
     <p class="note" style="margin-top:8px"><a href="/media/day/${mediaDay}/export.zip">Download this day's media as one ZIP</a> ·
@@ -188,7 +188,7 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
 
   <div style="padding:26px 0 8px"><div class="eyebrow">The Habitat tab of mission control · as it stands at the time of this record · the same tab is written to the readings log automatically at the end of each day</div></div>
   <div class="grid g2">
-    ${panel('CH-30 / SCHEDULE', `
+    ${panel('SCHEDULE', `
       ${eyebrow('Schedule')}
       ${r.day && r.day.tasks.length ? `<div class="rows">${r.day.tasks.map((t) => `
         <div class="row ${t.status === 'DONE' ? 'done' : ''}">
@@ -197,7 +197,7 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
           <span class="badge">${esc(t.status)}</span>
         </div>`).join('')}</div>` : '<p class="note">No schedule for this day.</p>'}`, 'mars-side')}
 
-    ${panel('CH-32 / MEALS', `
+    ${panel('MEALS', `
       ${eyebrow('Meals')}
       ${r.day && r.day.meals.length ? r.day.meals.map((m) => `<div style="padding:8px 0;border-bottom:1px solid var(--rule)">
         <div class="eyebrow">${esc(slot[m.slot] || m.slot)}</div>
@@ -207,7 +207,7 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
         ${m.notes ? `<p class="note">${esc(m.notes)}</p>` : ''}
       </div>`).join('') : '<p class="note">No meals entered for this day.</p>'}`, 'mars-side')}
 
-    ${panel('CH-13 / STEPS TAKEN · CALORIES CONSUMED', `
+    ${panel('STEPS TAKEN · CALORIES CONSUMED', `
       ${eyebrow('As filed')}
       ${r.figures && r.figures.crew && Object.keys(r.figures.crew).length ? `<div class="tw"><table style="min-width:0">
         <thead><tr><th>Officer</th><th>Steps taken</th><th>Calories consumed</th></tr></thead>
@@ -221,7 +221,7 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
           <td class="n"><b>${asIs(r.figures.calories)}${r.figures.calories == null ? '' : ' kcal'}</b></td>
         </tr>` : ''}</tbody></table></div>` : '<p class="note">Not filed for this day.</p>'}`, 'mars-side')}
 
-    ${panel('CH-35 / POWER', `
+    ${panel('POWER', `
       ${eyebrow('Power consumed · as filed')}
       ${r.power && r.power.filed ? `<div class="tw"><table style="min-width:0"><tbody>${r.power.categories.map((c) => `<tr>
         <th>${esc(c.label)}</th>
@@ -229,7 +229,7 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
       </tr>`).join('')}</tbody></table></div>` : '<p class="note">Not filed for this day.</p>'}`, 'mars-side')}
   </div>
 
-  ${panel('CH-34 / INVENTORY LEVELS', `
+  ${panel('INVENTORY LEVELS', `
     ${eyebrow('As the tab shows them · "counted" means filed for this day, "carried" means from the day before at its draw')}
     ${r.stores.length ? `<div class="tw"><table>
       <thead><tr><th>Resource</th><th>Available amount</th><th>Amount used today</th><th>Amount left for future</th><th>Figures</th></tr></thead>
@@ -244,7 +244,7 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
 
   <div style="padding:26px 0 8px"><div class="eyebrow">Habitat sensors · named as on the dashboard · lowest, highest and mean reading over the day, then every reading</div></div>
   <div class="grid g2">
-    ${(r.external || []).length ? panel('CH-01 / HABITAT · SENSOR NODE', `
+    ${(r.external || []).length ? panel('HABITAT · SENSOR NODE', `
       ${eyebrow('The Habitat panel of the dashboard')}
       <div class="tw"><table>
         <thead><tr><th>Channel</th><th>Low</th><th>High</th><th>Mean</th><th>Readings</th></tr></thead>
@@ -257,12 +257,12 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
         </tr>`; }).join('')}</tbody>
       </table></div>`, 'mars-side') : ''}
 
-    ${r.habitat.length ? panel('CH-01 / HABITAT · THE STATION’S CHANNELS', `
+    ${r.habitat.length ? panel('HABITAT · THE STATION’S CHANNELS', `
       ${eyebrow('Posted to the station by the habitat node')}
       <div class="tw"><table>
         <thead><tr><th>Channel</th><th>Low</th><th>High</th><th>Mean</th><th>Readings</th></tr></thead>
         <tbody>${r.habitat.map((h) => `<tr>
-          <th>${h.channel ? `<span class="note">${esc(h.channel)}</span> ` : ''}${esc(h.label || h.metric)}</th>
+          <th>${esc(h.label || h.metric)}</th>
           <td class="n">${h.min_value == null ? '—' : h.min_value.toFixed(1)}</td>
           <td class="n">${h.max_value == null ? '—' : h.max_value.toFixed(1)}</td>
           <td class="n">${h.avg_value == null ? '—' : h.avg_value.toFixed(1)} ${esc(h.unit || '')}</td>
@@ -270,7 +270,7 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
         </tr>`).join('')}</tbody>
       </table></div>`, 'mars-side') : ''}
 
-    ${(r.hardware || []).length ? panel('CH-02 / HABITAT HARDWARE', `
+    ${(r.hardware || []).length ? panel('HABITAT HARDWARE', `
       ${eyebrow('The Habitat hardware panel of the dashboard · through Home Assistant')}
       <div class="tw"><table>
         <thead><tr><th>Device</th><th>Low</th><th>High</th><th>Mean</th><th>Added today</th><th>Readings</th></tr></thead>
@@ -300,19 +300,19 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
 function readingsPanels(R) {
   if (!R || !R.count) return '';
   const val = (v) => (v == null ? '—' : esc(String(v)));
-  const station = R.station.rows.length ? panel('CH-01 / EVERY READING · HABITAT · THE STATION’S CHANNELS', `
+  const station = R.station.rows.length ? panel('EVERY READING · HABITAT · THE STATION’S CHANNELS', `
     ${eyebrow(`${R.station.readings} readings · one row per instant, habitat time`)}
     <div class="tw"><table class="readings">
       <thead><tr><th>Time</th>${R.station.columns.map((c) => `<th>${esc(c.label)}${c.unit ? ` <span class="unit" style="font-weight:400;text-transform:none;font-size:.85em;opacity:.7">${esc(c.unit)}</span>` : ''}</th>`).join('')}</tr></thead>
       <tbody>${R.station.rows.map((row) => `<tr><td class="n">${esc(row.at)}</td>${R.station.columns.map((c) => `<td class="n">${val(row.values[c.metric])}</td>`).join('')}</tr>`).join('')}</tbody>
     </table></div>`, 'mars-side') : '';
-  const external = R.external.rows.length ? panel('CH-01 / EVERY READING · HABITAT · SENSOR NODE', `
+  const external = R.external.rows.length ? panel('EVERY READING · HABITAT · SENSOR NODE', `
     ${eyebrow(`${R.external.readings} readings · habitat time`)}
     <div class="tw"><table class="readings">
       <thead><tr><th>Time</th>${R.external.columns.map((c) => `<th>${esc(c.label)} <span class="unit" style="font-weight:400;text-transform:none;font-size:.85em;opacity:.7">${esc(c.unit)}</span></th>`).join('')}</tr></thead>
       <tbody>${R.external.rows.map((row) => `<tr><td class="n">${esc(row.at)}</td>${R.external.columns.map((c) => `<td class="n">${val(row.values[c.key])}</td>`).join('')}</tr>`).join('')}</tbody>
     </table></div>`, 'mars-side') : '';
-  const hardware = R.hardware.length ? panel('CH-02 / EVERY READING · HABITAT HARDWARE', `
+  const hardware = R.hardware.length ? panel('EVERY READING · HABITAT HARDWARE', `
     ${eyebrow('Through Home Assistant · every state reported, per device, habitat time')}
     <div class="grid g2">${R.hardware.map((h) => `<div>
       <h3>${esc(h.label)} <span class="unit" style="font-weight:400;text-transform:none;font-size:.85em;opacity:.7">sensor.${esc(h.id)} · ${h.rows.length} readings</span></h3>

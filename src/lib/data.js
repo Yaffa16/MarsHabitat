@@ -1,5 +1,7 @@
 'use strict';
 const { db } = require('../db');
+const mission = require('./mission');
+const mood = require('./mood');
 
 const STALE_SECONDS = Number(process.env.SENSOR_STALE_SECONDS || 300);
 
@@ -136,6 +138,30 @@ function moodHistory(crewId, limit = 60) {
   ).all(crewId, limit);
 }
 
+/** The record of an officer's states: every one a person filed (the mid-scale state the content loader gives a new
+ *  officer, set_by 'content', was filed by nobody and is not part of it), the newest first, each with the venue's day
+ *  and time, the sol and the word for it. Mission control shows it under the officer's state; the same rows, for every
+ *  officer and oldest first, go out as CSV (moodRecordAll). */
+function moodRecord(crewId, limit = 1000) {
+  return db.prepare(
+    "SELECT * FROM crew_mood WHERE crew_id = ? AND set_by != 'content' ORDER BY effective_at DESC, id DESC LIMIT ?"
+  ).all(crewId, limit).map(dressMood);
+}
+function moodRecordAll() {
+  return db.prepare(
+    `SELECT cm.*, c.designation, c.role FROM crew_mood cm JOIN crew c ON c.id = cm.crew_id
+     WHERE cm.set_by != 'content' ORDER BY cm.effective_at, cm.id`
+  ).all().map(dressMood);
+}
+function dressMood(row) {
+  const m = mission.config(), tz = (m && m.timezone) || 'Europe/Berlin', at = new Date(row.effective_at);
+  const ok = !Number.isNaN(at.getTime());
+  const date = ok ? mission.localDate(at, tz) : '';
+  const sol = ok && m && m.start_date ? mission.daysBetween(m.start_date, date) + 1 : null;
+  return { ...row, date, time: ok ? mission.localTime(at, tz).slice(0, 5) : '', sol,
+    condition: mood.condition(row), text: mood.translate(row).lines[0] || '' };
+}
+
 /**
  * Chronological mood series for the drift chart. Shows whether the crew arc is
  * actually landing as a curve or as noise -- a dramaturgical instrument as much
@@ -195,10 +221,12 @@ function published(limit = 100, filters = {}) {
 function board(limit = 400, visitorId = null) {
   settleTransits();
   return db.prepare(
-    `SELECT m.*, r.body AS response_body, r.published_at AS response_at, c.designation AS responder
+    `SELECT m.*, r.body AS response_body, r.published_at AS response_at, c.designation AS responder,
+            s.launched_at, s.remote_id AS space_id
      FROM message m
      LEFT JOIN response r ON r.message_id = m.id
      LEFT JOIN crew c ON c.id = r.crew_id
+     LEFT JOIN space_relay s ON s.message_id = m.id AND s.state = 'SENT'
      WHERE m.state = 'PUBLISHED' OR m.visitor_id = ?
      ORDER BY m.submitted_at DESC LIMIT ?`
   ).all(visitorId == null ? -1 : visitorId, limit).map((m) => ({
@@ -300,9 +328,9 @@ function logbook({ includeHeld = false, crewId = null, limit = 400 } = {}) {
  * `title`, and `placeholder` (true for a slot not yet written).
  */
 const BLOGS = [
-  { key: 'commander', title: 'Commander Blog', code: 'CH-53' },
-  { key: 'science', title: 'Daily Science Findings', code: 'CH-51', kind: 'SCIENCE' },
-  { key: 'health', title: 'Daily Health Blog', code: 'CH-52', kind: 'HEALTH' },
+  { key: 'commander', title: 'Commander Blog' },
+  { key: 'science', title: 'Daily Science Findings', kind: 'SCIENCE' },
+  { key: 'health', title: 'Daily Health Blog', kind: 'HEALTH' },
 ];
 function logSlotsPublic(totalDays, dateForDay) {
   const content = require('./content');
@@ -374,7 +402,7 @@ const TAGS = ['QUESTION', 'PERSONAL', 'HUMOUR', 'SCIENCE', 'HABITAT'];
 
 module.exports = {
   metrics, latest, history, evaluate, sensorPanels, dailyAverages,
-  day, mealRow, crewWithMood, moodHistory, moodSeries,
+  day, mealRow, crewWithMood, moodHistory, moodRecord, moodRecordAll, moodSeries,
   entriesForDay, entriesByCrew, entry, logbook, logSlotsPublic, BLOGS, entryCounts,
   settleTransits, published, board, inFlightFor, messagesFor, counts, dailyActivity,
   TAGS, STALE_SECONDS,

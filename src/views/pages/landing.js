@@ -1,25 +1,26 @@
 'use strict';
 /**
- * The landing page: four pages — P01 the habitat (dome.js, sky.js) and the
- * station's name; P02 a note on what MARS is and what this website is for;
- * then the two parts of what it is about, each under a heading of its own:
- * part 1, P03, the mission in two chapters, three astronauts landing on Mars
- * and life on Mars as the experiment; part 2, P04, the world's slowest chat —
- * its welcome, then what becomes of a message written here, in three steps:
- * uplink, transit, downlink. A phone opens on the habitat alone, the whole
- * screen, and has the name at the head of the note (the next page); a wider
- * screen has the name in a band over the habitat. On a phone P04 ends in the
- * door to the composer; on a wider screen the portal and the dashboard follow
- * on the same page (public.js).
+ * The landing page: three pages — the habitat (dome.js, sky.js) and the
+ * station's name; a note on what MARS is and what this website is for, with a
+ * key to the About page (Know more) for the rest; and the world's slowest
+ * chat — its welcome, then what becomes of a message written here, in three
+ * steps: uplink, transit, downlink. (The mission's two chapters that stood
+ * between the note and the chat are gone: the About page tells the mission.)
+ * A phone opens on the habitat alone, the whole screen, and has the name at
+ * the head of the note (the next page); a wider screen has the name in a band
+ * over the habitat. On a phone the chat ends in the door to the composer; on
+ * a wider screen the portal and the dashboard follow on the same page
+ * (public.js).
  *
  * The words are the handoff's; the figures in them are the station's own: the
  * day the run begins, the distance to Mars and the one-way light-time today,
  * the length of the crossing as the station simulates it (TRANSIT_SECONDS,
  * read the way server.js reads it), the visitor's own callsign on the example
  * message (the one the composer carries), and the hour the crew's
- * communication window opens (WINDOW_TIME), written with the venue's zone as
- * it is on the day the page is read — CEST until the clocks go back on 25
- * October, CET after.
+ * communication window opens (WINDOW_TIME, windowWhen), written with the
+ * venue's zone as it is on the day the page is read — CEST until the clocks
+ * go back on 25 October, CET after — and, for a visitor reading from
+ * anywhere, that this is Berlin time.
  *
  * Also the line under the dome (underLine): it turns every few seconds
  * through what is happening in the habitat now, the signal's time and the
@@ -46,12 +47,19 @@ function zoneName(iso, tz, lang) {
     return p ? p.value : '';
   } catch { return ''; }
 }
+/** When the crew answer, as every page writes it — the hour, the venue's zone as it is that day and, since the portal
+    is read from anywhere, whose clock that is: "16:00 CEST (Berlin time)". The ticker (public.js) writes it too. */
+function windowWhen(ctx) {
+  const m = ctx.mission, T = ctx.T || ((s) => s);
+  const zone = zoneName(m.today || m.start_date, m.timezone, ctx.lang || 'en');
+  return `${WINDOW_TIME}${zone ? ' ' + zone : ''} (${T('Berlin time')})`;
+}
 
 /** A sentence of the dictionary with its live figures put in ({date}, {time}, …), the figures already escaped. */
 const fill = (T, key, vals) => Object.entries(vals).reduce((s, [k, v]) => s.split(`{${k}}`).join(v), esc(T(key)));
 
-/** A sheet's label row: the page's number and name at the left, its subject at the right. */
-const meta = (left, right, cls = '') => `<div class="sheet-meta${cls ? ' ' + cls : ''}"><span>${left}</span><span>${right}</span></div>`;
+/** A sheet's label row: its subject, in small capitals (a page's number and name used to stand at its left; none now). */
+const meta = (left, right = '', cls = '') => `<div class="sheet-meta${cls ? ' ' + cls : ''}"><span>${left}</span>${right ? `<span>${right}</span>` : ''}</div>`;
 
 /* ---------------------------------------------------------------- P01 */
 /** The station's name, the line under it and the run — over the habitat on a wider screen (`desk`), at the head of the
@@ -71,74 +79,39 @@ function intro(ctx, where = 'desk') {
     </div>`;
 }
 
-/* ---------------------------------------------------------------- P02 */
+/* ---------------------------------------------------------------- the note */
+/** What MARS is and what this website is for — and, under it, the key to the About page, where the mission is told. */
 function note(ctx) {
   const T = ctx.T;
   // the first word is the performance's name, set bold, in every language
-  const lead = esc(T('MARS is a durational performance in which three officers live inside the habitat for thirteen consecutive days.')).replace(/^MARS\b/, '<b>MARS</b>');
+  const lead = esc(T('MARS is a durational performance in which three crew members are always in the habitat for the thirteen days of the run.')).replace(/^MARS\b/, '<b>MARS</b>');
   return `
   <section class="sheet sheet-p2" id="note" aria-label="${esc(T('Durational performance'))}" data-page>
     ${intro(ctx, 'phone')}
     <div class="note-card">
-      ${meta(`P02 / 04 · ${T('Note 00')}`, T('Durational performance'), 'is-ruled')}
+      ${meta(T('Durational performance'), '', 'is-ruled')}
       <div class="note-body">
         <p class="note-lead">${lead}</p>
-        <p class="note-more">${T('This website is your portal into the mission: a space to communicate with the astronauts, follow their activities, and observe life inside the habitat throughout the duration of the performance.')}</p>
+        <div class="note-aside">
+          <p class="note-more">${T('This website is your portal into the mission: a space to communicate with the astronauts, follow their activities, and observe life inside the habitat throughout the duration of the performance.')}</p>
+          <p class="note-cta"><a class="know-more" href="/about"><span>${T('Know more')}</span><span aria-hidden="true">→</span></a></p>
+        </div>
       </div>
     </div>
   </section>`;
 }
 
-/* ---------------------------------------------------------------- P03, P04: the two parts */
-/** A part's heading: its page in small capitals and which of the two parts it is in an orange pill; its name, large and
-    bold; a short orange rule — and, for the chat, its welcome under it. The two parts are the two things the page is about. */
-function partHead(T, { page, part, title, id = '', lead = '' }) {
+/* ---------------------------------------------------------------- the chat's heading */
+/** A part's heading: its name, large and bold; a short orange rule — and its welcome under it. */
+function partHead(T, { title, id = '', lead = '' }) {
   return `
     <header class="part-head">
-      <span class="part-tag"><span>${page} / 04</span><b>${T(part)}</b></span>
       <h2 class="part-title"${id ? ` id="${id}"` : ''}>${esc(T(title))}</h2>
       <i class="part-rule" aria-hidden="true"></i>${lead ? `\n      <p class="part-lead">${lead}</p>` : ''}
     </header>`;
 }
 
-/* A chapter: the photograph with a Mars-orange glow behind it and the chapter's subjects beside it, then its number, its
-   title, a short orange rule and the text; chapters take turns left and right on a wider screen. */
-function chapter(T, { id, n, side, img, alt, title, tags = [], body }) {
-  return `
-    <article class="chapter is-${side}" id="${id}" aria-labelledby="${id}-title">
-      <div class="ch-media">
-        <i class="ch-glow" aria-hidden="true"></i>
-        <figure class="ch-photo"><img src="${img}" alt="${esc(T(alt))}" loading="lazy" decoding="async"></figure>
-        ${tags.length ? `<ul class="ch-tags">${tags.map((t) => `<li>${esc(T(t))}</li>`).join('')}</ul>` : ''}
-      </div>
-      <div class="ch-text">
-        <span class="ch-n" aria-hidden="true">${n}</span>
-        <h3 id="${id}-title">${esc(T(title))}</h3>
-        <i class="ch-rule" aria-hidden="true"></i>
-        <p>${body}</p>
-      </div>
-    </article>`;
-}
-
-function chapters(ctx) {
-  const T = ctx.T, m = ctx.mission, lang = ctx.lang || 'en';
-  return `
-  <section class="sheet sheet-p3" id="story" aria-labelledby="part-1-title" data-page>
-    ${partHead(T, { page: 'P03', part: 'Part 1 of 2', title: 'The mission', id: 'part-1-title' })}
-    <div class="chapters">${chapter(T, {
-      id: 'ch-01', n: '01', side: 'left', img: '/mission/mission-01.jpg', alt: 'An astronaut shading their eyes in front of the golden habitat',
-      title: 'Three astronauts land on Mars', tags: ['Commanding officer', 'Science officer', 'Health officer'],
-      body: fill(T, 'On {date}, three astronauts enter the Habitat at MARS!platz: a Commanding Officer, a Science Officer and a Health Officer. Life on Mars becomes the experiment.', { date: esc(dayMonth(m.start_date, lang)) }),
-    })}${chapter(T, {
-      id: 'ch-02', n: '02', side: 'right', img: '/mission/mission-02.jpg', alt: 'An astronaut in red light at the habitat’s foil wall',
-      title: 'Life on Mars becomes the experiment', tags: ['Food & growing', 'Resources', 'Mental health', 'Governance'],
-      body: esc(T('Inside the Habitat, the crew lives under the conditions of a long-duration mission: isolation, limited space and resources. Each day brings new experiments — from growing food to resource management, EVAs, mental health, governance and understanding how people live together in an unfamiliar environment.')),
-    })}
-    </div>
-  </section>`;
-}
-
-/* ---------------------------------------------------------------- P04: the world's slowest chat */
+/* ---------------------------------------------------------------- the world's slowest chat */
 /* The three steps' signs, line drawings in the hand of the habitat's keys: the dish sending the message up, the signal on
    its arc from Earth to Mars, the crew's answer as a speech bubble with a spark in it. */
 const ICON = {
@@ -150,18 +123,18 @@ const ICON = {
 const stepHead = (k, n, name) => `<div class="step-k"><span class="step-ic" aria-hidden="true"><svg viewBox="0 0 24 24">${ICON[k]}</svg></span><span class="step-l"><b>${n}</b>${name}</span></div>`;
 
 function slowChat(ctx) {
-  const T = ctx.T, m = ctx.mission, lang = ctx.lang || 'en';
+  const T = ctx.T;
   const b = (s) => `<b>${esc(s)}</b>`;
   const km = Math.round(ctx.geo.distanceKm / 1e6);
   const light = orbital.formatLightTime(ctx.geo.lightSeconds);
   const secs = Number(process.env.TRANSIT_SECONDS || 12);
   const crossing = `${secs} ${T(secs === 1 ? 'second' : 'seconds')}`;
-  const winZone = zoneName(m.today || m.start_date, m.timezone, lang);
+  const when = windowWhen(ctx);                                            // "16:00 CEST (Berlin time)"
   const me = ctx.callsign || ctx.offer || '';
   return `
   <section class="sheet sheet-p4" id="slowest-chat" aria-labelledby="ch-03-title" data-page>
-    ${partHead(T, { page: 'P04', part: 'Part 2 of 2', title: 'Welcome to the World’s Slowest Chat', id: 'ch-03-title',
-      lead: fill(T, 'Every day at {time}, the Habitat opens its communication window. Come to MARS!platz at Karlsruhe’s Marktplatz or connect through the online portal to speak with the astronauts and discover what is happening inside the Habitat.', { time: esc(WINDOW_TIME) }) })}
+    ${partHead(T, { title: 'Welcome to the World’s Slowest Chat', id: 'ch-03-title',
+      lead: fill(T, 'Every day at {time}, the Habitat opens its communication window. Come to MARS!platz at Karlsruhe’s Marktplatz or connect through the online portal to speak with the astronauts and discover what is happening inside the Habitat.', { time: esc(when) }) })}
     <ol class="steps" aria-label="${esc(T('How a message reaches the crew'))}">
       <li class="step s-up">
         ${stepHead('up', '01', T('Uplink'))}
@@ -188,7 +161,7 @@ function slowChat(ctx) {
           <h3>${T('Crew response')}</h3>
           <p class="step-flag">${T('Downlink received')}</p>
           <div class="step-card is-crew"><span class="step-who">${T('Crew answer')}</span>${T('Lentils. Mostly lentils.')}</div>
-          <p>${fill(T, 'At {time}, the communications window opens. Messages from Earth are answered by the crew.', { time: b(`${WINDOW_TIME}${winZone ? ' ' + winZone : ''}`) })}</p>
+          <p>${fill(T, 'At {time}, the communications window opens. Messages from Earth are answered by the crew; answered questions can be seen on the Message Board.', { time: b(when) })}</p>
         </div>
       </li>
     </ol>
@@ -225,7 +198,7 @@ function underLine(ctx, { recent = [], today = null } = {}) {
   const a = (x) => ({ id: x.id, meta: ['✧ ' + responder(x, T), stamp(x.response_at, tz)].filter(Boolean).join(' · '), text: clip(x.response_body), crew: 1 });
   const left = m.totalDays - m.clampedDay;
   const pool = {
-    now: pre ? { meta: T('Now in the habitat'), text: T('Hatch not yet sealed.') }
+    now: pre ? { meta: T('Now in the habitat'), text: T('The run has not begun yet.') }
       : over ? { meta: T('Now in the habitat'), text: T('Mission complete') }
         : { meta: T('Now in the habitat'), live: 'tk-now', text: doing },
     data: [
@@ -248,4 +221,20 @@ function underLine(ctx, { recent = [], today = null } = {}) {
       </div>`;
 }
 
-module.exports = { intro, note, chapters, slowChat, underLine, WINDOW_TIME, dayMonth, zoneName };
+/* ---------------------------------------------------------------- the nudge under the dome */
+/**
+ * What stands on the floor under the habitat's ground line now: an arrow
+ * pointing down, on its own, that bobs gently, nudging the visitor to scroll
+ * on to the pages beneath (public/sky.js hides it once the page has been
+ * scrolled). It is a link to the next page, so it works as a key too. The
+ * line that used to turn there (underLine, above) is kept for the run, unused.
+ */
+function scrollNudge(ctx) {
+  const T = ctx.T;
+  return `
+      <a class="dome-nudge" id="dome-nudge" href="#note" aria-label="${esc(T('Scroll down'))}" title="${esc(T('Scroll down'))}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v15"/><path d="M5.5 12.5 12 19l6.5-6.5"/></svg>
+      </a>`;
+}
+
+module.exports = { intro, note, slowChat, underLine, scrollNudge, WINDOW_TIME, windowWhen, dayMonth, zoneName };

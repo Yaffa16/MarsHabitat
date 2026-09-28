@@ -2,17 +2,21 @@
 /**
  * The sky over the habitat, as the v6 mock-up of the app draws its first
  * screen — on a desk and on a phone held upright: in the room above the dome the latest
- * exchanges with Earth drift in and fade away one after another, a visitor's
- * question under its callsign and the time, the crew's answer under ✧ and the
- * officer; and the newest pictures out of the cloud folder appear as small
- * snapshots, one after another, and fade away again.
+ * exchanges with Earth come and go — each as one block, the visitor's QUESTION
+ * under its callsign and the time and the crew's ANSWER under ✧ and the
+ * officer, so that what they are is plain — one to three of them at a time;
+ * and the newest pictures out of the cloud folder appear as small snapshots,
+ * one to three at a time, and fade away again.
  *
  * Nothing in it is new: the exchanges are the board's published ones — the
  * rows the board itself shows, never a message still waiting for mission
  * control — and the pictures are the cloud gallery's newest, the same the
  * Habitat panel's strip shows. This draws the room and the first lines into
  * the page (a JSON block); public/sky.js places them, lets them rise and fade,
- * and keeps them current from what the page already fetches. With nothing to
+ * and keeps them current from what the page already fetches. A touch on a
+ * snapshot or an exchange brings a note beside it saying what it is — the
+ * live feed from the habitat, the latest communication from it — whose words
+ * come with the page too (skyNotes, below). With nothing to
  * show — no exchange yet, no picture — there is no sky and the dome stands as
  * it did.
  *
@@ -26,8 +30,9 @@
 const { esc } = require('../layout');
 const officer = require('../../lib/officer');
 
-const EXCHANGES = 4;     // the newest published exchanges: each its question, then its answer
+const EXCHANGES = 6;     // the newest published exchanges carried in the sky (at least five, as asked): each its question and its answer
 const PICTURES = 5;      // the newest pictures from the cloud folder
+const AT_ONCE = 3;       // how many exchanges, and how many pictures, are in the sky at one time at most (one at least, when there are any)
 const CLIP = 90;         // a line in the sky is two lines at most; the rest is on the board
 
 const clip = (t) => { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > CLIP ? t.slice(0, CLIP - 1).trimEnd() + '…' : t; };
@@ -47,19 +52,17 @@ function stamp(iso, tz) {
 /** The officer who answered, as the board names them — the first officer as the Commanding Officer (lib/officer.js). */
 const responder = (m, T) => (m.responder ? T(officer.shown(m.responder)) : T('Mars habitat'));
 
-/** The lines, in the order they rise: the newest exchanges first. Each carries its message's id, so the line under the
-    dome can pass over an exchange while it is in the sky. */
-function lines(recent, T) {
+/** The exchanges, in the order they rise: the newest first — each its question (the visitor's callsign, when it was
+    sent, the words) and its answer (the officer as the board names them, public.js messageCard; when it left Mars; the
+    words). Each carries its message's id, so the same exchange is never in the sky twice at once. */
+function exchanges(recent, T) {
   const shown = recent.filter((m) => m.state === 'PUBLISHED')
     .sort((a, b) => String(b.submitted_at).localeCompare(String(a.submitted_at)))
     .slice(0, EXCHANGES);
-  const out = [];
-  for (const m of shown) {
-    out.push({ k: 'q', id: m.id, who: m.callsign, at: m.submitted_at, text: clip(m.body) });
-    // the officer as the board names them (public.js, messageCard)
-    if (m.response_body) out.push({ k: 'a', id: m.id, who: responder(m, T), at: m.response_at, text: clip(m.response_body) });
-  }
-  return out;
+  return shown.map((m) => ({
+    id: m.id, who: m.callsign, at: m.submitted_at, text: clip(m.body),
+    reply: m.response_body ? clip(m.response_body) : '', rwho: m.response_body ? responder(m, T) : '', rat: m.response_body ? m.response_at : '',
+  }));
 }
 
 /** The snapshots: the newest pictures, with the moment each was taken as the gallery writes it. */
@@ -79,15 +82,43 @@ function pictures(cloud, tz) {
  */
 function habitatSky(ctx, { recent = [], cloud = null } = {}) {
   const T = ctx.T, m = ctx.mission;
-  const model = { msgs: lines(recent, T), pics: pictures(cloud, m.timezone) };
-  const on = !!(model.msgs.length || model.pics.length);
+  const model = { ex: exchanges(recent, T), pics: pictures(cloud, m.timezone) };
+  const on = !!(model.ex.length || model.pics.length);
   const json = JSON.stringify(model).replace(/</g, '\\u003c');
   const html = `
       <div class="dome-sky" id="dome-sky" aria-hidden="true" data-tz="${esc(m.timezone)}" data-start="${esc(m.start_date)}" data-days="${m.totalDays}"
-           data-exchanges="${EXCHANGES}" data-pictures="${PICTURES}" data-clip="${CLIP}">
+           data-exchanges="${EXCHANGES}" data-pictures="${PICTURES}" data-at-once="${AT_ONCE}" data-clip="${CLIP}"
+           data-q="${esc(T('Question'))}" data-a="${esc(T('Answer'))}">
         <script type="application/json" id="dome-sky-data">${json}</script>
+        ${skyNotes(T)}
       </div>`;
   return { html, on };
+}
+
+/**
+ * The notes a touch on the sky brings (public/sky.js clones one and stands it
+ * beside what was touched): on a snapshot, that this is the live feed from
+ * the habitat, and a key to the Media gallery; on an exchange, that this is
+ * the latest communication from the habitat, and a key to it on the board.
+ * A name and a key — no more words: the picture and the exchange say the rest.
+ */
+function skyNotes(T) {
+  const x = `<button type="button" class="sky-note-x" aria-label="${esc(T('Close'))}">×</button>`;
+  return `
+        <template id="sky-note-pic">
+          <div class="sky-note is-pic" role="note">${x}
+            <b class="sky-note-k"><i></i>${T('LIVE FEED')}</b>
+            <span class="sky-note-t">${T('Live feed from the habitat')}</span>
+            <a class="sky-note-btn" href="/media">${T('Media Gallery')}</a>
+          </div>
+        </template>
+        <template id="sky-note-msg">
+          <div class="sky-note is-msg" role="note">${x}
+            <b class="sky-note-k"><i></i>${T('LATEST COMMUNICATION')}</b>
+            <span class="sky-note-t">${T('The latest communication from the habitat')}</span>
+            <a class="sky-note-btn sky-note-open" href="/messages">${T('Message Board')}</a>
+          </div>
+        </template>`;
 }
 
 /* ------------------------------------------------------------------ the sheet under it */
@@ -96,7 +127,9 @@ function habitatSky(ctx, { recent = [], cloud = null } = {}) {
  * sheet ruled in fine columns, a ruler across its top, tracks running across it — dashed, doubled, dotted, one carrying a
  * wave, one a row of steps — a line or two of small figures on them, and one great glow in the middle, ultramarine going
  * over into red). Here the columns are the run's sols, thirteen of them, a ruler of their numbers across the top with the
- * sol the run is on in Mars orange and an orange line down its column; the figure is the station's own — the crew and the
+ * sol the run is on in Mars orange and an orange line down its column; the station's name, large, in the top left corner
+ * under the ruler (a phone's first screen is the sheet, so the sheet carries the name; the sky keeps clear of it like
+ * the small figure) and LIVE in the top right corner opposite it; the figure is the station's own — the crew and the
  * sol (not the one-way signal: that is read where a message is written); and the glow stands
  * behind the dome, from Earth's blue to Mars's red, and ends at the ground the dome stands on. The dome is glass over it
  * (aura.css); the sky's snapshots and lines come and go on top (above). public/sky.js keeps the day's line on the day
@@ -136,13 +169,17 @@ function habitatSheet(ctx) {
   const head = on ? `<i class="seq-head" style="--day:${on}"></i>` : '';
   const sol = on ? `SOL ${String(on).padStart(2, '0')}/${days}` : m.phase === 'PRE_LAUNCH' ? `T−${m.countdown.days}D` : `SOL ${days}/${days}`;
   const figures = [
-    { x: 0.015, y: 0.58, t: `CH-00 · ${T('CREW')} 3 · ${sol}` },
+    { x: 0.015, y: 0.58, t: `${T('CREW')} 3 · ${sol}` },
   ];
+  // LIVE in the top right corner, opposite the name, while there is a habitat to be live: the readings, the pictures
+  // and the exchanges on the sheet are the habitat as it is now (after the run the sheet is the record)
+  const live = m.phase === 'COMPLETE' ? '' : `<span class="seq-fig seq-live" title="${esc(T('Live — the habitat as it is now: its readings, the newest pictures and the latest exchanges'))}"><i></i>${T('LIVE')}</span>`;
   return `
       <div class="dome-seq${on ? ' has-day' : ''}" id="dome-seq" aria-hidden="true" style="--seq-days:${days}">
         <div class="seq-glow"><i class="seq-orb"></i></div>
         <div class="seq-grid"></div>
         <div class="seq-ruler">${ruler}</div>
+        <span class="seq-fig seq-brand">MARS<b class="bang">!</b>platz</span>${live}
         ${TRACKS.map((t) => `<i class="seq-t seq-${t.k}" style="top:${pct(t.y)};left:${pct(t.a)};right:${pct(1 - t.b)}"></i>`).join('')}
         ${WAVES.map((w) => `<svg class="seq-wave" viewBox="0 0 60 12" preserveAspectRatio="none" style="left:${pct(w.x)};top:${pct(w.y)};width:${pct(w.w)}"><path d="${wave(w.k)}"/></svg>`).join('')}
         ${STEPS.map((st) => `<i class="seq-steps" style="left:${pct(st.x)};top:${pct(st.y)}">${'<b></b>'.repeat(st.n)}</i>`).join('')}

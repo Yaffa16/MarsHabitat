@@ -170,6 +170,24 @@ CREATE TABLE IF NOT EXISTS message (
 CREATE INDEX IF NOT EXISTS idx_msg_state ON message(state, submitted_at DESC);
 CREATE INDEX IF NOT EXISTS idx_msg_visitor ON message(visitor_id, submitted_at DESC);
 
+-- The relay to space (src/lib/spacespeak.js): one row per message handed to
+-- SpaceSpeak — queued, sent (with the site's number and address), failed (why).
+CREATE TABLE IF NOT EXISTS space_relay (
+  id           INTEGER PRIMARY KEY,
+  message_id   INTEGER NOT NULL UNIQUE REFERENCES message(id) ON DELETE CASCADE,
+  state        TEXT NOT NULL DEFAULT 'QUEUED',   -- QUEUED · SENDING · SENT · DRY_RUN · FAILED · SKIPPED
+  attempts     INTEGER NOT NULL DEFAULT 0,
+  next_at      TEXT,                             -- not before: the wait after a failed try
+  remote_id    TEXT,                             -- SpaceSpeak's number for the message
+  remote_url   TEXT,
+  launched_at  TEXT,                             -- when SpaceSpeak took it: the moment the card counts from
+  error        TEXT NOT NULL DEFAULT '',
+  steps        TEXT NOT NULL DEFAULT '',         -- what the browser did, for reading a failure
+  queued_at    TEXT NOT NULL,
+  sent_at      TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_relay_state ON space_relay(state, queued_at);
+
 CREATE TABLE IF NOT EXISTS response (
   id           INTEGER PRIMARY KEY,
   message_id   INTEGER NOT NULL UNIQUE REFERENCES message(id) ON DELETE CASCADE,

@@ -494,4 +494,5 @@ module.exports = {
   page, panel, eyebrow, readout, orbitPlot, sparkline, pipeline, scaleStrip,
   statusStrip, langSwitch, themeSwitch, sym, legend, SYMBOL_KEY, esc, NAV, MESSAGE_STATES,
   mealEco, mealEcoText, MEAL_NUTRIENTS,
+  clientTable, ASSET_V,   // the installation's screens (pages/screens.js) build their own shell from these
 };

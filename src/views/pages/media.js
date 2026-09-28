@@ -225,6 +225,27 @@ function cloudGridInner(T, cloud, opts = {}) {
     : `<div class="empty" style="padding:28px">${T('Nothing in the folder yet')}.</div>`}`;
 }
 
+/** The gallery as the installation's screen shows it (src/views/pages/screens.js): the head line, then every picture
+ *  in one grid, the newest first, each stamped with its day and time — no day heads, so a screen that must show the
+ *  whole thing in one glance is as full as the folder allows. Kept live by public/cloud.js through /api/cloud?flat=1
+ *  (the address in data-api), which answers with cloudScreenInner. */
+function cloudScreen(T, cloud, opts) {
+  return `<section class="logpage-day media-day cloud-gallery cloud-screen" id="gallery" data-api="/api/cloud?flat=1" data-version="${esc(cloud.snapshot.version || '')}" data-poll="${(Number(cloud.snapshot.checkSeconds) || 20) * 1000}">${cloudScreenInner(T, cloud, opts)}</section>`;
+}
+function cloudScreenInner(T, cloud, opts = {}) {
+  const tz = opts.tz, n = cloud.items.length, s = cloud.snapshot, line = checkedLine(T, s, tz);
+  const items = cloud.sort === 'name' ? cloud.items.slice().reverse() : cloud.items;   // the newest first, whatever order the folder is read in
+  return `
+    <div class="log-day-head">
+      <span class="cs">${esc(T(cloud.title))}</span>
+      <span>${n ? plural(T, n, 'photograph', 'photographs') : T('no photographs yet')} · ${T('checked every')} ${every(s.checkSeconds)}${line.last}</span>
+      ${line.failed}
+      <span class="cloud-live" title="${esc(T('Updates by itself as pictures arrive'))}"><i></i>${T('LIVE')}</span>
+    </div>
+    ${n ? `<div class="mgrid cloud-grid cloud-flat">${items.map((x) => cloudTile(x, tz)).join('')}</div>`
+    : `<div class="empty" style="padding:28px">${T('Nothing in the folder yet')}.</div>`}`;
+}
+
 /** The newest few from the cloud folder, as a strip — the head of the
  *  landing page's dashboard carries it, kept live by public/cloud.js. Its
  *  head is the LIVE badge alone (the label is for screen readers; when the
@@ -294,4 +315,4 @@ function item(ctx, { item: m, date, prev, next, position }) {
     hero: L.masthead(ctx) + L.pageNav('/media', T), hideRail: true, hideNav: true, bodyClass: 'landing inner' });
 }
 
-module.exports = { gallery, item, tile, strip, figure, entryHtml, entryText, entryMarkdown, fmtBytes, cloudGridInner, cloudLatestInner, cloudWhen, cloudDay };
+module.exports = { gallery, item, tile, strip, figure, entryHtml, entryText, entryMarkdown, fmtBytes, cloudGrid, cloudGridInner, cloudScreen, cloudScreenInner, cloudLatestInner, cloudWhen, cloudDay };

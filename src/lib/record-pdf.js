@@ -651,7 +651,7 @@ function todayRecord() {
  */
 const STATE_WORD = { PUBLISHED: 'published', REJECTED: 'rejected', PENDING_APPROVAL: 'awaiting reply', APPROVED: 'awaiting reply', IN_TRANSIT: 'in transit', TRANSMITTED: 'in transit', ARRIVED: 'arrived' };
 const WASH = [252, 240, 233];
-const fmtLight = (sec) => (sec == null ? '—' : `${Math.floor(sec / 60)} min ${String(Math.round(sec % 60)).padStart(2, '0')} s`);
+const fmtLight = (sec) => (sec == null ? '—' : `${Math.round(sec / 60)} min`);   // whole minutes, as the station writes it everywhere (the exact seconds are in the CSV and JSON)
 function dayOf(iso, st) {
   const date = mission.localDate(new Date(iso), st.timezone);
   return mission.daysBetween(st.start_date, date) + 1;

@@ -1942,9 +1942,6 @@ body.control .filters a b { font-size: 13px; }
 /* the editor's toolbar and tabs keep their own shape under the control rules */
 body.control .ed-bar-add button { border: 1px solid var(--c-line-strong); border-radius: 3px; }
 body.control .ed-bar-add button:hover { border-color: var(--c-text); background: var(--c-panel); }
-body.control .ed-bar-tabs button { border: 1px solid transparent; border-bottom: 0; border-radius: 3px 3px 0 0; background: transparent; color: var(--c-muted); }
-body.control .ed-bar-tabs button:hover { background: var(--c-hover); color: var(--c-text); border-color: transparent; }
-body.control .ed-bar-tabs button.on { background: var(--c-panel); border-color: var(--c-line); color: var(--c-text); }
 body.control .ed-block-text .ed-text { border: 1px solid var(--c-line-soft); }
 body.control .ed-block-text .ed-text:focus { border-color: var(--c-text); outline: 0; }
 body.control textarea.ed-source { border: 0; }
@@ -1970,6 +1967,20 @@ body.control .msg.pending .reply-box { box-shadow: none; border: 2px solid var(-
 body.control .msg .reply-box { border: 2px solid var(--c-line); background: var(--c-field); }
 body.control .msg .reply-box:focus { border-color: var(--orange); outline: 0; }
 body.control .flash { background: var(--c-panel); border: 1px solid var(--c-line); box-shadow: none; color: var(--c-text); }
+/* the relay to space over the queue, and its mark on every message (control/index.js, spaceStatus / spaceMark) */
+body.control .space-status { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin: 0 0 14px; padding: 10px 14px; border-radius: 4px; border: 1px solid var(--c-line); background: var(--c-panel); font-size: 13px; color: var(--c-muted); line-height: 1.5; }
+body.control .space-status-k { font-weight: 600; color: var(--c-text); white-space: nowrap; }
+body.control .space-status.on .space-status-k i { display: inline-block; width: 8px; height: 8px; margin-right: 7px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 0 3px var(--orange-soft); vertical-align: 1px; }
+body.control .space-status-v { flex: 1 1 320px; }
+body.control .space-status-v b { color: var(--c-text); font-weight: 600; }
+body.control .space-status-v .space-bad, body.control .space-status-v .space-last { color: var(--c-bad); }
+body.control .space-status-v .space-last { display: block; margin-top: 2px; }
+body.control .badge.space-sent { color: var(--orange); border-color: var(--orange); text-decoration: none; }
+body.control .badge.space-sent:hover { background: var(--orange-soft); }
+body.control .badge.space-wait { color: var(--c-muted); border-style: dashed; }
+body.control .badge.space-dry { color: var(--c-text); border-style: dashed; }
+body.control .badge.space-none { color: var(--c-faint); }
+body.control .badge.space-bad { color: var(--c-bad); border-color: var(--c-bad); max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
 body.control .flash.err { color: var(--c-bad); border-color: var(--c-bad); }
 body.control .work { border-top: 0; }
 /* mood sliders: grey track, black thumb */
@@ -2357,6 +2368,27 @@ body.landing.inner .cloud-gallery:first-child { margin-top: 26px; }
 .control .mood-face:hover, .control .mood-face:has(input:checked) { background: var(--c-face, #f3f1ee); }
 @media (max-width: 760px) { .mood-face svg { width: 44px; height: 44px; } }
 .mood-poles { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+/* The record under the state: every state filed for the officer, the newest first — the day and time, the sol, the
+   mood and its words, who filed it — and the key to the CSV of all three. */
+.mood-record { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--c-line-soft, var(--rule)); }
+.mood-record-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-bottom: 6px; }
+.mood-record-head .eyebrow { margin: 0; flex: none; }
+.mood-record-head .eyebrow::after { display: none; }
+.mood-record-head .note { flex: 1 1 260px; margin: 0; }
+.mood-record-csv { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; color: var(--orange); text-decoration: none; border-bottom: 1px solid currentColor; }
+.mood-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.mood-table th { text-align: left; font-family: var(--mono); font-weight: 500; font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--c-muted, var(--dim)); padding: 8px 12px 6px 0; border-bottom: 1px solid var(--c-line-soft, var(--rule)); }
+.mood-table td { padding: 8px 12px 8px 0; border-bottom: 1px solid var(--c-line-soft, var(--rule)); vertical-align: top; }
+.mood-table td b { display: block; font-weight: 600; }
+.mood-table td span { display: block; font-size: 12px; color: var(--c-muted, var(--dim)); }
+.mood-table .mr-when { white-space: nowrap; }
+.mood-table .mr-sol, .mood-table .mr-by { font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em; color: var(--c-muted, var(--dim)); white-space: nowrap; }
+.mood-table .mr-mood b { color: var(--orange); letter-spacing: .06em; }
+.mood-table tbody tr:first-child td { background: var(--orange-soft); }
+.mood-table th:first-child, .mood-table td:first-child { padding-left: 8px; }
+.mood-table tbody tr:first-child td:first-child { border-radius: 6px 0 0 6px; }
+.mood-table tbody tr:first-child td:last-child { border-radius: 0 6px 6px 0; }
+.mood-table .mr-by { text-transform: none; }
 
 /* Mission control: the officer's blocks in one column, and room to write. */
 .officer-stack { display: flex; flex-direction: column; gap: 14px; }
@@ -2396,14 +2428,6 @@ textarea.blog-box { min-height: 340px; font-size: 16px; line-height: 1.65; }
 .ed-bar-add button svg { flex: none; color: var(--c-muted, var(--dim)); }
 .ed-bar-add button:hover { border-color: var(--c-text, var(--ink)); background: var(--c-panel, #fff); color: var(--c-text, var(--ink)); box-shadow: none; transform: none; }
 .ed-bar-add button:hover svg { color: var(--orange); }
-.ed-bar-tabs { display: flex; gap: 2px; align-self: flex-end; }
-.ed-bar-tabs button {
-  min-height: 30px; padding: 0 14px; margin-bottom: -1px;
-  border: 1px solid transparent; border-bottom: 0; border-radius: 3px 3px 0 0; background: transparent;
-  color: var(--c-muted, var(--dim)); font: inherit; font-size: 13px; letter-spacing: 0; text-transform: none; box-shadow: none; transform: none; cursor: pointer;
-}
-.ed-bar-tabs button:hover { background: var(--c-hover, #ececec); color: var(--c-text, var(--ink)); box-shadow: none; transform: none; }
-.ed-bar-tabs button.on { background: var(--c-panel, #fff); border-color: var(--c-line, var(--rule)); color: var(--c-text, var(--ink)); }
 .ed-blocks { padding: 10px 12px 4px; min-height: 0; }
 /* the sheet: one document, text flowing round the pictures */
 .ed-doc { position: relative; padding: 18px 20px 12px; min-height: 240px; outline: 0; font-size: 16px; line-height: 1.65; color: var(--c-text, var(--ink)); cursor: text; }
@@ -2438,7 +2462,6 @@ textarea.ed-source:focus { outline: 0; }
 .ed.over { outline: 2px dashed var(--orange); outline-offset: -4px; }
 @media (max-width: 760px) {
   .ed-bar { flex-direction: column; align-items: stretch; }
-  .ed-bar-tabs { align-self: flex-end; }
   .ed-bar-add button span { display: none; }
   .ed-bar-add button { padding: 0 10px; }
   .ed-hint { display: none; }

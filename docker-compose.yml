@@ -79,6 +79,21 @@ services:
       # CLOUD_DIR=/cloud in .env; user and password are then not needed.
       CLOUD_DIR: "${CLOUD_DIR:-}"
 
+      # --- the relay to space (SpaceSpeak) -----------------------------------
+      # Every message a visitor sends is also handed to spacespeak.com, which
+      # beams it out by radio: the station signs in with this account and
+      # sends it the way a person would (src/lib/spacespeak.js). The account
+      # comes from .env and stays out of the repository; without it the relay
+      # is off. SPACESPEAK_DRY_RUN=true goes through every step but the last.
+      SPACESPEAK_USER: "${SPACESPEAK_USER:-}"
+      SPACESPEAK_PASSWORD: "${SPACESPEAK_PASSWORD:-}"
+      SPACESPEAK_ENABLED: "${SPACESPEAK_ENABLED:-}"
+      SPACESPEAK_DRY_RUN: "${SPACESPEAK_DRY_RUN:-false}"
+      SPACESPEAK_GAP_SECONDS: "${SPACESPEAK_GAP_SECONDS:-20}"
+      SPACESPEAK_ATTEMPTS: "${SPACESPEAK_ATTEMPTS:-6}"
+      SPACESPEAK_SIGNATURE: "${SPACESPEAK_SIGNATURE:-}"
+      SPACESPEAK_URL: "${SPACESPEAK_URL:-https://www.spacespeak.com}"
+
       # --- the habitat's own hardware (Home Assistant) -----------------------
       # Host, port and token come from .env and stay out of the repository;
       # which sensors are read lives in content/home-assistant.json. Without
@@ -94,6 +109,8 @@ services:
       # The mission content is mounted, not baked in: edit the files on your
       # machine and the running site updates within a couple of seconds.
       - ./content:/app/content
+      # The scientific missions' sheets (PDFs) the same way: drop a sheet into missions/ and it is served at once.
+      - ./missions:/app/missions
       # The code (src/ and public/) is mounted from this folder as well, so an
       # edit to a page script is live on the next reload and a change to the
       # server is picked up by:  docker compose restart

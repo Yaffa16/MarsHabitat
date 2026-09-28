@@ -138,10 +138,9 @@ function geometry(date = new Date()) {
 }
 
 /** "14 min 22 s" -- used wherever the real transmission time is shown. */
+/** The one-way light time as the station writes it everywhere: whole minutes, rounded — "14 min", never "13 min 60 s". */
 function formatLightTime(seconds) {
-  const m = Math.floor(seconds / 60);
-  const s = Math.round(seconds % 60);
-  return `${m} min ${String(s).padStart(2, '0')} s`;
+  return `${Math.round(seconds / 60)} min`;
 }
 
 module.exports = { geometry, position, formatLightTime, AU_KM, AU_LIGHT_SECONDS };

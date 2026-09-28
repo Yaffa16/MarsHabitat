@@ -1,5 +1,5 @@
 {
-  "_note": "Crew designations and the resources the habitat tracks. Edit and save; the station picks the change up within a couple of seconds. Order here is the order shown on the site. The stores' \"start\" (what is carried in) and \"warnBelow\" (the level a store turns orange at) ship as 0 — placeholders, nothing invented. Write the real figures here before the run, or file the day-1 count on the Habitat tab of mission control: the site draws every gauge against the day-1 figure and carries it forward.",
+  "_note": "Crew designations and the resources the habitat tracks. Edit and save; the station picks the change up within a couple of seconds. Order here is the order shown on the site. Four stores are tracked — potable water, food rations, medical kits and fire extinguishers. Their \"start\" (what is carried in) and \"warnBelow\" (the level a store turns orange at) ship as 0 — placeholders, nothing invented: until a real figure is written here or a count is filed on the Habitat tab of mission control, the site shows the store as a placeholder rather than as an empty store. Write the real figures here before the run, or file the day-1 count on the Habitat tab: the site draws every gauge against the day-1 figure and carries it forward.",
   "crew": [
     {
       "designation": "COMMUNICATION OFFICER",
@@ -34,42 +34,6 @@
       "warnBelow": 0
     },
     {
-      "key": "oxygen",
-      "label": "Oxygen reserve",
-      "unit": "%",
-      "category": "Life support",
-      "critical": true,
-      "start": 0,
-      "warnBelow": 0
-    },
-    {
-      "key": "scrubber",
-      "label": "CO₂ scrubber cartridges",
-      "unit": "units",
-      "category": "Life support",
-      "critical": true,
-      "start": 0,
-      "warnBelow": 0
-    },
-    {
-      "key": "power",
-      "label": "Battery charge",
-      "unit": "kWh",
-      "category": "Power",
-      "critical": true,
-      "start": 0,
-      "warnBelow": 0
-    },
-    {
-      "key": "filters",
-      "label": "Dust filters",
-      "unit": "units",
-      "category": "Equipment",
-      "critical": false,
-      "start": 0,
-      "warnBelow": 0
-    },
-    {
       "key": "medical",
       "label": "Medical kits",
       "unit": "kits",
@@ -79,19 +43,10 @@
       "warnBelow": 0
     },
     {
-      "key": "materials",
-      "label": "Repair materials",
-      "unit": "kg",
-      "category": "Equipment",
-      "critical": false,
-      "start": 0,
-      "warnBelow": 0
-    },
-    {
-      "key": "seed",
-      "label": "Germination trays",
-      "unit": "trays",
-      "category": "Research",
+      "key": "extinguishers",
+      "label": "Fire extinguishers",
+      "unit": "units",
+      "category": "Safety",
       "critical": false,
       "start": 0,
       "warnBelow": 0

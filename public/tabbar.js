@@ -17,7 +17,9 @@
  *    it; its writing box grows with the text, while the keyboard is up the
  *    bar of keys steps aside and the pop-up rides the keyboard's edge, and a
  *    press on Transmit brings the board's head into view, where the message
- *    just sent appears while the pop-up, keeping its size, shows the crossing.
+ *    just sent appears while the pop-up, keeping its size, shows the crossing
+ *    — and once the message has arrived the pop-up lowers itself, leaving the
+ *    board and the message on it, awaiting its reply.
  */
 (function () {
   var upright = window.matchMedia ? window.matchMedia('(max-width: 760px) and (min-height: 521px)') : null;
@@ -144,7 +146,13 @@
       var want = held - (device.getBoundingClientRect().height - own);
       if (want > own) { stage.style.minHeight = want + 'px'; stage.classList.add('is-held'); }
     };
-    if (stage) new MutationObserver(function () { boxes().forEach(grow); hold(); }).observe(stage, { childList: true });   // the form comes back after a crossing
+    if (stage) new MutationObserver(function () {                                // the form comes back after a crossing
+      var crossed = document.body.classList.contains('crossing');              // a crossing was showing until this change
+      boxes().forEach(grow); hold();
+      // the crossing over — the form is back (composer.js, refresh): the pop-up lowers itself, and what is on the screen
+      // is the board, the message just sent at its head under MY MESSAGES, marked AWAITING REPLY
+      if (crossed && !document.body.classList.contains('crossing') && phone() && isOpen()) setOpen(false, false);
+    }).observe(stage, { childList: true });
     boxes().forEach(grow); hold();
     onUpright(function () { boxes().forEach(grow); hold(); });
     // Transmit: the pop-up's size is noted, and the board's head comes into view, where the message just sent appears

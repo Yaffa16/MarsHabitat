@@ -1,0 +1,158 @@
+'use strict';
+/**
+ * The installation's screens: one piece of the station a screen, full screen,
+ * the whole of it in one glance, nothing to scroll — the habitat's instruments,
+ * the message board, today's mission, the three blogs, the day (schedule, meal,
+ * moods), the trends, the landing page's first screen (the one with the
+ * ticker) and the media gallery. Each is a page of its own at /screen/<name>
+ * (the list at /screens), without the station's chrome — no ticker but on the
+ * landing screen, no menu, no bar of keys, no foot, no cookie question — in
+ * the dark theme and in German unless the address says otherwise
+ * (?theme=light, ?lang=en|de|fr). Landscape and upright screens alike: the
+ * layout turns with the screen (public/screen.css), and what does not fit is
+ * scaled down to fit (public/screen.js) or cut clean at the foot — the board's
+ * cards, the gallery's tiles — never scrolled. What the site keeps live stays
+ * live — the board, the habitat's readings, the pictures, the sky — and every
+ * screen reloads itself every five minutes and at the venue's midnight, when
+ * the sol turns.
+ */
+const L = require('../layout');
+const { esc } = L;
+const P = require('./public');
+const { habitatSky, habitatSheet } = require('./sky');
+const LP = require('./landing');
+const M = require('./media');
+
+const V = L.ASSET_V;
+
+/** The screens, in the order the list shows them: the name in the address, the title, how the body is made to fit. */
+/* `fit`: scale — the piece is scaled to the height of the screen, up (to twice) as well as down; clip — the piece is
+   not scaled (only read larger on a large screen) and the rows that would be cut at the foot are hidden. `minWidth`: how
+   narrow the piece may be made by scaling up (the width it keeps its layout at) — the scale is capped so the screen's
+   width, divided by the scale, stays at least this. */
+const SCREENS = [
+  { name: 'landing', title: 'Landing page', fit: 'scale', minWidth: 1000, about: 'The first screen of the landing page — the name, the habitat with its sky — with the ticker' },
+  { name: 'habitat', title: 'Habitat', fit: 'scale', minWidth: 960, about: 'The habitat’s instruments: the readings, the crew’s figures, the stores and the power' },
+  { name: 'board', title: 'Message Board', fit: 'clip', about: 'The latest exchanges with the crew, as many as fit, live' },
+  { name: 'mission', title: 'Today’s Mission', fit: 'scale', minWidth: 760, about: 'The day’s scientific mission: its question, Morning, Afternoon and EVA' },
+  { name: 'blogs', title: 'Blogs', fit: 'scale', minWidth: 700, about: 'The Commander Blog, the Daily Health Blog and the Daily Science Findings' },
+  { name: 'day', title: 'Today', fit: 'scale', minWidth: 640, about: 'Today’s Schedule, Today’s Meal and the Crew Moods' },
+  { name: 'trends', title: 'Trends', fit: 'scale', minWidth: 520, about: 'The run’s trends on one graph' },
+  { name: 'media', title: 'Media', fit: 'clip', about: 'The newest pictures out of the habitat in one grid, as many as fit, live' },
+];
+const BY_NAME = Object.fromEntries(SCREENS.map((s) => [s.name, s]));
+
+/** The page around a screen: the stylesheets and the dictionary the site uses, the stage, the scripts — nothing else. */
+function shell(ctx, { name, title, body, scripts = [], fit = 'scale', ticker = '', head = true, inner = true }) {
+  const T = ctx.T, m = ctx.mission, lang = ctx.lang || 'en', minWidth = (BY_NAME[name] && BY_NAME[name].minWidth) || 0;
+  const stamp = m.phase === 'ACTIVE' ? `SOL ${String(m.clampedDay).padStart(2, '0')}/${m.totalDays}`
+    : m.phase === 'PRE_LAUNCH' ? `T−${m.countdown.days}d` : T('Mission complete');
+  return `<!doctype html>
+<html lang="${lang}" data-theme="${ctx.theme === 'light' ? 'light' : 'dark'}" class="js screen"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex">
+<title>${esc(T(title))} — MARS!platz</title>
+<link rel="stylesheet" href="/station.css?v=${V}">
+<link rel="stylesheet" href="/aura.css?v=${V}">
+<link rel="stylesheet" href="/sheet.css?v=${V}">
+<link rel="stylesheet" href="/screen.css?v=${V}">
+${L.clientTable(lang)}
+</head><body class="landing${inner ? ' inner' : ''} screen screen-${name}" data-screen="${name}" data-fit="${fit}"${minWidth ? ` data-min-width="${minWidth}"` : ''} data-tz="${esc(m.timezone)}">
+${ticker}
+<main class="stage">${head ? `
+  <header class="stage-head">
+    <span class="stage-brand">MARS<b>!</b>platz</span>
+    <span class="stage-title">${esc(T(title))}</span>
+    <span class="stage-when">${esc(stamp)} · <time id="stage-clock" data-tz="${esc(m.timezone)}"></time></span>
+  </header>` : ''}
+  <div class="stage-body" id="stage-body"><div class="stage-fit" id="stage-fit">${body}</div></div>
+</main>
+${scripts.concat('/screen.js').map((s) => `<script src="${s}?v=${V}" defer></script>`).join('\n')}
+</body></html>`;
+}
+
+/* ------------------------------------------------------------------ the screens */
+
+/** The landing page's first screen: the ticker, the name in its band, the habitat with its sky on its sheet. */
+function landing(ctx, d) {
+  const T = ctx.T;
+  const body = `
+  <section class="sheet sheet-p1" id="top" aria-label="${esc(T('The habitat'))}">
+    ${LP.intro(ctx, 'desk')}
+    ${P.habitatDome(ctx, { today: d.today, crew: d.crew, recent: d.recent, power: d.power, counts: d.counts, crewFigures: d.crewFigures, pods: true,
+      sky: habitatSky(ctx, { recent: d.recent, cloud: d.cloud }), sheet: habitatSheet(ctx), line: '' })}
+  </section>
+  ${d.cloud ? `<div class="screen-hidden"><div class="cloud-latest" id="cloud-latest" data-version="${esc(d.cloud.snapshot.version || '')}" data-poll="${(Number(d.cloud.snapshot.checkSeconds) || 20) * 1000}">${M.cloudLatestInner(T, d.cloud, { tz: ctx.mission.timezone })}</div></div>` : ''}`;
+  return shell(ctx, { name: 'landing', title: 'Landing page', body, head: false, inner: false, fit: 'scale',
+    ticker: P.ticker(ctx, { today: d.today }), scripts: ['/sky.js'].concat(d.cloud ? ['/cloud.js'] : []) });
+}
+
+/** The habitat's instruments: the Habitat panel as the dashboard has it, live. */
+function habitat(ctx, d) {
+  const p = P.dashboardPanels(ctx, d);
+  return shell(ctx, { name: 'habitat', title: 'Habitat', body: p.habitat, fit: 'scale', scripts: ['/habitat.js', '/hardware.js'] });
+}
+
+/** The trends on one graph — drawn by habitat.js, which needs the Habitat panel on the page: it stands here unshown. */
+function trends(ctx, d) {
+  const p = P.dashboardPanels(ctx, d);
+  return shell(ctx, { name: 'trends', title: 'Trends', body: `${p.trends}<div class="screen-hidden">${p.habitat}</div>`, fit: 'scale', scripts: ['/habitat.js', '/hardware.js'] });
+}
+
+/** Today's mission. */
+function mission(ctx, d) {
+  const p = P.dashboardPanels(ctx, d);
+  return shell(ctx, { name: 'mission', title: 'Today’s Mission', body: p.missionPanel, fit: 'scale' });
+}
+
+/** The three blogs side by side (one under the other upright), scaled so the day's posts are shown whole. */
+function blogs(ctx, d) {
+  const p = P.dashboardPanels(ctx, d);
+  return shell(ctx, { name: 'blogs', title: 'Blogs', body: `<div class="screen-three">${p.blogCommander}${p.blogHealth}${p.blogScience}</div>`, fit: 'scale' });
+}
+
+/** The day: the schedule, the meal and the crew's moods side by side (one under the other upright). */
+function day(ctx, d) {
+  const p = P.dashboardPanels(ctx, d);
+  return shell(ctx, { name: 'day', title: 'Today', body: `<div class="screen-three">${p.schedule}${p.galley}${p.crewPanel}</div>`, fit: 'scale' });
+}
+
+/** The message board: the latest exchanges, as many as fit, kept live by board.js (its filter bar stands unshown — the
+    script needs it — and the cards are cut clean at the foot by screen.js). */
+function board(ctx, d) {
+  return shell(ctx, { name: 'board', title: 'Message Board', body: P.boardScreen(ctx, { recent: d.recent }), fit: 'clip', scripts: ['/board.js'] });
+}
+
+/** The gallery: every picture in one grid, the newest first, as many as fit, kept live by cloud.js (through
+    /api/cloud?flat=1 — the grid without the site's day heads). */
+function media(ctx, d) {
+  const T = ctx.T;
+  const body = d.cloud ? M.cloudScreen(T, d.cloud, { tz: ctx.mission.timezone, mission: ctx.mission, lang: ctx.lang })
+    : `<div class="empty" style="padding:40px">${T('The gallery is not connected yet')}.</div>`;
+  return shell(ctx, { name: 'media', title: 'Media', body, fit: 'clip', scripts: d.cloud ? ['/cloud.js'] : [] });
+}
+
+const BUILD = { landing, habitat, board, mission, blogs, day, trends, media };
+
+/** The screen by its name, or null for a name that is not one. */
+function render(name, ctx, d) {
+  return BUILD[name] ? BUILD[name](ctx, d) : null;
+}
+
+/** The list of the screens, for setting up: each with its address and what it shows, and the two switches in the address. */
+function index(ctx) {
+  const T = ctx.T;
+  const body = `
+    <div class="screen-index">
+      <p class="screen-index-lead">${T('One piece of the station a screen, full screen, the whole of it in one glance — nothing to scroll. Open one on a screen and put the browser into full-screen mode (F11).')}</p>
+      <ul class="screen-list">${SCREENS.map((s) => `
+        <li><a href="/screen/${s.name}"><b>${esc(T(s.title))}</b><span>/screen/${s.name}</span></a><p>${esc(T(s.about))}</p></li>`).join('')}
+      </ul>
+      <p class="screen-index-note">${T('Every screen is dark and in German unless its address says otherwise:')} <code>?theme=light</code> · <code>?lang=en</code> · <code>?lang=fr</code> — ${T('for example')} <code>/screen/board?lang=en&amp;theme=light</code>. ${T('What the site keeps live stays live on the screen; the rest reloads every five minutes and at midnight, when the sol turns.')}</p>
+    </div>`;
+  return shell(ctx, { name: 'index', title: 'Screens', body, fit: 'none' });
+}
+
+module.exports = { render, index, SCREENS };

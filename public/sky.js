@@ -2,9 +2,9 @@
  * it on a phone held upright, where the habitat has the first screen to itself, and on a desk, around and above the dome
  * — not on a phone held sideways).
  *
- * The first screen of the v6 mock-up of the app: around the dome the latest exchanges with Earth fade in and out one
- * after another — a visitor's question under its callsign, the crew's answer under ✧ and the officer — and the newest
- * pictures from the cloud folder appear as snapshots and fade again. Each comes somewhere else each time, on the sheet's
+ * The first screen of the v6 mock-up of the app: around the dome the latest exchanges with Earth fade in and out — each
+ * one block, its QUESTION under the visitor's callsign and its ANSWER under ✧ and the officer, one to three of them at a
+ * time — and the newest pictures from the cloud folder appear as snapshots, one to three at a time, and fade again. Each comes somewhere else each time, on the sheet's
  * grid (a column to a sol), clear of the dome and of everything else in the sky: nothing is ever drawn over anything
  * else. What it shows comes with the page (the JSON block in
  * the sky); what it learns later it takes from what the page already fetches, never polling on its own:
@@ -13,6 +13,8 @@
  *    the board itself shows them (a message still waiting for mission control is never among them);
  *  - public/cloud.js keeps the Habitat panel's strip of newest pictures (#cloud-latest) in line with the folder, and the
  *    snapshots follow the strip.
+ * A touch on a snapshot or an exchange brings a note beside it saying what it is (the live feed from the habitat; the
+ * latest communication from it) with the way to the whole of it; what was touched stays while the note stands.
  * It runs only while it can be seen — a phone held upright, the page in front, the habitat on the screen — and stops
  * otherwise. With nothing to show there is no sky: the panel keeps no room for it (has-sky). A phone set to reduce
  * motion sees the lines and snapshots come and go by fading alone (aura.css). Nothing here is ever sent anywhere.
@@ -82,6 +84,21 @@
     setInterval(next, EVERY_LINE);
   })();
 
+  /* ------------------------------------------------------------ the nudge under the dome (landing.js, scrollNudge)
+     The arrow on the floor under the ground line bobs until the page is scrolled, and is gone from then on; back at the
+     top it returns. It is a link to the next page as well, so a press on it scrolls there. */
+  (function () {
+    var nudge = document.getElementById('dome-nudge'); if (!nudge) return;
+    var gone = false;
+    function look() {
+      var g = (window.scrollY || document.documentElement.scrollTop || 0) > 80;
+      if (g === gone) return;
+      gone = g; nudge.classList.toggle('is-gone', g);
+    }
+    window.addEventListener('scroll', look, { passive: true });
+    look();
+  })();
+
   /* ------------------------------------------------------------ the sheet under the habitat (sky.js, habitatSheet) */
   // Its glow stands behind the dome — centred on it, as wide as it, ending at its ground line — wherever the layout puts
   // the dome; and the orange line stands on the day of the run, moved on at midnight. The dome's box is read off its
@@ -144,7 +161,7 @@
 
   /* ------------------------------------------------------------ the pages of the scroll, on a phone (sheet.css)
      A phone held upright goes from one page of the landing to the next with a swipe — the habitat, the name and the note,
-     the mission, the chat, the foot. The room a page has is the screen between the header and the bar of keys with the
+     the chat, the foot. The room a page has is the screen between the header and the bar of keys with the
      browser's own bars folded away, as they are once the page is scrolled (100lvh) — so that nothing changes while they
      fold and unfold. A page that does not fit that room as it is drawn is set a little closer (is-snug); one that still
      does not (a small phone, a long language, the chat's three steps) is marked tall, and then its parts are stops of the
@@ -173,8 +190,8 @@
     // The stops of the scroll are wherever the stylesheet has the scroll stop, read off it, and the end. Two closer than a
     // flick of the thumb (the last step of the chat and the end, often) would make a swipe that hardly moves: the part's
     // stop gives way (no-stop).
-    var CAND = 'body.landing:not(.inner) :is([data-page], .note-card, .chapter, .steps, .step, .foot)';
-    var PART = 'body.landing:not(.inner) [data-page] :is(.note-card, .chapter, .steps, .step)';
+    var CAND = 'body.landing:not(.inner) :is([data-page], .note-card, .steps, .step, .foot)';
+    var PART = 'body.landing:not(.inner) [data-page] :is(.note-card, .steps, .step)';
     function marks() {
       var cs = getComputedStyle(document.documentElement), h = window.innerHeight;
       var pt = parseFloat(cs.scrollPaddingTop) || 0, pb = parseFloat(cs.scrollPaddingBottom) || 0;
@@ -240,21 +257,26 @@
   var stage = panel && panel.querySelector('.dome-stage');
   if (!sky || !panel || !stage) return;
 
-  var model = { msgs: [], pics: [] };
-  try { var d0 = JSON.parse((document.getElementById('dome-sky-data') || {}).textContent || '{}'); if (d0 && d0.msgs) model = d0; } catch (e) { /* an empty sky */ }
+  var model = { ex: [], pics: [] };
+  try { var d0 = JSON.parse((document.getElementById('dome-sky-data') || {}).textContent || '{}'); if (d0 && d0.ex) model = d0; } catch (e) { /* an empty sky */ }
   var num = function (a, dflt) { var v = Number(sky.getAttribute(a)); return v > 0 ? v : dflt; };
   var tz = sky.getAttribute('data-tz') || 'Europe/Berlin', start = sky.getAttribute('data-start') || '', days = num('data-days', 13);
-  var EXCHANGES = num('data-exchanges', 4), PICTURES = num('data-pictures', 5), CLIP = num('data-clip', 90);
+  var EXCHANGES = num('data-exchanges', 6), PICTURES = num('data-pictures', 5), AT_ONCE = num('data-at-once', 3), CLIP = num('data-clip', 90);
+  var WORD = { q: sky.getAttribute('data-q') || 'Question', a: sky.getAttribute('data-a') || 'Answer' };   // in the page's language
   var upright = window.matchMedia ? window.matchMedia('(max-width: 760px) and (min-height: 521px)') : null;
   var desk = window.matchMedia ? window.matchMedia('(min-width: 761px) and (min-height: 521px)') : null;
   var shown = function () { return getComputedStyle(sky).display !== 'none'; };   // aura.css decides where there is a sky
   var phone = function () { return !!(upright && upright.matches); };
 
-  // How long a line and a snapshot stay — fading in over FADE, standing, fading out over FADE — and how often the next one
-  // is asked for (a turn with no free place passes).
-  var FADE = 1200, LIFE_MSG = 6800, LIFE_PIC = 8800, EVERY_MSG = 3400, EVERY_PIC = 3600;
-  // Their sizes on the grid: a snapshot as wide as a whole number of the sheet's columns (a column to a sol), a line as
-  // wide as its words need, up to a number of columns — both start on a column's line, a few pixels in.
+  // How long an exchange and a snapshot stay — fading in over FADE, standing, fading out over FADE, each a little longer
+  // or shorter than the last (VARY) so that they never all go at once — and how often the sky is topped up: every TICK
+  // it adds one exchange and one snapshot while fewer than AT_ONCE of each are standing, and the moment one begins to
+  // fade (AHEAD before, and again as it fades) its successor is brought in, so there is always something in the sky:
+  // between one and three of each standing, as long as there are any (a turn with no free place passes — but a fading
+  // one's place may be taken when nothing else is free).
+  var FADE = 1200, LIFE_MSG = 10000, LIFE_PIC = 9000, TICK = 1200, VARY = 0.3, AHEAD = 700;
+  // Their sizes on the grid: a snapshot as wide as a whole number of the sheet's columns (a column to a sol), an exchange
+  // as wide as its words need, up to a number of columns — both start on a column's line, a few pixels in.
   var SIZE = { phone: { pic: 5, line: 9 }, desk: { pic: 2, line: 4 } };
   var INSET = 4, GAP = 16, EDGE = 6;               // in from a column's line; the room kept around each; from the sky's edges
   var PIC_RATIO = 1.6;
@@ -283,8 +305,9 @@
     return (n ? 'SOL ' + pad(n) : p.date.slice(8, 10) + '.' + p.date.slice(5, 7)) + ' · ' + p.hm;
   }
   // a snapshot's time: the moment it was taken as the picture's own name writes it (greenhouse_2026_09_25-16-41.jpg →
-  // "25.09.2026 · 16:41"), as the gallery shows it
-  function picStamp(when) { return when || ''; }
+  // "25.09.2026 · 16:41"), as the gallery shows it — without the year on a narrow snapshot (a phone's), where the plate
+  // would not hold it
+  function picStamp(when, w) { when = when || ''; return w && w < 176 ? when.replace(/(\d{2})\.(\d{2})\.\d{4}/, '$1.$2') : when; }
   var clip = function (t) { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > CLIP ? t.slice(0, CLIP - 1).replace(/\s+$/, '') + '…' : t; };
 
   /* ------------------------------------------------------------ the snapshots, loaded before they are shown */
@@ -325,67 +348,182 @@
     for (ci = 0; ci * col + INSET + w <= W - EDGE + 0.5; ci++) for (y = EDGE; y + h <= H - EDGE; y += 8) tries.push({ x: Math.round(ci * col + INSET), y: y, w: w, h: h });
     shuffle(tries);
     var far = function (t) { return lately.every(function (p) { return Math.abs(p.x - t.x) + Math.abs(p.y - t.y) > col * 3; }); };
-    var ok = function (t) { return !inDome(t, c) && busy.every(function (b) { return !clash(t, b); }); };
+    var ok = function (t, list) { return !inDome(t, c) && list.every(function (b) { return !clash(t, b); }); };
     var i, best = null;
-    for (i = 0; i < tries.length; i++) { if (ok(tries[i])) { if (far(tries[i])) return tries[i]; if (!best) best = tries[i]; } }
-    return best;                                                   // somewhere free, if not somewhere new
+    for (i = 0; i < tries.length; i++) { if (ok(tries[i], busy)) { if (far(tries[i])) return tries[i]; if (!best) best = tries[i]; } }
+    if (best) return best;                                         // somewhere free, if not somewhere new
+    // nothing free: the place of one that is fading out will do — the next fades in as it goes (a small sky, a phone's)
+    var going = busy.filter(function (b) { return !b.fading; });
+    for (i = 0; i < tries.length; i++) if (ok(tries[i], going)) return tries[i];
+    return null;
   }
   function show(el, at, life) {
     el.style.left = at.x + 'px'; el.style.top = at.y + 'px';
-    held.push({ x: at.x, y: at.y, w: at.w, h: at.h, until: Date.now() + life + 200 });
+    el.__held = { x: at.x, y: at.y, w: at.w, h: at.h, until: Date.now() + life + 200 };
+    held.push(el.__held);
     lately.push({ x: at.x, y: at.y }); if (lately.length > 4) lately.shift();
     requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add('is-on'); }); });
-    setTimeout(function () { el.classList.remove('is-on'); }, life - FADE);
-    setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, life + 150);
+    later(el, life);
   }
+  // it stands for `life`, then fades and goes — its place kept that long, though marked as going once it fades — and
+  // as it begins to fade its successor is brought in, so the sky is never left empty between one and the next
+  function later(el, life) {
+    clearTimeout(el.__fade); clearTimeout(el.__gone); clearTimeout(el.__next);
+    if (el.__held) { el.__held.until = Date.now() + life + 200; el.__held.fading = false; }
+    var kind = el.classList.contains('sky-pic') ? 'pic' : 'msg';
+    el.__next = setTimeout(function () { refill(kind); }, Math.max(0, life - FADE - AHEAD));   // the successor, a little before this one fades
+    el.__fade = setTimeout(function () {
+      el.classList.remove('is-on');
+      if (el.__held) el.__held.fading = true;                      // its place may be taken now, if nothing else is free
+      refill(kind);
+    }, Math.max(0, life - FADE));
+    el.__gone = setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, life + 150);
+  }
+  // a little longer or shorter each time, so that what came in together does not go out together
+  function vary(life) { return Math.round(life * (1 - VARY / 2 + Math.random() * VARY)); }
+  // it stays as it is, and keeps its place, until it is let go (a note stands beside it: below)
+  function stay(el) { clearTimeout(el.__fade); clearTimeout(el.__gone); clearTimeout(el.__next); el.classList.add('is-on'); if (el.__held) { el.__held.until = Infinity; el.__held.fading = false; } }
   var n = { msg: 0, pic: 0 };
   function size() { return phone() ? SIZE.phone : SIZE.desk; }
-  function nextLine() {
-    if (!model.msgs.length) return;
-    var m = model.msgs[n.msg % model.msgs.length];
-    var el = document.createElement('div'); el.className = 'sky-msg ' + (m.k === 'a' ? 'is-crew' : 'is-earth');
-    var who = document.createElement('span'); who.className = 'sky-who';
-    var st = lineStamp(m.at); who.textContent = (m.k === 'a' ? '✧ ' : '') + m.who + (st ? ' · ' + st : '');
-    var tx = document.createElement('span'); tx.className = 'sky-text'; tx.textContent = m.text;
-    el.appendChild(who); el.appendChild(tx);
+  // what is standing in the sky now — one fading out no longer counts, so its successor can come as it goes — so that
+  // no more than AT_ONCE of each kind are, and never the same exchange or picture twice at once
+  function onSky(cls) { return [].slice.call(sky.querySelectorAll('.' + cls + '.is-on')); }
+  function onIds(cls) { return onSky(cls).map(function (e) { return e.getAttribute('data-id') || ''; }); }
+  // one part of an exchange: QUESTION or ANSWER, who and when in small type, the words beneath
+  function part(kind, who, at, text) {
+    var d = document.createElement('div'); d.className = 'sky-part ' + (kind === 'a' ? 'is-crew' : 'is-earth');
+    var w = document.createElement('span'); w.className = 'sky-who';
+    var k = document.createElement('b'); k.className = 'sky-k'; k.textContent = WORD[kind]; w.appendChild(k);
+    var st = lineStamp(at); w.appendChild(document.createTextNode(' · ' + (kind === 'a' ? '✧ ' : '') + who + (st ? ' · ' + st : '')));
+    var tx = document.createElement('span'); tx.className = 'sky-text'; tx.textContent = text;
+    d.appendChild(w); d.appendChild(tx);
+    return d;
+  }
+  function nextExchange() {
+    if (!model.ex.length || onSky('sky-msg').length >= Math.min(AT_ONCE, model.ex.length)) return;
+    var there = onIds('sky-msg'), m = null, i;
+    for (i = 0; i < model.ex.length; i++) {                        // the next one round that is not in the sky already
+      var c = model.ex[(n.msg + i) % model.ex.length];
+      if (there.indexOf(String(c.id)) < 0) { m = c; n.msg = (n.msg + i + 1) % model.ex.length; break; }
+    }
+    if (!m) return;
+    var el = document.createElement('div'); el.className = 'sky-msg ' + (m.reply ? 'is-crew' : 'is-earth'); el.setAttribute('data-id', String(m.id));
+    el.appendChild(part('q', m.who, m.at, m.text));
+    if (m.reply) el.appendChild(part('a', m.rwho, m.rat, m.reply));
     var col = sky.clientWidth / days;
     el.style.maxWidth = Math.floor(size().line * col - 2 * INSET) + 'px'; el.style.left = '0px'; el.style.top = '0px';
     sky.appendChild(el);                                           // measured where it cannot be seen (it is not on yet)
     var at = spot(Math.ceil(el.offsetWidth), Math.ceil(el.offsetHeight));
-    if (!at) { sky.removeChild(el); return; }                      // no room this turn: the next line tries again
-    n.msg++;
-    window.MCS_SKY_NOW = m.id != null ? m.id : null;                // the line under the dome passes over this exchange meanwhile
-    show(el, at, LIFE_MSG);
+    if (!at) { sky.removeChild(el); return; }                      // no room this turn: the next tick tries again
+    window.MCS_SKY_NOW = m.id != null ? m.id : null;
+    show(el, at, vary(LIFE_MSG));
   }
   function nextPicture() {
     var ok = model.pics.filter(ready); if (!ok.length) return;
-    var p = ok[n.pic % ok.length];
-    var col = sky.clientWidth / days, w = Math.floor(size().pic * col - 2 * INSET), ph = Math.round(w / PIC_RATIO);
-    var st = picStamp(p.when), sh = st ? 18 : 0;                   // its time over it, inside its place on the grid
-    var at = spot(w, ph + sh);
+    if (onSky('sky-pic').length >= Math.min(AT_ONCE, ok.length)) return;
+    var there = onIds('sky-pic'), p = null, i;
+    for (i = 0; i < ok.length; i++) { var c = ok[(n.pic + i) % ok.length]; if (there.indexOf(String(c.id)) < 0) { p = c; n.pic = (n.pic + i + 1) % ok.length; break; } }
+    if (!p) return;
+    var col = sky.clientWidth / days, w = Math.floor(size().pic * col - 2 * INSET);
+    // its frame: the brackets' padding around the picture, and its plate (the time) with the gap under it (sheet.css)
+    var PAD = 6, PLATE = 21, st = picStamp(p.when, w);
+    var ph = Math.round((w - 2 * PAD) / PIC_RATIO), h = ph + 2 * PAD + (st ? PLATE : 0);
+    var at = spot(w, h);
     if (!at) return;
-    n.pic++;
-    var a = document.createElement('a'); a.className = 'sky-pic'; a.href = p.url; a.target = '_blank'; a.rel = 'noopener'; a.tabIndex = -1;
-    a.style.width = w + 'px'; a.style.height = (ph + sh) + 'px';
+    var a = document.createElement('a'); a.className = 'sky-pic'; a.href = p.url; a.target = '_blank'; a.rel = 'noopener'; a.tabIndex = -1; a.setAttribute('data-id', String(p.id));
+    a.style.width = w + 'px'; a.style.height = h + 'px';
     var fr = document.createElement('span'); fr.className = 'sky-frame';
     var im = loaded[p.id].cloneNode(); im.alt = ''; fr.appendChild(im);
     if (st) { var s = document.createElement('span'); s.className = 'sky-when'; s.textContent = st; a.appendChild(s); }
     a.appendChild(fr);
-    sky.appendChild(a); show(a, at, LIFE_PIC);
+    sky.appendChild(a); show(a, at, vary(LIFE_PIC));
   }
+  // as one goes, its successor of the same kind — and one of the other kind only if none of that kind is standing (the
+  // tick tops the rest up): so a small sky keeps its mix of lines and pictures, neither crowding the other out
+  function refill(kind) {
+    if (!running) return;
+    if (kind === 'pic') { nextPicture(); if (!onSky('sky-msg').length) nextExchange(); }
+    else { nextExchange(); if (!onSky('sky-pic').length) nextPicture(); }
+  }
+
+  /* ------------------------------------------------------------ a touch on a snapshot or an exchange: a note beside it
+     What was touched stays, and a note stands beside it (under it, over it, at its side — the first place inside the sky
+     and clear of the dome) saying what it is — a snapshot: the live feed from the habitat, with a key to the Media
+     gallery; an exchange: the latest communication from the habitat, with a key to it on the board (the notes' words come
+     with the page: sky.js, skyNotes). Nothing else is placed over the note while it stands. The cross, a touch anywhere
+     else, Escape, or a while (NOTE_LIFE) closes it, and what was touched fades a moment later. */
+  var NOTE_LIFE = 12000, NOTE_W = { phone: 300, desk: 340 }, NOTE_GAP = 10;
+  var open = null;                                                 // { el: the note, on: what was touched, rec: its place, t: its timer }
+  function closeNote(now) {
+    if (!open) return;
+    var o = open; open = null;
+    clearTimeout(o.t);
+    if (o.rec) o.rec.until = Date.now();                             // its place is free again
+    o.el.classList.remove('is-on');
+    setTimeout(function () { if (o.el.parentNode) o.el.parentNode.removeChild(o.el); }, now ? 0 : 260);
+    if (o.on && o.on.parentNode) later(o.on, FADE + 1400);           // what was touched fades a moment later
+  }
+  function note(on) {
+    var pic = on.classList.contains('sky-pic');
+    var tpl = document.getElementById(pic ? 'sky-note-pic' : 'sky-note-msg');
+    if (!tpl || !tpl.content) return;
+    var same = open && open.on === on;
+    closeNote(true);
+    if (same) return;                                                // touched again: the note goes, and that is all
+    stay(on);
+    var el = tpl.content.firstElementChild.cloneNode(true);
+    var link = el.querySelector('.sky-note-open'), id = on.getAttribute('data-id');
+    if (!pic && link) link.href = '/messages' + (id ? '#m' + id : '');   // the key leads to this exchange on the board
+
+    var W = sky.clientWidth, H = sky.clientHeight, w = Math.min(W - 2 * EDGE, phone() ? NOTE_W.phone : NOTE_W.desk);
+    el.style.width = w + 'px'; el.style.left = '0px'; el.style.top = '0px';
+    sky.appendChild(el);                                             // measured before it can be seen
+    var h = el.offsetHeight, b = box(on), c = dome();
+    // under it, over it, at its right, at its left — the first that is inside the sky and clear of the dome (its keys
+    // stay free); failing all four, under or over it, kept inside the sky
+    var fits = function (t) { return t.x >= EDGE && t.y >= EDGE && t.x + w <= W - EDGE && t.y + h <= H - EDGE && !inDome({ x: t.x, y: t.y, w: w, h: h }, c); };
+    var tries = [{ x: b.x, y: b.y + b.h + NOTE_GAP }, { x: b.x, y: b.y - NOTE_GAP - h }, { x: b.x + b.w + NOTE_GAP, y: b.y }, { x: b.x - NOTE_GAP - w, y: b.y }];
+    var at = null, i, x, y;
+    for (i = 0; i < tries.length && !at; i++) if (fits(tries[i])) at = tries[i];
+    if (at) { x = at.x; y = at.y; }
+    else {
+      x = Math.max(EDGE, Math.min(W - EDGE - w, b.x)); y = b.y + b.h + NOTE_GAP;
+      if (y + h > H - EDGE) y = b.y - NOTE_GAP - h;
+      if (y < EDGE) y = Math.max(EDGE, Math.min(H - EDGE - h, b.y));
+    }
+    el.style.left = Math.round(x) + 'px'; el.style.top = Math.round(y) + 'px';
+    var rec = { x: x, y: y, w: w, h: h, until: Infinity };
+    held.push(rec);
+    open = { el: el, on: on, rec: rec, t: setTimeout(function () { closeNote(); }, NOTE_LIFE) };
+    requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add('is-on'); }); });
+  }
+  sky.addEventListener('click', function (e) {
+    var on = e.target.closest ? e.target.closest('.sky-pic, .sky-msg') : null;
+    if (on && sky.contains(on)) { e.preventDefault(); e.stopPropagation(); note(on); return; }
+    if (e.target.closest && e.target.closest('.sky-note-x')) { e.preventDefault(); closeNote(); }
+  });
+  document.addEventListener('click', function (e) { if (open && !(e.target.closest && e.target.closest('.sky-note'))) closeNote(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeNote(); });
 
   /* ------------------------------------------------------------ running only while it can be seen */
   var timers = [], running = false, inView = true;
   function stop() { timers.forEach(function (t) { clearInterval(t); clearTimeout(t); }); timers = []; running = false; }
   function go() {
     stop(); running = true;
-    // with only a few, each comes round no sooner than it has gone — never the same one twice at once
-    var em = Math.max(EVERY_MSG, Math.ceil((LIFE_MSG + 300) / Math.max(1, model.msgs.length)));
-    var ep = Math.max(EVERY_PIC, Math.ceil((LIFE_PIC + 300) / Math.max(1, model.pics.length)));
-    if (model.msgs.length) { timers.push(setTimeout(nextLine, 400)); timers.push(setInterval(nextLine, em)); }
-    if (model.pics.length) { timers.push(setTimeout(nextPicture, 1300)); timers.push(setInterval(nextPicture, ep)); }
+    // every tick the sky is topped up to AT_ONCE exchanges and AT_ONCE snapshots; an exchange and a snapshot never come
+    // in the same instant, so the eye can follow each arriving
+    var tick = 0;
+    timers.push(setTimeout(nextExchange, 400));
+    timers.push(setTimeout(nextPicture, 1100));
+    timers.push(setInterval(function () {
+      tick++;
+      // a kind with nothing left in the sky comes first, so there is always at least one of each; otherwise they take turns
+      if (model.ex.length && !onSky('sky-msg').length) nextExchange();
+      else if (model.pics.length && !onSky('sky-pic').length) nextPicture();
+      else if (tick % 2) nextExchange(); else nextPicture();
+    }, TICK));
   }
-  function any() { return !!(model.msgs.length || model.pics.length); }
+  function any() { return !!(model.ex.length || model.pics.length); }
   function check() {
     panel.classList.toggle('has-sky', any());
     var want = any() && shown() && inView && !document.hidden;
@@ -413,12 +551,9 @@
       };
     });
     rows.sort(function (a, b) { return a.at < b.at ? 1 : a.at > b.at ? -1 : 0; });   // the newest first, as the page drew them
-    var out = [];
-    rows.slice(0, EXCHANGES).forEach(function (r) {
-      out.push({ k: 'q', id: r.id, who: r.who, at: r.at, text: clip(r.text) });
-      if (r.reply) out.push({ k: 'a', id: r.id, who: r.rwho, at: r.rat, text: clip(r.reply) });
+    return rows.slice(0, EXCHANGES).map(function (r) {
+      return { id: r.id, who: r.who, at: r.at, text: clip(r.text), reply: r.reply ? clip(r.reply) : '', rwho: r.reply ? r.rwho : '', rat: r.reply ? r.rat : '' };
     });
-    return out;
   }
   var latest = document.querySelector('[data-field="comms-text"]'), asking = false;
   if (latest && window.MutationObserver && window.fetch) {
@@ -426,7 +561,7 @@
       if (asking) return; asking = true;
       fetch('/api/board', { cache: 'no-store', credentials: 'same-origin' })
         .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (d) { if (d && typeof d.cards === 'string') { model.msgs = fromCards(d.cards); renew(); } })
+        .then(function (d) { if (d && typeof d.cards === 'string') { model.ex = fromCards(d.cards); renew(); } })
         .catch(function () { /* the sky keeps what it has */ })
         .then(function () { asking = false; });
     }).observe(latest, { childList: true, characterData: true, subtree: true });

@@ -66,7 +66,7 @@ function slowestChat(ctx) {
   return `
   <section class="slow-chat" id="slowest-chat" aria-labelledby="slow-chat-title" data-stop>
     <header class="slow-head">
-      <span class="slow-eyebrow">CH-09 · ${T('Wait, what is this?')}</span>
+      <span class="slow-eyebrow">${T('Wait, what is this?')}</span>
       <h2 id="slow-chat-title">${T('The world’s slowest chat.')}</h2>
       <p class="slow-sub">${T('Communicate with the crew.')}</p>
     </header>
@@ -103,7 +103,7 @@ function slowestChat(ctx) {
           <h3>${T('Crew response')}</h3>
           <p class="slow-k">${T('Downlink received')}</p>
           <div class="slow-bubble is-crew"><span class="slow-bk">✧ ${T('Crew answer')}</span>${T('Lentils. Mostly lentils.')}</div>
-          <p>${say('At {time}, the communications window opens. Messages from Earth are answered by the crew.', { time: b(`${WINDOW_TIME}${winZone ? ' ' + winZone : ''}`) })}</p>
+          <p>${say('At {time}, the communications window opens. Messages from Earth are answered by the crew; answered questions can be seen on the Message Board.', { time: b(`${WINDOW_TIME}${winZone ? ' ' + winZone : ''}`) })}</p>
         </div>
       </li>
     </ol>

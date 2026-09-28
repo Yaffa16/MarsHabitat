@@ -27,6 +27,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl \
 
 COPY --from=builder /app/node_modules ./node_modules
 COPY package.json ./
+# The relay to space (src/lib/spacespeak.js) drives spacespeak.com in a browser of its own: Playwright's headless
+# Chromium and the libraries it needs, installed here so the image works the moment the account is set in .env.
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+RUN npx playwright install --with-deps --only-shell chromium \
+    && rm -rf /var/lib/apt/lists/* \
+    && chmod -R a+rX /ms-playwright
 COPY src ./src
 COPY public ./public
 COPY tools ./tools
@@ -37,6 +43,7 @@ RUN date -u +%Y-%m-%dT%H:%M:%SZ > /app/BUILD
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 COPY --chown=node:node content ./content
+COPY --chown=node:node missions ./missions
 
 USER node
 VOLUME ["/data"]

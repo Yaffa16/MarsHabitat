@@ -312,7 +312,6 @@ body.landing .dome-panel { --room: 170px; }                                     
 body.landing .dome-head { margin: 12px 0 var(--room); padding: 0 20px; align-items: baseline; }   /* the heading at the panel's top, the frame's top corners just under it; the room beneath holds the pop-up */
 body.landing .dome-title { gap: 12px; }
 body.landing .dome-title h2 { font-size: 20px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); }
-body.landing .dpanel-code, body.landing .dome-title .dpanel-code { font-family: var(--display); font-size: var(--fs-label); letter-spacing: .12em; text-transform: uppercase; color: var(--mars-ink); font-weight: 500; }
 body.landing .dome-meta { font-family: var(--display); font-size: var(--fs-label); letter-spacing: .12em; color: var(--dim); }
 body.landing .dome-meta-hint { display: none; }
 body.landing .dome-panel { --dome-aura: radial-gradient(ellipse 46% 62% at 50% 78%, rgba(255,141,62,.85) 0%, rgba(239,134,184,.7) 38%, rgba(171,214,241,.55) 66%, rgba(171,214,241,0) 100%); }
@@ -383,7 +382,6 @@ body.landing .dome-popup .dome-mark { width: 30px; height: 30px; }
 body.landing .dome-popup .popup-head > div { flex-direction: row; align-items: baseline; gap: 12px; flex: 1 1 auto; }
 body.landing .popup-head .fold-title { font-size: 17px; font-weight: 600; letter-spacing: -.015em; }
 body.landing .popup-head .fold-sub { font-family: var(--display); font-size: var(--fs-label); letter-spacing: .1em; color: var(--dim); }
-body.landing .dome-code-chip { color: var(--mars-ink); }
 body.landing .popup-close { width: 30px; height: 30px; border-radius: 999px; border: 1px solid rgba(var(--cobalt-rgb),.45); background: rgba(255,255,255,.5); color: var(--cobalt); font-size: 18px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; flex: none; }
 body.landing .dome-popup .popup-body { padding: 0 16px 8px; overflow: auto; }
 body.landing .dome-popup .popup-body p { margin: 0 0 3px; font-size: 15px; line-height: 1.45; max-width: none; }
@@ -415,6 +413,14 @@ body.landing .dev-head { margin: 0 0 14px; gap: 10px; font-family: var(--display
 body.landing .dev-chip { font-family: var(--display); font-size: 13px; letter-spacing: .12em; font-weight: 600; color: var(--paper); background: var(--ink); border-radius: 999px; padding: 7px 13px; box-shadow: none; }
 body.landing .dev-chan { color: var(--dim); }
 body.landing .dev-chip.dev-chip-later { background: transparent; color: var(--dim); border: 1px dashed rgba(var(--cobalt-rgb),.45); font-weight: 500; }   /* no callsign yet: one comes with the first message */
+/* the day's question from the habitat over the writing box (public.js, composerPrompt): the question for the community
+   hour on the day's mission sheet, on a tinted band with a bar of Mars at its left, and a line inviting an answer */
+body.landing .dev-prompt { display: grid; gap: 4px; margin: 0 0 14px; padding: 12px 14px 12px 16px; border-radius: 14px; background: rgba(255,90,31,.08); border-left: 3px solid var(--mars); }
+:root[data-theme="dark"] body.landing .dev-prompt { background: rgba(255,90,31,.1); }
+body.landing .dev-prompt-k { font-family: var(--display); font-size: var(--fs-label); letter-spacing: .12em; text-transform: uppercase; font-weight: 600; color: var(--mars-ink); }
+body.landing .dev-prompt-q { margin: 0; font-family: var(--display); font-size: 16px; line-height: 1.35; font-weight: 600; letter-spacing: -.01em; color: var(--ink); text-wrap: pretty; }
+body.landing .dev-prompt-n { font-size: 13px; line-height: 1.4; color: var(--dim); }
+body.landing .composer-device.sending .dev-prompt { display: none; }                  /* the dial has the box to itself while a message crosses */
 
 /* the cookie question (layout.js, consent()): a card at the foot of the window until it is answered — on a desk at the
    right, on a phone (below) a sheet above the bar of keys */
@@ -488,6 +494,9 @@ body.landing .board-head { padding-bottom: 14px; border-bottom: 1px solid var(--
 body.landing .board-head h2 { font-size: 23.5px; font-weight: 600; letter-spacing: -.015em; color: var(--ink); }
 body.landing .board .live { font-family: var(--display); font-size: var(--fs-label); letter-spacing: .12em; color: var(--mars-ink); }
 body.landing .board .live::before { background: var(--mars); box-shadow: 0 0 10px 2px rgba(255,90,31,.7); }
+/* under the composer's key: that every message is beamed into space as well (communicate.js, spaceRelayOn) */
+body.landing .composer .dev-foot { flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+body.landing .composer .dev-space { flex: 1 1 100%; text-align: center; font-family: var(--display); font-size: 12px; line-height: 1.45; color: var(--dim); }
 /* the exchanges (messageCard in src/views/pages/public.js): a card per exchange — the visitor's message in a shaded box, a
    line of small print over it (its tags, the callsign, Earth, the time it was sent; the reference number at the right);
    beneath the box CREW ANSWER and the crew's reply, large, with the officer, the habitat and the time it left Mars in small
@@ -513,6 +522,53 @@ body.landing .card.xc .badge.new { margin-left: 8px; align-self: center; }
 body.landing .card.xc .card-state.warn, body.landing .card.xc .card-state.mars, body.landing .card.xc .card-state.ok, body.landing .card.xc .badge.new { color: var(--mars-ink); }
 body.landing .card.xc .card-state.earth { color: var(--cobalt); }
 body.landing .card.xc .card-day, body.landing .card.xc .card-sent, body.landing .card.xc .card-when, body.landing .card.xc .tagrow, body.landing .card.xc .card-foot { display: none; }
+/* the card's line into space (spaceLine in public.js, run by board.js): how far the message has got since it was launched —
+   the figures in Mars orange, running; UPDATE DISTANCE as a small key; when it was launched after it */
+body.landing .card.xc .card-space { display: flex; flex-direction: column; gap: 4px; padding: 0 2px; font-family: var(--display); font-size: 13.5px; line-height: 1.45; color: var(--dim); }
+body.landing .card.xc .card-space-line b { font-weight: 600; color: var(--mars-ink); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+body.landing .card.xc .card-space-more { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 14px; font-size: var(--fs-label); letter-spacing: .06em; text-transform: uppercase; }
+body.landing .card.xc .card-space-launched { color: var(--dim); }
+body.landing .card.xc .card-space-launched .sp-ago { color: var(--ink); }
+/* a tap on the card opens its journey (board.js): the card says so at the right, quietly */
+body.landing .card.xc:has(.card-space[data-launched]) { cursor: pointer; }
+body.landing .card.xc .card-space-go { color: var(--cobalt); white-space: nowrap; transition: color .15s ease; }
+body.landing .card.xc:hover .card-space-go { color: var(--mars-ink); }
+body.screen .card.xc { cursor: default; }
+body.screen .card.xc .card-space-go { display: none; }                                             /* nothing to tap on a screen */
+/* the journey: a panel over the page — the message's way out, stop by stop, in the sky's HUD dress */
+body.landing > .journey, .journey { position: fixed; inset: 0; z-index: 90; display: none; align-items: center; justify-content: center; padding: 18px; background: rgba(8, 9, 18, .62); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+body.landing > .journey.is-open, .journey.is-open { display: flex; }
+body.journey-open { overflow: hidden; }
+.jr-panel { position: relative; width: min(640px, 100%); max-height: min(88vh, 88dvh); overflow: auto; overscroll-behavior: contain; padding: 26px 28px 24px; border-radius: 22px; background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); color: var(--ink); font-family: var(--display); }
+:root[data-theme="dark"] .jr-panel { background: rgba(14, 16, 30, .92); }
+.jr-close { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; padding: 0; border-radius: 50%; border: 1px solid var(--glass-edge); background: transparent; color: var(--dim); font: inherit; font-size: 15px; line-height: 1; cursor: pointer; box-shadow: none; min-height: 0; }
+.jr-close:hover { color: var(--ink); background: rgba(var(--cobalt-rgb), .1); transform: none; box-shadow: none; }
+.jr-kicker { display: block; font-size: var(--fs-label); letter-spacing: .14em; text-transform: uppercase; color: var(--mars-ink); font-weight: 600; }
+.jr-title { margin: 6px 40px 0 0; font-size: 24px; line-height: 1.2; font-weight: 600; letter-spacing: -.02em; }
+.jr-title .cs { font-family: var(--mono); font-size: 18px; letter-spacing: .08em; color: var(--ink); }
+.jr-lead { margin: 10px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--dim); }
+.jr-lead b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.jr-stops { list-style: none; margin: 20px 0 0; padding: 0; display: flex; flex-direction: column; }
+.jr-stop { position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 0 12px; padding: 12px 0 14px; border-top: 1px solid var(--glass-edge); }
+.jr-mark { position: relative; width: 14px; height: 14px; margin-top: 3px; border-radius: 50%; border: 2px solid var(--cobalt); box-sizing: border-box; }
+.jr-stop.is-done .jr-mark { background: var(--mars); border-color: var(--mars); box-shadow: 0 0 0 3px rgba(255, 90, 31, .18); }
+.jr-stop.is-star .jr-mark { border-radius: 2px; transform: rotate(45deg); }
+.jr-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; }
+.jr-name { font-size: 16px; font-weight: 600; }
+.jr-status { font-size: var(--fs-label); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); font-variant-numeric: tabular-nums; }
+.jr-stop.is-done .jr-status { color: var(--mars-ink); }
+.jr-bar { height: 3px; margin: 8px 0 2px; border-radius: 2px; background: rgba(var(--cobalt-rgb), .15); overflow: hidden; }
+.jr-bar i { display: block; height: 100%; background: var(--cobalt); border-radius: 2px; }
+.jr-you { margin: 8px 0 0; font-size: 14px; line-height: 1.45; color: var(--ink); }
+.jr-you b { color: var(--mars-ink); font-variant-numeric: tabular-nums; }
+.jr-fact { margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--dim); }
+.jr-fact a { color: var(--cobalt); text-decoration: none; border-bottom: 1px solid rgba(var(--cobalt-rgb), .35); white-space: nowrap; }
+.jr-fact a:hover { color: var(--mars-ink); border-color: currentColor; }
+@media (max-width: 600px) {
+  .journey { padding: 0; align-items: flex-end; }
+  .jr-panel { width: 100%; max-height: 92vh; max-height: 92dvh; border-radius: 22px 22px 0 0; padding: 22px 18px 28px; }
+  .jr-title { font-size: 21px; }
+}
 /* on the board: one card under the other, the viewer's own with a rule of Mars at the left */
 body.landing .board .card { border-bottom: 0; margin: 0 0 12px; padding: 14px 16px 16px; }
 body.landing .board .card[data-mine] { box-shadow: inset 3px 0 0 var(--mars), 0 10px 30px -20px rgba(15,21,64,.35); padding-left: 19px; }
@@ -530,7 +586,6 @@ body.landing .board .empty, body.landing .dpanel .empty, body.landing .empty { f
 body.landing .dash { margin: 0; padding: calc(8 * var(--u)) 0 0; background: none; box-shadow: none; display: grid; grid-template-columns: minmax(0, 1fr); gap: min(20px, calc(2.2 * var(--u))); scroll-margin-top: calc(28px - 8 * var(--u)); }   /* a link to #mission (the masthead's button, the foot) lands the heading where the wheel does: 28 px under the top, the section's own air above it discounted */
 body.landing .dash > * { grid-column: 1 / -1; }
 body.landing .dash-head { margin: 0; align-items: flex-end; }
-body.landing .dash-code { display: block; margin: 0 0 8px; font-family: var(--display); font-size: var(--fs-label); letter-spacing: .12em; text-transform: uppercase; color: var(--mars-ink); font-weight: 500; }   /* the section's channel code, above its title, as on every panel */
 body.landing .dash-head .bigsec, body.landing .portal-head .bigsec, body.landing .dash-subhead .bigsec { margin: 0; font-size: 38px; line-height: 1.05; letter-spacing: -.025em; font-weight: 600; color: var(--ink); }
 body.landing .dash-sub { font-family: var(--display); font-size: var(--fs-label); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); margin-top: 10px; }
 body.landing .dash-clock { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
@@ -563,8 +618,7 @@ body.landing .dash-subhead { grid-column: 1 / -1; display: flex; align-items: fl
 
 /* the panels */
 body.landing .dpanel { padding: min(24px, calc(2.7 * var(--u))) 28px; display: flex; flex-direction: column; }
-body.landing .dpanel.h-3 { height: clamp(300px, calc(100vh - 424px), 560px); }       /* Today's Schedule, Meal, Crew: as tall as leaves the dashboard on one screen (476 px in a 900 px window) */
-body.landing .dpanel.h-4 { height: calc(57.8 * var(--u)); }
+body.landing .dpanel.h-3, body.landing .dpanel.h-4 { height: auto; max-height: none; }   /* Today's Schedule, Meal, Crew, the blogs: as tall as what is in them — nothing scrolls inside a panel */
 body.landing .dpanel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; margin: 0 0 12px; padding: 0; border-bottom: 0; }
 body.landing .dpanel-title { display: flex; align-items: center; gap: 12px; }
 body.landing .dpanel-title h3 { margin: 0; font-family: var(--display); font-size: 20px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); }
@@ -613,6 +667,40 @@ body.landing .officer-role { font-family: var(--display); font-size: var(--fs-la
 body.landing .officer .badge { grid-area: badge; font-family: var(--display); font-size: var(--fs-label); letter-spacing: .1em; text-transform: uppercase; color: var(--cobalt); border: 1px solid rgba(var(--cobalt-rgb),.45); border-radius: 999px; padding: 6px 12px; background: rgba(255,255,255,.5); }
 :root[data-theme="dark"] body.landing .officer .badge { background: rgba(255,255,255,.06); color: #e6e6ec; border-color: rgba(255,255,255,.30); }
 body.landing .officer-note { grid-area: note; font-size: var(--fs-note); color: var(--ink); }
+
+/* today's scientific mission, at the head of the dashboard over the index of folders (public.js, missionPanel): the
+   mission's number and title with its central question as the lead, the three parts of the day side by side — Morning,
+   Afternoon, EVA, each under its name with a dot in its colour (cobalt, violet, Mars) — the question for the community
+   hour on a tinted band at the foot, and the key to the sheet */
+body.landing .mission-today { padding: min(24px, calc(2.7 * var(--u))) 28px 26px; }
+body.landing .mission-body { display: grid; gap: 22px; }
+body.landing .mission-lead { display: grid; gap: 8px; max-width: 78ch; }
+body.landing .mission-no { font-family: var(--display); font-size: var(--fs-label); letter-spacing: .14em; text-transform: uppercase; font-weight: 600; color: var(--mars-ink); }
+body.landing .mission-title { margin: 0; font-family: var(--display); font-size: clamp(24px, 2.2vw, 32px); line-height: 1.1; font-weight: 600; letter-spacing: -.02em; color: var(--ink); text-wrap: balance; }
+body.landing .mission-q { margin: 4px 0 0; font-size: var(--fs-read); line-height: 1.5; color: var(--ink); text-wrap: pretty; }
+body.landing .mission-k { display: block; margin: 0 0 3px; font-family: var(--display); font-size: var(--fs-label); letter-spacing: .12em; text-transform: uppercase; font-weight: 500; color: var(--dim); }
+body.landing .mission-parts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+body.landing .mission-part { --mp: var(--cobalt-fill); display: flex; flex-direction: column; gap: 8px; padding: 16px 18px 18px; border-radius: 18px; background: var(--tile); border: 1px solid rgba(var(--cobalt-rgb),.12); min-width: 0; }
+body.landing .mission-part.is-afternoon { --mp: #8b5cf6; }
+body.landing .mission-part.is-eva { --mp: var(--mars); }
+body.landing .mission-part h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-family: var(--display); font-size: var(--fs-label); letter-spacing: .14em; text-transform: uppercase; font-weight: 600; color: var(--ink); }
+body.landing .mission-part h4::before { content: ""; flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--mp); box-shadow: 0 0 0 3px color-mix(in srgb, var(--mp) 22%, transparent); }
+body.landing .mission-part p, body.landing .mission-part li { margin: 0; font-size: var(--fs-note); line-height: 1.5; color: var(--ink); text-wrap: pretty; }
+body.landing .mission-part ul, body.landing .mission-part ol { margin: 0; padding: 0 0 0 18px; display: grid; gap: 3px; }
+body.landing .mission-part li::marker { color: var(--mp); }
+body.landing .mission-part .mission-sub { display: block; margin: 6px 0 0; font-family: var(--display); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; color: var(--mp); }
+body.landing .mission-part .mission-sub:first-child { margin-top: 0; }
+body.landing .mission-part .mission-arrow { padding-left: 18px; text-indent: -18px; color: var(--dim); }
+body.landing .mission-part .mission-arrow::before { content: "→ "; color: var(--mp); }
+body.landing .mission-foot { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 24px; }
+body.landing .mission-community { flex: 1 1 420px; margin: 0; padding: 14px 18px; border-radius: 16px; background: rgba(var(--cobalt-rgb),.07); border-left: 3px solid var(--cobalt-fill); }
+:root[data-theme="dark"] body.landing .mission-community { background: rgba(255,255,255,.05); }
+body.landing .mission-cq { display: block; font-family: var(--display); font-size: 17px; line-height: 1.4; font-weight: 600; letter-spacing: -.01em; color: var(--ink); text-wrap: pretty; }
+body.landing .mission-cq.is-de { margin-top: 5px; font-size: var(--fs-note); font-weight: 400; color: var(--dim); }
+body.landing .mission-sheet { flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 18px; border-radius: 999px; text-decoration: none; border: 1px solid rgba(var(--cobalt-rgb),.45); background: rgba(255,255,255,.5); color: var(--cobalt); font-family: var(--display); font-size: 13.5px; font-weight: 600; }
+:root[data-theme="dark"] body.landing .mission-sheet { background: rgba(255,255,255,.06); color: #e6e6ec; border-color: rgba(255,255,255,.3); }
+body.landing .mission-sheet:hover { border-color: var(--cobalt-fill); }
+@media (max-width: 1100px) { body.landing .mission-parts { grid-template-columns: minmax(0, 1fr); } }
 
 /* the habitat: two rows of instruments, the stills at the foot */
 body.landing #habitat.dpanel { padding: 22px 28px; }
@@ -671,6 +759,9 @@ body.landing .round-num { font-family: var(--display); font-size: 15px; font-wei
 body.landing .round-unit { font-family: var(--display); font-size: 9.5px; letter-spacing: .06em; fill: var(--dim); text-transform: uppercase; }
 body.landing .cell-name { font-family: var(--display); font-size: 13.5px; font-weight: 600; line-height: 1.25; color: var(--ink); text-transform: none; letter-spacing: 0; }
 body.landing .cell-days { font-family: var(--display); font-size: 13px; color: var(--dim); line-height: 1.2; }
+/* a store with no figure yet: a dash in its ring, PLACEHOLDER as a small stamp in Mars under its name */
+body.landing .cell-days.is-ph, body.landing .gauge-val .is-ph { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; color: var(--mars-ink); }
+body.landing .gauge.round.is-ph .round-num { fill: var(--dim); font-weight: 400; }
 body.landing .pwr { padding-top: 6px; margin-top: 0; gap: min(4px, calc(.4 * var(--u))); display: grid; }
 body.landing .pwr-row { display: grid; grid-template-columns: minmax(0, 150px) minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 0; min-height: min(22px, calc(2.2 * var(--u))); }
 body.landing .pwr-name { font-family: var(--display); font-size: var(--fs-label); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -761,14 +852,12 @@ body.landing .tlegend i { flex: none; width: 10px; height: 10px; border-radius: 
 
 /* the three blogs: each under a head of colour of its own */
 body.landing .dpanel.blogp { padding: 0; overflow: hidden; }
-body.landing .dpanel.blogp .dpanel-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "code meta" "title title"; align-items: baseline; align-content: start; gap: 8px 12px; margin: 0; padding: 22px 28px; min-height: 150px; box-sizing: border-box; color: #fff; border-bottom: 0; position: relative; isolation: isolate; }
+body.landing .dpanel.blogp .dpanel-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "meta meta" "title title"; align-items: baseline; align-content: start; gap: 8px 12px; margin: 0; padding: 22px 28px; min-height: 150px; box-sizing: border-box; color: #fff; border-bottom: 0; position: relative; isolation: isolate; }
 body.landing .dpanel.blogp .dpanel-title { display: contents; }
-body.landing .dpanel.blogp .dpanel-code { grid-area: code; }
 body.landing .dpanel.blogp .dpanel-title h3 { grid-area: title; margin: 0; }
 body.landing .dpanel.blogp .dpanel-meta { grid-area: meta; }
 body.landing .dpanel.blogp .dpanel-head::before { content: ""; position: absolute; inset: 0; z-index: -1; background-image: url("/grain.png"); background-size: 110px 110px; mix-blend-mode: overlay; opacity: .9; }   /* the mock-up's film grain over the colour */
 body.landing .dpanel.blogp .dpanel-title h3 { color: #fff; font-size: 23.5px; text-shadow: 0 1px 12px rgba(0,0,0,.35); }
-body.landing .dpanel.blogp .dpanel-code { color: #fff; opacity: .9; }
 body.landing .dpanel.blogp .dpanel-meta { color: #fff; text-align: right; max-width: none; }
 body.landing #blog-commander .dpanel-head { background: radial-gradient(ellipse 200px 125px at 52% 136%, #ffb347 0, #ffb347 52%, rgba(255,179,71,0) 100%), radial-gradient(ellipse 180px 155px at 86% 44%, #ff7a00 0, #ff7a00 52%, rgba(255,122,0,0) 100%), radial-gradient(ellipse 200px 165px at 28% 30%, #7a2bff 0, #7a2bff 52%, rgba(122,43,255,0) 100%), #1c0a3d; }
 body.landing #blog-health .dpanel-head { background: radial-gradient(ellipse 200px 125px at 52% 136%, #8fd3ff 0, #8fd3ff 52%, rgba(143,211,255,0) 100%), radial-gradient(ellipse 180px 155px at 86% 44%, #2b9bd8 0, #2b9bd8 52%, rgba(43,155,216,0) 100%), radial-gradient(ellipse 200px 165px at 28% 30%, #2f45e8 0, #2f45e8 52%, rgba(47,69,232,0) 100%), #0b1a5c; }
@@ -783,7 +872,7 @@ body.landing .blogp .empty { margin: 0; }
 /* ------------------------------------------------------ the index of folders */
 /* The dashboard's nine panels behind one index, on the head of one glass panel: three rows of keys, all of one width — the
    habitat's (Habitat, Habitat hardware, Trends), the day's (Today's Schedule, Today's Meal, Crew Moods), the blogs' — each row a
-   recessed track named at its left, its three keys of equal share, every key a sign, a code and a name. The key of the open
+   recessed track named at its left, its three keys of equal share, every key a sign and a name. The key of the open
    folder in cobalt, as every pressed pill on the page; a hairline under the index, and the open folder's panel beneath it. */
 body.landing .folder {
   position: relative; margin: 0; scroll-margin-top: 28px; box-sizing: border-box; overflow: hidden;
@@ -812,28 +901,35 @@ body.landing .frow .ftab:hover { background: rgba(255,255,255,.72); color: var(-
 body.landing .ftab:focus-visible { outline: 2px solid var(--cobalt-fill); outline-offset: -3px; }
 body.landing .ftab .ftab-ic { flex: none; width: 17px; height: 17px; fill: none; stroke: var(--cobalt); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }   /* the key's sign, a line icon in the dome keys' hand */
 :root[data-theme="dark"] body.landing .ftab .ftab-ic { stroke: #dfe3ff; }
-body.landing .ftab .ftab-n { flex: none; font-size: var(--fs-label); letter-spacing: .1em; text-transform: uppercase; font-weight: 500; color: var(--mars-ink); }
 body.landing .ftab .ftab-l { flex: 1 1 auto; min-width: 0; font-size: 15.5px; font-weight: 600; letter-spacing: -.005em; text-transform: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* the open folder's key: cobalt, as every pressed pill on the page */
 body.landing .folder .frow .ftab.is-front, body.landing .folder .frow .ftab.is-front:hover, :root[data-theme="dark"] body.landing .folder .frow .ftab.is-front, :root[data-theme="dark"] body.landing .folder .frow .ftab.is-front:hover { background: var(--cobalt-fill); color: #fff; box-shadow: 0 10px 20px -12px rgba(47,69,232,.7); }
-body.landing .folder .frow .ftab.is-front .ftab-n { color: rgba(255,255,255,.8); }
 body.landing .folder .frow .ftab.is-front .ftab-ic, :root[data-theme="dark"] body.landing .folder .frow .ftab.is-front .ftab-ic { stroke: #fff; }
-/* the open folder's panel beneath the index — as tall as that panel (the Habitat's instruments, a day's list, a blog at its own
-   height), never taller than the window leaves under the index; a panel that needs more scrolls inside */
+/* the open folder's panel beneath the index — as tall as that panel is: the Habitat's instruments, a day's whole list, a blog
+   at its own height. Nothing in the folder scrolls inside itself: the whole of a panel is on the page, and the page scrolls
+   (the day's lists and the blogs used to keep their own heights and scroll inside; a laptop's window showed half a panel) */
 body.landing .folder-body {
-  position: relative; box-sizing: border-box; height: auto; min-height: 400px; max-height: calc(100vh - 224px); padding: min(24px, calc(2.7 * var(--u))) 28px 28px;
-  overflow: auto; scrollbar-width: thin; scrollbar-color: var(--mars) transparent;
+  position: relative; box-sizing: border-box; height: auto; min-height: 400px; max-height: none; padding: min(24px, calc(2.7 * var(--u))) 28px 28px;
+  overflow: visible;
 }
 body.landing .fpage { height: auto; }
 body.landing .fpage[hidden] { display: none !important; }
 body.landing .folder-body .dpanel, body.landing .folder-body #habitat.dpanel, body.landing .folder-body #hardware.dpanel, body.landing .folder-body #trends.dpanel { height: auto; max-height: none; min-height: 0; padding: 0; background: none; border: 0; box-shadow: none; border-radius: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
-body.landing .folder-body .dpanel.h-3 { height: clamp(300px, calc(100vh - 424px), 560px); }                          /* the day's lists and the blogs keep their own heights and scroll inside, as they always did */
-body.landing .folder-body .dpanel.h-4 { height: calc(57.8 * var(--u)); }
+body.landing .folder-body .dpanel.h-3, body.landing .folder-body .dpanel.h-4 { height: auto; max-height: none; }
+body.landing .folder-body .dpanel.scroll .dpanel-body { overflow: visible; }
+body.landing .folder-body .blog-scroll { overflow: visible; max-height: none; -webkit-mask-image: none; mask-image: none; margin: 0; padding: 0; }
+body.landing .folder-body .blog-scroll > :last-child { margin-bottom: 0; }
+body.landing .folder-body .blogp .card .card-body { max-width: 78ch; }                                                 /* a post's lines stay readable on a wide screen */
 body.landing .folder-body #trends .dpanel-body { min-height: 0; }
 body.landing .folder-body .tchart-svg { max-height: calc(100vh - 300px); }                                            /* the whole chart in the folder, under the panel's head */
 body.landing .folder-body .dpanel.blogp { overflow: hidden; }
 body.landing .folder-body .dpanel.blogp .dpanel-head { border-radius: 16px; min-height: 110px; padding: 18px 22px; }
 body.landing .folder-body .dpanel.blogp .dpanel-body { padding: 18px 4px 0; }
+/* the day's schedule uses the folder's width on a wider screen: its rows in two columns, so the whole day is in view at once */
+@media (min-width: 761px) {
+  body.landing .folder-body #schedule .rows { columns: 2; column-gap: 56px; }
+  body.landing .folder-body #schedule .row { break-inside: avoid; page-break-inside: avoid; }
+}
 
 /* ------------------------------------------------------------- the foot */
 body.landing .foot {
@@ -982,7 +1078,6 @@ body.landing.about .about-sec .panel { background: var(--tile); -webkit-backdrop
 
 /* ------------------------------------------------------------ panel heads */
 body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
-body.landing .dpanel-code { white-space: nowrap; }
 
 /* --------------------------------------------------------------- phones */
 @media (max-width: 760px), (max-height: 520px) {
@@ -1051,8 +1146,10 @@ body.landing .dpanel-code { white-space: nowrap; }
   body.landing .run-strip { border-radius: 24px; }
   body.landing .dash-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   body.landing .dpanel { padding: 20px 18px; border-radius: 28px; }
-  body.landing .dpanel.h-3 { height: auto; max-height: 400px; }
-  body.landing .dpanel.h-4 { height: auto; max-height: 470px; }
+  body.landing .mission-today { padding: 20px 18px 22px; }
+  body.landing .mission-parts { gap: 10px; }
+  body.landing .mission-part { padding: 14px 16px 16px; }
+  body.landing .mission-title { font-size: 24px; }
   body.landing .dash-head .bigsec, body.landing .portal-head .bigsec, body.landing .dash-subhead .bigsec { font-size: 30px; }
   body.landing .dash-clock { align-items: flex-start; }
   /* the habitat's four instruments two by two — carbon dioxide beside temperature, humidity beside light — then the figures,
@@ -1090,12 +1187,10 @@ body.landing .dpanel-code { white-space: nowrap; }
   body.landing .frow.n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   body.landing .frow.n1 { grid-template-columns: minmax(0, 1fr); }
   body.landing .frow-k { grid-column: 1 / -1; padding: 3px 6px 1px; font-size: 11px; letter-spacing: .1em; }
-  body.landing .ftab { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "ic n" "l l"; align-items: center; align-content: center; justify-items: start; gap: 2px 5px; min-height: 48px; padding: 5px 7px; border-radius: 11px; }
+  body.landing .ftab { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "ic" "l"; align-items: center; align-content: center; justify-items: center; gap: 3px; min-height: 48px; padding: 5px 7px; border-radius: 11px; }
   body.landing .ftab .ftab-ic { grid-area: ic; width: 13px; height: 13px; stroke-width: 1.9; }
-  body.landing .ftab .ftab-n { grid-area: n; font-size: 10.5px; letter-spacing: .08em; }
-  body.landing .ftab .ftab-l { grid-area: l; width: 100%; font-size: 13px; line-height: 1.15; white-space: normal; overflow: visible; -webkit-hyphens: auto; hyphens: auto; }
+  body.landing .ftab .ftab-l { grid-area: l; width: 100%; font-size: 13px; line-height: 1.15; text-align: center; white-space: normal; overflow: visible; -webkit-hyphens: auto; hyphens: auto; }
   body.landing .folder-body { height: auto; min-height: 0; max-height: none; overflow: visible; padding: 16px 14px 18px; }
-  body.landing .folder-body .dpanel.h-3, body.landing .folder-body .dpanel.h-4 { height: auto; max-height: 440px; }
   body.landing .officer-id b, body.landing .officer-role { white-space: normal; overflow: visible; }   /* an officer's designation and role whole, on two lines where the phone is narrow */
   body.landing .folder-body .tchart-svg { max-height: none; }                                    /* as wide as the folder, however the phone is held; the page scrolls */
   body.landing .folder-body .dpanel.blogp .dpanel-head { min-height: 96px; padding: 14px 18px; }
@@ -1253,9 +1348,15 @@ body.landing .dpanel-code { white-space: nowrap; }
   :root[data-theme="dark"] html.js body.landing.messages .dev-close { background: rgba(255,255,255,.08); }
   body.landing.messages .dev-head { margin: 0 0 12px; gap: 10px; font-size: 13px; }
   body.landing.messages .dev-chip { font-size: 14px; padding: 5px 12px; }
+  /* the day's question in the pop-up: compact, so the writing box keeps its room; while the keyboard is up the
+     question stays and its invitation goes */
+  body.landing.messages .dev-prompt { margin: 0 0 10px; padding: 9px 12px 9px 13px; gap: 2px; }
+  body.landing.messages .dev-prompt-q { font-size: 15px; line-height: 1.3; }
+  body.landing.messages .dev-prompt-n { font-size: 12.5px; }
+  body.landing.messages.kb .dev-prompt-n { display: none; }
   /* the form: the writing box the whole width and seven lines deep to begin with (less while the keyboard is up, so the
-     pop-up stays above it — tabbar.js, grow), the tags in one line beneath, all of them, small enough to fit, and
-     Transmit under them in the middle — an orange pill, waiting dim until there is something to send */
+     pop-up stays above it — tabbar.js, grow), the five tags in one line beneath, every one whole, and Transmit under
+     them in the middle — an orange pill, waiting dim until there is something to send */
   body.landing.messages .composer-device .dev-body > form.composer { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "msg" "tags" "send"; gap: 12px; align-items: center; }
   body.landing.messages .composer-device form.composer .msgfield { grid-area: msg; }
   body.landing.messages .composer-device form.composer .msgbox textarea { box-sizing: border-box; min-height: 216px; max-height: 320px; padding: 15px 17px 15px; font-size: 18px; line-height: 1.4; border-radius: 20px; }
@@ -1269,9 +1370,12 @@ body.landing .dpanel-code { white-space: nowrap; }
   body.landing.messages .composer hr { display: none; }
   body.landing.messages .composer .tagbar { grid-area: tags; min-width: 0; margin: 0; flex-direction: row; align-items: center; gap: 0; }
   body.landing.messages .composer .tagbar .lbl { display: none; }
-  body.landing.messages .composer .tags { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; justify-content: space-between; overflow: visible; gap: 4px; padding: 0; }
-  body.landing.messages .composer .tags label { flex: 0 1 auto; min-width: 0; justify-content: center; min-height: 40px; padding: 0 10px; font-size: 11px; letter-spacing: .03em; white-space: nowrap; }
-  body.landing.messages .composer .tags label span { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; }   /* a tag longer than its room is cut short rather than the row */
+  /* the five tags in one line, every one whole: the type is sized to the row (container units — a hair under 10 px on
+     a 390 px phone, 9 px on a 360 px one), and only the narrowest phones (320 px) slide the row sideways */
+  body.landing.messages .composer .tags { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; justify-content: space-between; gap: 3px; padding: 0; container-type: inline-size; overflow-x: auto; scrollbar-width: none; }
+  body.landing.messages .composer .tags::-webkit-scrollbar { display: none; }
+  body.landing.messages .composer .tags label { flex: 0 0 auto; min-width: 0; justify-content: center; min-height: 36px; padding: 0 5px; font-size: 10px; font-size: clamp(9px, 2.85cqw, 10px); letter-spacing: 0; white-space: nowrap; }
+  body.landing.messages .composer .tags label span { display: block; overflow: visible; }
   body.landing.messages .flash.err { margin: 0 0 10px; }
   /* the keyboard is up (tabbar.js sets body.kb from the visible part of the page, which the keyboard shortens): the bar of
      keys steps aside and the pop-up sits on the keyboard's upper edge (its bottom set by the script), so what is typed is in view */
@@ -1280,12 +1384,16 @@ body.landing .dpanel-code { white-space: nowrap; }
   /* the crossing, in the pop-up: the dial small at the left, its readings beside it — in the room the form had (tabbar.js
      holds the stage at the form's height while the crossing shows, so the pop-up keeps its size) */
   body.landing.messages #dev-body.is-held { display: grid; align-content: center; }
-  body.landing.messages .transit-block { grid-template-columns: 96px minmax(0, 1fr); grid-template-rows: auto; gap: 14px; align-items: center; }
-  body.landing.messages .xdial { max-width: 96px; margin: 0; }
+  /* the crossing is the whole of the box while it lasts: the dial large in the middle — as wide as the pop-up allows —
+     its readings beneath it, centred, the countdown large enough to read at arm's length */
+  body.landing.messages .transit-block { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; gap: 12px; align-items: start; justify-items: center; text-align: center; }
+  body.landing.messages .xdial-wrap { width: min(66vw, 280px); }
+  body.landing.messages .xdial { max-width: none; width: 100%; margin: 0 auto; }
+  body.landing.messages .transit-read { width: 100%; }
   body.landing.messages .transit .state { font-size: var(--fs-label); letter-spacing: .1em; }
-  body.landing.messages .transit .clock { margin: 4px 0 6px; font-size: 26px; }
-  body.landing.messages .transit .tbar { height: 4px; margin-bottom: 6px; }
-  body.landing.messages .transit .honesty { margin-top: 4px; font-size: 11.5px; letter-spacing: .06em; }
+  body.landing.messages .transit .clock { margin: 6px 0 8px; font-size: 42px; line-height: 1; }
+  body.landing.messages .transit .tbar { height: 5px; margin: 0 auto 8px; max-width: 280px; }
+  body.landing.messages .transit .honesty { margin-top: 4px; font-size: 12px; letter-spacing: .06em; }
   body.landing.messages .transit.closed { padding: 4px 0; }
   /* the cookie question as a sheet above the bar of keys */
   body.landing .consent { width: 100%; max-height: calc(100vh - 32px); overflow: auto; padding: 0 16px 14px; }
@@ -1312,7 +1420,7 @@ body.landing .dpanel-code { white-space: nowrap; }
   body.landing .folder-tabs { position: sticky; top: 83px; z-index: 5; display: block; padding: 8px 8px 0; background: var(--glass); -webkit-backdrop-filter: blur(26px) saturate(1.35); backdrop-filter: blur(26px) saturate(1.35); border-radius: 26px 26px 0 0; border-bottom: 1px solid var(--hair); }
   body.landing .fgroups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 14px; background: rgba(var(--cobalt-rgb),.06); }
   :root[data-theme="dark"] body.landing .fgroups { background: rgba(255,255,255,.05); }
-  body.landing .fgroup { min-height: 36px; border: 0; background: transparent; border-radius: 10px; padding: 0 4px; font-family: var(--display); font-size: var(--fs-label); letter-spacing: .08em; text-transform: uppercase; font-weight: 500; color: var(--dim); cursor: pointer; box-shadow: none; transform: none; }
+  body.landing .fgroup { min-height: 36px; border: 0; background: transparent; border-radius: 10px; padding: 0 4px; justify-content: center; text-align: center; font-family: var(--display); font-size: var(--fs-label); letter-spacing: .08em; text-transform: uppercase; font-weight: 500; color: var(--dim); cursor: pointer; box-shadow: none; transform: none; }   /* each name in the middle of its third */
   body.landing .fgroup.is-cur { background: var(--cobalt-fill); color: #fff; }
   body.landing .frows { display: block; }
   body.landing .frow { display: none; }
@@ -1320,15 +1428,13 @@ body.landing .dpanel-code { white-space: nowrap; }
   body.landing .frow.n2.is-cur { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   body.landing .frow.n1.is-cur { grid-template-columns: minmax(0, 1fr); }
   body.landing .frow-k { display: none; }
-  body.landing .ftab { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; min-height: 64px; padding: 8px 4px 10px; border-radius: 0; background: transparent; position: relative; color: var(--dim); }
+  body.landing .ftab { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; min-height: 64px; padding: 8px 4px 10px; border-radius: 0; background: transparent; position: relative; color: var(--dim); text-align: center; }
   body.landing .frow .ftab:hover { background: transparent; }
   body.landing .ftab .ftab-ic { width: 20px; height: 20px; stroke: currentColor; stroke-width: 1.7; }
-  body.landing .ftab .ftab-n { font-size: 10.5px; letter-spacing: .08em; color: var(--mars-ink); }
   body.landing .ftab .ftab-l { flex: none; width: 100%; font-size: 13px; line-height: 1.15; text-align: center; white-space: normal; overflow: visible; color: var(--ink); -webkit-hyphens: auto; hyphens: auto; }
   body.landing .folder .frow .ftab.is-front, body.landing .folder .frow .ftab.is-front:hover, :root[data-theme="dark"] body.landing .folder .frow .ftab.is-front, :root[data-theme="dark"] body.landing .folder .frow .ftab.is-front:hover { background: transparent; color: var(--cobalt); box-shadow: none; }
   body.landing .folder .frow .ftab.is-front .ftab-l { color: var(--cobalt); }
   body.landing .folder .frow .ftab.is-front .ftab-ic, :root[data-theme="dark"] body.landing .folder .frow .ftab.is-front .ftab-ic { stroke: var(--cobalt); }
-  body.landing .folder .frow .ftab.is-front .ftab-n { color: var(--mars-ink); }
   body.landing .folder .frow .ftab.is-front::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 3px; border-radius: 2px; background: var(--cobalt-fill); }
   body.landing .folder-body { padding: 14px 12px 18px; }
   /* the bar of five keys at the foot of the screen */
@@ -1346,7 +1452,6 @@ body.landing .dpanel-code { white-space: nowrap; }
 /* narrower phones: the bar's first row keeps to one line with everything a little smaller; the narrowest do without the
    sol pill (the peek tile carries the sol) */
 @media (max-width: 400px) and (min-height: 521px) {
-  body.landing.messages .composer .tags label { font-size: 10.5px; letter-spacing: .02em; padding: 0 8px; }   /* the five tags, WISSENSCHAFT among them, in one line */
   body.landing .tk-brand { font-size: 16px; }
   body.landing .tk-sol { font-size: 10.5px; padding: 0 7px; gap: 5px; }
   body.landing .tk-clock { padding: 0 4px; }
@@ -1494,8 +1599,8 @@ body.landing .sky-msg.is-on { animation: sky-line 3s ease-in-out both; }
 body.landing .sky-who { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-tag); letter-spacing: .06em; text-transform: uppercase; color: var(--mars-ink);
   text-shadow: 0 0 2px var(--lbl-halo), 0 0 6px var(--lbl-halo); }
 :root[data-theme="dark"] body.landing .sky-who { color: #fff; }
-body.landing .sky-msg.is-crew .sky-who { color: var(--cobalt); }
-:root[data-theme="dark"] body.landing .sky-msg.is-crew .sky-who { color: #fff; }
+body.landing .sky-part.is-crew .sky-who { color: var(--cobalt); }
+:root[data-theme="dark"] body.landing .sky-part.is-crew .sky-who { color: #fff; }
 body.landing .sky-text { max-width: 100%; box-sizing: border-box; padding: 0 0 5px; font-family: var(--display); font-size: 15px; font-weight: 600; line-height: 1.22; letter-spacing: -.005em; color: var(--lbl);
   text-shadow: 0 0 2px var(--lbl-halo), 0 0 10px var(--lbl-halo);
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; text-overflow: ellipsis; }   /* two lines at most; the whole of it is on the board */
@@ -1514,6 +1619,26 @@ body.landing .sky-when { position: absolute; left: 0; bottom: 100%; margin-botto
   body.landing .sky-msg.is-on { animation: sky-fade 3s linear both !important; }
   body.landing .sky-pic.is-on { animation: sky-fade 7.2s linear both !important; }
 }
+/* a touch on a snapshot or an exchange (public/sky.js): what was touched stays, and a note stands beside it saying what it
+   is — LIVE FEED, the live feed from the habitat; LATEST COMMUNICATION, the latest exchange with it — a small white card
+   (dark by night) with one key: to the Media gallery, or to the exchange on the board */
+body.landing .sky-msg { pointer-events: auto; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+body.landing .sky-note { position: absolute; z-index: 4; box-sizing: border-box; width: 320px; padding: 14px 40px 14px 16px; border-radius: 16px; pointer-events: auto; text-align: left; text-transform: none; letter-spacing: 0;
+  background: rgba(255,255,255,.97); color: var(--ink); border: 1px solid rgba(var(--cobalt-rgb),.28); box-shadow: 0 18px 40px -16px rgba(15,21,64,.55); font-family: var(--display);
+  opacity: 0; transform: translateY(6px); transition: opacity .25s ease, transform .25s ease; }
+:root[data-theme="dark"] body.landing .sky-note { background: rgba(26,26,32,.97); color: #fff; border-color: rgba(255,255,255,.22); box-shadow: 0 18px 40px -16px rgba(0,0,0,.8); }
+body.landing .sky-note.is-on { opacity: 1; transform: none; }
+body.landing .sky-note-k { display: flex; align-items: center; gap: 7px; font-size: 10.5px; line-height: 1; letter-spacing: .16em; text-transform: uppercase; font-weight: 600; color: var(--mars-ink); }
+body.landing .sky-note-k i { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--mars); box-shadow: 0 0 8px 2px rgba(255,90,31,.6); animation: live 2.4s ease-in-out infinite; }
+body.landing .sky-note-t { display: block; margin: 7px 0 0; font-size: 16px; line-height: 1.2; font-weight: 600; letter-spacing: -.01em; }
+/* its one key: a cobalt pill — Media Gallery, Message Board — as the page's pressed pills are */
+body.landing .sky-note-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; margin: 12px 0 0; padding: 0 18px; border: 0; border-radius: 999px; box-sizing: border-box;
+  background: var(--cobalt-fill); color: #fff; font-size: 13.5px; font-weight: 600; line-height: 1; letter-spacing: .01em; text-decoration: none; box-shadow: 0 10px 20px -12px rgba(47,69,232,.7); -webkit-tap-highlight-color: transparent; }
+body.landing .sky-note-btn:hover, body.landing .sky-note-btn:active { color: #fff; background: var(--cobalt-fill); filter: brightness(1.08); transform: none; }
+body.landing .sky-note-x { position: absolute; top: 8px; right: 8px; display: grid; place-items: center; width: 28px; height: 28px; margin: 0; padding: 0; border: 0; border-radius: 50%; background: rgba(15,21,64,.07); color: inherit; font: 400 18px/1 var(--display); cursor: pointer; box-shadow: none; -webkit-tap-highlight-color: transparent; }
+:root[data-theme="dark"] body.landing .sky-note-x { background: rgba(255,255,255,.1); }
+body.landing .sky-note-x:hover, body.landing .sky-note-x:active { transform: none; box-shadow: none; background: rgba(15,21,64,.14); }
+@media (prefers-reduced-motion: reduce) { body.landing .sky-note-k i { animation: none; } }
 /* a phone held upright: the room above the dome is kept inside the dome's screen, so the sky spans the room and the dome */
 @media (max-width: 760px) and (min-height: 521px) {
   body.landing .dome-panel.has-sky { --sky: calc(clamp(116px, 34vw, 150px) + 25px); }                   /* and the sheet's ruler over it */
@@ -1603,6 +1728,8 @@ body.landing .dome-shell { stroke: rgba(255,255,255,.95); stroke-width: 1.4; }
   body.landing .dome-seq { left: calc(-1 * var(--gutter)); right: calc(-1 * var(--gutter)); top: 0; bottom: -30px; }
   body.landing .dome-screen { padding-top: 25px; }                                                   /* room for the ruler over the dome (with a sky, the sky's room: above) */
   body.landing .seq-fig { display: none; }                                                            /* the small figures would crowd a phone's sheet */
+  body.landing .seq-fig.seq-brand { display: block; }                                                 /* the name stays (sheet.css) */
+  body.landing .seq-fig.seq-live { display: inline-flex; }                                            /* and the LIVE mark opposite it (sheet.css) */
 }
 
 /* ---- the world's slowest chat: the heading, the four steps, the door */

@@ -16,6 +16,8 @@
   if (!targets.length) return;
   var pollMs = Math.max(5000, Number(targets[0].el.getAttribute('data-poll')) || 20000);
   var version = targets[0].el.getAttribute('data-version') || '';
+  // the gallery's address: /api/cloud, or the flat grid's (/api/cloud?flat=1) on the installation's media screen
+  var api = targets[0].el.getAttribute('data-api') || '/api/cloud';
 
   /** Bring the tiles of `oldGrid` into line with those of `newGrid`, keeping every tile that is still there. */
   function reconcileGrid(oldGrid, newGrid) {
@@ -85,7 +87,7 @@
 
   function tick() {
     if (document.hidden) return;
-    fetch('/api/cloud', { cache: 'no-store' })
+    fetch(api, { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (j) {
         if (!j || !j.configured || !j.version || j.version === version) return;

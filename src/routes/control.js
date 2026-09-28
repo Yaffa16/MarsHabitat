@@ -7,6 +7,7 @@ const V = require('../views/control');
 const content = require('../lib/content');
 const missionLib = require('../lib/mission');
 const officer = require('../lib/officer');
+const spacespeak = require('../lib/spacespeak');
 const media = require('../lib/media');
 const multer = require('multer');
 
@@ -201,6 +202,9 @@ router.get('/', (req, res) => {
      WHERE ${VIEWS[show]}
      ORDER BY m.submitted_at ${show === 'pending' ? 'ASC' : 'DESC'} LIMIT 200`
   ).all();
+  // the relay to space: how each message stands with SpaceSpeak (src/lib/spacespeak.js)
+  const relay = spacespeak.statesOf(list.map((m) => m.id));
+  for (const m of list) m.relay = relay[m.id] || null;
 
   const day = dayParam(req, ctx);
   const withEntry = (designation, kind) => {
@@ -210,7 +214,8 @@ router.get('/', (req, res) => {
     const report = kind ? reportFor(day, kind) : '';
     return { ...o, entry, media: media.list({ day, crewId: o.id }), report,
       // media placed in the report belongs to the report, and the other way round
-      otherBodies: [report], reportOtherBodies: [entry ? entry.body : ''] };
+      otherBodies: [report], reportOtherBodies: [entry ? entry.body : ''],
+      record: data.moodRecord(o.id) };                                   // every state filed for the officer, newest first
   };
   const officers = {
     comms: withEntry('COMMUNICATION OFFICER'),
@@ -226,6 +231,7 @@ router.get('/', (req, res) => {
     show, tab: tabOf(req.query.tab), day, totalDays: ctx.mission.totalDays,
     tpl: allTemplates(),
     list, crew: data.crewWithMood(), counts: data.counts(),
+    space: spacespeak.status(),
     officers,
     tasks: db.prepare('SELECT * FROM task WHERE mission_day = ? ORDER BY sort_order, time').all(day),
     meals: db.prepare(`SELECT * FROM meal WHERE mission_day = ? ORDER BY
@@ -317,6 +323,17 @@ router.get('/messages/export.pdf', (req, res, next) => {
     res.type('application/pdf').attachment(`mars-station-messages-${stampNow()}.pdf`).send(require('../lib/record-pdf').messagesPdf());
   } catch (e) { next(e); }
 });
+/* The record of the crew's states: every state filed for every officer — who, the day and time (the venue's clock and
+   the sol), the mood and its words, who filed it — oldest first. What mission control shows under each officer's state,
+   for all three at once. */
+router.get('/moods.csv', (req, res) => {
+  const cell = (v) => { const t = v == null ? '' : String(v); return /[",\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+  const head = ['officer', 'date', 'time', 'sol', 'mood', 'value', 'reads', 'filed_by', 'filed_at_utc'];
+  const rows = data.moodRecordAll().map((m) => [officer.shown(m.designation), m.date, m.time, m.sol, m.condition, m.calm_tense, m.text, m.set_by, m.effective_at]);
+  res.type('text/csv; charset=utf-8').attachment(`mars-station-crew-states-${stampNow()}.csv`)
+    .send('\ufeff' + [head, ...rows].map((r) => r.map(cell).join(',')).join('\r\n') + '\r\n');
+});
+
 router.get('/messages/export.csv', (req, res) => {
   res.type('text/csv; charset=utf-8').attachment(`mars-station-messages-${stampNow()}.csv`).send('\ufeff' + require('../lib/record-pdf').messagesCsv());
 });
@@ -351,7 +368,9 @@ router.post('/:id(\\d+)/reply', (req, res) => {
   db.prepare('UPDATE message SET state = ?, reviewed_at = ?, reviewed_by = ? WHERE id = ?')
     .run(publish ? 'PUBLISHED' : 'RESPONSE', now(), req.user.username, id);
   audit(req.user.username, 'Message', id, publish ? 'reply-publish' : 'reply-draft');
-  setFlash(req, publish ? `Exchange ${id} is live on the mission page.` : `Reply saved for ${id}, not published.`);
+  // a replied message goes out of the atmosphere too: the relay hands it to SpaceSpeak (src/lib/spacespeak.js) — once
+  const beamed = publish && spacespeak.enqueue(id);
+  setFlash(req, publish ? `Exchange ${id} is live on the mission page${beamed ? ' and on its way to SpaceSpeak' : ''}.` : `Reply saved for ${id}, not published.`);
   toQueue(req, res);
 });
 

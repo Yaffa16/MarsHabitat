@@ -72,6 +72,11 @@ function crossingDial(T = same) {
  * Shared so the landing page and /communicate cannot drift apart: there is one
  * writing surface on this site and it behaves identically wherever it appears.
  */
+/** Whether the relay to space is on — the composer says so under its key, so a visitor knows before sending. */
+function spaceRelayOn() {
+  try { return require('../../lib/spacespeak').CFG.enabled; } catch { return false; }
+}
+
 function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
   // The composer appears twice on the mission page. Ids are suffixed so the
   // character counter and tag limiter bind to the right one.
@@ -128,7 +133,8 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
     </div>
     <hr>
     <div class="dev-foot">
-      <button type="${ghost ? 'button' : 'submit'}" class="primary">${T('Transmit')}</button>
+      <button type="${ghost ? 'button' : 'submit'}" class="primary">${T('Transmit')}</button>${spaceRelayOn() ? `
+      <span class="dev-space">${T('Every message is also beamed into space by radio.')}</span>` : ''}
     </div>
   </form>`;
   const form = formHtml(false);
@@ -185,10 +191,10 @@ function compose(ctx, { inFlight, mine, error, draft }) {
   ${error ? `<div class="flash err">${esc(error)}</div>` : ''}
 
   <div class="grid g-hero">
-    ${panel('CH-09 / COMPOSER', composerBlock(ctx, { inFlight, error, draft }), 'earth-side')}
+    ${panel('COMPOSER', composerBlock(ctx, { inFlight, error, draft }), 'earth-side')}
     <div>
       ${orbitPlot(ctx.geo, { size: 400, id: 'orbit' })}
-      ${panel('CH-09 / LINK BUDGET', `
+      ${panel('LINK BUDGET', `
         ${eyebrow(phase === 'ACTIVE' ? 'This transmission' : 'The gap, right now')}
         <dl class="kv">
           <dt>RANGE</dt><dd>${(g.distanceKm / 1e6).toFixed(2)} million km</dd>
@@ -199,7 +205,7 @@ function compose(ctx, { inFlight, mine, error, draft }) {
     </div>
   </div>
 
-  ${mine.length ? panel('CH-09 / YOUR TRAFFIC', `
+  ${mine.length ? panel('YOUR TRAFFIC', `
     ${eyebrow('Messages you have sent')}
     ${mine.map((m) => `
       <div style="border-bottom:1px solid var(--rule);padding:12px 0">

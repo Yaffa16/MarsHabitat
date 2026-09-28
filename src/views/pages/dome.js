@@ -2,9 +2,9 @@
 /**
  * The habitat as a picture: a geodesic dome, drawn as a wireframe over a
  * copper shell on a dark screen, with a hexagon set into it for each thing
- * that lives inside — the science bench, the three crew, the power draw, the
- * three crew, the power store, the water recycling loop, the nap pod, the
- * hydroponic shelves and the bicycle power generator — each named by a short label
+ * that lives inside — the science bench, the three crew, the uplink, the
+ * power store, the water recycling loop, the hydroponic shelves and the
+ * bicycle power generator — each named by a short label
  * on a leader line, and each opening, when pressed, a pop-up that says what
  * that part of the habitat is and what is happening in it right now. It
  * sits between the About row and the composer on the landing
@@ -187,20 +187,26 @@ const DOME_SVG = domeSvgInner(false), DOME_SVG_AURA = domeSvgInner(true);
 /* ------------------------------------------------------------ the hexagons
    Each is a system inside the habitat: where it stands (in the dome's own
    space, x across, y towards the viewer, z up — all within the unit sphere),
-   its icon (traced from the pictograms in src/views/pages/dome-icons.json),
-   the section of the dashboard its pop-up links to, and where its label sits
-   around the dome (as a fraction of the drawing's box, anchored on `side`). */
+   its icon (traced from the pictograms in src/views/pages/dome-icons.json;
+   the aura layout draws line icons instead, LINE_ICONS), the section of the
+   dashboard its pop-up links to, and where its label sits around the dome
+   (as a fraction of the drawing's box, anchored on `side`). Two keys are
+   not parts of the habitat: EVA — the crew's daily walk outside (a rover)
+   — and Dashboard, which says what the mission dashboard is and carries a
+   key to it (`btn`: the words on that key, where the parts' pop-ups say
+   "Open its panel on the dashboard"). */
 const ICONS = require('./dome-icons.json');
 
 const HEXES = [
-  { id: 'crew',       code: 'CH-12', at: [-0.10, 0.28, 0.40], label: 'Crew',            href: '#crew',      lx: 0.03, ly: 0.20, side: 'left' },
-  { id: 'science',    code: 'CH-11', at: [-0.52, 0.10, 0.38], label: 'Science lab',     href: '#crewlog',   lx: 0.03, ly: 0.42, side: 'left' },
-  { id: 'recycling',  code: 'CH-10', at: [-0.46, 0.40, 0.14], label: 'Water recycling', href: '#habitat',   lx: 0.03, ly: 0.64, side: 'left' },
-  { id: 'aeroponics', code: 'CH-13', at: [-0.18, 0.56, 0.08], label: 'Hydroponics',     href: '#galley',    lx: 0.03, ly: 0.86, side: 'left' },
-  { id: 'comms',      code: 'CH-09', at: [0.32, -0.04, 0.68], label: 'Communication',   href: '#exchanges', lx: 0.97, ly: 0.20, side: 'right' },
-  { id: 'power',      code: 'CH-20', at: [0.54, 0.20, 0.38],  label: 'Power',           href: '#habitat',   lx: 0.97, ly: 0.42, side: 'right' },
-  { id: 'nappod',     code: 'CH-30', at: [0.48, 0.46, 0.12],  label: 'Nap pod',         href: '#schedule',  lx: 0.97, ly: 0.64, side: 'right' },
-  { id: 'generator',  code: 'CH-21', at: [0.16, 0.58, 0.10],  label: 'Power generator', href: '#habitat',   lx: 0.97, ly: 0.86, side: 'right' },
+  { id: 'crew',       at: [-0.10, 0.28, 0.40], label: 'Crew',            href: '#crew',      lx: 0.03, ly: 0.20, side: 'left' },
+  { id: 'science',    at: [-0.52, 0.10, 0.38], label: 'Science lab',     href: '#crewlog',   lx: 0.03, ly: 0.42, side: 'left' },
+  { id: 'recycling',  at: [-0.46, 0.40, 0.14], label: 'Water recycling', href: '#habitat',   lx: 0.03, ly: 0.64, side: 'left' },
+  { id: 'aeroponics', at: [-0.18, 0.56, 0.08], label: 'Hydroponics',     href: '#galley',    lx: 0.03, ly: 0.86, side: 'left' },
+  { id: 'comms',      at: [0.32, -0.04, 0.68], label: 'Communication',   href: '#exchanges', lx: 0.97, ly: 0.20, side: 'right' },
+  { id: 'power',      at: [0.54, 0.20, 0.38],  label: 'Power',           href: '#habitat',   lx: 0.97, ly: 0.42, side: 'right' },
+  { id: 'generator',  at: [0.16, 0.58, 0.10],  label: 'Power generator', href: '#habitat',   lx: 0.97, ly: 0.86, side: 'right' },
+  { id: 'eva',        at: [-0.30, -0.12, 0.62], label: 'EVA',             href: '#schedule',  lx: 0.03, ly: 0.31, side: 'left' },
+  { id: 'dashboard',  at: [0.12, -0.30, 0.56],  label: 'Dashboard',       href: '#mission',   lx: 0.97, ly: 0.31, side: 'right', btn: 'Open the Mission Dashboard' },
 ];
 
 /* --------------------------------------------------------------- figures */
@@ -226,7 +232,7 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
   const tasks = today ? today.tasks : [];
   let nowT = null, nextT = null;
   for (const t of tasks) { if (t.time <= hhmm) nowT = t; else if (!nextT) nextT = t; }
-  const doing = pre ? (tasks[0] ? `${T('Day 01 opens with')} ${tasks[0].label}.` : T('Hatch not yet sealed.'))
+  const doing = pre ? (tasks[0] ? `${T('Day 01 opens with')} ${tasks[0].label}.` : T('The run has not begun yet.'))
     : nowT ? `${T('Now')}: ${nowT.label}${nowT.detail ? ' — ' + nowT.detail : ''}.` : T('Off the schedule.');
   const next = nextT ? ` ${T('Up next')} ${nextT.time}: ${nextT.label}.` : '';
 
@@ -241,7 +247,13 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
   const store = (key) => inv.find((i) => i.key === key) || null;
   const daysOf = (i) => (i && i.consumption > 0 ? i.quantity / i.consumption : null);
   const left = (i) => { const d = daysOf(i); return d == null ? '' : d < 1 ? ` — ${T('under a day at this draw')}` : d < 99 ? ` — ${Math.round(d)} ${T(Math.round(d) === 1 ? 'day left at this draw' : 'days left at this draw')}` : ''; };
-  const storeLine = (key, fallback) => { const i = store(key) || inv.find((x) => x.critical) || inv[0]; return i ? `${i.label}: ${qty(i.quantity)} ${i.unit} ${T('of')} ${i.start_quantity || i.quantity}${left(i)}.` : fallback; };
+  const storeLine = (key, fallback) => {
+    const i = store(key) || inv.find((x) => x.critical) || inv[0];
+    if (!i) return fallback;
+    // a store with no figure at all yet stands as a placeholder (public.js, inventoryGauges)
+    if (!(i.start_quantity || i.quantity)) return `${i.label}: ${T('Placeholder')} — ${T('no figure filed yet')}.`;
+    return `${i.label}: ${qty(i.quantity)} ${i.unit} ${T('of')} ${i.start_quantity || i.quantity}${left(i)}.`;
+  };
 
   // Today's power, all categories.
   const pwrDay = pre ? 1 : m.clampedDay;
@@ -261,6 +273,14 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
   const steps = fig.steps != null ? `${Number(fig.steps).toLocaleString('en-GB')} ${T('steps today')}` : T('steps not yet counted');
   const kcal = fig.calories != null ? `${Number(fig.calories).toLocaleString('en-GB')} kcal` : null;
 
+  // Today's EVA — the crew's walk outside — from the schedule: on now, still to come, or already made.
+  const evas = tasks.filter((t) => /\bEVA\b/i.test(t.label));
+  const evaOn = evas.find((t) => t === nowT), evaNext = evas.find((t) => t.time > hhmm), evaPast = evas.filter((t) => t.time <= hhmm).pop();
+  const evaLine = pre ? (evas[0] ? `${T('Day 01’s EVA is at')} ${evas[0].time}: ${evas[0].label}.` : T('The run has not begun yet.'))
+    : evaOn ? `${T('Now')}: ${evaOn.label}${evaOn.detail ? ' — ' + evaOn.detail : ''}.`
+      : evaNext ? `${T('Today’s EVA is at')} ${evaNext.time}: ${evaNext.label}.`
+        : evaPast ? `${T('Today’s EVA was at')} ${evaPast.time}: ${evaPast.label}.` : T('No EVA on today’s schedule.');
+
   // The latest exchange with Earth.
   const ex = recent.find((r) => r.state === 'PUBLISHED' && r.response_body) || recent.find((r) => r.state === 'PUBLISHED');
   const clip = (t, n) => { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1).trimEnd() + '…' : t; };
@@ -274,8 +294,9 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
     recycling:  { text: storeLine('water', T('No inventory filed for today.')), more: T('The loop runs whenever there is grey water to pass; the crew count the tank at the end of the day.') },
     aeroponics: { text: storeLine('food', T('No inventory filed for today.')), more: `${T('First harvest planned for SOL 10.')}` },
     power:      { text: powerLine, more: '' },
-    nappod:     { text: `${doing}${next}`, more: `${name(health)}: ${cond(health)}.` },
     generator:  { text: `${steps}${kcal ? ` · ${kcal}` : ''}.`, more: powerLine },
+    eva:        { text: evaLine, more: evaNext && evaOn ? `${T('Up next')} ${evaNext.time}: ${evaNext.label}.` : '' },
+    dashboard:  { text: pre ? T('The run has not begun yet.') : `${T('Sol')} ${m.clampedDay} ${T('of')} ${m.totalDays} · ${tasks.filter((t) => t.status === 'DONE').length}/${tasks.length} ${T('tasks done today')} · ${counts.published} ${T('exchanges published')}.`, more: '' },
   };
 }
 
@@ -293,7 +314,8 @@ const LINE_ICONS = {
   science: '<path d="M9 3h6"/><path d="M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/>',
   recycling: '<path d="M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11z"/><path d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/>',
   aeroponics: '<path d="M12 21v-9"/><path d="M12 12c0-4-3-6-7-6 0 4 3 6 7 6z"/><path d="M12 14c0-3.5 2.5-5.5 7-5.5 0 3.5-2.5 5.5-7 5.5z"/><path d="M8 21h8"/>',
-  nappod: '<rect x="3" y="8" width="18" height="9" rx="4.5"/><path d="M7 12.5h5"/><path d="M5 17v2"/><path d="M19 17v2"/>',
+  eva: '<rect x="4.5" y="10.5" width="15" height="6" rx="1.5"/><circle cx="7.5" cy="19.6" r="1.9"/><circle cx="12" cy="19.6" r="1.9"/><circle cx="16.5" cy="19.6" r="1.9"/><path d="M9 10.5V6.8"/><rect x="6.5" y="4" width="5" height="2.8" rx="1"/><path d="M15.5 10.5V8.2"/><path d="M13.3 6.8a2.6 2.6 0 0 1 4.4 0"/>',   // a rover: the body on its wheels, the camera mast, the dish
+  dashboard: '<rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/>',   // four panels
 };
 // the key's face and its icon, about the origin; the icon box is 24 units, a shade under the key's radius
 const podBody = (id) => `<circle class="dome-pod" r="${S}"/>
@@ -301,7 +323,7 @@ const podBody = (id) => `<circle class="dome-pod" r="${S}"/>
 
 /** The hexagon with its pictogram, on its own — for the pop-up's head. */
 function hexMark(h, pods = false) {
-  if (pods) return `<svg class="dome-mark" viewBox="${-S - 3} ${-S - 3} ${2 * S + 6} ${2 * S + 6}" aria-hidden="true">${podBody(h.id)}</svg>`;
+  if (pods || !ICONS[h.id]) return `<svg class="dome-mark" viewBox="${-S - 3} ${-S - 3} ${2 * S + 6} ${2 * S + 6}" aria-hidden="true">${podBody(h.id)}</svg>`;
   const pts = Array.from({ length: 6 }, (_, i) => {
     const a = Math.PI / 3 * i + Math.PI / 6;
     return `${(S * Math.cos(a)).toFixed(1)},${(S * Math.sin(a)).toFixed(1)}`;
@@ -323,10 +345,10 @@ function hexSvg(h, T, pods = false) {
   }).join(' ');
   // The pictogram, fitted into the hexagon: potrace's paths are in tenths of
   // a point, y up, so they are flipped and scaled into a box of 2·S·0.66.
-  const ic = ICONS[h.id];
+  const ic = ICONS[h.id] || null;                                    // the two new keys have line icons alone
   const box = S * 2 * 0.66;
-  const sc = box / Math.max(ic.w, ic.h);
-  const ox = -ic.w * sc / 2, oy = -ic.h * sc / 2;
+  const sc = ic ? box / Math.max(ic.w, ic.h) : 1;
+  const ox = ic ? -ic.w * sc / 2 : 0, oy = ic ? -ic.h * sc / 2 : 0;
   // Drawn about its own origin and placed by the transform, which the page
   // script rewrites as the hexagon drifts; without the script it stands here.
   // The name on a tag beneath the hexagon, carried with it as it floats
@@ -335,7 +357,7 @@ function hexSvg(h, T, pods = false) {
   const tag = T(h.label), tw = Math.round(tag.length * 7 + 24);
   return `<g class="dome-hex" data-hex="${h.id}" data-at="${h.at.join(',')}" transform="translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="dome-${h.id}">
       <title>${esc(T(h.label))}</title>
-      <g class="dome-hex-body">${pods ? podBody(h.id) : `
+      <g class="dome-hex-body">${pods || !ic ? podBody(h.id) : `
         <polygon points="${pts}"/>
         <g class="dome-ic" transform="translate(${ox.toFixed(1)} ${oy.toFixed(1)}) scale(${sc.toFixed(4)}) translate(0 ${ic.h}) scale(0.1 -0.1)"><path d="${ic.d}"/></g>`}
       </g>
@@ -349,8 +371,8 @@ function labelSvg(h, T) {
   const text = T(h.label);
   const tx = h.lx * W, ty = h.ly * H;
   const right = h.side === 'right';
-  // The name is set in the display face at 15 units, its channel code in
-  // the small mono above it. The width is estimated so the leader starts a
+  // The name is set in the display face at 15 units. The width is
+  // estimated so the leader starts a
   // little beyond the name's inner edge, runs level for a moment, then goes
   // straight to the hexagon.
   const width = Math.max(text.length * 8.0, 5 * 6.4);
@@ -359,7 +381,6 @@ function labelSvg(h, T) {
   return `<g class="dome-label" data-hex="${h.id}" data-side="${h.side}" data-w="${width.toFixed(0)}" data-y="${ty.toFixed(0)}" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="dome-${h.id}">
       <path class="dome-lead" d="M${sx.toFixed(0)} ${ty.toFixed(0)}H${kx.toFixed(0)}L${p.x.toFixed(1)} ${p.y.toFixed(1)}"/>
       <circle class="dome-lead-dot" cx="${sx.toFixed(0)}" cy="${ty.toFixed(0)}" r="2.5"/>
-      <text class="dome-code" x="${tx.toFixed(0)}" y="${(ty - 13).toFixed(0)}" text-anchor="${right ? 'end' : 'start'}">${esc(h.code)}</text>
       <text class="dome-name" x="${tx.toFixed(0)}" y="${(ty + 5).toFixed(0)}" text-anchor="${right ? 'end' : 'start'}">${esc(text)}</text>
     </g>`;
 }
@@ -367,14 +388,16 @@ function labelSvg(h, T) {
 /* What each part of the habitat is — the still text of each pop-up. The
    live sentences come from figures(). */
 const ABOUT = {
-  crew: 'Three officers live sealed inside the habitat for the thirteen days of the run: a commanding officer who relays every message from Earth, a science officer who runs the experiments and watches the habitat’s systems, and a health officer who keeps the crew fit and the life support in order. Between them they write three blogs a day — the Commander Blog, the Daily Science Findings and the Daily Health Blog — and file their condition from inside.',
+  crew: 'Three crew members are always in the habitat for the thirteen days of the run: a commanding officer who relays every message from Earth, a science officer who runs the experiments and watches the habitat’s systems, and a health officer who keeps the crew fit and the life support in order. Between them they write three blogs a day — the Commander Blog, the Daily Science Findings and the Daily Health Blog — and file their condition from inside.',
   science: 'The science bench: the habitat’s own experiments — samples, cultures, readings — and the daily science findings the science officer writes up. The sensor node beside it measures temperature, humidity, carbon dioxide and more every twenty minutes.',
   recycling: 'Nothing is thrown away. Used water passes through a planted filter bed, a screw press and a settling funnel and comes back as water for the plants and the crew. This loop decides how long the stores last.',
   aeroponics: 'Three shelves of plants grown without soil, their roots in nutrient-rich water — the habitat’s fresh food and part of its air. What grows here is counted with the food rations.',
   power: 'Everything in the habitat runs on what the crew can make and store. Heating, the galley, lighting and electronics draw on one battery, and the crew count the kilowatt-hours by category every day.',
-  nappod: 'One enclosed pod for rest. The crew sleep in shifts so that someone is always awake for a communication window, and the air in the pod during the sleep period is the reading watched most closely.',
   comms: 'The uplink. Every message written on this station crosses the distance to the habitat and waits for the commanding officer, who reads it and answers from inside; the reply comes back to the board on every open phone. The real light-time between Earth and Mars is shown beside the composer.',
   generator: 'A bicycle generator: pedalling charges the battery. The health officer’s workout is also the habitat’s power plant — the steps and the kilowatt-hours are the same effort.',
+  eva: ['Every day, the astronauts also leave the Habitat in their spacesuits for an EVA on the Mars landscape of Karlsruhe’s Marktplatz.',
+    'An EVA — an extra-vehicular activity — is the walk outside, in the suit, on the square. Its hour is on the day’s schedule, and the pictures of it are on the Media page.'],
+  dashboard: 'The Mission Dashboard is the station’s instrument panel: the habitat’s live readings, today’s schedule and meal, the crew’s condition, the trends over the run and the three daily blogs — everything the sensors measure and the crew report, on one page, refreshed as it comes in.',
 };
 
 /**
@@ -391,26 +414,26 @@ function habitatDome(ctx, args) {
     <dialog class="popup dome-popup" id="dome-${h.id}" aria-labelledby="dome-${h.id}-title">
       <div class="popup-head">
         ${hexMark(h, pods)}
-        <div><span class="fold-title" id="dome-${h.id}-title">${esc(T(h.label))}</span><span class="fold-sub"><span class="dome-code-chip">${esc(h.code)}</span> · <span data-field="stamp">${esc(f.stamp)}</span></span></div>
+        <div><span class="fold-title" id="dome-${h.id}-title">${esc(T(h.label))}</span><span class="fold-sub"><span data-field="stamp">${esc(f.stamp)}</span></span></div>
         <button type="button" class="popup-close" data-close aria-label="${esc(T('Close'))}">×</button>
       </div>
       <div class="popup-body">
         <p class="dome-now"><span class="dome-now-k">${T('Now')}</span> <span data-field="${h.id}-text">${esc(f[h.id].text)}</span> <span data-field="${h.id}-more">${esc(f[h.id].more)}</span></p>
-        <p>${esc(T(ABOUT[h.id]))}</p>
-        <p><a class="btn" href="${h.href}" data-close>${T('Open its panel on the dashboard')} →</a></p>
+        <p>${esc([].concat(ABOUT[h.id]).map(T).join(' '))}</p>
+        <p><a class="btn" href="${h.href}" data-close>${T(h.btn || 'Open its panel on the dashboard')} →</a></p>
       </div>
     </dialog>`;
   // The sky over the dome, when the page brings one (sky.js: the latest exchanges and pictures rising and fading above it),
   // and the sheet under it all (sky.js, habitatSheet: the run's sols as a sequencer's sheet, the glow behind the dome)
   const sky = args.sky || null, sheet = args.sheet || '';
-  // and the line that turns under the dome (landing.js, underLine): on the ground line, beside the caption, in the foot of the
-  // sheet (sheet.css)
+  // and what stands on the floor under the sheet's ground line (the landing page puts its scroll nudge there,
+  // landing.js scrollNudge; sheet.css)
   const line = args.line || '';
   return `
   <section class="dome-panel${sky && sky.on ? ' has-sky' : ''}${line ? ' has-line' : ''}" id="habitat-dome" aria-label="${esc(T('The habitat'))}">
     <header class="dome-head">
-      <div class="dome-title"><span class="dpanel-code">CH-00</span><h2>${T('The habitat')}</h2></div>
-      <span class="dome-meta">HABITAT ONE · R75-2<span class="dome-meta-hint"> · ${T('press a part of the habitat to see what is happening in it')}</span></span>
+      <div class="dome-title"><h2>${T('The habitat')}</h2></div>
+      <span class="dome-meta">HABITAT ONE · R75-2</span>
     </header>
     <div class="dome-screen">${sheet}${sky ? sky.html : ''}
       <div class="dome-stage">
@@ -421,11 +444,9 @@ function habitatDome(ctx, args) {
         </svg>
       </div>
       <div class="dome-legend" role="group" aria-label="${esc(T('The parts of the habitat'))}">${HEXES.map((h) => `
-        <button type="button" class="chip" data-hex="${h.id}"><span class="chip-code">${esc(h.code)}</span>${esc(T(h.label))}</button>`).join('')}</div>
+        <button type="button" class="chip" data-hex="${h.id}">${esc(T(h.label))}</button>`).join('')}</div>
     </div>
-    ${line ? `<div class="dome-foot">${line}
-      <p class="dome-caption" aria-hidden="true">${T('press a part of the habitat to see what is happening in it')}</p>
-    </div>` : `<p class="dome-caption" aria-hidden="true">${T('press a part of the habitat to see what is happening in it')}</p>`}
+    ${line ? `<div class="dome-foot">${line}</div>` : `<p class="dome-caption" aria-hidden="true"></p>`}
     ${HEXES.map(popup).join('')}
     <script>
     (function () {
@@ -621,7 +642,7 @@ function habitatDome(ctx, args) {
         var lab = root.querySelector('.dome-label[data-hex="' + n.getAttribute('data-hex') + '"]');
         return { n: n, pos: at.slice(), vel: [0, 0, 0], to: null, until: 14 + Math.random() * 12, lab: lab,
           lead: lab && lab.querySelector('.dome-lead'), dot: lab && lab.querySelector('.dome-lead-dot'),
-          code: lab && lab.querySelector('.dome-code'), name: lab && lab.querySelector('.dome-name'),
+          name: lab && lab.querySelector('.dome-name'),
           side: lab && lab.getAttribute('data-side'), w: lab ? +lab.getAttribute('data-w') : 0,
           ly: lab ? +lab.getAttribute('data-y') : 0, fade: 1, swapTo: null };
       });
@@ -657,9 +678,9 @@ function habitatDome(ctx, args) {
         var sx = right ? tx - h.w - 16 : tx + h.w + 16;
         var kx = right ? sx - 30 : sx + 30;
         var ty = h.ly.toFixed(1);
-        h.code.setAttribute('x', tx); h.name.setAttribute('x', tx);
-        h.code.setAttribute('text-anchor', right ? 'end' : 'start'); h.name.setAttribute('text-anchor', right ? 'end' : 'start');
-        h.code.setAttribute('y', (h.ly - 13).toFixed(1)); h.name.setAttribute('y', (h.ly + 5).toFixed(1));
+        h.name.setAttribute('x', tx);
+        h.name.setAttribute('text-anchor', right ? 'end' : 'start');
+        h.name.setAttribute('y', (h.ly + 5).toFixed(1));
         h.dot.setAttribute('cx', sx); h.dot.setAttribute('cy', ty);
         h.lead.setAttribute('d', 'M' + sx + ' ' + ty + 'H' + kx + 'L' + h.p.x.toFixed(1) + ' ' + h.p.y.toFixed(1));
         h.lab.style.opacity = h.fade.toFixed(3);

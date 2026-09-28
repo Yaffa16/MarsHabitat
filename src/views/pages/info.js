@@ -29,12 +29,21 @@ const p = (T, text) => `<p>${T(text)}</p>`;
 function aboutFold(ctx) {
   const T = ctx.T;
   const n = ctx.mission.totalDays;
+  /* The project, as the ZKM announces it — zkm.de/de/2026/10/marsplatz-red-dust-city — paragraph by paragraph; then
+     what this station adds to it. Nothing here is invented: the run, the dome, the crew's brief, the EVAs, the ways to
+     reach the crew, the question and the closing line, the opening, the project's name and its funders are the
+     announcement's. */
   return `
   <div class="grid g-hero">
     <div class="prose">
-      <h3>${T('The habitat')}</h3>
-      ${p(T, 'MARS is a durational performance. For the length of the mission the crew do not leave the habitat. They follow a schedule, eat what has been planned for them, work through a set of tasks, and draw down a finite inventory. Visitors to the exhibition can see the habitat from outside. What they cannot do is walk in and talk to the people inside it.')}
-      ${p(T, 'The sensors that produce the readings on this page are mounted in that structure. When the habitat warms up because a room full of people is standing around it, the number moves. The data is not a simulation of a Mars habitat; it is a measurement of a real enclosed space with three people in it.')}
+      <h3>MARS!platz: Red Dust City</h3>
+      ${p(T, 'A durational performance on Karlsruhe’s Marktplatz, Thursday 15 to Tuesday 27 October 2026. Admission is free.')}
+      ${p(T, 'Large space agencies and private companies are hard at work on a future for people on Mars. What would that future look like — and shouldn’t the people be part of designing it? MARS!platz asks exactly that.')}
+      ${p(T, 'For six months Hertzlab, the artistic research and development department of the ZKM, worked with artists, experts and the citizen scientists of the open group Red Dust Society on how people could live on Mars: how to build and use a habitat, how to keep a crew mentally well, how to feed it and grow food, how to organise living together, and how to keep track of and save resources. What came out of it now goes into an analogue simulation — a large public experiment that tests which of the ideas hold up.')}
+      ${p(T, 'A white dome on the Marktplatz marks the outpost of the first people to land: Red Dust City. For the thirteen days of the run three crew members are always in the habitat — a Commanding Officer, a Science Officer and a Health Officer — living and working under the conditions of a long-duration mission and testing what visitors of the ZKM and citizens of Karlsruhe have developed: the design and use of the habitat, strategies for the crew’s mental health, a balanced plan for food and growing, rules for organising a community, and the documenting and saving of resources.')}
+      ${p(T, 'Every day the crew go out in their spacesuits on an EVA — an extra-vehicular activity — to run experiments on the Marktplatz. A detailed hourly programme says what is being tested when, and what came of it.')}
+      ${p(T, 'You can talk to the crew: online, right here, through the world’s slowest chat; over the radio; at the ZKM; or on the Marktplatz itself. How would you live on Mars? Help design a possible future — solutions for Mars are also solutions for life on Earth.')}
+      ${p(T, 'MARS!platz: Red Dust City is part of MARS! Mobilizing Awareness for Resilient Societies!, the ZKM’s programme for 2026, which the exhibition MARS! opened at the ZKM from 6 June to 13 September 2026. The opening on the Marktplatz is on Thursday 15 October 2026 from 16:00 to 17:00.')}
 
       <h3>${T('Distance as the material')}</h3>
       ${p(T, 'Networked communication is built to remove distance. A message is written and delivered in the same breath, and the gap between two people becomes invisible. That invisibility is the thing this piece takes apart.')}
@@ -42,13 +51,13 @@ function aboutFold(ctx) {
       ${p(T, 'The delay is not friction added for effect. It is the subject.')}
 
       <h3>${T('The archive as the work')}</h3>
-      ${p(T, 'Every published exchange stays here. Over the run the archive accumulates into something neither the artists nor the audience wrote alone: a record of what people on Earth wanted to ask three strangers in a sealed room, and how those questions shifted as the mission went on.')}
+      ${p(T, 'Every published exchange stays here. Over the run the archive accumulates into something neither the artists nor the audience wrote alone: a record of what people on Earth wanted to ask the three crew members in the habitat, and how those questions shifted as the mission went on.')}
 
-      <h3>Hertzlab</h3>
-      ${p(T, 'Hertzlab is the research and production laboratory of the ZKM | Center for Art and Media Karlsruhe, working across performance, sound, media technology and installation. MARS is produced within that context, and this station was built as part of the production rather than as documentation of it.')}
+      <h3>${T('The readings')}</h3>
+      ${p(T, 'The sensors that produce the readings on this page are mounted in the habitat on the Marktplatz. When the habitat warms up because a crowd is standing around it, the number moves. The data is not a simulation of a Mars habitat; it is a measurement of the real one, with the crew in it.')}
     </div>
     <div>
-      ${panel('CH-41 / MISSION', `
+      ${panel('MISSION', `
         ${eyebrow(T('This mission'))}
         <dl class="kv">
           <dt>${T('DESIGNATION')}</dt><dd>${esc(ctx.mission.name)}</dd>
@@ -59,7 +68,7 @@ function aboutFold(ctx) {
           <dt>${T('CREW')}</dt><dd>3</dd>
           <dt>${T('TIMEZONE')}</dt><dd>${esc(ctx.mission.timezone)}</dd>
         </dl>`, 'mars-side')}
-      ${panel('CH-41 / RIGHT NOW', `
+      ${panel('RIGHT NOW', `
         ${eyebrow(T('At this moment'))}
         <dl class="kv">
           <dt>${T('SEPARATION')}</dt><dd>${ctx.geo.distanceAu.toFixed(3)} au</dd>
@@ -96,7 +105,7 @@ function whatFold(ctx) {
       ${p(T, 'The crew readings are filed by mission control on two axes and translated into sentences. They are a report about three people, written by people, transmitted deliberately. They are not sentiment analysis and they are not automated.')}
     </div>
     <div>
-      ${panel('CH-40 / SEQUENCE', `
+      ${panel('SEQUENCE', `
         ${eyebrow(T('The path of a message'))}
         <div class="rows">
         ${[
@@ -111,19 +120,19 @@ function whatFold(ctx) {
         ].map(([a, b], i) => `<div class="row"><div class="t">${String(i + 1).padStart(2, '0')}</div>
           <div class="m"><b>${T(a)}</b><span>${T(b)}</span></div></div>`).join('')}
         </div>`, 'earth-side')}
-      ${panel('CH-40 / PRIVACY', `
+      ${panel('PRIVACY', `
         ${eyebrow(T('What is kept'))}
         <p class="note">${T('Your callsign, your message text, your tags, and the time you sent it. A one-way hash of your IP address is stored for rate limiting and is never displayed. No analytics, no third-party scripts, no tracking of any kind. Published exchanges stay on this page as part of the work; the complete day-by-day record is held by mission control and is not public.')}</p>`, 'earth-side')}
     </div>
   </div>
-  ${panel('CH-40 / STATES', `${eyebrow(T('Message states as shown in the interface'))}${pipeline('IN_TRANSIT', T)}`)}`;
+  ${panel('STATES', `${eyebrow(T('Message states as shown in the interface'))}${pipeline('IN_TRANSIT', T)}`)}`;
 }
 
 function whoFold(crew, T, write = '#write') {
   return `
-  ${panel('CH-42 / CREW', `
+  ${panel('CREW', `
     ${eyebrow(T('Inside the habitat'))}
-    <p class="note" style="max-width:64ch;margin-bottom:20px">${T('The crew are addressed by designation for the length of the mission. That is a condition of the piece, not an administrative convenience — the audience meets them as a role, and the names are published only once the habitat opens.')}</p>
+    <p class="note" style="max-width:64ch;margin-bottom:20px">${T('The crew are addressed by designation for the length of the mission. That is a condition of the piece, not an administrative convenience — the audience meets them as a role, and the names are published after the run.')}</p>
     <div class="grid g3">
     ${crew.map((c) => `
       <div>
@@ -133,7 +142,7 @@ function whoFold(crew, T, write = '#write') {
       </div>`).join('')}
     </div>`, 'mars-side')}
   <div class="grid g2">
-    ${panel('CH-42 / COMPANY', `
+    ${panel('COMPANY', `
       ${eyebrow(T('Outside the habitat'))}
       <div class="tw"><table><tbody>
         ${CREDITS.map(([role, name]) => `<tr>
@@ -142,13 +151,13 @@ function whoFold(crew, T, write = '#write') {
       <p class="note" style="margin-top:14px">${T('Replace these entries in')}
       <code>src/views/pages/info.js</code> ${T('before the run opens.')}</p>`, 'earth-side')}
     <div>
-      ${panel('CH-42 / PRODUCTION', `
+      ${panel('PRODUCTION', `
         ${eyebrow(T('Produced by'))}
         <p>ZKM | ${T('Center for Art and Media Karlsruhe')}<br>
         Hertzlab<br>
         Lorenzstraße 19, 76135 Karlsruhe, ${T('Germany')}</p>
-        <p class="note">${T('Supported by')} — ${T('to be credited')}. ${T('Partners')} — ${T('to be credited')}.</p>`, 'earth-side')}
-      ${panel('CH-42 / CONTACT', `
+        <p class="note">${T('Supported by the Innovationsfonds Kunst of the Ministry of Science, Research and the Arts Baden-Württemberg, the E.ON Stiftung and the LBBW Stiftung.')}</p>`, 'earth-side')}
+      ${panel('CONTACT', `
         ${eyebrow(T('Reach the production'))}
         <p class="note">${T('Press and production enquiries reach a person, not this station. Messages sent through the communication channel reach the habitat and are answered there. The two do not mix.')}</p>
         <p><a class="btn" href="${write}">${T('Write to the habitat instead')}</a></p>`, 'earth-side')}
@@ -158,8 +167,8 @@ function whoFold(crew, T, write = '#write') {
 
 /**
  * The reading matter as a page: About, What this is and Who we are one after
- * another, each under its own head — the channel's code, its name, the line
- * beneath, in the dress of the dashboard's heads — with a row of three pills
+ * another, each under its own head — its name and the line beneath, in the
+ * dress of the dashboard's heads — with a row of three pills
  * at the top that jump to them. Once three pop-ups over the landing page; now
  * the page the About key opens (layout.js, tabbar()), where the ticker's menu
  * rows lead (public.js, ticker()) and where the old addresses land: /what and
@@ -169,9 +178,9 @@ function whoFold(crew, T, write = '#write') {
  * upright turns into the messages page's (tabbar.js).
  */
 const PARTS = [
-  ['about-project', 'CH-41', 'About', 'The habitat, the distance, the archive'],
-  ['what', 'CH-40', 'What this is', 'How the station behaves, in plain terms'],
-  ['who-we-are', 'CH-42', 'Who we are', 'Crew, company, production credits'],
+  ['about-project', 'About', 'The project, the distance, the archive'],
+  ['what', 'What this is', 'How the station behaves, in plain terms'],
+  ['who-we-are', 'Who we are', 'Crew, company, production credits'],
 ];
 
 function aboutPage(ctx, { crew = [] } = {}) {
@@ -179,12 +188,11 @@ function aboutPage(ctx, { crew = [] } = {}) {
   const inner = { 'about-project': () => aboutFold(ctx), what: () => whatFold(ctx), 'who-we-are': () => whoFold(crew, T, '/#write') };
   const body = `
   <nav class="about-jump" aria-label="${esc(T('About, What this is, Who we are'))}">
-    ${PARTS.map(([id, , title]) => `<a href="#${id}">${esc(T(title))}</a>`).join('')}
+    ${PARTS.map(([id, title]) => `<a href="#${id}">${esc(T(title))}</a>`).join('')}
   </nav>
-  ${PARTS.map(([id, code, title, sub]) => `
+  ${PARTS.map(([id, title, sub]) => `
   <section class="about-sec" id="${id}" aria-labelledby="${id}-title">
     <header class="about-sec-head">
-      <span class="dash-code">${code}</span>
       <h2 class="bigsec" id="${id}-title">${esc(T(title))}</h2>
       <p class="dash-sub">${esc(T(sub))}</p>
     </header>

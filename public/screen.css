@@ -1,0 +1,111 @@
+/* ==========================================================================
+   MARS!platz — the installation's screens (src/views/pages/screens.js).
+
+   Loaded after station.css, aura.css and sheet.css on /screen/<name>: one
+   piece of the station a screen, full screen, the whole of it in one glance,
+   nothing to scroll. The page is a stage the height of the screen — a thin
+   head (the name, what the screen shows, the sol and the clock) and the body
+   under it — and what does not fit the body is scaled down to fit
+   (public/screen.js) or, on the board and in the gallery, cut clean at the
+   foot. The layout turns with the screen: side by side on a landscape screen,
+   one under the other on an upright one. No ticker (but on the landing
+   screen), no menu, no bar of keys, no foot, no cookie question.
+   ========================================================================== */
+
+html.screen, html.screen body { height: 100%; margin: 0; overflow: hidden !important; }
+body.screen { display: flex; flex-direction: column; padding: 0 !important; scroll-snap-type: none; }
+html.screen:has(body.landing:not(.inner)) { scroll-snap-type: none; }
+body.screen .tabbar, body.screen .foot, body.screen #consent, body.screen .masthead, body.screen .screen-hidden { display: none !important; }
+body.screen .ticker { position: static; flex: none; }                                /* the landing screen keeps the ticker, in flow */
+body.screen .stage { flex: 1 1 auto; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px; padding: 22px 28px 26px; box-sizing: border-box; }
+body.screen .stage-head { display: flex; align-items: baseline; gap: 18px; padding: 0 4px; font-family: var(--display); color: var(--ink); }
+body.screen .stage-brand { font-size: 22px; font-weight: 600; letter-spacing: -.03em; }
+body.screen .stage-brand b { color: var(--mars); font-weight: inherit; }
+body.screen .stage-title { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; color: var(--dim); }
+body.screen .stage-when { margin-left: auto; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; letter-spacing: .1em; color: var(--dim); font-variant-numeric: tabular-nums; }
+/* the body holds the piece in a wrapper that is scaled to fit (screen.js): on a screen with room to spare the piece is
+   shown larger, centred; on the board, in the gallery and among the blogs (data-fit="clip") the wrapper fills the body
+   instead and what runs over is cut clean */
+body.screen .stage-body { position: relative; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+body.screen .stage-fit { flex: none; width: 100%; box-sizing: border-box; }
+body.screen[data-fit="clip"] .stage-fit { height: 100%; flex: 1 1 auto; min-height: 0; }
+body.screen .stage-fit > .dpanel { box-sizing: border-box; min-height: 0; overflow: hidden; }
+body.screen[data-fit="clip"] .stage-fit > .dpanel { height: 100%; }
+body.screen .dpanel-body { min-height: 0; }
+body.screen .dpanel.scroll .dpanel-body, body.screen .blog-scroll { overflow: hidden; }
+/* three panels side by side — the day's, the blogs' — one under the other on an upright screen */
+body.screen .screen-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
+body.screen[data-fit="clip"] .screen-three { height: 100%; }
+body.screen .screen-three > .dpanel { grid-column: auto !important; min-height: 0; box-sizing: border-box; overflow: hidden; }   /* a panel's span-4 means nothing here, nor the commander blog's whole row at a tablet's width */
+body.screen[data-fit="clip"] .screen-three > .dpanel { height: 100%; }
+body.screen .screen-three .dpanel.h-3, body.screen .screen-three .dpanel.h-4 { max-height: none; }
+body.screen .blog-scroll { max-height: none; }
+body.screen .blogp .dpanel-title h3 { white-space: normal; overflow: visible; text-overflow: clip; }   /* a blog's name wraps rather than ends in dots */
+@media (orientation: portrait) {
+  /* one under the other, each as tall as its content (the scaling makes the three fill the height); a clipped screen
+     shares the height in three */
+  body.screen .screen-three { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; gap: 16px; }
+  body.screen[data-fit="clip"] .screen-three { grid-template-rows: repeat(3, minmax(0, 1fr)); }
+}
+/* the habitat's instruments and the trends fill their panel; the habitat's rows keep their proportions */
+body.screen.screen-habitat #habitat.dpanel, body.screen.screen-trends #trends.dpanel { padding: 24px 30px; }
+body.screen.screen-trends .tchart-svg { max-height: calc(100vh - 220px); width: 100%; }
+body.screen.screen-trends #trends .dpanel-body { min-height: 0; }
+/* today's mission: the three parts fill the width, one under the other upright */
+body.screen.screen-mission .mission-today { padding: 26px 34px 28px; }
+body.screen.screen-mission .mission-lead { max-width: none; }
+body.screen.screen-mission .mission-title { font-size: clamp(28px, 2.6vw, 40px); }
+body.screen.screen-mission .mission-q { font-size: 18px; }
+body.screen.screen-mission .mission-part p, body.screen.screen-mission .mission-part li { font-size: 15.5px; }
+@media (orientation: portrait) {
+  body.screen.screen-mission .mission-parts { grid-template-columns: minmax(0, 1fr); }
+}
+/* the message board: the latest exchanges in two columns (one upright), as many as fit — the rest cut clean (screen.js);
+   the filter bar and the key for more stand unshown, the script needs them */
+body.screen.screen-board .feed-wrap { min-height: 0; height: 100%; position: relative; }
+body.screen.screen-board .feed-scroll { position: absolute; inset: 0; }
+body.screen.screen-board .screen.board { height: 100%; box-sizing: border-box; display: flex; flex-direction: column; min-height: 0; padding: 26px 30px 20px; }
+body.screen.screen-board .board .scroller { flex: 1 1 auto; min-height: 0; max-height: none; overflow: hidden; margin: 0; }
+body.screen.screen-board .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-content: start; }
+@media (orientation: landscape) and (min-width: 1400px) {
+  body.screen.screen-board .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }                /* three across on a wide screen */
+}
+body.screen.screen-board .feed-filter, body.screen.screen-board .feed-more, body.screen.screen-board .board-group { display: none !important; }
+body.screen.screen-board .board-head h2 { font-size: 26px; }
+body.screen.screen-board .card.xc .card-body { font-size: 19px; }
+body.screen.screen-board .card-reply p { font-size: 21px; }
+@media (max-width: 700px) {
+  body.screen.screen-board .cards { grid-template-columns: minmax(0, 1fr); }
+}
+/* the gallery: every picture in one grid, the newest first, five across (three upright), each with its day and time
+   under it, as many as fit — the rest cut clean */
+body.screen.screen-media #gallery { height: 100%; box-sizing: border-box; overflow: hidden; margin: 0; padding: 22px 26px; border-radius: var(--r-lg); background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); }
+body.screen.screen-media .log-day-head { margin-bottom: 18px; }
+body.screen.screen-media .mgrid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; align-content: start; }
+body.screen.screen-media .mtile { border-radius: 14px; }
+body.screen.screen-media .mtile-visual { aspect-ratio: 16 / 10; }
+body.screen.screen-media .mtile-stamp { padding: 8px 12px 10px; }
+body.screen.screen-media .mtile-stamp .mtile-when { font-size: var(--fs-label); letter-spacing: .08em; color: var(--dim); }
+@media (orientation: portrait) {
+  body.screen.screen-media .mgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+/* what is cut at the foot is hidden, so the last row is whole */
+body.screen .is-cut { visibility: hidden; }
+/* the landing screen: the ticker, then the name in its band and the habitat with its sky, as the site's first screen —
+   the nudge to scroll is not drawn */
+body.screen.screen-landing .stage { padding: 0 var(--gutter) 10px; }
+body.screen.screen-landing .sheet-p1 { display: flex; flex-direction: column; }
+body.screen.screen-landing .dome-nudge, body.screen.screen-landing .dome-foot { display: none; }
+body.screen.screen-landing .tk-right, body.screen.screen-landing .tk-menu, body.screen.screen-landing .tk-dropdown { display: none !important; }   /* the switches and the menu are for a visitor with a hand on the page */
+body.screen.screen-landing .dome-panel.has-line { --foot-h: 0px; }
+/* the list of the screens */
+body.screen.screen-index .stage-body { overflow: auto; justify-content: flex-start; }
+body.screen .screen-index { max-width: 900px; margin: 0 auto; padding: 10px 0 40px; font-family: var(--display); color: var(--ink); }
+body.screen .screen-index-lead, body.screen .screen-index-note { font-size: 17px; line-height: 1.55; color: var(--dim); }
+body.screen .screen-index code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 14px; color: var(--ink); background: var(--tile); padding: 2px 6px; border-radius: 6px; }
+body.screen .screen-list { list-style: none; margin: 24px 0; padding: 0; display: grid; gap: 12px; }
+body.screen .screen-list li { padding: 16px 20px; border-radius: 18px; background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); }
+body.screen .screen-list a { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; text-decoration: none; border: 0; color: var(--ink); }
+body.screen .screen-list a b { font-size: 20px; font-weight: 600; }
+body.screen .screen-list a span { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 14px; color: var(--cobalt); }
+body.screen .screen-list p { margin: 6px 0 0; font-size: 15px; color: var(--dim); }

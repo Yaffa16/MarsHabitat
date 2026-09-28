@@ -1,8 +1,9 @@
 /* The entry composer — every blog box in mission control.
    One sheet, written like a document: the text flows, Enter starts a new
    paragraph, and a photograph or a film sits in the flow where the cursor
-   was when it was added — under a toolbar with Photo / video on the left
-   and Visual | Text on the right, like a classic post editor. A picture
+   was when it was added — under a toolbar with Photo / video, like a
+   classic post editor (the sheet is the one form there is; the plain text
+   the station stores is never shown for editing by hand). A picture
    uploads there and then, shows its preview in place, can be captioned
    under itself, and ✕ takes it out of the post. Underneath, the same plain
    text the station has always stored — paragraphs with [media:id] lines —
@@ -125,17 +126,13 @@
     var attach = form.querySelector('.attach'); if (attach) attach.classList.add('ed-hidden');
     var pick = form.querySelector('.attach input[type=file]'); if (pick) pick.disabled = true;
 
-    // The editor: a toolbar strip (Photo / video; Visual | Text), one
-    // editable sheet, and a foot with the word count.
+    // The editor: a toolbar strip (Photo / video), one editable sheet, and
+    // a foot with the word count.
     this.root = el('div', 'ed');
     this.root.innerHTML =
       '<div class="ed-bar">' +
         '<div class="ed-bar-add">' +
           '<button type="button" data-add="visual" title="Add a photograph or video where the cursor is">' + ICON.image + '<span>Photo / video</span></button>' +
-        '</div>' +
-        '<div class="ed-bar-tabs" role="tablist">' +
-          '<button type="button" data-mode="visual" class="on" role="tab" aria-selected="true">Visual</button>' +
-          '<button type="button" data-mode="text" role="tab" aria-selected="false">Text</button>' +
         '</div>' +
       '</div>' +
       '<div class="ed-doc" contenteditable="true" spellcheck="true"></div>' +
@@ -175,12 +172,8 @@
       input.addEventListener('change', function () { self.insertFiles(at, Array.prototype.slice.call(input.files || [])); });
       input.click();
     });
-    this.root.querySelector('.ed-bar-tabs').addEventListener('click', function (e) {
-      var b = e.target.closest('button[data-mode]'); if (!b) return;
-      self.setMode(b.getAttribute('data-mode'));
-    });
     this.body.addEventListener('input', function () { if (self.mode === 'text') { self.dirty = true; self.words(); } });
-    this.mode = 'visual';
+    this.mode = 'visual';                                                  // the sheet; 'text' (the stored text by hand) is kept for a script, no key opens it
     ['dragenter', 'dragover'].forEach(function (ev) { self.root.addEventListener(ev, function (e) { e.preventDefault(); self.root.classList.add('over'); }); });
     ['dragleave', 'drop'].forEach(function (ev) { self.root.addEventListener(ev, function (e) { e.preventDefault(); self.root.classList.remove('over'); }); });
     this.root.addEventListener('drop', function (e) {
@@ -324,7 +317,9 @@
 
   /** Visual: the sheet. Text: the plain textarea the station stores, with
    *  paragraphs and [media:12] lines, editable by hand. Switching back
-   *  rebuilds the sheet from the text. */
+   *  rebuilds the sheet from the text. The toolbar no longer offers the
+   *  switch — the sheet is the one form the crew write in — but the mode
+   *  stays, for a script that needs the stored text. */
   Editor.prototype.setMode = function (mode) {
     if (mode === this.mode) return;
     if (mode === 'text') {
@@ -341,10 +336,6 @@
       this.load(this.body.value);
     }
     this.mode = mode;
-    Array.prototype.forEach.call(this.root.querySelectorAll('.ed-bar-tabs button'), function (b) {
-      var on = b.getAttribute('data-mode') === mode;
-      b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false');
-    });
   };
 
   /* ---- the cursor */

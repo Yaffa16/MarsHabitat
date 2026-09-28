@@ -8,7 +8,6 @@ const { composerBlock } = require('./communicate');
 const { habitatDome, LINE_ICONS } = require('./dome');
 const { habitatSky, habitatSheet } = require('./sky');
 const LP = require('./landing');
-const { WINDOW_TIME } = LP;
 const MV = require('./media');
 const mediaGet = require('../../lib/media').get;
 const moodLib = require('../../lib/mood');
@@ -47,7 +46,7 @@ function complete(ctx, { counts, recent }) {
 
   <div class="grid g-hero">
     ${orbitPlot(ctx.geo, { T, light: false })}
-    ${panel('CH-21 / RECORD', `
+    ${panel('RECORD', `
       ${eyebrow(T('What the station carried'))}
       <dl class="kv">
         <dt>${T('MISSION')}</dt><dd>${esc(m.name)}</dd>
@@ -59,7 +58,7 @@ function complete(ctx, { counts, recent }) {
       <p class="note" style="margin-top:16px">${T('The communication channel is closed. The archive is not — it stays readable, and it stays part of the work.')}</p>`, 'earth-side')}
   </div>
 
-  ${panel('CH-20 / LAST EXCHANGES', recent.length
+  ${panel('LAST EXCHANGES', recent.length
     ? recent.slice(0, 3).map((x) => messageCard(x, undefined, T)).join('') + `<p style="margin:6px 0 0"><a href="/archive">${T('Full archive')} →</a></p>`
     : `<div class="empty">${T('NOTHING WAS PUBLISHED DURING THIS MISSION')}</div>`)}`;
 
@@ -82,43 +81,49 @@ function inventoryGauges(inventory, { compact = false, strip = false, cells = fa
   const shown = compact ? inventory.filter((i) => i.critical).slice(0, 5) : inventory;
   // As rounds: a ring per resource, its arc filled to what is left of what was
   // carried in, the figure in the centre, the name and days remaining beneath.
+  // A store with no figure at all yet — nothing carried in written into
+  // content/crew-and-inventory.json and no count filed on the Habitat tab —
+  // stands as a placeholder, and says so, rather than as an empty store.
+  const placeholder = (i) => !(i.start_quantity || i.quantity);
   if (cells) {
     const R = 24, C = 2 * Math.PI * R;
     return `<div class="gauges rounds">${shown.map((i) => {
+      const ph = placeholder(i);
       const start = i.start_quantity || i.quantity || 1;
       const startLabel = (i.start_quantity || i.quantity) ? start : '—';   // a 0 placeholder reads "of —", not "of 1"
-      const pct = Math.max(0, Math.min(100, (i.quantity / start) * 100));
-      const low = i.warn_below > 0 && i.quantity <= i.warn_below;
+      const pct = ph ? 0 : Math.max(0, Math.min(100, (i.quantity / start) * 100));
+      const low = !ph && i.warn_below > 0 && i.quantity <= i.warn_below;
       const daysLeft = i.consumption > 0 ? i.quantity / i.consumption : null;
       const num = Number.isInteger(i.quantity) ? String(i.quantity) : i.quantity.toFixed(1);
-      return `<div class="gauge round ${low ? 'low' : ''}" title="${esc(i.label)}: ${i.quantity} ${esc(i.unit)} ${T('of')} ${startLabel} · ${esc(left(daysLeft, 1))}">
+      return `<div class="gauge round ${low ? 'low' : ''}${ph ? ' is-ph' : ''}" title="${esc(i.label)}: ${ph ? esc(T('Placeholder')) : `${i.quantity} ${esc(i.unit)} ${T('of')} ${startLabel} · ${esc(left(daysLeft, 1))}`}">
         <svg viewBox="0 0 60 60" aria-hidden="true">
           <circle cx="30" cy="30" r="${R}" class="round-track"/>
           <circle cx="30" cy="30" r="${R}" class="round-arc" stroke-dasharray="${C.toFixed(1)}"
             stroke-dashoffset="${(C * (1 - pct / 100)).toFixed(1)}" transform="rotate(-90 30 30)"/>
-          <text x="30" y="33.5" class="round-num">${num}</text>
-          <text x="30" y="44" class="round-unit">${esc(i.unit)}</text>
+          <text x="30" y="33.5" class="round-num">${ph ? '—' : num}</text>
+          <text x="30" y="44" class="round-unit">${ph ? '' : esc(i.unit)}</text>
         </svg>
         <span class="cell-name">${esc(i.label)}</span>
-        <span class="cell-days">${daysLeft != null ? (daysLeft < 99 ? `${daysLeft.toFixed(0)} ${T('days')}` : T('ample')) : T('no draw')}</span>
+        <span class="cell-days${ph ? ' is-ph' : ''}">${ph ? T('Placeholder') : daysLeft != null ? (daysLeft < 99 ? `${daysLeft.toFixed(0)} ${T('days')}` : T('ample')) : T('no draw')}</span>
       </div>`;
     }).join('')}</div>`;
   }
   return `<div class="gauges${strip ? ' strip' : ''}">${shown.map((i) => {
+    const ph = placeholder(i);
     const start = i.start_quantity || i.quantity || 1;
     const startLabel = (i.start_quantity || i.quantity) ? start : '—';   // a 0 placeholder reads "of —", not "of 1"
-    const pct = Math.max(0, Math.min(100, (i.quantity / start) * 100));
-    const low = i.warn_below > 0 && i.quantity <= i.warn_below;
+    const pct = ph ? 0 : Math.max(0, Math.min(100, (i.quantity / start) * 100));
+    const low = !ph && i.warn_below > 0 && i.quantity <= i.warn_below;
     const daysLeft = i.consumption > 0 ? i.quantity / i.consumption : null;
-    return `<div class="gauge ${low ? 'low' : ''}">
+    return `<div class="gauge ${low ? 'low' : ''}${ph ? ' is-ph' : ''}">
       <div class="gauge-head">
         <span class="gauge-name">${esc(i.label)}</span>
-        <span class="gauge-val">${i.quantity}<em>${esc(i.unit)}</em></span>
+        <span class="gauge-val">${ph ? `<span class="is-ph">${T('Placeholder')}</span>` : `${i.quantity}<em>${esc(i.unit)}</em>`}</span>
       </div>
       <div class="gauge-track"><i style="width:${pct.toFixed(1)}%"></i></div>
       <div class="gauge-foot">
-        <span>${pct.toFixed(0)}% ${T('of')} ${startLabel} ${esc(i.unit)}</span>
-        <span>${left(daysLeft, 1)}</span>
+        <span>${ph ? T('no figure filed yet') : `${pct.toFixed(0)}% ${T('of')} ${startLabel} ${esc(i.unit)}`}</span>
+        <span>${ph ? '' : left(daysLeft, 1)}</span>
       </div>
     </div>`;
   }).join('')}</div>`;
@@ -237,7 +242,7 @@ function crewFiguresGraph(figures, mission, { key, label, unit, colour, fmt }) {
 
 /**
  * One monitoring channel as a dial: the value in the centre, an arc showing
- * where it sits inside its limits, the channel code and status beneath.
+ * where it sits inside its limits, the status beneath.
  * Out-of-range channels turn orange, and status is carried by the symbol as
  * well as the colour, so the dial survives print and colourblindness.
  */
@@ -263,7 +268,7 @@ function sensorDial(sn) {
       <text x="50" y="57" class="dial-num">${num}</text>
     </svg>
     <div class="dial-unit">${esc(m.unit)}</div>
-    <div class="dial-foot">${sym(st.state)}<span>${esc(m.channel)}</span></div>
+    <div class="dial-foot">${sym(st.state)}</div>
     <div class="dial-label">${esc(m.label)}</div>
   </div>`;
 }
@@ -305,10 +310,28 @@ function wholeMission(ctx, days, { openToday = true } = {}) {
 
 /**
  * The composer as a device: an LED, the ribbed grip, a knob and a row of
- * vents, then the operator's callsign and the channel. While a message is
- * crossing, the form gives way to the dial (composerBlock, composer.js).
- * Drawn on the mission page and on the messages page alike.
+ * vents, then the operator's callsign and the channel — and, over the
+ * writing box, the day's question from the habitat: the question for the
+ * community hour on the day's mission sheet (content/missions.json), in the
+ * visitor's language where the sheet has it (English and German; the other
+ * where not), as a prompt to write. While a message is crossing, the form
+ * gives way to the dial (composerBlock, composer.js). Drawn on the mission
+ * page and on the messages page alike.
  */
+function composerPrompt(ctx) {
+  const T = ctx.T;
+  let mission = null;
+  try { mission = require('../../lib/content').missionForDay(ctx.mission.clampedDay); } catch { mission = null; }
+  const c = mission && mission.community ? mission.community : null;
+  const q = c ? (ctx.lang === 'de' ? c.de || c.en : c.en || c.de) : '';
+  if (!q) return '';
+  return `
+        <div class="dev-prompt" id="dev-prompt">
+          <span class="dev-prompt-k">${T('The crew’s question today')}</span>
+          <p class="dev-prompt-q"${ctx.lang !== 'de' && c.de && !c.en ? ' lang="de"' : ''}>${esc(q)}</p>
+          <span class="dev-prompt-n">${T('Answer it below — or ask the crew something of your own.')}</span>
+        </div>`;
+}
 function composerDevice(ctx, { inFlight = null, error = null, draft = '' } = {}) {
   const T = ctx.T;
   return `<section class="device composer-device${inFlight ? ' sending' : ''}" aria-label="${esc(T('Composer'))}">
@@ -323,8 +346,8 @@ function composerDevice(ctx, { inFlight = null, error = null, draft = '' } = {})
           ${ctx.callsign ? `<span class="dev-chip" title="${esc(T('Your callsign for this visit — no account, no name'))}">${esc(ctx.callsign)}</span>`
             : ctx.offer ? `<span class="dev-chip dev-chip-later" title="${esc(T('Your callsign for this visit — no account, no name'))}">${esc(ctx.offer)}</span>`
             : `<span class="dev-chip dev-chip-later" title="${esc(T('Your callsign for this visit — no account, no name'))}">${T('Callsign on sending')}</span>`}
-          <span class="dev-chan">CH-09 · Uplink</span>
-        </div>
+          <span class="dev-chan">${T('Uplink')}</span>
+        </div>${composerPrompt(ctx)}
         <div class="dev-body" id="dev-body">${composerBlock(ctx, { inFlight, error, draft })}</div>
       </section>`;
 }
@@ -379,7 +402,7 @@ function dashboardPage(ctx, d) {
   const body = dashboard(ctx, {
     crew: d.crew, today: d.today, counts: d.counts, crewFigures: d.crewFigures, power: d.power, allDays: d.allDays,
     logDays: d.logDays, entryCounts: d.entryCounts, ingest: d.ingest, media: d.media, mediaCounts: d.mediaCounts,
-    mediaLookup: d.mediaLookup, hardware: d.hardware, hardwareDaily: d.hardwareDaily, cloud: d.cloud,
+    mediaLookup: d.mediaLookup, hardware: d.hardware, hardwareDaily: d.hardwareDaily, cloud: d.cloud, mission: d.mission,
   });
   return L.page({
     title: 'Mission dashboard', ctx, body, hideNav: true, hideRail: true, bodyClass: 'landing inner dashboard',
@@ -404,7 +427,6 @@ function messages(ctx, { recent = [], inFlight = null, error = null, draft = '' 
   <section class="portal portal-page" id="write">
   <header class="portal-head">
     <div>
-      <span class="dash-code">CH-09</span>
       <h2 class="bigsec">${T('Messages')}</h2>
       <p class="dash-sub">${T('Communication Portal')} · ${T('Uplink')} · ${esc(ctx.mission.name)} · ${ctx.geo.distanceAu.toFixed(3)} au</p>
     </div>
@@ -415,7 +437,11 @@ function messages(ctx, { recent = [], inFlight = null, error = null, draft = '' 
   </header>
   <div class="portal-grid">
     <aside class="portal-letters" aria-hidden="true">${'MARSPLATZ'.split('').map((c) => `<span>${c}</span>`).join('')}</aside>
-    <div class="portal-main">${composerDevice(ctx, { inFlight, error, draft })}</div>
+    <div class="portal-main">
+      <!-- On a phone the composer is a pop-up over the board (tabbar.js; aura.css): the cross at its top right, a touch
+           beside it or Escape lowers it, and it lowers itself once a message has crossed, so the board is read then. -->
+      ${composerDevice(ctx, { inFlight, error, draft })}
+    </div>
     <section class="feed-col" id="exchanges">${boardScreen(ctx, { recent })}</section>
   </div>
   </section>`;
@@ -456,7 +482,7 @@ function ticker(ctx, { today } = {}) {
     cells.push(`${T('Next:')} <b id="tk-next">${nextTask ? say(nextTask) : T('nothing more today')}</b>`);
   }
   cells.push(`${T('Habitat:')} <b id="tk-hab">${T('awaiting reading')}</b>`);   // the one-way signal is read where a message is written, and nowhere else
-  if (!over) cells.push(`${T('Communication window daily')} <b>${esc(WINDOW_TIME)}</b>`);   // when the crew answer (landing.js)
+  if (!over) cells.push(`${T('Communication window daily')} <b>${esc(LP.windowWhen(ctx))}</b>`);   // when the crew answer — "16:00 CEST (Berlin time)" (landing.js)
   const line = cells.map((c) => `<span class="tk-cell">${c}</span>`).join('<span class="tk-sep">·</span>');
   /* The header of every public page, after the design handoff's reference sheet: a row with the wordmark (the way home),
      the run's badge — the countdown before it, the sol during it —, the habitat's clock, the theme and language switches
@@ -633,7 +659,7 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
                         inFlight = null, error = null, draft = '',
                         allDays = [], logDays = [], entryCounts = { published: 0, days: 0 }, ingest = [],
                         media = [], mediaCounts = { total: 0, bytes: 0 }, mediaLookup = () => null,
-                        hardware = null, hardwareDaily = [], cloud = null }) {
+                        hardware = null, hardwareDaily = [], cloud = null, mission = null }) {
   const pre = ctx.mission.phase === 'PRE_LAUNCH', T = ctx.T;
   /* The header every public page shares (ticker): the wordmark, the run's badge, the habitat's clock, the switches, the
      running line. */
@@ -649,9 +675,9 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
     <span class="day-rail-cap">SOL</span>
   </aside>`;
 
-  /* The landing page (landing.js): P01 the habitat — its sky of the latest exchanges and the newest pictures from the
-     cloud folder, the line under the dome — with the name over it on a wider screen; P02 the note (a phone has the name at
-     its head); part 1, P03, the mission in two chapters; part 2, P04, the world's slowest chat; then, on a wider screen,
+  /* The landing page (landing.js): the habitat — its sky of the latest exchanges and the newest pictures from the
+     cloud folder, the scroll nudge under its ground line — with the name over it on a wider screen; the note (a phone has
+     the name at its head), with its Know more key to the About page; the world's slowest chat; then, on a wider screen,
      the portal and the dashboard (a phone has them as pages of their own, aura.css, sheet.css). On a phone every
      data-page is a page of the scroll: a swipe goes to the next (sheet.css, public/sky.js). */
   const body = `
@@ -663,10 +689,9 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
   </script>
   <section class="sheet sheet-p1" id="top" aria-label="${esc(T('The habitat'))}" data-page>
     ${LP.intro(ctx, 'desk')}
-    ${habitatDome(ctx, { today, crew, recent, power, counts, crewFigures, pods: true, sky: habitatSky(ctx, { recent, cloud }), sheet: habitatSheet(ctx), line: LP.underLine(ctx, { recent, today }) })}
+    ${habitatDome(ctx, { today, crew, recent, power, counts, crewFigures, pods: true, sky: habitatSky(ctx, { recent, cloud }), sheet: habitatSheet(ctx), line: LP.scrollNudge(ctx) })}
   </section>
   ${LP.note(ctx)}
-  ${LP.chapters(ctx)}
   ${LP.slowChat(ctx)}
   <section class="portal" id="write" data-stop>
   <!-- The portal's heading, in the dress of the dashboard's: the channel's
@@ -674,7 +699,6 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
        a message is about to cross, where the dashboard shows the elapsed. -->
   <header class="portal-head">
     <div>
-      <span class="dash-code">CH-09</span>
       <h2 class="bigsec">${T('Send a message to the Crew')}</h2>
       <p class="dash-sub">${T('Communication Portal')} · ${T('Uplink')} · ${esc(ctx.mission.name)} · ${ctx.geo.distanceAu.toFixed(3)} au</p>
     </div>
@@ -691,7 +715,7 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
   </div>
   </section>
 
-  ${dashboard(ctx, { crew, today, counts, crewFigures, power, allDays, logDays, entryCounts, ingest, media, mediaCounts, mediaLookup, hardware, hardwareDaily, cloud })}
+  ${dashboard(ctx, { crew, today, counts, crewFigures, power, allDays, logDays, entryCounts, ingest, media, mediaCounts, mediaLookup, hardware, hardwareDaily, cloud, mission })}
   `;
   return L.page({
     title: 'Mission', ctx, body, hero, hideNav: true, hideRail: true, bodyClass: 'landing',
@@ -743,8 +767,9 @@ function figureTile(figures, mission, { key, label, unit, colour, fmt, T = same,
           fill="${days[i] === n0 ? colour : 'var(--well)'}" stroke="${colour}" stroke-width="${days[i] === n0 ? 2 : 1.5}">
           <title>${T('Day')} ${String(days[i]).padStart(3, '0')}: ${v.toLocaleString('en-GB')} ${unit}</title></circle>`).join('')}
   </svg>` : '';
-  // the officer's name as the station writes it: COMMANDING, SCIENCE, HEALTH
-  const who = (c) => T(officer.shown(c.designation).replace(/\s*OFFICER$/i, '').trim());
+  // the officer's title whole, as the station shows it: Commanding officer, Science officer, Health officer (the row's
+  // small capitals set the case on the page; the dictionary knows the titles in this spelling)
+  const who = (c) => { const s = officer.shown(c.designation); return T(s.charAt(0) + s.slice(1).toLowerCase()); };
   const rows = crew.map((c) => { const v = perOf(d, c); return `<div class="fig-r"><span class="fig-who">${esc(who(c))}</span><span class="fig-v">${v != null ? fmt(v) : '—'}<em>${esc(unit)}</em></span></div>`; }).join('');
   return `<section class="tile t-fig t-${key}" role="group" aria-label="${esc(T(label))}${total != null ? `: ${fmt(total)} ${esc(unit)} ${T('crew total')}` : ''}">
     <h3>${T(label)}</h3>
@@ -1046,11 +1071,11 @@ const kpi = ({ label, value, unit, sub, state }) => `
     <span class="dash-fig-k">${esc(label)}</span><b>${value}${unit ? `<em>${esc(unit)}</em>` : ''}</b>${sub ? `<span class="dash-fig-s">${sub}</span>` : ''}
   </span>`;
 
-/** A dashboard panel: code, title and meta in the head, the content beneath. */
-const dpanel = ({ id, code, title, meta = '', span = 4, cls = '', href = null, live = null, stop = false }, inner) => `
+/** A dashboard panel: title and meta in the head, the content beneath. */
+const dpanel = ({ id, title, meta = '', span = 4, cls = '', href = null, live = null, stop = false }, inner) => `
   <section class="dpanel span-${span} ${cls}"${id ? ` id="${id}"` : ''}${stop ? ' data-stop' : ''}>
     <header class="dpanel-head">
-      <div class="dpanel-title"><span class="dpanel-code">${esc(code)}</span><h3>${
+      <div class="dpanel-title"><h3>${
         href ? `<a href="${href}">${esc(title)} <span class="dpanel-arrow" aria-hidden="true">→</span></a>` : esc(title)}</h3>${
         live ? `<span class="cloud-live" title="${esc(live)}"><i></i>LIVE</span>` : ''}</div>
       ${meta ? `<span class="dpanel-meta">${meta}</span>` : ''}
@@ -1091,7 +1116,7 @@ const tabIcon = (id) => TAB_ICONS[id] ? `<svg class="ftab-ic" viewBox="0 0 24 24
 const folder = (T, rows, { id = 'day-folder', label = '' } = {}) => {
   rows = rows.map((row) => ({ label: row.label, tabs: row.tabs.filter(Boolean) })).filter((row) => row.tabs.length);
   const tabs = rows.flatMap((row) => row.tabs);
-  const tab = (t, i) => `<button type="button" class="ftab${i === 0 ? ' is-front' : ''}" role="tab" id="ftab-${t.id}" aria-controls="fpage-${t.id}" aria-selected="${i === 0 ? 'true' : 'false'}"${i === 0 ? '' : ' tabindex="-1"'} data-folder="${t.id}">${tabIcon(t.id)}<span class="ftab-n">${esc(t.code)}</span><span class="ftab-l">${esc(t.label)}</span></button>`;
+  const tab = (t, i) => `<button type="button" class="ftab${i === 0 ? ' is-front' : ''}" role="tab" id="ftab-${t.id}" aria-controls="fpage-${t.id}" aria-selected="${i === 0 ? 'true' : 'false'}"${i === 0 ? '' : ' tabindex="-1"'} data-folder="${t.id}">${tabIcon(t.id)}<span class="ftab-l">${esc(t.label)}</span></button>`;
   return `
   <section class="folder span-12" id="${id}" data-stop aria-label="${esc(label)}">
     <div class="folder-tabs">
@@ -1115,7 +1140,10 @@ const folder = (T, rows, { id = 'day-folder', label = '' } = {}) => {
  * whole mission — laid out on one twelve-column grid, nothing hidden behind
  * a tab.
  */
-function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories: [], days: {} }, allDays, logDays, entryCounts, ingest = [], media = [], mediaCounts = { total: 0, bytes: 0 }, mediaLookup = () => null, hardware = null, hardwareDaily = [], cloud = null }) {
+/* The dashboard's pieces, each on its own, so the dashboard can assemble them and the installation's screens
+   (screens.js) can show one at a time: the headline figures, the strip of sols, the live pictures, Today's Mission and
+   the nine panels — with the day they stand under. */
+function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { categories: [], days: {} }, allDays, logDays, entryCounts, ingest = [], media = [], mediaCounts = { total: 0, bytes: 0 }, mediaLookup = () => null, hardware = null, hardwareDaily = [], cloud = null, mission = null }) {
   const m = ctx.mission, g = ctx.geo, T = ctx.T;
   const pre = m.phase === 'PRE_LAUNCH';
   const slotName = { BREAKFAST: 'Breakfast', LUNCH: 'Lunch', DINNER: 'Dinner', RATION: 'Ration' };
@@ -1145,7 +1173,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
     }).join('')}</div>`;
 
   /* ---- panels */
-  const schedule = dpanel({ id: 'schedule', code: 'CH-30', title: T('Today’s Schedule'),
+  const schedule = dpanel({ id: 'schedule', title: T('Today’s Schedule'),
     meta: `SOL ${day3} · ${done}/${tasks.length} ${T('done')}`, span: 4, cls: 'h-3 scroll' },
     tasks.length ? `<div class="rows">${tasks.map((t) => `
       <div class="row ${t.status === 'DONE' ? 'done' : ''} ${t.status === 'ACTIVE' ? 'active' : ''}">
@@ -1264,7 +1292,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
       </section>`
     : '';
 
-  const habitat = dpanel({ id: 'habitat', code: 'CH-01', title: T('Habitat'), meta: T('Habitat sensor · measured live · figures and stores counted by the crew'), span: 12, cls: 'compact',
+  const habitat = dpanel({ id: 'habitat', title: T('Habitat'), meta: T('Live sensors and Habitat measurements'), span: 12, cls: 'compact',
     live: T('The readings refresh by themselves as the sensors report') }, `
     <!-- The habitat's instruments. The station server polls the habitat sensor
          (through Home Assistant — or the external node, src/lib/critical.js)
@@ -1351,7 +1379,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
   /* ---- every trend as a chart: the habitat's channels, each store, the
      crew's counts. habitat.js draws them from the spec above plus its own
      habitat rows, and redraws when the period selector changes. */
-  const trends = dpanel({ id: 'trends', code: 'CH-40', title: T('Trends'),
+  const trends = dpanel({ id: 'trends', title: T('Trends'),
     span: 12 }, `
     <div class="trends" id="hbt-trends" data-date="${esc(m.today)}" data-day-start="${missionLib.venueMidnightUtc(m.today, m.timezone)}" data-axis-start="${esc(axis.start)}" data-axis-end="${esc(axis.end)}" data-axis-run="${axis.run ? '1' : '0'}" data-spec="${esc(JSON.stringify(trendSpec))}">
       <div id="hbt-tcharts"></div>
@@ -1365,40 +1393,49 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
      Commanding officer tabs) and are public the moment they are saved, as
      everywhere else on the station.
 
-     Each panel shows the CURRENT DAY's post and nothing else — the day the
-     schedule and the meal panels above are showing: today's SOL during the
-     run, SOL 01 before it. Earlier days are on the crew log and in At a
-     Glance, not here. The post is read where it stands, by scrolling inside
-     its panel: a panel's title is not a link and a photograph in a post is
-     shown, not linked — nothing in a panel leads off the page, so there is
-     nothing to click into and back out of. */
+     Each panel stands under the CURRENT DAY — the day the schedule and the
+     meal panels above are showing: today's SOL during the run, SOL 01 before
+     it — and shows the day's post once it is written. The crew write at
+     night, so through the day the post would be missing: until today's is
+     written, the panel shows the LATEST POST OF AN EARLIER DAY instead (the
+     day before, or the last day that has one), under today's date and
+     without a note, so that a visitor never meets an empty blog; the
+     placeholder stands only while no post at all has been written yet.
+     Earlier days are on the crew log and in At a Glance, day by day. The post
+     is read where it stands: a panel's title is not a link and a photograph
+     in a post is shown, not linked — nothing in a panel leads off the page,
+     so there is nothing to click into and back out of. */
   const blogDay = m.clampedDay;
   const blogDate = (allDays[blogDay - 1] || {}).date || m.today;
   // A post is its rendered body; one that comes out empty — a picture since
   // withdrawn and nothing else — is left out rather than shown as a blank card.
   const post = (body, attached) => MV.entryHtml(body, attached, { lookup: mediaLookup, T, link: false });
-  const reportToday = (kind) => ((allDays[blogDay - 1] || {}).notes || [])
+  const reportOn = (kind, d) => ((allDays[d - 1] || {}).notes || [])
     .filter((n) => n.kind === kind).map((n) => post(n.body, [])).filter(Boolean);
   const commander = crew.find((c) => /COMM/i.test(c.designation)) || crew[0] || null;
-  const commanderToday = commander ? ((logDays[blogDay - 1] || {}).entries || [])
-    .filter((e) => e.blog === 'commander' && !e.placeholder).map((e) => post(e.body, e.media || [])).filter(Boolean) : [];
+  const commanderOn = (d) => (commander ? ((logDays[d - 1] || {}).entries || [])
+    .filter((e) => e.blog === 'commander' && !e.placeholder).map((e) => post(e.body, e.media || [])).filter(Boolean) : []);
+  // today's post — or, until it is written, the latest earlier day's (see above)
+  const latest = (on) => { for (let d = blogDay; d >= 1; d--) { const posts = on(d); if (posts.length) return posts; } return []; };
+  const reportToday = (kind) => latest((d) => reportOn(kind, d));
+  const commanderToday = latest(commanderOn);
   // A panel is as tall as the post in it, up to a limit, and scrolls from
   // there (.h-4 and .blog-scroll in the stylesheet) — so with nothing written
   // yet the three make a low row rather than a wall of empty boxes.
-  const blogPanel = ({ id, code, title, posts, empty }) => dpanel({ id, code, title, span: 4, cls: 'h-4 blogp',
+  const blogPanel = ({ id, title, posts, empty }) => dpanel({ id, title, span: 4, cls: 'h-4 blogp',
       meta: `SOL ${day3} · ${esc(shortDay(blogDate))}` },
     // No whitespace inside the card body: it renders with pre-line.
     posts.length ? `<div class="blog-scroll" tabindex="0" role="region" aria-label="${esc(title)}">${
       posts.map((html) => `<div class="card log-entry"><div class="card-body entry-post">${html}</div></div>`).join('')}</div>`
     : `<div class="empty">${T(empty)} SOL ${day3}${pre ? ` — ${T('occupied from')} ${esc(m.startLabel)}` : ''}</div>`);
-  const blogScience = blogPanel({ id: 'blog-science', code: 'CH-51', title: T('Daily Science Findings'),
+  const blogScience = blogPanel({ id: 'blog-science', title: T('Daily Science Findings'),
     posts: reportToday('SCIENCE'), empty: 'No science findings yet for' });
-  const blogHealth = blogPanel({ id: 'blog-health', code: 'CH-52', title: T('Daily Health Blog'),
+  const blogHealth = blogPanel({ id: 'blog-health', title: T('Daily Health Blog'),
     posts: reportToday('HEALTH'), empty: 'No health blog yet for' });
-  const blogCommander = blogPanel({ id: 'blog-commander', code: 'CH-53', title: T('Commander Blog'),
+  const blogCommander = blogPanel({ id: 'blog-commander', title: T('Commander Blog'),
     posts: commanderToday, empty: 'No commander blog yet for' });
 
-  const galley = dpanel({ id: 'galley', code: 'CH-32', title: T('Today’s Meal'), meta: today && today.meals.length
+  const galley = dpanel({ id: 'galley', title: T('Today’s Meal'), meta: today && today.meals.length
       ? `${today.kcalPlanned} kcal · ${today.waterPlanned.toFixed(1)} L · ${today.energyPlanned} Wh${today.co2ePlanned != null ? ` · ${+today.co2ePlanned.toFixed(2)} kg CO₂e` : ''}` : '', span: 4, cls: 'h-3 scroll' },
     today && today.meals.length ? `<div class="meals">${today.meals.map((x) => `
       <div class="meal">
@@ -1411,7 +1448,7 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
   // Each officer with their current condition — the latest state filed from
   // mission control, translated to language in src/lib/mood.js. The slider
   // number itself is never published; only the word and the sentence.
-  const crewPanel = dpanel({ id: 'crew', code: 'CH-12', title: T('Crew Moods'),
+  const crewPanel = dpanel({ id: 'crew', title: T('Crew Moods'),
       meta: T('Condition as reported · never as numbers'), span: 4, cls: 'h-3 scroll' },
     `<div class="officers">${crew.map((c) => {
       const t = moodLib.translate(c.mood);
@@ -1430,13 +1467,13 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
     }).join('')}</div>`);
 
   /* ---- media out of the habitat: the newest items, and the door to all of them */
-  const mediaPanel = dpanel({ id: 'media', code: 'CH-60', title: T('Media'), href: '/media',
+  const mediaPanel = dpanel({ id: 'media', title: T('Media'), href: '/media',
     meta: mediaCounts.total ? `${mediaCounts.total} ${T(mediaCounts.total === 1 ? 'item' : 'items')} · ${MV.fmtBytes(mediaCounts.bytes)} · ${T('originals, every one downloadable')}` : T('photographs, video and sound out of the habitat'), span: 12 },
     media.length ? `${MV.strip(media, mediaCounts.total > media.length ? { href: '/media', n: mediaCounts.total - media.length, label: T('See everything') } : null)}
       <div class="dpanel-more"><a class="btn" href="/media">${T('All media, day by day')} →</a><a class="btn" href="/media/export.zip">${T('Download everything')} · ZIP</a></div>`
     : `<div class="empty">${T('Nothing has been sent out of the habitat yet')}${pre ? ` — ${T('occupied from')} ${esc(m.startLabel)}` : ''}</div>`);
 
-  const whole = dpanel({ id: 'whole', code: 'CH-30', title: T('The whole mission'),
+  const whole = dpanel({ id: 'whole', title: T('The whole mission'),
     meta: `${esc(m.runLabel)} · ${dayWord(T, m.totalDays)}`, span: 12 },
     allDays.length ? `<div class="days-strip">${allDays.map((d) => {
       // Before the hatch closes every day is still ahead; after it opens,
@@ -1459,11 +1496,65 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
       </details>`;
     }).join('')}</div>` : `<div class="empty">${T('No schedule filed yet')}</div>`);
 
+  /* ---- today's scientific mission (content/missions.json, content.missionForDay): at the head of the dashboard, over the
+     index of folders — the mission's number and title, its central question, the three parts of the day (Morning,
+     Afternoon, EVA) as the sheet gives them, the question for the community hour in English and German as the sheet has
+     it. (The sheets themselves, PDFs in missions/, are served at /missions/<file> but not linked from here.) The words
+     are the sheet's own, shown as written, like the schedule's; the labels are in the visitor's language. */
+  const missionPanel = (() => {
+    const head = `<header class="dpanel-head"><div class="dpanel-title"><h3>${T('Today’s Mission')}</h3></div>
+        <span class="dpanel-meta">SOL ${day3} · ${esc(shortDay(blogDate))}${mission ? ` · ${T('Mission No.')} ${mission.no}` : ''}</span></header>`;
+    if (!mission) return `<section class="dpanel span-12 mission-today" id="mission-today" aria-label="${esc(T('Today’s Mission'))}">${head}
+      <div class="dpanel-body"><div class="empty">${T('No mission filed for')} SOL ${day3}${pre ? ` — ${T('occupied from')} ${esc(m.startLabel)}` : ''}</div></div></section>`;
+    // a part's lines: a line in capitals is a heading, bullets and numbered lines are lists, → a pointer, the rest paragraphs
+    const lines = (arr) => {
+      const out = []; let list = null, kind = '';
+      const close = () => { if (list) { out.push(`<${kind}>${list.join('')}</${kind}>`); list = null; kind = ''; } };
+      for (const raw of arr) {
+        const l = String(raw).trim(); if (!l) continue;
+        const bullet = /^•\s*/.test(l), num = /^\d+\.\s+/.test(l);
+        if (bullet || num) {
+          const k = bullet ? 'ul' : 'ol';
+          if (list && kind !== k) close();
+          if (!list) { list = []; kind = k; }
+          list.push(`<li>${esc(l.replace(bullet ? /^•\s*/ : /^\d+\.\s+/, ''))}</li>`);
+          continue;
+        }
+        close();
+        if (/^→/.test(l)) out.push(`<p class="mission-arrow">${esc(l.replace(/^→\s*/, ''))}</p>`);
+        else if (l.length > 2 && l === l.toUpperCase() && /[A-Z]/.test(l)) out.push(`<b class="mission-sub">${esc(l)}</b>`);
+        else out.push(`<p>${esc(l)}</p>`);
+      }
+      close();
+      return out.join('');
+    };
+    const part = (key, name) => (mission[key].length ? `<div class="mission-part is-${key}"><h4>${T(name)}</h4>${lines(mission[key])}</div>` : '');
+    const c = mission.community, community = c.en || c.de ? `<p class="mission-community"><span class="mission-k">${T('Question for the community hour')}</span>${
+      c.en ? `<span class="mission-cq">${esc(c.en)}</span>` : ''}${c.de ? `<span class="mission-cq is-de" lang="de">${esc(c.de)}</span>` : ''}</p>` : '';
+    return `<section class="dpanel span-12 mission-today" id="mission-today" aria-labelledby="mission-today-title">${head}
+      <div class="dpanel-body mission-body">
+        <div class="mission-lead">
+          <span class="mission-no">${T('Mission No.')} ${mission.no}</span>
+          <h4 class="mission-title" id="mission-today-title">${esc(mission.title)}</h4>
+          ${mission.question ? `<p class="mission-q"><span class="mission-k">${T('Central question')}</span>${esc(mission.question)}</p>` : ''}
+        </div>
+        <div class="mission-parts">${part('morning', 'Morning')}${part('afternoon', 'Afternoon')}${part('eva', 'EVA')}</div>
+        <div class="mission-foot">
+          ${community}
+        </div>
+      </div>
+    </section>`;
+  })();
+
+  return { m, T, day3, blogDate, kpis, strip, cloudStrip, missionPanel, habitat, trends, schedule, galley, crewPanel, blogCommander, blogHealth, blogScience };
+}
+
+function dashboard(ctx, args) {
+  const { m, T, day3, blogDate, kpis, strip, cloudStrip, missionPanel, habitat, trends, schedule, galley, crewPanel, blogCommander, blogHealth, blogScience } = dashboardPanels(ctx, args);
   return `
   <section class="dash" id="mission">
     <header class="dash-head" data-stop>
       <div>
-        <span class="dash-code">CH-00</span>
         <h2 class="bigsec">${T('Mission dashboard')}</h2>
         <p class="dash-sub">${esc(m.name)} · ${esc(m.runLabel)} · ${dayWord(T, m.totalDays)} · ${esc(m.timezone)}</p>
         <p class="dash-figs">${kpis}</p>
@@ -1482,19 +1573,20 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
       </a>
       ${strip}
     </div>
+    ${missionPanel}
     <div class="dash-grid">
       ${folder(T, [
         { label: T('Habitat'), tabs: [
-          { id: 'habitat', code: 'CH-01', label: T('Habitat'), html: habitat },
-          { id: 'trends', code: 'CH-40', label: T('Trends'), html: trends } ] },
+          { id: 'habitat', label: T('Habitat'), html: habitat },
+          { id: 'trends', label: T('Trends'), html: trends } ] },
         { label: T('Today'), tabs: [
-          { id: 'schedule', code: 'CH-30', label: T('Today’s Schedule'), html: schedule },
-          { id: 'galley', code: 'CH-32', label: T('Today’s Meal'), html: galley },
-          { id: 'crew', code: 'CH-12', label: T('Crew Moods'), html: crewPanel } ] },
+          { id: 'schedule', label: T('Today’s Schedule'), html: schedule },
+          { id: 'galley', label: T('Today’s Meal'), html: galley },
+          { id: 'crew', label: T('Crew Moods'), html: crewPanel } ] },
         { label: T('Blogs'), tabs: [
-          { id: 'blog-commander', code: 'CH-53', label: T('Commander Blog'), html: blogCommander },
-          { id: 'blog-health', code: 'CH-52', label: T('Daily Health Blog'), html: blogHealth },
-          { id: 'blog-science', code: 'CH-51', label: T('Daily Science Findings'), html: blogScience } ] },
+          { id: 'blog-commander', label: T('Commander Blog'), html: blogCommander },
+          { id: 'blog-health', label: T('Daily Health Blog'), html: blogHealth },
+          { id: 'blog-science', label: T('Daily Science Findings'), html: blogScience } ] },
       ], { label: `${T('Mission dashboard')} · SOL ${day3} · ${shortDay(blogDate)}` })}
     </div>
   </section>`;
@@ -1508,8 +1600,8 @@ function dashboard(ctx, { crew, today, counts, crewFigures, power = { categories
  * it was sent, the reference number at the right — and beneath the box the
  * crew's answer, large, under the words CREW ANSWER, with the officer, the
  * habitat and the time it left Mars in small print under it. A message not
- * yet answered shows its state — in transit, reached Mars — where the answer
- * will stand. Drawn on the board (mission page, messages page) and, after
+ * yet answered shows its state — in transit, then awaiting reply — where the
+ * answer will stand. Drawn on the board (mission page, messages page) and, after
  * the run, among the last exchanges on the closing page; styled under *the
  * exchanges* in aura.css.
  */
@@ -1520,7 +1612,70 @@ function cardStatus(m) {
   }
   if (m.state === 'REJECTED') return { label: 'REJECTED', cls: 'bad' };
   if (m.state === 'TRANSMITTED' || m.state === 'IN_TRANSIT') return { label: 'IN TRANSIT', cls: 'earth' };
-  return { label: 'REACHED MARS', cls: 'ok' };   // ARRIVED · PENDING_APPROVAL · APPROVED
+  return { label: 'AWAITING REPLY', cls: 'ok' };   // ARRIVED · PENDING_APPROVAL · APPROVED: it is on Mars, and the crew have not answered yet
+}
+
+/* The card's line into space. Every message is beamed out of the atmosphere
+   by radio as well (src/lib/spacespeak.js), and from the moment it left —
+   the relay's, when it has one; when it was sent, until then — it is
+   getting further from Earth at the speed of light: 299,792 km every second.
+   The card says how far it has got, in the visitor's language and figures,
+   with a key to update the figure and when it was launched; board.js keeps
+   the figure running, a second at a time. Without a script the figure is the
+   one the page was drawn with. */
+const MILES_PER_S = 186282.397, KM_PER_S = 299792.458;
+const LOCALE = { de: 'de-DE', fr: 'fr-FR', en: 'en-GB' };
+function fmtInt(n, lang) {
+  try { return new Intl.NumberFormat(LOCALE[lang] || 'en-GB', { maximumFractionDigits: 0 }).format(n); } catch { return String(Math.round(n)); }
+}
+/** A big figure in words once it is big: every digit up to ten million, then "4.36 million", "3.95 billion",
+ *  "1.02 trillion" — in the visitor's language, where the English billion is the German Milliarde and the French
+ *  milliard (board.js has the same, for the running figure). */
+const SCALES = [[1e15, 'quadrillion'], [1e12, 'trillion'], [1e9, 'billion'], [1e6, 'million']];
+function fmtBig(n, lang, T = same, words = n >= 1e7) {
+  if (!words || n < 1e6) return fmtInt(n, lang);
+  const [unit, word] = SCALES.find(([u]) => n >= u);
+  let num;
+  try { num = new Intl.NumberFormat(LOCALE[lang] || 'en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n / unit); }
+  catch { num = (n / unit).toFixed(2); }
+  // English says "4.83 billion miles" whatever the figure; German and French have a plural for it (the dictionary's row)
+  const one = /^1([.,]00)?$/.test(num), plural = T(word + 's');
+  return `${num} ${one || plural === word + 's' ? T(word) : plural}`;
+}
+/** "7 hours ago", in the visitor's language. */
+function agoText(secs, T) {
+  const n = Math.max(0, Math.floor(secs));
+  if (n < 45) return T('just now');
+  const min = Math.round(n / 60);
+  if (min < 60) return min <= 1 ? T('a minute ago') : T('{n} minutes ago').replace('{n}', String(min));
+  const h = Math.round(n / 3600);
+  if (h < 24) return h <= 1 ? T('an hour ago') : T('{n} hours ago').replace('{n}', String(h));
+  const d = Math.round(n / 86400);
+  return d <= 1 ? T('a day ago') : T('{n} days ago').replace('{n}', String(d));
+}
+/** Whether the relay to space is on (src/lib/spacespeak.js). */
+function spaceRelayOn() {
+  try { return require('../../lib/spacespeak').CFG.enabled; } catch { return false; }
+}
+function spaceLine(m, T = same) {
+  // the line belongs to a message that has been beamed: from the moment SpaceSpeak took it. Only a replied message is
+  // handed over (routes/control.js), so a card still awaiting its reply has no line. With the relay off — a rehearsal,
+  // a station without the account — a replied message counts from the moment its reply was published.
+  const launched = m.launched_at || (!spaceRelayOn() && m.state === 'PUBLISHED' ? (m.response_at || m.submitted_at) : null);
+  const at = Date.parse(launched || '');
+  if (Number.isNaN(at)) return '';
+  const lang = T.lang || 'en';
+  const secs = Math.max(0, (Date.now() - at) / 1000), words = secs * KM_PER_S >= 1e7;   // both figures in words from the same moment
+  const sentence = esc(T('This message is currently {miles} miles ({km} km) from Earth!'))
+    .replace('{miles}', `<b class="sp-mi">${fmtBig(secs * MILES_PER_S, lang, T, words)}</b>`)
+    .replace('{km}', `<b class="sp-km">${fmtBig(secs * KM_PER_S, lang, T, words)}</b>`);
+  // the card is opened by a tap (board.js, the journey): where the message has got to, stop by stop — Mars as it stood
+  // that day is the message's own distance (orbital.js at the moment it was sent)
+  return `<div class="card-space" data-launched="${esc(new Date(at).toISOString())}" data-au="${Number(m.distance_au || 0).toFixed(4)}" data-ls="${Math.round(Number(m.light_seconds || 0))}" data-callsign="${esc(m.callsign || '')}">
+      <span class="card-space-line">${sentence}</span>
+      <span class="card-space-more"><span class="card-space-launched">${T('Launched')} <span class="sp-ago">${esc(agoText(secs, T))}</span></span>
+      <span class="card-space-go">${T('Follow its journey')} ›</span></span>
+    </div>`;
 }
 
 /** `T` puts the card's chrome — the state, Earth, CREW ANSWER, the tags —
@@ -1549,6 +1704,7 @@ function messageCard(m, tz, T = same) {
       </div>
       <div class="card-body">${esc(m.body)}</div>
     </div>
+    ${spaceLine(m, T)}
     ${m.response_body ? `<div class="card-reply">
       <div class="who">${T('Crew answer')}</div>
       <p>${esc(m.response_body)}</p>
@@ -1587,7 +1743,7 @@ function boardCards(recent, T = same) {
  */
 function boardVersion(recent) {
   const key = recent.map((m) =>
-    `${m.id}:${m.state}:${m.response_at || ''}:${m.mine ? 1 : 0}:${
+    `${m.id}:${m.state}:${m.response_at || ''}:${m.launched_at || ''}:${m.mine ? 1 : 0}:${
       m.response_at && Date.now() - Date.parse(m.response_at) < 6 * 3600000 ? 'new' : ''}`
   ).join('|');
   return require('crypto').createHash('sha1').update(key).digest('hex').slice(0, 16);
@@ -1605,7 +1761,7 @@ function archive(ctx, { messages, filters, stats }) {
     the mission went on.</p>
   </div>
 
-  ${panel('CH-21 / DISTRIBUTION', `
+  ${panel('DISTRIBUTION', `
     ${eyebrow('What people asked about')}
     ${stats.tags.length ? stats.tags.map((t) => `
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:7px">
@@ -1615,7 +1771,7 @@ function archive(ctx, { messages, filters, stats }) {
       </div>`).join('') : '<div class="empty">NO DATA YET</div>'}`, 'earth-side')}
 
   <form method="get" action="/archive" class="panel">
-    <span class="chan">CH-21 / FILTER</span>
+    <span class="chan">FILTER</span>
     <div class="grid g4">
       <label class="f"><span>Tag</span>
         <select name="tag"><option value="">Any</option>
@@ -1643,10 +1799,10 @@ function single(ctx, { message }) {
   ${messageCard(message)}
   ${pipeline('PUBLISHED')}
   <p style="margin-top:22px"><a href="/archive">← Back to the archive</a></p>`;
-  return L.page({ title: `Exchange ${message.id}`, ctx, body, current: '/archive' });
+  return L.page({ title: `Exchange ${message.id}`, ctx, body, current: '/archive', scripts: ['/board.js'] });   // board.js keeps the card's distance running
 }
 
 module.exports = {
   mission, messages, dashboardPage, complete, inventoryGauges, boardCards, boardVersion, archive, single, messageCard,
-  hardwareInner, powerTileInner, ticker,
+  hardwareInner, powerTileInner, ticker, dashboardPanels, boardScreen, habitatDome,
 };
