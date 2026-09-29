@@ -35,7 +35,7 @@ const SCREENS = [
   { name: 'habitat', title: 'Habitat', fit: 'scale', minWidth: 960, about: 'The habitat’s instruments: the readings, the crew’s figures, the stores and the power' },
   { name: 'board', title: 'Message Board', fit: 'clip', about: 'The latest exchanges with the crew, as many as fit, live' },
   { name: 'mission', title: 'Today’s Mission', fit: 'scale', minWidth: 760, about: 'The day’s scientific mission: its question, Morning, Afternoon and EVA' },
-  { name: 'blogs', title: 'Blogs', fit: 'scale', minWidth: 700, about: 'The Commander Blog, the Daily Health Blog and the Daily Science Findings' },
+  { name: 'blogs', title: 'Blogs', fit: 'none', about: 'The Commander Blog, the Daily Science Findings and the Daily Health Blog, one at a time — each post rolling by from top to bottom, then the next blog' },
   { name: 'day', title: 'Today', fit: 'scale', minWidth: 640, about: 'Today’s Schedule, Today’s Meal and the Crew Moods' },
   { name: 'trends', title: 'Trends', fit: 'scale', minWidth: 520, about: 'The run’s trends on one graph' },
   { name: 'media', title: 'Media', fit: 'clip', about: 'The newest pictures out of the habitat in one grid, as many as fit, live' },
@@ -107,10 +107,12 @@ function mission(ctx, d) {
   return shell(ctx, { name: 'mission', title: 'Today’s Mission', body: p.missionPanel, fit: 'scale' });
 }
 
-/** The three blogs side by side (one under the other upright), scaled so the day's posts are shown whole. */
+/** The three blogs one at a time, each filling the screen: its head, then the day's post rolling by from top to bottom
+    at reading pace (public/screen-blogs.js) — the Commander Blog, then the Daily Science Findings, then the Daily Health
+    Blog, round and round. A blog with nothing written yet shows its note for a moment and passes the turn on. */
 function blogs(ctx, d) {
   const p = P.dashboardPanels(ctx, d);
-  return shell(ctx, { name: 'blogs', title: 'Blogs', body: `<div class="screen-three">${p.blogCommander}${p.blogHealth}${p.blogScience}</div>`, fit: 'scale' });
+  return shell(ctx, { name: 'blogs', title: 'Blogs', body: `<div class="screen-blogs" id="screen-blogs">${p.blogCommander}${p.blogScience}${p.blogHealth}</div>`, fit: 'none', scripts: ['/screen-blogs.js'] });
 }
 
 /** The day: the schedule, the meal and the crew's moods side by side (one under the other upright). */

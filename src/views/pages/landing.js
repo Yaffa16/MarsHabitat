@@ -141,7 +141,8 @@ function slowChat(ctx) {
         <div class="step-body">
           <h3>${T('Send a message')}</h3>
           <div class="step-card is-earth">${me ? `<span class="step-who">${esc(me)}</span>` : ''}${T('What does it smell like in there?')}</div>
-          <p>${T('A message from Earth enters the communications queue. It will take time to reach the crew.')}</p>
+          <p>${T('A message from Earth enters the communications queue. It will take time to reach the crew.')}
+            <span class="step-space">${T('Every message goes two ways: to the crew in the Mars habitat — and, by radio, out into space, where it travels on at the speed of light. Tap it on the Message Board to see how far it has come.')}</span></p>
         </div>
       </li>
       <li class="step s-transit">

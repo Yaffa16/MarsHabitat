@@ -224,7 +224,7 @@ app.get('/', (req, res) => {
     ...stationData(ctx),
     // Published exchanges for everyone; this visitor's own messages as well,
     // whatever state they are in, so a sender can always find what they sent.
-    recent: data.board(400, ctx.visitor ? ctx.visitor.id : null),
+    recent: data.board(BOARD_RECENT, ctx.visitor ? ctx.visitor.id : null),
     inFlight: ctx.visitor ? data.inFlightFor(ctx.visitor.id) : null,
     error: req.query.err ? String(req.query.err).slice(0, 160) : null,
   }));
@@ -261,7 +261,7 @@ app.get('/dashboard', (req, res) => {
 app.get('/messages', (req, res) => {
   const ctx = req.ctx();
   res.send(P.messages(ctx, {
-    recent: data.board(400, ctx.visitor ? ctx.visitor.id : null),
+    recent: data.board(BOARD_RECENT, ctx.visitor ? ctx.visitor.id : null),
     inFlight: ctx.visitor ? data.inFlightFor(ctx.visitor.id) : null,
     error: req.query.err ? String(req.query.err).slice(0, 160) : null,
   }));
@@ -546,6 +546,7 @@ app.get('/archive/message/:id', requireControl, (req, res, next) => {
 /* =========================================================== COMMUNICATION */
 
 const MAX_CHARS = Number(process.env.MESSAGE_MAX_CHARS || 500);
+const BOARD_RECENT = Math.max(1, Number(process.env.BOARD_RECENT || 9));   // the answered exchanges the board shows, newest first
 const TRANSIT_MS = Number(process.env.TRANSIT_SECONDS || 12) * 1000;
 
 /** Errors bounce back to the landing page, which is where the composer lives. */
@@ -589,7 +590,7 @@ app.get('/api/composer', (req, res) => composerFragment(req, res));
  */
 app.get('/api/board', (req, res) => {
   const ctx = req.ctx();
-  const recent = data.board(400, ctx.visitor ? ctx.visitor.id : null);
+  const recent = data.board(BOARD_RECENT, ctx.visitor ? ctx.visitor.id : null);
   const counts = data.counts();
   res.set('Cache-Control', 'no-store').json({
     version: P.boardVersion(recent),
@@ -818,6 +819,14 @@ app.get('/api/hardware', (req, res) => {
 
 /* The cloud gallery's state — is the bridge on, how many images, when it
    last answered, what went wrong. No credentials, no paths beyond the folder. */
+/* The celestial objects a message's distance is compared with (src/lib/celestial.js, content/celestial.json), in the
+   visitor's language (?lang=de|en|fr says otherwise — the installation's screens), nearest first. board.js asks for it
+   once, the first time a card is tapped. */
+app.get('/api/celestial', (req, res) => {
+  const lang = ['de', 'en', 'fr'].includes(req.query.lang) ? req.query.lang : req.ctx().lang;
+  res.set('Cache-Control', 'public, max-age=300').json({ lang, objects: require('./lib/celestial').list(lang) });
+});
+
 app.get('/api/cloud', (req, res) => {
   const cloud = require('./lib/cloud');
   const snap = cloud.snapshot();

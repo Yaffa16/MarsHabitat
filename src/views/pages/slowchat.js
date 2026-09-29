@@ -84,7 +84,8 @@ function slowestChat(ctx) {
         <div class="slow-txt">
           <h3>${T('Uplink received')}</h3>
           <div class="slow-bubble is-earth">${me ? `<span class="slow-bk">${esc(me)}</span>` : ''}${T('What does it smell like in there?')}</div>
-          <p>${T('A message from Earth enters the communications queue. It will take time to reach the crew.')}</p>
+          <p>${T('A message from Earth enters the communications queue. It will take time to reach the crew.')}
+            <span class="step-space">${T('Every message goes two ways: to the crew in the Mars habitat — and, by radio, out into space, where it travels on at the speed of light. Tap it on the Message Board to see how far it has come.')}</span></p>
         </div>
       </li>
       <li class="slow-step s-transit">

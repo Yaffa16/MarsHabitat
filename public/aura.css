@@ -535,39 +535,24 @@ body.landing .card.xc .card-space-go { color: var(--cobalt); white-space: nowrap
 body.landing .card.xc:hover .card-space-go { color: var(--mars-ink); }
 body.screen .card.xc { cursor: default; }
 body.screen .card.xc .card-space-go { display: none; }                                             /* nothing to tap on a screen */
-/* the journey: a panel over the page — the message's way out, stop by stop, in the sky's HUD dress */
+/* where the message is (board.js): a panel over the page with the one thing the message has just passed — how many
+   times farther the message is, then the object's own distance and a line about it; nothing on it is a link */
 body.landing > .journey, .journey { position: fixed; inset: 0; z-index: 90; display: none; align-items: center; justify-content: center; padding: 18px; background: rgba(8, 9, 18, .62); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 body.landing > .journey.is-open, .journey.is-open { display: flex; }
 body.journey-open { overflow: hidden; }
-.jr-panel { position: relative; width: min(640px, 100%); max-height: min(88vh, 88dvh); overflow: auto; overscroll-behavior: contain; padding: 26px 28px 24px; border-radius: 22px; background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); color: var(--ink); font-family: var(--display); }
+.jr-panel { position: relative; width: min(560px, 100%); max-height: min(88vh, 88dvh); overflow: auto; overscroll-behavior: contain; padding: 26px 28px 26px; border-radius: 22px; background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); color: var(--ink); font-family: var(--display); }
 :root[data-theme="dark"] .jr-panel { background: rgba(14, 16, 30, .92); }
 .jr-close { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; padding: 0; border-radius: 50%; border: 1px solid var(--glass-edge); background: transparent; color: var(--dim); font: inherit; font-size: 15px; line-height: 1; cursor: pointer; box-shadow: none; min-height: 0; }
 .jr-close:hover { color: var(--ink); background: rgba(var(--cobalt-rgb), .1); transform: none; box-shadow: none; }
-.jr-kicker { display: block; font-size: var(--fs-label); letter-spacing: .14em; text-transform: uppercase; color: var(--mars-ink); font-weight: 600; }
-.jr-title { margin: 6px 40px 0 0; font-size: 24px; line-height: 1.2; font-weight: 600; letter-spacing: -.02em; }
-.jr-title .cs { font-family: var(--mono); font-size: 18px; letter-spacing: .08em; color: var(--ink); }
-.jr-lead { margin: 10px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--dim); }
-.jr-lead b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
-.jr-stops { list-style: none; margin: 20px 0 0; padding: 0; display: flex; flex-direction: column; }
-.jr-stop { position: relative; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 0 12px; padding: 12px 0 14px; border-top: 1px solid var(--glass-edge); }
-.jr-mark { position: relative; width: 14px; height: 14px; margin-top: 3px; border-radius: 50%; border: 2px solid var(--cobalt); box-sizing: border-box; }
-.jr-stop.is-done .jr-mark { background: var(--mars); border-color: var(--mars); box-shadow: 0 0 0 3px rgba(255, 90, 31, .18); }
-.jr-stop.is-star .jr-mark { border-radius: 2px; transform: rotate(45deg); }
-.jr-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; }
-.jr-name { font-size: 16px; font-weight: 600; }
-.jr-status { font-size: var(--fs-label); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); font-variant-numeric: tabular-nums; }
-.jr-stop.is-done .jr-status { color: var(--mars-ink); }
-.jr-bar { height: 3px; margin: 8px 0 2px; border-radius: 2px; background: rgba(var(--cobalt-rgb), .15); overflow: hidden; }
-.jr-bar i { display: block; height: 100%; background: var(--cobalt); border-radius: 2px; }
-.jr-you { margin: 8px 0 0; font-size: 14px; line-height: 1.45; color: var(--ink); }
-.jr-you b { color: var(--mars-ink); font-variant-numeric: tabular-nums; }
-.jr-fact { margin: 6px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--dim); }
-.jr-fact a { color: var(--cobalt); text-decoration: none; border-bottom: 1px solid rgba(var(--cobalt-rgb), .35); white-space: nowrap; }
-.jr-fact a:hover { color: var(--mars-ink); border-color: currentColor; }
+.jr-line { margin: 0 40px 0 0; font-size: 24px; line-height: 1.3; font-weight: 600; letter-spacing: -.015em; color: var(--ink); }
+.jr-line .jr-r { color: var(--mars-ink); font-variant-numeric: tabular-nums; }
+.jr-line .jr-what { color: var(--cobalt); }                                    /* the object's name — a word, not a link */
+:root[data-theme="dark"] .jr-line .jr-what { color: #b3baff; }
+.jr-fact { margin: 14px 0 0; padding-top: 14px; border-top: 1px solid var(--glass-edge); font-size: 16px; line-height: 1.55; color: var(--dim); }
 @media (max-width: 600px) {
-  .journey { padding: 0; align-items: flex-end; }
-  .jr-panel { width: 100%; max-height: 92vh; max-height: 92dvh; border-radius: 22px 22px 0 0; padding: 22px 18px 28px; }
-  .jr-title { font-size: 21px; }
+  body.landing > .journey, .journey { padding: 0; align-items: flex-end; }
+  .jr-panel { width: 100%; max-height: 92vh; max-height: 92dvh; border-radius: 22px 22px 0 0; padding: 22px 18px 30px; }
+  .jr-line { font-size: 21px; }
 }
 /* on the board: one card under the other, the viewer's own with a rule of Mars at the left */
 body.landing .board .card { border-bottom: 0; margin: 0 0 12px; padding: 14px 16px 16px; }

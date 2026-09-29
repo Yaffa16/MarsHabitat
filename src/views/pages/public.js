@@ -1615,15 +1615,14 @@ function cardStatus(m) {
   return { label: 'AWAITING REPLY', cls: 'ok' };   // ARRIVED · PENDING_APPROVAL · APPROVED: it is on Mars, and the crew have not answered yet
 }
 
-/* The card's line into space. Every message is beamed out of the atmosphere
-   by radio as well (src/lib/spacespeak.js), and from the moment it left —
-   the relay's, when it has one; when it was sent, until then — it is
-   getting further from Earth at the speed of light: 299,792 km every second.
-   The card says how far it has got, in the visitor's language and figures,
-   with a key to update the figure and when it was launched; board.js keeps
-   the figure running, a second at a time. Without a script the figure is the
-   one the page was drawn with. */
-const MILES_PER_S = 186282.397, KM_PER_S = 299792.458;
+/* The card's line into space. From the moment a message is sent it is
+   counted as on its way out of the atmosphere at the speed of light —
+   299,792 km every second (and once the crew answer, it really is:
+   src/lib/spacespeak.js hands it to SpaceSpeak then). The card says how far
+   it has got, in the visitor's language and figures, and when it was
+   launched; board.js keeps the figure running, a second at a time. Without
+   a script the figure is the one the page was drawn with. */
+const KM_PER_S = 299792.458;
 const LOCALE = { de: 'de-DE', fr: 'fr-FR', en: 'en-GB' };
 function fmtInt(n, lang) {
   try { return new Intl.NumberFormat(LOCALE[lang] || 'en-GB', { maximumFractionDigits: 0 }).format(n); } catch { return String(Math.round(n)); }
@@ -1632,15 +1631,16 @@ function fmtInt(n, lang) {
  *  "1.02 trillion" — in the visitor's language, where the English billion is the German Milliarde and the French
  *  milliard (board.js has the same, for the running figure). */
 const SCALES = [[1e15, 'quadrillion'], [1e12, 'trillion'], [1e9, 'billion'], [1e6, 'million']];
-function fmtBig(n, lang, T = same, words = n >= 1e7) {
-  if (!words || n < 1e6) return fmtInt(n, lang);
+function fmtBig(n, lang, T = same) {
+  if (n < 1e7) return fmtInt(n, lang);
   const [unit, word] = SCALES.find(([u]) => n >= u);
   let num;
   try { num = new Intl.NumberFormat(LOCALE[lang] || 'en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n / unit); }
   catch { num = (n / unit).toFixed(2); }
-  // English says "4.83 billion miles" whatever the figure; German and French have a plural for it (the dictionary's row)
-  const one = /^1([.,]00)?$/.test(num), plural = T(word + 's');
-  return `${num} ${one || plural === word + 's' ? T(word) : plural}`;
+  // English says "4.83 billion km" whatever the figure; German and French have a plural for it (the dictionary's row),
+  // and French puts "de" before the unit: "7,78 milliards de km"
+  const one = /^1([.,]00)?$/.test(num);
+  return `${num} ${lang === 'en' || one ? T(word) : T(word + 's')}${lang === 'fr' ? ' de' : ''}`;
 }
 /** "7 hours ago", in the visitor's language. */
 function agoText(secs, T) {
@@ -1653,24 +1653,16 @@ function agoText(secs, T) {
   const d = Math.round(n / 86400);
   return d <= 1 ? T('a day ago') : T('{n} days ago').replace('{n}', String(d));
 }
-/** Whether the relay to space is on (src/lib/spacespeak.js). */
-function spaceRelayOn() {
-  try { return require('../../lib/spacespeak').CFG.enabled; } catch { return false; }
-}
 function spaceLine(m, T = same) {
-  // the line belongs to a message that has been beamed: from the moment SpaceSpeak took it. Only a replied message is
-  // handed over (routes/control.js), so a card still awaiting its reply has no line. With the relay off — a rehearsal,
-  // a station without the account — a replied message counts from the moment its reply was published.
-  const launched = m.launched_at || (!spaceRelayOn() && m.state === 'PUBLISHED' ? (m.response_at || m.submitted_at) : null);
-  const at = Date.parse(launched || '');
+  // the count starts the moment the message was sent
+  const at = Date.parse(m.submitted_at || '');
   if (Number.isNaN(at)) return '';
   const lang = T.lang || 'en';
-  const secs = Math.max(0, (Date.now() - at) / 1000), words = secs * KM_PER_S >= 1e7;   // both figures in words from the same moment
-  const sentence = esc(T('This message is currently {miles} miles ({km} km) from Earth!'))
-    .replace('{miles}', `<b class="sp-mi">${fmtBig(secs * MILES_PER_S, lang, T, words)}</b>`)
-    .replace('{km}', `<b class="sp-km">${fmtBig(secs * KM_PER_S, lang, T, words)}</b>`);
-  // the card is opened by a tap (board.js, the journey): where the message has got to, stop by stop — Mars as it stood
-  // that day is the message's own distance (orbital.js at the moment it was sent)
+  const secs = Math.max(0, (Date.now() - at) / 1000);
+  const sentence = esc(T('This message is currently {km} km from Earth!'))
+    .replace('{km}', `<b class="sp-km">${fmtBig(secs * KM_PER_S, lang, T)}</b>`);
+  // the card is opened by a tap (board.js): the one thing the message is heading for — Mars as it stood that day is
+  // the message's own distance (orbital.js at the moment it was sent)
   return `<div class="card-space" data-launched="${esc(new Date(at).toISOString())}" data-au="${Number(m.distance_au || 0).toFixed(4)}" data-ls="${Math.round(Number(m.light_seconds || 0))}" data-callsign="${esc(m.callsign || '')}">
       <span class="card-space-line">${sentence}</span>
       <span class="card-space-more"><span class="card-space-launched">${T('Launched')} <span class="sp-ago">${esc(agoText(secs, T))}</span></span>

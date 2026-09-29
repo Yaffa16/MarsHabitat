@@ -285,6 +285,8 @@ body.landing .step-body { grid-column: 2; min-width: 0; }
 body.landing .step-body h3 { margin: 4px 0 0; font-family: var(--display); font-size: 21px; line-height: 1.22; font-weight: 600; letter-spacing: -.015em; color: var(--ink); }
 body.landing .step-body p { margin: 12px 0 0; font-size: var(--fs-read); line-height: 1.62; color: var(--dim); text-wrap: pretty; }
 body.landing .step-body p b { font-weight: 600; color: var(--ink); }
+/* the message's second way — into space by radio — as a line of its own under the queue */
+body.landing .step-body .step-space { display: block; margin-top: 8px; }
 body.landing .step-card { margin: 14px 0 0; padding: 11px 15px 13px; border: 1px solid var(--hair); border-radius: 18px 18px 18px 5px; background: var(--tile);
   font-family: var(--display); font-size: 17px; line-height: 1.38; color: var(--ink); box-shadow: 0 10px 24px -18px rgba(15,21,64,.35); }
 body.landing .step-card.is-crew { border-radius: 18px 18px 5px 18px; border-color: rgba(255,90,31,.32); background: #fff6f1; }

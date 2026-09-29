@@ -118,8 +118,8 @@ pop-ups over it) lead to the About page too. The footer of the landing page is t
 - `/screen/board` — the message board, read-only, live; three columns on a wide screen, two
   upright
 - `/screen/mission` — Today's Mission
-- `/screen/blogs` — the three blogs side by side (one under the other upright), scaled so the
-  posts show whole
+- `/screen/blogs` — the three blogs one at a time, each post rolling by from top to bottom,
+  then the next blog
 - `/screen/day` — schedule, meal and moods in one row
 - `/screen/trends` — the graph; upright it draws the phone version with the legend
   underneath, which reads far better
@@ -145,7 +145,7 @@ address.
 | Habitat | `/screen/habitat` | The Habitat panel of the dashboard: the readings, the crew's figures, the stores and the power — live |
 | Message Board | `/screen/board` | The latest exchanges, newest first, three across on a wide screen (two upright), as many as fit — live, a new exchange slides in as the board publishes it. Read-only: no composer |
 | Today's Mission | `/screen/mission` | The day's mission from the sheet: its question, Morning, Afternoon, EVA, the question for the community hour |
-| Blogs | `/screen/blogs` | The Commander Blog, the Daily Health Blog and the Daily Science Findings side by side (one under the other upright) — the latest posts carried forward until the night's are written, as the dashboard does |
+| Blogs | `/screen/blogs` | The three blogs **one at a time**, each filling the screen: its head stays, the day's post rolls by underneath from top to bottom at reading pace (`public/screen-blogs.js`, 28 px a second, five seconds' hold at the top and at the end; a post that fits is shown for fourteen), then the next blog takes the screen — the Commander Blog, the Daily Science Findings, the Daily Health Blog, round and round. The text is set at the size of the panels' own notes (about 23 px on a 1080p screen). A blog with nothing written yet shows its note and passes the turn on; the latest earlier post is carried forward, as the dashboard does |
 | Today | `/screen/day` | Today's Schedule, Today's Meal and the Crew Moods, three in a row (one under the other upright) |
 | Trends | `/screen/trends` | The run's trends on one graph — on an upright screen drawn the way a phone draws it, the names of the lines in a legend under it |
 | Media | `/screen/media` | Every picture out of the habitat in **one grid, the newest first**, five across (three upright), each stamped with its day and time, as many as fit — live, a new picture slides in as it arrives. (The site's gallery groups them by day; a screen that must be full does not) |
@@ -937,7 +937,9 @@ window tall with its cards in the middle and air around them, a margin at both s
   becomes of a message in three steps on one card of glass, each step's sign in a small tinted
   disc of its own colour — Earth's blue, the crossing's violet red, Mars orange — on a dashed
   thread: **01 Uplink** *Send a message* (the visitor's words in a bubble under their own
-  callsign), **02 Transit** *Signal in transit*, **a dot crossing from Earth to Mars** in the
+  callsign, and under the queue a line of its own: *Every message goes two ways: to the crew in
+  the Mars habitat — and, by radio, out into space, where it travels on at the speed of light.
+  Tap it on the Message Board to see how far it has come.*), **02 Transit** *Signal in transit*, **a dot crossing from Earth to Mars** in the
   time the station takes (`TRANSIT_SECONDS`), the way it has come lit behind it, with today's
   distance and light-time — the page moves it itself, frame by frame, so a phone set to less
   motion (or saving power) still sees the signal on its way — **03 Downlink** *Crew response* —
@@ -1344,38 +1346,58 @@ beamed by itself, and what is rejected or deleted is never sent. (The composer s
 under its key, *Every message is also beamed into space by radio.*) Two things follow from it
 on the site.
 
-**The card's line into space.** A card whose message has been beamed — on the board, the
-messages page, the installation's board screen, a single exchange — carries, under the message:
-*This message is currently 4.84 billion miles (7.78 billion km) from Earth!* and *Launched
-7 hours ago*. The figure is the distance a radio signal has covered since SpaceSpeak took the
-message (the card's `data-launched`) — 299,792 km every second — and `public/board.js` moves it
-on once a second, so the numbers race: every digit while it is small (the first half-minute),
-then in words as it grows — million, billion, trillion, quadrillion (`fmtBig()` in
-`src/views/pages/public.js`, the same in `board.js`; in German Millionen, Milliarden, Billionen,
-in French millions, milliards, billions — the English billion is the German Milliarde). A card
-still awaiting its reply has no line; with the relay off (a rehearsal, a station without the
-account) a replied message counts from the moment its reply was published, so the board looks
-the same. In German the kilometres come first, with German figures (*Diese Nachricht ist jetzt
-7,78 Milliarden km … von der Erde entfernt!*), in French likewise.
+**The card's line into space.** Every card — on the board, the messages page, the
+installation's board screen, a single exchange — carries, under the message: *This message is
+currently 7.78 billion km from Earth!* and *Launched 7 hours ago*. The count starts the moment
+the message was sent (the card's `data-launched` is `submitted_at`): the distance a radio signal
+covers, 299,792 km every second, and `public/board.js` moves it on once a second, so the numbers
+race — every digit while it is small (the first half-minute), then in words as it grows —
+million, billion, trillion, quadrillion (`fmtBig()` in `src/views/pages/public.js`, the same in
+`board.js`; in German Millionen, Milliarden, Billionen, in French millions, milliards, billions —
+the English billion is the German Milliarde). Kilometres only, no miles. In German: *Diese
+Nachricht ist jetzt 7,78 Milliarden km von der Erde entfernt!*, in French likewise. (The real
+broadcast follows once the crew answer — the relay below — but the visitor's count runs from
+the send.)
 
-**The journey.** A tap on a card opens where its message has got to (*Follow its journey ›*
-at the card's foot says so; `board.js`): a panel over the page with the message's callsign,
-when it left and how far it has come, then the way out stop by stop — the Moon, the Sun, Mars,
-the orbits of Jupiter, Saturn, Uranus, Neptune and Pluto, the heliopause, Voyager 1, one
-light-day, the Oort cloud, then the nearest stars: Proxima Centauri, Alpha Centauri, Barnard's
-Star, Sirius, Vega. A stop passed says when (*reached after 43 minutes*); one ahead shows the
-share of the way as a bar, and each star the line *Your message is 0.13 % of the way to
-Sirius.* Under every stop, what it is, in one or two sentences, and its page on Wikipedia (in
-the page's language). The facts are real and checked: the planets' orbits are their mean
-distances from the Sun, the stars' distances the measured ones, the heliopause where Voyager 1
-crossed it (121 au); **Mars is the message's own distance that day** (`distance_au` and
-`light_seconds` from `orbital.js`, carried on the card as `data-au` / `data-ls`), and Voyager
-1's distance is worked out for today from its speed (17 km/s) and the day it reaches one
-light-day from Earth (15 November 2026). The words are in `src/lib/i18n.js`, in the three
-languages — Sirius, for one, is a hot white main-sequence star with a white-dwarf companion,
-not two white dwarfs. The figures in an open panel follow the clock; Escape, the ✕ or a tap
-outside closes it. Nothing on the installation's board screen is tappable, so it shows no
-*Follow its journey*.
+**What it is closest to.** A tap on a card (*Follow its journey ›* at the card's foot says
+so; `board.js`) opens two lines: *Your message is 6.1 times farther away than Saturn.* and under
+it *Saturn is on average about 1.43 billion km from Earth — the ringed planet; its rings are
+mostly water ice…* Nothing on the panel is a link — no Wikipedia key, nothing to tap but ✕. The
+object is the last one the message has passed on its way out, from a list of **586 things in
+the sky** in `content/celestial.json`. A hundred and twenty of them lie within the first five
+light-minutes, so a message just sent passes something new every few seconds: the meteors
+burning up overhead, the Kármán line, Gagarin's orbit, the space stations, Hubble and the
+satellite constellations, the asteroids that have flown inside the Moon's orbit and the ones to
+come (Apophis in 2029), the Van Allen belts, the geostationary ring, the Moon and its landing
+sites, Apollo 13's and Artemis I's far points, the Lagrange points and the James Webb telescope,
+the comets that came closest, the planets at their nearest. From there the list reaches through
+the two light-weeks a message travels during the run — the planets and their moons and the
+probes at them, the asteroids and comets, the dwarf planets of the Kuiper belt, Pioneer,
+Voyager and New Horizons at their 2026 distances, the heliopause, the light-hour and light-day
+marks (the two-light-week mark is 362.6 billion km), the far worlds Sedna, Farfarout and the
+Goblin, the hypothetical Planet Nine, the inner Oort cloud — and on past the stars, the nebulae,
+clusters and galaxies to the oldest light there is, with thirty constellations (a constellation
+counts as its brightest star). Each row has its distance from Earth in kilometres (`ly` in
+light-years, `au` in astronomical units), its name and one line about it in English, German and
+French, and `how`, which says what kind of distance it is and picks the second line's sentence:
+`avg` *is on average about … km from Earth* (planets, moons, asteroids; a moon carries its
+planet's distance a hair short, so the planet is named first), `orbit` *orbits about … km above
+Earth* (a satellite still up), `flew` *flew about … km above Earth* (Vostok 1, Skylab, the
+Shuttle), `reached` *reached … km from Earth* (Apollo 13, Artemis I), `flyby` *passed about …
+km from Earth* (an asteroid or comet that came by), `will` *will pass about … km from Earth*,
+`closest` / `farthest` and `mark` *is … km from Earth* (*Venus at its nearest*, *the one-light-hour
+mark*), `now` *is now about … km from Earth* (the probes, Halley's Comet, Sedna), `height` *is
+about … km above the ground* (a shooting star, the aurora), and the stars' *is … light-years
+from Earth*. The sentences are in `src/lib/i18n.js` in the three languages; names are singular
+and carry their article (*a GPS satellite*, *der Mond*, *la comète de Halley*), and French
+elides *que* to *qu'* before a vowel. `/api/celestial` hands the list over nearest first in the
+page's language (`?lang=de|en|fr`), `src/lib/celestial.js` reads the file fresh whenever it
+changes — add a row, and the object is in. Within 15 % of an object the line reads *Your
+message is just about as far as Voyager 1.*; past the first minute a message is beyond the
+Moon, past eight it is as far as the Sun, past a day it is at Voyager 1, and after eleven days
+at the inner Oort cloud — the stars come years later. The open panel follows the clock; Escape,
+the ✕ or a tap outside closes it. Nothing on the installation's board screen is tappable, so it
+shows no *Follow its journey*.
 
 **The relay.** SpaceSpeak has no API at the price of a text message (their API licence is a
 separate, paid product), so the station uses the site the way a person does
@@ -1560,6 +1582,13 @@ During pre-launch the readings show the countdown in place of the mission day an
 and strip carry no marker.
 
 ## The board
+
+**What it holds.** The viewer's own messages, every one whatever its state — in transit,
+awaiting reply, answered, rejected — under MY MESSAGES, and under ALL MESSAGES the newest **nine**
+exchanges the crew have answered (`BOARD_RECENT`, `data.board()` in `src/lib/data.js`). Nothing
+unanswered by anyone else is ever shown: a visitor sees only their own waiting messages, so on a
+station where the crew have not yet replied to anything the board shows just those. The
+installation's board screen is the exception — it holds as many answered exchanges as fit.
 
 The board beside the composer holds the whole correspondence: every published exchange in one
 scrollable field, with tag chips that filter it — press `PERSONAL` and the field shows only

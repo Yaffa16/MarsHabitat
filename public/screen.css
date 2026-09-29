@@ -33,7 +33,30 @@ body.screen .stage-fit > .dpanel { box-sizing: border-box; min-height: 0; overfl
 body.screen[data-fit="clip"] .stage-fit > .dpanel { height: 100%; }
 body.screen .dpanel-body { min-height: 0; }
 body.screen .dpanel.scroll .dpanel-body, body.screen .blog-scroll { overflow: hidden; }
-/* three panels side by side — the day's, the blogs' — one under the other on an upright screen */
+/* the blogs, one at a time (screen-blogs.js): each panel fills the stage, its head stays, the post rolls by under it — the
+   text at the size of the panel's own notes, large enough to read from across the room */
+body.screen.screen-blogs .stage-fit { height: 100%; flex: 1 1 auto; min-height: 0; }
+body.screen .screen-blogs { position: relative; height: 100%; }
+body.screen .screen-blogs > .dpanel { position: absolute; inset: 0; grid-column: auto !important; height: 100%; max-height: none; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; opacity: 0; visibility: hidden; transition: opacity .7s ease, visibility 0s linear .7s; }
+body.screen .screen-blogs > .dpanel.is-on { opacity: 1; visibility: visible; transition: opacity .7s ease; }
+body.screen .screen-blogs .dpanel.blogp .dpanel-head { flex: none; min-height: 190px; padding: 30px 40px; }
+body.screen .screen-blogs .dpanel.blogp .dpanel-title h3 { font-size: clamp(30px, 2.4vw, 46px); white-space: normal; overflow: visible; text-overflow: clip; }
+body.screen .screen-blogs .dpanel.blogp .dpanel-meta { font-size: clamp(13px, 1vw, 18px); }
+body.screen .screen-blogs .dpanel-body { flex: 1 1 auto; min-height: 0; position: relative; overflow: hidden; padding: 22px 40px 0; display: block; }
+body.screen .screen-blogs .blog-scroll { position: absolute; top: 22px; left: 40px; right: 40px; max-height: none; overflow: visible; margin: 0; padding: 0 0 40px; mask-image: none; -webkit-mask-image: none; will-change: transform; }
+body.screen .screen-blogs .blogp .log-entry { margin: 0 0 16px; }
+body.screen .screen-blogs .blogp .log-entry .card-body { padding: 22px 26px 24px; font-size: clamp(20px, 1.2vw, 24px); line-height: 1.6; }
+body.screen .screen-blogs .blogp .entry-post p { margin: 0 0 .8em; }
+body.screen .screen-blogs .blogp .entry-figure { max-width: 70%; margin: 18px 0; }
+body.screen .screen-blogs .blogp .dpanel-body > .empty { position: absolute; inset: 22px 40px 40px; min-height: 0; display: flex; align-items: center; justify-content: center; font-size: clamp(20px, 1.2vw, 24px); line-height: 1.5; letter-spacing: .08em; padding: 40px; }
+@media (orientation: portrait) {
+  body.screen .screen-blogs .dpanel.blogp .dpanel-head { min-height: 160px; padding: 26px 30px; }
+  body.screen .screen-blogs .dpanel-body { padding: 20px 30px 0; }
+  body.screen .screen-blogs .blog-scroll { left: 30px; right: 30px; top: 20px; }
+  body.screen .screen-blogs .blogp .log-entry .card-body { font-size: clamp(20px, 2vw, 26px); }
+  body.screen .screen-blogs .blogp .dpanel-body > .empty { inset: 20px 30px 40px; font-size: clamp(20px, 2vw, 26px); }
+}
+/* three panels side by side — the day's — one under the other on an upright screen */
 body.screen .screen-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
 body.screen[data-fit="clip"] .screen-three { height: 100%; }
 body.screen .screen-three > .dpanel { grid-column: auto !important; min-height: 0; box-sizing: border-box; overflow: hidden; }   /* a panel's span-4 means nothing here, nor the commander blog's whole row at a tablet's width */

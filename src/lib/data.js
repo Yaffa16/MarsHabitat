@@ -218,20 +218,23 @@ function published(limit = 100, filters = {}) {
  * Each row carries `mine` (sent by this visitor) and `pending` (not yet
  * published, so visible to its sender only).
  */
-function board(limit = 400, visitorId = null) {
+/** What the board holds: the viewer's own messages, every one whatever its state, and the newest `limit` exchanges the
+ *  crew have answered (published) — the site's board shows the last nine (BOARD_RECENT), the installation's screen as
+ *  many as fit. The viewer's own come first; boardCards (public.js) heads them MY MESSAGES. */
+function board(limit = 9, visitorId = null) {
   settleTransits();
-  return db.prepare(
-    `SELECT m.*, r.body AS response_body, r.published_at AS response_at, c.designation AS responder,
+  const SELECT = `SELECT m.*, r.body AS response_body, r.published_at AS response_at, c.designation AS responder,
             s.launched_at, s.remote_id AS space_id
      FROM message m
      LEFT JOIN response r ON r.message_id = m.id
      LEFT JOIN crew c ON c.id = r.crew_id
-     LEFT JOIN space_relay s ON s.message_id = m.id AND s.state = 'SENT'
-     WHERE m.state = 'PUBLISHED' OR m.visitor_id = ?
-     ORDER BY m.submitted_at DESC LIMIT ?`
-  ).all(visitorId == null ? -1 : visitorId, limit).map((m) => ({
+     LEFT JOIN space_relay s ON s.message_id = m.id AND s.state = 'SENT'`;
+  const vid = visitorId == null ? -1 : visitorId;
+  const mine = vid < 0 ? [] : db.prepare(`${SELECT} WHERE m.visitor_id = ? ORDER BY m.submitted_at DESC LIMIT 100`).all(vid);
+  const rest = db.prepare(`${SELECT} WHERE m.state = 'PUBLISHED' AND m.visitor_id != ? ORDER BY m.submitted_at DESC LIMIT ?`).all(vid, limit);
+  return mine.concat(rest).map((m) => ({
     ...m,
-    mine: visitorId != null && m.visitor_id === visitorId,
+    mine: vid >= 0 && m.visitor_id === vid,
     pending: m.state !== 'PUBLISHED',
   }));
 }

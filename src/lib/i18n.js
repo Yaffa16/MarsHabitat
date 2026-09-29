@@ -111,8 +111,8 @@ const D = {
   'IN TRANSIT': ['UNTERWEGS', 'EN TRANSIT'],
   'AWAITING REPLY': ['WARTET AUF ANTWORT', 'EN ATTENTE DE RÉPONSE'],       // on Mars, not yet answered (public.js, cardStatus)
   // ---- the card's line into space (public.js spaceLine, board.js): how far the message has got since it left Earth
-  'This message is currently {miles} miles ({km} km) from Earth!':
-    ['Diese Nachricht ist jetzt {km} km ({miles} Meilen) von der Erde entfernt!', 'Ce message est maintenant à {km} km ({miles} miles) de la Terre !'],
+  'This message is currently {km} km from Earth!':
+    ['Diese Nachricht ist jetzt {km} km von der Erde entfernt!', 'Ce message est maintenant à {km} km de la Terre !'],
   'Launched': ['Gestartet', 'Lancé'],
   'Follow its journey': ['Seine Reise verfolgen', 'Suivre son voyage'],
   // the big figures' words (fmtBig in public.js / board.js): the English billion is the German Milliarde, the French milliard —
@@ -121,91 +121,21 @@ const D = {
   'billion': ['Milliarde', 'milliard'], 'billions': ['Milliarden', 'milliards'],
   'trillion': ['Billion', 'billion'], 'trillions': ['Billionen', 'billions'],
   'quadrillion': ['Billiarde', 'billiard'], 'quadrillions': ['Billiarden', 'billiards'],
-  // ---- the journey (board.js): a message's way out, stop by stop — where it has got to, with the facts of each stop
-  'Where this message has got to': ['Wo diese Nachricht jetzt ist', 'Où en est ce message'],
-  'The message of': ['Die Nachricht von', 'Le message de'],
-  'left Earth {ago} and has covered {km} ({mi}) — as far as light travels in {span}.':
-    ['hat die Erde {ago} verlassen und {km} ({mi}) zurückgelegt — so weit, wie das Licht in {span} kommt.',
-     'a quitté la Terre {ago} et a parcouru {km} ({mi}) — la distance que la lumière parcourt en {span}.'],
-  'miles': ['Meilen', 'miles'],
-  'It goes out as radio waves, at the speed of light, and will not stop.': ['Sie ist als Funkwelle unterwegs, mit Lichtgeschwindigkeit, und wird nicht anhalten.', 'Elle voyage sous forme d’ondes radio, à la vitesse de la lumière, et ne s’arrêtera pas.'],
-  'reached after': ['erreicht nach', 'atteint après'],
-  'of the way': ['des Weges', 'du chemin'],
-  'of the way to': ['des Weges bis', 'du chemin vers'],
-  'Your message is': ['Deine Nachricht ist', 'Votre message est'],
-  'ahead': ['voraus', 'à venir'],
-  'On Wikipedia': ['Bei Wikipedia', 'Sur Wikipédia'],
-  'the distance to Mars that day': ['die Entfernung zum Mars an dem Tag', 'la distance de Mars ce jour-là'],
-  // the stops
-  'The Moon': ['Der Mond', 'La Lune'],
-  'Earth’s only natural satellite, 384,400 km away on average — light crosses that in 1.3 seconds. The only other world people have walked on, from 1969 to 1972.':
-    ['Der einzige natürliche Satellit der Erde, im Mittel 384.400 km entfernt — das Licht schafft das in 1,3 Sekunden. Die einzige andere Welt, auf der Menschen gegangen sind, von 1969 bis 1972.',
-     'Le seul satellite naturel de la Terre, à 384 400 km en moyenne — la lumière franchit cette distance en 1,3 seconde. Le seul autre monde où des humains ont marché, de 1969 à 1972.'],
-  'The Sun': ['Die Sonne', 'Le Soleil'],
-  'The star the Solar System turns around, 149.6 million km away — one astronomical unit (au), the yardstick of the Solar System. Its light takes 8 minutes 19 seconds to reach Earth.':
-    ['Der Stern, um den sich das Sonnensystem dreht, 149,6 Millionen km entfernt — eine Astronomische Einheit (au), das Maß des Sonnensystems. Sein Licht braucht 8 Minuten 19 Sekunden bis zur Erde.',
-     'L’étoile autour de laquelle tourne le Système solaire, à 149,6 millions de km — une unité astronomique (ua), l’étalon du Système solaire. Sa lumière met 8 minutes 19 secondes pour atteindre la Terre.'],
-  'Where this station’s habitat stands in the story. On the day this message was sent, Mars was {au} au from Earth — {km} — and a radio signal needed {lt} to get there; the distance changes through the year as the two planets move.':
-    ['Wo das Habitat dieser Station in der Geschichte steht. Am Tag, an dem diese Nachricht gesendet wurde, war der Mars {au} au von der Erde entfernt — {km} — und ein Funksignal brauchte {lt} dorthin; die Entfernung ändert sich übers Jahr, weil sich beide Planeten bewegen.',
-     'Là où se trouve l’habitat de cette station dans l’histoire. Le jour où ce message a été envoyé, Mars était à {au} ua de la Terre — {km} — et un signal radio mettait {lt} pour y arriver ; la distance change au fil de l’année, les deux planètes se déplaçant.'],
-  'The orbit of Jupiter': ['Die Bahn des Jupiter', 'L’orbite de Jupiter'],
-  'The largest planet, eleven times Earth’s width, orbiting 778 million km from the Sun (5.2 au). Its Great Red Spot is a storm wider than Earth that has raged for centuries.':
-    ['Der größte Planet, elfmal so breit wie die Erde, 778 Millionen km von der Sonne entfernt (5,2 au). Sein Großer Roter Fleck ist ein Sturm, breiter als die Erde, der seit Jahrhunderten tobt.',
-     'La plus grande planète, onze fois plus large que la Terre, à 778 millions de km du Soleil (5,2 ua). Sa Grande Tache rouge est une tempête plus large que la Terre qui fait rage depuis des siècles.'],
-  'The orbit of Saturn': ['Die Bahn des Saturn', 'L’orbite de Saturne'],
-  'The ringed planet, 1.43 billion km from the Sun (9.5 au). Its rings are mostly water ice, hundreds of thousands of km across and mostly less than a kilometre thick.':
-    ['Der Ringplanet, 1,43 Milliarden km von der Sonne entfernt (9,5 au). Seine Ringe bestehen vor allem aus Wassereis, Hunderttausende km breit und meist weniger als einen Kilometer dick.',
-     'La planète aux anneaux, à 1,43 milliard de km du Soleil (9,5 ua). Ses anneaux sont surtout faits de glace d’eau, larges de centaines de milliers de km et le plus souvent épais de moins d’un kilomètre.'],
-  'The orbit of Uranus': ['Die Bahn des Uranus', 'L’orbite d’Uranus'],
-  'An ice giant 2.87 billion km from the Sun (19.2 au), tipped almost on its side: its axis leans 98°, so each pole gets 42 years of sunlight, then 42 of dark.':
-    ['Ein Eisriese, 2,87 Milliarden km von der Sonne entfernt (19,2 au), fast auf die Seite gekippt: Seine Achse ist um 98° geneigt, sodass jeder Pol 42 Jahre Sonne bekommt und dann 42 Jahre Dunkelheit.',
-     'Une géante de glace à 2,87 milliards de km du Soleil (19,2 ua), presque couchée sur le côté : son axe est incliné de 98°, si bien que chaque pôle reçoit 42 ans de soleil, puis 42 ans d’obscurité.'],
-  'The orbit of Neptune': ['Die Bahn des Neptun', 'L’orbite de Neptune'],
-  'The outermost planet, 4.5 billion km from the Sun (30.1 au), with the strongest winds in the Solar System — around 2,000 km/h. Sunlight takes 4 hours 10 minutes to reach it.':
-    ['Der äußerste Planet, 4,5 Milliarden km von der Sonne entfernt (30,1 au), mit den stärksten Winden im Sonnensystem — rund 2.000 km/h. Das Sonnenlicht braucht 4 Stunden 10 Minuten bis dorthin.',
-     'La planète la plus lointaine, à 4,5 milliards de km du Soleil (30,1 ua), aux vents les plus violents du Système solaire — environ 2 000 km/h. La lumière du Soleil met 4 heures 10 minutes pour l’atteindre.'],
-  'The orbit of Pluto': ['Die Bahn des Pluto', 'L’orbite de Pluton'],
-  'The dwarf planet of the Kuiper belt, on average 5.9 billion km from the Sun (39.5 au). New Horizons flew past it in July 2015, the only visit so far.':
-    ['Der Zwergplanet des Kuipergürtels, im Mittel 5,9 Milliarden km von der Sonne entfernt (39,5 au). New Horizons flog im Juli 2015 an ihm vorbei — der bislang einzige Besuch.',
-     'La planète naine de la ceinture de Kuiper, à 5,9 milliards de km du Soleil en moyenne (39,5 ua). New Horizons l’a survolée en juillet 2015, la seule visite à ce jour.'],
-  'The heliopause': ['Die Heliopause', 'L’héliopause'],
-  'Where the Sun’s wind gives way to the gas between the stars — the edge of the heliosphere, about 121 au (18 billion km) out. Voyager 1 crossed it in August 2012, Voyager 2 in November 2018.':
-    ['Wo der Sonnenwind dem Gas zwischen den Sternen weicht — der Rand der Heliosphäre, etwa 121 au (18 Milliarden km) entfernt. Voyager 1 hat sie im August 2012 überquert, Voyager 2 im November 2018.',
-     'Là où le vent du Soleil cède la place au gaz entre les étoiles — la limite de l’héliosphère, à environ 121 ua (18 milliards de km). Voyager 1 l’a franchie en août 2012, Voyager 2 en novembre 2018.'],
-  'Voyager 1': ['Voyager 1', 'Voyager 1'],
-  'Launched in 1977 and still sending data, the most distant human-made object — now about {km} from Earth, moving away at 17 km/s. On 15 November 2026 it will be a full light-day away.':
-    ['1977 gestartet und noch immer auf Sendung, das fernste von Menschen gebaute Objekt — jetzt etwa {km} von der Erde entfernt, mit 17 km/s unterwegs. Am 15. November 2026 wird es einen ganzen Lichttag entfernt sein.',
-     'Lancée en 1977 et émettant toujours, l’objet humain le plus lointain — aujourd’hui à environ {km} de la Terre, s’éloignant à 17 km/s. Le 15 novembre 2026, elle sera à un jour-lumière entier.'],
-  'One light-day': ['Ein Lichttag', 'Un jour-lumière'],
-  'The distance light — and this message — covers in 24 hours: 25.9 billion km. Voyager 1 reaches it in November 2026, after 49 years of flight.':
-    ['Die Strecke, die das Licht — und diese Nachricht — in 24 Stunden zurücklegt: 25,9 Milliarden km. Voyager 1 erreicht sie im November 2026, nach 49 Jahren Flug.',
-     'La distance que la lumière — et ce message — parcourt en 24 heures : 25,9 milliards de km. Voyager 1 l’atteint en novembre 2026, après 49 ans de vol.'],
-  'The Oort cloud': ['Die Oortsche Wolke', 'Le nuage d’Oort'],
-  'The cloud of icy bodies around the whole Solar System, where long-period comets come from. Its inner edge is thought to lie some 2,000 au out — 300 billion km, 11.6 light-days; its outer reaches may stretch halfway to the nearest star.':
-    ['Die Wolke aus Eiskörpern rund um das ganze Sonnensystem, aus der die langperiodischen Kometen kommen. Ihr innerer Rand liegt vermutlich rund 2.000 au entfernt — 300 Milliarden km, 11,6 Lichttage; ihr äußerer Rand reicht womöglich bis zur Hälfte des Weges zum nächsten Stern.',
-     'Le nuage de corps glacés qui entoure tout le Système solaire, d’où viennent les comètes à longue période. Son bord interne se situerait à quelque 2 000 ua — 300 milliards de km, 11,6 jours-lumière ; ses confins pourraient s’étendre à mi-chemin de l’étoile la plus proche.'],
-  'Proxima Centauri': ['Proxima Centauri', 'Proxima Centauri'],
-  'The nearest star to the Sun, 4.25 light-years away: a small red dwarf in the Alpha Centauri system, too faint to see without a telescope. At least one planet, Proxima b, orbits in its habitable zone. This message needs 4 years and 3 months to get there.':
-    ['Der sonnennächste Stern, 4,25 Lichtjahre entfernt: ein kleiner Roter Zwerg im Alpha-Centauri-System, ohne Teleskop nicht zu sehen. Mindestens ein Planet, Proxima b, kreist in seiner habitablen Zone. Diese Nachricht braucht 4 Jahre und 3 Monate dorthin.',
-     'L’étoile la plus proche du Soleil, à 4,25 années-lumière : une petite naine rouge du système d’Alpha du Centaure, invisible sans télescope. Au moins une planète, Proxima b, orbite dans sa zone habitable. Ce message met 4 ans et 3 mois pour y arriver.'],
-  'Alpha Centauri': ['Alpha Centauri', 'Alpha du Centaure'],
-  'Alpha Centauri A and B, 4.37 light-years away — the nearest Sun-like stars, a pair orbiting each other every 80 years; with Proxima they form the closest star system, and the third-brightest star in the night sky.':
-    ['Alpha Centauri A und B, 4,37 Lichtjahre entfernt — die nächsten sonnenähnlichen Sterne, ein Paar, das einander alle 80 Jahre umkreist; mit Proxima bilden sie das nächste Sternsystem und den dritthellsten Stern am Nachthimmel.',
-     'Alpha du Centaure A et B, à 4,37 années-lumière — les étoiles semblables au Soleil les plus proches, un couple qui tourne sur lui-même tous les 80 ans ; avec Proxima, elles forment le système stellaire le plus proche et la troisième étoile la plus brillante du ciel nocturne.'],
-  'Barnard’s Star': ['Barnards Stern', 'L’étoile de Barnard'],
-  'A red dwarf 5.96 light-years away, the nearest star in the northern sky — and the star that moves fastest across it, the width of the Moon every 180 years.':
-    ['Ein Roter Zwerg, 5,96 Lichtjahre entfernt, der nächste Stern am Nordhimmel — und der Stern, der sich am schnellsten über ihn bewegt: alle 180 Jahre um die Breite des Mondes.',
-     'Une naine rouge à 5,96 années-lumière, l’étoile la plus proche du ciel boréal — et celle qui s’y déplace le plus vite : la largeur de la Lune tous les 180 ans.'],
-  'Sirius': ['Sirius', 'Sirius'],
-  'The brightest star in the night sky, in Canis Major, the great dog, 8.6 light-years away — nearly twice as bright as Canopus, the next brightest. A binary: Sirius A, a hot white star of twice the Sun’s mass, and Sirius B, a white dwarf the size of Earth with the mass of the Sun.':
-    ['Der hellste Stern am Nachthimmel, im Großen Hund (Canis Major), 8,6 Lichtjahre entfernt — fast doppelt so hell wie Canopus, der nächsthellste. Ein Doppelstern: Sirius A, ein heißer weißer Stern mit der doppelten Masse der Sonne, und Sirius B, ein Weißer Zwerg von der Größe der Erde mit der Masse der Sonne.',
-     'L’étoile la plus brillante du ciel nocturne, dans le Grand Chien (Canis Major), à 8,6 années-lumière — près de deux fois plus brillante que Canopus, la suivante. Une binaire : Sirius A, une étoile blanche et chaude de deux fois la masse du Soleil, et Sirius B, une naine blanche de la taille de la Terre et de la masse du Soleil.'],
-  'Vega': ['Wega', 'Véga'],
-  'The brightest star of Lyra and the fifth-brightest in the night sky, 25 light-years away — around 12,000 BC it was the northern pole star, as it will be again in about 13,700 AD.':
-    ['Der hellste Stern der Leier und der fünfthellste am Nachthimmel, 25 Lichtjahre entfernt — um 12.000 v. Chr. war er der Polarstern des Nordens, und um 13.700 n. Chr. wird er es wieder sein.',
-     'L’étoile la plus brillante de la Lyre et la cinquième du ciel nocturne, à 25 années-lumière — vers 12 000 av. J.-C. elle était l’étoile polaire du nord, et le sera de nouveau vers 13 700 apr. J.-C.'],
-  'light-years': ['Lichtjahre', 'années-lumière'],
-  'hours': ['Stunden', 'heures'], 'hour': ['Stunde', 'heure'], 'minute': ['Minute', 'minute'], 'second': ['Sekunde', 'seconde'],
+  // ---- where the message is (board.js, /api/celestial): a tap on a card — the last object it has passed, in two lines.
+  // The second line's sentence follows the object's kind of distance (content/celestial.json, how); {name} comes with its
+  // article, in the singular, and the sentence is capitalised by the page.
+  'Your message is {r} times farther away than {name}.': ['Deine Nachricht ist {r}-mal weiter entfernt als {name}.', 'Votre message est {r} fois plus loin que {name}.'],
+  'Your message is just about as far as {name}.': ['Deine Nachricht ist gerade so weit wie {name}.', 'Votre message est à peu près aussi loin que {name}.'],
+  '{name} is on average about {km} km from Earth': ['{name} ist im Mittel etwa {km} km von der Erde entfernt', '{name} est en moyenne à environ {km} km de la Terre'],                  // avg
+  '{name} is {ly} light-years from Earth': ['{name} ist {ly} Lichtjahre von der Erde entfernt', '{name} est à {ly} années-lumière de la Terre'],                                        // ly
+  '{name} orbits about {km} km above Earth': ['{name} kreist etwa {km} km über der Erde', '{name} orbite à environ {km} km au-dessus de la Terre'],                                       // orbit
+  '{name} flew about {km} km above Earth': ['{name} flog etwa {km} km über der Erde', '{name} volait à environ {km} km au-dessus de la Terre'],                                           // flew
+  '{name} reached {km} km from Earth': ['{name} erreichte {km} km Entfernung von der Erde', '{name} a atteint {km} km de la Terre'],                                                      // reached
+  '{name} passed about {km} km from Earth': ['{name} zog in etwa {km} km Entfernung an der Erde vorbei', '{name} a frôlé la Terre à environ {km} km'],                                   // flyby
+  '{name} will pass about {km} km from Earth': ['{name} wird in etwa {km} km Entfernung an der Erde vorbeiziehen', '{name} passera à environ {km} km de la Terre'],                      // will
+  '{name} is now about {km} km from Earth': ['{name} ist jetzt etwa {km} km von der Erde entfernt', '{name} est aujourd’hui à environ {km} km de la Terre'],                            // now
+  '{name} is {km} km from Earth': ['{name} ist {km} km von der Erde entfernt', '{name} est à {km} km de la Terre'],                                                                      // mark, closest, farthest
+  '{name} is about {km} km above the ground': ['{name} ist etwa {km} km über dem Boden', '{name} est à environ {km} km au-dessus du sol'],                                                // height
   'just now': ['gerade eben', 'à l’instant'],
   'a minute ago': ['vor einer Minute', 'il y a une minute'],
   '{n} minutes ago': ['vor {n} Minuten', 'il y a {n} minutes'],
@@ -1004,6 +934,9 @@ const D = {
   'What does it smell like in there?': ['Wie riecht es da drin?', 'Ça sent quoi, là-dedans ?'],
   'A message from Earth enters the communications queue. It will take time to reach the crew.':
     ['Eine Nachricht von der Erde reiht sich in die Warteschlange ein. Es dauert, bis sie die Crew erreicht.', 'Un message de la Terre entre dans la file d’attente des communications. Il lui faudra du temps pour atteindre l’équipage.'],
+  'Every message goes two ways: to the crew in the Mars habitat — and, by radio, out into space, where it travels on at the speed of light. Tap it on the Message Board to see how far it has come.':
+    ['Jede Nachricht geht zwei Wege: zur Crew im Mars-Habitat — und per Funk hinaus ins All, wo sie mit Lichtgeschwindigkeit weiterreist. Tippe sie auf dem Nachrichtenboard an, um zu sehen, wie weit sie schon gekommen ist.',
+      'Chaque message suit deux chemins : vers l’équipage dans l’habitat martien — et, par radio, vers l’espace, où il poursuit sa route à la vitesse de la lumière. Touchez-le sur le tableau des messages pour voir jusqu’où il est arrivé.'],
   'Signal in transit': ['Signal unterwegs', 'Signal en transit'],
   'M km': ['Mio. km', 'M km'],
   'The signal is on its way.': ['Das Signal ist unterwegs.', 'Le signal est en route.'],

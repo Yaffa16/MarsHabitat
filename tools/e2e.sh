@@ -1185,7 +1185,13 @@ echo "$SCR" | grep -q 'class="landing inner screen screen-board" data-screen="bo
 ! echo "$SCR" | grep -q 'class="tabbar\|class="foot\|id="consent"' && ok "no bar of keys, no foot, no cookie card on a screen" || bad "the station's chrome is on a screen"
 echo "$SCR" | grep -q '/screen.css?v=' && echo "$SCR" | grep -q '/screen.js?v=' && echo "$SCR" | grep -q '/board.js?v=' && ok "each screen loads the screens' stylesheet and script over the site's, and the script that keeps its piece live" || bad "a screen's assets are missing"
 for n in landing habitat board mission blogs day trends media; do curl -s $B/screen/$n; done | grep -q 'id="stage-clock"' && ok "the venue's clock in the head" || bad "no clock on the screens"
-curl -s $B/screen/blogs | grep -q 'class="screen-three"' && curl -s $B/screen/day | grep -q 'class="screen-three"' && ok "the blogs and the day are three panels in a row (one under the other upright)" || bad "the three-panel screens are not"
+curl -s $B/screen/day | grep -q 'class="screen-three"' && ok "the day is three panels in a row (one under the other upright)" || bad "the day screen is not three panels"
+BL=$(curl -s $B/screen/blogs)
+echo "$BL" | grep -q 'class="screen-blogs" id="screen-blogs"' && echo "$BL" | grep -q 'data-fit="none"' && echo "$BL" | grep -q '/screen-blogs.js?v=' \
+  && node -e 'const h = process.argv[1]; const a = h.indexOf("id=\"blog-commander\""), b = h.indexOf("id=\"blog-science\""), c = h.indexOf("id=\"blog-health\""); process.exit(a > -1 && a < b && b < c ? 0 : 1);' "$BL" \
+  && grep -q "translateY" public/screen-blogs.js && grep -q "requestAnimationFrame" public/screen-blogs.js \
+  && ok "the blogs screen shows one blog at a time, the post rolling by — the Commander Blog, then the Science Findings, then the Health Blog, round and round" || bad "the blogs screen is not one at a time"
+grep -q "font-size: clamp(20px, 1.2vw, 24px)" public/screen.css && ok "its text stands at the size of the panel's own notes, readable across the room" || bad "the blogs screen's text size is not set"
 curl -s $B/screen/mission | grep -q 'id="mission-today"' && curl -s $B/screen/trends | grep -q 'id="trends"' && curl -s $B/screen/habitat | grep -q 'id="hbt-bento"' && ok "the mission, the trends and the habitat screens carry the dashboard's own panels" || bad "a screen lacks its panel"
 curl -s "$B/api/cloud?flat=1" | node -e 'let s="";process.stdin.on("data",(c)=>s+=c).on("end",()=>{const j=JSON.parse(s); process.exit(!j.configured || (j.html.indexOf("cloud-flat")>-1 && j.html.indexOf("cloud-day-head")<0) ? 0 : 1);});' \
   && ok "/api/cloud?flat=1 answers with the gallery as one grid, no day heads — what the media screen polls (data-api)" || bad "the flat gallery is wrong"
@@ -1210,27 +1216,60 @@ sys.exit(0 if ok else 1)
 ' && ok "and /control/moods.csv hands the whole record over — every officer, oldest first, the content loader's placeholder state left out" || bad "the CSV of the record is wrong"
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/control/moods.csv)" = "302" ] && ok "the CSV is behind the sign-in" || bad "the CSV is public"
 
+echo "── the board: the viewer's own messages, and the last nine the crew have answered"
+grep -q "BOARD_RECENT" src/server.js && grep -q "LIMIT 100" src/lib/data.js && grep -q "m.state = 'PUBLISHED' AND m.visitor_id != ?" src/lib/data.js \
+  && ok "the board holds the viewer's own messages, whatever their state, and the newest nine answered exchanges (BOARD_RECENT)" || bad "the board's query is not own + nine"
+[ "$(curl -s $B/messages | grep -c 'class="card xc')" -le 9 ] && ok "a visitor without messages of their own sees at most nine" || bad "more than nine cards for a stranger"
+
 echo "── beamed into space: the relay to SpaceSpeak (replied messages only), the card's line into space, the journey"
 # on the main station the relay is off (no account): a replied message's line counts from the moment its reply was published
 MSGS=$(curl -s $B/messages)
-echo "$MSGS" | grep -q 'class="card-space" data-launched="' && echo "$MSGS" | grep -qE 'This message is currently <b class="sp-mi">[0-9.,]+ (million|billion)</b> miles \(<b class="sp-km">[0-9.,]+ (million|billion)</b> km\) from Earth!' \
-  && echo "$MSGS" | grep -q 'Launched <span class="sp-ago">' && ! echo "$MSGS" | grep -q 'Update distance' \
-  && ok "every replied card on the board carries its line into space — how far it has got, in words once it is big (million, billion), and when it was launched; no Update distance key" || bad "the cards have no line into space: $(echo "$MSGS" | grep -o 'This message is currently.\{0,140\}' | head -1)"
+echo "$MSGS" | grep -q 'class="card-space" data-launched="' && echo "$MSGS" | grep -qE 'This message is currently <b class="sp-km">[0-9.,]+ (million|billion)</b> km from Earth!' \
+  && echo "$MSGS" | grep -q 'Launched <span class="sp-ago">' && ! echo "$MSGS" | grep -q 'Update distance\|miles' \
+  && ok "every card on the board carries its line into space — kilometres alone, in words once it is big (million, billion), and when it was launched; no miles, no Update distance key" || bad "the cards have no line into space: $(echo "$MSGS" | grep -o 'This message is currently.\{0,140\}' | head -1)"
 echo "$MSGS" | grep -q 'data-au="[0-9.]*" data-ls="[0-9]*" data-callsign="[A-Z]*-[0-9]*"' && echo "$MSGS" | grep -q 'class="card-space-go">Follow its journey ›' \
   && ok "each card carries what its journey needs — the launch moment, Mars’s distance and light time that day — and says it can be followed" || bad "the cards lack the journey's data"
 MSGD=$(curl -s -H "Cookie: mcs_lang=de" $B/messages)
-echo "$MSGD" | grep -qE 'Diese Nachricht ist jetzt <b class="sp-km">[0-9.,]+ (Millionen|Milliarden)</b> km \(<b class="sp-mi">[0-9.,]+ (Millionen|Milliarden)</b> Meilen\) von der Erde entfernt!' \
+echo "$MSGD" | grep -qE 'Diese Nachricht ist jetzt <b class="sp-km">[0-9.,]+ (Millionen|Milliarden)</b> km von der Erde entfernt!' \
   && echo "$MSGD" | grep -q 'Gestartet <span class="sp-ago">' && echo "$MSGD" | grep -q '>Seine Reise verfolgen ›<' \
-  && ok "in German the kilometres come first, with German figures and words — Millionen, Milliarden; Gestartet; Seine Reise verfolgen" || bad "the German line is wrong"
+  && ok "in German with German figures and words — Millionen, Milliarden; Gestartet; Seine Reise verfolgen" || bad "the German line is wrong"
 grep -q "setInterval(tick, 1000)" public/board.js && grep -q "299792.458" public/board.js && grep -q "'quadrillion'" public/board.js \
   && ok "board.js moves the figure on every second — 299,792 km a second — million, billion, trillion, quadrillion as it grows" || bad "board.js does not run the distance"
-grep -q "closest('.card.xc')" public/board.js && grep -q "jr-stop" public/board.js && grep -q "key: 'sirius'" public/board.js && grep -q "voyagerKm" public/board.js \
-  && ok "a tap on a card opens its journey: the stops from the Moon to the stars, each with its facts and its Wikipedia page; Voyager 1's distance worked out for today" || bad "board.js has no journey"
+grep -q "closest('.card.xc')" public/board.js && grep -q "function closest(" public/board.js && grep -q "/api/celestial" public/board.js && grep -q "jr-one" public/board.js && ! grep -q "jr-stops\|voyagerKm" public/board.js \
+  && ok "a tap on a card says in two lines what the message is closest to — the last object it has passed, how many times farther it is, one line about the object — nothing more" || bad "board.js has no closest-object panel, or still lists everything"
+grep -q '<span class="jr-what">' public/board.js && ! grep -q 'jr-what" href\|wikipedia\|o\.wiki' public/board.js && ! grep -q 'jr-what:hover\|text-decoration' <(awk '/^\.jr-line/' public/aura.css) \
+  && ok "the object's name on the panel is a word, not a link — no Wikipedia key, nothing to tap" || bad "the panel still links to Wikipedia"
+grep -q "WHERE = {" public/board.js && grep -q "orbits about {km} km above Earth" public/board.js && grep -q "passed about {km} km from Earth" public/board.js && grep -q "is about {km} km above the ground" public/board.js \
+  && ok "the second line follows the object's kind of distance — a satellite orbits, an asteroid passed, a meteor is above the ground, a probe is now, a planet on average" || bad "board.js has one sentence for every kind of distance"
+CEL=$(curl -s "$B/api/celestial?lang=de")
+echo "$CEL" | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
+  const j = JSON.parse(s), o = j.objects;
+  const HOW = ["avg", "orbit", "flew", "reached", "flyby", "will", "closest", "farthest", "now", "mark", "height", "ly"];
+  const sorted = o.every((x, i) => !i || x.km >= o[i - 1].km), ids = new Set(o.map((x) => x.id));
+  const fields = o.every((x) => x.id && x.km > 0 && x.name && x.about && HOW.includes(x.how) && x.wiki === undefined);
+  const has = (id) => ids.has(id);
+  const near = o.filter((x) => x.km <= 89937738).length, run = o.filter((x) => x.km <= 362628957197).length;
+  if (!(near >= 100 && run >= 280)) console.error("    " + near + " within five light-minutes, " + run + " within two light-weeks");
+  process.exit(j.lang === "de" && o.length >= 500 && ids.size === o.length && sorted && fields && near >= 100 && run >= 280 && has("iss") && has("moon") && has("saturn") && has("sirius") && has("andromeda") && has("c_orion") && has("voyager1") && has("m14d")
+    && o.find((x) => x.id === "saturn").name === "der Saturn" && o.find((x) => x.id === "iss").how === "orbit" && o.find((x) => x.id === "voyager1").how === "now" && o.find((x) => x.id === "sirius").how === "ly" ? 0 : 1);
+});' && ok "/api/celestial hands over 500-odd objects — a hundred and more within the first five light-minutes, 280 and more within the two light-weeks a message travels during the run — nearest first, each with its distance, its kind of distance (how), its name and line in the page's language, and no Wikipedia address" || bad "/api/celestial is incomplete"
+node -e '
+const c = require("./src/lib/celestial"); const all = c.all();
+const ok = all.length >= 500 && all.every((o) => ["en", "de", "fr"].every((l) => o.name[l] && o.about[l]))
+  && all.find((o) => o.id === "saturn").km > 1.4e9 && all.find((o) => o.id === "saturn").km < 1.5e9
+  && all.find((o) => o.id === "sirius").ly === 8.6 && all.find((o) => o.id === "moon").km === 384400 && all.find((o) => o.id === "iss").km === 400
+  && all.find((o) => o.id === "m14d").km === 362628957197 && all.find((o) => o.id === "lightday").km > 25.9e9 && all.find((o) => o.id === "lightday").km < 25.95e9
+  && all.find((o) => o.id === "io").km < all.find((o) => o.id === "jupiter").km;
+process.exit(ok ? 0 : 1);' && ok "content/celestial.json carries every object in the three languages, with the accepted distances — the ISS 400 km, the Moon 384,400 km, Saturn 1.43 billion km, one light-day 25.9 billion km, two light-weeks 362.6 billion km, Sirius 8.6 light-years; a moon a hair inside its planet, so the planet is named first" || bad "celestial.json is wrong"
+curl -s "$B/api/celestial?lang=fr" | grep -q '"name":"Saturne"' && curl -s "$B/api/celestial" | grep -q '"name":"Saturn"' && ok "the list comes in French and in English too" || bad "the list is not translated"
 node -e '
 const D = require("./src/lib/i18n").D;
-const keys = ["The Moon", "The Sun", "The orbit of Jupiter", "The orbit of Saturn", "The orbit of Uranus", "The orbit of Neptune", "The orbit of Pluto", "The heliopause", "Voyager 1", "One light-day", "The Oort cloud", "Proxima Centauri", "Alpha Centauri", "Barnard’s Star", "Sirius", "Vega", "reached after", "of the way to", "Your message is", "millions", "billions", "trillions"];
-process.exit(keys.every((k) => D[k] && D[k][0] && D[k][1]) && /Weißer Zwerg/.test(Object.entries(D).find(([k]) => k.startsWith("The brightest star in the night sky"))[1][0]) ? 0 : 1);
-' && ok "every stop and its facts are in the dictionary in German and French — Sirius as it is: a white star and a white dwarf" || bad "the journey's rows are missing from the dictionary"
+const keys = ["Your message is {r} times farther away than {name}.", "Your message is just about as far as {name}.", "{name} is on average about {km} km from Earth", "{name} is {ly} light-years from Earth",
+  "{name} orbits about {km} km above Earth", "{name} flew about {km} km above Earth", "{name} reached {km} km from Earth", "{name} passed about {km} km from Earth", "{name} is now about {km} km from Earth", "{name} is {km} km from Earth", "{name} is about {km} km above the ground",
+  "millions", "billions", "trillions"];
+process.exit(keys.every((k) => D[k] && D[k][0] && D[k][1]) ? 0 : 1);
+' && ok "the two lines' words — one sentence for each kind of distance — are in the dictionary in German and French" || bad "the panel's rows are missing from the dictionary"
 curl -s $B/ | grep -q 'class="dev-space"' && bad "the composer says every message is beamed while the relay is off" || ok "with the relay off the composer says nothing about space"
 CQ=$(curl -s -b $A "$B/control?show=published")
 echo "$CQ" | grep -q 'Off — set <b>SPACESPEAK_USER</b>' && ok "mission control says the relay is off and how to turn it on" || bad "control does not report the relay"
@@ -1261,8 +1300,8 @@ if DATA_DIR="$DATA4" SPACESPEAK_URL=http://localhost:$MOCKP SPACESPEAK_USER=stat
   curl -s -c $V4 -b $V4 -o /dev/null $B4/
   curl -s -c $V4 -b $V4 -X POST -d "body=Is the sky really butterscotch up there?" -o /dev/null $B4/communicate
   sleep 9
-  [ "$(curl -s http://localhost:$MOCKP/_mock/messages | grep -c butterscotch)" = "0" ] && ! curl -s -b $V4 $B4/messages | grep -q 'class="card-space"' \
-    && ok "a message just sent is NOT handed to the site — nothing goes out by itself — and its card carries no line into space yet" || bad "a message was sent to the site before any reply"
+  [ "$(curl -s http://localhost:$MOCKP/_mock/messages | grep -c butterscotch)" = "0" ] && curl -s -b $V4 $B4/messages | grep -q 'class="card-space" data-launched="' \
+    && ok "a message just sent is NOT handed to the site — nothing goes out by itself — though its card starts counting the moment it was sent" || bad "a message was sent to the site before any reply, or its card does not count"
   A4=/tmp/admin4.jar; rm -f $A4
   curl -s -c $A4 -X POST -d "username=${CONTROL_USER}" -d "password=${CONTROL_PASSWORD}" -o /dev/null $B4/control/login
   curl -s -b $A4 "$B4/control?show=pending" | grep -q 'Beam again\|Not beamed' && bad "control offers Beam again, or marks an unreplied message" || ok "an unreplied message carries no mark on the control page, and no Beam again key exists"
@@ -1283,8 +1322,11 @@ if DATA_DIR="$DATA4" SPACESPEAK_URL=http://localhost:$MOCKP SPACESPEAK_USER=stat
     && ok "the moment its reply is published, the message is on the site — signed in, typed into the box, the key pressed, as written" || bad "the replied message did not reach the site"
   sleep 2
   [ "$(curl -s http://localhost:$MOCKP/_mock/messages | grep -c '"text":"One to')" = "0" ] && ok "the rejected one and the deleted one are never sent" || bad "a rejected or deleted message was sent"
-  curl -s -b $V4 $B4/messages | grep -q 'class="card-space" data-launched="' && [ "$(curl -s -b $V4 $B4/api/board | grep -o 'data-launched' | wc -l)" = "1" ] \
-    && ok "its card counts from the moment SpaceSpeak took it — and only its card" || bad "the card does not carry the launch moment, or others do"
+  node -e '
+const Database = require("better-sqlite3"); const db = new Database(process.argv[1], { readonly: true });
+const r = db.prepare("SELECT s.launched_at, m.submitted_at FROM space_relay s JOIN message m ON m.id = s.message_id WHERE s.state = ? ORDER BY s.id DESC LIMIT 1").get("SENT");
+process.exit(r && r.launched_at && r.launched_at > r.submitted_at ? 0 : 1);
+' "$DATA4/station.db" && ok "the relay records when SpaceSpeak took it, after the moment it was sent" || bad "no launch moment recorded"
   C4=$(curl -s -b $A4 "$B4/control?show=published")
   echo "$C4" | grep -q 'Beamed into space' && echo "$C4" | grep -q 'Beamed · No. 1429' && echo "$C4" | grep -q 'href="http://localhost:'$MOCKP'/Messages/1429' \
     && ok "mission control shows the relay on and the message beamed, with its number and a link to it on the site" || bad "control does not show the beamed message"
@@ -1395,6 +1437,10 @@ echo "$LAND" | grep -Eq 'At <b>16:00 (CEST|CET) \(Berlin time\)</b>, the communi
 echo "$LAND" | grep -Eq 'Communication window daily <b>16:00 (CEST|CET) \(Berlin time\)</b>' && ok "and the running line says so" || bad "the running line does not name the window"
 curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q 'Willkommen im langsamsten Chat der Welt' && curl -s -H "Cookie: mcs_lang=fr" $B/ | grep -q 'Bienvenue dans le chat le plus lent du monde' \
   && ok "in German and French as well" || bad "the slowest chat is not translated"
+echo "$LAND" | grep -q '<span class="step-space">Every message goes two ways: to the crew in the Mars habitat — and, by radio, out into space, where it travels on at the speed of light. Tap it on the Message Board to see how far it has come.</span>' \
+  && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q 'Jede Nachricht geht zwei Wege: zur Crew im Mars-Habitat — und per Funk hinaus ins All' && curl -s -H "Cookie: mcs_lang=fr" $B/ | grep -q 'Chaque message suit deux chemins : vers l’équipage dans l’habitat martien — et, par radio, vers l’espace' \
+  && grep -q 'body.landing .step-body .step-space { display: block; margin-top: 8px; }' public/sheet.css \
+  && ok "the Uplink step says a message goes two ways — to the habitat, and by radio into space — in the three languages, on a line of its own" || bad "the slowest chat does not say the message is beamed into space"
 SKYCSS=$(awk '/the sky over the habitat, and the world.s slowest chat/,0' public/aura.css)
 grep -q '\.dome-sky, \.dome-seq, \.slow-chat { display: none; }' public/station.css && echo "$SKYCSS" | grep -q 'top: calc(12px - var(--room))' && echo "$SKYCSS" | grep -q ':has(dialog.dome-popup\[open\]) .dome-sky { opacity: 0; }' \
   && ok "the sky fills the room the dome keeps above itself on a desk, and steps aside while a pop-up is there; without the landing dress neither is drawn" || bad "the desk's sky is not wired"
