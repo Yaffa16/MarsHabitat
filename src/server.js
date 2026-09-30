@@ -242,7 +242,8 @@ app.get('/', (req, res) => {
 function screenCtx(req) {
   const base = req.ctx();
   const lang = i18n.LANGS.includes(req.query.lang) ? req.query.lang : 'de';
-  return { ...base, lang, T: i18n.of(lang), theme: req.query.theme === 'light' ? 'light' : 'dark', offer: '' };
+  // no visitor on a screen: a screen in the square is nobody's browser (the writing screen mints one a message)
+  return { ...base, lang, T: i18n.of(lang), theme: req.query.theme === 'light' ? 'light' : 'dark', offer: '', visitor: null, callsign: '' };
 }
 app.get('/screens', (req, res) => res.set('Cache-Control', 'no-store').send(require('./views/pages/screens').index(screenCtx(req))));
 app.get('/screen/:name', (req, res, next) => {
@@ -250,6 +251,50 @@ app.get('/screen/:name', (req, res, next) => {
   const html = require('./views/pages/screens').render(req.params.name, ctx, { ...stationData(ctx), recent: data.board(400, null) });
   if (!html) return next();
   res.set('Cache-Control', 'no-store').send(html);
+});
+
+/* The writing screen (views/pages/screens.js, write): the composer full screen, for writing to the crew at the venue.
+   Every message sent from it is a new visitor's — a callsign minted for it alone (lib/callsign.js, mint), no cookie
+   set, so the next person at the screen is nobody's continuation: no transit lock across them, no callsign carried
+   over. The checks are the composer's (the channel open, the words within bounds); the hourly limit is the screen's
+   own, per address, since all its messages come from one (KIOSK_HOURLY_LIMIT, 60 an hour). The fragment the screen's
+   script asks for comes in the screen's language (?lang=), which no cookie could carry. */
+const KIOSK_HOURLY_LIMIT = Number(process.env.KIOSK_HOURLY_LIMIT || 60);
+app.get('/screen/write/composer', (req, res) => {
+  const ctx = screenCtx(req);
+  res.set('Cache-Control', 'no-store').type('html').send(composerBlock(ctx, { inFlight: null, error: null, draft: '', kiosk: ctx.lang }));
+});
+app.post('/screen/write', (req, res) => {
+  const ctx = screenCtx(req);
+  const S = require('./views/pages/screens');
+  const answer = (extra = {}, visitor = null) => {                  // the fragment for the screen's script, or the whole screen
+    const c = visitor ? { ...ctx, callsign: visitor.callsign } : ctx;
+    const inFlight = visitor ? data.inFlightFor(visitor.id) : null;
+    res.set('Cache-Control', 'no-store');
+    if (isLive(req)) return res.type('html').send(composerBlock(c, { inFlight, error: extra.error || null, draft: extra.draft || '', kiosk: ctx.lang }));
+    return res.send(S.render('write', c, { ...stationData(ctx), recent: [], inFlight, error: extra.error || null, draft: extra.draft || '' }));
+  };
+  if (!ctx.mission.open) return answer();
+  if (ctx.mission.phase === 'PRE_LAUNCH' && process.env.HOLD_CHANNEL_BEFORE_LAUNCH === 'true') return answer();
+  const body = String(req.body.body || '').trim().replace(/\s+\n/g, '\n');
+  if (body.length < 2) return answer({ error: 'Write something before transmitting.', draft: body });
+  if (body.length > MAX_CHARS) return answer({ error: `${ctx.T('Messages are limited to')} ${MAX_CHARS} ${ctx.T('characters.')}`, draft: body.slice(0, MAX_CHARS) });
+  const since = new Date(Date.now() - 3600000).toISOString(), ip = hashIp(req.ip);
+  const sent = db.prepare('SELECT COUNT(*) n FROM message WHERE ip_hash = ? AND submitted_at > ?').get(ip, since).n;
+  if (sent >= KIOSK_HOURLY_LIMIT) return answer({ error: 'The uplink is saturated from your position. Try again later.', draft: body });
+  let tags = req.body.tags || [];
+  if (!Array.isArray(tags)) tags = [tags];
+  tags = tags.filter((t) => data.TAGS.includes(t)).slice(0, 3);
+  const visitor = callsign.mint();
+  const geo = geometry(), submitted = new Date(), arrival = new Date(submitted.getTime() + TRANSIT_MS);
+  db.prepare(
+    `INSERT INTO message (visitor_id, callsign, body, tags, state, mission_day,
+        submitted_at, arrival_at, light_seconds, distance_au, ip_hash)
+     VALUES (?, ?, ?, ?, 'IN_TRANSIT', ?, ?, ?, ?, ?, ?)`
+  ).run(visitor.id, visitor.callsign, body, tags.join(','),
+        ctx.mission.phase === 'PRE_LAUNCH' ? 0 : ctx.mission.clampedDay,
+        submitted.toISOString(), arrival.toISOString(), geo.lightSeconds, geo.distanceAu, ip);
+  answer({}, visitor);
 });
 
 /* The dashboard page: the mission dashboard — the nine panels behind their

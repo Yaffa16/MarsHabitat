@@ -332,7 +332,7 @@ function composerPrompt(ctx) {
           <span class="dev-prompt-n">${T('Answer it below — or ask the crew something of your own.')}</span>
         </div>`;
 }
-function composerDevice(ctx, { inFlight = null, error = null, draft = '' } = {}) {
+function composerDevice(ctx, { inFlight = null, error = null, draft = '', kiosk = '' } = {}) {
   const T = ctx.T;
   return `<section class="device composer-device${inFlight ? ' sending' : ''}" aria-label="${esc(T('Composer'))}">
         <h2 class="dev-title">${T('Write to the crew')}</h2>
@@ -348,7 +348,7 @@ function composerDevice(ctx, { inFlight = null, error = null, draft = '' } = {})
             : `<span class="dev-chip dev-chip-later" title="${esc(T('Your callsign for this visit — no account, no name'))}">${T('Callsign on sending')}</span>`}
           <span class="dev-chan">${T('Uplink')}</span>
         </div>${composerPrompt(ctx)}
-        <div class="dev-body" id="dev-body">${composerBlock(ctx, { inFlight, error, draft })}</div>
+        <div class="dev-body" id="dev-body"${kiosk ? ` data-kiosk="1" data-refresh="/screen/write/composer?lang=${esc(kiosk)}"` : ''}>${composerBlock(ctx, { inFlight, error, draft, kiosk })}</div>
       </section>`;
 }
 
@@ -677,11 +677,12 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
     <span class="day-rail-cap">SOL</span>
   </aside>`;
 
-  /* The landing page (landing.js): the habitat — its sky of the latest exchanges and the newest pictures from the
-     cloud folder, the scroll nudge under its ground line — with the name over it on a wider screen; the note (a phone has
-     the name at its head), with its Know more key to the About page; the world's slowest chat; then, on a wider screen,
-     the portal and the dashboard (a phone has them as pages of their own, aura.css, sheet.css). On a phone every
-     data-page is a page of the scroll: a swipe goes to the next (sheet.css, public/sky.js). */
+  /* The landing page (landing.js): first the way to the habitat — the Earth, the line up to the habitat, and around
+     it the sky of the latest exchanges and the newest pictures from the cloud folder, the scroll nudge on the Earth —
+     with the name over it on a wider screen; the note (a phone has the name at its head), with its doors and its Know
+     more key to the About page; the habitat — the dome on its sheet, its keys floating about it; the world's slowest
+     chat; then, on a wider screen, the portal and the dashboard (a phone has them as pages of their own, aura.css,
+     sheet.css). On a phone every data-page is a page of the scroll: a swipe goes to the next (sheet.css, public/sky.js). */
   const body = `
   <script>
   // the reading matter was three pop-ups over this page once, opened from the address: those addresses — /#about,
@@ -689,11 +690,11 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
   // browser can have kept as the permanent redirect back to /#about that /about used to be
   (function () { var h = location.hash; if (/^#(about|about-project|what|who-we-are)$/.test(h)) location.replace('/about?from=home' + (h === '#about' ? '' : h)); })();
   </script>
-  <section class="sheet sheet-p1" id="top" aria-label="${esc(T('The habitat'))}" data-page>
-    ${LP.intro(ctx, 'desk')}
-    ${habitatDome(ctx, { today, crew, recent, power, counts, crewFigures, pods: true, sky: habitatSky(ctx, { recent, cloud }), sheet: habitatSheet(ctx), line: LP.scrollNudge(ctx) })}
-  </section>
+  ${LP.space(ctx, { sky: habitatSky(ctx, { recent, cloud }) })}
   ${LP.note(ctx)}
+  <section class="sheet sheet-p1" id="habitat-page" aria-label="${esc(T('The habitat'))}" data-page>
+    ${habitatDome(ctx, { today, crew, recent, power, counts, crewFigures, pods: true, sheet: habitatSheet(ctx) })}
+  </section>
   ${LP.slowChat(ctx)}
   <section class="portal" id="write" data-stop>
   <!-- The portal's heading, in the dress of the dashboard's: the channel's
@@ -1805,5 +1806,5 @@ function single(ctx, { message }) {
 
 module.exports = {
   mission, messages, dashboardPage, complete, inventoryGauges, boardCards, boardVersion, archive, single, messageCard,
-  hardwareInner, powerTileInner, ticker, dashboardPanels, boardScreen, habitatDome,
+  hardwareInner, powerTileInner, ticker, dashboardPanels, boardScreen, habitatDome, composerDevice,
 };

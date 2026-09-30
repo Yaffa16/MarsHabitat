@@ -77,10 +77,15 @@ function spaceRelayOn() {
   try { return require('../../lib/spacespeak').CFG.enabled; } catch { return false; }
 }
 
-function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
+/* `kiosk`: the installation's writing screen (screens.js, write) — the language its address names. The form posts to
+   the screen's own address (server.js, POST /screen/write: a callsign minted for every message, no cookie), the
+   crossing's read-out names the callsign the message went under, and it stands a while longer once the message has
+   arrived, so the visitor can take the callsign with them (composer.js, data-hold). */
+function composerBlock(ctx, { inFlight, error, draft, idSuffix = '', kiosk = '' }) {
   // The composer appears twice on the mission page. Ids are suffixed so the
   // character counter and tag limiter bind to the right one.
   const uid = (base) => base + idSuffix;
+  const action = kiosk ? `/screen/write?lang=${esc(kiosk)}` : '/communicate';
   const phase = ctx.mission.phase;
   const g = ctx.geo;
   const T = ctx.T || same;
@@ -116,7 +121,7 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
   // message, and composer.js writes it into the device's head from here.
   const formHtml = (ghost = false) => `
   <form ${ghost ? 'class="composer ghost" inert aria-hidden="true"' :
-    `method="post" action="/communicate" id="${uid('composer')}" class="composer" data-callsign="${esc(ctx.callsign || '')}"`}>${!ghost && !ctx.callsign && ctx.offer ? `
+    `method="post" action="${action}" id="${uid('composer')}" class="composer" data-callsign="${esc(ctx.callsign || '')}"${kiosk ? ' data-kiosk="1"' : ''}`}>${!ghost && !ctx.callsign && ctx.offer ? `
     <input type="hidden" name="callsign" value="${esc(ctx.offer)}">` : ''}
     <label class="f msgfield"><span class="sr-only">${T('Message')}</span>
       <div class="msgbox">
@@ -146,7 +151,7 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
     <div class="transit transit-block" data-callsign="${esc(ctx.callsign || '')}"
          data-arrival="${esc(inFlight.arrival_at)}"
          data-departure="${esc(inFlight.submitted_at)}"
-         data-light="${inFlight.light_seconds}">
+         data-light="${inFlight.light_seconds}"${kiosk ? ' data-hold="9000"' : ''}>
 
       <!-- The crossing as a dial: a dark screen behind glass, Earth at the
            foot, Mars at the head, the message travelling the arc between
@@ -165,7 +170,8 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
           ${T('The real message would take')} <b>${orbital.formatLightTime(inFlight.light_seconds)}</b>
           ${T('at a distance of')} ${inFlight.distance_au.toFixed(3)} au.
           <span class="sr-only">${T('Arrives')} <span id="tarr">${esc(inFlight.arrival_at.slice(11, 19))} UTC</span></span>
-        </div>
+        </div>${kiosk && ctx.callsign ? `
+        <div class="kiosk-cs">${T('Your message went under the callsign')} <b>${esc(ctx.callsign)}</b> — ${T('look for it on the Message Board once the crew have answered.')}</div>` : ''}
       </div>
     </div>
     </div>` : '';

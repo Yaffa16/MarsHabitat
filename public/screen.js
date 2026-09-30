@@ -9,8 +9,8 @@
  *    themselves) and whenever the screen changes size or turns;
  *  - keeps the clock in the head on the venue's time;
  *  - reloads the page every five minutes (a little apart on every screen, so the station is not asked by all at once)
- *    and at the venue's midnight, when the sol turns.
- * The screens are display-only: nothing here is ever sent anywhere. */
+ *    and at the venue's midnight, when the sol turns — not while someone is writing on the writing screen.
+ * The screens are display-only but for the writing screen (screen-write.js): nothing here is ever sent anywhere. */
 (function () {
   'use strict';
   var body = document.getElementById('stage-body'), fitEl = document.getElementById('stage-fit'); if (!body || !fitEl) return;
@@ -109,7 +109,9 @@
     try { return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); }
     catch (e) { return new Date().toISOString().slice(0, 10); }
   }
+  // (the writing screen says when someone is writing — screen-write.js, MCSScreenBusy — and a reload waits for them)
+  var busy = function () { return !!(window.MCSScreenBusy && window.MCSScreenBusy()); };
   var day0 = venueDate();
-  setTimeout(function () { location.reload(); }, 5 * 60 * 1000 + Math.floor(Math.random() * 20000));
-  setInterval(function () { if (venueDate() !== day0) location.reload(); }, 30000);
+  (function later(ms) { setTimeout(function () { if (busy()) return later(60000); location.reload(); }, ms); })(5 * 60 * 1000 + Math.floor(Math.random() * 20000));
+  setInterval(function () { if (venueDate() !== day0 && !busy()) location.reload(); }, 30000);
 })();

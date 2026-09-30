@@ -7,11 +7,12 @@
    habitat's colour — and this sheet lays the pages out as the design handoff
    has them: the header in two rows (the name, the sol, the habitat's clock,
    the switches and the menu; the running line under them), and the landing
-   page as three pages (src/views/pages/landing.js) — the name and the
-   habitat, the note with its Know more key, the world's slowest chat — each
-   drawn in that same dress: the note as a glass card lifted off the paper,
-   the steps of a message's crossing on a dashed thread, each sign in its own
-   colour. It also draws the foot, one for the
+   page as four pages (src/views/pages/landing.js) — the way to the habitat
+   (the Earth, the line, the habitat far above, the sky around it), the note
+   with its doors and its Know more key, the habitat, the world's slowest
+   chat — each drawn in that same dress: the note as a glass card lifted off
+   the paper, the steps of a message's crossing on a dashed thread, each sign
+   in its own colour. It also draws the foot, one for the
    light and one for the dark. Nothing a visitor reads is drawn smaller than
    the type floor aura.css sets (--fs-tag). It changes how the pages look,
    never what they do: every id and every hook of the scripts stays as it was.
@@ -141,11 +142,15 @@ body.landing .seq-head { left: calc(100% * (var(--day, 1) - 1) / var(--seq-days,
 body.landing .seq-head::before { top: 0; left: -4px; }
 
 /* the floor under the dome: the sheet ends at the ground line the dome stands on (its columns, tracks and the day's line
-   with it), and under it lies its floor, plain, carrying the nudge to scroll on — an arrow pointing down that bobs
-   (public/sky.js hides it once the page has been scrolled). The line that used to turn there is kept in landing.js,
-   unused; its styles stay below for the run. */
+   with it), and under it lies its floor, plain (the dome's foot, when the page puts something there). The nudge to scroll
+   on — an arrow pointing down that bobs (public/sky.js hides it once the page has been scrolled) — stands on the Earth at
+   the foot of the first page now (P00, below). The line that used to turn under the dome is kept in landing.js, unused;
+   its styles stay below for the run. */
 body.landing .dome-panel.has-line { --foot-h: 64px; }
 body.landing .dome-panel.has-line .dome-seq { bottom: 0; }
+/* the habitat's page: the sheet ends at the ground line the dome stands on, and nothing stands under it */
+body.landing:not(.inner) .sheet-p1 .dome-seq { bottom: 0; }
+body.landing:not(.inner) .sheet-p1 .dome-caption::before { margin-bottom: 0; }
 body.landing .dome-foot { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 10px 32px;
   height: var(--foot-h); box-sizing: border-box; margin: 0; padding: 0; background: var(--seq-ground); }
 body.landing .dome-foot::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--cobalt-fill); }   /* the ground line */
@@ -163,15 +168,89 @@ body.landing .hab-line-meta { display: block; font-family: var(--display); font-
 body.landing .hab-line-text { font-family: var(--display); font-size: 18px; line-height: 1.32; font-weight: 600; letter-spacing: -.01em; color: var(--ink);
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 
-/* the sky: the pictures and the exchanges come and go on the sheet's grid, each somewhere else each time, clear of the
-   dome and of one another (public/sky.js) — fading in, standing, fading out, nothing moving. Each is framed as a
+/* ---- P00: the way to the habitat — the first page (landing.js, space). After the mock-up: a room of night with a field
+   of stars; at its foot the Earth — a photograph of its limb from orbit (public/space/earth.jpg), the horizon curving away
+   — and over it a mesh of dots that thins out quickly with height; far above, at the top, the habitat as a line drawing of
+   the geodesic dome (public/space/habitat.png), white on the night, a faint light behind it; between them the dashed line a
+   message goes up and an answer comes down, a signal climbing it and an orange one falling; the sky's exchanges and
+   snapshots on either side, each in a minimal white frame (below; public/sky.js keeps them clear of the Earth, the habitat
+   and the line: data-sky-round, data-sky-solid). On the Earth, the nudge to scroll on. Night in both themes: the room is
+   space. Lines, the two pictures and a few gradients — nothing blurred. */
+body.landing .space { display: flex; flex-direction: column; }
+body.landing .space-room { --dome-w: clamp(190px, 30vh, 330px); --dome-top: 8px; --earth-w: 125%; --earth-arc: clamp(96px, 15vh, 150px);
+  --hud: #fff; --hud-rgb: 255,255,255; --hud-hot: #ff6a2e; --hud-hot-rgb: 255,106,46; --hud-ground: rgba(0,0,0,.45); --seq-ground: #0a0a0c;
+  position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; border-radius: var(--r-lg); color: #fff; background: #000; }
+/* the stars: a field of small lights, still */
+body.landing .space-stars { position: absolute; inset: 0; z-index: 0; pointer-events: none; background-image:
+  radial-gradient(1.2px 1.2px at 8% 18%, #fff 99%, transparent), radial-gradient(1px 1px at 19% 61%, rgba(255,255,255,.7) 99%, transparent),
+  radial-gradient(1.4px 1.4px at 27% 9%, #fff 99%, transparent), radial-gradient(1px 1px at 33% 44%, rgba(255,255,255,.6) 99%, transparent),
+  radial-gradient(1.1px 1.1px at 41% 27%, #fff 99%, transparent), radial-gradient(1px 1px at 57% 15%, rgba(255,255,255,.8) 99%, transparent),
+  radial-gradient(1.3px 1.3px at 64% 52%, #fff 99%, transparent), radial-gradient(1px 1px at 71% 8%, rgba(255,255,255,.7) 99%, transparent),
+  radial-gradient(1.2px 1.2px at 79% 36%, #fff 99%, transparent), radial-gradient(1px 1px at 88% 22%, rgba(255,255,255,.6) 99%, transparent),
+  radial-gradient(1.4px 1.4px at 93% 58%, #fff 99%, transparent), radial-gradient(1px 1px at 14% 80%, rgba(255,255,255,.5) 99%, transparent),
+  radial-gradient(1.1px 1.1px at 48% 70%, rgba(255,255,255,.7) 99%, transparent), radial-gradient(1px 1px at 84% 74%, rgba(255,255,255,.55) 99%, transparent),
+  radial-gradient(1.2px 1.2px at 3% 40%, rgba(255,255,255,.6) 99%, transparent), radial-gradient(1px 1px at 97% 12%, #fff 99%, transparent),
+  radial-gradient(1px 1px at 12% 33%, rgba(255,255,255,.45) 99%, transparent), radial-gradient(1.3px 1.3px at 23% 88%, rgba(255,255,255,.5) 99%, transparent),
+  radial-gradient(1px 1px at 36% 5%, rgba(255,255,255,.65) 99%, transparent), radial-gradient(1px 1px at 52% 38%, rgba(255,255,255,.4) 99%, transparent),
+  radial-gradient(1.2px 1.2px at 61% 81%, rgba(255,255,255,.55) 99%, transparent), radial-gradient(1px 1px at 68% 30%, rgba(255,255,255,.5) 99%, transparent),
+  radial-gradient(1px 1px at 76% 62%, rgba(255,255,255,.45) 99%, transparent), radial-gradient(1.3px 1.3px at 90% 42%, rgba(255,255,255,.6) 99%, transparent),
+  radial-gradient(1px 1px at 45% 92%, rgba(255,255,255,.35) 99%, transparent), radial-gradient(1px 1px at 30% 64%, rgba(255,255,255,.4) 99%, transparent); }
+/* the habitat, far: the drawing, its name under it beside the line, and a faint light behind it */
+body.landing .space-dome { position: absolute; z-index: 1; left: 50%; top: var(--dome-top); width: var(--dome-w); transform: translateX(-50%); }
+body.landing .space-dome::before { content: ""; position: absolute; z-index: -1; left: -30%; right: -30%; top: -20%; bottom: -30%; pointer-events: none;
+  background: radial-gradient(ellipse 50% 58% at 50% 68%, rgba(150,170,255,.22) 0%, rgba(150,170,255,.08) 45%, rgba(150,170,255,0) 100%); }
+body.landing .space-dome-img { display: block; width: 100%; height: auto; }
+body.landing .space-tag { position: absolute; z-index: 1; margin: 0; white-space: nowrap; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-tag); line-height: 1; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.62); }
+body.landing .space-tag-dome { top: 100%; right: calc(50% + 14px); margin-top: 0; }
+/* the line: dashed, from the habitat's front foot down to the Earth's limb; a signal climbs it, and the answer comes down in Mars orange */
+body.landing .space-line { position: absolute; z-index: 1; left: 50%; width: 2px; margin-left: -1px; top: calc(var(--dome-top) + var(--dome-w) * 0.676); bottom: calc(var(--earth-arc) - 2px);
+  background: repeating-linear-gradient(180deg, rgba(255,255,255,.6) 0 6px, transparent 6px 12px); }
+body.landing .space-line::before, body.landing .space-line::after { content: ""; position: absolute; left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; opacity: 0; }
+body.landing .space-line::before { bottom: 0; background: #fff; box-shadow: 0 0 10px 2px rgba(120,170,255,.9); animation: space-up 9s linear infinite; }
+body.landing .space-line::after { top: 0; background: var(--hud-hot); box-shadow: 0 0 10px 2px rgba(var(--hud-hot-rgb),.8); animation: space-down 9s linear infinite; }
+@keyframes space-up { 0% { bottom: 0; opacity: 0; } 4% { opacity: 1; } 42% { bottom: calc(100% - 8px); opacity: 1; } 46%, 100% { bottom: calc(100% - 8px); opacity: 0; } }
+@keyframes space-down { 0%, 52% { top: 0; opacity: 0; } 56% { opacity: 1; } 94% { top: calc(100% - 8px); opacity: 1; } 98%, 100% { top: calc(100% - 8px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { body.landing .space-line::before, body.landing .space-line::after { animation: none; } }
+/* the Earth: the picture the width of the room and more, centred under the line, its apex the arc's height above the
+   room's foot (the apex is 9.7 % down the picture; the rest curves away below); the mesh of dots drawn about its horizon
+   in the same box, and — never seen — the globe's circle for the sky to keep clear of */
+body.landing .space-earth { position: absolute; z-index: 1; left: 50%; bottom: 0; width: var(--earth-w); aspect-ratio: 1414 / 340; pointer-events: none;
+  transform: translate(-50%, calc(100% - var(--earth-arc) - 9.7%)); }
+body.landing .space-earth-img { display: block; width: 100%; height: 100%; }
+body.landing .space-halo { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
+body.landing .space-halo circle { vector-effect: non-scaling-stroke; stroke-width: 1.8px; }
+body.landing .space-halo.is-phone { display: none; }
+body.landing .space-globe { position: absolute; aspect-ratio: 1; visibility: hidden; }
+/* the nudge, on the Earth */
+body.landing .space .dome-nudge { position: absolute; z-index: 3; left: 50%; bottom: 12px; margin-left: -29px; color: #fff; }
+/* the sky's items on this page, in a minimal white frame — a hairline and a bracket at each corner (the frame below, in
+   white here): an exchange's line — QUESTION, the callsign, the time — in small white capitals over its words, and the
+   crew's answer under them with an orange rule at its left and ANSWER in orange, so what is Earth's and what is the crew's
+   is plain; a snapshot in the same frame, in colour, its time in white over it. Three lines of a message (the whole of
+   it is on the board). */
+body.landing .space .sky-text { -webkit-line-clamp: 3; padding: 0; text-shadow: none; }
+body.landing .space .sky-msg { padding: 9px 12px 10px; border-color: rgba(255,255,255,.34); box-shadow: none; }
+body.landing .space .sky-who, body.landing .space .sky-when { padding: 0; background: none; clip-path: none; color: rgba(255,255,255,.74); font-size: 10px; letter-spacing: .14em; }
+body.landing .space .sky-part { gap: 4px; }
+body.landing .space .sky-part.is-crew { margin: 8px 0 0; padding: 0 0 0 10px; border: 0; border-left: 2px solid var(--hud-hot); background: none; max-width: 100%; }
+body.landing .space .sky-part.is-crew .sky-who { background: none; color: var(--hud-hot); }
+body.landing .space .sky-when { padding-left: 1px; }
+body.landing .space .sky-when::before { background: #fff; box-shadow: 0 0 5px #fff; }
+body.landing .space .sky-frame { border-color: rgba(255,255,255,.7); box-shadow: 0 0 14px rgba(255,255,255,.1); background: #0a0a0c; }
+body.landing .space .sky-frame::after { opacity: .5; }
+body.landing .space .sky-pic img { filter: none; }
+body.landing .space .sky-pic:hover .sky-frame, body.landing .space .sky-pic:active .sky-frame { border-color: var(--hud-hot); box-shadow: 0 0 14px rgba(var(--hud-hot-rgb),.3); }
+body.landing .space .sky-note, :root[data-theme="dark"] body.landing .space .sky-note { border-color: rgba(255,255,255,.4); background-color: rgba(0,0,0,.86); box-shadow: none; }
+
+/* the sky: the pictures and the exchanges come and go, each somewhere else each time, clear of the Earth, the habitat, the
+   line and of one another (public/sky.js) — fading in, standing, fading out, nothing moving. Each is framed as a
    head-up display frames a readout: a hairline edge with a faint glow, a bracket at each corner, and a data plate with a
    slanted end — on a picture the moment it was taken, on a message QUESTION or ANSWER with the sender and the time — the
    words of a message on a dark translucent panel. Cobalt for the pictures and for what comes from Earth, Mars orange for
    the crew's answer, so what comes from Mars stands out. As one comes in, a bright line sweeps down it once (lock-on);
    not where a phone asks for less motion. They fade even where a phone asks for less motion (station.css stops every
    transition there): a fade is not a movement. */
-body.landing .dome-panel { --hud: #2f45e8; --hud-rgb: 47,69,232; --hud-hot: #ff5a1f; --hud-hot-rgb: 255,90,31; --hud-ground: rgba(10,12,26,.66); }
+body.landing .dome-panel { --hud: #2f45e8; --hud-rgb: 47,69,232; --hud-hot: #ff5a1f; --hud-hot-rgb: 255,90,31; --hud-ground: rgba(10,12,26,.66); }   /* (the room's are above) */
 :root[data-theme="dark"] body.landing .dome-panel { --hud: #6b7dff; --hud-rgb: 107,125,255; --hud-hot: #ff6a2e; --hud-hot-rgb: 255,106,46; --hud-ground: rgba(8,9,18,.72); }
 body.landing .sky-msg, body.landing .sky-pic { opacity: 0; animation: none !important; transition: opacity 1.2s ease-in-out; }
 body.landing .sky-msg.is-on, body.landing .sky-pic.is-on { opacity: 1; }
@@ -443,16 +522,18 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
 
 /* ====================================================================== a wider screen */
 @media (min-width: 761px) and (min-height: 521px) {
-  /* P01 is the first screen: the name in a low band across its top, then the habitat — its dome kept to a moderate size,
-     so the sheet around and above it has the room for the pictures and the exchanges */
-  body.landing .sheet-p1 { height: max(660px, calc(100vh - 101px)); padding: 0 20px; box-sizing: border-box; }
+  /* P00 is the first screen: the name in a low band across its top, then the room — the Earth, the line, the habitat far
+     above, the sky's pictures and exchanges around them — down to the window's foot; P01, the habitat, is a window tall
+     too, its dome kept to a moderate size so the sheet around and above it has room */
+  body.landing .space { height: max(660px, calc(100vh - 101px)); padding: 0 0 12px; box-sizing: border-box; }
+  body.landing .space-room { margin-top: 12px; }
+  body.landing .sheet-p1 { height: max(660px, calc(100vh - 101px)); padding: 0 20px 48px; box-sizing: border-box; }   /* the ground line clear of the window's foot */
   body.landing .sheet-intro { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 28px; padding-top: 14px; }
   body.landing .sheet-intro .wordmark { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }   /* the name stands in the sheet below; this one is for the page's outline only */
   body.landing .sheet-intro .run-dates { margin: 0; text-align: left; }
   body.landing .sheet-intro .tagline { margin: 0; text-align: left; }
   body.landing:not(.inner) .dome-panel { flex: 1 1 auto; margin-top: 10px; }
   body.landing:not(.inner) .dome-stage { flex: 0 0 auto; height: clamp(220px, 36vh, 400px); max-height: 50cqw; min-height: 0; }
-  html.js body.landing .dome-panel.has-sky .dome-sky { top: calc(32px - var(--room)); }        /* the sky: from under the ruler to the ground line */
   body.landing .dome-panel.has-line { --foot-h: 64px; padding-bottom: 0; }
   body.landing .dome-foot { padding: 0 20px; }
   body.landing .dome-foot::before { left: -20px; right: -20px; }                     /* the ground line out to the frame's corners */
@@ -514,16 +595,25 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
 /* a phone held upright: the landing page is a few pages, one a screen, a swipe from one to the next — the habitat, the
    name and the note, the mission, the chat — then the foot */
 @media (max-width: 760px) and (min-height: 521px) {
-  /* the habitat has the first screen to itself, the width of the screen and its height between the header and the bar of
-     keys: the sheet with its ruler, the sky over the dome (as tall as the rest of the screen leaves), the dome standing on
-     its ground line, and the floor with the line under the dome. The name moves to the next page. */
+  /* the habitat's page has a screen to itself, the width of the screen and its height between the header and the bar of
+     keys: the sheet with its ruler, the name and LIVE at its head, the dome standing on its ground line at its foot (the
+     first page — the way to the habitat — is laid out below, under P00). The name stands at the head of the note. */
   body.landing .sheet-intro.is-desk { display: none; }
-  :root body.landing:not(.inner) .dome-panel { order: 1; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); box-sizing: border-box; display: flex; flex-direction: column;
-    height: max(440px, calc(100vh - 149px)); height: max(440px, calc(100svh - 149px - env(safe-area-inset-bottom, 0px))); }
+  /* the first page: the room alone, the width of the screen and its height between the header and the bar of keys */
+  body.landing .space { margin: 0 calc(-1 * var(--gutter)); height: max(440px, calc(100vh - 149px)); height: max(440px, calc(100svh - 149px - env(safe-area-inset-bottom, 0px))); }
+  body.landing .space-room { --dome-w: 150px; --dome-top: 12px; --earth-w: 100%; --earth-arc: 84px; border-radius: 0; }
+  body.landing .space-halo.is-desk { display: none; }
+  body.landing .space-halo.is-phone { display: block; }
+  body.landing .space-halo circle { stroke-width: 2px; }
+  body.landing .space .sky-text { font-size: 14px; line-height: 1.25; }
+  body.landing .space .sky-who { font-size: 10px; letter-spacing: .05em; }   /* the line in a narrow lane: the word and the callsign */
+  body.landing .space .sky-msg { padding: 8px 10px 9px; }
+  body.landing .space .dome-nudge { bottom: 8px; margin-left: -23px; }
+  :root body.landing:not(.inner) .dome-panel { order: 1; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter) 56px; box-sizing: border-box; display: flex; flex-direction: column;
+    height: max(440px, calc(100vh - 149px)); height: max(440px, calc(100svh - 149px - env(safe-area-inset-bottom, 0px))); }   /* the dome's ground clear of the bar of keys */
   body.landing:not(.inner) .dome-head { display: none; }
-  html.js body.landing .dome-panel.has-sky .dome-screen, body.landing:not(.inner) .dome-screen { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; padding-top: 25px; }
+  body.landing:not(.inner) .dome-screen { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; padding-top: 25px; }
   body.landing:not(.inner) .dome-stage { flex: none; }
-  html.js body.landing .dome-panel.has-sky .dome-sky { inset: 25px calc(-1 * var(--gutter)) 0; }
   body.landing .dome-panel.has-line { --foot-h: 60px; }
   body.landing .dome-foot { margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); }
   /* the nudge in one row — the words and the arrow side by side — set high on the floor, clear of the Write key's disc
@@ -583,8 +673,10 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
   body.landing .step { column-gap: 14px; }
   body.landing .part-title { font-size: 28px; }
 }
-/* a phone held sideways: the pages under one another, the habitat no taller than the screen */
+/* a phone held sideways: the pages under one another, the first page and the habitat no taller than the screen */
 @media (max-height: 520px) {
+  body.landing .space { height: auto; min-height: max(400px, calc(100vh - 90px)); }
+  body.landing .space-room { --dome-w: 130px; --dome-top: 8px; --earth-w: 110%; --earth-arc: 60px; min-height: 380px; }
   body.landing .sheet-p2 { margin-top: 44px; }
   body.landing .sheet-p4 { margin-top: 52px; }
 }

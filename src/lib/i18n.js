@@ -215,6 +215,7 @@ const D = {
   'What this is': ['Worum es geht', 'De quoi il s’agit'],
   'Who we are': ['Wer wir sind', 'Qui nous sommes'],
   'The habitat': ['Das Habitat', 'L’habitat'],
+  'From Earth to the habitat': ['Von der Erde zum Habitat', 'De la Terre à l’habitat'],
   'Distance as the material': ['Distanz als Material', 'La distance comme matériau'],
   'The archive as the work': ['Das Archiv als Werk', 'L’archive comme œuvre'],
   'This mission': ['Diese Mission', 'Cette mission'],
@@ -532,6 +533,8 @@ const D = {
   'high': ['Hoch', 'max'],
   'Reject': ['Ablehnen', 'Refuser'],
   'Callsign on sending': ['Rufzeichen beim Senden', 'Indicatif à l’envoi'],
+  'Your message went under the callsign': ['Deine Nachricht ging unter dem Rufzeichen', 'Votre message est parti sous l’indicatif'],
+  'look for it on the Message Board once the crew have answered.': ['such es auf dem Nachrichtenboard, sobald die Crew geantwortet hat.', 'cherchez-le sur le tableau des messages une fois que l’équipage aura répondu.'],
   'You will get a callsign': ['Du bekommst ein Rufzeichen', 'Vous recevrez un indicatif'],
   'The station assigns you one — a word and a number, such as BASALT-625 — the moment you accept its cookie, or the moment you first send.':
     ['Die Station weist dir eines zu — ein Wort und eine Zahl, etwa BASALT-625 —, sobald du ihren Cookie akzeptierst oder zum ersten Mal sendest.',

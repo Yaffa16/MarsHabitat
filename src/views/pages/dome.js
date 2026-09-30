@@ -789,4 +789,4 @@ function habitatDome(ctx, args) {
   </section>`;
 }
 
-module.exports = { habitatDome, figures, HEXES, ABOUT, LINE_ICONS };
+module.exports = { habitatDome, figures, HEXES, ABOUT, LINE_ICONS, MESH };

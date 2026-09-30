@@ -16,6 +16,12 @@
   var device = document.querySelector('.composer-device');
   var stage = document.getElementById('dev-body');
   var transitTimer = null;
+  /* The installation's writing screen (screens.js, write): the fresh composer comes from the screen's own address, in
+     the screen's language (data-refresh), and every message there is a new visitor's — once one has crossed, the
+     device's head goes back to saying a callsign comes on sending (data-kiosk). */
+  var refreshUrl = (stage && stage.getAttribute('data-refresh')) || '/api/composer';
+  var kiosk = !!(stage && stage.hasAttribute('data-kiosk'));
+  var chip0 = device && device.querySelector('.dev-chip') ? device.querySelector('.dev-chip').textContent : '';
 
   /* --------------------------------------------------------------- forms */
   function bindForms(root) {
@@ -86,11 +92,14 @@
     if (tagged && chip && tagged.getAttribute('data-callsign')) {
       chip.textContent = tagged.getAttribute('data-callsign');
       chip.classList.remove('dev-chip-later');
+    } else if (tagged && chip && kiosk) {
+      chip.textContent = chip0;                                     // the next person at the screen: no callsign yet
+      chip.classList.add('dev-chip-later');
     }
   }
 
   function refresh() {
-    fetch('/api/composer', { credentials: 'same-origin', cache: 'no-store',
+    fetch(refreshUrl, { credentials: 'same-origin', cache: 'no-store',
       headers: { 'X-Requested-With': 'fetch' } })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
       .then(function (html) {
@@ -165,12 +174,13 @@
       block.classList.add('done');
       var state = block.querySelector('.state');
       if (state) state.textContent = t('Delivered · awaiting review');
-      // Hold on ARRIVED for a moment, then bring the composer back with the
-      // real server-side state — in place, without a reload.
+      // Hold on ARRIVED for a moment (longer on the writing screen, where the
+      // read-out names the callsign to take away: data-hold), then bring the
+      // composer back with the real server-side state — in place, without a reload.
       setTimeout(function () {
         if (!block.isConnected) return;
         if (stage && window.fetch) refresh(); else window.location.reload();
-      }, 2600);
+      }, Number(block.dataset.hold) || 2600);
     }
 
     function tick() {

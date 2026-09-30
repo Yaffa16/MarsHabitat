@@ -74,4 +74,17 @@ function identify(req, res, { create = true, persist = true, callsign: wanted = 
   return { id: info.lastInsertRowid, callsign, token: newToken, created_at: stamp };
 }
 
-module.exports = { identify, generate, usable, keep, WORDS };
+/**
+ * A visitor minted without a cookie — for the installation's writing screen
+ * (server.js, POST /screen/write), where every message is a new visitor's:
+ * a callsign of its own, a token nobody holds. The message keeps the
+ * callsign, and the visitor can look for it on the board.
+ */
+function mint() {
+  const token = crypto.randomBytes(24).toString('hex');
+  const cs = generate(), stamp = now();
+  const info = db.prepare('INSERT INTO visitor (callsign, token, created_at, last_seen) VALUES (?, ?, ?, ?)').run(cs, token, stamp, stamp);
+  return { id: info.lastInsertRowid, callsign: cs, token, created_at: stamp };
+}
+
+module.exports = { identify, generate, usable, keep, mint, WORDS };

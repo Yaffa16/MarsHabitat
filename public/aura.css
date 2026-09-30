@@ -905,7 +905,8 @@ body.landing .folder-body .dpanel.h-3, body.landing .folder-body .dpanel.h-4 { h
 body.landing .folder-body .dpanel.scroll .dpanel-body { overflow: visible; }
 body.landing .folder-body .blog-scroll { overflow: visible; max-height: none; -webkit-mask-image: none; mask-image: none; margin: 0; padding: 0; }
 body.landing .folder-body .blog-scroll > :last-child { margin-bottom: 0; }
-body.landing .folder-body .blogp .card .card-body { max-width: 78ch; }                                                 /* a post's lines stay readable on a wide screen */
+body.landing .folder-body .blogp .card .card-body, body.landing .folder-body .blogp .entry-post p { max-width: none; }   /* a post spans the folder — its lines and its pictures */
+body.landing .folder-body .blogp .entry-figure { max-width: none; }
 body.landing .folder-body #trends .dpanel-body { min-height: 0; }
 body.landing .folder-body .tchart-svg { max-height: calc(100vh - 300px); }                                            /* the whole chart in the folder, under the panel's head */
 body.landing .folder-body .dpanel.blogp { overflow: hidden; }
@@ -1561,16 +1562,15 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
   body.landing .tk-track { animation: tk-run 64s linear infinite !important; }
 }
 
-/* ====================================================================== the sky over the habitat, and the world's slowest chat
-   The first screen of the v6 mock-up of the app, in this dress. Above the dome, the latest exchanges with Earth rise and fade
+/* ====================================================================== the sky of the first page, and the world's slowest chat
+   The first screen of the v6 mock-up of the app, in this dress. On the first page — the Earth at its foot, the habitat far
+   above, the line between them (landing.js, space; sheet.css lays it out) — the latest exchanges with Earth rise and fade
    one after another — a visitor's question under its callsign, the crew's answer under ✧ and the officer — and the newest
    pictures from the cloud folder appear as small snapshots and fade again (src/views/pages/sky.js draws the sky, public/sky.js
-   places what is in it and keeps it current; with nothing to show there is no sky). After the habitat, the world's slowest
-   chat: what becomes of a message, in four steps, with a door to the composer (slowchat.js). Opacity and a few pixels of rise
-   only — nothing blurred, as the paper dress asks; a snapshot's grey is the one filter, on the small picture alone.
-   A phone held upright keeps a room above the dome for the sky; a desk has one already — the room the dome keeps above itself
-   for its pop-ups — and the sky fills it, stepping aside while a pop-up is there. A phone held sideways has no sky. The slowest
-   chat is a column of four steps on a phone and on narrower screens, and a row of four on a desk. */
+   places what is in it and keeps it current; with nothing to show there is no sky). After the note and the habitat, the
+   world's slowest chat: what becomes of a message, in three steps, with a door to the composer. Opacity and a few pixels of
+   rise only — nothing blurred, as the paper dress asks; a snapshot's grey is the one filter, on the small picture alone. The
+   slowest chat is a column of steps on a phone and on narrower screens, and a row on a desk. */
 
 /* ---- the sky: a line, and a snapshot — as a sequencer sheet has them (below, the sheet): a line is a label on a track, its
    words over a track drawn the width of the sheet (dashed for a message from Earth, whole for the crew's answer), its sender
@@ -1625,19 +1625,10 @@ body.landing .sky-note-x { position: absolute; top: 8px; right: 8px; display: gr
 :root[data-theme="dark"] body.landing .sky-note-x { background: rgba(255,255,255,.1); }
 body.landing .sky-note-x:hover, body.landing .sky-note-x:active { transform: none; box-shadow: none; background: rgba(15,21,64,.14); }
 @media (prefers-reduced-motion: reduce) { body.landing .sky-note-k i { animation: none; } }
-/* a phone held upright: the room above the dome is kept inside the dome's screen, so the sky spans the room and the dome */
-@media (max-width: 760px) and (min-height: 521px) {
-  body.landing .dome-panel.has-sky { --sky: calc(clamp(116px, 34vw, 150px) + 25px); }                   /* and the sheet's ruler over it */
-  html.js body.landing .dome-panel.has-sky .dome-screen { padding-top: var(--sky); }
-  html.js body.landing .dome-panel.has-sky .dome-sky { display: block; position: absolute; inset: 25px 0 0; z-index: 2; overflow: hidden; overflow: visible clip; pointer-events: none; }   /* a line's track runs on to the screen's edges, as the sheet does */
-}
-/* a desk: the room the dome keeps above itself for its pop-ups (the heading's 170 px margin) is the sky, down to the dome's
-   foot — the snapshots in the room and in the dome's two upper corners, the lines in the room and across the crown. A key's
-   pop-up opens in that room: the sky steps aside while it is there, and comes back when it closes. */
+/* the sky is the first page's room, over the whole of it (sheet.css lays the room out: the Earth, the habitat, the line);
+   its lines and snapshots are placed by public/sky.js, clear of them */
+html.js body.landing .space-room .dome-sky { display: block; position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; }
 @media (min-width: 761px) and (min-height: 521px) {
-  html.js body.landing .dome-panel.has-sky .dome-sky { display: block; position: absolute; left: 0; right: 0; top: calc(12px - var(--room)); bottom: 0; z-index: 2; overflow: hidden; pointer-events: none; transition: opacity .35s ease; }
-  html.js body.landing .dome-panel.has-sky:has(dialog.dome-popup[open]) .dome-sky { opacity: 0; }
-  html.js body.landing .dome-panel.has-sky:has(dialog.dome-popup[open]) .sky-pic { pointer-events: none; }
   body.landing .sky-text { font-size: 16px; line-height: 1.24; }
   body.landing .sky-who { font-size: 11.5px; }
   body.landing .sky-when { font-size: 11px; }

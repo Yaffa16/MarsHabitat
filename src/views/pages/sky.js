@@ -1,12 +1,13 @@
 'use strict';
 /**
- * The sky over the habitat, as the v6 mock-up of the app draws its first
- * screen — on a desk and on a phone held upright: in the room above the dome the latest
+ * The sky of the first page, as the v6 mock-up of the app draws its first
+ * screen — on a desk and on a phone alike: in the room between the Earth and
+ * the habitat (landing.js, space), either side of the line between them, the latest
  * exchanges with Earth come and go — each as one block, the visitor's QUESTION
  * under its callsign and the time and the crew's ANSWER under ✧ and the
- * officer, so that what they are is plain — one to three of them at a time;
+ * officer, so that what they are is plain — one or two of them at a time;
  * and the newest pictures out of the cloud folder appear as small snapshots,
- * one to three at a time, and fade away again.
+ * one or two at a time, and fade away again.
  *
  * Nothing in it is new: the exchanges are the board's published ones — the
  * rows the board itself shows, never a message still waiting for mission
@@ -17,13 +18,12 @@
  * snapshot or an exchange brings a note beside it saying what it is — the
  * live feed from the habitat, the latest communication from it — whose words
  * come with the page too (skyNotes, below). With nothing to
- * show — no exchange yet, no picture — there is no sky and the dome stands as
- * it did.
+ * show — no exchange yet, no picture — there is no sky and the room stands as
+ * it is: the Earth, the line and the habitat.
  *
- * Drawn into the dome panel (dome.js, `sky`); shown by aura.css — on a desk
- * in the room the dome keeps above itself for its pop-ups (stepping aside
- * while one is open there), on a phone held upright in a room kept above the
- * dome for it; a phone held sideways keeps the dome without a sky.
+ * Drawn into the first page's room (landing.js, `space`); shown by aura.css
+ * and sheet.css over the whole of the room, on a phone and on a desk alike,
+ * its items placed clear of the Earth, the habitat and the line.
  * Decorative: the same exchanges are on the board and the same pictures on
  * the Media page, so the sky is hidden from assistive technology.
  */
@@ -32,7 +32,7 @@ const officer = require('../../lib/officer');
 
 const EXCHANGES = 6;     // the newest published exchanges carried in the sky (at least five, as asked): each its question and its answer
 const PICTURES = 5;      // the newest pictures from the cloud folder
-const AT_ONCE = 3;       // how many exchanges, and how many pictures, are in the sky at one time at most (one at least, when there are any)
+const AT_ONCE = 2;       // how many exchanges, and how many pictures, are in the sky at one time at most (one at least, when there are any)
 const CLIP = 90;         // a line in the sky is two lines at most; the rest is on the board
 
 const clip = (t) => { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > CLIP ? t.slice(0, CLIP - 1).trimEnd() + '…' : t; };
@@ -76,9 +76,9 @@ function pictures(cloud, tz) {
 }
 
 /**
- * The sky, for the dome panel: `html` goes inside the dome's screen, `on`
- * says whether there is anything to show (the panel keeps its room for the
- * sky only then). The landing page loads public/sky.js to set it going.
+ * The sky, for the first page: `html` goes inside the page's room, `on`
+ * says whether there is anything to show. The landing page loads
+ * public/sky.js to set it going.
  */
 function habitatSky(ctx, { recent = [], cloud = null } = {}) {
   const T = ctx.T, m = ctx.mission;

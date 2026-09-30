@@ -112,11 +112,14 @@ pop-ups over it) lead to the About page too. The footer of the landing page is t
 **The screens.** `/screens` lists them; each is a page of its own that you open full screen
 (F11) on the player behind a display:
 
-- `/screen/landing` — the landing page's first screen, with the ticker (its light/language
+- `/screen/landing` — the landing page's first screen — the way to the habitat, with the
+  latest exchanges and pictures around the line — with the ticker (its light/language
   switches and menu are not drawn)
 - `/screen/habitat` — the Habitat instruments, live
 - `/screen/board` — the message board, read-only, live; two columns (one upright), each card's
   line into space on one line, nothing to tap
+- `/screen/write` — **the message-sending box, full screen**: the composer alone, for writing
+  to the crew at the venue — every message sent from it goes under a callsign of its own
 - `/screen/mission` — Today's Mission
 - `/screen/blogs` — the three blogs one at a time, each post rolling by from top to bottom,
   then the next blog; a blog with nothing written stands its note at the top left, across the
@@ -132,19 +135,22 @@ Dark and German by default; `?theme=light`, `?lang=en`, `?lang=fr` switch it (fo
 `/screen/board?lang=en&theme=light`). Nothing scrolls: a piece that is too tall is scaled
 down, a small piece is scaled up (never narrower than its layout stands), and on the board
 and media screens the row that would be cut at the foot is hidden so the last row is whole.
-Every screen reloads itself every five minutes and at midnight, when the sol turns.
+Every screen reloads itself every five minutes and at midnight, when the sol turns (the
+writing screen waits while someone is writing).
 
-In more detail: eight pages made to be shown on screens in the installation — a laptop or a
-player behind each screen, the browser in full-screen mode (F11), nothing to touch. Each
+In more detail: nine pages made to be shown on screens in the installation — a laptop or a
+player behind each screen, the browser in full-screen mode (F11), nothing to touch but on
+the writing screen, which is made to be touched. Each
 shows one piece of the station, the whole of it in one glance: **nothing scrolls, nothing
 moves but what is live.** `/screens` lists them, with what each shows and the switches in the
 address.
 
 | Screen | Address | Shows |
 |---|---|---|
-| Landing page | `/screen/landing` | The station's first screen — the ticker across the top, the name in its band, the habitat with its sky (the live pictures and the latest exchanges, framed) and the dome with its keys. The one screen that keeps the ticker; the ticker's switches (light, language) and its menu are not drawn |
+| Landing page | `/screen/landing` | The station's first screen — the ticker across the top, the name in its band, then the way to the habitat: the Earth, the line, the habitat far above, the latest exchanges and pictures either side of the line (*The landing page: four pages*). The one screen that keeps the ticker; the ticker's switches (light, language) and its menu are not drawn |
 | Habitat | `/screen/habitat` | The Habitat panel of the dashboard: the readings, the crew's figures, the stores and the power — live |
 | Message Board | `/screen/board` | The latest exchanges, newest first, two across (one upright), as many as fit — live, a new exchange slides in as the board publishes it. Read-only: no composer, nothing to tap — a card's line into space stands on one line (*Diese Nachricht ist jetzt 20,02 Milliarden km von der Erde entfernt! · Gestartet vor 19 Stunden*) and opens no panel. The screen polls `/api/board?lang=<its language>&limit=400`, so the cards come back in the language the screen is in, all of them |
+| Write to the crew | `/screen/write` | **The message-sending box, full screen** — the composer as the site has it (the crew's question of the day over it, the message box, the tags, the Transmit key), alone in the middle of the screen, for a touch screen in the square. **Every message sent from it is a new visitor's**: a callsign is minted for it alone (`src/lib/callsign.js`, `mint`; `POST /screen/write` in `server.js`), no cookie is set, so the next person at the screen starts afresh — no callsign carried over, no transit lock between them. Once a message is sent the crossing plays as on the site, then holds nine seconds on ARRIVED with the callsign named — *Your message went under the callsign DUST-465 — look for it on the Message Board once the crew have answered* — before the empty box comes back (`public/composer.js`, `data-hold`, `data-refresh`). The checks are the composer's (the channel open, the words within bounds); the hourly limit is the screen's own, per address, since all its messages come from one: `KIOSK_HOURLY_LIMIT`, sixty an hour. What is left half-written is cleared after three minutes with nobody touching the screen, and the page's own reloads wait while someone is writing or a message is crossing (`public/screen-write.js`) |
 | Today's Mission | `/screen/mission` | The day's mission from the sheet: its question, Morning, Afternoon, EVA, the question for the community hour |
 | Blogs | `/screen/blogs` | The three blogs **one at a time**, each filling the screen: its head stays, the day's post rolls by underneath from top to bottom at reading pace (`public/screen-blogs.js`, 28 px a second, five seconds' hold at the top and at the end; a post that fits is shown for fourteen), then the next blog takes the screen — the Commander Blog, the Daily Science Findings, the Daily Health Blog, round and round. The text is set at the size of the panels' own notes (about 23 px on a 1080p screen). A blog with nothing written yet shows its note and passes the turn on; the latest earlier post is carried forward, as the dashboard does |
 | Today | `/screen/day` | Today's Schedule, Today's Meal and the Crew Moods, three in a row (one under the other upright) |
@@ -359,6 +365,9 @@ own box any more — the whole of every panel is on the page and the page scroll
 window used to show half a panel behind a scroller of its own). A panel's title is not a link, and a
 photograph in a post is shown in the post rather than linked to its media page, so nothing in
 a panel leads off the landing page. Photographs and video placed in a post are shown in it.
+**A post spans the whole of its folder** — its lines run the width of the panel and a
+photograph in it is as wide as the panel (no column narrower than the folder, nothing held to
+the left); on the blogs screen (`/screen/blogs`) the lines span the panel the same way.
 
 The panel titles and their empty lines are in `src/lib/i18n.js` like every other word (German
 *Commander-Blog*, French *Blog du commandement*); the markup is in `dashboard()` in
@@ -844,13 +853,16 @@ files do not hold.
 
 ---
 
-## The landing page: three pages in the glass dress
+## The landing page: four pages in the glass dress
 
-The landing page keeps the layout of the design handoff of September 2026, pared down — three
-pages, one under the other: the habitat; the note, with a **Know more** key under it that leads
-to the About page; and *Welcome to the World's Slowest Chat* under a heading of its own — its
+The landing page keeps the layout of the design handoff of September 2026, pared down — four
+pages, one under the other: **the way to the habitat** — the Earth at the foot of the screen,
+the habitat far above it, a dashed line between them, and the latest exchanges and pictures
+coming and going around it; the note, with the two doors and a **Know more** key under it that
+leads to the About page; **the habitat** — the dome on its sheet, its keys floating about it;
+and *Welcome to the World's Slowest Chat* under a heading of its own — its
 name large and bold, a short orange rule — with a line across the page setting it apart from the
-note. (The handoff's page numbers and part pills — *P02 / 04 · Note 00*, *Part 1 of 2* — are not
+habitat. (The handoff's page numbers and part pills — *P02 / 04 · Note 00*, *Part 1 of 2* — are not
 written any more, and the mission's two chapters that stood between the note and the chat are
 gone: the About page tells the mission.) It is drawn in the station's own dress: the drafting paper with
 its fine grid, cobalt ink, **frosted glass floating on soft shadows**, rounded cards and round
@@ -860,7 +872,7 @@ default; by day the page is near-white and **the only grey on it is the habitat'
 grey of the reference sheet.
 
 **On a phone held upright the landing goes a page a swipe**, in the swipe's direction — the
-habitat, the name and the note, the chat, then the foot (CSS scroll snapping, each
+way to the habitat, the name and the note, the habitat, the chat, then the foot (CSS scroll snapping, each
 page a stop the scroll cannot fly past). Each page fills the screen between the header and the
 bar of keys (with the browser's own bars folded away, as they are once the page is scrolled); a
 page that does not fit as drawn is set a little closer, and one that still does not (a small
@@ -871,16 +883,42 @@ them). A mouse wheel or a touchpad in a window that narrow turns one stop a turn
 is open the page stays where it is. **On a desk the page scrolls freely**, each page about a
 window tall with its cards in the middle and air around them, a margin at both sides as before.
 
-- **The habitat.** **The station's name stands large in the top left corner of the sheet**,
+- **The way to the habitat — the first page** (`landing.js`, `space`; laid out in `sheet.css`
+  under *P00*), after the mock-up. A room of night on the page, black in both themes — the
+  room is space — with a field of still stars; **the Earth at its foot**: a photograph of its
+  limb from orbit (`public/space/earth.jpg`, 1414 × 340 — the picture handed over, cut to the
+  arc, its haze let fade in where the picture cut it off), the horizon curving away below the
+  page, and over it **a mesh of dots** that thins out quickly with height — rings of dots about
+  the horizon's circle (radius 945, centred at 672 × 977 in the picture), every ring the same
+  angular pitch so the dots line up along the radii too, each ring fainter than the one under
+  it; one set for a desk (rings 13 apart in the picture, dots 0.6° apart) and a closer set for a
+  phone, where the picture is a quarter the size (`halo()` in `landing.js`; `sheet.css` shows
+  one). **The habitat far above, at the top**: the line drawing of the geodesic dome handed
+  over (`public/space/habitat.png`, 1004 × 699 — its lines made white on nothing, so it stands
+  on the night), a faint light behind it, *MARS · HABITAT ONE* beside its front foot; and
+  **between them a dashed line**, from the dome's front foot (97 % of the way down the drawing)
+  to the Earth's limb, the way a message goes — a white signal climbs it, then the crew's
+  answer comes down it in Mars orange (a phone set to less motion sees the line still). Around
+  the line, **on either side of it, the latest exchanges with Earth and the newest pictures
+  from the habitat come and go** — the sky, below — and on the Earth stands the nudge to scroll
+  on. On a desk the picture of the Earth is a quarter wider than the room, so its horizon
+  reaches the room's corners; on a phone it is the width of the screen. On a desk the name and
+  the run stand in the low band over it (*Communication Station · ZKM | Hertzlab*, the dates in
+  Mars orange, the thirteen sols, and *opens in N days* before the run, *SOL 05 of 13* during
+  it); **on a phone the page has the whole first screen to itself**, the width of the screen and
+  its height between the header and the bar of keys — the note on the next page carries the
+  name. The drawing is decorative and hidden from assistive technology; the exchanges in the
+  sky are the board's own. (To change either picture, replace the file under `public/space/`:
+  the Earth's must keep its 1414 × 340 box and its horizon where it is, or the mesh and the
+  line's foot move with `EARTH` in `landing.js`; the habitat's keeps its axis down the middle
+  and its foot near its bottom edge, `HABITAT`.)
+- **The habitat — the third page.** **The station's name stands large in the top left corner of the sheet**,
   under the ruler — *MARS!platz*, the mark in Mars orange — on a desk and on a phone alike, and
   **LIVE in the top right corner** opposite it, an orange pill with a pulsing dot (the mark the
-  board and the strip of pictures carry; not after the run) — the sky keeps clear of both as it
-  does of the sheet's small figure. On a desk a low band across the
-  top carries the rest in one row: *Communication Station · ZKM | Hertzlab* and the run — its
-  dates in Mars orange, the thirteen sols, and *opens in N days* before the run (*SOL 05 of 13*
-  during it); then the habitat, the dome kept to a moderate size so the sky around it has room.
-  **On a phone the habitat has the whole first screen to itself**, the width of the screen and
-  its height between the header and the bar of keys; the note on the next page repeats the name.
+  board and the strip of pictures carry; not after the run). On a desk the page is a window
+  tall, the dome kept to a moderate size so the sheet around and above it has room (the room
+  above the dome is where a key's pop-up opens); on a phone the page is a screen, the sheet the
+  width of it, the dome standing on its ground line at its foot, clear of the bar of keys.
   **The habitat** stands on a **sheet drawn after a sequencer's layout sheet**: ruled in the
   run's thirteen sols, four fine lines to each, a ruler of their numbers across the top, and **the
   day of the performance** marked — its number in Mars orange and **an orange line down its
@@ -909,9 +947,15 @@ window tall with its cards in the middle and air around them, a margin at both s
   this minute (the task on the schedule, each officer's condition as words, the stores and their
   days left, the latest exchange, today's kWh, the steps pedalled), asked for again every twenty
   seconds from **`/api/dome`**. It opens in the room above the dome, on a phone too, fading in.
-- **The sky over the dome.** On the sheet around the dome the newest exchanges with Earth come
+- **The sky — on the first page.** In the room between the Earth and the habitat the newest exchanges with Earth come
   and go one after another, and the **newest pictures from the cloud folder** appear as small
-  snapshots, grey as print until the hand is on them. **Each is framed as a head-up display
+  snapshots. **On the first page each wears a minimal white frame** — a hairline and a bracket
+  at each corner: an exchange's line (*QUESTION · callsign · time*) in small white capitals over
+  its words, and the crew's answer under them with an orange rule at its left and *ANSWER* in
+  orange, so what is Earth's and what is the crew's is plain at a glance; a snapshot in the
+  same white frame, in colour, its time in white over it. (The head-up dress described next —
+  the plates, the cobalt, the grey — is the sky's own; the first page's night calls for less.)
+  **Each is framed as a head-up display
   frames a readout**: a hairline edge with a faint glow, a bracket at each corner, and a data
   plate with a slanted end — cobalt for the pictures and for what comes from Earth, Mars orange
   for the crew's answer. An exchange is a dark translucent panel: the plate *QUESTION · callsign
@@ -930,29 +974,34 @@ window tall with its cards in the middle and air around them, a margin at both s
   its note stands; the note goes with its cross, a touch anywhere else, Escape, or after twelve
   seconds, and nothing is placed over it meanwhile (`skyNotes()` in `sky.js`, `public/sky.js`).
   Each **fades in, stands and fades out — nothing moves** (the fade stays even where a phone
-  asks for less motion: it is not a movement) — and **comes somewhere else each time, on the
-  sheet's grid**: starting on a column's line, as wide as a whole number of columns (a snapshot
-  five on a phone, two on a desk; a line as wide as its words, up to nine or four), inside the
-  sheet, **clear of the dome and of everything else in the sky** — every line and snapshot still
-  there, even while it fades, and the sheet's small figure — and away from where the last few
-  were. **The sky is never empty while there is anything to show**: each exchange and snapshot
+  asks for less motion: it is not a movement) — and **comes somewhere else each time, close to
+  the line, on either side of it, in the band between the habitat and the Earth** — never
+  beside the habitat, never on the Earth: on a desk a snapshot 184 px wide and an exchange as
+  wide as its words need, up to 380 px, each standing at the line's margin or up to 44 px out
+  from it; on a phone each as wide as the room beside the line allows (about 178 px — three
+  lines of a message, its line without the time, the whole of it on the board). **Two
+  exchanges and two snapshots at a time at most**, one of each at least while there are any —
+  **clear of the habitat's drawing and its name, the Earth's globe, the nudge and everything
+  else in the sky**, every line and snapshot still there, even while it fades (the page marks
+  what the sky keeps clear of: `data-sky-round` for the globe, `data-sky-solid` for the rest;
+  the lanes keep off the line) — and away from where the last few were. **The sky is never empty while there is anything to show**: each exchange and snapshot
   stands a little longer or shorter than the last, so they never all go at once, and as one is
   about to fade its successor of the same kind is brought in (and again as it fades), so that
-  something is always standing; when no place is free, the place of one that is fading is taken,
-  the next fading in as it goes — the one case where two overlap, on a phone's small sky. Otherwise
-  **nothing in the sky is drawn over anything else.** Only published exchanges — the board's own — never a message still waiting for
+  something is always standing; when no place is free the turn passes and the next tries
+  again, once a place has come free. **Nothing in the sky is drawn over anything else**, on a
+  phone either. Only published exchanges — the board's own — never a message still waiting for
   mission control or one it turned down; a sky with nothing to show stays empty. The sky asks for
   nothing on its own: the board is read again only when the dome's refresh says there is a new
   exchange, and the snapshots follow the Habitat panel's strip of pictures that
   `public/cloud.js` keeps current (`sky.js`, `public/sky.js`).
-- **The nudge under the dome.** The sheet ends at the ground line the dome stands on —
-  its columns, tracks and the day's line with it — and under it lies its floor, plain, carrying
-  only **an arrow pointing down**, on its own, bobbing gently, that nudges the
-  visitor on to the pages beneath; it is a link to the next page as well, and it is gone once
-  the page has been scrolled and back once the page is at the top again (`scrollNudge()` in
-  `landing.js`, `public/sky.js`). The line that used to turn there every six seconds — what the
-  crew are doing now, the signal's time, the last answered exchanges — is kept in `landing.js`
-  (`underLine()`) unused, in case the run wants it back.
+- **The nudge, on the Earth.** At the foot of the first page, on the Earth, stands **an arrow
+  pointing down**, on its own, bobbing gently, that nudges the visitor on to the pages beneath;
+  it is a link to the next page as well, and it is gone once the page has been scrolled and
+  back once the page is at the top again (`scrollNudge()` in `landing.js`, `public/sky.js`).
+  The habitat's sheet ends at the ground line the dome stands on — its columns, tracks and the
+  day's line with it — with nothing under it now. The line that used to turn there every six
+  seconds — what the crew are doing now, the signal's time, the last answered exchanges — is kept
+  in `landing.js` (`underLine()`) unused, in case the run wants it back.
 - **The note**, on a card of glass under *DURATIONAL PERFORMANCE*: *MARS is a durational
   performance in which three crew members are always in the habitat for the thirteen days of the
   run* — and what this website is for, with three pills under it: **Write to the crew →** in
@@ -982,11 +1031,13 @@ window tall with its cards in the middle and air around them, a margin at both s
   in `landing.js`; the running line writes it the same way). On a phone the page ends in the orange key **Write to the crew →** (the messages page,
   composer open); on a wider screen the portal and the dashboard follow instead.
 
-**On a wider screen** the first screen is the habitat: the name in its band, then the habitat
-the width of the page with the sky around the dome, and the nudge under it. Then the note in two
-columns with its Know more key, the chat's heading and welcome and the three steps in a row, each
-page about a window tall. Then the portal — the composer and the board — and the dashboard, as
-before.
+**On a wider screen** the first screen is the way to the habitat: the name in its band, then
+the room the width of the page — the habitat at its top, the Earth at its foot, the line between
+them with the sky's exchanges and pictures either side, and the nudge on the Earth. Then the
+note in two columns with its doors and its Know more key; the habitat, the width of the page,
+the dome on its sheet with its keys; the chat's heading and welcome and the three steps in a
+row, each page about a window tall. Then the portal — the composer and the board — and the
+dashboard, as before.
 
 ## Communication is the point
 

@@ -33,6 +33,15 @@ body.screen .stage-fit > .dpanel { box-sizing: border-box; min-height: 0; overfl
 body.screen[data-fit="clip"] .stage-fit > .dpanel { height: 100%; }
 body.screen .dpanel-body { min-height: 0; }
 body.screen .dpanel.scroll .dpanel-body, body.screen .blog-scroll { overflow: hidden; }
+/* the writing screen: the composer alone in the middle of the screen, as wide as a reader's column (scaled to the
+   screen's height like the other pieces); nothing to close, and the crossing's read-out names the callsign */
+body.screen .screen-write { display: flex; justify-content: center; align-items: flex-start; padding: 8px 0 0; }
+body.screen .screen-write .composer-device { width: 100%; max-width: 640px; box-sizing: border-box; }
+body.screen .screen-write .dev-close { display: none !important; }
+body.screen .screen-write .dev-stage .transit-block { position: static; }         /* the crossing's view has the box to itself, whatever its height (the read-out is longer here) */
+body.screen .screen-write .dev-stage .composer.ghost { display: none; }
+body.screen .screen-write .kiosk-cs { margin-top: 14px; font-family: var(--display); font-size: 15px; line-height: 1.45; color: var(--ink); }
+body.screen .screen-write .kiosk-cs b { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 16px; letter-spacing: .08em; color: var(--mars-ink); }
 /* the blogs, one at a time (screen-blogs.js): each panel fills the stage, its head stays, the post rolls by under it — the
    text at the size of the panel's own notes, large enough to read from across the room */
 body.screen.screen-blogs .stage-fit { height: 100%; flex: 1 1 auto; min-height: 0; }
@@ -46,7 +55,7 @@ body.screen .screen-blogs .dpanel-body { flex: 1 1 auto; min-height: 0; position
 body.screen .screen-blogs .blog-scroll { position: absolute; top: 22px; left: 40px; right: 40px; max-height: none; overflow: visible; margin: 0; padding: 0 0 40px; mask-image: none; -webkit-mask-image: none; will-change: transform; }
 body.screen .screen-blogs .blogp .log-entry { margin: 0 0 16px; }
 body.screen .screen-blogs .blogp .log-entry .card-body { padding: 22px 26px 24px; font-size: clamp(20px, 1.2vw, 24px); line-height: 1.6; }
-body.screen .screen-blogs .blogp .entry-post p { margin: 0 0 .8em; }
+body.screen .screen-blogs .blogp .entry-post p { margin: 0 0 .8em; max-width: none; }   /* a post's lines span the panel */
 body.screen .screen-blogs .blogp .entry-figure { max-width: 70%; margin: 18px 0; }
 /* a blog with nothing written yet: its note at the top left, across the width, like a post would be */
 body.screen .screen-blogs .blogp .dpanel-body > .empty { position: absolute; inset: 22px 40px 40px; min-height: 0; display: block; text-align: left; font-size: clamp(20px, 1.2vw, 24px); line-height: 1.5; letter-spacing: .08em; padding: 22px 26px 24px; border-radius: var(--r-lg, 18px); background: var(--tile); border: 1px solid var(--hair); height: max-content; }

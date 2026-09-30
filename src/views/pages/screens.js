@@ -2,9 +2,9 @@
 /**
  * The installation's screens: one piece of the station a screen, full screen,
  * the whole of it in one glance, nothing to scroll — the habitat's instruments,
- * the message board, today's mission, the three blogs, the day (schedule, meal,
- * moods), the trends, the landing page's first screen (the one with the
- * ticker) and the media gallery. Each is a page of its own at /screen/<name>
+ * the message board, the composer (the writing screen), today's mission, the
+ * three blogs, the day (schedule, meal, moods), the trends, the landing page's
+ * first screen (the one with the ticker) and the media gallery. Each is a page of its own at /screen/<name>
  * (the list at /screens), without the station's chrome — no ticker but on the
  * landing screen, no menu, no bar of keys, no foot, no cookie question — in
  * the dark theme and in German unless the address says otherwise
@@ -14,12 +14,12 @@
  * cards, the gallery's tiles — never scrolled. What the site keeps live stays
  * live — the board, the habitat's readings, the pictures, the sky — and every
  * screen reloads itself every five minutes and at the venue's midnight, when
- * the sol turns.
+ * the sol turns (the writing screen waits while someone is writing).
  */
 const L = require('../layout');
 const { esc } = L;
 const P = require('./public');
-const { habitatSky, habitatSheet } = require('./sky');
+const { habitatSky } = require('./sky');
 const LP = require('./landing');
 const M = require('./media');
 
@@ -31,9 +31,10 @@ const V = L.ASSET_V;
    narrow the piece may be made by scaling up (the width it keeps its layout at) — the scale is capped so the screen's
    width, divided by the scale, stays at least this. */
 const SCREENS = [
-  { name: 'landing', title: 'Landing page', fit: 'scale', minWidth: 1000, about: 'The first screen of the landing page — the name, the habitat with its sky — with the ticker' },
+  { name: 'landing', title: 'Landing page', fit: 'scale', minWidth: 1000, about: 'The first screen of the landing page — the name, the way to the habitat with the latest exchanges and pictures around the line — with the ticker' },
   { name: 'habitat', title: 'Habitat', fit: 'scale', minWidth: 960, about: 'The habitat’s instruments: the readings, the crew’s figures, the stores and the power' },
   { name: 'board', title: 'Message Board', fit: 'clip', about: 'The latest exchanges with the crew, as many as fit, live' },
+  { name: 'write', title: 'Write to the crew', fit: 'scale', minWidth: 640, about: 'The composer, full screen, for writing to the crew at the venue — every message from it under a callsign of its own' },
   { name: 'mission', title: 'Today’s Mission', fit: 'scale', minWidth: 760, about: 'The day’s scientific mission: its question, Morning, Afternoon and EVA' },
   { name: 'blogs', title: 'Blogs', fit: 'none', about: 'The Commander Blog, the Daily Science Findings and the Daily Health Blog, one at a time — each post rolling by from top to bottom, then the next blog' },
   { name: 'day', title: 'Today', fit: 'scale', minWidth: 640, about: 'Today’s Schedule, Today’s Meal and the Crew Moods' },
@@ -75,15 +76,12 @@ ${scripts.concat('/screen.js').map((s) => `<script src="${s}?v=${V}" defer></scr
 
 /* ------------------------------------------------------------------ the screens */
 
-/** The landing page's first screen: the ticker, the name in its band, the habitat with its sky on its sheet. */
+/** The landing page's first screen: the ticker, the name in its band, then the way to the habitat — the Earth, the
+    line, the habitat far above, and the sky's exchanges and pictures around the line (landing.js, space). */
 function landing(ctx, d) {
   const T = ctx.T;
   const body = `
-  <section class="sheet sheet-p1" id="top" aria-label="${esc(T('The habitat'))}">
-    ${LP.intro(ctx, 'desk')}
-    ${P.habitatDome(ctx, { today: d.today, crew: d.crew, recent: d.recent, power: d.power, counts: d.counts, crewFigures: d.crewFigures, pods: true,
-      sky: habitatSky(ctx, { recent: d.recent, cloud: d.cloud }), sheet: habitatSheet(ctx), line: '' })}
-  </section>
+  ${LP.space(ctx, { sky: habitatSky(ctx, { recent: d.recent, cloud: d.cloud }) })}
   ${d.cloud ? `<div class="screen-hidden"><div class="cloud-latest" id="cloud-latest" data-version="${esc(d.cloud.snapshot.version || '')}" data-poll="${(Number(d.cloud.snapshot.checkSeconds) || 20) * 1000}">${M.cloudLatestInner(T, d.cloud, { tz: ctx.mission.timezone })}</div></div>` : ''}`;
   return shell(ctx, { name: 'landing', title: 'Landing page', body, head: false, inner: false, fit: 'scale',
     ticker: P.ticker(ctx, { today: d.today }), scripts: ['/sky.js'].concat(d.cloud ? ['/cloud.js'] : []) });
@@ -128,6 +126,17 @@ function board(ctx, d) {
   return shell(ctx, { name: 'board', title: 'Message Board', body: P.boardScreen(ctx, { recent: d.recent, poll: `/api/board?lang=${ctx.lang || 'de'}&limit=400` }), fit: 'clip', scripts: ['/board.js'] });
 }
 
+/** The writing screen: the composer alone, full screen, for writing to the crew at the venue (the mission page's
+    composer, with the crew's question of the day over it). Every message sent from it is a new visitor's, under a
+    callsign minted for it (server.js, POST /screen/write) — no cookie, so the next person at the screen starts afresh —
+    and the crossing's read-out names the callsign, so the visitor can look for their exchange on the board. The
+    screen's script (public/screen-write.js) clears what was left half-written after a while, and the page's own
+    reloads wait while someone is writing. */
+function write(ctx, d) {
+  const body = `<div class="screen-write">${P.composerDevice(ctx, { inFlight: d.inFlight || null, error: d.error || null, draft: d.draft || '', kiosk: ctx.lang || 'de' })}</div>`;
+  return shell(ctx, { name: 'write', title: 'Write to the crew', body, fit: 'scale', scripts: ['/composer.js', '/screen-write.js'] });
+}
+
 /** The gallery: every picture in one grid, the newest first, as many as fit, kept live by cloud.js (through
     /api/cloud?flat=1 — the grid without the site's day heads). */
 function media(ctx, d) {
@@ -137,7 +146,7 @@ function media(ctx, d) {
   return shell(ctx, { name: 'media', title: 'Media', body, fit: 'clip', scripts: d.cloud ? ['/cloud.js'] : [] });
 }
 
-const BUILD = { landing, habitat, board, mission, blogs, day, trends, media };
+const BUILD = { landing, habitat, board, write, mission, blogs, day, trends, media };
 
 /** The screen by its name, or null for a name that is not one. */
 function render(name, ctx, d) {

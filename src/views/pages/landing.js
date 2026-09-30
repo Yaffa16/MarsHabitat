@@ -1,16 +1,21 @@
 'use strict';
 /**
- * The landing page: three pages — the habitat (dome.js, sky.js) and the
- * station's name; a note on what MARS is and what this website is for, with a
- * key to the About page (Know more) for the rest; and the world's slowest
- * chat — its welcome, then what becomes of a message written here, in three
- * steps: uplink, transit, downlink. (The mission's two chapters that stood
- * between the note and the chat are gone: the About page tells the mission.)
- * A phone opens on the habitat alone, the whole screen, and has the name at
- * the head of the note (the next page); a wider screen has the name in a band
- * over the habitat. On a phone the chat ends in the door to the composer; on
- * a wider screen the portal and the dashboard follow on the same page
- * (public.js).
+ * The landing page: four pages — the way to the habitat (space, below):
+ * the Earth at the foot of the screen, the habitat far above it, a dashed
+ * line between them and the latest exchanges and pictures coming and going
+ * around it (sky.js, public/sky.js), with the station's name over it on a
+ * wider screen; a note on what MARS is and what this website is for, with
+ * the doors to the composer and the dashboard and a key to the About page
+ * (Know more) for the rest; the habitat itself (dome.js) — the dome on its
+ * sheet, its keys floating about it; and the world's slowest chat — its
+ * welcome, then what becomes of a message written here, in three steps:
+ * uplink, transit, downlink. (The mission's two chapters that stood between
+ * the note and the chat are gone: the About page tells the mission.)
+ * A phone opens on the first page alone, the whole screen, and has the name
+ * at the head of the note (the next page); a wider screen has the name in a
+ * band over the first page. On a phone the chat ends in the door to the
+ * composer; on a wider screen the portal and the dashboard follow on the
+ * same page (public.js).
  *
  * The words are the handoff's; the figures in them are the station's own: the
  * day the run begins, the distance to Mars and the one-way light-time today,
@@ -77,6 +82,68 @@ function intro(ctx, where = 'desk') {
       <p class="tagline">${T('Communication Station')} · <b>ZKM | Hertzlab</b></p>
       <p class="run-dates"><b>${esc(m.runLabel)}</b> · ${m.totalDays} ${T('sols in the habitat')} · <span class="run-now">${now}</span></p>
     </div>`;
+}
+
+/* ---------------------------------------------------------------- the first page: Earth to the habitat */
+/**
+ * The first screen, after the mock-up: the Earth at the foot of the page —
+ * a photograph of its limb from orbit (public/space/earth.jpg), the horizon
+ * curving away, and over it a mesh of dots that thins out quickly with
+ * height; the habitat far above it at the top — the geodesic dome as a line
+ * drawing (public/space/habitat.png), white on the night; and a dashed line
+ * between them, the way a message goes, with a signal climbing it and the
+ * crew's answer coming down. On either side of the line the latest
+ * exchanges with Earth and the newest pictures out of the habitat come and
+ * go (sky.js draws them into the page; public/sky.js places them clear of
+ * the Earth, the habitat and the line — data-sky-solid, data-sky-round — and
+ * keeps them current). A field of stars behind it all. The name and the run
+ * stand in the band over it on a wider screen (intro); a phone has the page
+ * to itself. On the Earth, the nudge to scroll on (scrollNudge). Decorative
+ * but for the sky's items: the drawing is hidden from assistive technology,
+ * and the exchanges are the board's own.
+ *
+ * The Earth's picture is 1414 × 340 (EARTH), the horizon a circle of radius
+ * 945 centred at (672, 977) in it, its apex 33 down from the top; the mesh
+ * is rings of dots about that circle — every ring the same angular pitch
+ * (pathLength puts the dashes in degrees), so the dots line up along the
+ * radii too, into a mesh — a set for a desk and a closer set for a phone
+ * (sheet.css shows one). The habitat's drawing is 1004 × 699 (HABITAT), its
+ * axis down the middle and its front foot 97 % of the way down.
+ */
+const EARTH = { w: 1414, h: 340, cx: 672, cy: 977, r: 945 };
+const HABITAT = { w: 1004, h: 699, foot: 0.971 };
+function halo(kind) {
+  // desk: rings 13 apart, dots 0.6° apart; phone (the picture a quarter the size): rings 32 apart, dots 2.2° apart;
+  // each ring fainter than the one under it, gone within a few
+  const rings = kind === 'phone' ? { from: 18, step: 32, n: 10, dash: 4.4 } : { from: 14, step: 13, n: 10, dash: 1.2 };
+  return `<svg class="space-halo is-${kind}" viewBox="0 0 ${EARTH.w} ${EARTH.h}" aria-hidden="true"><g fill="none" stroke="#fff" stroke-linecap="round" stroke-dasharray="0 ${rings.dash}">${
+    Array.from({ length: rings.n }, (_, k) => `<circle cx="${EARTH.cx}" cy="${EARTH.cy}" r="${EARTH.r + rings.from + k * rings.step}" pathLength="720" opacity="${(0.72 * Math.pow(0.72, k)).toFixed(3)}"/>`).join('')
+  }</g></svg>`;
+}
+function space(ctx, { sky = null } = {}) {
+  const T = ctx.T;
+  // the globe, for the sky to keep clear of: the horizon's circle, as a box the width of its diameter about its centre
+  // (data-r sets the radius the sky keeps clear of as a part of that width: the horizon and a little of the mesh)
+  const globe = `left:${(100 * (EARTH.cx - EARTH.r) / EARTH.w).toFixed(2)}%;top:${(100 * (EARTH.cy - EARTH.r) / EARTH.h).toFixed(2)}%;width:${(200 * EARTH.r / EARTH.w).toFixed(2)}%`;
+  return `
+  <section class="sheet sheet-p0 space" id="top" aria-label="${esc(T('From Earth to the habitat'))}" data-page>
+    ${intro(ctx, 'desk')}
+    <div class="space-room" id="space-room">
+      <div class="space-stars" aria-hidden="true"></div>
+      <div class="space-dome" data-sky-solid aria-hidden="true">
+        <img class="space-dome-img" src="/space/habitat.png" alt="" width="${HABITAT.w}" height="${HABITAT.h}" decoding="async">
+        <span class="space-tag space-tag-dome" data-sky-solid>MARS · HABITAT ONE</span>
+      </div>
+      <i class="space-line" data-sky-solid aria-hidden="true"></i>
+      <div class="space-earth" aria-hidden="true">
+        <img class="space-earth-img" src="/space/earth.jpg" alt="" width="${EARTH.w}" height="${EARTH.h}" decoding="async">
+        ${halo('desk')}${halo('phone')}
+        <i class="space-globe" data-sky-round data-r="0.52" style="${globe}"></i>
+      </div>
+      ${sky ? sky.html : ''}
+      ${scrollNudge(ctx)}
+    </div>
+  </section>`;
 }
 
 /* ---------------------------------------------------------------- the note */
@@ -229,13 +296,15 @@ function underLine(ctx, { recent = [], today = null } = {}) {
       </div>`;
 }
 
-/* ---------------------------------------------------------------- the nudge under the dome */
+/* ---------------------------------------------------------------- the nudge */
 /**
- * What stands on the floor under the habitat's ground line now: an arrow
- * pointing down, on its own, that bobs gently, nudging the visitor to scroll
- * on to the pages beneath (public/sky.js hides it once the page has been
- * scrolled). It is a link to the next page, so it works as a key too. The
- * line that used to turn there (underLine, above) is kept for the run, unused.
+ * What stands at the foot of the first page, on the Earth: an arrow pointing
+ * down, on its own, that bobs gently, nudging the visitor to scroll on to the
+ * pages beneath (public/sky.js hides it once the page has been scrolled). It
+ * is a link to the next page, so it works as a key too. (It stood on the
+ * floor under the habitat's ground line while the habitat was the first
+ * page.) The line that used to turn under the dome (underLine, above) is kept
+ * for the run, unused.
  */
 function scrollNudge(ctx) {
   const T = ctx.T;
@@ -245,4 +314,4 @@ function scrollNudge(ctx) {
       </a>`;
 }
 
-module.exports = { intro, note, slowChat, underLine, scrollNudge, WINDOW_TIME, windowWhen, dayMonth, zoneName };
+module.exports = { intro, space, note, slowChat, underLine, scrollNudge, WINDOW_TIME, windowWhen, dayMonth, zoneName };
