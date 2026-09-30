@@ -6,7 +6,7 @@ const data = require('../../lib/data');
 const { TAGS } = data;
 const { composerBlock } = require('./communicate');
 const { habitatDome, LINE_ICONS } = require('./dome');
-const { habitatSky, habitatSheet } = require('./sky');
+const { habitatSky } = require('./sky');
 const LP = require('./landing');
 const MV = require('./media');
 const mediaGet = require('../../lib/media').get;
@@ -681,9 +681,10 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
      it the sky of the latest exchanges and the newest pictures from the cloud folder, the scroll nudge on the Earth —
      with the name over it on a wider screen; the note (a phone has the name at its head), with its doors and its Know
      more key to the About page; inside the habitat — the cutaway drawing, a part in colour under the hand and what it
-     is beside it (cutaway.js); the habitat — the dome on its sheet, its keys floating about it; the world's slowest
-     chat; then, on a wider screen, the portal and the dashboard (a phone has them as pages of their own, aura.css,
-     sheet.css). On a phone every data-page is a page of the scroll: a swipe goes to the next (sheet.css, public/sky.js). */
+     is beside it (cutaway.js); the world's slowest chat; then, on a wider screen, the portal and the dashboard (a phone
+     has them as pages of their own, aura.css, sheet.css). On a phone every data-page is a page of the scroll: a swipe
+     goes to the next (sheet.css, public/sky.js). (The dome with its floating keys — dome.js, habitatDome — is not drawn
+     any more: the cutaway carries its words; the code stays, in case the run wants it back.) */
   const body = `
   <script>
   // the reading matter was three pop-ups over this page once, opened from the address: those addresses — /#about,
@@ -694,9 +695,6 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
   ${LP.space(ctx, { sky: habitatSky(ctx, { recent, cloud }) })}
   ${LP.note(ctx)}
   ${require('./cutaway').cutaway(ctx, { f: require('./dome').figures(ctx, { today, crew, recent, power, counts, crewFigures }) })}
-  <section class="sheet sheet-p1" id="habitat-page" aria-label="${esc(T('The habitat'))}" data-page>
-    ${habitatDome(ctx, { today, crew, recent, power, counts, crewFigures, pods: true, sheet: habitatSheet(ctx) })}
-  </section>
   ${LP.slowChat(ctx)}
   <section class="portal" id="write" data-stop>
   <!-- The portal's heading, in the dress of the dashboard's: the channel's

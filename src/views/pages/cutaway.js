@@ -20,8 +20,9 @@
  * of the dome just under the edge; 124 off the foot, a strip of ground kept
  * under it), 1536 × 720 — the SVG that carries the drawing, the colour and
  * the outlines is in that box, and the outlines are moved down into it here.
- * The dome itself is the shell about the rooms: the outline of the dome with
- * the block of rooms cut out of it (a path with two rings, even-odd).
+ * The dome's shell itself is no part: it is the drawing. Before a part is
+ * chosen the panel says what to do — Click to know what is inside — and
+ * names the parts.
  */
 const { esc } = require('../layout');
 const { ABOUT, figures } = require('./dome');
@@ -32,11 +33,7 @@ const IMG = { lines: '/habitat/cutaway-lines.webp', colour: '/habitat/cutaway-co
 /* The parts, in the order the chips name them, each with its outline (in the picture's own coordinates), the fields
    of dome.js figures() whose live sentences it carries (fig: a figure's text, or its text and its more), what it is
    (about — the dome's words where the key exists) and the panel of the dashboard it leads to. */
-const OUTER = [[18, 832], [28, 700], [58, 600], [108, 520], [178, 420], [298, 320], [448, 252], [618, 212], [768, 199], [918, 212], [1088, 252], [1238, 320], [1358, 420], [1430, 520], [1480, 600], [1510, 700], [1520, 832]];
-const ROOMS = [[172, 505], [238, 502], [292, 372], [345, 340], [1205, 340], [1240, 378], [1262, 502], [1362, 505], [1426, 560], [1446, 672], [1446, 836], [95, 836], [95, 672], [112, 560]];
 const MODULES = [
-  { id: 'dome', label: 'Geodesic dome', fig: ['dome-text'], href: '#habitat', ring: [OUTER, ROOMS],
-    about: ['Habitat One is a geodesic dome on Karlsruhe’s Marktplatz: a shell of triangles over three floors. Under the crown, the growing shelves, the communication station and the science bench; on the main floor the kitchen, the lounge, the sleeping pods and the health station; below them the water loop and the power plant. Three crew members are always in it for the thirteen days of the run, and everything they measure and report comes to this station.'] },
   { id: 'hydro', label: 'Hydroponic plants', fig: ['aeroponics-text', 'aeroponics-more'], href: '#galley', poly: [[238, 502], [292, 372], [345, 340], [592, 340], [592, 502]], about: [ABOUT.aeroponics] },
   { id: 'comms', label: 'Communication station', fig: ['comms-text', 'comms-more'], href: '#exchanges', poly: [[592, 502], [592, 348], [660, 330], [760, 320], [860, 330], [925, 348], [925, 502]], about: [ABOUT.comms] },
   { id: 'science', label: 'Science station', fig: ['science-text', 'science-more'], href: '#crewlog', poly: [[925, 502], [925, 345], [1205, 345], [1240, 378], [1262, 502]], about: [ABOUT.science] },
@@ -52,21 +49,18 @@ const MODULES = [
   { id: 'power', label: 'Power generation', fig: ['power-text', 'generator-text'], href: '#habitat', poly: [[915, 690], [1215, 690], [1215, 836], [915, 836]], about: [ABOUT.power, ABOUT.generator] },
 ];
 
-/* The outlines as SVG: a polygon's points, moved into the cropped box; the dome's two rings as one even-odd path. */
+/* The outlines as SVG: a polygon's points, moved into the cropped box. */
 const pts = (poly) => poly.map(([x, y]) => `${x},${y - CROP}`).join(' ');
-const ring = (poly) => 'M' + poly.map(([x, y]) => `${x} ${y - CROP}`).join(' L') + ' Z';
-const shape = (m, attrs) => (m.ring
-  ? `<path d="${m.ring.map(ring).join(' ')}" fill-rule="evenodd" clip-rule="evenodd" ${attrs}/>`
-  : `<polygon points="${pts(m.poly)}" ${attrs}/>`);
+const shape = (m, attrs) => `<polygon points="${pts(m.poly)}"${attrs ? ' ' + attrs : ''}/>`;
 
 /**
- * The page: the drawing with its colour and its outlines in one SVG at the left, the chips under it, the panel at the
- * right — one article a part, the dome's shown first (public/cutaway.js switches them). `f` is figures() of dome.js
- * for the moment the page is drawn, so the live sentences stand before the first refresh.
+ * The page: the drawing with its colour and its outlines in one SVG at the left, the chips under it (a desk's; a phone
+ * touches the drawing), the panel at the right — the word to begin with, then one article a part (public/cutaway.js
+ * switches them). `f` is figures() of dome.js for the moment the page is drawn, so the live sentences stand before the
+ * first refresh.
  */
 function cutaway(ctx, { f }) {
   const T = ctx.T;
-  const first = MODULES[0].id;
   const svg = `
       <svg class="cut-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(T('The habitat in section: its three floors under the dome'))}">
         <defs>${MODULES.map((m) => `<clipPath id="cut-clip-${m.id}">${shape(m, '')}</clipPath>`).join('')}</defs>
@@ -75,11 +69,18 @@ function cutaway(ctx, { f }) {
         <g class="cut-hits">${MODULES.map((m) => shape(m, `class="cut-hit" data-module="${m.id}" tabindex="0" role="button" aria-label="${esc(T(m.label))}"`)).join('')}</g>
       </svg>`;
   const chips = `
-      <div class="cut-chips" role="tablist" aria-label="${esc(T('The parts of the habitat'))}">${MODULES.map((m, i) => `
-        <button type="button" class="chip${i === 0 ? ' active' : ''}" role="tab" aria-selected="${i === 0 ? 'true' : 'false'}" aria-controls="cut-about-${m.id}" data-module="${m.id}">${esc(T(m.label))}</button>`).join('')}
+      <div class="cut-chips" role="tablist" aria-label="${esc(T('The parts of the habitat'))}">${MODULES.map((m) => `
+        <button type="button" class="chip" role="tab" aria-selected="false" tabindex="-1" aria-controls="cut-about-${m.id}" data-module="${m.id}">${esc(T(m.label))}</button>`).join('')}
       </div>`;
-  const panel = MODULES.map((m, i) => `
-      <article class="cut-about${i === 0 ? ' is-on' : ''}" id="cut-about-${m.id}" data-module="${m.id}" role="tabpanel"${i === 0 ? '' : ' hidden'}>
+  // before a part is chosen: the word to begin with, and the parts by name
+  const intro = `
+      <article class="cut-about cut-intro is-on" id="cut-about-intro" data-module="">
+        <span class="cut-k">${T('Inside the habitat')} · <span data-field="stamp">${esc(f.stamp)}</span></span>
+        <h3 class="cut-cta"><span class="cut-cta-click">${T('Click to know what is inside.')}</span><span class="cut-cta-tap">${T('Tap to know what is inside.')}</span></h3>
+        <p>${esc(T('Every part of the habitat is on the drawing:'))} ${MODULES.map((m) => esc(T(m.label).toLowerCase())).join(', ')}.</p>
+      </article>`;
+  const panel = intro + MODULES.map((m) => `
+      <article class="cut-about" id="cut-about-${m.id}" data-module="${m.id}" role="tabpanel" hidden>
         <span class="cut-k">${T('Inside the habitat')} · <span data-field="stamp">${esc(f.stamp)}</span></span>
         <h3>${esc(T(m.label))}</h3>
         <p class="dome-now"><span class="dome-now-k">${T('Now')}</span> ${m.fig.map((k) => { const [id, part] = k.split('-'); return `<span data-field="${k}">${esc((f[id] || {})[part] || '')}</span>`; }).join(' ')}</p>
@@ -88,8 +89,8 @@ function cutaway(ctx, { f }) {
       </article>`).join('');
   return `
   <section class="sheet sheet-p3 cutaway" id="inside" aria-label="${esc(T('Inside the habitat'))}" data-page>
-    <div class="cut-card" id="cutaway" data-first="${first}">
-      <div class="sheet-meta is-ruled"><span>${T('Inside the habitat')}</span><span class="cut-hint">${T('Hover over a part of the habitat — or touch it — to see it in colour and read what it is.')}</span></div>
+    <div class="cut-card" id="cutaway">
+      <div class="sheet-meta is-ruled"><span>${T('Inside the habitat')}</span><span class="cut-hint"><span class="cut-cta-click">${T('Click to know what is inside.')}</span><span class="cut-cta-tap">${T('Tap to know what is inside.')}</span></span></div>
       <div class="cut-body">
         <div class="cut-fig">${svg}${chips}</div>
         <aside class="cut-panel" aria-live="polite">${panel}</aside>

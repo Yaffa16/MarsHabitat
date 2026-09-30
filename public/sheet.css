@@ -339,12 +339,16 @@ body.landing .know-more.is-write:hover { color: #0f1540; box-shadow: 0 18px 32px
    label row, then the cutaway drawing at the left with the chips under it and the panel at the right. The drawing is
    one SVG: the line drawing, the coloured drawing once for each part, clipped to it and shown only while the part is
    selected (fading in), and the parts' outlines over it all, unseen, catching the hand — the selected one drawn as a
-   faint white line. A phone stacks the panel under the drawing. */
+   faint white line. A phone has the drawing edge to edge, as large as the screen allows, no chips (a touch on the
+   drawing chooses), and the panel under it. The word to begin with says Click on a desk and Tap on a touch screen. */
 body.landing .sheet-p3 { margin: 64px 0 0; }
 body.landing .cut-card { padding: 26px 22px 30px;
   background: var(--glass); -webkit-backdrop-filter: blur(26px) saturate(1.35); backdrop-filter: blur(26px) saturate(1.35);
   border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); border-radius: var(--r-lg); color: var(--ink); }
 body.landing .cut-card .sheet-meta > .cut-hint { color: var(--dim); text-transform: none; letter-spacing: 0; font-weight: 400; font-size: var(--fs-note); }
+body.landing .cut-cta-tap { display: none; }
+@media (hover: none) { body.landing .cut-cta-click { display: none; } body.landing .cut-cta-tap { display: inline; } }
+body.landing .cut-cta { margin: 10px 0 12px; font-family: var(--display); font-size: clamp(24px, 2.2vw, 32px); line-height: 1.15; font-weight: 600; letter-spacing: -.015em; color: var(--ink); }
 body.landing .cut-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; margin-top: 18px; }
 body.landing .cut-fig { min-width: 0; }
 body.landing .cut-svg { display: block; width: 100%; height: auto; }
@@ -386,9 +390,14 @@ body.landing .cut-about .btn:hover { color: var(--ink); background: none; transf
   body.landing .cut-card { padding: 20px 16px 22px; }
   body.landing .cut-card .sheet-meta > .cut-hint { display: none; }
   body.landing .cut-body { gap: 12px; margin-top: 12px; }
-  body.landing .cut-chips { gap: 6px; margin-top: 10px; }
-  body.landing .cut-chips .chip, body:not(.control).landing .cut-chips button.chip { min-height: 30px; padding: 0 11px; font-size: 10.5px; letter-spacing: .08em; }   /* a compact row: the drawing, the chips and the words on one screen */
+  /* the drawing edge to edge — out past the card's padding and the page's gutter, the width of the screen — and a little
+     wider still, the dome's outer struts running off the sides (every room stays whole) and the strip of ground under it
+     cut; no chips: a touch on the drawing chooses */
+  body.landing .cut-fig { margin: 0 calc(-16px - var(--gutter)); overflow: hidden; aspect-ratio: 1536 / 740; }   /* the box: the drawing at 112 % less its strip of ground (660 of its 720) */
+  body.landing .cut-svg { width: 112%; margin: 0 0 0 -6%; }
+  body.landing .cut-chips { display: none; }
   body.landing .cut-about h3 { font-size: 20px; margin: 4px 0 8px; }
+  body.landing .cut-cta { font-size: 22px; margin: 6px 0 10px; }
   body.landing .cut-about .dome-now { padding: 10px 12px; font-size: 14px; }
   body.landing .cut-about p { font-size: 15px; line-height: 1.5; }
 }

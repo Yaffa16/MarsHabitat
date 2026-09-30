@@ -837,9 +837,10 @@ const D = {
   'Open its panel on the dashboard': ['Sein Feld auf dem Dashboard öffnen', 'Ouvrir son panneau sur le tableau de bord'],
   // inside the habitat — the cutaway page (src/views/pages/cutaway.js)
   'Inside the habitat': ['Im Habitat', 'À l’intérieur de l’habitat'],
-  'Hover over a part of the habitat — or touch it — to see it in colour and read what it is.': ['Fahre mit der Maus über einen Teil des Habitats — oder tippe ihn an — um ihn in Farbe zu sehen und zu lesen, was er ist.', 'Survolez une partie de l’habitat — ou touchez-la — pour la voir en couleur et lire ce qu’elle est.'],
+  'Click to know what is inside.': ['Klicke, um zu erfahren, was drinnen ist.', 'Cliquez pour savoir ce qu’il y a à l’intérieur.'],
+  'Tap to know what is inside.': ['Tippe, um zu erfahren, was drinnen ist.', 'Touchez pour savoir ce qu’il y a à l’intérieur.'],
+  'Every part of the habitat is on the drawing:': ['Jeder Teil des Habitats ist auf der Zeichnung:', 'Chaque partie de l’habitat est sur le dessin :'],
   'The habitat in section: its three floors under the dome': ['Das Habitat im Schnitt: seine drei Ebenen unter der Kuppel', 'L’habitat en coupe : ses trois niveaux sous le dôme'],
-  'Geodesic dome': ['Geodätische Kuppel', 'Dôme géodésique'],
   'Hydroponic plants': ['Hydroponische Pflanzen', 'Plantes hydroponiques'],
   'Communication station': ['Kommunikationsstation', 'Station de communication'],
   'Science station': ['Wissenschaftsstation', 'Station scientifique'],
@@ -849,9 +850,6 @@ const D = {
   'Health station': ['Gesundheitsstation', 'Station de santé'],
   'Water recycling system': ['Wasseraufbereitung', 'Système de recyclage de l’eau'],
   'Power generation': ['Stromerzeugung', 'Production d’énergie'],
-  'Habitat One is a geodesic dome on Karlsruhe’s Marktplatz: a shell of triangles over three floors. Under the crown, the growing shelves, the communication station and the science bench; on the main floor the kitchen, the lounge, the sleeping pods and the health station; below them the water loop and the power plant. Three crew members are always in it for the thirteen days of the run, and everything they measure and report comes to this station.':
-    ['Habitat One ist eine geodätische Kuppel auf dem Karlsruher Marktplatz: eine Hülle aus Dreiecken über drei Ebenen. Unter der Krone die Pflanzregale, die Kommunikationsstation und der Labortisch; auf der Hauptebene die Küche, der Aufenthaltsbereich, die Schlafkapseln und die Gesundheitsstation; darunter der Wasserkreislauf und die Stromversorgung. Drei Crewmitglieder sind während der dreizehn Tage der Laufzeit immer darin, und alles, was sie messen und berichten, kommt an dieser Station an.',
-     'Habitat One est un dôme géodésique sur la Marktplatz de Karlsruhe : une coque de triangles sur trois niveaux. Sous le sommet, les étagères de culture, la station de communication et la paillasse scientifique ; au niveau principal la cuisine, l’espace de détente, les capsules de repos et la station de santé ; en dessous, la boucle de l’eau et la centrale électrique. Trois membres d’équipage y sont toujours pendant les treize jours de la performance, et tout ce qu’ils mesurent et rapportent arrive à cette station.'],
   'The galley: where the crew cook and eat what the stores and the growing shelves give — three meals a day, each planned in calories, water and energy. What is eaten is counted with the rations, and today’s meal stands on the dashboard.':
     ['Die Küche: wo die Crew kocht und isst, was die Vorräte und die Pflanzregale hergeben — drei Mahlzeiten am Tag, jede in Kalorien, Wasser und Energie geplant. Was gegessen wird, zählt zu den Rationen, und die heutige Mahlzeit steht auf dem Dashboard.',
      'La cuisine : là où l’équipage prépare et mange ce que donnent les réserves et les étagères de culture — trois repas par jour, chacun planifié en calories, en eau et en énergie. Ce qui est mangé est compté avec les rations, et le repas du jour figure sur le tableau de bord.'],
