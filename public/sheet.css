@@ -177,7 +177,7 @@ body.landing .hab-line-text { font-family: var(--display); font-size: 18px; line
    and the line: data-sky-round, data-sky-solid). On the Earth, the nudge to scroll on. Night in both themes: the room is
    space. Lines, the two pictures and a few gradients — nothing blurred. */
 body.landing .space { display: flex; flex-direction: column; }
-body.landing .space-room { --dome-w: clamp(190px, 30vh, 330px); --dome-top: 8px; --earth-w: 125%; --earth-arc: clamp(96px, 15vh, 150px);
+body.landing .space-room { --dome-w: clamp(190px, 30vh, 330px); --dome-top: 8px; --earth-w: 125%; --earth-arc: clamp(90px, 12.5vh, 125px);
   --hud: #fff; --hud-rgb: 255,255,255; --hud-hot: #ff6a2e; --hud-hot-rgb: 255,106,46; --hud-ground: rgba(0,0,0,.45); --seq-ground: #0a0a0c;
   position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; border-radius: var(--r-lg); color: #fff; background: #000; }
 /* the stars: a field of small lights, still */
@@ -202,8 +202,8 @@ body.landing .space-dome::before { content: ""; position: absolute; z-index: -1;
 body.landing .space-dome-img { display: block; width: 100%; height: auto; }
 body.landing .space-tag { position: absolute; z-index: 1; margin: 0; white-space: nowrap; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-tag); line-height: 1; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.62); }
 body.landing .space-tag-dome { top: 100%; right: calc(50% + 14px); margin-top: 0; }
-/* the line: dashed, from the habitat's front foot down to the Earth's limb; a signal climbs it, and the answer comes down in Mars orange */
-body.landing .space-line { position: absolute; z-index: 1; left: 50%; width: 2px; margin-left: -1px; top: calc(var(--dome-top) + var(--dome-w) * 0.676); bottom: calc(var(--earth-arc) - 2px);
+/* the line: dashed, from the habitat's front foot down onto the Earth's limb; a signal climbs it, and the answer comes down in Mars orange */
+body.landing .space-line { position: absolute; z-index: 2; left: 50%; width: 2px; margin-left: -1px; top: calc(var(--dome-top) + var(--dome-w) * 0.676); bottom: calc(var(--earth-arc) - 6px);   /* over the Earth's haze, down onto the limb */
   background: repeating-linear-gradient(180deg, rgba(255,255,255,.6) 0 6px, transparent 6px 12px); }
 body.landing .space-line::before, body.landing .space-line::after { content: ""; position: absolute; left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; opacity: 0; }
 body.landing .space-line::before { bottom: 0; background: #fff; box-shadow: 0 0 10px 2px rgba(120,170,255,.9); animation: space-up 9s linear infinite; }
@@ -211,11 +211,11 @@ body.landing .space-line::after { top: 0; background: var(--hud-hot); box-shadow
 @keyframes space-up { 0% { bottom: 0; opacity: 0; } 4% { opacity: 1; } 42% { bottom: calc(100% - 8px); opacity: 1; } 46%, 100% { bottom: calc(100% - 8px); opacity: 0; } }
 @keyframes space-down { 0%, 52% { top: 0; opacity: 0; } 56% { opacity: 1; } 94% { top: calc(100% - 8px); opacity: 1; } 98%, 100% { top: calc(100% - 8px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { body.landing .space-line::before, body.landing .space-line::after { animation: none; } }
-/* the Earth: the picture the width of the room and more, centred under the line, its apex the arc's height above the
-   room's foot (the apex is 9.7 % down the picture; the rest curves away below); the mesh of dots drawn about its horizon
-   in the same box, and — never seen — the globe's circle for the sky to keep clear of */
+/* the Earth: the picture the width of the room and more, centred under the line, its limb's apex the arc's height above
+   the room's foot (the limb is 24.1 % down the picture, its haze above it; the rest curves away below); the mesh of dots
+   drawn about the limb in the same box, and — never seen — the globe's circle for the sky to keep clear of */
 body.landing .space-earth { position: absolute; z-index: 1; left: 50%; bottom: 0; width: var(--earth-w); aspect-ratio: 1414 / 340; pointer-events: none;
-  transform: translate(-50%, calc(100% - var(--earth-arc) - 9.7%)); }
+  transform: translate(-50%, calc(100% - var(--earth-arc) - 24.1%)); }
 body.landing .space-earth-img { display: block; width: 100%; height: 100%; }
 body.landing .space-halo { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
 body.landing .space-halo circle { vector-effect: non-scaling-stroke; stroke-width: 1.8px; }
@@ -334,6 +334,64 @@ body.landing .note-doors { display: flex; flex-wrap: wrap; gap: 10px 12px; }
 body.landing .know-more.is-write { background: linear-gradient(180deg, #ff8a3d, #ff5a1f); color: #0f1540; box-shadow: 0 14px 28px -14px rgba(255,70,0,.8), 0 1px 0 rgba(255,255,255,.55) inset; }
 body.landing .know-more.is-write:hover { color: #0f1540; box-shadow: 0 18px 32px -14px rgba(255,70,0,.9), 0 1px 0 rgba(255,255,255,.55) inset; }
 :root[data-theme="dark"] body.landing .know-more.is-write, :root[data-theme="dark"] body.landing .know-more.is-write:hover { color: #1a0a02; }
+
+/* ---- P03: inside the habitat (src/views/pages/cutaway.js; public/cutaway.js) — a card of glass like the note's: its
+   label row, then the cutaway drawing at the left with the chips under it and the panel at the right. The drawing is
+   one SVG: the line drawing, the coloured drawing once for each part, clipped to it and shown only while the part is
+   selected (fading in), and the parts' outlines over it all, unseen, catching the hand — the selected one drawn as a
+   faint white line. A phone stacks the panel under the drawing. */
+body.landing .sheet-p3 { margin: 64px 0 0; }
+body.landing .cut-card { padding: 26px 22px 30px;
+  background: var(--glass); -webkit-backdrop-filter: blur(26px) saturate(1.35); backdrop-filter: blur(26px) saturate(1.35);
+  border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); border-radius: var(--r-lg); color: var(--ink); }
+body.landing .cut-card .sheet-meta > .cut-hint { color: var(--dim); text-transform: none; letter-spacing: 0; font-weight: 400; font-size: var(--fs-note); }
+body.landing .cut-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; margin-top: 18px; }
+body.landing .cut-fig { min-width: 0; }
+body.landing .cut-svg { display: block; width: 100%; height: auto; }
+body.landing .cut-colour { opacity: 0; transition: opacity .35s ease; pointer-events: none; }
+body.landing .cut-colour.is-on { opacity: 1; }
+body.landing .cut-hit { fill: rgba(255,255,255,0); stroke: rgba(255,255,255,0); stroke-width: 2; cursor: pointer; outline: none; transition: stroke .25s ease; }
+body.landing .cut-hit.is-on { stroke: rgba(255,255,255,.55); }
+body.landing .cut-hit:focus-visible { stroke: var(--mars); }
+@media (prefers-reduced-motion: reduce) { body.landing .cut-colour, body.landing .cut-hit { transition: none; } }
+/* the chips: the parts by name, the selected one filled — the row wraps */
+body.landing .cut-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
+body.landing .cut-chips .chip { font-size: var(--fs-tag); }
+/* the panel: the part's name, what is happening in it now, what it is, and the way to its panel on the dashboard */
+body.landing .cut-panel { min-width: 0; }
+body.landing .cut-about[hidden] { display: none; }
+body.landing .cut-k { display: block; font-family: var(--display); font-size: var(--fs-label); letter-spacing: .12em; text-transform: uppercase; font-weight: 500; color: var(--mars-ink); }
+body.landing .cut-about h3 { margin: 8px 0 12px; font-family: var(--display); font-size: 24px; line-height: 1.15; font-weight: 600; letter-spacing: -.015em; color: var(--ink); }
+body.landing .cut-about .dome-now { margin: 0 0 12px; padding: 12px 14px; border-radius: 14px; background: rgba(255,90,31,.08); border-left: 3px solid var(--mars); font-size: var(--fs-note); line-height: 1.5; color: var(--ink); }
+body.landing .cut-about p { margin: 0 0 10px; font-size: var(--fs-read); line-height: 1.6; color: var(--dim); max-width: none; }
+body.landing .cut-about p:last-child { margin: 12px 0 0; }
+body.landing .cut-about .btn { min-height: 0; padding: 0; border: 0; background: none; box-shadow: none; font-size: var(--fs-label); letter-spacing: .12em; color: var(--cobalt); border-bottom: 1px solid rgba(var(--cobalt-rgb),.35); border-radius: 0; }
+body.landing .cut-about .btn:hover { color: var(--ink); background: none; transform: none; box-shadow: none; }
+@media (min-width: 761px) and (min-height: 521px) {
+  body.landing .sheet-p3 { min-height: calc(100vh - 101px); box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; margin: 0; padding: clamp(40px, 6vh, 88px) 0; }
+  body.landing .cut-card { padding: 34px 44px 40px; }
+  body.landing .cut-body { grid-template-columns: minmax(0, 7fr) minmax(280px, 4fr); gap: 40px; align-items: start; margin-top: 26px; }
+  body.landing .cut-panel { position: sticky; top: 112px; }
+  body.landing .cut-about h3 { font-size: clamp(24px, 2vw, 30px); }
+}
+@media (min-width: 761px) and (max-width: 1100px) and (min-height: 521px) {
+  body.landing .cut-card { padding: 26px 28px 30px; }
+  body.landing .cut-body { grid-template-columns: minmax(0, 11fr) minmax(240px, 9fr); gap: 24px; }   /* the drawing smaller, the words still beside it */
+  body.landing .cut-about h3 { font-size: 22px; }
+  body.landing .cut-about p { font-size: 15.5px; line-height: 1.55; }
+}
+@media (max-width: 760px) and (min-height: 521px) {
+  body.landing .sheet-p3 { margin: 0; padding: 28px 0 24px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center;
+    min-height: calc(100vh - 149px); min-height: calc(100lvh - 149px - env(safe-area-inset-bottom, 0px)); }
+  body.landing .cut-card { padding: 20px 16px 22px; }
+  body.landing .cut-card .sheet-meta > .cut-hint { display: none; }
+  body.landing .cut-body { gap: 12px; margin-top: 12px; }
+  body.landing .cut-chips { gap: 6px; margin-top: 10px; }
+  body.landing .cut-chips .chip, body:not(.control).landing .cut-chips button.chip { min-height: 30px; padding: 0 11px; font-size: 10.5px; letter-spacing: .08em; }   /* a compact row: the drawing, the chips and the words on one screen */
+  body.landing .cut-about h3 { font-size: 20px; margin: 4px 0 8px; }
+  body.landing .cut-about .dome-now { padding: 10px 12px; font-size: 14px; }
+  body.landing .cut-about p { font-size: 15px; line-height: 1.5; }
+}
 
 /* ---- the chat's heading: its name large and bold, a short orange rule, and its welcome under it */
 body.landing .sheet-p4 { margin: 72px 0 0; }
@@ -601,7 +659,7 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
   body.landing .sheet-intro.is-desk { display: none; }
   /* the first page: the room alone, the width of the screen and its height between the header and the bar of keys */
   body.landing .space { margin: 0 calc(-1 * var(--gutter)); height: max(440px, calc(100vh - 149px)); height: max(440px, calc(100svh - 149px - env(safe-area-inset-bottom, 0px))); }
-  body.landing .space-room { --dome-w: 150px; --dome-top: 12px; --earth-w: 100%; --earth-arc: 84px; border-radius: 0; }
+  body.landing .space-room { --dome-w: 150px; --dome-top: 12px; --earth-w: 108%; --earth-arc: 74px; border-radius: 0; }   /* the picture a little wider than the screen: its foot reaches the room's, the limb 74 px up */
   body.landing .space-halo.is-desk { display: none; }
   body.landing .space-halo.is-phone { display: block; }
   body.landing .space-halo circle { stroke-width: 2px; }
@@ -660,8 +718,8 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
   html:has(body.landing:not(.inner)) { scroll-snap-type: y mandatory; scroll-padding-top: 83px; scroll-padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
   html:has(body.landing:not(.inner) dialog[open]) { scroll-snap-type: none; }
   body.landing:not(.inner) [data-page] { scroll-snap-align: start; scroll-snap-stop: always; }
-  body.landing:not(.inner) [data-page].is-tall :is(.note-card, .steps, .step + .step) { scroll-snap-align: start; }
-  body.landing:not(.inner) [data-page].is-tall :is(.note-card, .steps, .step).no-stop { scroll-snap-align: none; }   /* too near the next stop (sky.js) */
+  body.landing:not(.inner) [data-page].is-tall :is(.note-card, .steps, .step + .step, .cut-panel) { scroll-snap-align: start; }
+  body.landing:not(.inner) [data-page].is-tall :is(.note-card, .steps, .step, .cut-panel).no-stop { scroll-snap-align: none; }   /* too near the next stop (sky.js) */
   body.landing:not(.inner) .foot { scroll-snap-align: end; content-visibility: visible; }   /* laid out from the start (aura.css
      leaves it for later on a phone): the end of the scroll stays where it is */
   body.landing.messages .composer-device { padding-top: 52px; }

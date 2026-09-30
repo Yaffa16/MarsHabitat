@@ -102,20 +102,23 @@ function intro(ctx, where = 'desk') {
  * but for the sky's items: the drawing is hidden from assistive technology,
  * and the exchanges are the board's own.
  *
- * The Earth's picture is 1414 × 340 (EARTH), the horizon a circle of radius
- * 945 centred at (672, 977) in it, its apex 33 down from the top; the mesh
- * is rings of dots about that circle — every ring the same angular pitch
- * (pathLength puts the dashes in degrees), so the dots line up along the
- * radii too, into a mesh — a set for a desk and a closer set for a phone
- * (sheet.css shows one). The habitat's drawing is 1004 × 699 (HABITAT), its
- * axis down the middle and its front foot 97 % of the way down.
+ * The Earth's picture is 1414 × 340 (EARTH), its bright limb a circle of
+ * radius 997 centred at (674, 1079) in it, its apex 82 down from the top
+ * (24 % of the height; the haze above it is fainter); the mesh is rings of
+ * dots about that circle, from just over the limb up — every ring the same
+ * angular pitch (pathLength puts the dashes in degrees), so the dots line
+ * up along the radii too, into a mesh — a set for a desk and a closer set
+ * for a phone (sheet.css shows one). The line down from the habitat ends on
+ * the limb (sheet.css puts the limb's apex at --earth-arc). The habitat's
+ * drawing is 1004 × 699 (HABITAT), its axis down the middle and its front
+ * foot 97 % of the way down.
  */
-const EARTH = { w: 1414, h: 340, cx: 672, cy: 977, r: 945 };
+const EARTH = { w: 1414, h: 340, cx: 674, cy: 1079, r: 997 };
 const HABITAT = { w: 1004, h: 699, foot: 0.971 };
 function halo(kind) {
   // desk: rings 13 apart, dots 0.6° apart; phone (the picture a quarter the size): rings 32 apart, dots 2.2° apart;
-  // each ring fainter than the one under it, gone within a few
-  const rings = kind === 'phone' ? { from: 18, step: 32, n: 10, dash: 4.4 } : { from: 14, step: 13, n: 10, dash: 1.2 };
+  // the first just over the limb, each ring fainter than the one under it, gone within a few
+  const rings = kind === 'phone' ? { from: 14, step: 32, n: 10, dash: 4.4 } : { from: 8, step: 13, n: 10, dash: 1.2 };
   return `<svg class="space-halo is-${kind}" viewBox="0 0 ${EARTH.w} ${EARTH.h}" aria-hidden="true"><g fill="none" stroke="#fff" stroke-linecap="round" stroke-dasharray="0 ${rings.dash}">${
     Array.from({ length: rings.n }, (_, k) => `<circle cx="${EARTH.cx}" cy="${EARTH.cy}" r="${EARTH.r + rings.from + k * rings.step}" pathLength="720" opacity="${(0.72 * Math.pow(0.72, k)).toFixed(3)}"/>`).join('')
   }</g></svg>`;

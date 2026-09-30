@@ -680,7 +680,8 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
   /* The landing page (landing.js): first the way to the habitat — the Earth, the line up to the habitat, and around
      it the sky of the latest exchanges and the newest pictures from the cloud folder, the scroll nudge on the Earth —
      with the name over it on a wider screen; the note (a phone has the name at its head), with its doors and its Know
-     more key to the About page; the habitat — the dome on its sheet, its keys floating about it; the world's slowest
+     more key to the About page; inside the habitat — the cutaway drawing, a part in colour under the hand and what it
+     is beside it (cutaway.js); the habitat — the dome on its sheet, its keys floating about it; the world's slowest
      chat; then, on a wider screen, the portal and the dashboard (a phone has them as pages of their own, aura.css,
      sheet.css). On a phone every data-page is a page of the scroll: a swipe goes to the next (sheet.css, public/sky.js). */
   const body = `
@@ -692,6 +693,7 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
   </script>
   ${LP.space(ctx, { sky: habitatSky(ctx, { recent, cloud }) })}
   ${LP.note(ctx)}
+  ${require('./cutaway').cutaway(ctx, { f: require('./dome').figures(ctx, { today, crew, recent, power, counts, crewFigures }) })}
   <section class="sheet sheet-p1" id="habitat-page" aria-label="${esc(T('The habitat'))}" data-page>
     ${habitatDome(ctx, { today, crew, recent, power, counts, crewFigures, pods: true, sheet: habitatSheet(ctx) })}
   </section>
@@ -722,7 +724,7 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
   `;
   return L.page({
     title: 'Mission', ctx, body, hero, hideNav: true, hideRail: true, bodyClass: 'landing',
-    current: '/', scripts: ['/composer.js', '/board.js', '/habitat.js', '/hardware.js', '/folder.js'].concat(cloud ? ['/cloud.js'] : [], ['/sky.js']),   // the page scrolls freely: no stops
+    current: '/', scripts: ['/composer.js', '/board.js', '/habitat.js', '/hardware.js', '/folder.js', '/cutaway.js'].concat(cloud ? ['/cloud.js'] : [], ['/sky.js']),   // the page scrolls freely: no stops
     styles: ['/aura.css'],
   });
 }

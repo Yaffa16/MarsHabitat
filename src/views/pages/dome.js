@@ -286,9 +286,21 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
   const clip = (t, n) => { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1).trimEnd() + '…' : t; };
   const exLine = ex ? `${T('Latest exchange')}: “${clip(ex.body, 80)}”${ex.response_body ? ` — “${clip(ex.response_body, 80)}”` : ''}.` : `${counts.published} ${T('exchanges published')}, ${counts.total} ${T('messages sent')}.`;
 
+  // The rooms the cutaway names that the keys do not (cutaway.js): the galley's meals today, the sleeping pods' hours
+  // on the schedule, the health station's officer and the crew's figures, the habitat as a whole.
+  const slotName = { BREAKFAST: 'Breakfast', LUNCH: 'Lunch', DINNER: 'Dinner', RATION: 'Ration' };
+  const meals = today ? today.meals : [];
+  const mealLine = meals.length ? `${pre ? T('Planned for day 01') : T('Today')}: ${meals.map((x) => `${T(slotName[x.slot] || x.slot)} — ${x.name}`).join(' · ')}${today.kcalPlanned ? ` · ${today.kcalPlanned} kcal` : ''}.` : T('No meals filed for today.');
+  const rests = tasks.filter((t) => /\b(sleep|rest|nap|lights out|bed|wake|schlaf|ruhe)\b/i.test(t.label));
+  const restLine = rests.length ? `${pre ? T('On day 01’s schedule') : T('On today’s schedule')}: ${rests.map((t) => `${t.time} ${t.label}`).join(' · ')}.` : T('No rest is written on today’s schedule.');
+
   return {
     stamp, sol, phase: m.phase,
     crew:       { text: `${name(comm)} — ${cond(comm)} · ${name(sci)} — ${cond(sci)} · ${name(health)} — ${cond(health)}.`, more: `${doing}${next}` },
+    kitchen:    { text: mealLine, more: storeLine('food', '') },
+    nap:        { text: restLine, more: '' },
+    health:     { text: `${name(health)}: ${cond(health)}.`, more: `${steps}${kcal ? ` · ${kcal}` : ''}.` },
+    dome:       { text: pre ? `${T('The run has not begun yet.')} ${T('Opens')} ${m.startLabel}.` : `${T('Sol')} ${m.clampedDay} ${T('of')} ${m.totalDays}. ${doing}${next}`, more: '' },
     comms:      { text: exLine, more: `${name(comm)}: ${cond(comm)}.` },
     science:    { text: `${name(sci)}: ${cond(sci)}.`, more: `${doing}${next}` },
     recycling:  { text: storeLine('water', T('No inventory filed for today.')), more: T('The loop runs whenever there is grey water to pass; the crew count the tank at the end of the day.') },

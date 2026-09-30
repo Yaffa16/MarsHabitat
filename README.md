@@ -853,14 +853,15 @@ files do not hold.
 
 ---
 
-## The landing page: four pages in the glass dress
+## The landing page: five pages in the glass dress
 
-The landing page keeps the layout of the design handoff of September 2026, pared down — four
+The landing page keeps the layout of the design handoff of September 2026, pared down — five
 pages, one under the other: **the way to the habitat** — the Earth at the foot of the screen,
 the habitat far above it, a dashed line between them, and the latest exchanges and pictures
 coming and going around it; the note, with the two doors and a **Know more** key under it that
-leads to the About page; **the habitat** — the dome on its sheet, its keys floating about it;
-and *Welcome to the World's Slowest Chat* under a heading of its own — its
+leads to the About page; **inside the habitat** — the cutaway drawing of Habitat One, a part
+of it in colour under the hand and what that part is beside it; **the habitat** — the dome on
+its sheet, its keys floating about it; and *Welcome to the World's Slowest Chat* under a heading of its own — its
 name large and bold, a short orange rule — with a line across the page setting it apart from the
 habitat. (The handoff's page numbers and part pills — *P02 / 04 · Note 00*, *Part 1 of 2* — are not
 written any more, and the mission's two chapters that stood between the note and the chat are
@@ -872,12 +873,12 @@ default; by day the page is near-white and **the only grey on it is the habitat'
 grey of the reference sheet.
 
 **On a phone held upright the landing goes a page a swipe**, in the swipe's direction — the
-way to the habitat, the name and the note, the habitat, the chat, then the foot (CSS scroll snapping, each
+way to the habitat, the name and the note, inside the habitat, the habitat, the chat, then the foot (CSS scroll snapping, each
 page a stop the scroll cannot fly past). Each page fills the screen between the header and the
 bar of keys (with the browser's own bars folded away, as they are once the page is scrolled); a
 page that does not fit as drawn is set a little closer, and one that still does not (a small
 phone, a long language, the chat's three steps) stops at each of its parts as well — the note,
-the card of steps and each step after the first — so nothing on it is passed
+the cutaway's words, the card of steps and each step after the first — so nothing on it is passed
 over; two stops closer than a flick of the thumb become one (`public/sky.js` measures and marks
 them). A mouse wheel or a touchpad in a window that narrow turns one stop a turn. While a pop-up
 is open the page stays where it is. **On a desk the page scrolls freely**, each page about a
@@ -888,17 +889,19 @@ window tall with its cards in the middle and air around them, a margin at both s
   room is space — with a field of still stars; **the Earth at its foot**: a photograph of its
   limb from orbit (`public/space/earth.jpg`, 1414 × 340 — the picture handed over, cut to the
   arc, its haze let fade in where the picture cut it off), the horizon curving away below the
-  page, and over it **a mesh of dots** that thins out quickly with height — rings of dots about
-  the horizon's circle (radius 945, centred at 672 × 977 in the picture), every ring the same
-  angular pitch so the dots line up along the radii too, each ring fainter than the one under
-  it; one set for a desk (rings 13 apart in the picture, dots 0.6° apart) and a closer set for a
-  phone, where the picture is a quarter the size (`halo()` in `landing.js`; `sheet.css` shows
-  one). **The habitat far above, at the top**: the line drawing of the geodesic dome handed
-  over (`public/space/habitat.png`, 1004 × 699 — its lines made white on nothing, so it stands
-  on the night), a faint light behind it, *MARS · HABITAT ONE* beside its front foot; and
-  **between them a dashed line**, from the dome's front foot (97 % of the way down the drawing)
-  to the Earth's limb, the way a message goes — a white signal climbs it, then the crew's
-  answer comes down it in Mars orange (a phone set to less motion sees the line still). Around
+  page, its bright limb the arc's height above the room's foot, and over it **a mesh of dots**
+  that begins just over the limb and thins out quickly with height — rings of dots about the
+  limb's circle (radius 997, centred at 674 × 1079 in the picture, the apex of the limb 24 %
+  down it), every ring the same angular pitch so the dots line up along the radii too, each
+  ring fainter than the one under it; one set for a desk (the first ring 8 over the limb, then
+  13 apart in the picture, dots 0.6° apart) and a closer set for a phone, where the picture is a
+  quarter the size (`halo()` in `landing.js`; `sheet.css` shows one). **The habitat far above,
+  at the top**: the line drawing of the geodesic dome handed over (`public/space/habitat.png`,
+  1004 × 699 — its lines made white on nothing, so it stands on the night), a faint light
+  behind it, *MARS · HABITAT ONE* beside its front foot; and **between them a dashed line**,
+  from the dome's front foot (97 % of the way down the drawing) down onto the Earth's limb,
+  over its haze, the way a message goes — a white signal climbs it, then the crew's answer
+  comes down it in Mars orange (a phone set to less motion sees the line still). Around
   the line, **on either side of it, the latest exchanges with Earth and the newest pictures
   from the habitat come and go** — the sky, below — and on the Earth stands the nudge to scroll
   on. On a desk the picture of the Earth is a quarter wider than the room, so its horizon
@@ -909,10 +912,36 @@ window tall with its cards in the middle and air around them, a margin at both s
   its height between the header and the bar of keys — the note on the next page carries the
   name. The drawing is decorative and hidden from assistive technology; the exchanges in the
   sky are the board's own. (To change either picture, replace the file under `public/space/`:
-  the Earth's must keep its 1414 × 340 box and its horizon where it is, or the mesh and the
-  line's foot move with `EARTH` in `landing.js`; the habitat's keeps its axis down the middle
-  and its foot near its bottom edge, `HABITAT`.)
-- **The habitat — the third page.** **The station's name stands large in the top left corner of the sheet**,
+  the Earth's must keep its 1414 × 340 box and its limb where it is, or the mesh and the
+  line's foot move with `EARTH` in `landing.js` and the `24.1%` in `sheet.css`; the habitat's
+  keeps its axis down the middle and its foot near its bottom edge, `HABITAT`.)
+- **Inside the habitat — the third page** (`src/views/pages/cutaway.js`, `public/cutaway.js`;
+  the styles under *P03* in `sheet.css`). On a card of glass like the note's, **the cutaway
+  drawing of Habitat One that was handed over** — its three floors under the geodesic dome in
+  white line on the Mars ground (`public/habitat/cutaway-lines.webp`) — and beside it what each
+  part of it is. **The hand over a part of the drawing shows that part in colour**: the coloured
+  drawing (`cutaway-colour.webp`, the same picture painted) lies over the line drawing, once for
+  each part and clipped to that part's outline, and fades in for the part under the hand alone;
+  a touch does the same on a phone, and so do the keyboard (the outlines take focus) and **the
+  row of chips under the drawing**, which names every part — a chip pressed, or on a desk
+  under the hand, selects it. The part stays selected when the hand leaves it, so its words are
+  read in peace. **The panel at the right** (under the drawing on a phone) carries one article a
+  part: the part's name; *NOW* and what is happening in it at this minute — the same live
+  sentences the dome's keys carry (`dome.js`, `figures()`), asked for again every twenty seconds
+  from `/api/dome` while the page is in view; what the part is; and the key *Open its panel on
+  the dashboard →*. The ten parts, as the labelled drawing names them: the geodesic dome (the
+  shell about the rooms — its outline is the dome's with the block of rooms cut out), the
+  hydroponic plants, the communication station, the science station, the kitchen, the relaxing
+  area, the nap pod, the health station, the water recycling system and the power generation
+  (the bicycle and the battery). Where a part is one of the dome's keys its words are the key's
+  own; the kitchen, the lounge, the pods, the health station and the dome itself have words of
+  their own, and live sentences of their own in `figures()` — today's meals, the rest on the
+  day's schedule, the health officer's condition with the crew's steps and calories, the sol and
+  what the crew are doing now. All of it in the three languages (`src/lib/i18n.js`). The
+  outlines are traced on the picture as handed over (1536 × 1024) and drawn into the cropped
+  box the page shows (180 off the top, 124 off the foot); to move one, change its points in
+  `MODULES`. Each drawing is a WebP with its sky transparent, under 200 kB.
+- **The habitat — the fourth page.** **The station's name stands large in the top left corner of the sheet**,
   under the ruler — *MARS!platz*, the mark in Mars orange — on a desk and on a phone alike, and
   **LIVE in the top right corner** opposite it, an orange pill with a pulsing dot (the mark the
   board and the strip of pictures carry; not after the run). On a desk the page is a window
@@ -1034,10 +1063,11 @@ window tall with its cards in the middle and air around them, a margin at both s
 **On a wider screen** the first screen is the way to the habitat: the name in its band, then
 the room the width of the page — the habitat at its top, the Earth at its foot, the line between
 them with the sky's exchanges and pictures either side, and the nudge on the Earth. Then the
-note in two columns with its doors and its Know more key; the habitat, the width of the page,
-the dome on its sheet with its keys; the chat's heading and welcome and the three steps in a
-row, each page about a window tall. Then the portal — the composer and the board — and the
-dashboard, as before.
+note in two columns with its doors and its Know more key; inside the habitat — the cutaway
+drawing at the left with its chips, the words at the right (the drawing smaller on a laptop, the
+words still beside it); the habitat, the width of the page, the dome on its sheet with its
+keys; the chat's heading and welcome and the three steps in a row, each page about a window
+tall. Then the portal — the composer and the board — and the dashboard, as before.
 
 ## Communication is the point
 

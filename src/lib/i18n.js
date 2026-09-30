@@ -835,6 +835,38 @@ const D = {
   'Placeholder': ['Platzhalter', 'Espace réservé'],
   'no figure filed yet': ['noch keine Zahl erfasst', 'aucun chiffre saisi pour l’instant'],
   'Open its panel on the dashboard': ['Sein Feld auf dem Dashboard öffnen', 'Ouvrir son panneau sur le tableau de bord'],
+  // inside the habitat — the cutaway page (src/views/pages/cutaway.js)
+  'Inside the habitat': ['Im Habitat', 'À l’intérieur de l’habitat'],
+  'Hover over a part of the habitat — or touch it — to see it in colour and read what it is.': ['Fahre mit der Maus über einen Teil des Habitats — oder tippe ihn an — um ihn in Farbe zu sehen und zu lesen, was er ist.', 'Survolez une partie de l’habitat — ou touchez-la — pour la voir en couleur et lire ce qu’elle est.'],
+  'The habitat in section: its three floors under the dome': ['Das Habitat im Schnitt: seine drei Ebenen unter der Kuppel', 'L’habitat en coupe : ses trois niveaux sous le dôme'],
+  'Geodesic dome': ['Geodätische Kuppel', 'Dôme géodésique'],
+  'Hydroponic plants': ['Hydroponische Pflanzen', 'Plantes hydroponiques'],
+  'Communication station': ['Kommunikationsstation', 'Station de communication'],
+  'Science station': ['Wissenschaftsstation', 'Station scientifique'],
+  'Kitchen': ['Küche', 'Cuisine'],
+  'Relaxing area': ['Aufenthaltsbereich', 'Espace de détente'],
+  'Nap pod': ['Schlafkapsel', 'Capsule de repos'],
+  'Health station': ['Gesundheitsstation', 'Station de santé'],
+  'Water recycling system': ['Wasseraufbereitung', 'Système de recyclage de l’eau'],
+  'Power generation': ['Stromerzeugung', 'Production d’énergie'],
+  'Habitat One is a geodesic dome on Karlsruhe’s Marktplatz: a shell of triangles over three floors. Under the crown, the growing shelves, the communication station and the science bench; on the main floor the kitchen, the lounge, the sleeping pods and the health station; below them the water loop and the power plant. Three crew members are always in it for the thirteen days of the run, and everything they measure and report comes to this station.':
+    ['Habitat One ist eine geodätische Kuppel auf dem Karlsruher Marktplatz: eine Hülle aus Dreiecken über drei Ebenen. Unter der Krone die Pflanzregale, die Kommunikationsstation und der Labortisch; auf der Hauptebene die Küche, der Aufenthaltsbereich, die Schlafkapseln und die Gesundheitsstation; darunter der Wasserkreislauf und die Stromversorgung. Drei Crewmitglieder sind während der dreizehn Tage der Laufzeit immer darin, und alles, was sie messen und berichten, kommt an dieser Station an.',
+     'Habitat One est un dôme géodésique sur la Marktplatz de Karlsruhe : une coque de triangles sur trois niveaux. Sous le sommet, les étagères de culture, la station de communication et la paillasse scientifique ; au niveau principal la cuisine, l’espace de détente, les capsules de repos et la station de santé ; en dessous, la boucle de l’eau et la centrale électrique. Trois membres d’équipage y sont toujours pendant les treize jours de la performance, et tout ce qu’ils mesurent et rapportent arrive à cette station.'],
+  'The galley: where the crew cook and eat what the stores and the growing shelves give — three meals a day, each planned in calories, water and energy. What is eaten is counted with the rations, and today’s meal stands on the dashboard.':
+    ['Die Küche: wo die Crew kocht und isst, was die Vorräte und die Pflanzregale hergeben — drei Mahlzeiten am Tag, jede in Kalorien, Wasser und Energie geplant. Was gegessen wird, zählt zu den Rationen, und die heutige Mahlzeit steht auf dem Dashboard.',
+     'La cuisine : là où l’équipage prépare et mange ce que donnent les réserves et les étagères de culture — trois repas par jour, chacun planifié en calories, en eau et en énergie. Ce qui est mangé est compté avec les rations, et le repas du jour figure sur le tableau de bord.'],
+  'The lounge, under the crown: the one room in the habitat that is nobody’s station — the round sofa where the three meet, eat, plan the day and end it. Each of them files their condition from inside, in words, and it stands on the dashboard.':
+    ['Der Aufenthaltsbereich unter der Krone: der einzige Raum im Habitat, der niemandes Station ist — das runde Sofa, auf dem die drei sich treffen, essen, den Tag planen und ihn beschließen. Jeder von ihnen meldet seinen Zustand von innen, in Worten, und er steht auf dem Dashboard.',
+     'L’espace de détente, sous le sommet : la seule pièce de l’habitat qui n’est le poste de personne — le canapé rond où les trois se retrouvent, mangent, planifient la journée et la terminent. Chacun d’eux déclare son état depuis l’intérieur, en mots, et il figure sur le tableau de bord.'],
+  'Two sleeping pods, each a bunk closed off from the light and the sound of the habitat. Rest is on the schedule like everything else: the hours are written on the day’s plan, and the crew keep to them as they keep to the rest.':
+    ['Zwei Schlafkapseln, jede eine Koje, abgeschlossen vom Licht und den Geräuschen des Habitats. Die Ruhe steht wie alles andere im Zeitplan: die Stunden sind im Tagesplan eingetragen, und die Crew hält sie ein wie alles Übrige.',
+     'Deux capsules de repos, chacune une couchette close, à l’abri de la lumière et des bruits de l’habitat. Le repos est au programme comme tout le reste : les heures sont inscrites au plan du jour, et l’équipage s’y tient comme au reste.'],
+  'The health station: a bed, the monitors and the medicine cabinet, where the health officer looks after the crew — their condition, their steps, what they have eaten — and the life support with them, and where the Daily Health Blog is written each day.':
+    ['Die Gesundheitsstation: ein Bett, die Monitore und der Medizinschrank, wo die Gesundheitsoffizierin oder der Gesundheitsoffizier sich um die Crew kümmert — ihren Zustand, ihre Schritte, was sie gegessen hat — und mit ihr um die Lebenserhaltung, und wo jeden Tag der Daily Health Blog geschrieben wird.',
+     'La station de santé : un lit, les moniteurs et l’armoire à pharmacie, où l’officier de santé veille sur l’équipage — son état, ses pas, ce qu’il a mangé — et sur le support de vie avec lui, et où le Daily Health Blog est écrit chaque jour.'],
+  'No rest is written on today’s schedule.': ['Im heutigen Zeitplan ist keine Ruhezeit eingetragen.', 'Aucun repos n’est inscrit au programme d’aujourd’hui.'],
+  'On today’s schedule': ['Im heutigen Zeitplan', 'Au programme d’aujourd’hui'],
+  'On day 01’s schedule': ['Im Zeitplan von Tag 01', 'Au programme du jour 01'],
   'Now': ['Jetzt', 'Maintenant'],
   'The run has not begun yet.': ['Der Lauf hat noch nicht begonnen.', 'La mission n’a pas encore commencé.'],
   'Off the schedule.': ['Ausserhalb des Plans.', 'Hors programme.'],
