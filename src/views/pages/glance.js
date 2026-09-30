@@ -109,7 +109,7 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
       </div>
       <span class="badge ${rehearsal ? 'warn' : state === 'today' ? 'mars' : ''}">${T(rehearsal ? 'Before the run' : state === 'today' ? 'Today' : state === 'past' ? 'Complete' : 'Planned')}</span>
     </header>
-    ${rehearsal ? `<p class="note" style="margin:0 0 14px">${T('A preview, not the record: a run day’s page as it will look, filled with what there is')} <b>${T('today')}</b> — ${T('the habitat’s readings as the sensors are sending them now, the plan for SOL 001 (schedule, meals, consumption, power), whatever the crew have already written into the opening day, and any states filed today. This page disappears on 15 October, when SOL 001 takes its place.')}</p>` : ''}
+    ${rehearsal ? `<p class="note" style="margin:0 0 14px">${T('A preview, not the record: a run day’s page as it will look, filled with what there is')} <b>${T('today')}</b> — ${T('the habitat’s readings as the sensors are sending them now, and everything mission control has filed under NOW, the rehearsal day — its schedule, meals, counts and power, the blogs, the exchanges and the media — with any states filed today. Nothing of it touches the run’s days. This page disappears on 15 October, when SOL 001 takes its place.')}</p>` : ''}
     <div class="spec glance-spec">
       <span><b>${posts.length}</b> ${T('blog posts')}</span>
       <span><b>${r.messages.length}</b> ${T('exchanges')}</span>

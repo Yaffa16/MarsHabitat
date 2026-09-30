@@ -6,6 +6,8 @@ const missionLib = require('../../lib/mission');
 const { shortDay } = missionLib;
 
 const dayLabel = (n) => String(n).padStart(3, '0');
+// NOW — day 0, the rehearsal day before the run — stands at the head of the log once something is written under it,
+// marked as the rehearsal it is; it never counts among the run's days
 
 /* ============================================================== CREW LOG */
 
@@ -35,7 +37,7 @@ function logPage(ctx, { days, crew, counts, blogs = [], mediaLookup = () => null
     ${days.map((d) => {
       const n = d.missionDay;
       const cls = pre ? 'quiet' : n < m.clampedDay ? 'past' : n === m.clampedDay ? 'now' : 'quiet';
-      return `<a class="${cls}" href="#day-${n}"><b>D${dayLabel(n)}</b><span>${esc(shortDay(d.date))}</span><i>${d.written}</i></a>`;
+      return `<a class="${cls}${n === 0 ? ' rehearsal' : ''}" href="#day-${n}"><b>${n === 0 ? T('NOW') : `D${dayLabel(n)}`}</b><span>${esc(shortDay(d.date))}</span><i>${d.written}</i></a>`;
     }).join('')}
   </div>
 
@@ -48,8 +50,9 @@ function logPage(ctx, { days, crew, counts, blogs = [], mediaLookup = () => null
     ${days.map((d) => `
     <section class="log-day logpage-day" id="day-${d.missionDay}" data-day="${d.missionDay}">
       <div class="log-day-head">
-        <span class="cs">${T('Day')} ${dayLabel(d.missionDay)}</span>
+        <span class="cs">${d.missionDay === 0 ? T('NOW') : `${T('Day')} ${dayLabel(d.missionDay)}`}</span>
         <span>${esc(missionLib.dayLabel(d.date))}</span>
+        ${d.missionDay === 0 ? `<span class="badge warn">${T('Rehearsal · today, before the run')}</span>` : ''}
         ${!pre && d.missionDay === m.clampedDay ? `<span class="now">${T('Today')}</span>` : ''}
         <span class="count">${d.written}/${d.entries.length} ${T('written')}</span>
       </div>

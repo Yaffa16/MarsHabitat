@@ -91,12 +91,26 @@ function state(date = new Date()) {
   const mi = Math.floor(abs / 60000) % 60;
   const s = Math.floor(abs / 1000) % 60;
 
+  // The channel and the desk close at the end of the day after the run — 28 October 2026: the last messages come in
+  // and the crew's last replies go out on the day after they come out; from 29 October the station is read-only
+  // (no message is taken, mission control takes no edit; the archive and every download keep serving). A rehearsal
+  // against made-up dates closes the day after its own last day.
+  const closeDate = new Date(Date.parse(m.end_date + 'T00:00:00Z') + 86400000).toISOString().slice(0, 10);
+  const closeMs = venueMidnightUtc(closeDate, m.timezone) + 86400000;
+
   return {
     ...m,
     missionDay: day,
     clampedDay: Math.min(Math.max(day, 1), total),
     totalDays: total,
     phase,
+    // NOW — mission day 0 — is the rehearsal day: everything mission control files under NOW (blogs, reports, the
+    // Habitat tab, media) stays apart from the run's days, and the record shows it marked as a rehearsal. It is there
+    // before the run, and all through a rehearsal against made-up dates (MISSION_OVERRIDE, src/lib/run.js) — never
+    // during the real run. workDay is the day the desk opens on and the day today's content is filed under: NOW before
+    // the run, the current sol during it, the last sol after.
+    nowDay: phase === 'PRE_LAUNCH' || run.dates().override,
+    workDay: phase === 'PRE_LAUNCH' ? 0 : Math.min(Math.max(day, 1), total),
     today,
     venueTime: localTime(date, m.timezone),
     elapsed,
@@ -104,6 +118,9 @@ function state(date = new Date()) {
     countdown: { days: dd, hours: h, minutes: mi, seconds: s, ms: Math.abs(elapsedMs) },
     opensAt: new Date(launchMs).toISOString(),
     closesAt: new Date(venueMidnightUtc(m.end_date, m.timezone) + 86399000).toISOString(),
+    // the channel and the desk: open until the end of the day after the run (closeDate), closed from then on
+    open: date.getTime() < closeMs,
+    closeDate, closeLabel: dayLabel(closeDate), closedAt: new Date(closeMs).toISOString(),
     daysUntilStart: elapsedMs < 0 ? dd + (h || mi || s ? 1 : 0) : 0,
     progress: total > 0 ? Math.min(1, Math.max(0, (day - 1) / total)) : 0,
     // "Thu 15 – Tue 27 Oct 2026", for wherever the run is named
@@ -179,6 +196,7 @@ function sync() {
       db.prepare('UPDATE day SET date = ? WHERE mission_day = ?').run(date, n);
     }
   }
+  touchNow();                                                    // and NOW, the rehearsal day, dated today
   const label = `${after.start_date} → ${after.end_date} (${total} days, ${after.timezone})`;
   if (want.override) console.log(`[mission] REHEARSAL — MISSION_OVERRIDE is set: ${label}`);
   else console.log(`[mission] the run: ${runLabel(after.start_date, after.end_date)} — ${label}`);
@@ -195,12 +213,36 @@ function sync() {
   return null;
 }
 
-/** Calendar date for a given mission day, as YYYY-MM-DD. */
+/** Calendar date for a given mission day, as YYYY-MM-DD — for NOW (day 0), today's date at the venue. */
 function dateForDay(missionDay) {
   const m = config();
+  if (Number(missionDay) === 0) return localDate(new Date(), m.timezone);
   const t = Date.parse(m.start_date + 'T00:00:00Z') + (missionDay - 1) * 86400000;
   return new Date(t).toISOString().slice(0, 10);
 }
 
-module.exports = { config, state, dateForDay, localDate, localTime, daysBetween, runLabel, dayLabel, shortDay, sync,
+/** "NOW" for day 0, "day 006" otherwise — wherever a day is named on the desk or in the record. */
+function dayName(missionDay, { pad = 3, word = 'day' } = {}) {
+  return Number(missionDay) === 0 ? 'NOW' : `${word} ${String(missionDay).padStart(pad, '0')}`;
+}
+
+/**
+ * The day row of NOW (mission day 0), dated today: made at start and kept
+ * dated by the archive's tick, so what the desk files under NOW hangs on a
+ * day like everything else (tasks, meals and notes refer to a day row).
+ */
+function touchNow() {
+  const m = config();
+  if (!m) return;
+  const date = localDate(new Date(), m.timezone);
+  const row = db.prepare('SELECT date FROM day WHERE mission_day = 0').get();
+  if (!row) {
+    db.prepare("INSERT INTO day (mission_day, date, status, updated_at, updated_by) VALUES (0, ?, 'READY', ?, 'mission')")
+      .run(date, new Date().toISOString());
+  } else if (row.date !== date) {
+    db.prepare('UPDATE day SET date = ? WHERE mission_day = 0').run(date);
+  }
+}
+
+module.exports = { config, state, dateForDay, dayName, touchNow, localDate, localTime, daysBetween, runLabel, dayLabel, shortDay, sync,
                    venueMidnightUtc, zoneOffsetMs };

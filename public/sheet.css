@@ -249,6 +249,12 @@ body.landing .know-more { display: inline-flex; align-items: center; gap: 12px; 
   transition: transform .15s ease, box-shadow .15s ease, filter .15s ease; }
 body.landing .know-more:hover { color: #fff; transform: translateY(-1px); filter: brightness(1.08); box-shadow: 0 18px 32px -14px rgba(47,69,232,.9); }
 body.landing .know-more span[aria-hidden] { font-size: 16px; }
+/* the doors under the description: Write to the crew in the orange of the composer's key, Mission dashboard and Know
+   more in cobalt — a row of pills that wraps on a narrow screen */
+body.landing .note-doors { display: flex; flex-wrap: wrap; gap: 10px 12px; }
+body.landing .know-more.is-write { background: linear-gradient(180deg, #ff8a3d, #ff5a1f); color: #0f1540; box-shadow: 0 14px 28px -14px rgba(255,70,0,.8), 0 1px 0 rgba(255,255,255,.55) inset; }
+body.landing .know-more.is-write:hover { color: #0f1540; box-shadow: 0 18px 32px -14px rgba(255,70,0,.9), 0 1px 0 rgba(255,255,255,.55) inset; }
+:root[data-theme="dark"] body.landing .know-more.is-write, :root[data-theme="dark"] body.landing .know-more.is-write:hover { color: #1a0a02; }
 
 /* ---- the chat's heading: its name large and bold, a short orange rule, and its welcome under it */
 body.landing .sheet-p4 { margin: 72px 0 0; }

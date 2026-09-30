@@ -77,6 +77,8 @@ router.get('/thumb/:id.jpg', (req, res, next) => {
 /* --------------------------------------------------------------- downloads */
 
 const dd = (n) => String(n).padStart(3, '0');
+// the folder of a day in the ZIP — NOW (day 0, before the run) is its own, named as the rehearsal it is
+const folder = (n) => (n < 1 ? 'now-rehearsal' : `day-${dd(n)}`);
 
 /** Everything visible, one ZIP: day folders, original names (made unique),
  *  the manifest and a README. Stored, not deflated, streamed as it goes. */
@@ -84,10 +86,10 @@ async function sendZip(res, items, label) {
   const st = missionLib.state();
   const seen = new Set();
   const entries = items.map((m) => {
-    let name = `day-${dd(m.mission_day)}/${m.filename}`;
+    let name = `${folder(m.mission_day)}/${m.filename}`;
     if (seen.has(name)) {
       const ext = path.extname(m.filename), base = m.filename.slice(0, -ext.length || undefined);
-      name = `day-${dd(m.mission_day)}/${base}-${m.sha256.slice(0, 8)}${ext}`;
+      name = `${folder(m.mission_day)}/${base}-${m.sha256.slice(0, 8)}${ext}`;
     }
     seen.add(name);
     return { name, path: media.pathOf(m), size: m.bytes, mtime: new Date(m.uploaded_at), item: m };
@@ -106,7 +108,9 @@ async function sendZip(res, items, label) {
     'One folder per mission day. Files are the originals as they left the habitat:',
     'nothing has been re-encoded or resized. manifest.json lists every file with its',
     'mission day, who made it, its caption, and its SHA-256, so any copy of this',
-    'archive can be checked file by file.',
+    'archive can be checked file by file. A now-rehearsal/ folder holds what was sent',
+    'out before the run under NOW, mission day 0: a rehearsal, not part of the record',
+    '(the manifest marks those files rehearsal: true).',
     '',
     'ZKM | Hertzlab',
   ].join('\n') + '\n';
@@ -125,8 +129,8 @@ async function sendZip(res, items, label) {
 router.get('/export.zip', (req, res) => sendZip(res, media.list(), new Date().toISOString().slice(0, 10)));
 router.get('/day/:n/export.zip', (req, res, next) => {
   const n = Number(req.params.n);
-  if (!Number.isInteger(n) || n < 1) return next();
-  sendZip(res, media.list({ day: n }), `day-${dd(n)}`);
+  if (!Number.isInteger(n) || n < 0) return next();
+  sendZip(res, media.list({ day: n }), folder(n));                     // /media/day/0/export.zip: NOW's, before the run
 });
 
 /* -------------------------------------------------------------------- item */

@@ -91,7 +91,7 @@ which is mission control's, sits behind the same login.
 | Page | Route | Holds |
 |---|---|---|
 | The station | `/` | **The header** across the top — the wordmark, the run's badge, the habitat's clock and a running line of the current activity, the next one, the habitat sensor's reading and the daily communication window · **four pages**: the habitat with its sky, the note, the mission's chapters and the world's slowest chat (see *The landing page: four pages in the glass dress*) · on a wider screen then the composer · the live message board · the mission dashboard (schedule, meal, mood, habitat, resources, trends, and below the trends **the three daily blogs** — Daily Science Findings, Daily Health Blog, Commander Blog). The crew log, the media, the whole mission day by day and the reading matter live on their own pages (`/logbook`, `/media`, `/at-a-glance`, `/about`) |
-| About | `/about` | The reading matter, one page: **About** (the project as the ZKM announces it — zkm.de/de/2026/10/marsplatz-red-dust-city: the run, the dome on the Marktplatz, the crew's brief, the daily EVAs, the ways to reach the crew, the opening and the funders — then the distance, the archive and the readings), **What this is** (how the station behaves, in plain terms) and **Who we are** (crew, company, production credits), one after another under a row of three pills that jump to them (`src/views/pages/info.js`). A phone's **About** key opens it; on a desk the ticker's three-lines menu leads to each part of it |
+| About | `/about` | The reading matter, one page: **About** (the project as the ZKM announces it — zkm.de/de/2026/10/marsplatz-red-dust-city: the run, the dome on the Marktplatz, the crew's brief, the daily EVAs, the ways to reach the crew, the opening and the funders — then the distance, the archive, the readings and *Messages sent to space* — two paragraphs on how a replied message goes out by radio through SpaceSpeak, after spacespeak.com/Learn/Science: the transmitters, the 2.4–5 GHz band, the directional antenna, the speed of light, then where the signal gets to and that it never stops), **What this is** (how the station behaves, in plain terms) and **Who we are** (crew, company, production credits), one after another under a row of three pills that jump to them (`src/views/pages/info.js`). A phone's **About** key opens it; on a desk the ticker's three-lines menu leads to each part of it |
 | Dashboard | `/dashboard` | The mission dashboard on a page of its own — the same section the station page carries on a desk: the head, the live images, the two doors, the strip of sols and the nine panels behind their index. Drawn for a phone first — where it leaves the strip of live images out (the newest pictures rise over the habitat instead, and fill the Media page); the phone's bar of keys leads here with **Dashboard**, and on a phone the station page keeps its four pages alone |
 | Messages | `/messages` | The portal on a page of its own — the composer and the live message board, the same pieces the station page shows on a desk. Drawn for a phone first: the exchanges flow with the page, the composer is a dock at the foot of the screen, which lowers itself once a message has crossed; the phone's bar of keys leads here with **Write**, and so does the door at the foot of the station page's sheet |
 | Mission control | `/control` | Five tabs: **Messages** (the reply queue) first, then one per officer, and the habitat — which ends with the plan and the reset |
@@ -115,11 +115,12 @@ pop-ups over it) lead to the About page too. The footer of the landing page is t
 - `/screen/landing` — the landing page's first screen, with the ticker (its light/language
   switches and menu are not drawn)
 - `/screen/habitat` — the Habitat instruments, live
-- `/screen/board` — the message board, read-only, live; three columns on a wide screen, two
-  upright
+- `/screen/board` — the message board, read-only, live; two columns (one upright), each card's
+  line into space on one line, nothing to tap
 - `/screen/mission` — Today's Mission
 - `/screen/blogs` — the three blogs one at a time, each post rolling by from top to bottom,
-  then the next blog
+  then the next blog; a blog with nothing written stands its note at the top left, across the
+  width, like a post
 - `/screen/day` — schedule, meal and moods in one row
 - `/screen/trends` — the graph; upright it draws the phone version with the legend
   underneath, which reads far better
@@ -143,7 +144,7 @@ address.
 |---|---|---|
 | Landing page | `/screen/landing` | The station's first screen — the ticker across the top, the name in its band, the habitat with its sky (the live pictures and the latest exchanges, framed) and the dome with its keys. The one screen that keeps the ticker; the ticker's switches (light, language) and its menu are not drawn |
 | Habitat | `/screen/habitat` | The Habitat panel of the dashboard: the readings, the crew's figures, the stores and the power — live |
-| Message Board | `/screen/board` | The latest exchanges, newest first, three across on a wide screen (two upright), as many as fit — live, a new exchange slides in as the board publishes it. Read-only: no composer |
+| Message Board | `/screen/board` | The latest exchanges, newest first, two across (one upright), as many as fit — live, a new exchange slides in as the board publishes it. Read-only: no composer, nothing to tap — a card's line into space stands on one line (*Diese Nachricht ist jetzt 20,02 Milliarden km von der Erde entfernt! · Gestartet vor 19 Stunden*) and opens no panel. The screen polls `/api/board?lang=<its language>&limit=400`, so the cards come back in the language the screen is in, all of them |
 | Today's Mission | `/screen/mission` | The day's mission from the sheet: its question, Morning, Afternoon, EVA, the question for the community hour |
 | Blogs | `/screen/blogs` | The three blogs **one at a time**, each filling the screen: its head stays, the day's post rolls by underneath from top to bottom at reading pace (`public/screen-blogs.js`, 28 px a second, five seconds' hold at the top and at the end; a post that fits is shown for fourteen), then the next blog takes the screen — the Commander Blog, the Daily Science Findings, the Daily Health Blog, round and round. The text is set at the size of the panels' own notes (about 23 px on a 1080p screen). A blog with nothing written yet shows its note and passes the turn on; the latest earlier post is carried forward, as the dashboard does |
 | Today | `/screen/day` | Today's Schedule, Today's Meal and the Crew Moods, three in a row (one under the other upright) |
@@ -242,7 +243,9 @@ visible only to its sender, under **MY MESSAGES** on the board; the common board
 that has not been published. Saving without publishing is still there as a secondary action.
 
 **The board is live.** The landing page polls `/api/board` every few seconds and swaps in
-changes, so a reply published from control appears on every open phone without a reload.
+changes, so a reply published from control appears on every open phone without a reload. The
+LIVE mark beside the board's name says LIVE and nothing else: a poll that fails only takes its
+pulse away while the page backs off and tries again — it never says RECONNECTING.
 
 **The day-content tabs write back into `content/`.** A day's science findings or health
 activities are one note of that kind in `notes.json`, rewritten on each save; saving an
@@ -376,13 +379,40 @@ whichever suits the moment and it is live on the station within seconds:
 | Mission notes | `content/notes.json`: per day, `{ "kind": "LOG" \| "ANOMALY", "body": "…" }` | `POST /control/updates` (the notes composer) |
 | Blogs, findings, activities | written over the placeholders in `content/logbook.json` / `notes.json` | each officer's tab |
 
-**Before the run, At a Glance opens on a rehearsal page.** Marked `REHEARSAL · NOT THE RECORD`
-and reached as **NOW** in the day strip, it is a complete day page filled with what there is
-today: the habitat's readings as the sensors are sending them now (tiles and point-by-point
-charts), the plan for SOL 001 (schedule, meals, consumption rings, power), whatever the crew
-have already written into the opening day (blogs, exchanges, media), and any states filed
-today — the real feel of a filled page, weeks early. It is not part of the record and
-disappears on 15 October, when SOL 001 takes its place.
+**NOW — the rehearsal day.** Before the run, mission control opens on **NOW**: mission day 0,
+dated today, the first stop of the day picker on every tab (*NOW · 29 Sept*), ahead of 15 Oct —
+a day to try everything out on. Everything filed under it —
+the schedule, the meals, the Commander Blog and the two reports, the stores' count, the crew's
+figures, the power, the media sent with a post — goes into the content files under the key
+`"0"` and into the database as mission day 0, and **nothing of it touches the run's days**:
+SOL 001 keeps its plan, the stores' chain from day 1 on is not counted from NOW, the resource
+log has no NOW row. NOW is dated today (its day row is kept dated), so states filed today, the
+readings the sensors send today and the messages that come in before the run are its too. It
+is there before the run and all through a rehearsal against made-up dates (`MISSION_OVERRIDE`),
+never during the real run (`mission.nowDay`; `mission.workDay` — the day the desk opens on — is
+0 before the run and the current sol during one), and the reset takes it with it — every `"0"`
+goes from the files. The record shows NOW everywhere, marked *REHEARSAL · NOT THE RECORD*: the
+archive's contents page, its own day page and PDF at `/archive/now` (`/archive/today` leads
+there before the run, and to the current day during one), the full PDF and the readable copy as a chapter after the days, the data copy
+as a `rehearsal` block beside the thirteen days, the readings log as a `daily` record with
+`missionDay: 0, rehearsal: true`, the media archive in a `now-rehearsal/` folder (and
+`/media/day/0/export.zip` alone), the messages exports with `when: NOW · before the run` /
+`rehearsal: true` and a heading of their own in the PDF. On the public station, once a blog is
+written under NOW the three blog panels, the blogs screen and the crew log show it headed
+**NOW** (until then they keep the opening day's empty slots), and At a Glance opens on it —
+before the run only: in a rehearsal against made-up dates the public pages show the sols, and
+NOW is the desk's and the record's. (To see the whole station as it will run — schedule,
+meals, sol counter and all — rehearse against made-up dates: `MISSION_OVERRIDE=true` with
+`MISSION_START` today; NOW is there too, for trying the desk and the record without touching
+the sols.)
+
+**Before the run, At a Glance opens on NOW.** Marked `REHEARSAL · NOT THE RECORD` and reached
+as **NOW** in the day strip, it is a complete day page filled with what there is today: the
+habitat's readings as the sensors are sending them now (tiles and point-by-point charts), and
+everything filed under NOW — its schedule, meals, consumption rings and power, its blogs,
+exchanges and media — with any states filed today: the real feel of a filled page, weeks
+early. It is not part of the record and disappears on 15 October, when SOL 001 takes its
+place.
 
 ## The mission is a folder of files
 
@@ -925,8 +955,10 @@ window tall with its cards in the middle and air around them, a margin at both s
   (`underLine()`) unused, in case the run wants it back.
 - **The note**, on a card of glass under *DURATIONAL PERFORMANCE*: *MARS is a durational
   performance in which three crew members are always in the habitat for the thirteen days of the
-  run* — and what this website is for, with the **Know more →** key under it, a cobalt pill that
-  leads to the About page. (Nothing on the station says or implies that the crew cannot leave
+  run* — and what this website is for, with three pills under it: **Write to the crew →** in
+  the orange of the composer's key (the composer, `#write`), **Mission dashboard →** and **Know
+  more →** in cobalt (`#mission`, and the About page); on a phone held upright `tabbar.js`
+  leads the first two to the messages page and the dashboard page. (Nothing on the station says or implies that the crew cannot leave
   the habitat: they go out on EVAs every day — the EVA key on the dome says so. The wording
   everywhere is that three crew members are always in it.)
   On a phone the page opens with the station's name — the wordmark, *Communication Station ·
@@ -1039,14 +1071,19 @@ against the ZIP with `sha256sum`. `/archive/day/:n/export.pdf` does one day. Not
 and nothing is derived: the record has no charts, no totals, no projections, no chapter for a
 day that has not come, no messages and no audit trail.
 
-**Before the run, a rehearsal page shows the shape.** Until 15 October the archive's contents
-page opens with a **NOW** row — today, before the run — and `/archive/today` (with
-`/archive/today/export.pdf` and `.md`) is a day's record built for today: today's readings
-from every source with their summary, the states filed today, and whatever has been put into
-the opening day (SOL 001) so far — its plan, entries, counts, figures and media. The full PDF
-and the Markdown carry it as a chapter after the list of days. It is marked *REHEARSAL · NOT
-THE RECORD* wherever it appears and disappears on the first day of the run, when day 001
-takes its place; from then on `/archive/today` simply leads to the current day.
+**Before the run, NOW shows the shape.** Until 15 October the archive's contents page opens
+with a **NOW** row — today, the rehearsal day (mission day 0; see *NOW — the rehearsal day*
+under mission control) — and `/archive/now` (with `/archive/now/export.pdf`, `.md` and
+`/media/day/0/export.zip`; `/archive/today` leads there before the run) is a day's record built for today: today's readings from
+every source with their summary, the states filed today, the exchanges published before the
+run, and everything mission control has filed under NOW — its schedule and meals, the blogs
+and reports, the counts, figures, power and media. The full PDF and the Markdown carry it as a
+chapter after the list of days, the data copy as a `rehearsal` block beside them, the readings
+log as its own `daily` record, the media ZIP in a `now-rehearsal/` folder and the messages
+exports marked *NOW · before the run*. It is marked *REHEARSAL · NOT THE RECORD* wherever it
+appears and disappears on the first day of the run, when day 001 takes its place; from then
+on `/archive/today` simply leads to the current day. A station rehearsing against made-up dates
+(`MISSION_OVERRIDE`) keeps NOW all through, beside the sols it records.
 
 The PDF is composed by the station itself — `src/lib/pdf.js` is a dependency-free PDF
 writer in the spirit of the ZIP writer, with the standard Helvetica and Courier that every
@@ -1116,7 +1153,7 @@ the public pages, drawn from the same markup — nothing is served twice (the ph
   **About** opens the About page — About, What this is and Who we are, one after another.
 - the station page is its three pages, **a swipe from one to the next** — the habitat alone on
   the first screen, with its sky and the nudge under the dome; the station's name and the note
-  with its Know more key; the world's slowest chat, ending in the orange key **Write to the
+  with its three pills (Write to the crew, Mission dashboard, Know more); the world's slowest chat, ending in the orange key **Write to the
   crew →** — and then the foot (see *The landing page: three pages in the glass dress*). The
   portal and the dashboard are pages of their own. The
   pages keep air between them and around their words: the cards are set in from the edge of the
@@ -1396,8 +1433,10 @@ changes — add a row, and the object is in. Within 15 % of an object the line r
 message is just about as far as Voyager 1.*; past the first minute a message is beyond the
 Moon, past eight it is as far as the Sun, past a day it is at Voyager 1, and after eleven days
 at the inner Oort cloud — the stars come years later. The open panel follows the clock; Escape,
-the ✕ or a tap outside closes it. Nothing on the installation's board screen is tappable, so it
-shows no *Follow its journey*.
+the ✕ or a tap outside closes it. On a phone it floats in the middle of the screen, a card with
+room around it, not a sheet at the foot. Nothing on the installation's board screen is tappable:
+`board.js` opens no panel there, the card shows no *Follow its journey*, and its two lines —
+the distance and the launch time — stand on one.
 
 **The relay.** SpaceSpeak has no API at the price of a text message (their API licence is a
 separate, paid product), so the station uses the site the way a person does
@@ -1695,9 +1734,27 @@ composer closes, and the block is enforced server-side so the form cannot be pos
 
 **15–27 October — active.** The countdown becomes the mission day.
 
-**After 27 October — complete.** The landing page reports what the station carried:
-exchanges published, messages sent, callsigns issued. The channel closes. The board and the
-archive stay exactly where they are, because they are the work.
+**After 27 October — complete.** The mission is over, and the day after it is the last day
+of the station: **Wednesday 28 October** the channel is still open — the last messages come in
+and the crew's last replies go out — and mission control still takes edits. **From 29 October
+the station is read-only.** The landing page becomes the closed record and reports what the
+station carried: exchanges published, messages sent, callsigns issued. The channel closes:
+the composer says so (*CHANNEL CLOSED — the crew left the habitat on 2026-10-27; the channel
+closed at the end of 2026-10-28. Nothing sent now would reach anyone.*) and the block is
+enforced on the server — `POST /communicate` stores nothing, whatever is sent to it. Mission
+control closes too: every save — a schedule, a blog, a reading, a reply, a publish, a reset —
+is refused with a note under the header (*Mission control closed at the end of Wed 28 Oct
+2026 — the record is read-only now. The archive and every download stay open.*), the page
+carries `body.control.closed` and its forms stand greyed and inert (`public/control.js`);
+only signing out still works. The board and the archive stay exactly where they are, because
+they are the work: every page, export and download keeps serving. The close is the end of
+28 October **at the venue** — 23:00 UTC, the clocks having gone back on the 25th — computed in
+`src/lib/mission.js` (`open`, `closeDate`, `closeLabel`, `closedAt`); `/api/ticker` and
+`/api/board` carry `open`, and a board or a landing page left open across that midnight
+reloads itself into the closed state on its next poll. For a rehearsal against made-up dates
+the close is the day after the rehearsal's own last day. (The ingest freeze below is a
+different instant — the end of 27 October — because the readings are the crew's, and the
+crew have left.)
 
 **And nothing is updated by automation again.** The record closes at the end of 27 October
 2026 (Berlin time). From that moment: the external sensor node is not polled again
@@ -1777,6 +1834,10 @@ computed, 0.37272 au actual). The station keeps working if the venue loses its c
    during it.
 7. Rehearse the full loop: send a message from a phone, watch it appear under MY MESSAGES,
    reply from control, watch it reach the board on every phone in the room without a reload.
+8. Nothing to do at the end. The channel and mission control close by themselves at the end
+   of Wednesday 28 October, the day after the crew come out — the last messages and the last
+   replies have that day — and from 29 October the station is read-only: no message is taken,
+   no edit saves, the archive and every download keep serving (*Three phases*, above).
 
 ---
 

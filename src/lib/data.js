@@ -335,7 +335,7 @@ const BLOGS = [
   { key: 'science', title: 'Daily Science Findings', kind: 'SCIENCE' },
   { key: 'health', title: 'Daily Health Blog', kind: 'HEALTH' },
 ];
-function logSlotsPublic(totalDays, dateForDay) {
+function logSlotsPublic(totalDays, dateForDay, { from = 1 } = {}) {
   const content = require('./content');
   const mediaLib = require('./media');
   const commander = db.prepare('SELECT * FROM crew WHERE designation = ?').get(content.BLOG_OFFICER)
@@ -343,11 +343,11 @@ function logSlotsPublic(totalDays, dateForDay) {
   const rows = commander ? db.prepare('SELECT * FROM crew_entry WHERE crew_id = ?').all(commander.id) : [];
   const media = mediaLib.list();
   const days = [];
-  for (let n = 1; n <= totalDays; n++) {
+  for (let n = from; n <= totalDays; n++) {
     const notes = db.prepare('SELECT * FROM day_note WHERE mission_day = ? AND published_at IS NOT NULL ORDER BY posted_at').all(n);
     // media placed in one of the day's reports belongs to that report
     const inNotes = new Set(notes.flatMap((r) => [...String(r.body).matchAll(/\[media:(\d+)\]/g)].map((m) => Number(m[1]))));
-    const dd = String(n).padStart(3, '0');
+    const dd = n === 0 ? 'NOW' : `Day ${String(n).padStart(3, '0')}`;   // day 0 is NOW, the rehearsal day
     const entries = [];
     for (const b of BLOGS) {
       if (b.key === 'commander') {
@@ -364,7 +364,7 @@ function logSlotsPublic(totalDays, dateForDay) {
       } else {
         const body = notes.filter((x) => x.kind === b.kind).map((x) => x.body).join('\n\n').trim();
         entries.push({ id: `${b.key}-${n}`, blog: b.key, title: b.title, crew_id: null, designation: '', role: '',
-          mission_day: n, body: body || `Day ${dd} · ${b.title} — to be written at the end of this day.`,
+          mission_day: n, body: body || `${dd} · ${b.title} — to be written at the end of this day.`,
           placeholder: !body, written_at: null, media: [] });
       }
     }
@@ -374,6 +374,10 @@ function logSlotsPublic(totalDays, dateForDay) {
       media: media.filter((m) => m.mission_day === n && !inNotes.has(m.id) && (!commander || m.crew_id !== commander.id)) });
   }
   return days;
+}
+/** One day's three slots the same way — for NOW (day 0), the rehearsal day before the run. */
+function logSlotsFor(n, dateForDay) {
+  return logSlotsPublic(n, dateForDay, { from: n })[0] || null;
 }
 
 function entryCounts() {
@@ -406,7 +410,7 @@ const TAGS = ['QUESTION', 'PERSONAL', 'HUMOUR', 'SCIENCE', 'HABITAT'];
 module.exports = {
   metrics, latest, history, evaluate, sensorPanels, dailyAverages,
   day, mealRow, crewWithMood, moodHistory, moodRecord, moodRecordAll, moodSeries,
-  entriesForDay, entriesByCrew, entry, logbook, logSlotsPublic, BLOGS, entryCounts,
+  entriesForDay, entriesByCrew, entry, logbook, logSlotsPublic, logSlotsFor, BLOGS, entryCounts,
   settleTransits, published, board, inFlightFor, messagesFor, counts, dailyActivity,
   TAGS, STALE_SECONDS,
 };

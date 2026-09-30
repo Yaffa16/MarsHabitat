@@ -14,7 +14,7 @@ const { isPlaceholder, placeholderCue } = require('../../lib/content');
 const mediaLib = require('../../lib/media');
 
 const dd = (n) => String(n).padStart(3, '0');
-const title = (c, day) => { const d = officer.shown(c.designation); return `${d.charAt(0) + d.slice(1).toLowerCase()} · Day ${dd(day)}`; };
+const title = (c, day) => { const d = officer.shown(c.designation); return `${d.charAt(0) + d.slice(1).toLowerCase()} · ${Number(day) === 0 ? 'NOW' : `Day ${dd(day)}`}`; };
 
 const editorMedia = (list, body, otherBodies = []) => {
   // media placed in another text of the same officer and day (the entry, or
@@ -48,7 +48,7 @@ function postPage(ctx, { user, f, crew: c, day, date, entry, report = '', kind =
   const preset = (tpl || []).find((t) => String(t.name).toLowerCase() === 'default');
   const cue = isReport ? (preset ? preset.body : `${KIND_LABEL[kind]} for the day…`)
     : entry && isPlaceholder(entry.body) ? placeholderCue(entry.body) : 'Write the entry…';
-  const heading = isReport ? `${KIND_LABEL[kind]} · Day ${dd(day)}` : title(c, day);
+  const heading = isReport ? `${KIND_LABEL[kind]} · ${Number(day) === 0 ? 'NOW' : `Day ${dd(day)}`}` : title(c, day);
   const placed = live ? (text.match(/\[media:\d+\]/g) || []).length : 0;
   const backHref = isReport ? `/control?tab=${kind}&day=${day}#work` : `/control?tab=crewlog&day=${day}#log-d${day}`;
   const body = `
@@ -112,7 +112,7 @@ function postPage(ctx, { user, f, crew: c, day, date, entry, report = '', kind =
         <details open>
           <summary>Published on ${ICONS.chevron}</summary>
           <div class="post-side-body">
-            <b>Mission day ${dd(day)}</b><span>${esc(date)}</span>
+            <b>${Number(day) === 0 ? 'NOW · before the run · rehearsal' : `Mission day ${dd(day)}`}</b><span>${esc(date)}</span>
             <div class="post-side-days">${Array.from({ length: totalDays }, (_, i) => i + 1).map((n) =>
               `<a href="/control/post/${n}/${c.id}${isReport ? `?kind=${kind}` : ''}" class="${n === day ? 'on' : ''}">${n}</a>`).join('')}</div>
           </div>

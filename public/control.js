@@ -316,3 +316,20 @@
   });
 
 })();
+
+/* ---------------------------------------------------------------- closed */
+/* The desk closed with the channel, at the end of the day after the run
+   (body.closed, src/lib/mission.js open): every form on the page is put out
+   of action — its fields and keys disabled — but the sign-out. The server
+   refuses every save anyway; this only says so at a glance. */
+(function () {
+  'use strict';
+  if (!document.body.classList.contains('closed')) return;
+  document.querySelectorAll('form').forEach(function (f) {
+    var action = f.getAttribute('action') || '';
+    if (!/^\/control(\/|$)/.test(action) || /\/control\/logout$/.test(action)) return;   // the desk's own forms; the theme switch and sign-out stay
+    f.querySelectorAll('input, textarea, select, button').forEach(function (el) { el.disabled = true; });
+    f.classList.add('is-closed');
+  });
+  document.querySelectorAll('button[data-open], .post-publish, #reset-open').forEach(function (b) { b.disabled = true; });
+})();

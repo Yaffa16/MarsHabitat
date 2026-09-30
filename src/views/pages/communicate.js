@@ -85,9 +85,10 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
   const g = ctx.geo;
   const T = ctx.T || same;
 
-  // After the run the channel always closes -- there is nobody left to read
-  // anything. Before it, closing is optional.
-  const closed = (phase === 'COMPLETE' || (phase === 'PRE_LAUNCH' && HOLD_BEFORE_LAUNCH)) ? `
+  // The channel closes at the end of the day after the run — 28 October 2026 (src/lib/mission.js, open): the day the
+  // crew come out still takes messages, for their last replies; from then on there is nobody left to read anything.
+  // Before the run, closing is optional.
+  const closed = (!ctx.mission.open || (phase === 'PRE_LAUNCH' && HOLD_BEFORE_LAUNCH)) ? `
     <div class="transit closed" style="text-align:left">
       <div class="state">${T('CHANNEL CLOSED')}</div>
       ${phase === 'PRE_LAUNCH' ? `
@@ -98,7 +99,7 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '' }) {
         <p><a class="btn" href="/about#what">${T('How it will work')}</a></p>`
       : `
         <p class="note" style="margin-top:12px">${T('The crew left the habitat on')}
-        ${esc(ctx.mission.end_date)}. ${T('Nothing sent now would reach anyone.')}</p>
+        ${esc(ctx.mission.end_date)}; ${T('the channel closed at the end of')} ${esc(ctx.mission.closeDate)}. ${T('Nothing sent now would reach anyone.')}</p>
         <p><a class="btn" href="/archive">${T('Read what was sent')}</a></p>`}
       ${ctx.callsign ? `<div class="honesty">
         ${T('YOUR CALLSIGN')} <b>${esc(ctx.callsign)}</b> ${T('IS STILL RESERVED.')}<br>

@@ -190,6 +190,10 @@ function stationData(ctx) {
     mission: content.missionForDay(ctx.mission.clampedDay),
     counts: data.counts(),
     latestEntries: data.entriesForDay(ctx.mission.clampedDay),
+    // NOW, before the run — the rehearsal day, mission day 0 (src/lib/mission.js): its three blog slots and its day,
+    // for the blog panels, which show NOW's posts once there are any (views/pages/public.js, dashboardPanels)
+    nowLog: ctx.mission.phase === 'PRE_LAUNCH' ? data.logSlotsFor(0, missionLib.dateForDay) : null,
+    nowDay: ctx.mission.phase === 'PRE_LAUNCH' ? data.day(0) : null,
     crewFigures: content.crewFigures(),
     // Power consumed by category, kWh per day, from content/power.json.
     power: content.powerLive(),
@@ -213,7 +217,9 @@ function stationData(ctx) {
 
 app.get('/', (req, res) => {
   const ctx = req.ctx();
-  if (ctx.mission.phase === 'COMPLETE') {
+  // The station closes at the end of the day after the run (mission.open — 28 October 2026): until then the page is
+  // the mission's, its channel taking messages for the crew's last replies; from then on it is the closed record.
+  if (!ctx.mission.open) {
     return res.send(P.complete(ctx, { counts: data.counts(), recent: data.published(3) }));
   }
   // Two public things exist: this page and mission control. Everything a
@@ -251,7 +257,7 @@ app.get('/screen/:name', (req, res, next) => {
    (the bar's Dashboard key leads here). The same pieces as the mission page. */
 app.get('/dashboard', (req, res) => {
   const ctx = req.ctx();
-  if (ctx.mission.phase === 'COMPLETE') return res.redirect('/');
+  if (!ctx.mission.open) return res.redirect('/');
   res.send(P.dashboardPage(ctx, stationData(ctx)));
 });
 
@@ -334,23 +340,19 @@ app.get('/at-a-glance', (req, res) => {
     const start = Date.parse(w.start);
     Object.assign(r, { dayStart: start }, dayData(start, Date.parse(w.end)));
   }
-  // Before the run, the booklet opens on a rehearsal page — a complete day
-  // page, so the real feel of a filled one can be had weeks early: today's
-  // pulled readings for the habitat, the opening day's plan for the
-  // schedule, meals, consumption and power, whatever the crew have already
-  // written into SOL 001 (blogs, exchanges, media), and any states filed
-  // today. Clearly marked, not part of the record, gone on 15 October.
+  // Before the run, the booklet opens on NOW — the rehearsal day, mission
+  // day 0 — as a complete day page, so the real feel of a filled one can be
+  // had weeks early: today's pulled readings for the habitat, and everything
+  // mission control has filed under NOW — its schedule, meals, counts and
+  // power, its blogs, exchanges and media — with any states filed today
+  // (src/lib/archive.js, rehearsalRecord). Clearly marked, not part of the
+  // record, gone on 15 October.
   let rehearsal = null;
   if (ctx.mission.phase === 'PRE_LAUNCH') {
     const start = missionLib.venueMidnightUtc(ctx.mission.today, ctx.mission.timezone);
     const end = start + 86400000;
-    const todayMoods = db.prepare(
-      `SELECT cm.*, c.designation FROM crew_mood cm JOIN crew c ON c.id = cm.crew_id
-       WHERE cm.effective_at >= ? AND cm.effective_at < ? AND cm.set_by != 'content' ORDER BY cm.effective_at`
-    ).all(new Date(start).toISOString(), new Date(end).toISOString());
-    const base = records[0] || {};
-    rehearsal = { ...base, date: ctx.mission.today, dayStart: start, ...dayData(start, end),
-      moods: todayMoods.length ? todayMoods : base.moods || [] };
+    const base = archive.rehearsalRecord(ctx.mission) || {};
+    rehearsal = { ...base, date: ctx.mission.today, dayStart: start, ...dayData(start, end) };
   }
   res.send(GL.page(ctx, { records, rehearsal }));
 });
@@ -363,8 +365,10 @@ app.get('/logbook', (req, res) => {
   // All thirteen days, each with its three blogs: the written post, or the
   // placeholder that shows where one will go.
   const days = data.logSlotsPublic(ctx.mission.totalDays, missionLib.dateForDay);
-  const counts = { published: days.reduce((n, d) => n + d.written, 0), days: days.filter((d) => d.written).length,
-    slots: days.reduce((n, d) => n + d.entries.length, 0) };
+  // NOW, before the run: the rehearsal day heads the log once a blog is written under it — marked, apart from the days
+  if (ctx.mission.phase === 'PRE_LAUNCH') { const nowSlots = data.logSlotsFor(0, missionLib.dateForDay); if (nowSlots && nowSlots.written) days.unshift(nowSlots); }
+  const counts = { published: days.filter((d) => d.missionDay).reduce((n, d) => n + d.written, 0), days: days.filter((d) => d.missionDay && d.written).length,
+    slots: days.filter((d) => d.missionDay).reduce((n, d) => n + d.entries.length, 0) };
   res.send(LB.logPage(ctx, { days, crew: data.crewWithMood(), counts, blogs: data.BLOGS, mediaLookup: mediaLib.get }));
 });
 
@@ -390,37 +394,40 @@ app.get('/archive', requireControl, (req, res) => {
   }));
 });
 
-/* Today. Before the run this is the rehearsal page — a day's record built
-   for today, marked as not the record, gone on the first day of the run.
-   During the run "today" is simply the current mission day, so the address
-   goes there; after the run, to the last day. */
-const todayTarget = (req, suffix = '') => {
-  const st = req.ctx().mission;
-  return st.phase === 'PRE_LAUNCH' ? null : `/archive/day/${archive.recordedUpTo(st)}${suffix}`;
-};
-app.get('/archive/today', requireControl, (req, res) => {
-  const to = todayTarget(req);
-  if (to) return res.redirect(to);
-  res.send(AR.dayRecord(req.ctx(), { record: archive.rehearsalRecord(req.ctx().mission), hasPrev: false, hasNext: false }));
+/* NOW — the rehearsal day (mission day 0, src/lib/mission.js): its record, built for today from what mission
+   control has filed under NOW and what the sensors sent today, marked as not the record. There before the run and
+   through a rehearsal against made-up dates (MISSION_OVERRIDE); a 404 during the real run. */
+app.get('/archive/now', requireControl, (req, res, next) => {
+  const record = archive.rehearsalRecord(req.ctx().mission);
+  if (!record) return next();
+  res.send(AR.dayRecord(req.ctx(), { record, hasPrev: false, hasNext: false }));
 });
-app.get('/archive/today/export.md', requireControl, (req, res) => {
-  const to = todayTarget(req, '/export.md');
-  if (to) return res.redirect(to);
+app.get('/archive/now/export.md', requireControl, (req, res, next) => {
+  const md = archive.rehearsalMarkdown();
+  if (!md) return next();
   res.type('text/markdown; charset=utf-8')
-     .attachment(`mars-station-today-rehearsal-${new Date().toISOString().slice(0, 10)}.md`)
-     .send(archive.rehearsalMarkdown());
+     .attachment(`mars-station-now-rehearsal-${new Date().toISOString().slice(0, 10)}.md`)
+     .send(md);
 });
-app.get('/archive/today/export.pdf', requireControl, (req, res, next) => {
-  const to = todayTarget(req, '/export.pdf');
-  if (to) return res.redirect(to);
+app.get('/archive/now/export.pdf', requireControl, (req, res, next) => {
   try {
     const buf = recordPdf.todayRecord();
     if (!buf) return next();
     res.type('application/pdf')
-       .attachment(`mars-station-today-rehearsal-${new Date().toISOString().slice(0, 10)}.pdf`)
+       .attachment(`mars-station-now-rehearsal-${new Date().toISOString().slice(0, 10)}.pdf`)
        .send(buf);
   } catch (e) { next(e); }
 });
+/* Today. Before the run this is NOW — the rehearsal page. During the run
+   "today" is simply the current mission day, so the address goes there;
+   after the run, to the last day. */
+const todayTarget = (req, suffix = '') => {
+  const st = req.ctx().mission;
+  return st.phase === 'PRE_LAUNCH' ? `/archive/now${suffix}` : `/archive/day/${archive.recordedUpTo(st)}${suffix}`;
+};
+app.get('/archive/today', requireControl, (req, res) => res.redirect(todayTarget(req)));
+app.get('/archive/today/export.md', requireControl, (req, res) => res.redirect(todayTarget(req, '/export.md')));
+app.get('/archive/today/export.pdf', requireControl, (req, res) => res.redirect(todayTarget(req, '/export.pdf')));
 
 /* A day's record exists once the day has happened. A day ahead has no
    record — not the plan dressed as one — so its addresses do not exist yet. */
@@ -590,12 +597,19 @@ app.get('/api/composer', (req, res) => composerFragment(req, res));
  */
 app.get('/api/board', (req, res) => {
   const ctx = req.ctx();
-  const recent = data.board(BOARD_RECENT, ctx.visitor ? ctx.visitor.id : null);
+  // The installation's board screen polls with ?lang= and ?limit=400: it shows every published exchange as many as
+  // fit, in the language its address names (no cookie reaches a screen), and its cards must come back in the same
+  // language they were drawn in — otherwise the words the page ticks (board.js: Milliarden, vor 19 Stunden) and the
+  // words the cards carry would be in two languages.
+  const T = i18n.LANGS.includes(req.query.lang) ? i18n.of(req.query.lang) : ctx.T;
+  const limit = Math.min(400, Math.max(1, Number(req.query.limit) || BOARD_RECENT));
+  const recent = data.board(limit, ctx.visitor ? ctx.visitor.id : null);
   const counts = data.counts();
   res.set('Cache-Control', 'no-store').json({
     version: P.boardVersion(recent),
     phase: ctx.mission.phase,
-    cards: P.boardCards(recent, ctx.T),
+    open: ctx.mission.open,                                                    // false once the station has closed (board.js turns the page)
+    cards: P.boardCards(recent, T),
     count: recent.length,
     pendingMine: recent.filter((m) => m.mine && m.pending).length,
     total: counts.total,
@@ -608,9 +622,10 @@ app.post('/communicate', (req, res) => {
   const visitor = req.writer();
 
   // Enforced server-side so a closed channel cannot be walked around by
-  // posting the form directly. After the run it is always shut.
+  // posting the form directly. The channel closes at the end of the day after the run — 28 October 2026
+  // (src/lib/mission.js, open) — and stays shut.
   const holdBefore = process.env.HOLD_CHANNEL_BEFORE_LAUNCH === 'true';
-  if (ctx.mission.phase === 'COMPLETE') return composeView(req, res);
+  if (!ctx.mission.open) return composeView(req, res);
   if (ctx.mission.phase === 'PRE_LAUNCH' && holdBefore) return composeView(req, res);
 
   // The transit lock is enforced here, not in the browser.
@@ -722,7 +737,7 @@ app.get('/api/ticker', (req, res) => {
   const st = req.ctx().mission;
   const today = st.phase === 'ACTIVE' ? data.day(st.clampedDay) : null;
   res.json({
-    sol: st.clampedDay, totalDays: st.totalDays, phase: st.phase, venueTime: st.venueTime,
+    sol: st.clampedDay, totalDays: st.totalDays, phase: st.phase, open: st.open, venueTime: st.venueTime,
     opensAt: st.opensAt, epoch: content.resetEpoch(),
     tasks: today ? today.tasks.map((t) => ({ time: t.time, label: t.label, detail: t.detail || '' })) : [],
   });

@@ -145,12 +145,15 @@ function load({ quiet = false } = {}) {
       });
     }
 
+    // Day 0 is NOW, the rehearsal day (src/lib/mission.js): a file may carry a "0" like any other day, and what it
+    // holds stays apart from the run's days — the record shows it marked as a rehearsal, before the run only.
     const days = new Set([
       ...dayKeys(schedule), ...dayKeys(meals), ...dayKeys(levels),
       ...dayKeys(logbook), ...dayKeys(notes),
-    ].filter((n) => n >= 1 && n <= total));
+    ].filter((n) => n >= 0 && n <= total));
+    days.add(0);
     for (const n of days) ensureDay(n);
-    counts.days = days.size;
+    counts.days = days.size - 1;
 
     /* --------------------------------------------------------- schedule */
     if (schedule) {
@@ -173,7 +176,7 @@ function load({ quiet = false } = {}) {
       // The file is the food plan: a day the file no longer mentions has no
       // meals, rather than keeping whatever an older version of the file held.
       const inFile = new Set(dayKeys(meals));
-      for (let n = 1; n <= total; n++) if (!inFile.has(n)) db.prepare('DELETE FROM meal WHERE mission_day = ?').run(n);
+      for (let n = 0; n <= total; n++) if (!inFile.has(n)) db.prepare('DELETE FROM meal WHERE mission_day = ?').run(n);
       for (const n of dayKeys(meals)) {
         if (n > total) { skipped.push(`meals.json day ${n}`); continue; }
         db.prepare('DELETE FROM meal WHERE mission_day = ?').run(n);
@@ -234,6 +237,23 @@ function load({ quiet = false } = {}) {
           counts.levels++;
         }
       }
+      // NOW (day 0) stands on its own, outside the chain: it starts from what was carried in, and holds whatever was
+      // counted under "0" — a rehearsal of the count, never carried into day 1.
+      const nowOver = (levels && levels['0']) || {};
+      for (const it of items) {
+        const def = defs.inventory.find((d) => d.key === it.key) || {};
+        const start = Number(def.start ?? 0);
+        const o = nowOver[it.key];
+        let quantity = start, consumption = 0;
+        if (o && typeof o === 'object') {
+          if (o.consumption != null) consumption = Number(o.consumption);
+          if (o.quantity != null) quantity = Number(o.quantity);
+          else if (o.consumption != null) quantity = Math.max(0, +(start - consumption).toFixed(2));
+          if (o.quantity != null && o.consumption == null) consumption = Math.max(0, +(start - quantity).toFixed(2));
+        }
+        db.prepare('INSERT INTO inventory_level (item_id, mission_day, quantity, consumption, note) VALUES (?, 0, ?, ?, ?)')
+          .run(it.id, quantity, consumption, '');
+      }
     }
 
     /* ---------------------------------------------------------- logbook */
@@ -277,7 +297,7 @@ function load({ quiet = false } = {}) {
       // The file is the notes: every day of the run is rewritten from it, a
       // day the file no longer mentions included — otherwise a note taken
       // out of the file (or left from an older one) would stay on the station.
-      for (let n = 1; n <= total; n++) {
+      for (let n = 0; n <= total; n++) {
         db.prepare("DELETE FROM day_note WHERE mission_day = ? AND posted_at LIKE '%'").run(n);
         (notes[String(n)] || []).forEach((note) => {
           if (!note.body) return;
@@ -309,7 +329,7 @@ function load({ quiet = false } = {}) {
     log.record('resources', { missionDays: total, items, levels: resourceLogRows(levels, total),
       power: { categories: pw.categories, days: pw.days } }, { dedupe: true });
     const fig = crewFigures();
-    const days = Object.keys(fig).filter((k) => /^\d+$/.test(k)).sort((a, b) => a - b).map((k) => ({ missionDay: Number(k), ...fig[k] }));
+    const days = Object.keys(fig).filter((k) => /^\d+$/.test(k) && Number(k) >= 1).sort((a, b) => a - b).map((k) => ({ missionDay: Number(k), ...fig[k] }));
     log.record('figures', { days }, { dedupe: true });
   } catch (e) { errors.push(`readings log: ${e.message}`); }
 
@@ -353,8 +373,8 @@ function resourceLogRows(levels = null, total = null) {
     `SELECT il.mission_day, il.quantity, il.consumption, i.key, i.label, i.unit, i.sort_order,
        (SELECT quantity FROM inventory_level WHERE item_id = i.id ORDER BY mission_day LIMIT 1) AS start_quantity
      FROM inventory_level il JOIN inventory_item i ON i.id = il.item_id
-     WHERE il.mission_day <= ? ORDER BY il.mission_day, i.sort_order, i.label`
-  ).all(total);
+     WHERE il.mission_day >= 1 AND il.mission_day <= ? ORDER BY il.mission_day, i.sort_order, i.label`
+  ).all(total);                                           // the run's days: NOW (day 0) is a rehearsal, not the record
   return rows.map((r) => {
     const over = (levels[String(r.mission_day)] || {})[r.key];
     const filed = over && typeof over === 'object' && (over.quantity != null || over.consumption != null);
@@ -550,6 +570,14 @@ function reset(actor = 'control') {
   };
   emptyDays('inventory-levels.json', 'Quantity remaining at the end of each mission day and the daily draw, per store, over the thirteen days of the run — counted on the Habitat tab of mission control, or written here as "5": { "water": { "quantity": 440, "consumption": 36 } }. A day with no entry carries forward on the site from the previous day at its draw; the record prints only the days that were counted.');
   emptyDays('notes.json', 'Mission notes filed from control, over the thirteen days of the run: "3": [ { "kind": "LOG", "body": "…" } ]. kind is LOG or ANOMALY; the science officer\'s findings (SCIENCE) and the health officer\'s activities (HEALTH) are written on their tabs of mission control.');
+  // The rehearsal day NOW ("0") goes from the plan files too — the schedule and the meals keep the run's days.
+  for (const name of ['schedule.json', 'meals.json']) {
+    const file = path.join(DIR, name);
+    try {
+      const obj = JSON.parse(fs.readFileSync(file, 'utf8'));
+      if (obj && Object.prototype.hasOwnProperty.call(obj, '0')) { delete obj['0']; fs.writeFileSync(file, JSON.stringify(obj, null, 2) + '\n'); }
+    } catch { /* rewritten by hand, or not there */ }
+  }
 
   // 2. the database
   const wiped = {};
@@ -899,7 +927,7 @@ const placeholderCue = (body) => String(body || '').trimStart().slice(PLACEHOLDE
 /** What the public sees in the slot: the first line only — the writer's cue stays inside. */
 const placeholderPublic = (body) => placeholderCue(body).split('\n')[0].trim();
 const placeholderFor = (day, designation) =>
-  `${PLACEHOLDER} Day ${String(day).padStart(3, '0')} · ${designation === BLOG_OFFICER ? 'Commander Blog' : designation.charAt(0) + designation.slice(1).toLowerCase()} — to be written at the end of this day.`;
+  `${PLACEHOLDER} ${Number(day) === 0 ? 'NOW' : `Day ${String(day).padStart(3, '0')}`} · ${designation === BLOG_OFFICER ? 'Commander Blog' : designation.charAt(0) + designation.slice(1).toLowerCase()} — to be written at the end of this day.`;
 
 function edit(name, mutate) {
   const file = path.join(DIR, name);

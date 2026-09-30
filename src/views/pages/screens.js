@@ -124,7 +124,8 @@ function day(ctx, d) {
 /** The message board: the latest exchanges, as many as fit, kept live by board.js (its filter bar stands unshown — the
     script needs it — and the cards are cut clean at the foot by screen.js). */
 function board(ctx, d) {
-  return shell(ctx, { name: 'board', title: 'Message Board', body: P.boardScreen(ctx, { recent: d.recent }), fit: 'clip', scripts: ['/board.js'] });
+  // the screen polls for its own 400 cards in its own language (server.js /api/board) — no cookie reaches a screen
+  return shell(ctx, { name: 'board', title: 'Message Board', body: P.boardScreen(ctx, { recent: d.recent, poll: `/api/board?lang=${ctx.lang || 'de'}&limit=400` }), fit: 'clip', scripts: ['/board.js'] });
 }
 
 /** The gallery: every picture in one grid, the newest first, as many as fit, kept live by cloud.js (through

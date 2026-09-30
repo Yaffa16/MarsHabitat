@@ -360,13 +360,15 @@ function composerDevice(ctx, { inFlight = null, error = null, draft = '' } = {})
  * everyone's published exchanges and this visitor's own messages, whatever
  * their state. Drawn on the mission page and on the messages page alike.
  */
-function boardScreen(ctx, { recent = [] } = {}) {
+function boardScreen(ctx, { recent = [], poll = '/api/board' } = {}) {
   const T = ctx.T;
   // This visitor's messages that mission control has not yet published. They
   // are in the page, but only surface under MY MESSAGES.
   const pendingMine = recent.filter((m) => m.mine && m.pending).length;
   const openOnMine = false;   // ALL opens first; the viewer's own messages head it
-  return `<div class="feed-wrap"><div class="feed-scroll" id="feed" data-poll="/api/board"
+  // the page polls /api/board for the same cards it was drawn with (the installation's board screen names its own
+  // address: its language and its 400 cards — views/pages/screens.js)
+  return `<div class="feed-wrap"><div class="feed-scroll" id="feed" data-poll="${esc(poll)}" data-open="${ctx.mission.open ? 1 : 0}"
           data-version="${boardVersion(recent)}">
         <div class="screen board">
           <div class="board-head">
@@ -1143,7 +1145,7 @@ const folder = (T, rows, { id = 'day-folder', label = '' } = {}) => {
 /* The dashboard's pieces, each on its own, so the dashboard can assemble them and the installation's screens
    (screens.js) can show one at a time: the headline figures, the strip of sols, the live pictures, Today's Mission and
    the nine panels — with the day they stand under. */
-function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { categories: [], days: {} }, allDays, logDays, entryCounts, ingest = [], media = [], mediaCounts = { total: 0, bytes: 0 }, mediaLookup = () => null, hardware = null, hardwareDaily = [], cloud = null, mission = null }) {
+function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { categories: [], days: {} }, allDays, logDays, entryCounts, ingest = [], media = [], mediaCounts = { total: 0, bytes: 0 }, mediaLookup = () => null, hardware = null, hardwareDaily = [], cloud = null, mission = null, nowLog = null, nowDay = null }) {
   const m = ctx.mission, g = ctx.geo, T = ctx.T;
   const pre = m.phase === 'PRE_LAUNCH';
   const slotName = { BREAKFAST: 'Breakfast', LUNCH: 'Lunch', DINNER: 'Dinner', RATION: 'Ration' };
@@ -1417,17 +1419,24 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
     .filter((e) => e.blog === 'commander' && !e.placeholder).map((e) => post(e.body, e.media || [])).filter(Boolean) : []);
   // today's post — or, until it is written, the latest earlier day's (see above)
   const latest = (on) => { for (let d = blogDay; d >= 1; d--) { const posts = on(d); if (posts.length) return posts; } return []; };
-  const reportToday = (kind) => latest((d) => reportOn(kind, d));
-  const commanderToday = latest(commanderOn);
+  // NOW, before the run: the rehearsal day, mission day 0 (src/lib/mission.js). Once a blog is written under it the
+  // three panels show NOW's posts, the way the run's day will be shown, headed NOW; until then they keep the opening
+  // day's empty slots. Nothing written under NOW ever stands in a run day's panel.
+  const onNow = (kind) => (kind === 'commander'
+    ? (commander && nowLog ? nowLog.entries.filter((e) => e.blog === 'commander' && !e.placeholder).map((e) => post(e.body, e.media || [])).filter(Boolean) : [])
+    : (nowDay ? nowDay.notes.filter((n) => n.kind === kind && n.published_at).map((n) => post(n.body, [])).filter(Boolean) : []));
+  const nowWritten = !!(m.phase === 'PRE_LAUNCH' && (onNow('commander').length || onNow('SCIENCE').length || onNow('HEALTH').length));   // before the run only: during a rehearsal run the sols have their own
+  const reportToday = (kind) => (nowWritten ? onNow(kind) : latest((d) => reportOn(kind, d)));
+  const commanderToday = nowWritten ? onNow('commander') : latest(commanderOn);
   // A panel is as tall as the post in it, up to a limit, and scrolls from
   // there (.h-4 and .blog-scroll in the stylesheet) — so with nothing written
   // yet the three make a low row rather than a wall of empty boxes.
   const blogPanel = ({ id, title, posts, empty }) => dpanel({ id, title, span: 4, cls: 'h-4 blogp',
-      meta: `SOL ${day3} · ${esc(shortDay(blogDate))}` },
+      meta: nowWritten ? `${T('NOW')} · ${esc(shortDay(m.today))}` : `SOL ${day3} · ${esc(shortDay(blogDate))}` },
     // No whitespace inside the card body: it renders with pre-line.
     posts.length ? `<div class="blog-scroll" tabindex="0" role="region" aria-label="${esc(title)}">${
       posts.map((html) => `<div class="card log-entry"><div class="card-body entry-post">${html}</div></div>`).join('')}</div>`
-    : `<div class="empty">${T(empty)} SOL ${day3}${pre ? ` — ${T('occupied from')} ${esc(m.startLabel)}` : ''}</div>`);
+    : `<div class="empty">${T(empty)} ${nowWritten ? T('today') : `SOL ${day3}`}${pre && !nowWritten ? ` — ${T('occupied from')} ${esc(m.startLabel)}` : ''}</div>`);
   const blogScience = blogPanel({ id: 'blog-science', title: T('Daily Science Findings'),
     posts: reportToday('SCIENCE'), empty: 'No science findings yet for' });
   const blogHealth = blogPanel({ id: 'blog-health', title: T('Daily Health Blog'),

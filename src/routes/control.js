@@ -64,6 +64,17 @@ router.post('/logout', (req, res) => {
 
 router.use((req, res, next) => { if (!req.user) return res.redirect('/control/login'); next(); });
 
+/* The desk closes with the channel, at the end of the day after the run — 28 October 2026 (src/lib/mission.js,
+   open): from then on mission control takes no edit — every form is refused here, whatever the page shows — while
+   the archive and every download keep serving. Signing out still works. */
+router.use((req, res, next) => {
+  if (req.method !== 'POST' || req.path === '/logout') return next();
+  const m = req.ctx().mission;
+  if (m.open) return next();
+  setFlash(req, `Mission control closed at the end of ${m.closeLabel} — the record is read-only now. The archive and every download stay open.`, true);
+  res.redirect('/control');
+});
+
 /* ---------------------------------------------------------------- flashes */
 
 const flashes = new Map();
@@ -102,10 +113,18 @@ const officerTab = (crewId) => {
 const officerBy = (designation) =>
   data.crewWithMood().find((c) => c.designation === designation) || null;
 
+/* The day a tab works on: ?day= or the form's day, else the day the desk opens on (mission.workDay) — NOW, mission
+   day 0, before the run: the rehearsal day, kept apart from the run's days (src/lib/mission.js). NOW can be asked for
+   only while it exists, before the run; afterwards the address falls back to the first day. */
 const dayParam = (req, ctx) => {
-  const n = Number(req.query.day || req.body.day || ctx.mission.clampedDay);
-  return Math.min(Math.max(Number.isInteger(n) ? n : 1, 1), ctx.mission.totalDays);
+  const raw = req.query.day ?? req.body.day;
+  const n = raw == null || raw === '' ? ctx.mission.workDay : Number(raw);
+  const low = ctx.mission.nowDay ? 0 : 1;
+  return Math.min(Math.max(Number.isInteger(n) ? n : low, low), ctx.mission.totalDays);
 };
+// "NOW" or "day 6", for the desk's own messages
+const dayWord = (day) => (Number(day) === 0 ? 'NOW' : `day ${day}`);
+const DayWord = (day) => (Number(day) === 0 ? 'NOW' : `Day ${day}`);
 
 const entryFor = (crewId, day) =>
   db.prepare('SELECT * FROM crew_entry WHERE crew_id = ? AND mission_day = ?').get(crewId, day);
@@ -117,7 +136,7 @@ const notesFor = (day) =>
    day were changed through this page, and when each form was last saved (the
    key '*'). The view marks those fields in orange — the marks stay after the
    save — and says "Last saved …" beside each form's button. The mood forms
-   have no day; they file under day 0. */
+   have no day; they file under day -1 (day 0 is NOW, a day like the others). */
 function noteEdits(form, day, keys, actor) {
   const at = now();
   const up = db.prepare(`INSERT INTO control_edit (form, day, key, at, actor) VALUES (?, ?, ?, ?, ?)
@@ -126,7 +145,7 @@ function noteEdits(form, day, keys, actor) {
 }
 function editsFor(day) {
   const out = {};
-  for (const r of db.prepare('SELECT form, key, at, actor FROM control_edit WHERE day = ? OR day = 0').all(day)) {
+  for (const r of db.prepare('SELECT form, key, at, actor FROM control_edit WHERE day = ? OR day = -1').all(day)) {
     const f = out[r.form] || (out[r.form] = { savedAt: null, actor: '', keys: {} });
     if (r.key === '*') { f.savedAt = r.at; f.actor = r.actor; } else f.keys[r.key] = r.at;
   }
@@ -282,7 +301,7 @@ router.post('/report', (req, res, next) => upload.array('file', 50)(req, res, (e
   if (req.body.action === 'draft') {                                         // kept on the desk; what is live stays live
     keepDraft(`report:${kindKey}`, day, text, req.user.username);
     audit(req.user.username, 'DayNote', day, kind.toLowerCase() + ' draft');
-    setFlash(req, `Draft saved for day ${day} — not public until it is published.` + (attached ? ` ${attached} file${attached === 1 ? '' : 's'} added.` : '') + (mediaError ? ` One file was refused: ${mediaError}` : ''), !!mediaError);
+    setFlash(req, `Draft saved for ${dayWord(day)} — not public until it is published.` + (attached ? ` ${attached} file${attached === 1 ? '' : 's'} added.` : '') + (mediaError ? ` One file was refused: ${mediaError}` : ''), !!mediaError);
     return toTab(res, tabOf(req.body.back) === 'messages' ? kindKey : req.body.back, day);
   }
   const wasReport = reportFor(day, kind);
@@ -294,7 +313,7 @@ router.post('/report', (req, res, next) => upload.array('file', 50)(req, res, (e
   noteEdits(`report:${kindKey}`, day, same(wasReport, text) ? [] : ['body'], req.user.username);
   dropDraft(`report:${kindKey}`, day);
   const label = kind === 'SCIENCE' ? 'Daily Science Findings' : 'Daily Health Blog';
-  setFlash(req, r.ok ? `${label} ${text ? 'published' : 'cleared'} for day ${day}.` + (attached ? ` ${attached} file${attached === 1 ? '' : 's'} added.` : '') + (mediaError ? ` One file was refused: ${mediaError}` : '')
+  setFlash(req, r.ok ? `${label} ${text ? 'published' : 'cleared'} for ${dayWord(day)}.` + (attached ? ` ${attached} file${attached === 1 ? '' : 's'} added.` : '') + (mediaError ? ` One file was refused: ${mediaError}` : '')
     : `Saved, but: ${r.error}`, !r.ok || !!mediaError);
   toTab(res, tabOf(req.body.back) === 'messages' ? kindKey : req.body.back, day);
 });
@@ -302,7 +321,7 @@ router.post('/report', (req, res, next) => upload.array('file', 50)(req, res, (e
 /* The old per-officer addresses land on their tab of the one page. */
 for (const t of ['science', 'health', 'habitat']) {
   router.get(`/${t}`, (req, res) => {
-    const q = req.query.day ? `&day=${Number(req.query.day) || 1}` : '';
+    const q = req.query.day != null ? `&day=${Number(req.query.day) || 0}` : '';
     res.redirect(301, `/control?tab=${t}${q}#work`);
   });
 }
@@ -431,7 +450,7 @@ router.post('/moods/:id', (req, res) => {
   ).run(id, v('calm_tense'), v('energetic_exhausted'), 50, 50,
         activity, member.status, now(), req.user.username);
   audit(req.user.username, 'CrewMood', id, 'file');
-  noteEdits(`mood:${id}`, 0, before && same(before.calm_tense, v('calm_tense')) ? [] : ['calm_tense'], req.user.username);
+  noteEdits(`mood:${id}`, -1, before && same(before.calm_tense, v('calm_tense')) ? [] : ['calm_tense'], req.user.username);
   setFlash(req, `State filed for ${officer.shown(member.designation)}. The mission page has been updated.`);
   toTab(res, TAB_OF_OFFICER[member.designation] || 'comms', dayParam(req, ctx));
 });
@@ -493,8 +512,8 @@ router.post('/logbook', (req, res, next) => upload.array('file', 50)(req, res, (
 
   if (draft) {                                                               // kept on the desk; what is live stays live
     keepDraft(`blog:${member.id}`, day, text, req.user.username);
-    audit(req.user.username, 'CrewEntry', `${designation} day ${day}`, 'draft');
-    setFlash(req, `Draft saved for ${officer.shown(designation)}, day ${day} — not public until it is published.`
+    audit(req.user.username, 'CrewEntry', `${designation} ${dayWord(day)}`, 'draft');
+    setFlash(req, `Draft saved for ${officer.shown(designation)}, ${dayWord(day)} — not public until it is published.`
       + (attached ? ` ${attached} file${attached === 1 ? '' : 's'} added to the archive with it.` : '') + (mediaError ? ` One file was refused: ${mediaError}` : ''), !!mediaError);
     return toTab(res, tab, day);
   }
@@ -513,12 +532,12 @@ router.post('/logbook', (req, res, next) => upload.array('file', 50)(req, res, (
     wasText = String(obj[String(day)][designation] || '');
     obj[String(day)][designation] = finalText;
   });
-  audit(req.user.username, 'CrewEntry', `${designation} day ${day}`, body ? 'write' : 'clear');
+  audit(req.user.username, 'CrewEntry', `${designation} ${dayWord(day)}`, body ? 'write' : 'clear');
   noteEdits(`blog:${member.id}`, day, same(wasText, finalText) ? [] : ['body'], req.user.username);
   dropDraft(`blog:${member.id}`, day);
-  const what = (!body ? `Entry cleared for ${designation}, day ${day} — the slot is a placeholder again.`
-    : content.isPlaceholder(body) ? `Placeholder saved for ${designation}, day ${day} — the text is not public until replaced.`
-    : `Blog entry saved for ${designation}, day ${day} — live on the station.`)
+  const what = (!body ? `Entry cleared for ${designation}, ${dayWord(day)} — the slot is a placeholder again.`
+    : content.isPlaceholder(body) ? `Placeholder saved for ${designation}, ${dayWord(day)} — the text is not public until replaced.`
+    : `Blog entry saved for ${designation}, ${dayWord(day)} — live on the station.`)
     + (attached ? ` ${attached} file${attached === 1 ? '' : 's'} added to the archive with it.` : '')
     + (mediaError ? ` One file was refused: ${mediaError}` : '');
   setFlash(req, r.ok ? what : `Saved, but: ${r.error}`, !r.ok || !!mediaError);
@@ -562,7 +581,7 @@ router.post('/media/upload', (req, res) => {
     } catch (e) { return fail(e.message); }
     if (isLive(req)) return res.json({ ok: true, items: saved.map((m) => ({ id: m.id, filename: m.filename, bytes: m.bytes, sha256: m.sha256, kind: m.kind,
       url: media.pageUrl(m), fileUrl: media.fileUrl(m), thumb: media.thumbUrl(m) })) });
-    setFlash(req, `${saved.length} file${saved.length === 1 ? '' : 's'} added to the archive for day ${day}.`);
+    setFlash(req, `${saved.length} file${saved.length === 1 ? '' : 's'} added to the archive for ${dayWord(day)}.`);
     toTab(res, req.body.back || officerTab(crewId), day);
   });
 });
@@ -570,7 +589,7 @@ router.post('/media/upload', (req, res) => {
 router.post('/media/:id(\\d+)/edit', (req, res) => {
   const ctx = req.ctx();
   const m = media.get(req.params.id);
-  if (!m) { setFlash(req, 'No such item.', true); return toTab(res, req.body.back, ctx.mission.clampedDay); }
+  if (!m) { setFlash(req, 'No such item.', true); return toTab(res, req.body.back, ctx.mission.workDay); }
   const day = Math.min(Math.max(Number(req.body.day) || m.mission_day, 1), ctx.mission.totalDays);
   const saved = media.update(m.id, { caption: req.body.caption, missionDay: day, crewId: Number(req.body.crew_id) || null,
     takenAt: req.body.taken_at || null }, req.user.username);
@@ -584,13 +603,13 @@ router.post('/media/:id(\\d+)/hide', (req, res) => {
   if (m) media.setHidden(m.id, true, req.user.username);
   if (isLive(req)) return m ? res.json({ ok: true, id: m.id }) : res.status(404).json({ ok: false });
   setFlash(req, m ? `${m.filename} withdrawn from view. The file is kept; restore it any time.` : 'No such item.', !m);
-  toTab(res, req.body.back || officerTab(m && m.crew_id), m ? m.mission_day : req.ctx().mission.clampedDay);
+  toTab(res, req.body.back || officerTab(m && m.crew_id), m ? m.mission_day : req.ctx().mission.workDay);
 });
 router.post('/media/:id(\\d+)/restore', (req, res) => {
   const m = media.get(req.params.id);
   if (m) media.setHidden(m.id, false, req.user.username);
   setFlash(req, m ? `${m.filename} is back in view.` : 'No such item.', !m);
-  toTab(res, req.body.back || officerTab(m && m.crew_id), m ? m.mission_day : req.ctx().mission.clampedDay);
+  toTab(res, req.body.back || officerTab(m && m.crew_id), m ? m.mission_day : req.ctx().mission.workDay);
 });
 
 /** The archive's own check: every file against its hash. */
@@ -613,7 +632,7 @@ router.post('/updates', (req, res) => {
     obj[String(day)].push({ kind, body });
   });
   audit(req.user.username, 'DayNote', day, kind.toLowerCase());
-  setFlash(req, r.ok ? `${kind} filed for day ${day}.` : `Saved, but: ${r.error}`, !r.ok);
+  setFlash(req, r.ok ? `${kind} filed for ${dayWord(day)}.` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, tab, day);
 });
 
@@ -673,7 +692,7 @@ router.post('/schedule', (req, res) => {
   const rowKey = (t) => `row:${t.time}|${t.label}|${t.detail || ''}`;
   const had = new Set(existing.map(rowKey));
   noteEdits('schedule', day, rows.map(rowKey).filter((k) => !had.has(k)), req.user.username);
-  setFlash(req, r.ok ? `Day ${day} schedule saved — ${rows.length} tasks.` : `Saved, but: ${r.error}`, !r.ok);
+  setFlash(req, r.ok ? `${DayWord(day)} schedule saved — ${rows.length} tasks.` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, 'habitat', day);
 });
 
@@ -728,7 +747,7 @@ router.post('/crew-figures', (req, res) => {
   audit(req.user.username, 'CrewFigures', day, 'edit');
   const form = hasCal && !hasSteps ? 'calories' : 'steps';
   noteEdits(form, day, changed, req.user.username);
-  setFlash(req, r.ok ? `Day ${day} ${form === 'calories' ? 'calories consumed' : 'steps taken'} saved.` : `Saved, but: ${r.error}`, !r.ok);
+  setFlash(req, r.ok ? `${DayWord(day)} ${form === 'calories' ? 'calories consumed' : 'steps taken'} saved.` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, 'habitat', day);
 });
 
@@ -836,7 +855,7 @@ router.post('/meals', (req, res) => {
     clear.run(day, `${slot}_recipe`);
   }
   noteEdits('meals', day, changed, req.user.username);
-  setFlash(req, r.ok ? `Day ${day} food plan saved — ${rows.length} slots.` : `Saved, but: ${r.error}`, !r.ok);
+  setFlash(req, r.ok ? `${DayWord(day)} food plan saved — ${rows.length} slots.` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, 'habitat', day);
 });
 
@@ -868,7 +887,7 @@ router.post('/inventory', (req, res) => {
   });
   audit(req.user.username, 'Inventory', day, 'update');
   noteEdits('inventory', day, changed, req.user.username);
-  setFlash(req, r.ok ? `Inventory saved for day ${day}. Later days recalculated.` : `Saved, but: ${r.error}`, !r.ok);
+  setFlash(req, r.ok ? `Inventory saved for ${dayWord(day)}.${day ? ' Later days recalculated.' : ''}` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, 'habitat', day);
 });
 
@@ -877,7 +896,7 @@ router.post('/inventory/clear', (req, res) => {
   const day = dayParam(req, ctx);
   const r = content.edit('inventory-levels.json', (obj) => { delete obj[String(day)]; });
   audit(req.user.username, 'Inventory', day, 'clear');
-  setFlash(req, r.ok ? `Day ${day} now carries forward automatically.` : `Cleared, but: ${r.error}`, !r.ok);
+  setFlash(req, r.ok ? `${DayWord(day)} now carries forward automatically.` : `Cleared, but: ${r.error}`, !r.ok);
   toTab(res, 'habitat', day);
 });
 
@@ -930,7 +949,7 @@ router.post('/power', (req, res) => {
   });
   audit(req.user.username, 'Power', day, 'update');
   noteEdits('power', day, changed, req.user.username);
-  setFlash(req, r.ok ? `Day ${day} power figures saved.` : `Saved, but: ${r.error}`, !r.ok);
+  setFlash(req, r.ok ? `${DayWord(day)} power figures saved.` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, 'habitat', day);
 });
 

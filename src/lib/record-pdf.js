@@ -267,8 +267,8 @@ function gather() {
   const written = days.map((r) => r.entries.filter((e) => !content.isPlaceholder(e.body)).length);
   const log = safe(() => readingsLog.counts(), { total: 0, bytes: 0, bySource: {} });
   const readingsInRecord = days.reduce((n, r) => n + r.readings.count, 0);
-  // before the run: today's rehearsal record, shown marked, never part of the record
-  const rehearsal = pre ? archive.rehearsalRecord(st) : null;
+  // before the run, and through a rehearsal against made-up dates: NOW, the rehearsal day, shown marked, never part of the record
+  const rehearsal = st.nowDay ? archive.rehearsalRecord(st) : null;
   return { st, log, total, pre, today, upTo, crew, items, channels, days, media, moods, rehearsal,
     readings, readingsInRecord, written, mediaCounts: mediaLib.counts(), carriedIn: content.inventoryStart() };
 }
@@ -356,13 +356,13 @@ function missionSection(L, G) {
 function daySection(L, G, r, { asChapter = true } = {}) {
   const { st, today } = G;
   const n = r.missionDay;
-  const title = r.rehearsal ? `Today · ${longDate(r.date)} · rehearsal, not the record` : `Day ${ddd(n)} · ${longDate(r.date)}`;
+  const title = r.rehearsal ? `NOW · ${longDate(r.date)} · rehearsal, not the record` : `Day ${ddd(n)} · ${longDate(r.date)}`;
   if (asChapter) { L.section = title; L.newPage(); L.pdf.bookmark(title, L.pageIndex, 40, 1); L.pdf.rect(L.page, M.left, L.y, CW, 3, { fill: n === today || r.rehearsal ? ORANGE : INK }); L.y += 26; for (const line of L.pdf.wrap(title, 'bold', 22, CW)) { L.pdf.text(L.page, M.left, L.y, line, { font: 'bold', size: 22 }); L.y += 26; } L.y += 4; }
   else L.h1(title);
-  const status = r.rehearsal ? 'before the run' : n < today ? (r.sealed ? 'sealed' : 'past, not yet sealed') : 'today — in progress';
+  const status = r.rehearsal ? (st.phase === 'PRE_LAUNCH' ? 'before the run' : 'rehearsal') : n < today ? (r.sealed ? 'sealed' : 'past, not yet sealed') : 'today — in progress';
   const written = r.officers.filter((o) => o.entry).length + r.officers.reduce((n, o) => n + (o.reports.length ? 1 : 0), 0);
-  L.para(`${r.rehearsal ? `Today, ${st.today}` : `Mission day ${ddd(n)} of ${ddd(st.totalDays)}`} · ${status} · ${written} daily ${written === 1 ? 'blog' : 'blogs'} · ${r.moods.length} ${r.moods.length === 1 ? 'state' : 'states'} filed · ${r.media.length} ${r.media.length === 1 ? 'file' : 'files'} sent out · ${r.readings.count.toLocaleString('en-GB')} ${r.readings.count === 1 ? 'reading' : 'readings'}`, { color: GREY, size: 8.5, after: 10 });
-  if (r.rehearsal) L.para(`REHEARSAL, NOT THE RECORD. A preview of a day's record with what there is today: today's readings from every source and the states filed today, and whatever has been put into the opening day (SOL 001) so far — its plan, blogs, reports, counts, figures and media. This chapter disappears on ${st.startLabel}, when day 001 takes its place.`, { font: 'italic', color: ORANGE, size: 8.5, after: 10 });
+  L.para(`${r.rehearsal ? `NOW — today, ${st.today}${st.phase === 'PRE_LAUNCH' ? ', before the run' : ' — a rehearsal against made-up dates'}` : `Mission day ${ddd(n)} of ${ddd(st.totalDays)}`} · ${status} · ${written} daily ${written === 1 ? 'blog' : 'blogs'} · ${r.moods.length} ${r.moods.length === 1 ? 'state' : 'states'} filed · ${r.media.length} ${r.media.length === 1 ? 'file' : 'files'} sent out · ${r.readings.count.toLocaleString('en-GB')} ${r.readings.count === 1 ? 'reading' : 'readings'}`, { color: GREY, size: 8.5, after: 10 });
+  if (r.rehearsal) L.para(`REHEARSAL, NOT THE RECORD. A day's record built for today: today's readings from every source and the states filed today, and everything mission control has filed under NOW — its schedule and meals, the blogs and reports, the counts, figures, power and media — kept apart from the run's days. ${st.phase === 'PRE_LAUNCH' ? `This chapter disappears on ${st.startLabel}, when day 001 takes its place.` : 'This chapter exists only while the station rehearses against made-up dates.'}`, { font: 'italic', color: ORANGE, size: 8.5, after: 10 });
   if (r.isEmpty) { L.para('Nothing was recorded on this day.', { font: 'italic', color: GREY }); return; }
   const day = r.day;
   const placed = new Set();
@@ -558,7 +558,7 @@ function mediaSection(L, G) {
   const sorted = [...media].sort((a, b) => a.mission_day - b.mission_day || a.sort_order - b.sort_order || a.id - b.id);
   let day = null;
   for (const m of sorted) {
-    if (m.mission_day !== day) { day = m.mission_day; L.h2(`Day ${ddd(day)}`, { keep: 70 }); }
+    if (m.mission_day !== day) { day = m.mission_day; L.h2(day < 1 ? 'NOW · before the run · rehearsal, not the record' : `Day ${ddd(day)}`, { keep: 70 }); }
     L.need(40);
     L.pdf.text(L.page, M.left, L.y, `${m.filename}${m.hidden ? '  (withdrawn from view)' : ''}`, { font: 'bold', size: 9 });
     L.pdf.text(L.page, M.left + CW, L.y, `${m.kind} · ${fmtBytes(m.bytes)}${m.width && m.height ? ` · ${m.width}×${m.height}` : ''}${m.duration_s ? ` · ${Math.round(m.duration_s)} s` : ''}`, { size: 8, color: GREY, align: 'right' });
@@ -584,7 +584,7 @@ function fullRecord() {
   // The contents list is known before the body is laid out: the sections and
   // the days. Its pages are reserved here and written once the page numbers exist.
   const toc = [];
-  const rehearsalTitle = G.rehearsal ? `Today · ${longDate(G.rehearsal.date)} · rehearsal, not the record` : null;
+  const rehearsalTitle = G.rehearsal ? `NOW · ${longDate(G.rehearsal.date)} · rehearsal, not the record` : null;
   const sectionTitles = ['The mission', 'The days', ...G.days.map((r) => `Day ${ddd(r.missionDay)} · ${longDate(r.date)}`), ...(rehearsalTitle ? [rehearsalTitle] : []), 'The crew log', 'Media'];
   const tocPages = contentsPages(L, sectionTitles);
   const startOf = (title) => (L.sections.find((s) => s[1] === title) || [L.pageIndex])[0];
@@ -593,8 +593,8 @@ function fullRecord() {
   missionSection(L, G); sec('The mission');
   L.h1('The days'); sec('The days');
   L.para(G.upTo === 0
-    ? `The run opens ${st.startLabel}. No day has been recorded yet; the ${st.totalDays} days are listed below by date.${G.rehearsal ? ' Until then a rehearsal chapter for today follows the list — marked, and not part of the record — so the shape of a day\'s record can be seen with what there is now.' : ''}`
-    : `${G.upTo} of ${st.totalDays} days recorded, each whole: the schedule as it was run, the meals, the stores counted that day, the power and the crew's figures as filed, the mission notes, the crew log with its photographs, the states filed, what was sent out, the day's sensor summary and every reading of the day. A day that has not happened has no chapter.`, { color: GREY, size: 8.5 });
+    ? `The run opens ${st.startLabel}. No day has been recorded yet; the ${st.totalDays} days are listed below by date.${G.rehearsal ? ' Until then NOW — a rehearsal chapter for today, built from what mission control has filed under NOW and what the sensors sent today — follows the list, marked, and not part of the record.' : ''}`
+    : `${G.upTo} of ${st.totalDays} days recorded, each whole: the schedule as it was run, the meals, the stores counted that day, the power and the crew's figures as filed, the mission notes, the crew log with its photographs, the states filed, what was sent out, the day's sensor summary and every reading of the day. A day that has not happened has no chapter.${G.rehearsal ? ' This is a rehearsal against made-up dates: NOW — a chapter for today, built from what mission control has filed under NOW — follows the days, marked, and not part of the record.' : ''}`, { color: GREY, size: 8.5 });
   const rows = [];
   for (let n = 1; n <= st.totalDays; n++) {
     const r = G.days[n - 1];
@@ -632,8 +632,8 @@ function todayRecord() {
   const { st } = G;
   const r = G.rehearsal;
   if (!r) return null;
-  const pdf = new PDF({ title: `${st.name} — today, before the run · ${longDate(r.date)} · rehearsal`, author: 'ZKM | Hertzlab — Mars Communication Station' });
-  const L = new Layout(pdf, { runningTitle: `${st.name} · today · rehearsal, not the record` });
+  const pdf = new PDF({ title: `${st.name} — NOW, today · ${longDate(r.date)} · rehearsal`, author: 'ZKM | Hertzlab — Mars Communication Station' });
+  const L = new Layout(pdf, { runningTitle: `${st.name} · NOW · rehearsal, not the record` });
   daySection(L, G, r, { asChapter: false });
   L.finish({ footerLeft: `ZKM | Hertzlab · ${st.runLabelLong} · rehearsal · generated ${new Date().toISOString().slice(0, 10)}` });
   return pdf.build();
@@ -676,11 +676,11 @@ function messagesPdf() {
   L.para(`Every message that reached the station, in the order it was sent: ${counts.total} from ${callsigns} callsigns — ${counts.published} published with a reply, ${counts.rejected} rejected, ${counts.pending + counts.awaitingResponse} still awaiting a reply, ${counts.inTransit} in transit. Messages sent before the habitat was occupied carry day 000. Generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC. The messages are not part of the mission record; this is mission control's own copy.`, { color: GREY, size: 8.5 });
   let day = null;
   for (const m of messages) {
-    if (m.mission_day !== day) { day = m.mission_day; L.h2(day < 1 ? 'Before the mission · day 000' : `Day ${ddd(day)}`, { keep: 90 }); }
+    if (m.mission_day !== day) { day = m.mission_day; L.h2(day < 1 ? 'NOW · before the run · rehearsal, not the record' : `Day ${ddd(day)}`, { keep: 90 }); }
     const tags = (m.tags || '').split(',').filter(Boolean).map((t) => '#' + t).join(' ');
     L.need(48);
     L.pdf.text(L.page, M.left, L.y, m.callsign, { font: 'bold', size: 9.5, color: ORANGE });
-    L.pdf.text(L.page, M.left + L.pdf.textWidth(m.callsign, 'bold', 9.5) + 6, L.y, `· Ref ${String(m.id).padStart(5, '0')} · day ${ddd(m.mission_day)} · ${mission.localDate(new Date(m.submitted_at), st.timezone)} ${localHM(m.submitted_at, st)}${tags ? ` · ${tags}` : ''} · ${STATE_WORD[m.state] || m.state.toLowerCase()}${m.flagged ? ' · flagged' : ''}`, { size: 8, color: GREY });
+    L.pdf.text(L.page, M.left + L.pdf.textWidth(m.callsign, 'bold', 9.5) + 6, L.y, `· Ref ${String(m.id).padStart(5, '0')} · ${m.mission_day < 1 ? 'NOW' : `day ${ddd(m.mission_day)}`} · ${mission.localDate(new Date(m.submitted_at), st.timezone)} ${localHM(m.submitted_at, st)}${tags ? ` · ${tags}` : ''} · ${STATE_WORD[m.state] || m.state.toLowerCase()}${m.flagged ? ' · flagged' : ''}`, { size: 8, color: GREY });
     L.y += 14;
     L.para(m.body, { size: 9.5, after: 4 });
     if (m.response_body) {
@@ -697,9 +697,9 @@ function messagesPdf() {
 /** The same, as one row per message for a spreadsheet. */
 function messagesCsv() {
   const cell = (v) => { const t = v == null ? '' : String(v); return /[",\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
-  const head = ['id', 'callsign', 'mission_day', 'submitted_at', 'arrived_at', 'state', 'flagged', 'tags', 'message',
+  const head = ['id', 'callsign', 'mission_day', 'when', 'submitted_at', 'arrived_at', 'state', 'flagged', 'tags', 'message',
     'reply', 'replied_by', 'reply_written_at', 'reply_published_at', 'reviewed_at', 'reviewed_by', 'reject_reason', 'light_seconds', 'distance_au'];
-  const rows = allMessages().map((m) => [m.id, m.callsign, m.mission_day, m.submitted_at, m.arrival_at, m.state, m.flagged ? 1 : 0, m.tags, m.body,
+  const rows = allMessages().map((m) => [m.id, m.callsign, m.mission_day, m.mission_day < 1 ? 'NOW · before the run' : 'the run', m.submitted_at, m.arrival_at, m.state, m.flagged ? 1 : 0, m.tags, m.body,
     m.response_body, m.responder, m.response_written, m.response_at, m.reviewed_at, m.reviewed_by, m.reject_reason, m.light_seconds, m.distance_au]);
   return [head, ...rows].map((r) => r.map(cell).join(',')).join('\r\n') + '\r\n';
 }
@@ -710,9 +710,9 @@ function messagesJson() {
   return {
     mission: { name: st.name, start: st.start_date, end: st.end_date, timezone: st.timezone },
     exportedAt: new Date().toISOString(),
-    note: 'Every message that reached the station, in the order it was sent, whatever became of it. Not part of the mission record.',
+    note: 'Every message that reached the station, in the order it was sent, whatever became of it. Not part of the mission record. A message with missionDay 0 came in before the run — NOW, the rehearsal.',
     counts: data.counts(),
-    messages: allMessages().map((m) => ({ id: m.id, callsign: m.callsign, missionDay: m.mission_day, submittedAt: m.submitted_at, arrivedAt: m.arrival_at,
+    messages: allMessages().map((m) => ({ id: m.id, callsign: m.callsign, missionDay: m.mission_day, rehearsal: m.mission_day < 1, submittedAt: m.submitted_at, arrivedAt: m.arrival_at,
       state: m.state, flagged: !!m.flagged, tags: (m.tags || '').split(',').filter(Boolean), body: m.body,
       reply: m.response_body ? { body: m.response_body, by: m.responder, writtenAt: m.response_written, publishedAt: m.response_at } : null,
       reviewedAt: m.reviewed_at, reviewedBy: m.reviewed_by, rejectReason: m.reject_reason, lightSeconds: m.light_seconds, distanceAu: m.distance_au })),

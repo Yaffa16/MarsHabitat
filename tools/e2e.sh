@@ -341,6 +341,17 @@ done
 ok "the PDF holds the mission, every day that has happened, the whole crew log and the media"
 echo "$PDFTXT" | grep -q "Audit trail" && bad "the PDF still carries the audit trail" || ok "no audit trail in the PDF"
 [ "$(curl -s -b $A -o /dev/null -w '%{redirect_url}' $B/archive/today)" = "$B/archive/day/$TODAY" ] && ok "during the run /archive/today is the current day" || bad "/archive/today does not lead to today"
+# a rehearsal against made-up dates (MISSION_OVERRIDE, as this suite runs): NOW is at hand on the desk and in the archive all through it, so everything can be tried; the public pages show the sols
+RUNCTL=$(curl -s -b $A "$B/control?tab=habitat")
+echo "$RUNCTL" | grep -qE 'class="daypick-now" data-day="0"[^>]*>NOW · [0-9]+ [A-Z][a-z]+</a>' && echo "$RUNCTL" | grep -q "day $(printf '%03d' $TODAY) · a rehearsal against made-up dates · NOW" && echo "$RUNCTL" | grep -q 'class="on" data-day="'$TODAY'"' \
+  && curl -s -b $A "$B/control?tab=habitat&day=0" | grep -q 'Schedule · NOW' \
+  && ok "in a rehearsal against made-up dates the desk keeps NOW in the picker, dated today, and opens on the current sol" || bad "NOW is missing from the desk during the rehearsal run"
+curl -s -b $A $B/archive | grep -q '<td class="n">NOW</td>' && [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/archive/now)" = "200" ] && curl -s -b $A $B/archive/now | grep -q '<h1>NOW — today, the rehearsal day</h1>' \
+  && ok "and the archive lists NOW with its record at /archive/now, while /archive/today stays the current day" || bad "no NOW in the archive during the rehearsal run"
+node -e '
+const m = require("./src/lib/mission").state();
+process.exit(m.nowDay === true && m.workDay === m.clampedDay && m.workDay >= 1 ? 0 : 1);
+' && ok "mission.nowDay is on for the rehearsal run and the desk still works on the current sol (workDay)" || bad "nowDay/workDay wrong during the rehearsal run"
 for made_up in "Trends" "Daily usage" "hour by hour" "Resources over the day" "Day total" "Days left" "planned, ahead" "The distance"; do
   echo "$PDFTXT" | grep -q "$made_up" && bad "the PDF still carries generated matter: $made_up"
 done
@@ -438,6 +449,10 @@ for sec in about-project what who-we-are; do
 done
 echo "$ABOUT" | grep -q 'Distance as the material' && echo "$ABOUT" | grep -q 'What happens when you send something' && echo "$ABOUT" | grep -q 'Outside the habitat' \
   && ok "the About page carries all three texts — About, What this is, Who we are" || bad "the About page is missing a text"
+echo "$ABOUT" | grep -q '<h3>Messages sent to space</h3>' && echo "$ABOUT" | grep -q 'through SpaceSpeak — a small network of transmitters around the world' && echo "$ABOUT" | grep -q 'between 2.4 and 5 gigahertz' \
+  && echo "$ABOUT" | grep -q 'From then on the message is on its way for good' && echo "$ABOUT" | grep -q 'nearly halfway to Proxima Centauri' \
+  && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<h3>Nachrichten ins All</h3>' && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q 'via SpaceSpeak' \
+  && ok "About tells how a message goes to space — SpaceSpeak's transmitters, the band, the antenna, the speed of light, then where it gets to and that it never stops — in two paragraphs, in the three languages" || bad "the About page has no Messages sent to space section"
 echo "$FOOT" | grep -q '<dialog class="popup" id="what"' && bad "the reading matter is still a pop-up on the landing page" || ok "no pop-ups for the reading matter on the landing page"
 echo "$FOOT" | grep -q '<a class="tab tab-more" data-tab="more" href="/about">' && echo "$ABOUT" | grep -q '<a class="tab tab-more is-on" data-tab="more" href="/about">' \
   && ok "a phone's About key opens the page, and is lit there" || bad "the About key does not lead to the page"
@@ -830,8 +845,8 @@ echo "$CTRLPAGE" | grep -q 'daypick-dates' && [ "$(echo "$CTRLPAGE" | grep -o 't
 echo "$CTRLPAGE" | grep -q 'href="/">Public station' && bad "the Public station button is still on mission control" || ok "no Public station button on mission control"
 echo "$CTRLPAGE" | grep -q 'class="officer-stack"' && ok "an officer's blocks stack in one column, the blog first and full width" || bad "officer blocks are still in a grid"
 echo "$CTRLPAGE" | grep -q 'class="blog-box"' && grep -q "textarea.blog-box { min-height: 340px" public/station.css && ok "the blog boxes are tall enough to write in" || bad "blog boxes not enlarged"
-[ "$(echo "$CTRLPAGE" | grep -o 'data-day="[0-9]*"' | sort -u | wc -l)" = "13" ] \
-  && ok "every officer tab offers all thirteen days of the run" || bad "the day picker does not offer thirteen days"
+[ "$(echo "$CTRLPAGE" | grep -o 'data-day="[1-9][0-9]*"' | sort -u | wc -l)" = "13" ] \
+  && ok "every officer tab offers all thirteen days of the run (and NOW, the rehearsal day, before them)" || bad "the day picker does not offer thirteen days"
 curl -s -b $A -X POST -d "day=2" -d "designation=COMMUNICATION OFFICER" -d "back=comms" --data-urlencode "body=First full sleep period logged." -o /dev/null $B/control/logbook
 curl -s $B/logbook | grep -q "First full sleep period logged." && ok "writing over a placeholder publishes the entry for its day" || bad "written entry not public"
 curl -s -b $A -X POST -d "day=2" -d "designation=COMMUNICATION OFFICER" -d "back=comms" -d "action=clear" -d "body=ignored" -o /dev/null $B/control/logbook
@@ -1192,6 +1207,15 @@ echo "$BL" | grep -q 'class="screen-blogs" id="screen-blogs"' && echo "$BL" | gr
   && grep -q "translateY" public/screen-blogs.js && grep -q "requestAnimationFrame" public/screen-blogs.js \
   && ok "the blogs screen shows one blog at a time, the post rolling by — the Commander Blog, then the Science Findings, then the Health Blog, round and round" || bad "the blogs screen is not one at a time"
 grep -q "font-size: clamp(20px, 1.2vw, 24px)" public/screen.css && ok "its text stands at the size of the panel's own notes, readable across the room" || bad "the blogs screen's text size is not set"
+grep -q 'body.screen .screen-blogs .blogp .dpanel-body > .empty { position: absolute; inset: 22px 40px 40px; min-height: 0; display: block; text-align: left;' public/screen.css \
+  && ok "a blog with nothing written stands at the top left, across the width, like a post would" || bad "the empty blog note is not left-aligned across the width"
+# the board screen: its cards come back from the poll in the screen's own language, all 400 of them; nothing on it is tappable
+echo "$SCR" | grep -q 'data-poll="/api/board?lang=de&amp;limit=400"' && curl -s "$B/screen/board?lang=en" | grep -q 'data-poll="/api/board?lang=en&amp;limit=400"' \
+  && ok "the board screen polls /api/board for its own language and its 400 cards" || bad "the board screen polls the visitor's board"
+curl -s "$B/api/board?lang=de&limit=400" | grep -q 'Diese Nachricht ist jetzt' && curl -s "$B/api/board?lang=fr" | grep -q 'Ce message est maintenant' && ! curl -s "$B/api/board?lang=de" | grep -q 'This message is currently' \
+  && ok "/api/board answers in the language asked for, so the ticking words and the cards' words agree" || bad "/api/board ignores ?lang"
+grep -q "if (document.body.classList.contains('screen')) return;" public/board.js && grep -q 'body.screen .card.xc .card-space { flex-direction: row; flex-wrap: wrap;' public/screen.css && grep -q 'body.screen .card.xc .card-space-more { display: contents; }' public/screen.css \
+  && ok "on the board screen the distance and the launch time share one line, and a tap opens nothing" || bad "the board screen's space line is not one line, or a tap still opens the panel"
 curl -s $B/screen/mission | grep -q 'id="mission-today"' && curl -s $B/screen/trends | grep -q 'id="trends"' && curl -s $B/screen/habitat | grep -q 'id="hbt-bento"' && ok "the mission, the trends and the habitat screens carry the dashboard's own panels" || bad "a screen lacks its panel"
 curl -s "$B/api/cloud?flat=1" | node -e 'let s="";process.stdin.on("data",(c)=>s+=c).on("end",()=>{const j=JSON.parse(s); process.exit(!j.configured || (j.html.indexOf("cloud-flat")>-1 && j.html.indexOf("cloud-day-head")<0) ? 0 : 1);});' \
   && ok "/api/cloud?flat=1 answers with the gallery as one grid, no day heads — what the media screen polls (data-api)" || bad "the flat gallery is wrong"
@@ -1237,6 +1261,10 @@ grep -q "setInterval(tick, 1000)" public/board.js && grep -q "299792.458" public
   && ok "board.js moves the figure on every second — 299,792 km a second — million, billion, trillion, quadrillion as it grows" || bad "board.js does not run the distance"
 grep -q "closest('.card.xc')" public/board.js && grep -q "function closest(" public/board.js && grep -q "/api/celestial" public/board.js && grep -q "jr-one" public/board.js && ! grep -q "jr-stops\|voyagerKm" public/board.js \
   && ok "a tap on a card says in two lines what the message is closest to — the last object it has passed, how many times farther it is, one line about the object — nothing more" || bad "board.js has no closest-object panel, or still lists everything"
+! grep -q "RECONNECTING" public/board.js && ! grep -q "'RECONNECTING'" src/lib/i18n.js && grep -q "live.classList.add('stale')" public/board.js \
+  && ok "the board's LIVE mark never says RECONNECTING — a failed poll only takes its pulse away and tries again" || bad "the board still says RECONNECTING"
+grep -q 'body.landing > .journey, .journey { padding: 24px 16px; align-items: center; }' public/aura.css && grep -q '.jr-panel { width: 100%; max-height: 84vh; max-height: 84dvh; border-radius: 22px;' public/aura.css \
+  && ok "on a phone the message's panel floats in the middle of the screen, a card with room around it, not a sheet at the foot" || bad "the phone's panel still sticks to the foot"
 grep -q '<span class="jr-what">' public/board.js && ! grep -q 'jr-what" href\|wikipedia\|o\.wiki' public/board.js && ! grep -q 'jr-what:hover\|text-decoration' <(awk '/^\.jr-line/' public/aura.css) \
   && ok "the object's name on the panel is a word, not a link — no Wikipedia key, nothing to tap" || bad "the panel still links to Wikipedia"
 grep -q "WHERE = {" public/board.js && grep -q "orbits about {km} km above Earth" public/board.js && grep -q "passed about {km} km from Earth" public/board.js && grep -q "is about {km} km above the ground" public/board.js \
@@ -1456,6 +1484,9 @@ grep -q 'stepHead(.up., .01.' src/views/pages/landing.js && [ "$(echo "$LAND" | 
   && ! echo "$LAND" | grep -q 'a small outpost on a simulated Mars' && ! echo "$LAND" | grep -q 'Communicate with the crew.' \
   && echo "$LAND" | grep -q '<a class="know-more" href="/about"><span>Know more</span>' && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '<span>Mehr erfahren</span>' \
   && ok "the note says the crew are always in the habitat (never that they cannot leave), and its Know more key leads to the About page, in German too" || bad "the note's words or its key are wrong"
+echo "$LAND" | grep -q '<p class="note-cta note-doors">' && echo "$LAND" | grep -q '<a class="know-more is-write" href="#write"><span>Write to the crew</span>' && echo "$LAND" | grep -q '<a class="know-more is-dash" href="#mission"><span>Mission dashboard</span>' \
+  && grep -q "body.landing .note-doors { display: flex; flex-wrap: wrap;" public/sheet.css && grep -q 'if (/^\\/?#write$/.test(href)) a.setAttribute' public/tabbar.js \
+  && ok "under the description two doors — Write to the crew (the composer) and Mission dashboard — stand before Know more; on a phone tabbar.js leads them to the messages page and the dashboard" || bad "the note has no doors to the composer and the dashboard"
 ! echo "$LAND" | grep -q 'src="/mission/mission-0' && ok "no photographs on the landing page: the mission is told on the About page" || bad "the chapters' photographs are still on the landing page"
 grep -q ':root\[data-theme="light"\] { --paper: #f6f7f8; --ground-2: #eceef1; }' public/sheet.css && grep -q 'body.landing .dome-panel { --seq-ground: #d7d7d7; }' public/sheet.css \
   && grep -q 'body.landing .sky-text { padding: 0 12px; color: #fff;' public/sheet.css \
@@ -1584,6 +1615,87 @@ let s = ""; process.stdin.on("data", (d) => s += d).on("end", () => {
   process.exit(need.every((x) => page.includes(x)) ? 0 : 1);
 });' && ok "the rehearsal page is a complete day page — schedule, meals, consumption rings, power and habitat, the real feel of SOL 001" || bad "the rehearsal page is missing day blocks"
 
+echo "── NOW — the rehearsal day, mission day 0: filed apart from the run's days, in every export, gone with the reset"
+# the schedule file was left broken on purpose earlier (a broken file must not take the site down); NOW files a schedule, so put the plan's back first
+cp "$CONTENT_DIR/plan/schedule.json" "$CONTENT_DIR/schedule.json"; sleep 2
+NOWCTL=$(curl -s -b $A "$B/control?tab=habitat")
+echo "$NOWCTL" | grep -q 'class="daypick-now on"' && echo "$NOWCTL" | grep -qE 'data-day="0"[^>]*>NOW · [0-9]+ [A-Z][a-z]+</a>' && echo "$NOWCTL" | grep -q 'href="/control?tab=habitat&day=0#work"' && echo "$NOWCTL" | grep -q 'Schedule · NOW' && echo "$NOWCTL" | grep -q 'rehearsing as NOW' \
+  && ok "before the run the desk opens on NOW — first in the day picker with today's date, ahead of 15 Oct, and every block says so" || bad "the desk does not open on NOW before the run"
+DAY1_TASKS=$(node -e 'console.log(require("./src/db").db.prepare("SELECT COUNT(*) n FROM task WHERE mission_day = 1").get().n)')
+DAY1_WATER=$(node -e 'console.log(JSON.stringify(require("./src/db").db.prepare("SELECT quantity, consumption FROM inventory_level il JOIN inventory_item i ON i.id = il.item_id WHERE i.key = ? AND il.mission_day = 1").get("water")))')
+curl -s -b $A -d day=0 -d n0_time=09:00 -d "n0_label=NOW briefing" -d "n0_detail=everyone in the dome" -o /dev/null $B/control/schedule
+curl -s -b $A -d day=0 -d "BREAKFAST_name=NOW porridge" -d BREAKFAST_kcal=400 -o /dev/null $B/control/meals
+curl -s -b $A -d day=0 -d "designation=COMMUNICATION OFFICER" -d "body=NOW words for the rehearsal" -d back=comms -o /dev/null $B/control/logbook
+curl -s -b $A -d day=0 -d kind=science -d "body=NOW findings for the rehearsal" -d back=science -o /dev/null $B/control/report
+curl -s -b $A -d day=0 -d q_water=480 -d c_water=22 -d "why=NOW count" -o /dev/null $B/control/inventory
+curl -s -b $A -d day=0 -d kwh_food=1.4 -o /dev/null $B/control/power
+curl -s -b $A -d day=0 -d steps_1=4200 -o /dev/null $B/control/crew-figures
+sleep 1
+node -e '
+const fs = require("fs"), d = process.env.CONTENT_DIR, r = (f) => JSON.parse(fs.readFileSync(d + "/" + f, "utf8"));
+const ok = r("schedule.json")["0"][0].label === "NOW briefing" && r("meals.json")["0"][0].name === "NOW porridge"
+  && r("logbook.json")["0"]["COMMUNICATION OFFICER"] === "NOW words for the rehearsal" && r("notes.json")["0"][0].body === "NOW findings for the rehearsal"
+  && r("inventory-levels.json")["0"].water.quantity === 480 && r("power.json").days["0"].food === 1.4 && r("crew-figures.json")["0"].steps === 4200;
+process.exit(ok ? 0 : 1);' && ok "everything filed under NOW lands in the content files under \"0\" — schedule, meals, blog, report, count, power, figures" || bad "NOW is not filed under 0 in the content files"
+[ "$(node -e 'console.log(require("./src/db").db.prepare("SELECT COUNT(*) n FROM task WHERE mission_day = 1").get().n)')" = "$DAY1_TASKS" ] \
+  && [ "$(node -e 'console.log(JSON.stringify(require("./src/db").db.prepare("SELECT quantity, consumption FROM inventory_level il JOIN inventory_item i ON i.id = il.item_id WHERE i.key = ? AND il.mission_day = 1").get("water")))')" = "$DAY1_WATER" ] \
+  && ! grep -q "NOW words\|NOW briefing" "$CONTENT_DIR/resource-log.csv" \
+  && ok "and nothing of it touches the run's days — SOL 001's schedule and stores are as they were, the resource log holds no NOW row" || bad "NOW leaked into the run's days"
+node -e '
+const db = require("./src/db").db;
+const w = db.prepare("SELECT quantity, consumption FROM inventory_level il JOIN inventory_item i ON i.id = il.item_id WHERE i.key = ? AND il.mission_day = 0").get("water");
+const day = db.prepare("SELECT date, status FROM day WHERE mission_day = 0").get();
+const m = require("./src/lib/mission");
+process.exit(w && w.quantity === 480 && w.consumption === 22 && day && day.date === m.state().today && m.dateForDay(0) === m.state().today && m.state().workDay === 0 && m.state().nowDay ? 0 : 1);
+' && ok "NOW is mission day 0 in the database — its own day row dated today, its own stores from what was carried in; mission.workDay is 0 before the run" || bad "day 0 is not set up as NOW"
+NOWARC=$(curl -s -b $A $B/archive)
+echo "$NOWARC" | grep -q '<td class="n">NOW</td>' && echo "$NOWARC" | grep -q 'Rehearsal · not the record' && echo "$NOWARC" | grep -q 'href="/archive/now/export.pdf"' \
+  && ok "the archive lists NOW ahead of the days, marked as the rehearsal, with its own PDF and Markdown" || bad "no NOW row in the archive"
+[ "$(curl -s -b $A -o /dev/null -w '%{redirect_url}' $B/archive/today)" = "$B/archive/now" ] && ok "before the run /archive/today leads to /archive/now" || bad "/archive/today does not lead to NOW before the run"
+NOWDAY=$(curl -s -b $A $B/archive/now)
+echo "$NOWDAY" | grep -q '<h1>NOW — today, before the run</h1>' && echo "$NOWDAY" | grep -q 'NOW words for the rehearsal' && echo "$NOWDAY" | grep -q 'NOW findings for the rehearsal' \
+  && echo "$NOWDAY" | grep -q 'NOW briefing' && echo "$NOWDAY" | grep -q 'NOW porridge' && echo "$NOWDAY" | grep -q 'NOW count' && echo "$NOWDAY" | grep -q '4200' \
+  && ok "/archive/today is NOW's record — the blog, the report, the schedule, the meal, the count and the figures filed under NOW" || bad "NOW's record is not built from day 0"
+curl -s -b $A $B/archive/export.json | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
+  const j = JSON.parse(s), r = j.rehearsal;
+  const ok = r && r.missionDay === 0 && r.rehearsal === true && r.recorded === false && /NOW/.test(r.note)
+    && r.schedule.some((t) => t.label === "NOW briefing") && r.meals.some((m) => m.name === "NOW porridge")
+    && r.officers.some((o) => o.commanderBlog && o.commanderBlog.body === "NOW words for the rehearsal")
+    && r.officers.some((o) => o.report && o.report.bodies.includes("NOW findings for the rehearsal"))
+    && r.storesCounted.some((v) => v.key === "water" && v.quantity === 480) && r.power && r.crewFigures && r.crewFigures.steps === 4200
+    && j.days.length === 13 && j.days.every((d) => d.recorded === false && d.missionDay >= 1);
+  process.exit(ok ? 0 : 1);
+});' && ok "the data copy carries NOW as its own rehearsal block — marked, beside the thirteen unrecorded days, never among them" || bad "export.json has no NOW block"
+NOWMD=$(curl -s -b $A $B/archive/export.md)
+echo "$NOWMD" | grep -q '^## NOW — today, before the run — .* — REHEARSAL, NOT THE RECORD' && echo "$NOWMD" | grep -q 'NOW words for the rehearsal' && echo "$NOWMD" | grep -q 'NOW briefing' \
+  && ok "the readable copy carries the NOW chapter, marked" || bad "export.md has no NOW chapter"
+curl -s -b $A $B/archive/export.pdf -o /tmp/now-record.pdf && NOWPDF=$(pdftext /tmp/now-record.pdf)
+echo "$NOWPDF" | grep -q 'NOW ·' && echo "$NOWPDF" | grep -q 'rehearsal, not the record' && echo "$NOWPDF" | grep -q 'NOW words for the rehearsal' && echo "$NOWPDF" | grep -q 'NOW briefing' \
+  && ok "the full record's PDF carries the NOW chapter, marked, with what was filed under NOW" || bad "the PDF has no NOW chapter"
+curl -s -b $A $B/archive/now/export.pdf -o /tmp/now-day.pdf && pdftext /tmp/now-day.pdf | grep -q 'NOW words for the rehearsal' && ok "and NOW downloads as a PDF of its own" || bad "no NOW PDF"
+curl -s -b $A -o /dev/null $B/archive
+node -e '
+const fs = require("fs"), path = require("path"), dir = path.join(process.env.DATA_DIR, "readings", "daily");
+let found = false;
+for (const d of fs.existsSync(dir) ? fs.readdirSync(dir) : []) for (const f of fs.readdirSync(path.join(dir, d))) {
+  const o = JSON.parse(fs.readFileSync(path.join(dir, d, f), "utf8"));
+  if (o.missionDay === 0 && o.rehearsal === true && o.habitatTab && o.habitatTab.schedule.some((t) => t.label === "NOW briefing") && /NOW/.test(o.note)) found = true;
+}
+process.exit(found ? 0 : 1);' && ok "the readings log holds a daily record for NOW — missionDay 0, marked rehearsal, with the Habitat tab as filed under NOW" || bad "no NOW record in the readings log"
+curl -s -b $A $B/archive/readings.zip -o /tmp/now-readings.zip && unzip -p /tmp/now-readings.zip README.txt | grep -q 'NOW' && ok "and the readings ZIP's README says so" || bad "the readings ZIP does not mention NOW"
+curl -s -b $A -D /tmp/now-media.h $B/media/day/0/export.zip -o /tmp/now-media.zip && grep -qi 'filename="mars-station-media-now-rehearsal.zip"' /tmp/now-media.h && unzip -p /tmp/now-media.zip README.txt | grep -q 'now-rehearsal' \
+  && ok "NOW's media downloads as its own ZIP, its folder named now-rehearsal, the README explaining it" || bad "no media ZIP for NOW"
+curl -s -b $V -c $V -X POST --data-urlencode "body=A NOW question from Earth" -d "callsign=$CS" -o /dev/null $B/communicate
+sleep $((TRANSIT_SECONDS + 1))
+curl -s -b $A $B/control/messages/export.csv | grep -q '0,NOW · before the run,' && curl -s -b $A $B/control/messages/export.json | grep -q '"missionDay":0,"rehearsal":true' \
+  && curl -s -b $A "$B/control?show=all" | grep -q '· NOW · <b class="msg-sent">' \
+  && ok "a message before the run is NOW's — mission day 0, marked in the CSV, the JSON and on the desk" || bad "messages before the run are not marked NOW"
+curl -s -b $A $B/control/messages/export.pdf -o /tmp/now-msgs.pdf && pdftext /tmp/now-msgs.pdf | grep -q 'NOW · before the run · rehearsal, not the record' && ok "and the messages PDF heads them NOW · before the run" || bad "the messages PDF does not head the rehearsal messages"
+curl -s $B/logbook | grep -q 'href="#day-0"' && curl -s $B/logbook | grep -q 'NOW words for the rehearsal' && curl -s $B/at-a-glance | grep -q 'NOW words for the rehearsal' \
+  && ok "the public crew log heads with NOW once it is written, and the booklet's NOW page is built from it" || bad "NOW is not on the public log or the booklet"
+curl -s "$B/screen/blogs?lang=en" | grep -q 'NOW words for the rehearsal' && curl -s "$B/screen/blogs?lang=en" | grep -q 'NOW · ' && ok "the blogs screen shows NOW's blogs before the run, headed NOW" || bad "the blogs screen does not show NOW"
+
 echo "── start again for 15 October"
 grep -q "copyFileSync" src/lib/content.js && bad "content.js still uses fs.copyFile, which fails with EPERM on a Docker bind mount from Windows" || ok "the plan is copied by read-and-write, so reset works on a mounted content/ folder"
 # a content file lost while the plan still has it comes back at start-up
@@ -1676,6 +1788,10 @@ curl -s -b $A -d "confirm=RESET" -o /dev/null $B/control/reset
 curl -s $B/api/status | grep -q '"total":0' && ok "reset clears every message from Earth" || bad "messages survived the reset"
 curl -s $B/logbook | grep -q "Rehearsal words" && bad "the rehearsal entry survived the reset" || ok "the rehearsal entry is gone from the crew log"
 grep -q "Rehearsal words" "$CONTENT_DIR/logbook.json" && bad "the rehearsal entry survived in logbook.json" || ok "logbook.json holds no entry"
+node -e '
+const fs = require("fs"), d = process.env.CONTENT_DIR, r = (f) => JSON.parse(fs.readFileSync(d + "/" + f, "utf8"));
+process.exit(["schedule.json", "meals.json", "logbook.json", "notes.json", "inventory-levels.json"].every((f) => !Object.prototype.hasOwnProperty.call(r(f), "0")) && !(r("power.json").days || {})["0"] && !r("crew-figures.json")["0"] ? 0 : 1);
+' && ok "the reset takes NOW with it — no \"0\" left in any content file" || bad "NOW survived the reset"
 [ "$(grep -c PLACEHOLDER "$CONTENT_DIR/logbook.json")" -ge 13 ] && ! grep -q "SCIENCE OFFICER\|HEALTH OFFICER" "$CONTENT_DIR/logbook.json" && ok "every Commander Blog slot is empty — 13 placeholders, no other officer's" || bad "placeholders missing after reset"
 curl -s -b $A "$B/control?tab=habitat" | grep -q "The station has been reset for 15 October" && ok "mission control reports the reset" || bad "no reset report"
 curl -s -b $A "$B/control?tab=habitat" | grep -q "Start again from 15 October" && ok "the reset panel is on the Habitat tab" || bad "no reset panel"
@@ -1737,6 +1853,22 @@ grep -q "data-over" src/views/pages/public.js && grep -q "d.phase === 'COMPLETE'
   && ok "a page left open across the last midnight stops its own timers when the run ends under it" || bad "an open ticker would keep fetching forever after the run"
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B2/logbook)" = "200" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' $B2/at-a-glance)" = "200" ] \
   && ok "reading never stops — the pages keep serving the record" || bad "the record stopped serving"
+# the channel and the desk closed at the end of the day after the run (src/lib/mission.js, open)
+curl -s $B2/api/ticker | grep -q '"open":false' && curl -s $B2/messages | grep -q 'CHANNEL CLOSED' && curl -s $B2/messages | grep -q 'the channel closed at the end of' \
+  && ok "the station says it is closed: /api/ticker open:false, the composer CHANNEL CLOSED with the day it closed" || bad "the closed station does not say so"
+V2=/tmp/visitor2.jar; rm -f $V2
+curl -s -c $V2 -b $V2 -o /dev/null $B2/messages
+curl -s -c $V2 -b $V2 -X POST -d "body=Too late for the crew" -o /dev/null $B2/communicate
+[ "$(DATA_DIR="$DATA2" node -e 'console.log(require("./src/db").db.prepare("SELECT COUNT(*) n FROM message").get().n)')" = "0" ] \
+  && ok "a message posted after the close is not taken — the form itself is refused on the server" || bad "the closed station still takes messages"
+A2=/tmp/admin2.jar; rm -f $A2
+curl -s -c $A2 -d "username=$CONTROL_USER" -d "password=$CONTROL_PASSWORD" -o /dev/null $B2/control/login
+[ "$(curl -s -b $A2 -d day=13 -d n0_time=09:00 -d "n0_label=Late edit" -o /dev/null -w '%{redirect_url}' $B2/control/schedule)" = "$B2/control" ] \
+  && ! grep -q "Late edit" "$CONT2/schedule.json" && curl -s -b $A2 $B2/control | grep -q 'Mission control closed at the end of' && curl -s -b $A2 "$B2/control?tab=habitat" | grep -q 'body class="control closed"' \
+  && grep -q "document.body.classList.contains('closed')" public/control.js && grep -q 'body.control.closed form.is-closed { opacity: .55; pointer-events: none; }' public/station.css \
+  && ok "mission control takes no edit after the close — every save is refused with a note, and the page stands greyed and read-only" || bad "mission control still takes edits after the close"
+[ "$(curl -s -b $A2 -o /dev/null -w '%{http_code}' $B2/archive)" = "200" ] && [ "$(curl -s -b $A2 -o /dev/null -w '%{http_code}' $B2/archive/export.json)" = "200" ] \
+  && ok "while the archive and the downloads keep serving" || bad "the archive closed with the desk"
 kill $SRV2 2>/dev/null; wait $SRV2 2>/dev/null
 DATA_DIR="$DATA2" CONTENT_DIR="$CONT2" CRITICAL_FREEZE_AT=2001-01-01T00:00:00Z node -e '
 const c = require("./src/lib/critical"), db = require("./src/db").db;
@@ -1747,6 +1879,40 @@ const after = db.prepare("SELECT COUNT(*) n FROM external_reading").get().n;
 process.exit(!moved && after === before ? 0 : 1);
 ' && ok "a Docker image built after the close does not move the floor — the run's readings stay" || bad "a rebuild after the close touched the readings"
 rm -rf "$DATA2" "$CONT2"
+
+echo "── the day after the run: the last day the channel and the desk are open"
+# a station whose run ended yesterday: the crew are out, the channel still takes messages for their last replies and
+# the desk still takes edits — until the end of today
+DATA5=$(mktemp -d); CONT5=$(mktemp -d); cp content/*.json "$CONT5"/
+DATA_DIR="$DATA5" CONTENT_DIR="$CONT5" node src/db/seed.js > /dev/null 2>&1
+DATA_DIR="$DATA5" CONTENT_DIR="$CONT5" PORT=8097 CRITICAL_POLL=false \
+  MISSION_START=$(date -u -d '-13 days' +%F) MISSION_END=$(date -u -d '-1 days' +%F) \
+  node src/server.js > /tmp/srv-grace.log 2>&1 &
+SRV5=$!
+sleep 3
+B5=http://localhost:8097
+curl -s $B5/api/ticker | grep -q '"phase":"COMPLETE"' && curl -s $B5/api/ticker | grep -q '"open":true' && curl -s $B5/ | grep -q 'id="write"' && ! curl -s $B5/ | grep -q 'CHANNEL CLOSED' \
+  && ok "the day after the run the mission is complete but the station is open: the page keeps its composer" || bad "the day after the run the station is already closed"
+V5=/tmp/visitor5.jar; rm -f $V5
+curl -s -c $V5 -b $V5 -o /dev/null $B5/
+curl -s -c $V5 -b $V5 -X POST -d "body=A last word for the crew" -o /dev/null $B5/communicate
+[ "$(DATA_DIR="$DATA5" node -e 'console.log(require("./src/db").db.prepare("SELECT COUNT(*) n FROM message").get().n)')" = "1" ] \
+  && ok "a message sent the day after the run is taken" || bad "the day after the run no message is taken"
+A5=/tmp/admin5.jar; rm -f $A5
+curl -s -c $A5 -d "username=$CONTROL_USER" -d "password=$CONTROL_PASSWORD" -o /dev/null $B5/control/login
+curl -s -b $A5 -d day=13 -d n0_time=09:00 -d "n0_label=Last edit" -o /dev/null $B5/control/schedule
+grep -q "Last edit" "$CONT5/schedule.json" && ! curl -s -b $A5 $B5/control | grep -q 'body class="control closed"' \
+  && ok "and the desk still takes edits that day" || bad "the desk refused an edit the day after the run"
+kill $SRV5 2>/dev/null; wait $SRV5 2>/dev/null
+rm -rf "$DATA5" "$CONT5"
+# the real run's close, from the dates fixed in src/lib/run.js: the end of 28 October 2026 at the venue
+UD=$(mktemp -d)
+DATA_DIR="$UD" MISSION_OVERRIDE=false node -e '
+const m = require("./src/lib/mission"); m.sync();
+const s = m.state(new Date("2026-10-28T22:59:00Z")), c = m.state(new Date("2026-10-28T23:00:00Z"));
+process.exit(s.open === true && c.open === false && s.closeDate === "2026-10-28" && c.closedAt === "2026-10-28T23:00:00.000Z" ? 0 : 1);
+' > /dev/null 2>&1 && ok "for the real run the close is the end of 28 October 2026 at the venue — 23:00 UTC, the clocks having gone back" || bad "the real run's close is wrong"
+rm -rf "$UD"
 
 echo "── the habitat sensor through Home Assistant"
 # A third station against a stand-in Home Assistant (tools/mock-home-assistant.js)

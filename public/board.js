@@ -159,17 +159,19 @@
     fetch(url, { cache: 'no-store', credentials: 'same-origin' })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (data) {
-        if (data.phase === 'COMPLETE') { window.location.reload(); return; }
+        // the station has closed under this open page (the end of the day after the run): it turns into the closed record
+        if (data.open === false && feed.getAttribute('data-open') !== '0') { window.location.reload(); return; }
         if (data.version !== version) {
           swap(data);
           version = data.version;
         }
         wait = BASE_MS;
-        if (live) { live.classList.remove('stale'); live.textContent = t('LIVE'); }
+        if (live) live.classList.remove('stale');
       })
       .catch(function () {
+        // a poll that fails backs off and tries again; the LIVE mark only loses its pulse, it never says anything else
         wait = Math.min(MAX_MS, wait * 2);
-        if (live) { live.classList.add('stale'); live.textContent = t('RECONNECTING'); }
+        if (live) live.classList.add('stale');
       })
       .then(schedule);
   }
@@ -426,6 +428,8 @@
     journey.innerHTML = '';
     box = null;
   }
+  // nothing on the installation's screens is tappable: no panel opens there (the cards' Follow its journey is not drawn either)
+  if (document.body.classList.contains('screen')) return;
   document.addEventListener('click', function (e) {
     if (!e.target.closest) return;
     if (e.target.closest('a, button, input, textarea, select, .journey')) return;

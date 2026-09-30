@@ -30,6 +30,8 @@ const TABS = [
 ];
 
 const tabUrl = (tab, day, extra = '') => `/control?tab=${tab}&day=${day}${extra}#work`;
+// "day 006" — or "NOW", the rehearsal day before the run (mission day 0), wherever a block names its day
+const dayN = (day) => (Number(day) === 0 ? 'NOW' : `day ${dd(day)}`);
 
 const flash = (f) => f ? `<div class="flash ${f.err ? 'err' : ''}">${esc(f.msg)}</div>` : '';
 
@@ -109,7 +111,7 @@ function messageCard(m, crew, show, space = null) {
         ${sp}
       </div>
       <div class="msg-side">
-        <span class="msg-meta" title="Message ${String(m.id).padStart(5, '0')} · sent ${esc(m.submitted_at)} (UTC)">MSG ${String(m.id).padStart(5, '0')} · day ${dd(m.mission_day)} · <b class="msg-sent">sent ${esc(whenFull(m.submitted_at))}</b></span>
+        <span class="msg-meta" title="Message ${String(m.id).padStart(5, '0')} · sent ${esc(m.submitted_at)} (UTC)">MSG ${String(m.id).padStart(5, '0')} · ${dayN(m.mission_day)} · <b class="msg-sent">sent ${esc(whenFull(m.submitted_at))}</b></span>
         <div class="msg-actions">
           ${m.state === 'REJECTED' ? small('restore', 'Restore to the queue')
             : m.state === 'PUBLISHED' ? small('unpublish', 'Unpublish') : small('reject', 'Reject')}
@@ -228,7 +230,7 @@ function moodRecord(c) {
   const rows = c.record || [];
   const row = (m) => `<tr>
         <td class="mr-when"><b>${esc(m.date ? fmtDay(m.date) : '—')}</b><span>${esc(m.time)}</span></td>
-        <td class="mr-sol">${m.sol != null && m.sol >= 1 ? `SOL ${dd(m.sol)}` : '—'}</td>
+        <td class="mr-sol">${m.sol != null && m.sol >= 1 ? `SOL ${dd(m.sol)}` : m.sol != null ? 'before the run' : '—'}</td>
         <td class="mr-mood"><b>${esc(m.condition)}</b><span>${esc(m.text)}</span></td>
         <td class="mr-by">${esc(m.set_by)}</td>
       </tr>`;
@@ -286,7 +288,7 @@ function blogBlock(c, tab, day, entry, n = 1, e = null, draft = null) {
   const live = entry && !isPlaceholder(entry.body);
   const text = draft ? draft.body : live ? entry.body : '';
   return panel('COMMANDER BLOG', `
-    ${blockHead(n, 'Commander Blog', `${esc(officer.shown(c.designation))} · day ${dd(day)}`, { live, liveText: 'Live', draft })}
+    ${blockHead(n, 'Commander Blog', `${esc(officer.shown(c.designation))} · ${dayN(day)}`, { live, liveText: 'Live', draft })}
     <form method="post" action="/control/logbook" enctype="multipart/form-data" data-attach-media data-crew-id="${c.id}" class="${mark(e, 'body').trim()}"
           data-media="${editorMedia(c.media, text, c.otherBodies || [])}">
       <input type="hidden" name="day" value="${day}">
@@ -306,7 +308,7 @@ function reportBlock(c, kindKey, label, hint, day, tpl, tab, n = 2, e = null, dr
   const preset = (tpl || []).find((t) => String(t.name).toLowerCase() === 'default');
   const text = draft ? draft.body : live ? c.report : (preset ? preset.body : '');
   return panel(`${kindKey.toUpperCase()}`, `
-    ${blockHead(n, label, `${esc(officer.shown(c.designation))} · day ${dd(day)}`, { live, liveText: 'Live', draft })}
+    ${blockHead(n, label, `${esc(officer.shown(c.designation))} · ${dayN(day)}`, { live, liveText: 'Live', draft })}
     ${hint ? `<p class="note block-hint">${hint}</p>` : ''}
     <form method="post" action="/control/report" enctype="multipart/form-data" data-attach-media data-crew-id="${c.id}" class="${mark(e, 'body').trim()}"
           data-media="${editorMedia(c.media, text, c.reportOtherBodies || [])}">
@@ -337,7 +339,7 @@ function attachRow() {
 function scheduleBlock(day, tasks, e = null) {
   const rowKey = (t) => `row:${t.time}|${t.label}|${t.detail || ''}`;
   return panel('DAILY MISSION', `
-    ${eyebrow(`Schedule · day ${dd(day)}`)}
+    ${eyebrow(`Schedule · ${dayN(day)}`)}
     <form method="post" action="/control/schedule">
       <input type="hidden" name="day" value="${day}">
       <div class="tw"><table>
@@ -355,7 +357,7 @@ function scheduleBlock(day, tasks, e = null) {
         </tr>`).join('')}
         </tbody>
       </table></div>
-      <div class="actions"><button class="primary">Save day ${dd(day)}</button>${savedNote(e)}
+      <div class="actions"><button class="primary">Save ${dayN(day)}</button>${savedNote(e)}
         <span class="note">A task with its name emptied is removed when the day is saved.</span></div>
     </form>`, 'mars-side');
 }
@@ -368,7 +370,7 @@ function figureBlock(day, figures, crew, e, { key, chan, title, label, unit, but
   const f = figures[String(day)] || {}, per = f.crew || {};
   const fmt = (v) => (v == null ? '—' : Number(v).toLocaleString('en-GB'));
   return panel(chan, `
-    ${eyebrow(`${title} · day ${dd(day)}`)}
+    ${eyebrow(`${title} · ${dayN(day)}`)}
     <p class="note block-hint">One line per officer. Saving writes <b>content/crew-figures.json</b>; the crew's total is the sum.
     Leave a field blank to record nothing for that officer that day.</p>
     <form method="post" action="/control/crew-figures">
@@ -379,7 +381,7 @@ function figureBlock(day, figures, crew, e, { key, chan, title, label, unit, but
           <input type="number" min="0" name="${key}_${c.id}" value="${v[key] ?? ''}" placeholder="${unit}"></label>`; }).join('')}
       </div>
       <p class="note">Crew total on record for this day: <b>${fmt(f[key])}</b> ${unit}${Object.keys(per).length ? '' : f[key] != null ? ' — filed as a total, before the officers were counted separately' : ''}.</p>
-      <div class="actions"><button class="primary">${button} for day ${dd(day)}</button>${savedNote(e)}</div>
+      <div class="actions"><button class="primary">${button} for ${dayN(day)}</button>${savedNote(e)}</div>
     </form>`, 'mars-side');
 }
 const stepsBlock = (day, figures, crew, e) => figureBlock(day, figures, crew, e,
@@ -434,7 +436,7 @@ function mealsBlock(day, meals, e = null, recipes = []) {
   };
 
   return panel('DAILY FOOD PLAN', `
-    ${eyebrow(`Meals · day ${dd(day)}`)}
+    ${eyebrow(`Meals · ${dayN(day)}`)}
     <p class="note block-hint">Choose Breakfast, Lunch or Dinner from the recipe book and its name, kcal, prep time, nutrients,
     CO₂e and water footprint are filled in — every field stays editable. <b>Empty</b> clears the slot to fill in by hand, on the
     go; it is saved for that day only and never adds a recipe. The recipes are in <b>content/recipes.json</b>.
@@ -469,13 +471,13 @@ function mealsBlock(day, meals, e = null, recipes = []) {
       <div class="kv" style="margin-top:6px"><dt>Day total</dt>
         <dd>${kcal} kcal offered across ${meals.length} slot${meals.length === 1 ? '' : 's'}${
           co2 != null ? ` · ${+co2.toFixed(3)} kg CO₂e` : ''}${wfp != null ? ` · ${+wfp.toFixed(1)} L water footprint` : ''}</dd></div>
-      <div class="actions"><button class="primary">Save food plan for day ${dd(day)}</button>${savedNote(e)}</div>
+      <div class="actions"><button class="primary">Save food plan for ${dayN(day)}</button>${savedNote(e)}</div>
     </form>`, 'mars-side');
 }
 
 function inventoryBlock(day, items, e = null) {
   return panel('INVENTORY', `
-    ${eyebrow(`Levels at the end of day ${dd(day)}`)}
+    ${eyebrow(day ? `Levels at the end of day ${dd(day)}` : 'Levels at the end of NOW — a rehearsal of the count, from what was carried in')}
     <form method="post" action="/control/inventory">
       <input type="hidden" name="day" value="${day}">
       <div class="tw"><table>
@@ -490,7 +492,7 @@ function inventoryBlock(day, items, e = null) {
         </tr>`).join('')}</tbody>
       </table></div>
       <div class="actions">
-        <button class="primary">Save levels for day ${dd(day)}</button>${savedNote(e)}
+        <button class="primary">Save levels for ${dayN(day)}</button>${savedNote(e)}
         <div class="spacer"></div>
       </div>
     </form>`, 'mars-side');
@@ -539,7 +541,7 @@ function powerBlock(day, power, e = null) {
           </td></tr>`;
   };
   return panel('POWER', `
-    ${eyebrow(`Power consumed · day ${dd(day)}`)}
+    ${eyebrow(`Power consumed · ${dayN(day)}`)}
     <form method="post" action="/control/power" class="pw-form">
       <input type="hidden" name="day" value="${day}">
       <div class="tw"><table>
@@ -548,7 +550,7 @@ function powerBlock(day, power, e = null) {
       </table></div>
       <div class="kv" style="margin-top:6px"><dt>Day total</dt>
         <dd>${filed.length ? `${total.toFixed(2)} kWh across ${filed.length} categor${filed.length === 1 ? 'y' : 'ies'}` : 'nothing recorded for this day'}</dd></div>
-      <div class="actions"><button class="primary">Save power for day ${dd(day)}</button>${savedNote(e)}</div>
+      <div class="actions"><button class="primary">Save power for ${dayN(day)}</button>${savedNote(e)}</div>
     </form>
     <script>
     (function () {
@@ -691,10 +693,15 @@ function page(ctx, model) {
           list, crew, counts, officers, tasks, meals, recipes = [], notes, figures, items, power = { categories: [], days: {} },
           media: mediaItems = [], mediaCounts = { total: 0, bytes: 0 }, mediaAccept = '', mediaMaxMb = 0, filter = 'all', space = null } = model;
 
+  // NOW — the rehearsal day, mission day 0, dated today — heads the picker before the run, and all through a rehearsal
+  // against made-up dates: what is filed under it stays apart from the run's days and shows in the record marked as a
+  // rehearsal (src/lib/mission.js, src/lib/archive.js)
+  const dateLabel = (n) => new Date(missionLib.dateForDay(n) + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const pre = ctx.mission.phase === 'PRE_LAUNCH';
   const dayPicker = `<nav class="filters daypick daypick-dates" aria-label="Mission day">
+    ${ctx.mission.nowDay ? `<a href="${tabUrl(tab, 0)}" class="daypick-now${day === 0 ? ' on' : ''}" data-day="0" title="NOW — today, ${esc(dateLabel(0))}: the rehearsal day, to try everything out. Filed apart from the run's days; in the record marked as a rehearsal${pre ? ', gone on the first day of the run' : ''}">NOW · ${esc(dateLabel(0))}</a>` : ''}
     ${Array.from({ length: totalDays }, (_, i) => i + 1).map((n) => {
-      const d = new Date(missionLib.dateForDay(n) + 'T12:00:00Z');
-      const label = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+      const label = dateLabel(n);
       return `<a href="${tabUrl(tab, n)}" class="${n === day ? 'on' : ''}" data-day="${n}"
         title="Mission day ${dd(n)}">${esc(label)}</a>`;
     }).join('')}
@@ -734,7 +741,8 @@ function page(ctx, model) {
   const body = `
   <div style="padding:22px 0 4px">
     <div class="eyebrow">Mission control · ${esc(user.username)} ·
-      day ${dd(ctx.mission.clampedDay)} · ${esc(ctx.mission.venueTime)} habitat time</div>
+      ${pre ? `before the run · ${esc(ctx.mission.startLabel)} opens in ${ctx.mission.daysUntilStart} ${ctx.mission.daysUntilStart === 1 ? 'day' : 'days'} · rehearsing as NOW, ${esc(dateLabel(0))}`
+        : `day ${dd(ctx.mission.clampedDay)}${ctx.mission.nowDay ? ` · a rehearsal against made-up dates · NOW, ${esc(dateLabel(0))}, at hand` : ''}`} · ${esc(ctx.mission.venueTime)} habitat time</div>
     <div class="actions" style="margin-bottom:8px">
       <h1 style="margin:0">Mission control</h1>
       <div class="spacer"></div>
@@ -748,6 +756,8 @@ function page(ctx, model) {
   </div>
   ${resetDialog(resetLocked)}
 
+  ${ctx.mission.open ? '' : `<div class="flash err control-closed-note"><b>Mission control closed at the end of ${esc(ctx.mission.closeLabel)}.</b>
+    The record is read-only now: nothing on this page can be edited or replied to any more — the server refuses every save — while the archive and every download stay open.</div>`}
   ${flash(f)}
   ${content && !content.ok ? `<div class="flash err">
     Content files have a problem — the site is serving the last good version.<br>
@@ -769,7 +779,8 @@ function page(ctx, model) {
 
   return L.page({
     title: 'Mission control', ctx, body, current: '', hideRail: true,          // the desk is its own header: no rail across the top
-    bodyClass: 'control', scripts: ['/control.js', '/media-upload.js', '/entry-editor.js'],
+    bodyClass: `control${ctx.mission.open ? '' : ' closed'}`,                 // closed: control.js disables every form (the server refuses them anyway)
+    scripts: ['/control.js', '/media-upload.js', '/entry-editor.js'],
   });
 }
 

@@ -89,9 +89,10 @@ function contents(ctx, { days, counts, entryCounts, rehearsal = null }) {
         <td class="n">${rehearsal.media.length || '—'}</td>
         <td class="n">${rehearsal.habitat.length || '—'}</td>
         <td><span class="day-links">
-          <a href="/archive/today">Open</a>
-          <a href="/archive/today/export.pdf" download>PDF</a>
-          <a href="/archive/today/export.md" download>MD</a></span></td>
+          <a href="/archive/now">Open</a>
+          <a href="/archive/now/export.pdf" download>PDF</a>
+          <a href="/archive/now/export.md" download>MD</a>
+          ${rehearsal.media.length ? '<a href="/media/day/0/export.zip" download>Media</a>' : ''}</span></td>
       </tr>` : ''}${days.map((d) => `<tr${d.isToday ? ' style="box-shadow:inset 2px 0 0 var(--mars)"' : ''}${
           !(d.isPast || d.isToday) ? ' class="ahead-row"' : ''}>
         <td class="n">${dd(d.missionDay)}</td>
@@ -108,7 +109,7 @@ function contents(ctx, { days, counts, entryCounts, rehearsal = null }) {
           : '<span style="color:var(--faint)">not yet</span>'}</td>
       </tr>`).join('')}</tbody>
     </table></div>
-    ${rehearsal ? `<p class="note" style="margin-top:10px"><b>NOW</b> is today, before the run: a day's record built for today — today's readings from every source and the states filed today, plus whatever has been put into the opening day (SOL 001) so far — so the shape of the record can be seen with real data in it. It is marked as a rehearsal wherever it appears, is not part of the record, and disappears on the first day of the run.</p>` : ''}`)}`;
+    ${rehearsal ? `<p class="note" style="margin-top:10px"><b>NOW</b> is today${ctx.mission.phase === 'PRE_LAUNCH' ? ', before the run' : ' — this station rehearses against made-up dates'} — the rehearsal day, mission day 0. Its record is built the way a run day's is: today's readings from every source and the states filed today, the messages that came in before the run, and everything mission control files under <b>NOW</b> — the day picker's first stop on every tab — its schedule and meals, the Commander Blog and the two reports, the counts, figures, power and media. Nothing of it touches the run's days. It is marked as a rehearsal wherever it appears — in the full record, the readable copy, the data copy, the readings log, the media archive and the messages — is not part of the record, and ${ctx.mission.phase === 'PRE_LAUNCH' ? 'disappears on the first day of the run' : 'is there only while the station rehearses against made-up dates'}.</p>` : ''}`)}`;
   return L.page({ title: 'Archive', ctx, body, current: '/archive' });
 }
 
@@ -118,13 +119,13 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
   const r = record;
   const slot = { BREAKFAST: 'Breakfast', LUNCH: 'Lunch', DINNER: 'Dinner', RATION: 'Ration' };
 
-  const base = r.rehearsal ? '/archive/today' : `/archive/day/${r.missionDay}`;
-  const mediaDay = r.rehearsal ? 1 : r.missionDay;   // the rehearsal shows the opening day's media
+  const base = r.rehearsal ? '/archive/now' : `/archive/day/${r.missionDay}`;
+  const mediaDay = r.rehearsal ? 0 : r.missionDay;   // NOW's media hangs on day 0
   const body = `
   <div style="padding:30px 0 18px">
     <div class="eyebrow">${r.rehearsal ? 'Archive · REHEARSAL · NOT THE RECORD' : `Archive · permanent record${r.sealed ? ' · sealed' : ' · still open'}`}</div>
-    <h1>${r.rehearsal ? 'Today, before the run' : `Day ${dd(r.missionDay)}`}</h1>
-    ${r.rehearsal ? `<p class="note">A preview of a day's record with what there is today: today's readings from every source and the states filed today, and whatever has been put into the opening day (SOL 001) so far — its plan, entries, counts, figures and media. Not part of the record; gone on the first day of the run, when day 001 takes its place.</p>` : ''}
+    <h1>${r.rehearsal ? `NOW — today, ${ctx.mission.phase === 'PRE_LAUNCH' ? 'before the run' : 'the rehearsal day'}` : `Day ${dd(r.missionDay)}`}</h1>
+    ${r.rehearsal ? `<p class="note">A day's record built for today: today's readings from every source and the states filed today, and everything mission control has filed under NOW (mission day 0) — its schedule and meals, the blogs and reports, the counts, figures, power and media — kept apart from the run's days. Not part of the record; ${ctx.mission.phase === 'PRE_LAUNCH' ? 'gone on the first day of the run, when day 001 takes its place' : 'there only while the station rehearses against made-up dates'}.</p>` : ''}
     <div class="spec">
       <span>${esc(r.date)}</span>
       <span><b>${r.officers.filter((o) => o.entry).length + r.officers.filter((o) => o.reports.length).length}</b> daily blogs</span>
@@ -290,7 +291,7 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
 
   ${r.isEmpty ? '<div class="empty">NOTHING WAS RECORDED ON THIS DAY</div>' : ''}`;
 
-  return L.page({ title: r.rehearsal ? 'Archive · today, before the run · rehearsal' : `Archive · day ${dd(r.missionDay)}`, ctx, body, current: '/archive' });
+  return L.page({ title: r.rehearsal ? 'Archive · NOW, today · rehearsal' : `Archive · day ${dd(r.missionDay)}`, ctx, body, current: '/archive' });
 }
 
 /* Every reading of the day, as stored: the station's channels as one row

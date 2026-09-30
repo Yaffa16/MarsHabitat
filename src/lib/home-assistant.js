@@ -479,7 +479,8 @@ function counterDay(entity, missionDay) {
   try {
     const mission = require('./mission'), m = mission.config();
     a = mission.venueMidnightUtc(mission.dateForDay(missionDay), m.timezone);
-    b = mission.venueMidnightUtc(mission.dateForDay(missionDay + 1), m.timezone);
+    b = Number(missionDay) === 0 ? a + 86400000                                   // NOW is today, the rehearsal day
+      : mission.venueMidnightUtc(mission.dateForDay(missionDay + 1), m.timezone);
   } catch { return null; }
   return counterBetween(entity, a, b);
 }

@@ -550,8 +550,9 @@ body.journey-open { overflow: hidden; }
 :root[data-theme="dark"] .jr-line .jr-what { color: #b3baff; }
 .jr-fact { margin: 14px 0 0; padding-top: 14px; border-top: 1px solid var(--glass-edge); font-size: 16px; line-height: 1.55; color: var(--dim); }
 @media (max-width: 600px) {
-  body.landing > .journey, .journey { padding: 0; align-items: flex-end; }
-  .jr-panel { width: 100%; max-height: 92vh; max-height: 92dvh; border-radius: 22px 22px 0 0; padding: 22px 18px 30px; }
+  /* on a phone the panel floats in the middle of the screen, a card with room around it — not a sheet at the foot */
+  body.landing > .journey, .journey { padding: 24px 16px; align-items: center; }
+  .jr-panel { width: 100%; max-height: 84vh; max-height: 84dvh; border-radius: 22px; padding: 22px 18px 24px; }
   .jr-line { font-size: 21px; }
 }
 /* on the board: one card under the other, the viewer's own with a rule of Mars at the left */

@@ -2711,3 +2711,7 @@ textarea.ed-source:focus { outline: 0; }
 /* the sky over the dome and the world's slowest chat (sky.js, slowchat.js) are drawn only in the landing page's own dress
    (aura.css) — without that stylesheet the page is as it was */
 .dome-sky, .dome-seq, .slow-chat { display: none; }
+
+/* mission control, closed (the end of the day after the run): its forms stand as they are, greyed, nothing to press */
+body.control.closed form.is-closed { opacity: .55; pointer-events: none; }
+body.control.closed .control-closed-note { margin-bottom: 14px; }

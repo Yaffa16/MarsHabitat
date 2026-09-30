@@ -80,7 +80,8 @@ function intro(ctx, where = 'desk') {
 }
 
 /* ---------------------------------------------------------------- the note */
-/** What MARS is and what this website is for — and, under it, the key to the About page, where the mission is told. */
+/** What MARS is and what this website is for — and, under it, the two doors (Write to the crew, Mission dashboard) and
+    the key to the About page, where the mission is told. */
 function note(ctx) {
   const T = ctx.T;
   // the first word is the performance's name, set bold, in every language
@@ -94,7 +95,13 @@ function note(ctx) {
         <p class="note-lead">${lead}</p>
         <div class="note-aside">
           <p class="note-more">${T('This website is your portal into the mission: a space to communicate with the astronauts, follow their activities, and observe life inside the habitat throughout the duration of the performance.')}</p>
-          <p class="note-cta"><a class="know-more" href="/about"><span>${T('Know more')}</span><span aria-hidden="true">→</span></a></p>
+          <!-- the two doors under the description — to the composer and to the mission dashboard (on a phone held upright
+               tabbar.js leads them to the messages page and the dashboard page) — and the key to the About page -->
+          <p class="note-cta note-doors">
+            <a class="know-more is-write" href="#write"><span>${T('Write to the crew')}</span><span aria-hidden="true">→</span></a>
+            <a class="know-more is-dash" href="#mission"><span>${T('Mission dashboard')}</span><span aria-hidden="true">→</span></a>
+            <a class="know-more" href="/about"><span>${T('Know more')}</span><span aria-hidden="true">→</span></a>
+          </p>
         </div>
       </div>
     </div>
