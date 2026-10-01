@@ -90,7 +90,7 @@ which is mission control's, sits behind the same login.
 
 | Page | Route | Holds |
 |---|---|---|
-| The station | `/` | **The header** across the top — the wordmark, the run's badge, the habitat's clock and a running line of the current activity, the next one, the habitat sensor's reading and the daily communication window · **four pages**: the habitat with its sky, the note, the mission's chapters and the world's slowest chat (see *The landing page: four pages in the glass dress*) · on a wider screen then the composer · the live message board · the mission dashboard (schedule, meal, mood, habitat, resources, trends, and below the trends **the three daily blogs** — Daily Science Findings, Daily Health Blog, Commander Blog). The crew log, the media, the whole mission day by day and the reading matter live on their own pages (`/logbook`, `/media`, `/at-a-glance`, `/about`) |
+| The station | `/` | **The header** across the top — the wordmark, the run's badge, the habitat's clock and a running line of the current activity, the next one, the habitat sensor's reading and the daily communication window · **four pages**: the way to the habitat with its sky, the note, the habitat in section and the world's slowest chat (see *The landing page: four pages in the glass dress*) · on a wider screen then the composer · the live message board · the mission dashboard (schedule, meal, mood, habitat, resources, trends, and below the trends **the three daily blogs** — Daily Science Findings, Daily Health Blog, Commander Blog). The crew log, the media, the whole mission day by day and the reading matter live on their own pages (`/logbook`, `/media`, `/at-a-glance`, `/about`) |
 | About | `/about` | The reading matter, one page: **About** (the project as the ZKM announces it — zkm.de/de/2026/10/marsplatz-red-dust-city: the run, the dome on the Marktplatz, the crew's brief, the daily EVAs, the ways to reach the crew, the opening and the funders — then the distance, the archive, the readings and *Messages sent to space* — two paragraphs on how a replied message goes out by radio through SpaceSpeak, after spacespeak.com/Learn/Science: the transmitters, the 2.4–5 GHz band, the directional antenna, the speed of light, then where the signal gets to and that it never stops), **What this is** (how the station behaves, in plain terms) and **Who we are** (crew, company, production credits), one after another under a row of three pills that jump to them (`src/views/pages/info.js`). A phone's **About** key opens it; on a desk the ticker's three-lines menu leads to each part of it |
 | Dashboard | `/dashboard` | The mission dashboard on a page of its own — the same section the station page carries on a desk: the head, the live images, the two doors, the strip of sols and the nine panels behind their index. Drawn for a phone first — where it leaves the strip of live images out (the newest pictures rise over the habitat instead, and fill the Media page); the phone's bar of keys leads here with **Dashboard**, and on a phone the station page keeps its four pages alone |
 | Messages | `/messages` | The portal on a page of its own — the composer and the live message board, the same pieces the station page shows on a desk. Drawn for a phone first: the exchanges flow with the page, the composer is a dock at the foot of the screen, which lowers itself once a message has crossed; the phone's bar of keys leads here with **Write**, and so does the door at the foot of the station page's sheet |
@@ -151,7 +151,7 @@ address.
 | Habitat | `/screen/habitat` | The Habitat panel of the dashboard: the readings, the crew's figures, the stores and the power — live |
 | Message Board | `/screen/board` | The latest exchanges, newest first, two across (one upright), as many as fit — live, a new exchange slides in as the board publishes it. Read-only: no composer, nothing to tap — a card's line into space stands on one line (*Diese Nachricht ist jetzt 20,02 Milliarden km von der Erde entfernt! · Gestartet vor 19 Stunden*) and opens no panel. The screen polls `/api/board?lang=<its language>&limit=400`, so the cards come back in the language the screen is in, all of them |
 | Write to the crew | `/screen/write` | **The message-sending box, full screen** — the composer as the site has it (the crew's question of the day over it, the message box, the tags, the Transmit key), alone in the middle of the screen, for a touch screen in the square. **Every message sent from it is a new visitor's**: a callsign is minted for it alone (`src/lib/callsign.js`, `mint`; `POST /screen/write` in `server.js`), no cookie is set, so the next person at the screen starts afresh — no callsign carried over, no transit lock between them. Once a message is sent the crossing plays as on the site, then holds nine seconds on ARRIVED with the callsign named — *Your message went under the callsign DUST-465 — look for it on the Message Board once the crew have answered* — before the empty box comes back (`public/composer.js`, `data-hold`, `data-refresh`). The checks are the composer's (the channel open, the words within bounds); the hourly limit is the screen's own, per address, since all its messages come from one: `KIOSK_HOURLY_LIMIT`, sixty an hour. What is left half-written is cleared after three minutes with nobody touching the screen, and the page's own reloads wait while someone is writing or a message is crossing (`public/screen-write.js`) |
-| Today's Mission | `/screen/mission` | The day's mission from the sheet: its question, Morning, Afternoon, EVA, the question for the community hour |
+| Today's Mission | `/screen/mission` | The day's mission from the sheet: its question, Morning, Afternoon, EVA, the question for the community hour — **typed out letter by letter** as if someone were writing it (`public/typed.js`: a cursor after the last letter, a halt at a full stop; typed to the end it stays three minutes, then is typed again; the site's dashboard shows the same panel still) |
 | Blogs | `/screen/blogs` | The three blogs **one at a time**, each filling the screen: its head stays, the day's post rolls by underneath from top to bottom at reading pace (`public/screen-blogs.js`, 28 px a second, five seconds' hold at the top and at the end; a post that fits is shown for fourteen), then the next blog takes the screen — the Commander Blog, the Daily Science Findings, the Daily Health Blog, round and round. The text is set at the size of the panels' own notes (about 23 px on a 1080p screen). A blog with nothing written yet shows its note and passes the turn on; the latest earlier post is carried forward, as the dashboard does |
 | Today | `/screen/day` | Today's Schedule, Today's Meal and the Crew Moods, three in a row (one under the other upright) |
 | Trends | `/screen/trends` | The run's trends on one graph — on an upright screen drawn the way a phone draws it, the names of the lines in a legend under it |
@@ -859,17 +859,17 @@ The landing page keeps the layout of the design handoff of September 2026, pared
 pages, one under the other: **the way to the habitat** — the Earth at the foot of the screen,
 the habitat far above it, a dashed line between them, and the latest exchanges and pictures
 coming and going around it; the note, with the two doors and a **Know more** key under it that
-leads to the About page; **inside the habitat** — the cutaway drawing of Habitat One, a part
-of it in colour under the hand and what that part is beside it; and *Welcome to the World's Slowest Chat* under a heading of its own — its
+leads to the About page; **the habitat** — the cutaway drawing of Habitat One on the Mars plain,
+every room a key whose lights come on under the hand, opening a pop-up that says what that part of
+the habitat is and what is happening in it now; and *Welcome to the World's Slowest Chat* under a heading of its own — its
 name large and bold, a short orange rule — with a line across the page setting it apart from the
 habitat. (The handoff's page numbers and part pills — *P02 / 04 · Note 00*, *Part 1 of 2* — are not
 written any more, and the mission's two chapters that stood between the note and the chat are
-gone: the About page tells the mission.) It is drawn in the station's own dress: the drafting paper with
-its fine grid, cobalt ink, **frosted glass floating on soft shadows**, rounded cards and round
-pills, the orange keys, and the habitat as it was before (`src/views/pages/landing.js`,
-`dome.js`, `sky.js`; `public/aura.css`, `public/sheet.css`, `public/sky.js`). Dark is the
-default; by day the page is near-white and **the only grey on it is the habitat's sheet**, the
-grey of the reference sheet.
+gone: the About page tells the mission.) It is drawn in the station's own dress: **a plain
+ground — white by day, black by night** — cobalt ink, **frosted glass floating on soft
+shadows**, rounded cards and round pills, the orange keys (`src/views/pages/landing.js`,
+`inside.js`, `sky.js`; `public/aura.css`, `public/sheet.css`, `public/sky.js`). Dark is the
+default.
 
 **On a phone held upright the landing goes a page a swipe**, in the swipe's direction — the
 way to the habitat, the name and the note, inside the habitat, the chat, then the foot (CSS scroll snapping, each
@@ -877,7 +877,7 @@ page a stop the scroll cannot fly past). Each page fills the screen between the 
 bar of keys (with the browser's own bars folded away, as they are once the page is scrolled); a
 page that does not fit as drawn is set a little closer, and one that still does not (a small
 phone, a long language, the chat's three steps) stops at each of its parts as well — the note,
-the cutaway's words, the card of steps and each step after the first — so nothing on it is passed
+the card of steps and each step after the first — so nothing on it is passed
 over; two stops closer than a flick of the thumb become one (`public/sky.js` measures and marks
 them). A mouse wheel or a touchpad in a window that narrow turns one stop a turn. While a pop-up
 is open the page stays where it is. **On a desk the page scrolls freely**, each page about a
@@ -914,76 +914,63 @@ window tall with its cards in the middle and air around them, a margin at both s
   the Earth's must keep its 1414 × 340 box and its limb where it is, or the mesh and the
   line's foot move with `EARTH` in `landing.js` and the `24.1%` in `sheet.css`; the habitat's
   keeps its axis down the middle and its foot near its bottom edge, `HABITAT`.)
-- **Inside the habitat — the third page** (`src/views/pages/cutaway.js`, `public/cutaway.js`;
-  the styles under *P03* in `sheet.css`). On a card of glass like the note's, **the cutaway
-  drawing of Habitat One that was handed over** — its three floors under the geodesic dome in
-  white line on the Mars ground (`public/habitat/cutaway-lines.webp`) — and beside it what each
-  part of it is. Until a part is chosen the panel says what to do — **Click to know what is
-  inside.** (*Tap* on a touch screen) — and names the parts. **The hand over a part of the
-  drawing shows that part in colour**: the coloured drawing (`cutaway-colour.webp`, the same
-  picture painted) lies over the line drawing, once for each part and clipped to that part's
-  outline, and fades in for the part under the hand alone; a touch does the same on a phone,
-  and so do the keyboard (the outlines take focus) and, on a desk, **the row of chips under the
-  drawing**, which names every part — a chip pressed, or under the hand, selects it. The part
-  stays selected when the hand leaves it, so its words are read in peace. **The panel at the
-  right** carries one article a part: the part's name; *NOW* and what is happening in it at
-  this minute — the same live sentences the dome's keys used to carry (`dome.js`, `figures()`),
-  asked for again every twenty seconds from `/api/dome`; what the part is; and the key *Open
-  its panel on the dashboard →*. The nine parts, as the labelled drawing names them: the
-  hydroponic plants, the communication station, the science station, the kitchen, the relaxing
-  area, the nap pod, the health station, the water recycling system and the power generation
-  (the bicycle and the battery); the dome's shell itself is no part — it is the drawing. Where a
-  part is one of the dome's keys its words are the key's own; the kitchen, the lounge, the pods
-  and the health station have words of their own, and live sentences of their own in
-  `figures()` — today's meals, the rest on the day's schedule, the health officer's condition
-  with the crew's steps and calories. All of it in the three languages (`src/lib/i18n.js`).
-  **On a phone the drawing is as large as the screen allows**: edge to edge and a little past
-  it (the dome's outer struts run off the sides; every room stays whole), the strip of ground
-  under it cut, no chips — a touch on the drawing chooses — and the words under it. The
-  outlines are traced on the picture as handed over (1536 × 1024) and drawn into the cropped
-  box the page shows (180 off the top, 124 off the foot); to move one, change its points in
-  `MODULES`. Each drawing is a WebP with its sky transparent, under 200 kB.
-- **The dome with its floating keys is not drawn any more.** The page that carried it — the
-  dome on its sequencer sheet, the nine round keys gliding about it, each opening a pop-up —
-  went when the cutaway came: the cutaway carries the keys' words, and `/api/dome` still serves
-  their live sentences. The code stays (`dome.js`, `habitatDome`; `sky.js`, `habitatSheet`; the
-  styles in `aura.css` and `sheet.css`), unused, in case the run wants it back. What follows
-  describes that page as it was.
-- **The habitat — as it was drawn.** **The station's name stands large in the top left corner of the sheet**,
-  under the ruler — *MARS!platz*, the mark in Mars orange — on a desk and on a phone alike, and
-  **LIVE in the top right corner** opposite it, an orange pill with a pulsing dot (the mark the
-  board and the strip of pictures carry; not after the run). On a desk the page is a window
-  tall, the dome kept to a moderate size so the sheet around and above it has room (the room
-  above the dome is where a key's pop-up opens); on a phone the page is a screen, the sheet the
-  width of it, the dome standing on its ground line at its foot, clear of the bar of keys.
-  **The habitat** stands on a **sheet drawn after a sequencer's layout sheet**: ruled in the
-  run's thirteen sols, four fine lines to each, a ruler of their numbers across the top, and **the
-  day of the performance** marked — its number in Mars orange and **an orange line down its
-  column** from under the number to the ground line (moved on at midnight; before and after the
-  run there is none); tracks across it, dashed, doubled, dotted, one carrying a wave, one a square
-  wave, one a row of steps; one small figure of the station's own, the crew and the sol (no
-  Earth–Mars distance on the habitat, and no channel code: the station writes none anywhere any
-  more — no *CH-00* over a heading, no code on a key, a panel or a tab). **The dome** is filled with colour rim to rim — a pale blue
-  at its left edge, ultramarine, violet, red and orange at its right, a little lighter towards
-  the crown — spilling softly past the rim onto the sheet; it is glass over it: white lines of a
-  geodesic wireframe, a thin sheen whiter at the crown.
-- **The keys.** The seven parts of the habitat — the crew, the science lab, the water recycling
-  loop, the growing shelves (*Hydroponics*), the uplink (*Communication*), the power store
-  (*Power*) and the bicycle (*Power generator*) — and two keys that are not parts
-  of it: **EVA**, the crew's daily walk outside (a rover), whose pop-up says what an EVA is and,
-  after **Now**, when today's is — on now, still to come at its hour, or already made, read off
-  the day's schedule; and **Dashboard** (four panels), whose pop-up says what the mission
-  dashboard is — the station's instrument panel — with, after **Now**, the sol, today's tasks
-  done and the exchanges published, and the key **Open the Mission Dashboard →** (on a phone
-  held upright it leads to the dashboard page, as every such door does). All nine are round keys with line icons,
-  white by day and dark by night, each with its name on a tag beneath it on a wider screen (a
-  phone shows the icons alone). They **float about the dome**: each glides on a slow spring
-  towards a destination inside the shell, and two that would sit on each other ease apart; a key
-  under the hand, or with its pop-up open, stands still and turns cobalt. Pressing one opens its
-  **pop-up** — what that part of the habitat is and, after **Now**, what is happening in it at
-  this minute (the task on the schedule, each officer's condition as words, the stores and their
-  days left, the latest exchange, today's kWh, the steps pedalled), asked for again every twenty
-  seconds from **`/api/dome`**. It opens in the room above the dome, on a phone too, fading in.
+- **The habitat — the third page** (`src/views/pages/inside.js`, `habitatInside`; the styles under
+  *P03* in `sheet.css`, the pop-ups' and the round keys' in `aura.css`). On a card of glass like the
+  note's: its label row — *THE HABITAT*, and at the right the hint **Point at a room to know what is
+  inside.** (*Tap a room…* on a touch screen) — then **the habitat in section, on the Mars plain**:
+  the cutaway drawing of Habitat One that was handed over — the geodesic shell on its ground line
+  and, under it, the rooms floor by floor: the hydroponic shelves, the communication station under
+  its dish, the laboratory; the health station, the crew's round room under the crown, the sleeping
+  pod; the water recycling loop and the bicycle generator with the power store — its lines in warm
+  white over **the photograph of the plain** that was handed over (`public/habitat/ground.jpg`: the
+  red plain, the hills at the horizon, the dusty sky), sliced into the drawing's box from its top so
+  the habitat stands on the ground at the picture's foot and the horizon runs behind its lower rooms;
+  each room a dark panel on it — the inside of the habitat — with its furniture drawn in white. The
+  linework is `public/habitat/inside.svg`, traced from the picture by `tools/trace-inside.py` (every
+  line a filled path in `currentColor`, one path per room, one for the shell) and drawn by `<use>`,
+  so the page carries only the rooms' outlines, the keys and the pop-ups and the browser keeps the
+  drawing. **Nothing else is on the page**: no sheet under it (the grey sequencer's sheet stays in
+  the code, `sky.js`, `habitatSheet`, unused), no sky of exchanges over it (the sky is on the first
+  page), no frame of corners. A room is kept over the drawing for a key's pop-up to open in. On a
+  desk the page is a window tall and the drawing as large as the window allows under the head; on a
+  phone the page is the drawing's — the name and the hint at its top, the plain edge to edge with the
+  shell the width of the screen, standing on its ground line at its foot, clear of the bar of keys.
+- **The dome with its floating keys is not drawn any more.** The half-disc filled with colour under
+  its wireframe, with nine round keys gliding about inside it, gave way to the drawing of the
+  habitat itself. The code stays (`dome.js`, `habitatDome`, and the earlier cutaway of September in
+  `cutaway.js` and `public/cutaway.js`), unused, in case the run wants either back; `dome.js`'s
+  `figures()` still writes every pop-up's sentences and `/api/dome`, and `/api/dome` still serves
+  the sentences of the galley, which no room shows now.
+- **The rooms are the keys, and under the hand their lights come on.** Each of the eight rooms is a
+  key: its outline on the drawing (`ROOMS` in `inside.js`, in the picture's own coordinates), its
+  name on a tag on its floor line — *Hydroponics*, *Communication*, *Science lab*, *Health station*,
+  *Crew*, *Nap pod*, *Water recycling*, *Power* (the bicycle generator and the store in one room, one
+  pop-up with both). Lit — under the hand, with its pop-up open, with keyboard focus — **a bright
+  band sweeps across the dark room once, then its lamp comes on**: a warm light over the floor, a
+  glow bleeding through its walls that breathes slowly while it stays lit, its lines turned pure
+  white, its tag filled with the same light (every layer of a room carries the room's id, so all of
+  them light together; under *less motion* the sweep and the breathing are left out). Two keys are
+  not rooms and stand on the ground outside the shell, round keys with line icons as the dome drew
+  them, each named on a tag over it: **EVA** at the right, the crew's daily walk outside (a rover),
+  whose pop-up says what an EVA is and, after **Now**, when today's is — on now, still to come at its
+  hour, or already made, read off the day's schedule; and **Dashboard** at the left (four panels),
+  whose pop-up says what the mission dashboard is — the station's instrument panel — with, after
+  **Now**, the sol, today's tasks done and the exchanges published, and the key **Open the Mission
+  Dashboard →** (on a phone held upright it leads to the dashboard page, as every such door does).
+  **On a desk the hand alone opens a room's pop-up**: a moment over a room (or a key, or a tag)
+  opens it over the crown of the shell — without taking the page: no backdrop, the hand can go on to
+  the next room, whose pop-up takes the place of the last, or into the pop-up itself to its key —
+  and a moment after the hand has left both, it goes (the pop-up is set where a pop-up in the top
+  layer would stand and then moved by whatever the card's frosted glass, which contains what is
+  fixed inside it, took off; `put()` in `inside.js`). A click, a tap or Enter opens the same pop-up
+  for good, over the page, until it is closed with its ✕, Escape or a touch beside it. Every pop-up
+  says what that part of the habitat is and, after **Now**, what is happening in it at this minute
+  (the task on the schedule, each officer's condition as words, the stores and their days left, the
+  latest exchange, today's kWh, the steps pedalled, the hours of rest on the plan), asked for again
+  every twenty seconds from **`/api/dome`**. The tags are set in the drawing's units and enlarged
+  again where the drawing is drawn small, so a name reads at no less than about 12 px; a phone shows
+  the drawing without them — a room is tapped, and its pop-up names it — with the two outside keys
+  standing in front of the habitat, under its ground line, drawn larger under the thumb.
 - **The sky — on the first page.** In the room between the Earth and the habitat the newest exchanges with Earth come
   and go one after another, and the **newest pictures from the cloud folder** appear as small
   snapshots. **On the first page each wears a minimal white frame** — a hairline and a bracket
@@ -1071,11 +1058,10 @@ window tall with its cards in the middle and air around them, a margin at both s
 **On a wider screen** the first screen is the way to the habitat: the name in its band, then
 the room the width of the page — the habitat at its top, the Earth at its foot, the line between
 them with the sky's exchanges and pictures either side, and the nudge on the Earth. Then the
-note in two columns with its doors and its Know more key; inside the habitat — the cutaway
-drawing at the left with its chips, the words at the right (the drawing smaller on a laptop, the
-words still beside it); the chat's heading and welcome and the three steps in a row, each page
-about a window tall. Then the portal — the composer and the board — and the dashboard, as
-before.
+note in two columns with its doors and its Know more key; the habitat — the dome on its card
+with its keys floating inside it, the pop-up opening in the room over it; the
+chat's heading and welcome and the three steps in a row, each page about a window tall. Then the portal — the composer and the board — and the dashboard, as
+before — alive, with its instruments among the habitat's tiles and the day's mission typed out (*Visual language*).
 
 ## Communication is the point
 
@@ -1262,13 +1248,13 @@ the public pages, drawn from the same markup — nothing is served twice (the ph
   charts, the booklet's day charts) are given back that size on the screen whatever the chart's
   scale, and on a phone the trend graph is drawn at its real width with the names of its lines
   in a legend beneath it (`public/habitat.js`).
-- **the habitat** at a phone's width fills the first screen: its sheet the width of the screen
-  and the height between the header and the bar of keys, the sky over the dome — the lines and
-  snapshots coming and going on the sheet's grid, never over one another — the dome as wide as
-  the page, its keys icons only, and under the ground line the floor with the scroll nudge; a
-  key's pop-up opens over the dome. The sky runs only while the habitat is on the
-  screen, and the page's small print — the snapshots' times among it — never goes under the
-  type floor below.
+- **the habitat** at a phone's width has a page to itself: the width of the screen and the
+  height between the header and the bar of keys, the name and the hint at its top, the plain
+  edge to edge at its foot with the shell the width of the screen (a tighter crop of the drawing
+  than a desk's, `VIEW_PHONE` in `inside.js`, so the habitat is a third larger than it would be
+  with the desk's margins) — its rooms tapped without their names, the two outside keys standing
+  in front of the habitat under its ground line, drawn larger — and a room's pop-up opening over
+  it; the page's small print never goes under the type floor below.
 - the **dashboard is a page of its own, `/dashboard`** (`dashboardPage()` in
   `src/views/pages/public.js`, built from the same data as the station page): the bar's
   Dashboard key and the dome's pop-ups all lead there
@@ -1333,11 +1319,12 @@ the public pages, drawn from the same markup — nothing is served twice (the ph
 
 ## Visual language
 
-**Glass floating over drafting paper** (`public/aura.css`, with the new layout drawn in the same
-dress by `public/sheet.css`, loaded last on every public page): a pale paper ruled in a fine
-cobalt grid by day, a near-black one with a few stars by night, a warm light behind the habitat
-and a cool one at the foot of the page, a film of grain over it all. What is read or touched
-**floats** on it — the panels, the cards, the header, the pop-ups are frosted glass with rounded
+**Glass floating on a plain ground** (`public/aura.css`, with the new layout drawn in the same
+dress by `public/sheet.css`, loaded last on every public page): the page is **plain white by
+day and plain black by night** — the drafting grid, the stars, the warm and cool lights behind
+the sections and the film of grain the dress once had are switched off at the foot of
+`sheet.css` (*the ground: plain*; the rules that drew them stay in `aura.css`, in case). What is
+read or touched **floats** on it — the panels, the cards, the header, the pop-ups are frosted glass with rounded
 corners and soft, deep shadows beneath; the keys are **round pills**, outlined in cobalt, the one
 that is on filled; the actions are **orange** keys with a glow under them (*Write to the crew*,
 *Transmit*, the menu). Cobalt is the ink by day; Mars orange marks codes, stamps and the run;
@@ -1380,6 +1367,37 @@ The parts are working parts, not decoration:
   foot, the About page and the mission-complete page leave it out (the About text still
   explains the compressed crossing in a sentence).
 - **Empty states** are dashed wells rather than crossed boxes.
+- **The dashboard is alive.** Signs that it is being updated as it stands, none of them a
+  figure (`dashLive()` and `vizTiles()` in `src/views/pages/public.js`, the block *the
+  dashboard, alive* at the foot of `public/aura.css`, `public/live.js`, `public/typed.js`): at
+  the right of the dashboard's head the LIVE mark with its pulsing dot, alone — the line under
+  the title names the mission, the run and its days, no time zone; a cursor blinking after the
+  title; the sol and the crew figures rolling up from zero to their value once, when the page
+  opens, as a readout settling — the values are the page's own, restored exactly; the sol of
+  the day breathing on the strip. **Two instruments without a reading** stand among the
+  habitat's tiles, each on a row of its own, never side by side, each named small in its corner
+  and hidden from assistive technology: *Astronauts tracked* at the end of the sensors' third
+  row, after the light (the air quality, the compounds and the light make room for it) — a
+  radar: a sweep going round every four seconds over rings and a rim of ticks, and inside it
+  **one dot an astronaut, three for the crew of three** (as many as the crew the head's figure
+  counts; `vizTile`, `n`), each wandering about the disc on a slow spring towards a place of its
+  own, two never on each other, each lit as the sweep passes over it and dimming until it comes
+  round again (`public/live.js`); *Orbit* at the end of the stores' row, after the power — a
+  wireframe globe turning, a satellite going round it on a dotted orbit. On a phone each is the
+  width of the panel, under the row it belongs to. The folder's open panel is framed with brackets at its four corners
+  and has a pulsing dot before each panel's name; a ring pulses out of each crew face and out
+  of the CO₂ dial; the task of the hour has a blinking dot before its time. No line sweeps over
+  anything. The Today's Mission panel on the dashboard stands as written. **On the
+  installation's mission screen** (`/screen/mission`) **the day's mission is typed** instead:
+  the panel's words — the title, the central question, the three parts of the day, the question
+  for the community hour — appear letter by letter, a third slower than a quick typist, with a
+  short halt at a full stop and a cursor after the last letter; typed to the end they stay three
+  minutes, then the panel is cleared and typed again (`public/typed.js`). Every word is on the
+  page from the start and keeps its place (the ones not yet typed are simply unseen), so nothing
+  moves while the typing goes on and a screen reader reads the whole text. All of it is
+  decoration laid over the data: nothing in it is a reading, the figures and the panels are
+  unchanged, nothing is sent anywhere, and where the visitor asks for less motion all of it
+  stands still, the astronauts where they are and the mission's words shown whole.
 
 Status is carried by **symbol** as well as colour — filled centre is nominal, single bar is caution, crossed
 ring is out of range, empty ring is no signal — so it survives print and colourblindness.
@@ -2010,14 +2028,22 @@ src/
   lib/officer.js         the first officer's title as shown (Commanding Officer; stored as COMMUNICATION OFFICER)
   views/pages/landing.js the landing page's three pages: the name, the note with its Know more key, the slowest
                          chat, and the scroll nudge under the dome
-  views/pages/dome.js    the habitat: the dome filled with its colour, its floating keys, the pop-ups, /api/dome's figures
+  views/pages/inside.js  the habitat: the cutaway drawing in section on the Mars plain (public/habitat/inside.svg by <use>,
+                         public/habitat/ground.jpg behind it), every room a key that lights up under the hand, with its floor,
+                         its tag and its pop-up (on a desk opened by the hand alone), EVA and the Dashboard as round keys on the
+                         ground outside
+  views/pages/dome.js    the pop-ups' sentences and /api/dome's figures (figures); the dome filled with its colour with its
+                         floating keys (habitatDome), not drawn any more
   views/pages/sky.js     the sky over the dome (the newest exchanges and pictures) and the sequencer sheet under it
                          (public/sky.js places them on the grid and fades them in and out, moves the day's line,
                          hides the nudge under the dome once scrolled, moves the signal in transit and pages a phone's scroll)
   views/pages/info.js    the About page: About, What this is, Who we are
 public/                  the stylesheets (station.css, aura.css, sheet.css over them), the page scripts (board,
-                         composer, habitat, media, sky, entry editor) and the mission's photographs (mission/, unused now)
-tools/                   sensor simulator, mock Home Assistant, backup script, media verifier, end-to-end test
+                         composer, habitat, media, sky, entry editor), the habitat's pictures (habitat/: inside.svg, the
+                         habitat in section, and ground.jpg, the Mars plain it stands on; the earlier cutaway's two
+                         pictures, unused) and the mission's photographs (mission/, unused now)
+tools/                   sensor simulator, mock Home Assistant, backup script, media verifier, end-to-end test,
+                         trace-inside.py (the habitat's linework, public/habitat/inside.svg, from the picture handed over)
 missions/                the scientific missions' sheets, one PDF a mission (served at /missions/<file>; which sheet
                          is which day's, and each sheet's words, are in content/missions.json)
 ```

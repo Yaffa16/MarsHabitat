@@ -99,10 +99,11 @@ function trends(ctx, d) {
   return shell(ctx, { name: 'trends', title: 'Trends', body: `${p.trends}<div class="screen-hidden">${p.habitat}</div>`, fit: 'scale', scripts: ['/habitat.js', '/hardware.js'] });
 }
 
-/** Today's mission. */
+/** Today's mission — typed out as if someone were writing it, letter by letter, held a few minutes typed to the end,
+    then typed again (public/typed.js; the dashboard shows the same panel still). */
 function mission(ctx, d) {
   const p = P.dashboardPanels(ctx, d);
-  return shell(ctx, { name: 'mission', title: 'Today’s Mission', body: p.missionPanel, fit: 'scale' });
+  return shell(ctx, { name: 'mission', title: 'Today’s Mission', body: p.missionPanel, fit: 'scale', scripts: ['/typed.js'] });
 }
 
 /** The three blogs one at a time, each filling the screen: its head, then the day's post rolling by from top to bottom

@@ -192,8 +192,8 @@
     // The stops of the scroll are wherever the stylesheet has the scroll stop, read off it, and the end. Two closer than a
     // flick of the thumb (the last step of the chat and the end, often) would make a swipe that hardly moves: the part's
     // stop gives way (no-stop).
-    var CAND = 'body.landing:not(.inner) :is([data-page], .note-card, .steps, .step, .cut-panel, .foot)';
-    var PART = 'body.landing:not(.inner) [data-page] :is(.note-card, .steps, .step, .cut-panel)';
+    var CAND = 'body.landing:not(.inner) :is([data-page], .note-card, .steps, .step, .foot)';
+    var PART = 'body.landing:not(.inner) [data-page] :is(.note-card, .steps, .step)';
     function marks() {
       var cs = getComputedStyle(document.documentElement), h = window.innerHeight;
       var pt = parseFloat(cs.scrollPaddingTop) || 0, pb = parseFloat(cs.scrollPaddingBottom) || 0;

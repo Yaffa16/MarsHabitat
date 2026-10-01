@@ -435,16 +435,22 @@ function habitatDome(ctx, args) {
       </div>
     </dialog>`;
   // The sky over the dome, when the page brings one (sky.js: the latest exchanges and pictures rising and fading above it),
-  // and the sheet under it all (sky.js, habitatSheet: the run's sols as a sequencer's sheet, the glow behind the dome)
+  // and the sheet under it all (sky.js, habitatSheet: the run's sols as a sequencer's sheet, the glow behind the dome) —
+  // the landing page brings neither now: the dome stands on the page's plain ground with its keys alone (public.js)
   const sky = args.sky || null, sheet = args.sheet || '';
   // and what stands on the floor under the sheet's ground line (the landing page puts its scroll nudge there,
   // landing.js scrollNudge; sheet.css)
   const line = args.line || '';
+  // the head's right-hand word: the habitat's designation, or — when the page asks for `hint` — what to do with the keys
+  // (Click on a desk, Tap on a touch screen: sheet.css shows the one that applies)
+  const meta = args.hint
+    ? `<span class="dome-meta dome-hint"><span class="dome-hint-click">${T('Click a key to know what is inside.')}</span><span class="dome-hint-tap">${T('Tap a key to know what is inside.')}</span></span>`
+    : '<span class="dome-meta">HABITAT ONE · R75-2</span>';
   return `
   <section class="dome-panel${sky && sky.on ? ' has-sky' : ''}${line ? ' has-line' : ''}" id="habitat-dome" aria-label="${esc(T('The habitat'))}">
     <header class="dome-head">
       <div class="dome-title"><h2>${T('The habitat')}</h2></div>
-      <span class="dome-meta">HABITAT ONE · R75-2</span>
+      ${meta}
     </header>
     <div class="dome-screen">${sheet}${sky ? sky.html : ''}
       <div class="dome-stage">

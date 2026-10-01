@@ -92,6 +92,9 @@ const D = {
   // ---- the board
   'Message Board': ['Nachrichtenboard', 'Tableau des messages'],
   'LIVE': ['LIVE', 'EN DIRECT'],
+  // the two instruments without a reading among the habitat's tiles (public.js vizTile)
+  'Orbit': ['Orbit', 'Orbite'],
+  'Astronauts tracked': ['Astronauten erfasst', 'Astronautes suivis'],
   'The board refreshes itself every few seconds': ['Das Board aktualisiert sich alle paar Sekunden', 'Le tableau se rafraîchit toutes les quelques secondes'],
   'ALL': ['ALLE', 'TOUT'],
   'MY MESSAGES': ['MEINE NACHRICHTEN', 'MES MESSAGES'],
@@ -835,6 +838,14 @@ const D = {
   'Placeholder': ['Platzhalter', 'Espace réservé'],
   'no figure filed yet': ['noch keine Zahl erfasst', 'aucun chiffre saisi pour l’instant'],
   'Open its panel on the dashboard': ['Sein Feld auf dem Dashboard öffnen', 'Ouvrir son panneau sur le tableau de bord'],
+  // the habitat — the dome with its keys, the hint in its head (src/views/pages/dome.js, habitatDome)
+  'Click a key to know what is inside.': ['Klicke auf eine Taste, um zu erfahren, was drinnen ist.', 'Cliquez sur une touche pour savoir ce qu’il y a à l’intérieur.'],
+  'Tap a key to know what is inside.': ['Tippe auf eine Taste, um zu erfahren, was drinnen ist.', 'Touchez une touche pour savoir ce qu’il y a à l’intérieur.'],
+  // the habitat in section — the cutaway drawing, every room a key, the hint in its head (src/views/pages/inside.js, habitatInside)
+  'Point at a room to know what is inside.': ['Zeige auf einen Raum, um zu erfahren, was drinnen ist.', 'Pointez une pièce pour savoir ce qu’il y a à l’intérieur.'],
+  'Tap a room to know what is inside.': ['Tippe auf einen Raum, um zu erfahren, was drinnen ist.', 'Touchez une pièce pour savoir ce qu’il y a à l’intérieur.'],
+  'The habitat in section: its rooms under the dome, on the Mars plain': ['Das Habitat im Schnitt: seine Räume unter der Kuppel, auf der Marsebene', 'L’habitat en coupe : ses pièces sous le dôme, sur la plaine martienne'],
+
   // inside the habitat — the cutaway page (src/views/pages/cutaway.js)
   'Inside the habitat': ['Im Habitat', 'À l’intérieur de l’habitat'],
   'Click to know what is inside.': ['Klicke, um zu erfahren, was drinnen ist.', 'Cliquez pour savoir ce qu’il y a à l’intérieur.'],

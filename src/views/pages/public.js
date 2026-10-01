@@ -6,6 +6,7 @@ const data = require('../../lib/data');
 const { TAGS } = data;
 const { composerBlock } = require('./communicate');
 const { habitatDome, LINE_ICONS } = require('./dome');
+const { habitatInside } = require('./inside');
 const { habitatSky } = require('./sky');
 const LP = require('./landing');
 const MV = require('./media');
@@ -408,7 +409,7 @@ function dashboardPage(ctx, d) {
   });
   return L.page({
     title: 'Mission dashboard', ctx, body, hideNav: true, hideRail: true, bodyClass: 'landing inner dashboard',
-    current: '/dashboard', scripts: ['/habitat.js', '/hardware.js', '/folder.js'].concat(d.cloud ? ['/cloud.js'] : []),
+    current: '/dashboard', scripts: ['/habitat.js', '/hardware.js', '/folder.js', '/live.js'].concat(d.cloud ? ['/cloud.js'] : []),
     styles: ['/aura.css'],
   });
 }
@@ -680,11 +681,15 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
   /* The landing page (landing.js): first the way to the habitat — the Earth, the line up to the habitat, and around
      it the sky of the latest exchanges and the newest pictures from the cloud folder, the scroll nudge on the Earth —
      with the name over it on a wider screen; the note (a phone has the name at its head), with its doors and its Know
-     more key to the About page; inside the habitat — the cutaway drawing, a part in colour under the hand and what it
-     is beside it (cutaway.js); the world's slowest chat; then, on a wider screen, the portal and the dashboard (a phone
-     has them as pages of their own, aura.css, sheet.css). On a phone every data-page is a page of the scroll: a swipe
-     goes to the next (sheet.css, public/sky.js). (The dome with its floating keys — dome.js, habitatDome — is not drawn
-     any more: the cutaway carries its words; the code stays, in case the run wants it back.) */
+     more key to the About page; the habitat — the dome with its floating keys, each opening a pop-up that says what that
+     part of the habitat is and what is happening in it now — drawn now as the habitat in section (inside.js,
+     habitatInside): the cutaway drawing handed over, every room a key, EVA and the Dashboard as round keys on the ground
+     outside the shell — on a card of glass, with no sheet under it and no sky over it: the drawing and its pop-ups alone;
+     the world's slowest chat; then, on a wider screen, the portal and the dashboard (a phone has them as pages of their
+     own, aura.css, sheet.css). On a phone every data-page is a page of the scroll: a swipe goes to the next (sheet.css,
+     public/sky.js). (The dome with its floating keys — dome.js, habitatDome — and the earlier cutaway — cutaway.js,
+     public/cutaway.js — are not drawn any more; the code stays, in case the run wants either back; the dome's figures()
+     still write every pop-up's sentences and /api/dome.) */
   const body = `
   <script>
   // the reading matter was three pop-ups over this page once, opened from the address: those addresses — /#about,
@@ -694,7 +699,11 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
   </script>
   ${LP.space(ctx, { sky: habitatSky(ctx, { recent, cloud }) })}
   ${LP.note(ctx)}
-  ${require('./cutaway').cutaway(ctx, { f: require('./dome').figures(ctx, { today, crew, recent, power, counts, crewFigures }) })}
+  <section class="sheet sheet-p3 habitat-page" id="inside" aria-label="${esc(T('The habitat'))}" data-page>
+    <div class="hab-card">
+      ${habitatInside(ctx, { today, crew, recent, power, counts, crewFigures })}
+    </div>
+  </section>
   ${LP.slowChat(ctx)}
   <section class="portal" id="write" data-stop>
   <!-- The portal's heading, in the dress of the dashboard's: the channel's
@@ -722,7 +731,7 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
   `;
   return L.page({
     title: 'Mission', ctx, body, hero, hideNav: true, hideRail: true, bodyClass: 'landing',
-    current: '/', scripts: ['/composer.js', '/board.js', '/habitat.js', '/hardware.js', '/folder.js', '/cutaway.js'].concat(cloud ? ['/cloud.js'] : [], ['/sky.js']),   // the page scrolls freely: no stops
+    current: '/', scripts: ['/composer.js', '/board.js', '/habitat.js', '/hardware.js', '/folder.js', '/live.js'].concat(cloud ? ['/cloud.js'] : [], ['/sky.js']),   // the page scrolls freely: no stops
     styles: ['/aura.css'],
   });
 }
@@ -1357,7 +1366,7 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
           <span class="sub">${T('Illuminance')} · ${T('Scale')} 0–1000 lx</span>
           <div class="big" id="lightVal" style="margin-top:12px">—<em>lx</em></div>
           <div id="hbt-light"></div>
-        </section>
+        </section>${vizTile(T, 'radar', { n: crew.length })}
       </div>
       <div class="bento aux">
         <section class="tile t-res">
@@ -1368,7 +1377,7 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
         <section class="tile t-pwr">
           <h3>${T('Power consumed')}</h3>
           <div id="pwr-live">${powerTileInner(ctx, power)}</div>
-        </section>
+        </section>${vizTile(T, 'orbit')}
       </div>
       <div id="hbt-notes"></div>
     </div>
@@ -1559,6 +1568,57 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
   return { m, T, day3, blogDate, kpis, strip, cloudStrip, missionPanel, habitat, trends, schedule, galley, crewPanel, blogCommander, blogHealth, blogScience };
 }
 
+/* The dashboard's LIVE mark, at the right of its head: a pill with a pulsing dot (aura.css). Decoration — hidden from
+   assistive technology; the strip of live pictures under the head carries a LIVE mark of its own for its readers. */
+function dashLive(T) {
+  return `
+      <div class="dash-live" aria-hidden="true"><span class="dl-live"><i></i>${T('LIVE')}</span></div>`;
+}
+
+/* Two instruments without a reading among the habitat's tiles — visual elements in the bento, each on a row of its own
+   (aura.css draws them, public/live.js moves what moves in them): Astronauts tracked, at the end of the sensors' third
+   row — a radar with a sweep going round, rings and a rim of ticks, and inside it one dot an astronaut (`n`, the crew's
+   number), each wandering about the disc and lit as the sweep passes over it; the orbit beside the stores and the power
+   — a wireframe globe turning, a satellite going round it on a dotted orbit. Decoration, nothing more: hidden from
+   assistive technology, not one figure in them (the dots are as many as the crew, which the head's figure says in
+   words); the readings are the other tiles'. */
+function vizTile(T, id, { n = 3 } = {}) {
+  const tile = (key, inner) => `
+        <section class="tile t-viz t-viz-${id}" aria-hidden="true"><span class="viz-k">${T(key)}</span>${inner}</section>`;
+  if (id === 'orbit') {
+    // the globe: meridians as ellipses (aura.css narrows and widens each in turn, so the globe seems to turn), parallels
+    // as flat ellipses, the globe seen a little from above
+    const R = 40, meridians = [0, 1, 2].map((i) => `<ellipse cx="60" cy="60" rx="${R}" ry="${R}" style="animation-delay:${(-i * 6).toFixed(0)}s"/>`).join('');
+    const parallels = [-0.66, -0.33, 0, 0.33, 0.66].map((f) => { const y = 60 + R * f, w = Math.sqrt(R * R - (R * f) ** 2); return `<ellipse cx="60" cy="${y.toFixed(1)}" rx="${w.toFixed(1)}" ry="${(w * 0.22).toFixed(1)}"/>`; }).join('');
+    return tile('Orbit', `
+          <svg class="dl-globe" viewBox="0 0 120 120">
+            <circle class="dl-ring" cx="60" cy="60" r="${R}"/><g class="dl-par">${parallels}</g><g class="dl-mer">${meridians}</g>
+            <ellipse class="dl-orbit" cx="60" cy="60" rx="56" ry="18" transform="rotate(-24 60 60)"/>
+            <g class="dl-sat-turn" transform="rotate(-24 60 60)"><circle class="dl-sat" cx="116" cy="60" r="2.6"/></g>
+          </svg>`);
+  }
+  const ticks = Array.from({ length: 48 }, (_, i) => {
+    const a = (i / 48) * Math.PI * 2, long = i % 6 === 0, r1 = long ? 50 : 53, r2 = 57;
+    return `<line x1="${(60 + r1 * Math.cos(a)).toFixed(2)}" y1="${(60 + r1 * Math.sin(a)).toFixed(2)}" x2="${(60 + r2 * Math.cos(a)).toFixed(2)}" y2="${(60 + r2 * Math.sin(a)).toFixed(2)}"${long ? ' class="dl-tick-l"' : ''}/>`;
+  }).join('');
+  // the astronauts: one dot each, set down apart from one another to begin with (live.js moves them)
+  const astros = Array.from({ length: Math.max(1, Math.min(6, n)) }, (_, i) => { const a = (i / Math.max(1, Math.min(6, n))) * Math.PI * 2 + 0.6, r = 22 + (i % 2) * 10; return `<circle class="dl-astro" cx="${(60 + r * Math.cos(a)).toFixed(1)}" cy="${(60 + r * Math.sin(a)).toFixed(1)}" r="2.6"/>`; }).join('');
+  return tile('Astronauts tracked', `
+          <svg class="dl-radar" viewBox="0 0 120 120">
+            <defs>
+              <linearGradient id="dl-sweep" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="var(--cobalt)" stop-opacity="0"/><stop offset="1" stop-color="var(--cobalt)" stop-opacity=".7"/></linearGradient>
+            </defs>
+            <g class="dl-ticks">${ticks}</g>
+            <circle class="dl-ring" cx="60" cy="60" r="47"/>
+            <circle class="dl-ring dl-dash" cx="60" cy="60" r="34"/>
+            <circle class="dl-ring dl-dash" cx="60" cy="60" r="21"/>
+            <circle class="dl-ring" cx="60" cy="60" r="8"/>
+            <line class="dl-cross" x1="60" y1="13" x2="60" y2="107"/><line class="dl-cross" x1="13" y1="60" x2="107" y2="60"/>
+            <g class="dl-sweep"><path d="M60 60 L60 13 A47 47 0 0 1 93.2 26.8 Z" fill="url(#dl-sweep)"/><line x1="60" y1="60" x2="60" y2="13"/></g>
+            <g class="dl-crew">${astros}</g>
+          </svg>`);
+}
+
 function dashboard(ctx, args) {
   const { m, T, day3, blogDate, kpis, strip, cloudStrip, missionPanel, habitat, trends, schedule, galley, crewPanel, blogCommander, blogHealth, blogScience } = dashboardPanels(ctx, args);
   return `
@@ -1566,9 +1626,9 @@ function dashboard(ctx, args) {
     <header class="dash-head" data-stop>
       <div>
         <h2 class="bigsec">${T('Mission dashboard')}</h2>
-        <p class="dash-sub">${esc(m.name)} · ${esc(m.runLabel)} · ${dayWord(T, m.totalDays)} · ${esc(m.timezone)}</p>
+        <p class="dash-sub">${esc(m.name)} · ${esc(m.runLabel)} · ${dayWord(T, m.totalDays)}</p>
         <p class="dash-figs">${kpis}</p>
-      </div>
+      </div>${dashLive(T)}
     </header>
     ${cloudStrip}
     <!-- the two doors and, beside them, the run as a strip of sols -->
