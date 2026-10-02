@@ -651,7 +651,7 @@ function resetDialog(locked) {
   <dialog class="popup reset-dialog" id="reset-dialog" aria-labelledby="reset-title">
     <div class="popup-head"><div><span class="fold-title" id="reset-title">Are you sure you want to reset?</span>
       <span class="fold-sub">Start again for 15 October · cannot be undone</span></div>
-      <button type="button" class="popup-close" data-close aria-label="Close">×</button></div>
+      <button type="button" class="popup-close" data-close aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="popup-body">
       <p class="note">This empties every blog slot, clears every message and reply from Earth, every crew state,
         the media sent out, the daily records, and every habitat reading (the readings and the trend graph start on

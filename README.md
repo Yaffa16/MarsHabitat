@@ -91,7 +91,7 @@ which is mission control's, sits behind the same login.
 | Page | Route | Holds |
 |---|---|---|
 | The station | `/` | **The header** across the top — the wordmark, the run's badge, the habitat's clock and a running line of the current activity, the next one, the habitat sensor's reading and the daily communication window · **four pages**: the way to the habitat with its sky, the note, the habitat in section and the world's slowest chat (see *The landing page: four pages in the glass dress*) · on a wider screen then the composer · the live message board · the mission dashboard (schedule, meal, mood, habitat, resources, trends, and below the trends **the three daily blogs** — Daily Mission Report, Health Report, Commander Blog). The crew log, the media, the whole mission day by day and the reading matter live on their own pages (`/logbook`, `/media`, `/at-a-glance`, `/about`) |
-| About | `/about` | The reading matter, one page: **About** (the project as the ZKM announces it — zkm.de/de/2026/10/marsplatz-red-dust-city: the run, the dome on the Marktplatz, the crew's brief, the daily EVAs, the ways to reach the crew, the opening and the funders — then the distance, the archive, the readings and *Messages sent to space* — two paragraphs on how a replied message goes out by radio through SpaceSpeak, after spacespeak.com/Learn/Science: the transmitters, the 2.4–5 GHz band, the directional antenna, the speed of light, then where the signal gets to and that it never stops), **What this is** (how the station behaves, in plain terms) and **Who we are** (crew, company, production credits), one after another under a row of three pills that jump to them (`src/views/pages/info.js`). A phone's **About** key opens it; on a desk the ticker's three-lines menu leads to each part of it |
+| About | `/about` | The reading matter, one page: **About** (the project as the ZKM announces it — zkm.de/de/2026/10/marsplatz-red-dust-city: the run, the dome on the Marktplatz, the crew's brief, the daily EVAs, the ways to reach the crew, the opening and the funders — then the distance, the archive, the readings and *Messages sent to space* — two paragraphs on how a replied message goes out by radio through SpaceSpeak, after spacespeak.com/Learn/Science: the transmitters, the 2.4–5 GHz band, the directional antenna, the speed of light, then where the signal gets to and that it never stops), **What this is** (how the station behaves, in plain terms, with *The path of a message* beside it in six steps — Write, Transmit, Reached MARS!platz, Pending approval, Transmitted to space, Replied back) and **Who we are** (the three officers; the crew's eleven portraits, each with its name as the photograph's file gives it — *Firstname_Lastname.jpg* — in the order of the surnames; and the producer with the partners' logos — *In cooperation with* the Badisches Staatstheater and the Naturkundemuseum Karlsruhe, *Supporters* E.ON Foundation, LBBW Stiftung and the Innovationsfonds Kunst — small, each on a white tile), one after another under a row of three pills that jump to them (`src/views/pages/info.js`; the pictures and `public/crew/crew.json` by `tools/crew-pictures.py`). The reading matter runs the whole width of its section; the mission's facts and the path of a message stand under it in rows. A phone's **About** key opens it; on a desk the ticker's three-lines menu leads to each part of it |
 | Dashboard | `/dashboard` | The mission dashboard on a page of its own — the same section the station page carries on a desk: the head, the live images, the two doors, the strip of sols and the nine panels behind their index. Drawn for a phone first — where it leaves the strip of live images out (the newest pictures rise over the habitat instead, and fill the Media page); the phone's bar of keys leads here with **Dashboard**, and on a phone the station page keeps its four pages alone |
 | Messages | `/messages` | The portal on a page of its own — the composer and the live message board, the same pieces the station page shows on a desk. Drawn for a phone first: the exchanges flow with the page, the composer is a dock at the foot of the screen, which lowers itself once a message has crossed; the phone's bar of keys leads here with **Write**, and so does the door at the foot of the station page's sheet |
 | Mission control | `/control` | Five tabs: **Messages** (the reply queue) first, then one per officer, and the habitat — which ends with the plan and the reset |
@@ -99,7 +99,7 @@ which is mission control's, sits behind the same login.
 | Crew log | `/logbook` | All thirteen days in order, each officer's entry where written and its placeholder where not — a day strip to jump by, a chip per voice. Opened from the Crew log panel on the station, and from the nav |
 | Media | `/media` | Everything the crew send out — photographs and video — by day, with filters; `/media/:id` one item; `/media/export.zip` everything as one ZIP; `/media/manifest.json` every file with its SHA-256 |
 | Archive | `/archive` | **Mission control only.** Day-by-day permanent record — no messages, every reading; `/archive/day/:n`, **`/archive/export.pdf`** (the whole mission as one document), `/archive/export.md`, `/archive/export.json`, **`/archive/readings.zip`** (every reading ever pulled). `/archive/messages` is a separate, unlinked search over the message queue and is not part of the record |
-| Screens | `/screens` | **The installation's screens** — one piece of the station a page, full screen, the whole of it in one glance, nothing to scroll: `/screen/landing`, `/screen/habitat`, `/screen/board`, `/screen/mission`, `/screen/blogs`, `/screen/day`, `/screen/trends`, `/screen/media` (see *The installation's screens*). `/screens` lists them |
+| Screens | `/screens` | **The installation's screens** — behind a sign-in of their own (`/screens/login`, *panolab* / *panolab123* unless `SCREENS_USER` and `SCREENS_PASSWORD` say otherwise; mission control's session opens them too) — one piece of the station a page, full screen, the whole of it in one glance, nothing to scroll: `/screen/landing`, `/screen/habitat`, `/screen/board`, `/screen/mission`, `/screen/blogs`, `/screen/day`, `/screen/trends`, `/screen/media` (see *The installation's screens*). `/screens` lists them |
 
 Every address the public subpages used to have (`/crew`, `/day`, `/schedule`, `/board`,
 `/communicate`) redirects to its section on the landing page, and `/what` and `/who-we-are` to
@@ -108,6 +108,17 @@ landing page's own old `#about`, `#what` and `#who-we-are` (when the reading mat
 pop-ups over it) lead to the About page too. The footer of the landing page is the navigation.
 
 ### The installation's screens
+
+**The screens are the venue's, not the public's.** `/screens`, every `/screen/<name>` and the
+writing screen's post open only to a browser that has signed in at `/screens/login` with the
+screens' user and password — `SCREENS_USER` and `SCREENS_PASSWORD` in `.env`, *panolab* /
+*panolab123* unless set (`src/lib/screens-auth.js`) — or that holds mission control's session.
+Anyone who types a screen's address into a browser lands on the sign-in page and, signed in,
+goes on to the screen asked for. The sign-in is a cookie that holds for a year, so a display
+stays signed in across its own reloads and the station's restarts; it stops working the moment
+the password is changed. Ten wrong tries from one address in ten minutes are throttled; the list
+carries a *Sign out of the screens* key. (The archive, `/archive`, needs mission control's session
+as it always did.)
 
 **The screens.** `/screens` lists them; each is a page of its own that you open full screen
 (F11) on the player behind a display:
@@ -148,7 +159,7 @@ address.
 | Screen | Address | Shows |
 |---|---|---|
 | Landing page | `/screen/landing` | The station's first screen — the ticker across the top, the name in its band, then the way to the habitat: the Earth, the line, the habitat far above, the latest exchanges and pictures either side of the line (*The landing page: four pages*). The one screen that keeps the ticker; the ticker's switches (light, language) and its menu are not drawn |
-| Habitat | `/screen/habitat` | The Habitat panel of the dashboard: the readings, the crew's figures, the stores and the power — live |
+| Habitat | `/screen/habitat` | The Habitat panel of the dashboard: the readings, the crew's figures, the stores and the power — live. Set to be read from across a room: what each tile measures in 32px type, its scale under it in 18px, the figures 46–54px, and the drawings (the dial, the ruler, the radar, the orbit) smaller for it (`screen.css`, `#habitat`) |
 | Message Board | `/screen/board` | The latest exchanges, newest first, two across (one upright), as many as fit — live, a new exchange slides in as the board publishes it. Read-only: no composer, nothing to tap — a card's line into space stands on one line (*Diese Nachricht ist jetzt 20,02 Milliarden km von der Erde entfernt! · Gestartet vor 19 Stunden*) and opens no panel. The screen polls `/api/board?lang=<its language>&limit=400`, so the cards come back in the language the screen is in, all of them |
 | Write to the crew | `/screen/write` | **The message-sending box, full screen** — the composer as the site has it (the crew's question of the day over it, the message box, the tags, the Transmit key), alone in the middle of the screen, for a touch screen in the square. **Every message sent from it is a new visitor's**: a callsign is minted for it alone (`src/lib/callsign.js`, `mint`; `POST /screen/write` in `server.js`), no cookie is set, so the next person at the screen starts afresh — no callsign carried over, no transit lock between them. Once a message is sent the crossing plays as on the site, then holds nine seconds on ARRIVED with the callsign named — *Your message went under the callsign DUST-465 — look for it on the Message Board once the crew have answered* — before the empty box comes back (`public/composer.js`, `data-hold`, `data-refresh`). The checks are the composer's (the channel open, the words within bounds); the hourly limit is the screen's own, per address, since all its messages come from one: `KIOSK_HOURLY_LIMIT`, sixty an hour. What is left half-written is cleared after three minutes with nobody touching the screen, and the page's own reloads wait while someone is writing or a message is crossing (`public/screen-write.js`) |
 | Today's Mission | `/screen/mission` | The day's mission from the sheet: its question, Morning, Afternoon, EVA, the question for the community hour — **typed out letter by letter** as if someone were writing it (`public/typed.js`: a cursor after the last letter, a halt at a full stop; typed to the end it stays three minutes, then is typed again; the site's dashboard shows the same panel still) |
@@ -626,6 +637,18 @@ the preview — so the grid stands with the cloud slow, the sign-in changed or t
 network unplugged, and the credentials never leave the server. It is **read-only**: nothing
 is ever written to the cloud. A file removed from the folder leaves the grid on the next read.
 
+**Nothing is pulled from the cloud at night.** Between **22:00 and 08:00, venue time, every
+day**, the folder is not listed and no picture is copied — not over WebDAV and not from a
+mounted folder either. The crew's lights go out at 22:00; what the camera sees after that stays
+on the cloud until the morning read, when the grid catches up. The window is a fact of the piece
+and is fixed in code (`QUIET` in `src/lib/cloud.js`), in the venue's own zone, so neither a stale
+`.env` nor the clocks going back on 25 October can open it; a read still copying at 22:00 stops
+where it is and the rest is copied at 08:00. The gallery's head line says so (*not between 22:00
+and 08:00*, and at night *next read at 08:00*), and the server log marks the start and the end
+of each night. The one way round it is a rehearsal — `MISSION_OVERRIDE=true` together with
+`CLOUD_QUIET=off` — which the test suite uses to run its cloud checks at any hour; on the real
+run `CLOUD_QUIET` does nothing.
+
 Everything is in **`.env`**: `CLOUD_URL` (default `https://cloud.zkm.de`), `CLOUD_USER` and
 `CLOUD_PASSWORD` (the display account), `CLOUD_FOLDER` (a path inside that account —
 empty for its root), `CLOUD_TITLE` (the heading, default *Gallery*), **`CLOUD_CHECK_SECONDS`**
@@ -873,7 +896,12 @@ gone: the About page tells the mission.) It is drawn in the station's own dress:
 ground — white by day, black by night** — cobalt ink, **frosted glass floating on soft
 shadows**, rounded cards and round pills, the orange keys (`src/views/pages/landing.js`,
 `inside.js`, `sky.js`; `public/aura.css`, `public/sheet.css`, `public/sky.js`). Dark is the
-default.
+default. **Every pop-up closes with the same key** — the room pop-ups, the sky's notes, the
+media pop-up, the composer's pop-up on a phone: a round key, 34px (40px under a thumb), its
+cross two strokes drawn in the markup (an inline SVG, not a typed ×), its sides pinned equal in
+one rule at the end of `aura.css` so that neither the station's wide-key styling (spaced
+capitals, a lift on hover) nor the 44px touch height (`station.css`) can stretch it or push the
+cross off centre; the media pop-up's arrows are drawn the same way.
 
 **On a phone held upright the landing goes a page a swipe**, in the swipe's direction — the
 way to the habitat, the name and the note, inside the habitat, the chat, then the foot (CSS scroll snapping, each
@@ -1998,8 +2026,13 @@ computed, 0.37272 au actual). The station keeps working if the venue loses its c
    written for days beyond the run is left out with a warning rather than refused.
 2. Set `CONTROL_PASSWORD`, `SENSOR_TOKEN` and `IP_SALT`.
 3. Set `SECURE_COOKIES=true` if serving over HTTPS.
-4. Replace the placeholder credits in `src/views/pages/info.js` (`CREDITS`, production and
-   contact blocks under Who we are on the About page, `/about#who-we-are`).
+4. Check Who we are on the About page (`/about#who-we-are`): the crew's portraits with their
+   names (`public/crew`, made from `public/Astronaut_Pictures` — one `Firstname_Lastname.jpg`
+   per person — by `tools/crew-pictures.py`, which also writes `public/crew/crew.json`, the
+   people by surname, that the page reads; a new photograph needs only the script run again)
+   and the partners' logos under Produced by (`public/partners`, from `public/PartnerLogo`:
+   1 and 2 *In cooperation with*, 3 to 5 *Supporters* — `PARTNERS` in
+   `src/views/pages/info.js`).
 5. Check all thirteen days on the landing page's **whole mission** fold — every day ships written
    in `content/`; change anything there or on the matching tab in mission control.
 6. Walk whoever will sit at mission control through `/control` once: the queue, Ctrl+Enter,

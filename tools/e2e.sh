@@ -11,6 +11,7 @@ export SENSOR_TOKEN=${SENSOR_TOKEN:-test-token}
 # the station's real data.
 export CRITICAL_POLL=${CRITICAL_POLL:-false}   # keep the suite off the network
 export CLOUD_POLL=false HA_POLL=${HA_POLL:-false}
+export CLOUD_QUIET=off          # the cloud's night (22:00–08:00, src/lib/cloud.js) is tested with a fake clock below; the other cloud checks run at any hour
 export MISSION_OVERRIDE=true    # a rehearsal: the real dates are fixed in src/lib/run.js
 export MISSION_START=${MISSION_START:-$(date -u -d '-4 days' +%F)}
 export MISSION_END=${MISSION_END:-$(date -u -d '+8 days' +%F)}
@@ -438,8 +439,42 @@ ABOUT=$(curl -s $B/about)
 for sec in about-project what who-we-are; do
   echo "$ABOUT" | grep -q "<section class=\"about-sec\" id=\"$sec\"" || bad "the About page has no #$sec section"
 done
-echo "$ABOUT" | grep -q 'Distance as the material' && echo "$ABOUT" | grep -q 'What happens when you send something' && echo "$ABOUT" | grep -q 'Outside the habitat' \
+echo "$ABOUT" | grep -q 'Distance as the material' && echo "$ABOUT" | grep -q 'What happens when you send something' && echo "$ABOUT" | grep -q 'Produced by' \
   && ok "the About page carries all three texts — About, What this is, Who we are" || bad "the About page is missing a text"
+# the About page, pared down: no "At this moment" panel, no "What is kept", no row of message states; the path of a message
+# in six steps — Write, Transmit, Reached MARS!platz, Pending approval, Transmitted to space, Replied back; under Who we are
+# the crew without a heading or a note over them, the credits without a heading, and no "Reach the production"
+! echo "$ABOUT" | grep -q 'At this moment</div>' && ! echo "$ABOUT" | grep -q 'What is kept' && ! echo "$ABOUT" | grep -q 'Message states as shown in the interface' && ! echo "$ABOUT" | grep -q 'class="pipe' \
+  && ! echo "$ABOUT" | grep -q 'Inside the habitat' && ! echo "$ABOUT" | grep -q 'addressed by designation' && ! echo "$ABOUT" | grep -q 'Outside the habitat' && ! echo "$ABOUT" | grep -q 'Reach the production' && ! echo "$ABOUT" | grep -q 'Replace these entries' \
+  && ok "the About page no longer carries At this moment, What is kept, the row of states, Inside/Outside the habitat, the crew's note or Reach the production" || bad "a removed About panel is still on the page"
+node -e '
+const h = process.argv[1]; const steps = ["Write", "Transmit", "Reached MARS!platz", "Pending approval", "Transmitted to space", "Replied back"];
+const rows = [...h.matchAll(/<div class="row"><div class="t">(\d\d)<\/div>\s*<div class="m"><b>([^<]*)<\/b>/g)].map((m) => m[2]);
+process.exit(JSON.stringify(rows) === JSON.stringify(steps) ? 0 : 1);
+' "$ABOUT" && ok "the path of a message is six steps: Write, Transmit, Reached MARS!platz, Pending approval, Transmitted to space, Replied back" || bad "the path of a message is not the six steps"
+curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<b>MARS!platz erreicht</b>' && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q '<b>Transmis dans l’espace</b>' && ok "and in German and French" || bad "the six steps are not translated"
+# Who we are: no credits any more; the crew's eleven portraits (public/crew, from public/Astronaut_Pictures) and, under
+# Produced by, the partners' logos (public/partners, from public/PartnerLogo) — 1 and 2 in cooperation with, 3 to 5 supporters
+! echo "$ABOUT" | grep -q 'To be credited' && ! echo "$ABOUT" | grep -q 'Technical direction' && ! echo "$ABOUT" | grep -q 'Supported by the Innovationsfonds' \
+  && [ "$(echo "$ABOUT" | grep -o '<figure class="crew-pic"><img src="/crew/[a-z-]*\.jpg" alt="" width="800" height="1200" loading="lazy" decoding="async"><figcaption>[^<]*</figcaption></figure>' | wc -l)" = "11" ] \
+  && ok "Who we are carries no credits, and the crew's eleven portraits, each with a name" || bad "the credits are still there, or the portraits are not, or they carry no names"
+node -e '
+const h = process.argv[1]; const names = [...h.matchAll(/<figure class="crew-pic">.*?<figcaption>([^<]*)<\/figcaption>/g)].map((m) => m[1]);
+const want = ["Till Bechtloff", "Götz Dipper", "Jan Gerigk", "Yasha Jain", "Dominik Kautz", "Bernd Lintermann", "Tina Lorenz", "Laura Schmidt", "Morgan Stricot", "Matthieu Vlaminck-Maurer", "Dan Wilcox"];
+process.exit(JSON.stringify(names) === JSON.stringify(want) ? 0 : 1);
+' "$ABOUT" && ok "the names are the files' (Firstname_Lastname), in the order of the surnames — Bechtloff to Wilcox" || bad "the crew's names or their order are not the files'"
+for f in bechtloff dipper gerigk jain kautz lintermann lorenz schmidt stricot vlaminck-maurer wilcox; do [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/$f.jpg)" = "200" ] || bad "no portrait /crew/$f.jpg"; done; ok "every portrait is served"
+[ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/crew.json)" = "200" ] && grep -q "'../../../public/crew/crew.json'" src/views/pages/info.js && ok "the list is public/crew/crew.json, written by tools/crew-pictures.py and read by the page" || bad "the crew's list is not read from crew.json"
+node -e '
+const h = process.argv[1];
+const row = (label) => { const i = h.indexOf("<div class=\"eyebrow\">" + label + "</div>"); if (i < 0) return null; const j = h.indexOf("</div></div>", i); return [...h.slice(i, j).matchAll(/<img src="\/partners\/([a-z-]+)\.png" alt="([^"]*)"/g)].map((m) => m[1]); };
+const c = row("In cooperation with"), s = row("Supporters");
+process.exit(JSON.stringify(c) === JSON.stringify(["staatstheater-karlsruhe", "naturkundemuseum-karlsruhe"]) && JSON.stringify(s) === JSON.stringify(["eon-foundation", "lbbw-stiftung", "innovationsfonds-kunst"]) ? 0 : 1);
+' "$ABOUT" && ok "under Produced by: In cooperation with — the Staatstheater and the Naturkundemuseum; Supporters — E.ON Foundation, LBBW Stiftung, Innovationsfonds Kunst" || bad "the partners' logos are not in their two rows"
+for f in staatstheater-karlsruhe naturkundemuseum-karlsruhe eon-foundation lbbw-stiftung innovationsfonds-kunst; do [ "$(curl -s -o /dev/null -w '%{http_code}' $B/partners/$f.png)" = "200" ] || bad "no logo /partners/$f.png"; done; ok "every logo is served"
+grep -q '.logos .logo { display: inline-flex; align-items: center; justify-content: center; height: 48px;' public/station.css && grep -q '.crew-wall { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px 10px; }' public/station.css \
+  && grep -q '.crew-pic figcaption { margin-top: 8px;' public/station.css && ok "the logos are small, each on a white tile; the portraits six to a row, the name under each" || bad "the logo or portrait rules are missing"
+curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<div class="eyebrow">In Kooperation mit</div>' && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q '<div class="eyebrow">Soutiens</div>' && ok "the partners' rows are named in German and French" || bad "the partners' rows are not translated"
 echo "$ABOUT" | grep -q '<h3>Messages sent to space</h3>' && echo "$ABOUT" | grep -q 'through SpaceSpeak — a small network of transmitters around the world' && echo "$ABOUT" | grep -q 'between 2.4 and 5 gigahertz' \
   && echo "$ABOUT" | grep -q 'From then on the message is on its way for good' && echo "$ABOUT" | grep -q 'nearly halfway to Proxima Centauri' \
   && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<h3>Nachrichten ins All</h3>' && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q 'via SpaceSpeak' \
@@ -1103,6 +1138,31 @@ CLOUD_POLL=true CLOUD_DIR=/tmp/e2e-cloud CLOUD_CHECK_SECONDS=7 DATA_DIR=$(mktemp
 const c = require("./src/lib/cloud"); const s = c.snapshot();
 process.exit(s.checkSeconds === 7 && typeof s.version === "string" ? 0 : 1);
 ' && ok "the frequency is one number, CLOUD_CHECK_SECONDS, and the grid carries a version stamp" || bad "frequency setting not honoured"
+# the night: NO image is pulled from the cloud between 22:00 and 08:00 at the venue, every day (src/lib/cloud.js, QUIET) —
+# a read at 23:30 lists nothing and copies nothing; at 08:05 the folder is read again; a read copying at 22:00 stops.
+# The window is fixed in code, in the venue's zone; CLOUD_QUIET=off opens it for a rehearsal (MISSION_OVERRIDE) only.
+night_poll() {   # $1 the instant (UTC), $2 CLOUD_QUIET, $3 MISSION_OVERRIDE → prints quiet.now quiet.off gallery-count lastPollAt
+  CLOUD_POLL=true CLOUD_DIR=/tmp/e2e-cloud CLOUD_QUIET="$2" MISSION_OVERRIDE="$3" DATA_DIR=$(mktemp -d) node -e '
+const RealDate = Date, AT = RealDate.parse(process.argv[1]);
+global.Date = class extends RealDate { constructor(...a) { super(...(a.length ? a : [AT])); } static now() { return AT; } };
+const c = require("./src/lib/cloud");
+c.poll().then(() => { const s = c.snapshot(); console.log(s.quiet.now, s.quiet.off, c.gallery().length, s.lastPollAt === null ? "never" : "read"); });
+' "$1" 2>/dev/null | tail -1
+}
+[ "$(night_poll 2026-10-16T21:30:00Z '' true)" = "true false 0 never" ] && ok "at 23:30 at the venue nothing is read from the cloud: no listing, no copy" || bad "the cloud is read at night: $(night_poll 2026-10-16T21:30:00Z '' true)"
+[ "$(night_poll 2026-10-17T05:30:00Z '' true)" = "true false 0 never" ] && ok "nor at 07:30" || bad "the cloud is read before 08:00"
+[ "$(night_poll 2026-10-17T06:05:00Z '' true)" = "false false 2 read" ] && ok "at 08:05 the folder is read again and the pictures copied" || bad "the morning read does not happen: $(night_poll 2026-10-17T06:05:00Z '' true)"
+[ "$(night_poll 2026-10-16T19:59:00Z '' true)" = "false false 2 read" ] && ok "and at 21:59 it still is" || bad "the night begins too early"
+[ "$(night_poll 2026-10-26T21:30:00Z '' true)" = "true false 0 never" ] && [ "$(night_poll 2026-10-27T07:05:00Z '' true)" = "false false 2 read" ] && ok "the window keeps the venue's clock after 25 October (22:30 CET quiet, 08:05 CET read)" || bad "the night window drifts with the clocks going back"
+[ "$(night_poll 2026-10-16T21:30:00Z off true)" = "false true 2 read" ] && ok "CLOUD_QUIET=off opens the night for a rehearsal (MISSION_OVERRIDE)" || bad "CLOUD_QUIET=off does not open the night for a rehearsal"
+[ "$(night_poll 2026-10-16T21:30:00Z off '')" = "true false 0 never" ] && ok "and does nothing without MISSION_OVERRIDE — the night cannot be opened from .env on the real run" || bad "CLOUD_QUIET=off works without MISSION_OVERRIDE"
+grep -q "const QUIET = Object.freeze({ from: '22:00', to: '08:00' });" src/lib/cloud.js && grep -q "if (quiet()) { held = next.length - cached; break; }" src/lib/cloud.js && grep -q "timeZone: RUN.TZ" src/lib/cloud.js \
+  && ok "the window is fixed in code — 22:00 to 08:00 in the venue's zone — and a read still copying at 22:00 stops" || bad "the night window is not fixed in code, or a read copying at 22:00 goes on"
+node -e '
+const M = require("./src/views/pages/media"); const T = (s) => s;
+const h = M.cloudGridInner(T, { title: "Gallery", items: [], snapshot: { checkSeconds: 900, lastPollAt: "2026-10-16T19:45:00Z", quiet: { from: "22:00", to: "08:00", now: true, off: false } }, sort: "newest" }, { tz: "Europe/Berlin", lang: "en" });
+process.exit(h.includes("not between 22:00 and 08:00 (next read at 08:00)") ? 0 : 1);
+' && ok "the gallery's head says so — not between 22:00 and 08:00 — and, at night, when the next read is" || bad "the gallery's head does not name the night"
 grep -q 'data-version' src/views/pages/media.js && grep -q "fetch(api, " public/cloud.js && grep -q "getAttribute('data-api') || '/api/cloud'" public/cloud.js && grep -q "CLOUD_CHECK_SECONDS" docker-compose.yml \
   && ok "an open /media polls /api/cloud on that beat and swaps the grid in as the folder changes" || bad "live gallery wiring missing"
 node -e '
@@ -1174,25 +1234,49 @@ process.exit(h.indexOf("glance-link") > -1 && h.indexOf("glance-link") < h.index
 curl -s $B/ | grep -q '>At a Glance<' && ok "and the footer navigation carries it" || bad "At a Glance missing from the nav"
 
 echo "── the installation's screens"
-[ "$(curl -s -o /dev/null -w '%{http_code}' $B/screens)" = "200" ] && ok "the list of the screens answers at /screens" || bad "/screens does not answer"
+# the screens' door (src/lib/screens-auth.js; server.js, requireScreens): /screens, every /screen/<name>, the writing
+# screen's composer and its post open only to a browser signed in with the screens' user and password (SCREENS_USER and
+# SCREENS_PASSWORD; panolab / panolab123 unless set) or holding mission control's session — anyone else is sent to
+# /screens/login and, signed in, on to the screen asked for; no address off the screens is a way on (no open redirect)
+[ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' $B/screens)" = "302 $B/screens/login?next=%2Fscreens" ] && [ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' $B/screen/board)" = "302 $B/screens/login?next=%2Fscreen%2Fboard" ] \
+  && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/screen/write/composer)" = "302" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' -d 'body=hello' $B/screen/write)" = "302" ] \
+  && ok "a browser that has not signed in is sent from the screens, their list and the writing screen's post to /screens/login, with the screen it asked for" || bad "the screens open without a sign-in"
+[ "$(curl -s -o /dev/null -w '%{http_code}' $B/screens/login)" = "200" ] && curl -s $B/screens/login | grep -q 'action="/screens/login"' && curl -s $B/screens/login | grep -q 'name="next" value="/screens"' \
+  && ok "the sign-in page: user, password, the way on" || bad "no sign-in page for the screens"
+[ "$(curl -s -o /dev/null -w '%{http_code}' -d 'username=panolab&password=nope' $B/screens/login)" = "401" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' -d 'username=someone&password=panolab123' $B/screens/login)" = "401" ] \
+  && ok "the wrong user or password is a 401 and no cookie" || bad "wrong credentials are accepted"
+SK=$(mktemp)
+[ "$(curl -s -c $SK -o /dev/null -w '%{http_code} %{redirect_url}' -d 'username=panolab&password=panolab123&next=%2Fscreen%2Fboard' $B/screens/login)" = "302 $B/screen/board" ] && grep -q 'mcs_screens' $SK \
+  && ok "panolab / panolab123 signs in: a cookie for the screens, and on to the screen asked for" || bad "the screens' credentials do not sign in"
+[ "$(curl -s -o /dev/null -w '%{redirect_url}' -d 'username=panolab&password=panolab123&next=https%3A%2F%2Fevil.example%2F' $B/screens/login)" = "$B/screens" ] && [ "$(curl -s -o /dev/null -w '%{redirect_url}' -d 'username=panolab&password=panolab123&next=%2Fcontrol' $B/screens/login)" = "$B/screens" ] \
+  && ok "an address off the screens is not a way on after signing in" || bad "the sign-in redirects anywhere it is told"
+[ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/screens)" = "200" ] && [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/screens/login)" = "302" ] && ok "mission control's session opens the screens too, and skips the sign-in page" || bad "mission control is asked to sign in to the screens"
+curl -s -b $SK $B/screens | grep -q 'action="/screens/logout"' && SK2=$(mktemp) && cp $SK $SK2 && curl -s -b $SK2 -c $SK2 -o /dev/null -X POST $B/screens/logout && [ "$(curl -s -b $SK2 -o /dev/null -w '%{http_code}' $B/screens)" = "302" ] \
+  && ok "the list carries a way out, and after it the screens ask again" || bad "no way out of the screens, or it does not sign out"
+grep -q "maxAge: 365 \* 86400000" src/lib/screens-auth.js && grep -q "crypto.timingSafeEqual" src/lib/screens-auth.js && grep -q "const TRIES = 10, WINDOW_MS = 10 \* 60 \* 1000;" src/lib/screens-auth.js \
+  && ok "the cookie holds for a year (a display stays signed in across its reloads and the station's restarts), the comparison is constant-time, and ten wrong tries in ten minutes are throttled" || bad "the screens' door is missing a part"
+[ "$(curl -s -b $SK -o /dev/null -w '%{http_code}' $B/screens)" = "200" ] && ok "the list of the screens answers at /screens, signed in" || bad "/screens does not answer"
+grep -q "body.screen.screen-habitat #habitat .hbt .tile h3 { font-size: 32px; line-height: 1.1; margin: 0 0 4px; }" public/screen.css && grep -q "body.screen.screen-habitat #habitat .hbt .sub, body.screen.screen-habitat #habitat .hbt .t-pwr .sub { font-size: 18px; line-height: 1.3; }" public/screen.css \
+  && grep -q "body.screen.screen-habitat #habitat .hbt .dial-wrap svg { max-width: 220px; }" public/screen.css && grep -q "body.screen.screen-habitat #habitat .hbt .tile.t-viz svg { max-height: 96px; }" public/screen.css \
+  && ok "the habitat screen is set to be read across a room — what each tile measures in 32px, its scale in 18px, the drawings smaller — by rules that name the panel (#habitat) and so outrank the dress's" || bad "the habitat screen's type is not enlarged for the room"
 SCR_OK=1; for n in landing habitat board write mission blogs day trends media; do
-  [ "$(curl -s -o /dev/null -w '%{http_code}' $B/screen/$n)" = "200" ] || SCR_OK=0
+  [ "$(curl -s -b $SK -o /dev/null -w '%{http_code}' $B/screen/$n)" = "200" ] || SCR_OK=0
 done
 [ $SCR_OK = 1 ] && ok "nine screens answer at /screen/<name>: landing, habitat, board, write, mission, blogs, day, trends, media" || bad "a screen does not answer"
-[ "$(curl -s -o /dev/null -w '%{http_code}' $B/screen/nothing)" = "404" ] && ok "a name that is not a screen is a 404" || bad "/screen/nothing answers"
-TICK_OK=1; for n in habitat board write mission blogs day trends media; do curl -s $B/screen/$n | grep -q 'class="ticker"' && TICK_OK=0; done
-[ $TICK_OK = 1 ] && curl -s $B/screen/landing | grep -q 'class="ticker"' && ok "no ticker on the screens, but on the landing screen, which keeps it" || bad "a ticker is on a screen, or off the landing screen"
-SCR=$(curl -s $B/screen/board)
+[ "$(curl -s -b $SK -o /dev/null -w '%{http_code}' $B/screen/nothing)" = "404" ] && ok "a name that is not a screen is a 404" || bad "/screen/nothing answers"
+TICK_OK=1; for n in habitat board write mission blogs day trends media; do curl -s -b $SK $B/screen/$n | grep -q 'class="ticker"' && TICK_OK=0; done
+[ $TICK_OK = 1 ] && curl -s -b $SK $B/screen/landing | grep -q 'class="ticker"' && ok "no ticker on the screens, but on the landing screen, which keeps it" || bad "a ticker is on a screen, or off the landing screen"
+SCR=$(curl -s -b $SK $B/screen/board)
 echo "$SCR" | grep -q '<html lang="de" data-theme="dark" class="js screen">' && echo "$SCR" | grep -q 'Nachrichtenboard' && ok "a screen is dark and in German unless its address says otherwise" || bad "the screens' default is not dark and German"
-curl -s "$B/screen/board?lang=en&theme=light" | grep -q '<html lang="en" data-theme="light" class="js screen">' && curl -s "$B/screen/board?lang=fr" | grep -q '<html lang="fr" data-theme="dark"' \
+curl -s -b $SK "$B/screen/board?lang=en&theme=light" | grep -q '<html lang="en" data-theme="light" class="js screen">' && curl -s -b $SK "$B/screen/board?lang=fr" | grep -q '<html lang="fr" data-theme="dark"' \
   && ok "?lang=en|fr and ?theme=light switch it" || bad "the switches in the address do not work"
-echo "$SCR" | grep -q 'class="landing inner screen screen-board" data-screen="board" data-fit="clip"' && curl -s $B/screen/habitat | grep -q 'data-fit="scale" data-min-width="960"' \
+echo "$SCR" | grep -q 'class="landing inner screen screen-board" data-screen="board" data-fit="clip"' && curl -s -b $SK $B/screen/habitat | grep -q 'data-fit="scale" data-min-width="960"' \
   && ok "the board is cut clean at the foot (data-fit=clip), the habitat scaled to fit, never narrower than its layout (data-min-width)" || bad "the fit attributes are wrong"
 ! echo "$SCR" | grep -q 'class="tabbar\|class="foot\|id="consent"' && ok "no bar of keys, no foot, no cookie card on a screen" || bad "the station's chrome is on a screen"
 echo "$SCR" | grep -q '/screen.css?v=' && echo "$SCR" | grep -q '/screen.js?v=' && echo "$SCR" | grep -q '/board.js?v=' && ok "each screen loads the screens' stylesheet and script over the site's, and the script that keeps its piece live" || bad "a screen's assets are missing"
-for n in landing habitat board write mission blogs day trends media; do curl -s $B/screen/$n; done | grep -q 'id="stage-clock"' && ok "the venue's clock in the head" || bad "no clock on the screens"
-curl -s $B/screen/day | grep -q 'class="screen-three"' && ok "the day is three panels in a row (one under the other upright)" || bad "the day screen is not three panels"
-BL=$(curl -s $B/screen/blogs)
+for n in landing habitat board write mission blogs day trends media; do curl -s -b $SK $B/screen/$n; done | grep -q 'id="stage-clock"' && ok "the venue's clock in the head" || bad "no clock on the screens"
+curl -s -b $SK $B/screen/day | grep -q 'class="screen-three"' && ok "the day is three panels in a row (one under the other upright)" || bad "the day screen is not three panels"
+BL=$(curl -s -b $SK $B/screen/blogs)
 echo "$BL" | grep -q 'class="screen-blogs" id="screen-blogs"' && echo "$BL" | grep -q 'data-fit="none"' && echo "$BL" | grep -q '/screen-blogs.js?v=' \
   && node -e 'const h = process.argv[1]; const a = h.indexOf("id=\"blog-commander\""), b = h.indexOf("id=\"blog-science\""), c = h.indexOf("id=\"blog-health\""); process.exit(a > -1 && a < b && b < c ? 0 : 1);' "$BL" \
   && grep -q "translateY" public/screen-blogs.js && grep -q "requestAnimationFrame" public/screen-blogs.js \
@@ -1201,39 +1285,39 @@ grep -q "font-size: clamp(20px, 1.2vw, 24px)" public/screen.css && ok "its text 
 grep -q 'body.screen .screen-blogs .blogp .dpanel-body > .empty { position: absolute; inset: 22px 40px 40px; min-height: 0; display: block; text-align: left;' public/screen.css \
   && ok "a blog with nothing written stands at the top left, across the width, like a post would" || bad "the empty blog note is not left-aligned across the width"
 # the board screen: its cards come back from the poll in the screen's own language, all 400 of them; nothing on it is tappable
-echo "$SCR" | grep -q 'data-poll="/api/board?lang=de&amp;limit=400"' && curl -s "$B/screen/board?lang=en" | grep -q 'data-poll="/api/board?lang=en&amp;limit=400"' \
+echo "$SCR" | grep -q 'data-poll="/api/board?lang=de&amp;limit=400"' && curl -s -b $SK "$B/screen/board?lang=en" | grep -q 'data-poll="/api/board?lang=en&amp;limit=400"' \
   && ok "the board screen polls /api/board for its own language and its 400 cards" || bad "the board screen polls the visitor's board"
 curl -s "$B/api/board?lang=de&limit=400" | grep -q 'Diese Nachricht ist jetzt' && curl -s "$B/api/board?lang=fr" | grep -q 'Ce message est maintenant' && ! curl -s "$B/api/board?lang=de" | grep -q 'This message is currently' \
   && ok "/api/board answers in the language asked for, so the ticking words and the cards' words agree" || bad "/api/board ignores ?lang"
 grep -q "if (document.body.classList.contains('screen')) return;" public/board.js && grep -q 'body.screen .card.xc .card-space { flex-direction: row; flex-wrap: wrap;' public/screen.css && grep -q 'body.screen .card.xc .card-space-more { display: contents; }' public/screen.css \
   && ok "on the board screen the distance and the launch time share one line, and a tap opens nothing" || bad "the board screen's space line is not one line, or a tap still opens the panel"
-curl -s $B/screen/mission | grep -q 'id="mission-today"' && curl -s $B/screen/trends | grep -q 'id="trends"' && curl -s $B/screen/habitat | grep -q 'id="hbt-bento"' && ok "the mission, the trends and the habitat screens carry the dashboard's own panels" || bad "a screen lacks its panel"
+curl -s -b $SK $B/screen/mission | grep -q 'id="mission-today"' && curl -s -b $SK $B/screen/trends | grep -q 'id="trends"' && curl -s -b $SK $B/screen/habitat | grep -q 'id="hbt-bento"' && ok "the mission, the trends and the habitat screens carry the dashboard's own panels" || bad "a screen lacks its panel"
 curl -s "$B/api/cloud?flat=1" | node -e 'let s="";process.stdin.on("data",(c)=>s+=c).on("end",()=>{const j=JSON.parse(s); process.exit(!j.configured || (j.html.indexOf("cloud-flat")>-1 && j.html.indexOf("cloud-day-head")<0) ? 0 : 1);});' \
   && ok "/api/cloud?flat=1 answers with the gallery as one grid, no day heads — what the media screen polls (data-api)" || bad "the flat gallery is wrong"
-curl -s $B/screens | grep -q '/screen/board?lang=en&amp;theme=light' && ok "the list explains the switches" || bad "the list does not explain the switches"
+curl -s -b $SK $B/screens | grep -q '/screen/board?lang=en&amp;theme=light' && ok "the list explains the switches" || bad "the list does not explain the switches"
 grep -q "location.reload" public/screen.js && grep -q "venueDate() !== day0" public/screen.js && ok "every screen reloads itself every five minutes and at the venue's midnight" || bad "screen.js does not reload"
 # the landing screen is the first page as the site has it now: the way to the habitat, with the sky, under the ticker
-curl -s "$B/screen/landing?lang=en" | grep -q '<div class="space-room" id="space-room">' && curl -s "$B/screen/landing?lang=en" | grep -q 'id="dome-sky-data"' && ! curl -s "$B/screen/landing" | grep -q 'id="habitat-dome"' \
+curl -s -b $SK "$B/screen/landing?lang=en" | grep -q '<div class="space-room" id="space-room">' && curl -s -b $SK "$B/screen/landing?lang=en" | grep -q 'id="dome-sky-data"' && ! curl -s -b $SK "$B/screen/landing" | grep -q 'id="habitat-dome"' \
   && ok "the landing screen shows the way to the habitat — the Earth, the line, the sky around it — under the ticker" || bad "the landing screen is not the first page"
 # the writing screen: the composer full screen, every message a new visitor's
-WR=$(curl -s "$B/screen/write?lang=en")
+WR=$(curl -s -b $SK "$B/screen/write?lang=en")
 echo "$WR" | grep -q 'class="landing inner screen screen-write" data-screen="write" data-fit="scale" data-min-width="640"' && echo "$WR" | grep -q '<div class="screen-write"><section class="device composer-device"' \
   && echo "$WR" | grep -q 'action="/screen/write?lang=en" id="composer" class="composer" data-callsign="" data-kiosk="1"' && echo "$WR" | grep -q '<div class="dev-body" id="dev-body" data-kiosk="1" data-refresh="/screen/write/composer?lang=en">' \
   && echo "$WR" | grep -q '>Callsign on sending<' && echo "$WR" | grep -q '/composer.js?v=' && echo "$WR" | grep -q '/screen-write.js?v=' && ! echo "$WR" | grep -q 'transit-block' \
-  && curl -s "$B/screen/write" | grep -q 'action="/screen/write?lang=de"' && curl -s "$B/screen/write" | grep -q 'Rufzeichen beim Senden' \
-  && curl -s "$B/screens?lang=en" | grep -q '<a href="/screen/write"><b>Write to the crew</b><span>/screen/write</span></a>' && curl -s $B/screens | grep -q '<a href="/screen/write"><b>Schreib der Crew</b>' \
+  && curl -s -b $SK "$B/screen/write" | grep -q 'action="/screen/write?lang=de"' && curl -s -b $SK "$B/screen/write" | grep -q 'Rufzeichen beim Senden' \
+  && curl -s -b $SK "$B/screens?lang=en" | grep -q '<a href="/screen/write"><b>Write to the crew</b><span>/screen/write</span></a>' && curl -s -b $SK $B/screens | grep -q '<a href="/screen/write"><b>Schreib der Crew</b>' \
   && ok "the writing screen: the composer alone, full screen, its form posting to the screen's own address in the screen's language, no callsign until one is sent; on the list" || bad "the writing screen is not the composer"
 WK=/tmp/kiosk.jar; rm -f $WK
-WR1=$(curl -s -c $WK -b $WK -D /tmp/kiosk-h1.txt -H 'X-Requested-With: fetch' -d "body=First from the square" -d "tags=QUESTION" "$B/screen/write?lang=en")
-WR2=$(curl -s -c $WK -b $WK -D /tmp/kiosk-h2.txt -H 'X-Requested-With: fetch' -d "body=Second from the square" "$B/screen/write?lang=en")
+WR1=$(curl -s -b $SK -c $WK -b $WK -D /tmp/kiosk-h1.txt -H 'X-Requested-With: fetch' -d "body=First from the square" -d "tags=QUESTION" "$B/screen/write?lang=en")
+WR2=$(curl -s -b $SK -c $WK -b $WK -D /tmp/kiosk-h2.txt -H 'X-Requested-With: fetch' -d "body=Second from the square" "$B/screen/write?lang=en")
 CS1=$(echo "$WR1" | grep -o 'data-callsign="[A-Z]*-[0-9]*"' | head -1); CS2=$(echo "$WR2" | grep -o 'data-callsign="[A-Z]*-[0-9]*"' | head -1)
 [ -n "$CS1" ] && [ -n "$CS2" ] && [ "$CS1" != "$CS2" ] && ! grep -qi 'set-cookie: mcs_id' /tmp/kiosk-h1.txt && ! grep -qi 'set-cookie' /tmp/kiosk-h2.txt \
   && echo "$WR1" | grep -q 'class="transit transit-block" data-callsign=' && echo "$WR1" | grep -q 'data-hold="9000"' && echo "$WR1" | grep -q 'class="kiosk-cs">Your message went under the callsign <b>' \
   && [ "$(DATA_DIR="$DATA_DIR" node -e 'const db=require("./src/db").db; console.log(db.prepare("SELECT COUNT(DISTINCT visitor_id) n FROM message WHERE body IN (?, ?)").get("First from the square", "Second from the square").n)')" = "2" ] \
   && ok "two messages sent from the writing screen one after the other go under two callsigns of their own, no cookie set, no transit lock between them — each answered with the crossing, held longer, the callsign named to take away" || bad "the writing screen's messages are not each a new visitor's"
-curl -s "$B/screen/write/composer?lang=fr" | grep -q 'action="/screen/write?lang=fr"' && curl -s "$B/screen/write/composer?lang=fr" | grep -q 'placeholder="Écrivez à l’équipage."' && ! curl -s "$B/screen/write/composer?lang=fr" | grep -q 'transit-block' \
-  && [ "$(curl -s -o /dev/null -w '%{http_code}' -d "body=Plain from the square" "$B/screen/write?lang=en")" = "200" ] \
-  && [ "$(curl -s -H 'X-Requested-With: fetch' -d "body=x" "$B/screen/write?lang=en" | grep -c 'Write something before transmitting')" = "1" ] \
+curl -s -b $SK "$B/screen/write/composer?lang=fr" | grep -q 'action="/screen/write?lang=fr"' && curl -s -b $SK "$B/screen/write/composer?lang=fr" | grep -q 'placeholder="Écrivez à l’équipage."' && ! curl -s -b $SK "$B/screen/write/composer?lang=fr" | grep -q 'transit-block' \
+  && [ "$(curl -s -b $SK -o /dev/null -w '%{http_code}' -d "body=Plain from the square" "$B/screen/write?lang=en")" = "200" ] \
+  && [ "$(curl -s -b $SK -H 'X-Requested-With: fetch' -d "body=x" "$B/screen/write?lang=en" | grep -c 'Write something before transmitting')" = "1" ] \
   && ok "the fresh composer comes from the screen's own address in its language; a plain post is answered with the screen itself; a word too short is refused as on the site" || bad "the writing screen's fragment or its refusals are wrong"
 grep -q "window.MCSScreenBusy = busy;" public/screen-write.js && grep -q "if (busy()) return later(60000);" public/screen.js && grep -q "venueDate() !== day0 && !busy()" public/screen.js && grep -q "var IDLE = 3 \* 60 \* 1000" public/screen-write.js \
   && grep -q "var refreshUrl = (stage && stage.getAttribute('data-refresh')) || '/api/composer';" public/composer.js && grep -q "Number(block.dataset.hold) || 2600" public/composer.js && grep -q "chip.textContent = chip0;" public/composer.js \
@@ -1683,7 +1767,7 @@ VZ=$(echo "$LAND" | node -e 'let s = ""; process.stdin.on("data", (c) => s += c)
 curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '<span class="viz-k">Orbit</span>' && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '<span class="viz-k">Astronauten erfasst</span>' && curl -s -H "Cookie: mcs_lang=fr" $B/ | grep -q '<span class="viz-k">Orbite</span>' && curl -s -H "Cookie: mcs_lang=fr" $B/ | grep -q '<span class="viz-k">Astronautes suivis</span>' \
   && curl -s $B/dashboard | grep -q '<section class="tile t-viz t-viz-orbit" aria-hidden="true">' && curl -s $B/dashboard | grep -q '<section class="tile t-viz t-viz-radar" aria-hidden="true">' && curl -s $B/dashboard | grep -q '<div class="dash-live" aria-hidden="true"><span class="dl-live"><i></i>LIVE</span></div>' \
   && echo "$LAND" | grep -q 'src="/live.js' && ! echo "$LAND" | grep -q 'src="/typed.js' && curl -s $B/dashboard | grep -q 'src="/live.js' && ! curl -s $B/dashboard | grep -q 'src="/typed.js' \
-  && curl -s $B/screen/mission | grep -q 'src="/typed.js' && curl -s $B/screen/mission | grep -q '<section class="dpanel span-12 mission-today" id="mission-today"' && ! curl -s $B/screen/habitat | grep -q 'src="/typed.js' \
+  && curl -s -b $SK $B/screen/mission | grep -q 'src="/typed.js' && curl -s -b $SK $B/screen/mission | grep -q '<section class="dpanel span-12 mission-today" id="mission-today"' && ! curl -s -b $SK $B/screen/habitat | grep -q 'src="/typed.js' \
   && curl -s -o /dev/null -w '%{content_type}' $B/live.js | grep -q javascript && curl -s -o /dev/null -w '%{content_type}' $B/typed.js | grep -q javascript \
   && ok "the instruments' names in German and French; the tiles and the LIVE mark on the dashboard page as well; live.js loaded on the landing page and the dashboard page alike; typed.js on the installation's mission screen alone — the dashboard's mission stands as written" || bad "the instruments are not on the dashboard page, or the scripts are not where they should be"
 grep -qF "var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;" public/live.js && grep -qF "var TURN = 4000, LIM = 40, C = 60;" public/live.js && grep -qF "radar.querySelectorAll('.dl-astro')" public/live.js \
@@ -1911,7 +1995,7 @@ curl -s -b $A $B/control/messages/export.csv | grep -q '0,NOW · before the run,
 curl -s -b $A $B/control/messages/export.pdf -o /tmp/now-msgs.pdf && pdftext /tmp/now-msgs.pdf | grep -q 'NOW · before the run · rehearsal, not the record' && ok "and the messages PDF heads them NOW · before the run" || bad "the messages PDF does not head the rehearsal messages"
 curl -s $B/logbook | grep -q 'href="#day-0"' && curl -s $B/logbook | grep -q 'NOW words for the rehearsal' && curl -s $B/at-a-glance | grep -q 'NOW words for the rehearsal' \
   && ok "the public crew log heads with NOW once it is written, and the booklet's NOW page is built from it" || bad "NOW is not on the public log or the booklet"
-curl -s "$B/screen/blogs?lang=en" | grep -q 'NOW words for the rehearsal' && curl -s "$B/screen/blogs?lang=en" | grep -q 'NOW · ' && ok "the blogs screen shows NOW's blogs before the run, headed NOW" || bad "the blogs screen does not show NOW"
+curl -s -b $SK "$B/screen/blogs?lang=en" | grep -q 'NOW words for the rehearsal' && curl -s -b $SK "$B/screen/blogs?lang=en" | grep -q 'NOW · ' && ok "the blogs screen shows NOW's blogs before the run, headed NOW" || bad "the blogs screen does not show NOW"
 
 echo "── start again for 15 October"
 grep -q "copyFileSync" src/lib/content.js && bad "content.js still uses fs.copyFile, which fails with EPERM on a Docker bind mount from Windows" || ok "the plan is copied by read-and-write, so reset works on a mounted content/ folder"

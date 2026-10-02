@@ -238,15 +238,42 @@ app.get('/', (req, res) => {
 
 /* The installation's screens (views/pages/screens.js): one piece of the station a screen, full screen, nothing to
    scroll — /screen/<name>, the list at /screens. Dark and in German unless the address says otherwise (?theme=light,
-   ?lang=en|de|fr): the cookies do not reach a screen in the square. */
+   ?lang=en|de|fr): the cookies do not reach a screen in the square — except the one that opens the door. The screens
+   are the installation's, not the public's: every one of them, the list and the writing screen's post ask for the
+   screens' sign-in (lib/screens-auth.js — SCREENS_USER and SCREENS_PASSWORD, a cookie for a year once given) or for
+   mission control's session; a browser without either is sent to /screens/login and, signed in, on to where it was
+   going. */
+const screensAuth = require('./lib/screens-auth');
+function requireScreens(req, res, next) {
+  if (screensAuth.signedIn(req) || control.currentUser(req)) return next();
+  res.set('Cache-Control', 'no-store').redirect(`/screens/login?next=${encodeURIComponent(req.originalUrl)}`);
+}
+const screensNext = (req) => { const n = String((req.query && req.query.next) || (req.body && req.body.next) || ''); return screensAuth.guarded(n) ? n : '/screens'; };
+app.get('/screens/login', (req, res) => {
+  if (screensAuth.signedIn(req) || control.currentUser(req)) return res.redirect(screensNext(req));
+  res.set('Cache-Control', 'no-store').send(require('./views/pages/screens').login(screenCtx(req), { next: screensNext(req) }));
+});
+app.post('/screens/login', (req, res) => {
+  const S = require('./views/pages/screens'), ip = hashIp(req.ip), next = screensNext(req);
+  res.set('Cache-Control', 'no-store');
+  if (screensAuth.throttled(ip)) return res.status(429).send(S.login(screenCtx(req), { next, error: 'Too many tries. Wait ten minutes, then sign in again.' }));
+  if (!screensAuth.accepted(req.body.username, req.body.password)) {
+    screensAuth.failed(ip);
+    return res.status(401).send(S.login(screenCtx(req), { next, error: 'Those credentials were not accepted.' }));
+  }
+  screensAuth.cleared(ip);
+  screensAuth.signIn(res);
+  res.redirect(next);
+});
+app.post('/screens/logout', (req, res) => { screensAuth.signOut(res); res.redirect('/screens/login'); });
 function screenCtx(req) {
   const base = req.ctx();
   const lang = i18n.LANGS.includes(req.query.lang) ? req.query.lang : 'de';
   // no visitor on a screen: a screen in the square is nobody's browser (the writing screen mints one a message)
   return { ...base, lang, T: i18n.of(lang), theme: req.query.theme === 'light' ? 'light' : 'dark', offer: '', visitor: null, callsign: '' };
 }
-app.get('/screens', (req, res) => res.set('Cache-Control', 'no-store').send(require('./views/pages/screens').index(screenCtx(req))));
-app.get('/screen/:name', (req, res, next) => {
+app.get('/screens', requireScreens, (req, res) => res.set('Cache-Control', 'no-store').send(require('./views/pages/screens').index(screenCtx(req))));
+app.get('/screen/:name', requireScreens, (req, res, next) => {
   const ctx = screenCtx(req);
   const html = require('./views/pages/screens').render(req.params.name, ctx, { ...stationData(ctx), recent: data.board(400, null) });
   if (!html) return next();
@@ -260,11 +287,11 @@ app.get('/screen/:name', (req, res, next) => {
    own, per address, since all its messages come from one (KIOSK_HOURLY_LIMIT, 60 an hour). The fragment the screen's
    script asks for comes in the screen's language (?lang=), which no cookie could carry. */
 const KIOSK_HOURLY_LIMIT = Number(process.env.KIOSK_HOURLY_LIMIT || 60);
-app.get('/screen/write/composer', (req, res) => {
+app.get('/screen/write/composer', requireScreens, (req, res) => {
   const ctx = screenCtx(req);
   res.set('Cache-Control', 'no-store').type('html').send(composerBlock(ctx, { inFlight: null, error: null, draft: '', kiosk: ctx.lang }));
 });
-app.post('/screen/write', (req, res) => {
+app.post('/screen/write', requireScreens, (req, res) => {
   const ctx = screenCtx(req);
   const S = require('./views/pages/screens');
   const answer = (extra = {}, visitor = null) => {                  // the fragment for the screen's script, or the whole screen

@@ -163,9 +163,31 @@ function index(ctx) {
       <ul class="screen-list">${SCREENS.map((s) => `
         <li><a href="/screen/${s.name}"><b>${esc(T(s.title))}</b><span>/screen/${s.name}</span></a><p>${esc(T(s.about))}</p></li>`).join('')}
       </ul>
+      <form method="post" action="/screens/logout" class="screen-index-out"><button type="submit">${T('Sign out of the screens')}</button></form>
       <p class="screen-index-note">${T('Every screen is dark and in German unless its address says otherwise:')} <code>?theme=light</code> · <code>?lang=en</code> · <code>?lang=fr</code> — ${T('for example')} <code>/screen/board?lang=en&amp;theme=light</code>. ${T('What the site keeps live stays live on the screen; the rest reloads every five minutes and at midnight, when the sol turns.')}</p>
     </div>`;
   return shell(ctx, { name: 'index', title: 'Screens', body, fit: 'none' });
 }
 
-module.exports = { render, index, SCREENS };
+/** The screens' door (server.js, /screens/login; lib/screens-auth.js): the user and the password, and the address to go
+ *  on to — the screen that was asked for, or the list. Wrong credentials come back here with a word; too many wrong
+ *  tries with another. Mission control's session opens the screens too, so an operator signed in there is never asked. */
+function login(ctx, { next = '/screens', error = null } = {}) {
+  const T = ctx.T;
+  const body = `
+    <div class="screen-login">
+      <p class="screen-login-k">${T('The screens')}</p>
+      <h1 class="screen-login-h">${T('Sign in')}</h1>
+      <p class="screen-login-lead">${T('The installation’s screens are for the venue: sign in once on this browser and it stays signed in.')}</p>
+      ${error ? `<p class="screen-login-err" role="alert">${esc(T(error))}</p>` : ''}
+      <form method="post" action="/screens/login" class="screen-login-form">
+        <input type="hidden" name="next" value="${esc(next)}">
+        <label><span>${T('User')}</span><input type="text" name="username" autocomplete="username" autocapitalize="none" autofocus required></label>
+        <label><span>${T('Password')}</span><input type="password" name="password" autocomplete="current-password" required></label>
+        <button type="submit" class="primary">${T('Sign in')}</button>
+      </form>
+    </div>`;
+  return shell(ctx, { name: 'login', title: 'Screens', body, fit: 'none', scripts: [], head: true });
+}
+
+module.exports = { render, index, login, SCREENS };

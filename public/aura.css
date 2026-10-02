@@ -786,11 +786,13 @@ body.landing .lightbox .lb-fig { position: relative; margin: 0; display: flex; f
 body.landing .lightbox .lb-img { display: block; width: auto; height: auto; max-width: min(100vw - 150px, 760px); max-height: min(62vh, 560px); object-fit: contain; border-radius: 14px; background: #101012; box-shadow: 0 30px 80px rgba(0,0,0,.6); }
 body.landing .lightbox .lb-img:not([src]) { display: none; }
 body.landing .lightbox .lb-cap { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 22px; font-family: var(--display); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.78); font-variant-numeric: tabular-nums; }
-body.landing .lightbox .lb-btn { flex: none; width: 44px; height: 44px; padding: 0; border-radius: 50%; border: 1px solid rgba(255,255,255,.4); background: rgba(0,0,0,.5); color: #fff; font-family: var(--display); font-size: 28px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+body.landing .lightbox .lb-btn { box-sizing: border-box; flex: none; width: 44px; height: 44px; min-width: 44px; min-height: 44px; max-width: 44px; max-height: 44px; margin: 0; padding: 0; border-radius: 50%; border: 1px solid rgba(255,255,255,.4); background: rgba(0,0,0,.5); color: #fff; font-size: 0; line-height: 1; letter-spacing: 0; box-shadow: none; cursor: pointer; display: grid; place-items: center; -webkit-tap-highlight-color: transparent; transition: background-color .15s; }
+body.landing .lightbox .lb-btn svg { display: block; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+body.landing .lightbox .lb-btn:hover, body.landing .lightbox .lb-btn:active { transform: none; box-shadow: none; }
 body.landing .lightbox .lb-btn:hover { background: rgba(255,255,255,.18); }
 body.landing .lightbox .lb-btn[disabled] { opacity: .25; cursor: default; }
-body.landing .lightbox .lb-close { position: absolute; z-index: 1; top: -14px; right: -14px; width: 36px; height: 36px; font-size: 22px; background: rgba(0,0,0,.7); }
-@media (max-width: 760px) { body.landing .lightbox .lb-box { flex-wrap: wrap; } body.landing .lightbox .lb-fig { order: -1; width: 100%; } body.landing .lightbox .lb-img { max-width: calc(100vw - 32px); max-height: 60vh; } body.landing .lightbox .lb-close { right: 0; } }
+body.landing .lightbox .lb-close { position: absolute; z-index: 1; top: -12px; right: -12px; background: rgba(0,0,0,.7); }
+@media (max-width: 760px) { body.landing .lightbox .lb-box { flex-wrap: wrap; } body.landing .lightbox .lb-fig { order: -1; width: 100%; } body.landing .lightbox .lb-img { max-width: calc(100vw - 32px); max-height: 60vh; } }
 body.landing .cloud-latest > .empty { flex: 1 1 auto; }
 
 /* the hardware: one day chart per quantity */
@@ -1075,6 +1077,22 @@ body.landing.about .about-sec {
 body.landing.about .about-sec-head { margin: 0 0 24px; padding: 0 0 18px; border-bottom: 1px solid var(--hair); }
 body.landing.about .about-sec-head .bigsec { margin: 0; font-size: clamp(28px, 2.6vw, 38px); line-height: 1.05; }
 body.landing.about .about-sec .g-hero { gap: 8px 44px; }
+/* the reading matter across the whole width of its section (About, What this is), the panel that stood beside it under
+   it: the mission's facts as a row of pairs, the path of a message as a row of six steps */
+body.landing.about .about-sec .about-full { display: grid; gap: 22px; }
+body.landing.about .about-sec .about-full .prose { max-width: none; }
+body.landing.about .about-sec .about-full .prose p { max-width: none; }
+body.landing.about .about-sec .about-full .panel { margin: 0; }
+body.landing.about .about-sec .kv-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px 24px; }
+body.landing.about .about-sec .kv-row > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+body.landing.about .about-sec .kv-row dt { font-family: var(--display); font-size: var(--fs-label); letter-spacing: .1em; color: var(--dim); }
+body.landing.about .about-sec .kv-row dd { margin: 0; font-family: var(--display); font-size: 15px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+body.landing.about .about-sec .steps-row { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; border: 0; }
+body.landing.about .about-sec .steps-row .row { flex-direction: column; align-items: flex-start; gap: 8px; padding: 14px 16px; border: 1px solid var(--hair); border-radius: 14px; background: var(--tile); min-width: 0; }
+body.landing.about .about-sec .steps-row .row .t { min-width: 0; }
+body.landing.about .about-sec .steps-row .row .m b { display: block; font-weight: 600; }
+@media (max-width: 1100px) { body.landing.about .about-sec .steps-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 600px) { body.landing.about .about-sec .steps-row { grid-template-columns: minmax(0, 1fr); } }
 body.landing.about .about-sec .prose h3 { margin: 26px 0 6px; font-size: 19px; font-weight: 600; letter-spacing: -.01em; scroll-margin-top: 96px; }   /* a heading a link lands on (More than Human, from the habitat) stands clear of the header */
 body.landing.about .about-sec .prose h3:first-child { margin-top: 0; }
 body.landing.about .about-sec .prose p { font-size: var(--fs-read); line-height: 1.6; }
@@ -1910,4 +1928,25 @@ body.landing .mission-body.is-typing li.tw-seen::marker { color: inherit; }
   body.landing .dl-sweep, body.landing .dl-mer ellipse, body.landing .dl-sat-turn,
   body.landing .officer-face::after, body.landing .hbt .t-co2 .dial-wrap::after, body.landing .mission-body .tw-cursor { animation: none; }
   body.landing .mission-body .tw-cursor { display: none; }
+}
+
+/* ------------------------------------------------------------------ the close key of every pop-up
+   The room pop-ups (inside.js, dome.js), the sky's notes (sky.js), the media pop-up (media.js) and the composer's
+   pop-up on a phone (public.js, tabbar.js) close with the same key: a round one, 34px (40px under a thumb, below),
+   its cross two strokes drawn in the markup, the same wherever it stands. The station's buttons are wide keys with
+   spaced capitals, a shadow and a lift on hover (station.css), and under a thumb they are made at least 44px high —
+   a round key takes none of that: its sides are pinned equal here, after every rule that sized one of them. */
+body.landing .popup-close, body.landing .sky-note-x, body.landing .lightbox .lb-close, html.js body.landing.messages .dev-close {
+  box-sizing: border-box; flex: none; width: 34px; height: 34px; min-width: 34px; min-height: 34px; max-width: 34px; max-height: 34px;
+  margin: 0; padding: 0; border-radius: 50%; place-items: center; font-size: 0; line-height: 1; letter-spacing: 0;
+  box-shadow: none; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background-color .15s, border-color .15s, color .15s; }
+body.landing .popup-close, body.landing .sky-note-x, body.landing .lightbox .lb-close { display: grid; }               /* the composer's key keeps its own: drawn on a phone only (above) */
+body.landing .popup-close { margin-left: auto; }                                                                        /* at the right of the pop-up's head */
+body.landing .popup-close svg, body.landing .sky-note-x svg, body.landing .lightbox .lb-close svg, html.js body.landing.messages .dev-close svg {
+  display: block; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+body.landing .popup-close:hover, body.landing .popup-close:active, body.landing .sky-note-x:hover, body.landing .sky-note-x:active,
+body.landing .lightbox .lb-close:hover, body.landing .lightbox .lb-close:active, html.js body.landing.messages .dev-close:hover, html.js body.landing.messages .dev-close:active { transform: none; box-shadow: none; }
+@media (max-width: 760px) {
+  body.landing .popup-close, body.landing .sky-note-x, body.landing .lightbox .lb-close, html.js body.landing.messages .dev-close { width: 40px; height: 40px; min-width: 40px; min-height: 40px; max-width: 40px; max-height: 40px; }
+  body.landing .lightbox .lb-close { top: -8px; right: -8px; }
 }

@@ -454,7 +454,7 @@ function habitatDome(ctx, args) {
       <div class="popup-head">
         ${hexMark(h, pods)}
         <div><span class="fold-title" id="dome-${h.id}-title">${esc(T(h.label))}</span><span class="fold-sub"><span data-field="stamp">${esc(f.stamp)}</span></span></div>
-        <button type="button" class="popup-close" data-close aria-label="${esc(T('Close'))}">×</button>
+        <button type="button" class="popup-close" data-close aria-label="${esc(T('Close'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </div>
       <div class="popup-body">
         <p class="dome-now"><span class="dome-now-k">${T('Now')}</span> <span data-field="${h.id}-text">${esc(f[h.id].text)}</span> <span data-field="${h.id}-more">${esc(f[h.id].more)}</span></p>

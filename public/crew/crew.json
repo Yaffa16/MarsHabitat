@@ -1,0 +1,57 @@
+[
+  {
+    "file": "bechtloff.jpg",
+    "first": "Till",
+    "last": "Bechtloff"
+  },
+  {
+    "file": "dipper.jpg",
+    "first": "Götz",
+    "last": "Dipper"
+  },
+  {
+    "file": "gerigk.jpg",
+    "first": "Jan",
+    "last": "Gerigk"
+  },
+  {
+    "file": "jain.jpg",
+    "first": "Yasha",
+    "last": "Jain"
+  },
+  {
+    "file": "kautz.jpg",
+    "first": "Dominik",
+    "last": "Kautz"
+  },
+  {
+    "file": "lintermann.jpg",
+    "first": "Bernd",
+    "last": "Lintermann"
+  },
+  {
+    "file": "lorenz.jpg",
+    "first": "Tina",
+    "last": "Lorenz"
+  },
+  {
+    "file": "schmidt.jpg",
+    "first": "Laura",
+    "last": "Schmidt"
+  },
+  {
+    "file": "stricot.jpg",
+    "first": "Morgan",
+    "last": "Stricot"
+  },
+  {
+    "file": "vlaminck-maurer.jpg",
+    "first": "Matthieu",
+    "last": "Vlaminck-Maurer"
+  },
+  {
+    "file": "wilcox.jpg",
+    "first": "Dan",
+    "last": "Wilcox"
+  }
+]

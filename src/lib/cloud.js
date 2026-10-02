@@ -17,6 +17,10 @@
  * that disappears from the folder disappears from the grid on the next
  * poll; its copy stays on the volume until the folder is cleared by hand.
  *
+ * And nothing is read from it at night: between 22:00 and 08:00, venue
+ * time, every day, the folder is not listed and no picture is copied (the
+ * night, below). The grid keeps what it had; the morning read brings the rest.
+ *
  * A second way in, for a machine where the cloud folder is already mounted
  * (davfs2 and an fstab line, as ZKM's IT set it up): CLOUD_DIR names that
  * directory, and the station reads the images from it instead of over the
@@ -28,6 +32,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { DATA_DIR } = require('../db');
+const { RUN } = require('./run');
 
 const CFG = {
   url: (process.env.CLOUD_URL || 'https://cloud.zkm.de').trim().replace(/\/+$/, ''),
@@ -52,6 +57,35 @@ const CFG = {
 const fromDir = () => !!CFG.dir;
 const configured = () => process.env.CLOUD_POLL !== 'false' && (fromDir() || !!(CFG.user && CFG.password));
 
+/* ---------------------------------------------------------------- the night
+   NO image is pulled from the cloud between 22:00 and 08:00, venue time,
+   every day: no listing of the folder, no copy, no preview — not over
+   WebDAV and not from a mounted folder either (davfs2 fetches from the cloud
+   whatever is read through it). The crew's lights go out at 22:00 (the
+   schedule), and what the camera sees after that stays on the cloud until
+   the morning read. The window is a fact of the piece and lives here, like
+   the run's dates (src/lib/run.js), not in .env, so no stale setting can
+   open it; it is kept in the venue's own zone, so the clocks going back on
+   25 October change nothing. A read still copying at 22:00 stops where it
+   is, and what it had not copied is copied at 08:00. The one way round it
+   is a rehearsal (MISSION_OVERRIDE=true, as the test suite runs) with
+   CLOUD_QUIET=off. */
+const QUIET = Object.freeze({ from: '22:00', to: '08:00' });
+const quietOff = /^(1|true|yes)$/i.test(String(process.env.MISSION_OVERRIDE || '')) && /^(off|false|no|0)$/i.test(String(process.env.CLOUD_QUIET || ''));
+const asMinutes = (hhmm) => { const [h, m] = String(hhmm).split(':').map(Number); return h * 60 + m; };
+/** Minutes since midnight at the venue, for an instant. */
+function venueMinutes(at = new Date()) {
+  const p = new Intl.DateTimeFormat('en-GB', { timeZone: RUN.TZ, hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(at);
+  const n = (t) => Number((p.find((x) => x.type === t) || {}).value) || 0;
+  return (n('hour') % 24) * 60 + n('minute');
+}
+/** Is it the night at the venue — the hours in which nothing is read from the cloud? */
+function quiet(at = new Date()) {
+  if (quietOff) return false;
+  const m = venueMinutes(at), a = asMinutes(QUIET.from), b = asMinutes(QUIET.to);
+  return a > b ? (m >= a || m < b) : (m >= a && m < b);
+}
+
 const DIR = path.join(DATA_DIR, 'cloud');
 const MANIFEST = path.join(DIR, 'manifest.json');
 const IMAGE = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', avif: 'image/avif', heic: 'image/heic', heif: 'image/heif', tif: 'image/tiff', tiff: 'image/tiff', bmp: 'image/bmp', svg: 'image/svg+xml' };
@@ -59,7 +93,7 @@ const IMAGE = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'i
 /* ------------------------------------------------------------------ state */
 
 let items = [];              // the folder as last listed, images only, in order
-const status = { lastPollAt: null, lastError: null, listed: 0, shown: 0, cached: 0, polling: false, pollingSince: null, folder: fromDir() ? CFG.dir : (CFG.folder || '/') };
+const status = { lastPollAt: null, lastError: null, listed: 0, shown: 0, cached: 0, polling: false, pollingSince: null, quietSince: null, folder: fromDir() ? CFG.dir : (CFG.folder || '/') };
 let timer = null;
 
 function loadManifest() {
@@ -233,6 +267,11 @@ let pollSeq = 0;
 
 async function poll() {
   if (!configured()) return;
+  if (quiet()) {                                                                 // the night: the cloud is not touched
+    if (!status.quietSince) { status.quietSince = Date.now(); console.log(`[cloud] ${QUIET.from} at the venue — nothing is read from the cloud until ${QUIET.to}`); }
+    return;
+  }
+  if (status.quietSince) { status.quietSince = null; console.log(`[cloud] ${QUIET.to} at the venue — the folder is read again`); }
   if (status.polling && Date.now() - (status.pollingSince || 0) < STUCK_MS) return;
   if (status.polling) console.warn('[cloud] the previous read of the folder never finished — starting a fresh one');
   const seq = ++pollSeq;
@@ -259,12 +298,14 @@ async function poll() {
       : (a, b) => (b.added - a.added) || (b.seenAt - a.seenAt) || (when(b) - when(a)) || b.path.localeCompare(a.path, undefined, { numeric: true }));
     // the cap keeps the newest (by name, the last in name order): the folder may hold thousands, the page shows this many
     if (next.length > CFG.maxFiles) next = CFG.sort === 'name' ? next.slice(-CFG.maxFiles) : next.slice(0, CFG.maxFiles);
-    let cached = 0;
+    let cached = 0, held = 0;
     for (const it of next) {
       if (seq !== pollSeq) return;                                           // a fresh read has taken over: this one is lost
+      if (quiet()) { held = next.length - cached; break; }                   // 22:00 came while copying: the rest waits for the morning
       try { if (await cacheFile(it)) cached++; } catch (e) { it.error = `copy: ${e.message}`; }
       await cacheThumb(it);
     }
+    if (held) console.log(`[cloud] ${QUIET.from} at the venue — stopped copying; ${held} picture${held === 1 ? '' : 's'} wait${held === 1 ? 's' : ''} until ${QUIET.to}`);
     if (seq !== pollSeq) return;
     items = next;
     status.listed = listed.length; status.shown = next.length; status.cached = cached;
@@ -283,6 +324,7 @@ function start() {
   status.listed = items.length;
   if (!configured()) { console.log('[cloud] not configured (set CLOUD_USER and CLOUD_PASSWORD, or CLOUD_DIR, in .env) — the gallery stays off /media'); return; }
   if (timer) return;
+  console.log(`[cloud] the folder is read every ${CFG.checkSeconds} s — and never between ${QUIET.from} and ${QUIET.to} at the venue${quietOff ? ' (CLOUD_QUIET=off: a rehearsal, the night window is open)' : ''}`);
   timer = setInterval(() => poll().catch(() => {}), CFG.checkSeconds * 1000);
   timer.unref();
   poll().catch(() => {});
@@ -327,11 +369,12 @@ function version() {
 }
 
 function snapshot() {
-  return { configured: configured(), source: fromDir() ? 'mounted folder' : CFG.url, mode: fromDir() ? 'dir' : 'webdav', folder: status.folder, title: CFG.title, checkSeconds: CFG.checkSeconds, pollMs: CFG.checkSeconds * 1000, version: version(),
+  return { configured: configured(), source: fromDir() ? 'mounted folder' : CFG.url, mode: fromDir() ? 'dir' : 'webdav', folder: status.folder, title: CFG.title, checkSeconds: CFG.checkSeconds,
+    quiet: { from: QUIET.from, to: QUIET.to, now: quiet(), off: quietOff }, pollMs: CFG.checkSeconds * 1000, version: version(),
     listed: status.listed, cached: status.cached, shown: gallery().length,
     lastPollAt: status.lastPollAt ? new Date(status.lastPollAt).toISOString() : null,
     lastError: status.lastError ? { at: new Date(status.lastError.at).toISOString(), message: status.lastError.message } : null,
     tooBig: items.filter((i) => i.tooBig).map((i) => i.path) };
 }
 
-module.exports = { CFG, DIR, configured, start, poll, gallery, get, filePath, thumbPath, snapshot, takenFromName };
+module.exports = { CFG, DIR, QUIET, configured, quiet, start, poll, gallery, get, filePath, thumbPath, snapshot, takenFromName };

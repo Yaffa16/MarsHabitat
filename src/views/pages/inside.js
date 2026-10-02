@@ -175,7 +175,7 @@ function habitatInside(ctx, args) {
       <div class="popup-head">
         ${mark(p)}
         <div><span class="fold-title" id="dome-${p.id}-title">${esc(T(p.label))}</span><span class="fold-sub"><span data-field="stamp">${esc(f.stamp)}</span></span></div>
-        <button type="button" class="popup-close" data-close aria-label="${esc(T('Close'))}">×</button>
+        <button type="button" class="popup-close" data-close aria-label="${esc(T('Close'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </div>
       <div class="popup-body">
         <p class="dome-now"><span class="dome-now-k">${T('Now')}</span> ${p.fig.map((k) => { const [id, part] = k.split('-'); return `<span data-field="${k}">${esc((f[id] || {})[part] || '')}</span>`; }).join(' ')}</p>

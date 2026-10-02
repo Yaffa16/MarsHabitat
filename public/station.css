@@ -317,6 +317,21 @@ p { margin: 0 0 13px; max-width: 66ch; color: var(--ink); }
 }
 .panel.mars-side > .chan { color: var(--orange); }
 
+/* Who we are (info.js, whoFold): the crew's portraits, six to a row, each with its name under it, in the order of their
+   surnames (public/crew/crew.json) — and the partners' logos, small, each on a white tile so that it reads on the dark
+   ground as on the light, under Produced by */
+.crew-wall { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px 10px; }
+.crew-pic { margin: 0; min-width: 0; }
+.crew-pic img { display: block; width: 100%; height: auto; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 10px; background: #101012; }
+.crew-pic figcaption { margin-top: 8px; font-family: var(--display); font-size: 14px; font-weight: 600; line-height: 1.25; color: var(--ink); text-align: center; overflow-wrap: anywhere; }
+@media (max-width: 1024px) { .crew-wall { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .crew-wall { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; } }
+.partners { display: grid; gap: 16px; margin-top: 20px; }
+.partner-row .eyebrow { margin-bottom: 10px; }
+.logos { display: flex; flex-wrap: wrap; gap: 10px; }
+.logos .logo { display: inline-flex; align-items: center; justify-content: center; height: 48px; padding: 8px 14px; border-radius: 8px; background: #fff; box-sizing: border-box; }
+.logos .logo img { display: block; height: 100%; width: auto; max-width: 150px; object-fit: contain; }
+
 .grid { display: grid; gap: var(--gutter); }
 .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -825,8 +840,9 @@ dialog.reset-dialog #reset-word { font-family: var(--mono); letter-spacing: 0.2e
 .popup-head > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .popup-close {
   margin-left: auto; flex: none; width: 40px; height: 40px; padding: 0; border-radius: 50%; border: 0; cursor: pointer;
-  background: var(--well); box-shadow: var(--sh-inset); color: var(--ink); font-size: 20px; line-height: 1; display: grid; place-items: center;
+  background: var(--well); box-shadow: var(--sh-inset); color: var(--ink); font-size: 0; line-height: 1; letter-spacing: 0; display: grid; place-items: center;
 }
+.popup-close svg { display: block; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .popup-close:hover { color: var(--orange); }
 .popup-close:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
 .popup-body { padding: 6px 24px 24px; overflow: auto; -webkit-overflow-scrolling: touch; }

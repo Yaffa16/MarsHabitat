@@ -306,14 +306,18 @@ const D = {
   'Approved': ['Freigegeben', 'Approuvé'],
   'Response': ['Antwort', 'Réponse'],
   'Published': ['Veröffentlicht', 'Publié'],
+  // the path of a message, in six steps (the About page, What this is — info.js)
   'You are writing. Nothing has left Earth.': ['Du schreibst. Nichts hat die Erde verlassen.', 'Vous écrivez. Rien n’a quitté la Terre.'],
-  'You pressed send. The station timestamps it.': ['Du hast auf Senden gedrückt. Die Station stempelt die Zeit.', 'Vous avez appuyé sur envoyer. La station l’horodate.'],
-  'Crossing the gap. You cannot send again.': ['Auf dem Weg über die Distanz. Du kannst nicht erneut senden.', 'En train de franchir la distance. Vous ne pouvez pas renvoyer.'],
-  'It has reached the Mars endpoint.': ['Sie hat den Mars-Endpunkt erreicht.', 'Il a atteint le point d’arrivée sur Mars.'],
-  'A human at mission control reads it.': ['Ein Mensch in der Missionskontrolle liest sie.', 'Une personne au contrôle de mission le lit.'],
-  'Cleared to be answered.': ['Zur Beantwortung freigegeben.', 'Autorisé à recevoir une réponse.'],
-  'The crew write back.': ['Die Crew schreibt zurück.', 'L’équipage répond.'],
-  'Both halves enter the archive.': ['Beide Hälften gehen ins Archiv.', 'Les deux moitiés entrent dans l’archive.'],
+  'You pressed send. The station timestamps it, and the message crosses the gap — you cannot send again until it has arrived.':
+    ['Du hast auf Senden gedrückt. Die Station stempelt die Zeit, und die Nachricht überquert die Distanz — bis sie angekommen ist, kannst du nicht erneut senden.',
+     'Vous avez appuyé sur envoyer. La station l’horodate, et le message franchit la distance — vous ne pouvez pas renvoyer avant qu’il soit arrivé.'],
+  'Reached MARS!platz': ['MARS!platz erreicht', 'Arrivé à MARS!platz'],
+  'It has reached the habitat on the Marktplatz.': ['Sie hat das Habitat auf dem Marktplatz erreicht.', 'Il a atteint l’habitat sur la Marktplatz.'],
+  'A human at mission control reads it and decides whether it goes to the crew.': ['Ein Mensch in der Missionskontrolle liest sie und entscheidet, ob sie zur Crew geht.', 'Une personne au contrôle de mission le lit et décide s’il va à l’équipage.'],
+  'Transmitted to space': ['Ins All gesendet', 'Transmis dans l’espace'],
+  'Cleared, it is beamed on into space by radio, through SpaceSpeak.': ['Freigegeben, wird sie per Funk weiter ins All gesendet — über SpaceSpeak.', 'Autorisé, il est émis par radio vers l’espace, via SpaceSpeak.'],
+  'Replied back': ['Beantwortet', 'Réponse reçue'],
+  'The crew write back; question and answer are published on the board.': ['Die Crew schreibt zurück; Frage und Antwort erscheinen auf dem Board.', 'L’équipage répond ; question et réponse sont publiées sur le tableau.'],
 
   // ---- after the run
   'mission complete': ['Mission abgeschlossen', 'mission accomplie'],
@@ -568,7 +572,7 @@ const D = {
   // ---- About / info
   'The project, the distance, the archive': ['Das Projekt, die Distanz, das Archiv', 'Le projet, la distance, l’archive'],
   'How the station behaves, in plain terms': ['Wie die Station sich verhält, in einfachen Worten', 'Comment la station se comporte, en termes simples'],
-  'Crew, company, production credits': ['Crew, Kompanie, Produktionscredits', 'Équipage, compagnie, crédits de production'],
+  'The crew, the producer, the partners': ['Die Crew, der Produzent, die Partner', 'L’équipage, le producteur, les partenaires'],
   'Close': ['Schließen', 'Fermer'],
   'A durational performance on Karlsruhe’s Marktplatz, Thursday 15 to Tuesday 27 October 2026. Admission is free.':
     ['Eine Dauerperformance auf dem Karlsruher Marktplatz, Donnerstag, 15. bis Dienstag, 27. Oktober 2026. Der Eintritt ist frei.',
@@ -619,23 +623,14 @@ const D = {
   'The sensors that produce the readings on this page are mounted in the habitat on the Marktplatz. When the habitat warms up because a crowd is standing around it, the number moves. The data is not a simulation of a Mars habitat; it is a measurement of the real one, with the crew in it.':
     ['Die Sensoren, die die Messwerte auf dieser Seite liefern, sind im Habitat auf dem Marktplatz montiert. Wenn sich das Habitat erwärmt, weil eine Menschenmenge darum herumsteht, bewegt sich die Zahl. Die Daten sind keine Simulation eines Mars-Habitats; sie sind die Messung des echten, mit der Crew darin.',
      'Les capteurs qui produisent les mesures de cette page sont montés dans l’habitat sur la Marktplatz. Quand l’habitat se réchauffe parce qu’une foule se tient autour, le chiffre bouge. Les données ne sont pas la simulation d’un habitat martien ; elles sont la mesure du vrai, avec l’équipage à l’intérieur.'],
-  'Supported by the Innovationsfonds Kunst of the Ministry of Science, Research and the Arts Baden-Württemberg, the E.ON Stiftung and the LBBW Stiftung.':
-    ['Gefördert durch den Innovationsfonds Kunst des Ministeriums für Wissenschaft, Forschung und Kunst Baden-Württemberg, die E.ON Stiftung und die LBBW Stiftung.',
-     'Avec le soutien de l’Innovationsfonds Kunst du ministère des Sciences, de la Recherche et des Arts du Bade-Wurtemberg, de la E.ON Stiftung et de la LBBW Stiftung.'],
   'DESIGNATION': ['BEZEICHNUNG', 'DÉSIGNATION'],
   'RUN': ['LAUF', 'PÉRIODE'],
   'START': ['BEGINN', 'DÉBUT'],
   'END': ['ENDE', 'FIN'],
   'CREW': ['CREW', 'ÉQUIPAGE'],
   'TIMEZONE': ['ZEITZONE', 'FUSEAU HORAIRE'],
-  'At this moment': ['In diesem Moment', 'En ce moment'],
-  'SEPARATION': ['ABSTAND', 'SÉPARATION'],
   'DISTANCE': ['ENTFERNUNG', 'DISTANCE'],
   'ROUND TRIP': ['HIN UND ZURÜCK', 'ALLER-RETOUR'],
-  'TREND': ['TENDENZ', 'TENDANCE'],
-  'Positions are computed from Keplerian elements, not fetched from a service. The station keeps working if the venue loses its connection.':
-    ['Die Positionen werden aus Kepler-Elementen berechnet, nicht von einem Dienst abgerufen. Die Station arbeitet weiter, wenn der Ort seine Verbindung verliert.',
-     'Les positions sont calculées à partir d’éléments képlériens, pas récupérées auprès d’un service. La station continue de fonctionner si le lieu perd sa connexion.'],
   'You already have a callsign': ['Du hast bereits ein Rufzeichen', 'Vous avez déjà un indicatif'],
   'The moment you opened this page the station assigned you one — yours is':
     ['In dem Moment, in dem du diese Seite geöffnet hast, hat die Station dir eines zugewiesen — deines ist', 'À l’instant où vous avez ouvert cette page, la station vous en a attribué un — le vôtre est'],
@@ -666,42 +661,15 @@ const D = {
     ['Die Crew-Werte werden von der Missionskontrolle auf zwei Achsen erfasst und in Sätze übersetzt. Sie sind ein Bericht über drei Menschen, von Menschen geschrieben, bewusst übermittelt. Sie sind keine Stimmungsanalyse und nicht automatisiert.',
      'Les relevés de l’équipage sont saisis par le contrôle de mission sur deux axes et traduits en phrases. C’est un rapport sur trois personnes, écrit par des personnes, transmis délibérément. Ce n’est pas une analyse de sentiment et ce n’est pas automatisé.'],
   'The path of a message': ['Der Weg einer Nachricht', 'Le chemin d’un message'],
-  'What is kept': ['Was gespeichert wird', 'Ce qui est conservé'],
-  'Your callsign, your message text, your tags, and the time you sent it. A one-way hash of your IP address is stored for rate limiting and is never displayed. No analytics, no third-party scripts, no tracking of any kind. Published exchanges stay on this page as part of the work; the complete day-by-day record is held by mission control and is not public.':
-    ['Dein Rufzeichen, dein Nachrichtentext, deine Tags und der Zeitpunkt des Sendens. Ein Einweg-Hash deiner IP-Adresse wird zur Begrenzung der Senderate gespeichert und nie angezeigt. Keine Analytik, keine Skripte Dritter, kein Tracking irgendeiner Art. Veröffentlichte Nachrichtenwechsel bleiben als Teil des Werks auf dieser Seite; die vollständige Tag-für-Tag-Aufzeichnung liegt bei der Missionskontrolle und ist nicht öffentlich.',
-     'Votre indicatif, le texte de votre message, vos étiquettes et l’heure d’envoi. Un hachage à sens unique de votre adresse IP est conservé pour limiter le débit et n’est jamais affiché. Pas d’analytique, pas de scripts tiers, aucun pistage d’aucune sorte. Les échanges publiés restent sur cette page comme partie de l’œuvre ; l’archive complète, jour par jour, est détenue par le contrôle de mission et n’est pas publique.'],
-  'Message states as shown in the interface': ['Nachrichtenzustände, wie die Oberfläche sie zeigt', 'Les états d’un message, tels qu’affichés dans l’interface'],
   'Inside the habitat': ['Im Habitat', 'Dans l’habitat'],
-  'The crew are addressed by designation for the length of the mission. That is a condition of the piece, not an administrative convenience — the audience meets them as a role, and the names are published after the run.':
-    ['Die Crew wird für die Dauer der Mission mit ihrer Bezeichnung angesprochen. Das ist eine Bedingung des Werks, keine Verwaltungsbequemlichkeit — das Publikum begegnet ihnen als Rolle, und die Namen werden nach dem Lauf veröffentlicht.',
-     'L’équipage est désigné par sa fonction pendant toute la mission. C’est une condition de l’œuvre, pas une commodité administrative — le public les rencontre comme un rôle, et les noms sont publiés après la mission.'],
   'currently': ['gerade', 'actuellement'],
   'unlogged': ['nicht erfasst', 'non consigné'],
-  'Outside the habitat': ['Außerhalb des Habitats', 'Hors de l’habitat'],
-  'Concept and direction': ['Konzept und Leitung', 'Concept et direction'],
-  'Performance': ['Performance', 'Performance'],
-  'Scenography and habitat': ['Szenografie und Habitat', 'Scénographie et habitat'],
-  'Sound': ['Klang', 'Son'],
-  'Sensor systems and software': ['Sensorsysteme und Software', 'Systèmes de capteurs et logiciel'],
-  'Production': ['Produktion', 'Production'],
-  'Technical direction': ['Technische Leitung', 'Direction technique'],
-  'To be credited': ['Wird noch genannt', 'À créditer'],
-  'to be credited': ['wird noch genannt', 'à créditer'],
-  'Three performers, credited after the run': ['Drei Performende, genannt nach dem Lauf', 'Trois interprètes, crédités après la période'],
-  'Replace these entries in': ['Ersetze diese Einträge in', 'Remplacez ces entrées dans'],
-  'before the run opens.': ['bevor der Lauf beginnt.', 'avant l’ouverture de la période.'],
   'Produced by': ['Produziert von', 'Produit par'],
+  // the partners' logos under Produced by (info.js, PARTNERS): 1 and 2 in cooperation with, 3 to 5 supporters
+  'In cooperation with': ['In Kooperation mit', 'En coopération avec'],
+  'Supporters': ['Förderer', 'Soutiens'],
   'Center for Art and Media Karlsruhe': ['Zentrum für Kunst und Medien Karlsruhe', 'Centre d’art et de médias de Karlsruhe'],
   'Germany': ['Deutschland', 'Allemagne'],
-  'Supported by': ['Gefördert von', 'Avec le soutien de'],
-  'Partners': ['Partner', 'Partenaires'],
-  'Reach the production': ['Die Produktion erreichen', 'Joindre la production'],
-  'Press and production enquiries reach a person, not this station. Messages sent through the communication channel reach the habitat and are answered there. The two do not mix.':
-    ['Presse- und Produktionsanfragen erreichen einen Menschen, nicht diese Station. Nachrichten über den Kommunikationskanal erreichen das Habitat und werden dort beantwortet. Beides vermischt sich nicht.',
-     'Les demandes de presse et de production atteignent une personne, pas cette station. Les messages envoyés par le canal de communication atteignent l’habitat et y reçoivent leur réponse. Les deux ne se mélangent pas.'],
-  'Write to the habitat instead': ['Stattdessen dem Habitat schreiben', 'Écrire plutôt à l’habitat'],
-
-  // ---- At a Glance
   'REHEARSAL': ['PROBE', 'RÉPÉTITION'],
   'REHEARSAL · NOT THE RECORD': ['PROBE · NICHT DIE AUFZEICHNUNG', 'RÉPÉTITION · PAS L’ARCHIVE'],
   'REHEARSAL · TODAY, BEFORE THE RUN': ['PROBE · HEUTE, VOR DEM LAUF', 'RÉPÉTITION · AUJOURD’HUI, AVANT LA PÉRIODE'],
@@ -765,6 +733,10 @@ const D = {
   'as of': ['Stand', 'au'],
   'checked every': ['geprüft alle', 'vérifié toutes les'],
   'last at': ['zuletzt um', 'dernière fois à'],
+  // the night: no image is pulled from the cloud between 22:00 and 08:00 (src/lib/cloud.js, QUIET)
+  'not between': ['nicht zwischen', 'pas entre'],
+  'and': ['und', 'et'],
+  'next read at': ['nächste Prüfung um', 'prochaine vérification à'],
   'The readings refresh by themselves as the sensors report': ['Die Messwerte aktualisieren sich von selbst, sobald die Sensoren melden', 'Les mesures se rafraîchissent d’elles-mêmes au fil des relevés'],
   'Updates by itself as pictures arrive': ['Aktualisiert sich von selbst, sobald Bilder ankommen', 'Se met à jour tout seul à l’arrivée des images'],
   'Live images from the Habitat': ['Live-Bilder aus dem Habitat', 'Images en direct de l’habitat'],
@@ -1100,6 +1072,15 @@ const D = {
   'the last day': ['der letzte Tag', 'le dernier jour'],
   'Communication window daily': ['Kommunikationsfenster täglich', 'Fenêtre de communication tous les jours à'],
   'Switch between light and dark': ['Zwischen hell und dunkel wechseln', 'Basculer entre clair et sombre'],
+  // the screens' door (screens.js, login; server.js, /screens/login)
+  'The screens': ['Die Screens', 'Les écrans'],
+  'Sign in': ['Anmelden', 'Se connecter'],
+  'The installation’s screens are for the venue: sign in once on this browser and it stays signed in.': ['Die Screens der Installation sind für den Ort: einmal in diesem Browser anmelden, und er bleibt angemeldet.', 'Les écrans de l’installation sont pour le lieu : connectez-vous une fois sur ce navigateur et il reste connecté.'],
+  'User': ['Benutzer', 'Utilisateur'],
+  'Password': ['Passwort', 'Mot de passe'],
+  'Those credentials were not accepted.': ['Diese Zugangsdaten wurden nicht akzeptiert.', 'Ces identifiants n’ont pas été acceptés.'],
+  'Too many tries. Wait ten minutes, then sign in again.': ['Zu viele Versuche. Warte zehn Minuten und melde dich dann erneut an.', 'Trop de tentatives. Attendez dix minutes, puis reconnectez-vous.'],
+  'Sign out of the screens': ['Von den Screens abmelden', 'Se déconnecter des écrans'],
 };
 
 /** T for one language: exact English in, that language out; unknown stays English. */

@@ -119,7 +119,11 @@ function hm(iso, tz = 'Europe/Berlin') {
  *  A failed read leaves the pictures already copied on the page, so without
  *  this a stalled bridge would look exactly like a quiet folder. */
 function checkedLine(T, s, tz) {
-  const last = s.lastPollAt ? ` · ${T('last at')} ${hm(s.lastPollAt, tz)}` : '';
+  // the night: nothing is read from the cloud between 22:00 and 08:00 (src/lib/cloud.js, QUIET) — the line says so,
+  // and while it is the night, that the next read is at 08:00
+  const q = s.quiet || null;
+  const night = q && !q.off ? ` · ${T('not between')} ${q.from} ${T('and')} ${q.to}${q.now ? ` (${T('next read at')} ${q.to})` : ''}` : '';
+  const last = (s.lastPollAt ? ` · ${T('last at')} ${hm(s.lastPollAt, tz)}` : '') + night;
   const failed = s.lastError ? `<span class="count cloud-fail">${T('the cloud could not be reached')}${s.lastError.at ? ` (${hm(s.lastError.at, tz)})` : ''}</span>` : '';
   return { last, failed };
 }
@@ -219,9 +223,9 @@ function cloudGrid(T, cloud, opts) {
 function lightbox(T) {
   return `<dialog class="lightbox" id="lightbox" aria-label="${esc(T('photograph'))}">
       <div class="lb-box">
-        <button type="button" class="lb-btn lb-prev" data-lb="prev" aria-label="${esc(T('Previous'))}">‹</button>
-        <figure class="lb-fig"><button type="button" class="lb-btn lb-close" data-lb="close" aria-label="${esc(T('Close'))}">×</button><img class="lb-img" alt=""><figcaption class="lb-cap"><span class="lb-when"></span></figcaption></figure>
-        <button type="button" class="lb-btn lb-next" data-lb="next" aria-label="${esc(T('Next'))}">›</button>
+        <button type="button" class="lb-btn lb-prev" data-lb="prev" aria-label="${esc(T('Previous'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <figure class="lb-fig"><button type="button" class="lb-btn lb-close" data-lb="close" aria-label="${esc(T('Close'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><img class="lb-img" alt=""><figcaption class="lb-cap"><span class="lb-when"></span></figcaption></figure>
+        <button type="button" class="lb-btn lb-next" data-lb="next" aria-label="${esc(T('Next'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
       </div>
     </dialog>`;
 }

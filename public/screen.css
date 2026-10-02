@@ -82,6 +82,37 @@ body.screen .blogp .dpanel-title h3 { white-space: normal; overflow: visible; te
 }
 /* the habitat's instruments and the trends fill their panel; the habitat's rows keep their proportions */
 body.screen.screen-habitat #habitat.dpanel, body.screen.screen-trends #trends.dpanel { padding: 24px 30px; }
+/* the habitat screen is read from across a room: what each tile measures in large type, its scale under it, the figure
+   large, the words beside it large — and the drawings (the dial, the ruler, the radar, the orbit, the stores' rounds)
+   smaller, so the stage keeps its height and is not scaled down to fit (screen.js). The panel is named (#habitat): the
+   dress sizes these with .dpanel.compact, and only a more specific rule can say otherwise. */
+body.screen.screen-habitat #habitat .dpanel-title h3 { font-size: 30px; }
+body.screen.screen-habitat #habitat .dpanel-meta { font-size: 17px; }
+body.screen.screen-habitat #habitat .hbt .tile h3 { font-size: 32px; line-height: 1.1; margin: 0 0 4px; }
+body.screen.screen-habitat #habitat .hbt .sub, body.screen.screen-habitat #habitat .hbt .t-pwr .sub { font-size: 18px; line-height: 1.3; }
+body.screen.screen-habitat #habitat .hbt .lvl .big, body.screen.screen-habitat #habitat .hbt .spk .big, body.screen.screen-habitat #habitat .hbt .ruler-num .big { font-size: 46px; }
+body.screen.screen-habitat #habitat .hbt .dial-center .big { font-size: 54px; }
+body.screen.screen-habitat #habitat .hbt .big em { font-size: 22px; }
+body.screen.screen-habitat #habitat .hbt .verdict { font-size: 20px; margin-top: 4px; }
+body.screen.screen-habitat #habitat .hbt .fig-who { font-size: 16px; }
+body.screen.screen-habitat #habitat .hbt .fig-v { font-size: 26px; }
+body.screen.screen-habitat #habitat .hbt .fig-v em { font-size: 16px; }
+body.screen.screen-habitat #habitat .hbt .fig-total { font-size: 19px; }
+body.screen.screen-habitat #habitat .hbt .fig-spark { height: 26px; }
+body.screen.screen-habitat #habitat .hbt .viz-k { font-size: 17px; letter-spacing: .12em; }
+body.screen.screen-habitat #habitat .hbt .tile.t-viz { min-height: 150px; padding-top: 44px; }
+body.screen.screen-habitat #habitat .hbt .tile.t-viz svg { max-height: 96px; }
+body.screen.screen-habitat #habitat .hbt .dial-wrap { min-height: 160px; }
+body.screen.screen-habitat #habitat .hbt .dial-wrap svg { max-width: 220px; }
+body.screen.screen-habitat #habitat .hbt .dial-center .verdict { font-size: 17px; margin-top: 0; }
+body.screen.screen-habitat #habitat .hbt .ruler-row { min-height: 110px; }
+body.screen.screen-habitat #habitat .hbt .ruler-wrap svg { max-height: 110px; }
+body.screen.screen-habitat #habitat .hbt .lvl svg, body.screen.screen-habitat #habitat .hbt .spk svg { max-height: 30px; }
+body.screen.screen-habitat #habitat .cell-name { font-size: 17px; }
+body.screen.screen-habitat #habitat .cell-days { font-size: 15px; }
+body.screen.screen-habitat #habitat .cell-days.is-ph { font-size: 10px; letter-spacing: .08em; }
+body.screen.screen-habitat #habitat .gauge.round svg { width: 60px; height: 60px; }
+body.screen.screen-habitat #habitat .hbt .empty, body.screen.screen-habitat #habitat .hbt .note, body.screen.screen-habitat #habitat #hbt-notes .note { font-size: 18px; line-height: 1.4; }
 body.screen.screen-trends .tchart-svg { max-height: calc(100vh - 220px); width: 100%; }
 body.screen.screen-trends #trends .dpanel-body { min-height: 0; }
 /* today's mission: the three parts fill the width, one under the other upright */
@@ -154,3 +185,16 @@ body.screen .screen-list a { display: flex; flex-wrap: wrap; align-items: baseli
 body.screen .screen-list a b { font-size: 20px; font-weight: 600; }
 body.screen .screen-list a span { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 14px; color: var(--cobalt); }
 body.screen .screen-list p { margin: 6px 0 0; font-size: 15px; color: var(--dim); }
+body.screen .screen-index-out { margin: 8px 0 24px; }
+body.screen .screen-index-out button { font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: .02em; text-transform: none; padding: 10px 16px; border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-edge); color: var(--ink); box-shadow: none; }
+/* the screens' door (screens.js, login): one small card in the middle of the stage */
+body.screen.screen-login .stage-body { overflow: auto; }
+body.screen .screen-login { max-width: 420px; margin: 8vh auto 0; padding: 28px 28px 30px; border-radius: 22px; background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); font-family: var(--display); color: var(--ink); }
+body.screen .screen-login-k { margin: 0 0 6px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--cobalt); }
+body.screen .screen-login-h { margin: 0 0 10px; font-size: 28px; font-weight: 700; letter-spacing: -.02em; }
+body.screen .screen-login-lead { margin: 0 0 18px; font-size: 15px; line-height: 1.5; color: var(--dim); }
+body.screen .screen-login-err { margin: 0 0 14px; padding: 10px 14px; border-radius: 12px; background: rgba(232,83,26,.12); border: 1px solid rgba(232,83,26,.4); color: var(--ink); font-size: 14px; }
+body.screen .screen-login-form { display: grid; gap: 14px; }
+body.screen .screen-login-form label { display: grid; gap: 6px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+body.screen .screen-login-form input { font: 16px var(--display); padding: 12px 14px; border-radius: 12px; border: 1px solid var(--glass-edge); background: var(--tile); color: var(--ink); }
+body.screen .screen-login-form button { justify-self: start; margin-top: 4px; font-family: var(--display); font-size: 14px; font-weight: 700; letter-spacing: .04em; text-transform: none; padding: 12px 22px; border-radius: 999px; }

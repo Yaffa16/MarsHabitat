@@ -103,7 +103,7 @@ function habitatSky(ctx, { recent = [], cloud = null } = {}) {
  * A name and a key — no more words: the picture and the exchange say the rest.
  */
 function skyNotes(T) {
-  const x = `<button type="button" class="sky-note-x" aria-label="${esc(T('Close'))}">×</button>`;
+  const x = `<button type="button" class="sky-note-x" aria-label="${esc(T('Close'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
   return `
         <template id="sky-note-pic">
           <div class="sky-note is-pic" role="note">${x}
