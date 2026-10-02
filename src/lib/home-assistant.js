@@ -83,6 +83,27 @@ function habitatMap() { return config().habitat; }
 /** The meals' meter and hours, from the same file (the defaults above where it says nothing). */
 function mealsConfig() { return config().meals; }
 
+/** "16:30" → '16:30' (hours and minutes, padded); the start of "16:00-17:00"; null for anything else. */
+function parseTime(s) {
+  const m = /^\s*(\d{1,2}):(\d{2})\b/.exec(String(s || ''));
+  if (!m || +m[1] > 24 || +m[2] > 59) return null;
+  return `${m[1].padStart(2, '0')}:${m[2]}`;
+}
+const minutesOf = (hhmm) => { const [h, m] = String(hhmm).split(':').map(Number); return h * 60 + m; };
+
+/** The named meal a time of day counts with: the one whose hours begin last before it — before the first meal's hours,
+ *  the first meal (05:30 is breakfast's); after dinner's begin, dinner's (23:00 is dinner's). Null without any hours. */
+function slotForTime(hhmm) {
+  const at = parseTime(hhmm);
+  const starts = Object.entries(mealsConfig().windows).map(([slot, w]) => [slot, parseWindow(w)]).filter(([, w]) => w)
+    .map(([slot, w]) => [slot, minutesOf(w[0])]).sort((a, b) => a[1] - b[1]);
+  if (!at || !starts.length) return null;
+  const t = minutesOf(at);
+  let slot = starts[0][0];
+  for (const [name, start] of starts) if (start <= t) slot = name;
+  return slot;
+}
+
 /** "06:00-09:00" (a hyphen or a dash between) → ['06:00', '09:00'], the end after the start; null for anything else. */
 function parseWindow(s) {
   const m = /^\s*(\d{1,2}:\d{2})\s*[-–—]\s*(\d{1,2}:\d{2})\s*$/.exec(String(s || ''));
@@ -506,19 +527,21 @@ function counterBetween(entity, a, b, decimals = 2) {
 }
 
 /**
- * What a meal drew from the kitchen's meter: the meter's consumption between the
- * meal's hours on its mission day — breakfast 06:00–09:00, lunch 09:00–14:00,
- * dinner 15:00–22:00 (mealsConfig), an added meal's own hours (`served`,
- * "16:00-17:00") — in watt hours, whole. `window` is the hours read, as
- * ['06:00', '09:00'], null when the meal has none (then nothing is read); `wh` is
- * null while the meter has no reading inside them; `running` says the hours are
- * still going at the venue (today's lunch at noon), so the figure is so far.
- * NOW (day 0) is today. Nothing is read without a database row — a meter that
- * is not configured, or not polled, simply has no readings, and the meal says so.
+ * What a named meal drew from the kitchen's meter: the meter's consumption
+ * between the meal's hours on its mission day — breakfast 06:00–09:00, lunch
+ * 09:00–14:00, dinner 15:00–22:00 (mealsConfig) — in watt hours, whole. `window`
+ * is the hours read, as ['06:00', '09:00'], null when the slot has none (then
+ * nothing is read); `wh` is null while the meter has no reading inside them;
+ * `running` says the hours are still going at the venue (today's lunch at
+ * noon), so the figure is so far. NOW (day 0) is today. Nothing is read
+ * without a database row — a meter that is not configured, or not polled,
+ * simply has no readings, and the meal says so. A meal added on the desk
+ * counts with a named meal (slotForTime; data.mealsFor) and has no reading of
+ * its own.
  */
-function mealPower(missionDay, slot, served = '') {
+function mealPower(missionDay, slot) {
   const cfg = mealsConfig();
-  const win = parseWindow(served) || parseWindow(cfg.windows[String(slot || '').toUpperCase()] || '');
+  const win = parseWindow(cfg.windows[String(slot || '').toUpperCase()] || '');
   if (!win) return { wh: null, window: null, running: false, meter: cfg.meter };
   let a, b;
   try {
@@ -619,4 +642,4 @@ function version(snap) {
 }
 
 module.exports = { start, poll, snapshot, readings, daily, daySummary, hourly, version, clear, sensors, sensorsFor, habitatMap, HABITAT_CHANNELS, fetchJson, configured, frozen, counterDay, counterToday, counterBetween,
-                   mealsConfig, mealPower, parseWindow, MEALS_DEFAULT, CFG };
+                   mealsConfig, mealPower, parseWindow, parseTime, slotForTime, MEALS_DEFAULT, CFG };

@@ -201,10 +201,10 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
     ${panel('MEALS', `
       ${eyebrow('Meals')}
       ${r.day && r.day.meals.length ? r.day.meals.map((m) => `<div style="padding:8px 0;border-bottom:1px solid var(--rule)">
-        <div class="eyebrow">${esc(slot(m.slot))}${m.served ? ` · ${esc(m.served.replace('-', '–'))}` : ''}</div>
+        <div class="eyebrow">${esc(slot(m.slot))}${m.served_at ? ` · ${esc(m.served_at)}` : ''}</div>
         <h3>${esc(m.name)}</h3>
         ${m.components ? `<div class="note" style="white-space:pre-line;margin-bottom:6px">${esc(m.components)}</div>` : ''}
-        <div class="note">${asIs(m.kcal)} kcal · ${asIs(m.water_litres)} L water · ${asIs(m.prep_minutes)} min · ${asIs(m.energy_wh)} Wh${m.energy_source === 'meter' ? ` (the kitchen meter${m.window ? `, ${m.window[0]}–${m.window[1]}` : ''}${m.power_running ? ', so far' : ''})` : ''}</div>
+        <div class="note">${asIs(m.kcal)} kcal · ${asIs(m.water_litres)} L water · ${asIs(m.prep_minutes)} min · ${m.energy_source === 'with' ? `power with ${esc(slot(m.power_with))}${m.window ? ` (${m.window[0]}–${m.window[1]}${m.power_wh != null ? `, ${m.power_wh} Wh` : ''})` : ''}` : `${asIs(m.energy_wh)} Wh${m.energy_source === 'meter' ? ` (the kitchen meter${m.window ? `, ${m.window[0]}–${m.window[1]}` : ''}${m.power_running ? ', so far' : ''})` : ''}`}</div>
         ${m.notes ? `<p class="note">${esc(m.notes)}</p>` : ''}
       </div>`).join('') : '<p class="note">No meals entered for this day.</p>'}`, 'mars-side')}
 

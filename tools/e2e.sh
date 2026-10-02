@@ -11,6 +11,8 @@ export SENSOR_TOKEN=${SENSOR_TOKEN:-test-token}
 # the station's real data.
 export CRITICAL_POLL=${CRITICAL_POLL:-false}   # keep the suite off the network
 export CLOUD_POLL=false HA_POLL=${HA_POLL:-false}
+# the screens' door, for its own checks below: off unless both are set (the station ships without them — no password on the screens)
+export SCREENS_USER=${SCREENS_USER:-panolab} SCREENS_PASSWORD=${SCREENS_PASSWORD:-panolab123}
 export CLOUD_QUIET=off          # the cloud's night (22:00–08:00, src/lib/cloud.js) is tested with a fake clock below; the other cloud checks run at any hour
 export MISSION_OVERRIDE=true    # a rehearsal: the real dates are fixed in src/lib/run.js
 export MISSION_START=${MISSION_START:-$(date -u -d '-4 days' +%F)}
@@ -482,8 +484,11 @@ echo "$ABOUT" | grep -q '<h3>Messages sent to space</h3>' && echo "$ABOUT" | gre
 echo "$FOOT" | grep -q '<dialog class="popup" id="what"' && bad "the reading matter is still a pop-up on the landing page" || ok "no pop-ups for the reading matter on the landing page"
 echo "$FOOT" | grep -q '<a class="tab tab-more" data-tab="more" href="/about">' && echo "$ABOUT" | grep -q '<a class="tab tab-more is-on" data-tab="more" href="/about">' \
   && ok "a phone's About key opens the page, and is lit there" || bad "the About key does not lead to the page"
-echo "$FOOT" | grep -q 'class="tk-row" href="/about#what"' && echo "$ABOUT" | grep -q 'class="tk-row" href="/about#who-we-are"' \
-  && ok "the ticker's menu rows lead to their section of the page" || bad "the menu rows do not lead to the About page"
+echo "$FOOT" | grep -q '<nav class="tk-nav" aria-label="The station, page by page"><a href="/#write">Write to the crew</a><a href="/#mission">Live Mission Dashboard</a><a href="/about">About</a></nav>' \
+  && echo "$ABOUT" | grep -q '<a href="/about" aria-current="page">About</a>' && ! echo "$FOOT" | grep -q 'tk-menu\|tk-dropdown\|tk-row' \
+  && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '<a href="/#write">Schreib der Crew</a><a href="/#mission">Missions-Dashboard live</a><a href="/about">Über</a>' \
+  && grep -q 'body.landing .tk-nav { flex: 1 1 auto; min-width: 0; display: flex; justify-content: center;' public/sheet.css && grep -q '  body.landing .tk-nav { display: none; }' public/sheet.css \
+  && ok "the header carries the three ways on in the middle of its row — Write to the crew, Live Mission Dashboard, About (the page's own marked, in the three languages) — and no three-lines menu; a phone held upright keeps them off its row" || bad "the header's links are not there, or the menu is"
 echo "$FOOT" | grep -q "location.replace('/about?from=home'" && ok "the landing page's old #about, #what and #who-we-are lead there too" || bad "old About addresses lost"
 echo "$FOOT" | grep -q 'id="crewlog"' && bad "the crew log panel is still on the landing page" || ok "no crew log panel on the landing page — the log lives at /logbook and in At a Glance"
 echo "$FOOT" | grep -q 'id="media"' && bad "the media panel is still on the landing page" || ok "no media panel — the media lives at /media and in At a Glance"
@@ -793,8 +798,8 @@ HB=$(curl -s -b $A "$B/control?tab=habitat&day=3")
 for S in BREAKFAST LUNCH DINNER; do echo "$HB" | grep -q "name=\"${S}_recipe\"" || bad "no recipe dropdown on $S"; done
 echo "$HB" | grep -q 'data-slot="RATION"' && bad "the Other card is still on the desk" || ok "no Other card: Breakfast, Lunch and Dinner, each with a recipe dropdown"
 echo "$HB" | grep -q '<button type="button" class="ghost meal-add">+ Add a meal</button>' && echo "$HB" | grep -q '<template class="meal-extra-tpl">' && echo "$HB" | grep -q 'name="EXTRA__N___recipe" class="recipe-pick" data-slot="EXTRA__N__"' \
-  && echo "$HB" | grep -q 'name="EXTRA__N___from"' && echo "$HB" | grep -q 'class="ghost meal-remove"' \
-  && ok "+ Add a meal: a template card with the same recipe dropdown, its own hours (served from · to) and a × to take it off" || bad "no + Add a meal template, or it lacks the dropdown, the hours or the ×"
+  && echo "$HB" | grep -q 'name="EXTRA__N___at"' && echo "$HB" | grep -q 'class="ghost meal-remove"' \
+  && ok "+ Add a meal: a template card with the same recipe dropdown, the time it is served at and a × to take it off" || bad "no + Add a meal template, or it lacks the dropdown, the time or the ×"
 echo "$HB" | grep -q 'The recipes are in' && bad "the recipes-are-in sentence is still on the desk" || ok "the food plan's hint no longer names content/recipes.json or says everything is public"
 echo "$HB" | grep -q 'Not saved from this desk yet' && bad "Not saved from this desk yet is still on the desk" || ok "a block never saved from the desk says nothing about it — no Not saved from this desk yet anywhere"
 echo "$HB" | grep -q 'the kitchen meter, 06:00–09:00' && echo "$HB" | grep -q '(breakfast 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00)' \
@@ -834,62 +839,73 @@ curl -s -b $A -X POST -d "day=6" -d "DINNER_recipe=__empty" -d "DINNER_name=Impr
 
 echo "── added meals, and the power each meal drew from the kitchen meter"
 # + Add a meal: the cards post as EXTRA<n>, in their order, and are saved as EXTRA1, EXTRA2, … (renumbered, so taking
-# one away leaves no gap); an added meal may name its hours (served); Other (RATION) from an older file is read as one.
+# one away leaves no gap); an added meal carries the time it is served at (served — the card's, else the habitat's clock
+# as it is saved); Other (RATION) from an older file is read as one.
 curl -s -b $A -X POST -d "day=2" -d "BREAKFAST_name=Oats" -d "BREAKFAST_kcal=400" \
-  -d "EXTRA2_name=Late broth" -d "EXTRA2_kcal=90" -d "EXTRA5_name=Afternoon tea" -d "EXTRA5_kcal=180" -d "EXTRA5_from=16:00" -d "EXTRA5_to=17:00" \
-  -d "EXTRA7_name=Bad hours" -d "EXTRA7_from=17:00" -d "EXTRA7_to=16:00" -o /dev/null $B/control/meals
+  -d "EXTRA2_name=Late broth" -d "EXTRA2_kcal=90" -d "EXTRA5_name=Afternoon tea" -d "EXTRA5_kcal=180" -d "EXTRA5_at=16:30" \
+  -d "EXTRA7_name=No time given" -o /dev/null $B/control/meals
 node -e '
 const d = require(process.env.CONTENT_DIR + "/meals.json")["2"];
 const slots = d.map((m) => m.slot).join(",");
-const tea = d.find((m) => m.name === "Afternoon tea"), bad = d.find((m) => m.name === "Bad hours");
-process.exit(slots === "BREAKFAST,EXTRA1,EXTRA2,EXTRA3" && tea.slot === "EXTRA2" && tea.served === "16:00-17:00" && bad.served === undefined ? 0 : 1);
-' && ok "added meals are saved as EXTRA1, EXTRA2, EXTRA3 in the order posted, one with its hours; hours out of order are dropped" || bad "added meals not saved as expected"
+const tea = d.find((m) => m.name === "Afternoon tea"), none = d.find((m) => m.name === "No time given");
+process.exit(slots === "BREAKFAST,EXTRA1,EXTRA2,EXTRA3" && tea.slot === "EXTRA2" && tea.served === "16:30" && /^\d\d:\d\d$/.test(none.served) ? 0 : 1);
+' && ok "added meals are saved as EXTRA1, EXTRA2, EXTRA3 in the order posted, each with the time it is served at — the card's, or the clock's when the card gave none" || bad "added meals not saved as expected"
 sleep 1.5
 HB2=$(curl -s -b $A "$B/control?tab=habitat&day=2")
 echo "$HB2" | grep -q 'data-slot="EXTRA1"' && echo "$HB2" | grep -q 'data-slot="EXTRA3"' && echo "$HB2" | grep -q 'data-next-extra="4"' \
-  && echo "$HB2" | grep -q '<h3 class="slot-name">Extra meal <span class="slot-n">2</span></h3>' && echo "$HB2" | grep -q 'name="EXTRA2_from" value="16:00"' \
-  && ok "the desk reopens the day with its three added cards — Extra meal, Extra meal 2 (with its hours), Extra meal 3 — and the next one would be the fourth" || bad "the added cards do not reopen as saved"
+  && echo "$HB2" | grep -q '<h3 class="slot-name">Extra meal <span class="slot-n">2</span></h3>' && echo "$HB2" | grep -q 'name="EXTRA2_at" value="16:30"' \
+  && ok "the desk reopens the day with its three added cards — Extra meal, Extra meal 2 (served at 16:30), Extra meal 3 — and the next one would be the fourth" || bad "the added cards do not reopen as saved"
 echo "$HB2" | grep -q 'food plan saved — 4 meals (3 added)' && ok "the save says how many meals, and how many of them added" || bad "the flash does not count the added meals"
-curl -s -b $A "$B/archive/day/2" | grep -q 'Extra meal 2 · 16:00–17:00' && ok "the record names an added meal by its number and its hours" || bad "the archive's day page does not name the added meal"
-curl -s -b $A "$B/archive/day/2/export.md" | grep -q '^\*\*Extra meal 2 (16:00–17:00): Afternoon tea\*\*' && ok "and so does the readable copy" || bad "the markdown copy does not name the added meal"
+curl -s -b $A "$B/archive/day/2" | grep -q 'Extra meal 2 · 16:30' && ok "the record names an added meal by its number and the time it is served at" || bad "the archive's day page does not name the added meal"
+curl -s -b $A "$B/archive/day/2/export.md" | grep -q '^\*\*Extra meal 2 (16:30): Afternoon tea\*\*' && ok "and so does the readable copy" || bad "the markdown copy does not name the added meal"
 # the Other slot of an older file is read as an added meal and shown as Other
 node -e '
 const fs = require("fs"), p = process.env.CONTENT_DIR + "/meals.json";
-const d = JSON.parse(fs.readFileSync(p, "utf8")); d["2"] = [{ slot: "RATION", name: "Emergency ration", kcal: 300 }, { slot: "EXTRA1", name: "Night snack", kcal: 120, served: "23:00-23:30" }]; fs.writeFileSync(p, JSON.stringify(d, null, 2));'
+const d = JSON.parse(fs.readFileSync(p, "utf8")); d["2"] = [{ slot: "RATION", name: "Emergency ration", kcal: 300 }, { slot: "EXTRA1", name: "Night snack", kcal: 120, served: "23:00-23:30" }]; fs.writeFileSync(p, JSON.stringify(d, null, 2));'   # an older file's hours: their start is the time
 sleep 2
 curl -s -b $A "$B/archive/day/2" | grep -q '<div class="eyebrow">Other</div>' && curl -s -b $A "$B/control?tab=habitat&day=2" | grep -q 'value="Emergency ration"' \
   && ok "an Other from an older file still loads — shown as Other, and on the desk as an added meal" || bad "the old RATION slot is refused or lost"
-curl -s -b $A -X POST -d "day=2" -d "EXTRA1_name=Night snack" -d "EXTRA1_kcal=120" -d "EXTRA1_from=23:00" -d "EXTRA1_to=23:30" -o /dev/null $B/control/meals
-node -e 'const d = require(process.env.CONTENT_DIR + "/meals.json")["2"]; process.exit(d.length === 1 && d[0].slot === "EXTRA1" && d[0].served === "23:00-23:30" ? 0 : 1);' \
-  && ok "a card taken off the desk (not posted) is gone with the save; the one kept keeps its hours" || bad "removing an added meal did not take it off the day"
+curl -s -b $A -X POST -d "day=2" -d "EXTRA1_name=Night snack" -d "EXTRA1_kcal=120" -d "EXTRA1_at=23:00" -o /dev/null $B/control/meals
+node -e 'const d = require(process.env.CONTENT_DIR + "/meals.json")["2"]; process.exit(d.length === 1 && d[0].slot === "EXTRA1" && d[0].served === "23:00" ? 0 : 1);' \
+  && ok "a card taken off the desk (not posted) is gone with the save; the one kept keeps its time" || bad "removing an added meal did not take it off the day"
 # the power a meal drew: the kitchen meter (sensor.habitat_power_kitchen_energie, content/home-assistant.json `meals`)
-# read between the meal's hours on its day — breakfast 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00, an added meal
-# between its own — the meter only grows, so the hours' consumption is its rise inside them from where it stood before
-curl -s -b $A -X POST -d "day=1" -d "BREAKFAST_name=Porridge" -d "BREAKFAST_kcal=400" -d "LUNCH_name=Soup" -d "LUNCH_kcal=300" -d "EXTRA1_name=Tea" -d "EXTRA1_kcal=50" -d "EXTRA1_from=16:00" -d "EXTRA1_to=17:00" -o /dev/null $B/control/meals
+# read between the meal's hours on its day — breakfast 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00 — the meter
+# only grows, so the hours' consumption is its rise inside them from where it stood before; an added meal counts with the
+# named meal whose hours cover the time it is served at (tea at 16:00: dinner's)
+curl -s -b $A -X POST -d "day=1" -d "BREAKFAST_name=Porridge" -d "BREAKFAST_kcal=400" -d "LUNCH_name=Soup" -d "LUNCH_kcal=300" -d "EXTRA1_name=Tea" -d "EXTRA1_kcal=50" -d "EXTRA1_at=16:00" -o /dev/null $B/control/meals
 node -e '
 const { db } = require("./src/db"); const mission = require("./src/lib/mission"); const m = mission.config(), date = mission.dateForDay(1);
 const at = (hhmm) => mission.venueTimeUtc(date, hhmm, m.timezone);
 const ins = db.prepare("INSERT OR IGNORE INTO ha_reading (entity, t, value, state, unit) VALUES (?, ?, ?, ?, ?)");
 for (const [h, v] of [["05:00", 100.0], ["06:30", 100.1], ["08:59", 100.3], ["12:00", 100.3], ["16:20", 100.35], ["16:50", 100.4], ["21:00", 100.9]]) ins.run("habitat_power_kitchen_energie", at(h), v, String(v), "kWh");
 const ha = require("./src/lib/home-assistant");
-const b = ha.mealPower(1, "BREAKFAST"), l = ha.mealPower(1, "LUNCH"), d = ha.mealPower(1, "DINNER"), e = ha.mealPower(1, "EXTRA1", "16:00-17:00"), n = ha.mealPower(1, "EXTRA2");
-// breakfast: 100.0 before the hours, 100.3 at their end → 300 Wh; lunch: one reading, no rise → 0; dinner: from 100.3 (last before 15:00) to 100.9 → 600; tea 16:00–17:00: from 100.3 to 100.4 → 100; no hours → nothing read
-const ok = b.wh === 300 && b.window.join("-") === "06:00-09:00" && l.wh === 0 && d.wh === 600 && e.wh === 100 && n.wh === null && n.window === null && !b.running;
-if (!ok) console.error(JSON.stringify({ b, l, d, e, n }));
+const b = ha.mealPower(1, "BREAKFAST"), l = ha.mealPower(1, "LUNCH"), d = ha.mealPower(1, "DINNER"), n = ha.mealPower(1, "EXTRA1");
+// breakfast: 100.0 before the hours, 100.3 at their end → 300 Wh; lunch: one reading, no rise → 0; dinner: from 100.3 (last before 15:00) to 100.9 → 600; an added slot has no hours of its own
+const ok = b.wh === 300 && b.window.join("-") === "06:00-09:00" && l.wh === 0 && d.wh === 600 && n.wh === null && n.window === null && !b.running
+  && ha.slotForTime("05:30") === "BREAKFAST" && ha.slotForTime("08:59") === "BREAKFAST" && ha.slotForTime("09:00") === "LUNCH" && ha.slotForTime("14:30") === "LUNCH" && ha.slotForTime("16:00") === "DINNER" && ha.slotForTime("23:30") === "DINNER" && ha.slotForTime("") === null
+  && ha.parseTime("16:30") === "16:30" && ha.parseTime("7:05") === "07:05" && ha.parseTime("16:00-17:00") === "16:00" && ha.parseTime("x") === null;
+if (!ok) console.error(JSON.stringify({ b, l, d, n }));
 process.exit(ok ? 0 : 1);
-' && ok "mealPower reads the meter's rise inside each meal's hours — breakfast 300 Wh, lunch 0, dinner 600, the added meal's own hours 100 — and nothing without hours" || bad "mealPower does not read the hours as expected"
+' && ok "mealPower reads the meter's rise inside each named meal's hours — breakfast 300 Wh, lunch 0, dinner 600 — and a time of day counts with the meal whose hours begin last before it (05:30 breakfast, 14:30 lunch, 23:30 dinner)" || bad "mealPower or slotForTime does not read the hours as expected"
 sleep 1
 HB1=$(curl -s -b $A "$B/control?tab=habitat&day=1")
-echo "$HB1" | grep -q '<b>300 Wh</b> · the kitchen meter, 06:00–09:00' && echo "$HB1" | grep -q '<b>100 Wh</b> · the kitchen meter, 16:00–17:00' && echo "$HB1" | grep -q 'the kitchen meter, 15:00–22:00 — no reading for these hours yet' \
-  && ok "each card on the desk shows what the meter read for its hours — 300 Wh for breakfast, 100 Wh for the added meal — and a dinner not served says so" || bad "the desk's cards do not show the meter's figures"
-echo "$HB1" | grep -q '400 Wh from the kitchen meter' && ok "the day total adds the metered watt hours" || bad "no metered total on the desk"
-curl -s -b $A "$B/archive/day/1" | grep -q '400 kcal · 0 L water · 0 min · 300 Wh (the kitchen meter, 06:00–09:00)' && curl -s -b $A "$B/archive/day/1/export.md" | grep -q '50 kcal · 0 L water · 0 min · 100 Wh (the kitchen meter, 16:00–17:00)' \
-  && ok "the record carries the metered figure with each meal and says where it came from" || bad "the record lacks the meter's figures"
+echo "$HB1" | grep -q '<b>300 Wh</b> · the kitchen meter, 06:00–09:00' && echo "$HB1" | grep -q '<b>600 Wh</b> · the kitchen meter, 15:00–22:00 — counts with Dinner' && echo "$HB1" | grep -q '<b>0 Wh</b> · the kitchen meter, 09:00–14:00' \
+  && ok "each card on the desk shows what the meter read for its hours — 300 Wh for breakfast, 0 for lunch — and the tea at 16:00 counts with Dinner, 600 Wh" || bad "the desk's cards do not show the meter's figures"
+echo "$HB1" | grep -q '900 Wh from the kitchen meter' && ok "the day total adds each window once — 300 + 0 + 600" || bad "no metered total on the desk, or a window counted twice"
+curl -s -b $A "$B/archive/day/1" | grep -q '400 kcal · 0 L water · 0 min · 300 Wh (the kitchen meter, 06:00–09:00)' && curl -s -b $A "$B/archive/day/1/export.md" | grep -q '50 kcal · 0 L water · 0 min · 600 Wh (the kitchen meter, 15:00–22:00)' \
+  && ok "the record carries the metered figure with each meal and says where it came from — the tea, alone in dinner's hours, carries them" || bad "the record lacks the meter's figures"
 curl -s -b $A "$B/archive/export.json" | node -e '
 let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const j = JSON.parse(s); const day = (j.days || []).find((d) => d.missionDay === 1); const ms = day ? day.meals : [];
   const b = ms.find((x) => x.slot === "BREAKFAST"), t = ms.find((x) => x.slot === "EXTRA1");
-  process.exit(b && b.energyWh === 300 && b.energySource === "meter" && b.hours === "06:00-09:00" && t && t.energyWh === 100 && t.hours === "16:00-17:00" ? 0 : 1); });
-' && ok "the data copy says each meal's watt hours, their source (meter) and the hours read" || bad "the data copy lacks energySource/hours"
+  process.exit(b && b.energyWh === 300 && b.energySource === "meter" && b.hours === "06:00-09:00" && t && t.energyWh === 600 && t.hours === "15:00-22:00" && t.servedAt === "16:00" && t.countsWith === "DINNER" ? 0 : 1); });
+' && ok "the data copy says each meal's watt hours, their source (meter), the hours read, and which meal an added one counts with" || bad "the data copy lacks energySource/hours/countsWith"
+# an added meal beside a named one of the same hours shows that meal's figure and counts once in the total
+curl -s -b $A -X POST -d "day=1" -d "BREAKFAST_name=Porridge" -d "BREAKFAST_kcal=400" -d "DINNER_name=Stew" -d "DINNER_kcal=500" -d "EXTRA1_name=Tea" -d "EXTRA1_kcal=50" -d "EXTRA1_at=16:00" -o /dev/null $B/control/meals
+sleep 1
+HB1B=$(curl -s -b $A "$B/control?tab=habitat&day=1")
+[ "$(echo "$HB1B" | grep -o '<b>600 Wh</b> · the kitchen meter, 15:00–22:00' | wc -l)" = "2" ] && echo "$HB1B" | grep -q '<b>600 Wh</b> · the kitchen meter, 15:00–22:00 — counts with Dinner' && echo "$HB1B" | grep -q '900 Wh from the kitchen meter' \
+  && curl -s -b $A "$B/archive/day/1/export.md" | grep -q '50 kcal · 0 L water · 0 min · power with Dinner (15:00–22:00, 600 Wh)' \
+  && ok "with a dinner planned, the tea shows dinner's 600 Wh as counting with it, and the day's total stays 900 — each window once" || bad "an added meal beside a named one is not counted with it"
 curl -s -b $A -o /tmp/day1.pdf $B/archive/day/1/export.pdf && pdftext /tmp/day1.pdf | grep -q "Wh: the kitchen's energy meter, read breakfast 06:00" && ok "the PDF's meals table says the watt hours are the kitchen meter's, and the hours" || bad "the PDF does not explain the watt hours"
 # today's meals on the dashboard, with the line under them (today has none filed yet in this suite: one is filed for the look)
 curl -s -b $A -X POST -d "day=$TODAY" -d "LUNCH_name=Lentil stew" -d "LUNCH_kcal=420" -o /dev/null $B/control/meals
@@ -925,6 +941,8 @@ echo "$HB1" | grep -q "These values are automated, are you sure you would like t
   && ok "every value in Power consumed is locked behind an Edit key, which asks: These values are automated, are you sure you would like to edit?" || bad "the power block's values are not all locked, or the prompt is wrong"
 # the Resources tile: a store with no figure yet carries no word for it
 echo "$LANDM" | grep -q '>Placeholder<' && bad "the Resources tile still says Placeholder" || ok "the Resources tile says no Placeholder — a store with no figure yet is an empty ring and a dash"
+grep -q '  body.landing .hbt .aux .t-res { flex: 0 0 auto; width: auto; max-width: 100%; }' public/aura.css && grep -q '  body.landing .hbt .aux .gauge.round { flex: 0 0 auto; width: max(86px, calc(8.8 \* var(--u))); }' public/aura.css && grep -q '  body.landing .hbt .bento.aux { display: flex; flex-wrap: wrap; align-items: stretch; }' public/aura.css \
+  && ok "on a desk the Resources tile is only as wide as its rings — one a store — the power tile taking the rest of the row" || bad "the Resources tile is not sized by its stores"
 
 echo "── crew figures"
 curl -s -b $A -X POST -d "day=3" -d "calories=4999" -d "steps=8123" -o /dev/null $B/control/crew-figures
@@ -949,8 +967,8 @@ curl -s $B/ | grep -q 'stroke-dasharray="2 3"' \
 echo "── editable content"
 curl -s $B/api/content | grep -q '"ok":true' && ok "content files loaded cleanly" || bad "content failed to load"
 curl -s $B/at-a-glance | grep -q "Hatch seal and pressure hold" && ok "authored schedule is live" || bad "schedule missing"
-node -e 'const d = require("./content/meals.json"); process.exit(Object.keys(d).some((k) => /^\d+$/.test(k)) ? 1 : 0);' \
-  && ok "the food plan ships empty" || bad "meals.json ships with days in it"
+node -e 'const d = require("./content/meals.json"); process.exit(Object.keys(d).some((k) => /^\d+$/.test(k) && k !== "0") ? 1 : 0);' \
+  && ok "the food plan ships empty (NOW, the rehearsal day, may be filed)" || bad "meals.json ships with run days in it"
 node -e '
 const fs = require("fs"), p = process.env.CONTENT_DIR + "/meals.json";
 const d = JSON.parse(fs.readFileSync(p, "utf8")); d["2"] = [{ slot: "DINNER", recipe: "black-bean-soup" }]; fs.writeFileSync(p, JSON.stringify(d, null, 2));'
@@ -1344,9 +1362,10 @@ curl -s $B/ | grep -q '>At a Glance<' && ok "and the footer navigation carries i
 
 echo "── the installation's screens"
 # the screens' door (src/lib/screens-auth.js; server.js, requireScreens): /screens, every /screen/<name>, the writing
-# screen's composer and its post open only to a browser signed in with the screens' user and password (SCREENS_USER and
-# SCREENS_PASSWORD; panolab / panolab123 unless set) — mission control's session does not open them — anyone else is sent
-# to /screens/login and, signed in, on to the screen asked for; no address off the screens is a way on (no open redirect)
+# screen's composer and its post open only to a browser signed in with the screens' user and password — WHILE .env sets
+# SCREENS_USER and SCREENS_PASSWORD (this suite does; without them, below, the screens open to anyone) — mission control's
+# session does not open them — anyone else is sent to /screens/login and, signed in, on to the screen asked for; no
+# address off the screens is a way on (no open redirect)
 [ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' $B/screens)" = "302 $B/screens/login?next=%2Fscreens" ] && [ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' $B/screen/board)" = "302 $B/screens/login?next=%2Fscreen%2Fboard" ] \
   && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/screen/write/composer)" = "302" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' -d 'body=hello' $B/screen/write)" = "302" ] \
   && ok "a browser that has not signed in is sent from the screens, their list and the writing screen's post to /screens/login, with the screen it asked for" || bad "the screens open without a sign-in"
@@ -1413,19 +1432,22 @@ curl -s -b $SK "$B/screen/landing?lang=en" | grep -q '<div class="space-room" id
 # the writing screen: the composer full screen, every message a new visitor's
 WR=$(curl -s -b $SK "$B/screen/write?lang=en")
 echo "$WR" | grep -q 'class="landing inner screen screen-write" data-screen="write" data-fit="scale" data-min-width="640"' && echo "$WR" | grep -q '<div class="screen-write"><section class="device composer-device"' \
-  && echo "$WR" | grep -q 'action="/screen/write?lang=en" id="composer" class="composer" data-callsign="" data-kiosk="1"' && echo "$WR" | grep -q '<div class="dev-body" id="dev-body" data-kiosk="1" data-refresh="/screen/write/composer?lang=en">' \
-  && echo "$WR" | grep -q '>Callsign on sending<' && echo "$WR" | grep -q '/composer.js?v=' && echo "$WR" | grep -q '/screen-write.js?v=' && ! echo "$WR" | grep -q 'transit-block' \
-  && curl -s -b $SK "$B/screen/write" | grep -q 'action="/screen/write?lang=de"' && curl -s -b $SK "$B/screen/write" | grep -q 'Rufzeichen beim Senden' \
+  && echo "$WR" | grep -q 'action="/screen/write?lang=en" id="composer" class="composer" data-callsign="BODENSTATION" data-kiosk="1"' && echo "$WR" | grep -q '<div class="dev-body" id="dev-body" data-kiosk="1" data-refresh="/screen/write/composer?lang=en">' \
+  && echo "$WR" | grep -q 'class="dev-chip" title="[^"]*">BODENSTATION</span>' && ! echo "$WR" | grep -q 'Callsign on sending' && echo "$WR" | grep -q '/composer.js?v=' && echo "$WR" | grep -q '/screen-write.js?v=' && ! echo "$WR" | grep -q 'transit-block' \
+  && curl -s -b $SK "$B/screen/write" | grep -q 'action="/screen/write?lang=de"' && curl -s -b $SK "$B/screen/write" | grep -q 'class="dev-chip" title="[^"]*">BODENSTATION</span>' && ! curl -s -b $SK "$B/screen/write" | grep -q '>Rufzeichen beim Senden<' && curl -s -b $SK "$B/screen/write/composer?lang=de" | grep -q 'data-callsign="BODENSTATION"' \
   && curl -s -b $SK "$B/screens?lang=en" | grep -q '<a href="/screen/write"><b>Write to the crew</b><span>/screen/write</span></a>' && curl -s -b $SK $B/screens | grep -q '<a href="/screen/write"><b>Schreib der Crew</b>' \
-  && ok "the writing screen: the composer alone, full screen, its form posting to the screen's own address in the screen's language, no callsign until one is sent; on the list" || bad "the writing screen is not the composer"
+  && ok "the writing screen: the composer alone, full screen, its form posting to the screen's own address in the screen's language, its operator BODENSTATION in its head from the start (no Rufzeichen beim Senden); on the list" || bad "the writing screen is not the composer, or its operator is not the ground station"
 WK=/tmp/kiosk.jar; rm -f $WK
 WR1=$(curl -s -b $SK -c $WK -b $WK -D /tmp/kiosk-h1.txt -H 'X-Requested-With: fetch' -d "body=First from the square" -d "tags=QUESTION" "$B/screen/write?lang=en")
 WR2=$(curl -s -b $SK -c $WK -b $WK -D /tmp/kiosk-h2.txt -H 'X-Requested-With: fetch' -d "body=Second from the square" "$B/screen/write?lang=en")
-CS1=$(echo "$WR1" | grep -o 'data-callsign="[A-Z]*-[0-9]*"' | head -1); CS2=$(echo "$WR2" | grep -o 'data-callsign="[A-Z]*-[0-9]*"' | head -1)
-[ -n "$CS1" ] && [ -n "$CS2" ] && [ "$CS1" != "$CS2" ] && ! grep -qi 'set-cookie: mcs_id' /tmp/kiosk-h1.txt && ! grep -qi 'set-cookie' /tmp/kiosk-h2.txt \
-  && echo "$WR1" | grep -q 'class="transit transit-block" data-callsign=' && echo "$WR1" | grep -q 'data-hold="9000"' && echo "$WR1" | grep -q 'class="kiosk-cs">Your message went under the callsign <b>' \
-  && [ "$(DATA_DIR="$DATA_DIR" node -e 'const db=require("./src/db").db; console.log(db.prepare("SELECT COUNT(DISTINCT visitor_id) n FROM message WHERE body IN (?, ?)").get("First from the square", "Second from the square").n)')" = "2" ] \
-  && ok "two messages sent from the writing screen one after the other go under two callsigns of their own, no cookie set, no transit lock between them — each answered with the crossing, held longer, the callsign named to take away" || bad "the writing screen's messages are not each a new visitor's"
+CS1=$(echo "$WR1" | grep -o 'class="transit transit-block" data-callsign="[A-Z0-9-]*"' | head -1); CS2=$(echo "$WR2" | grep -o 'class="transit transit-block" data-callsign="[A-Z0-9-]*"' | head -1)
+[ "$CS1" = 'class="transit transit-block" data-callsign="BODENSTATION"' ] && [ "$CS2" = "$CS1" ] && ! grep -qi 'set-cookie: mcs_id' /tmp/kiosk-h1.txt && ! grep -qi 'set-cookie' /tmp/kiosk-h2.txt \
+  && echo "$WR1" | grep -q 'data-hold="9000"' && echo "$WR1" | grep -q 'class="kiosk-cs">Your message went under the callsign <b>BODENSTATION</b>' \
+  && [ "$(DATA_DIR="$DATA_DIR" node -e 'const db=require("./src/db").db; const r = db.prepare("SELECT COUNT(DISTINCT visitor_id) v, COUNT(DISTINCT callsign) c, MIN(callsign) cs FROM message WHERE body IN (?, ?)").get("First from the square", "Second from the square"); console.log(r.v + " " + r.c + " " + r.cs)')" = "2 1 BODENSTATION" ] \
+  && ok "two messages sent from the writing screen one after the other both go out as BODENSTATION — the ground station's one operator name — each still a visitor row of its own (no cookie set, no transit lock between them), each answered with the crossing, held longer" || bad "the writing screen's messages do not carry the ground station's name, or share a visitor"
+sleep 4   # the transit (TRANSIT_SECONDS=3): then the screen's messages are in mission control's queue under the operator's name
+curl -s -b $A "$B/control?show=pending" | grep -q '<span class="cs">BODENSTATION</span>' \
+  && ok "mission control's queue shows the screen's messages under BODENSTATION, not under a callsign of the computer's" || bad "the screen's messages do not reach the queue under the operator name"
 curl -s -b $SK "$B/screen/write/composer?lang=fr" | grep -q 'action="/screen/write?lang=fr"' && curl -s -b $SK "$B/screen/write/composer?lang=fr" | grep -q 'placeholder="Écrivez à l’équipage."' && ! curl -s -b $SK "$B/screen/write/composer?lang=fr" | grep -q 'transit-block' \
   && [ "$(curl -s -b $SK -o /dev/null -w '%{http_code}' -d "body=Plain from the square" "$B/screen/write?lang=en")" = "200" ] \
   && [ "$(curl -s -b $SK -H 'X-Requested-With: fetch' -d "body=x" "$B/screen/write?lang=en" | grep -c 'Write something before transmitting')" = "1" ] \
@@ -1738,20 +1760,15 @@ echo "$LAND" | grep -q '<div class="sheet-intro is-desk">' && echo "$LAND" | gre
   && grep -q '  body.landing .sheet-intro .wordmark { margin: 0; font-size: clamp(36px, 3.4vw, 50px); line-height: .95; letter-spacing: -.035em; font-weight: 600; color: var(--ink); }' public/sheet.css \
   && ! grep -q 'body.landing .sheet-intro .wordmark { position: absolute; width: 1px;' public/sheet.css \
   && ok "MARS!platz : Ground Station stands large in the top left corner of the first page on a desk, the line and the run beside it" || bad "the name is not in the top left corner of the first page"
-# the first page on a desk: the Earth in the lower left corner, the habitat in the north-east, and between them the trajectory —
-# the arc of the message, on past the habitat into space (landing.js, trajectory; public/sky.js sets its paths; sheet.css)
-echo "$LAND" | grep -q '<svg class="space-arc" id="space-arc" aria-hidden="true">' && echo "$LAND" | grep -q '<path class="arc-up" id="arc-up" d="M0 0"/>' && echo "$LAND" | grep -q '<path class="arc-on" id="arc-on" d="M0 0"/>' \
-  && echo "$LAND" | grep -q '<circle class="arc-sig" r="4"><animateMotion dur="10s" repeatCount="indefinite" calcMode="linear" keyPoints="0;1;1" keyTimes="0;.4;1" rotate="0"><mpath href="#arc-up"/></animateMotion>' \
-  && echo "$LAND" | grep -q '<circle class="arc-ans" r="4"><animateMotion dur="10s" repeatCount="indefinite" calcMode="linear" keyPoints="1;1;0;0" keyTimes="0;.46;.86;1" rotate="0"><mpath href="#arc-up"/></animateMotion>' \
-  && echo "$LAND" | grep -q '<circle class="arc-far" r="3"><animateMotion dur="10s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;.42;.8;1" rotate="0"><mpath href="#arc-on"/></animateMotion>' \
-  && echo "$LAND" | grep -q '<circle class="arc-flare" r="3">' && echo "$LAND" | grep -q '<linearGradient id="arc-fade" gradientUnits="userSpaceOnUse"' \
-  && grep -q "function trajectory() {" public/sky.js && grep -q "up.setAttribute('d', 'M' + f(S) + ' L' + f(F));" public/sky.js && grep -q "on.setAttribute('d', 'M' + f(X) + ' L' + f(E));" public/sky.js && grep -q "var cd = { x: db.x + db.w / 2, y: db.y + db.h \* 0.73 }, rd = db.w \* 0.48;" public/sky.js && grep -q "function onWay(a) {" public/sky.js && grep -q "function nearWay(a) {" public/sky.js && grep -q "var NEAR_WAY = 48;" public/sky.js && grep -q "desk: { pic: 136, line: 300 }" public/sky.js && grep -q "if (arcShown()) return { top: EDGE, bottom: H - EDGE };" public/sky.js \
-  && grep -q "r: w \* f" public/sky.js \
-  && grep -q '  body.landing .space-earth { left: -108%; bottom: -5%; width: 151.2%; transform-origin: 47.66% 317.4%; transform: rotate(27deg); }' public/sheet.css \
-  && grep -q '  body.landing .space-dome { left: auto; right: 15%; top: 5%; transform: none; }' public/sheet.css && grep -q '  body.landing .space-tag-dome { right: auto; left: calc(50% + 26px); top: calc(100% + 2px); transform: none; }' public/sheet.css \
-  && grep -q '  body.landing .space-line { display: none; }' public/sheet.css && grep -q '  body.landing .space-arc { display: block; }' public/sheet.css \
-  && grep -q 'body.landing .space-arc { display: none; position: absolute; inset: 0; z-index: 2;' public/sheet.css && grep -q '@media (prefers-reduced-motion: reduce) { body.landing .space-arc circle { display: none; } }' public/sheet.css \
-  && ok "on a desk the Earth stands in the lower left corner, the habitat in the north-east, and the message's line runs straight from the horizon to the habitat and on from its far side into space, no line across the habitat — the signal, the answer and the one that goes on ride it, the sky keeps near it; a phone keeps its vertical line" || bad "the trajectory on the first page is not as it should be"
+# the first page on a desk: as on a phone — the Earth in the middle of the foot, the habitat above it (small: a quarter of the
+# window's height at most), the dashed line straight between them; the trajectory of the earlier desk layout stays in the
+# markup and in sky.js, off (sheet.css shows the line, not the arc, on a desk)
+echo "$LAND" | grep -q '<svg class="space-arc" id="space-arc" aria-hidden="true">' && grep -q "function trajectory() {" public/sky.js && grep -q "if (arcShown()) return { top: EDGE, bottom: H - EDGE };" public/sky.js \
+  && grep -q 'body.landing .space-arc { display: none; position: absolute; inset: 0; z-index: 2;' public/sheet.css \
+  && ! grep -q 'body.landing .space-arc { display: block; }' public/sheet.css && ! grep -q 'body.landing .space-line { display: none; }' public/sheet.css \
+  && ! grep -q 'transform: rotate(27deg)' public/sheet.css && ! grep -q 'body.landing .space-dome { left: auto; right: 15%;' public/sheet.css \
+  && grep -q '  body.landing .space-room { margin-top: 12px; --dome-w: clamp(170px, 22vh, 250px); --dome-top: 10px; --earth-w: 118%; --earth-arc: clamp(100px, 14vh, 150px); }' public/sheet.css \
+  && ok "on a desk the Earth is in the middle of the foot and the habitat above it, small — the dashed line straight between them, as on a phone; the arc of the earlier layout is off" || bad "the first page's desk layout is not the centred one"
 # the first page: the Earth at its foot, the habitat far above, the line between them, and the sky in the room (landing.js, space)
 echo "$LAND" | grep -q '<section class="sheet sheet-p0 space" id="top" aria-label="From Earth to the habitat" data-page>' \
   && echo "$LAND" | grep -q '<div class="space-dome" data-sky-solid aria-hidden="true">' && echo "$LAND" | grep -q '<img class="space-dome-img" src="/space/habitat.png" alt="" width="1004" height="699" decoding="async">' \
@@ -2347,10 +2364,15 @@ MOCK=$!
 sleep 1
 DATA_DIR="$DATA3" CONTENT_DIR="$CONT3" node src/db/seed.js > /dev/null 2>&1
 DATA_DIR="$DATA3" CONTENT_DIR="$CONT3" PORT=8083 CRITICAL_POLL=true HABITAT_SOURCE=auto HABITAT_POLL_MS=15000 \
-  HA_HOST=localhost HA_PORT=8125 HA_API_TOKEN=test-token HA_POLL=false node src/server.js > /tmp/srv3.log 2>&1 &
+  HA_HOST=localhost HA_PORT=8125 HA_API_TOKEN=test-token HA_POLL=false SCREENS_USER= SCREENS_PASSWORD= node src/server.js > /tmp/srv3.log 2>&1 &
 SRV3=$!
 sleep 6
 B3=http://localhost:8083
+# this station has no SCREENS_USER / SCREENS_PASSWORD — as the station ships: the screens open without any sign-in
+[ "$(curl -s -o /dev/null -w '%{http_code}' $B3/screens)" = "200" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' $B3/screen/board)" = "200" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' "$B3/screen/write/composer?lang=en")" = "200" ] \
+  && [ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' "$B3/screens/login?next=%2Fscreen%2Fboard")" = "302 $B3/screen/board" ] && [ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' -d 'username=x&password=y' $B3/screens/login)" = "302 $B3/screens" ] \
+  && ! curl -s $B3/screens | grep -q 'action="/screens/logout"' \
+  && ok "without SCREENS_USER and SCREENS_PASSWORD in .env there is no door: the screens, their list and the writing screen open to anyone, /screens/login only leads on, and the list has no sign-out" || bad "the screens still ask for a password without the two set"
 HAB=$(curl -s "$B3/api/habitat/data?days=1")
 echo "$HAB" | grep -q '"source":"home-assistant"' && ok "with Home Assistant configured and the entities mapped, the habitat is read from the sensor" || bad "source is not home-assistant"
 echo "$HAB" | node -e '

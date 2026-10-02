@@ -784,9 +784,10 @@ router.post('/meals', (req, res) => {
     const isExtra = !data.FIXED_SLOTS.includes(slot);
     const as = isExtra ? `EXTRA${++extraN}` : slot;
     saveAs[slot] = as;
-    // an added meal's own hours, between which the kitchen meter is read for it: both given and in order, or none
-    const from = String(req.body[`${slot}_from`] || '').trim(), to = String(req.body[`${slot}_to`] || '').trim();
-    const served = isExtra ? (ha.parseWindow(`${from}-${to}`) || '') : '';
+    // the time an added meal is served at — it counts with the named meal whose hours cover it (data.mealsFor): the
+    // card's, or an older form's "from" hour, or — with none given — the habitat's clock as it is saved
+    const at = String(req.body[`${slot}_at`] || req.body[`${slot}_from`] || '').trim();
+    const served = isExtra ? (ha.parseTime(at) || ha.parseTime(ctx.mission.venueTime) || '') : '';
     // The recipe the slot was filled from — only if it is in the book.
     const slug = String(req.body[`${slot}_recipe`] ?? was.recipe ?? '').trim();
     const recipe = slug && book.some((r) => r.slug === slug) ? slug : '';
@@ -812,7 +813,7 @@ router.post('/meals', (req, res) => {
       ...(wfp != null ? { water_footprint_l: wfp } : {}),
       ...(String(req.body[`${slot}_notes`] || '').trim()
         ? { notes: String(req.body[`${slot}_notes`]).trim() } : {}),
-      ...(served ? { served: served.join('-') } : {}),
+      ...(served ? { served } : {}),
       _posted: slot,                                           // the slot the form posted it under, for the marks below
     });
   }
@@ -846,7 +847,7 @@ router.post('/meals', (req, res) => {
     } else if (emptied) {
       base = { name: '', components: '', kcal: '', prep: '', co2e: '', wfp: '', n: {} };
     }
-    if (!same(was.served || '', is.served || '')) changed.push(`${as}_from`, `${as}_to`);
+    if (!same(was.served || '', is.served || '')) changed.push(`${as}_at`);
     if (base) {
       picked.push(as);
       const num0 = (v) => (v ? String(v) : '');                // 0 is how an empty number field is saved
@@ -875,7 +876,7 @@ router.post('/meals', (req, res) => {
   // the dropdown's own mark from before this rule too.
   const clear = db.prepare("DELETE FROM control_edit WHERE form = 'meals' AND day = ? AND key = ?");
   for (const slot of new Set([...SLOTS, ...Object.values(saveAs)])) {
-    const keys = ['name', 'components', 'kcal', 'prep', 'notes', 'co2e', 'wfp', 'from', 'to', ...content.NUTRIENTS.map((x) => x.key)];
+    const keys = ['name', 'components', 'kcal', 'prep', 'notes', 'co2e', 'wfp', 'at', ...content.NUTRIENTS.map((x) => x.key)];
     if (picked.includes(slot)) for (const k of keys) if (!changed.includes(`${slot}_${k}`)) clear.run(day, `${slot}_${k}`);
     clear.run(day, `${slot}_recipe`);
   }
@@ -986,7 +987,7 @@ router.post('/power', (req, res) => {
 router.post('/plan/save', (req, res) => {
   const n = content.savePlan();
   audit(req.user.username, 'plan', '1', 'save', `${n} files`);
-  setFlash(req, `Snapshot saved: ${n} content files copied to content/plan/.`);
+  // no flash: the block itself says when the snapshot was last saved, and how many files it holds
   toTab(res, 'habitat', dayParam(req, req.ctx()));
 });
 

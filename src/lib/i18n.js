@@ -407,6 +407,8 @@ const D = {
   'Dinner': ['Abendessen', 'Dîner'],
   'Ration': ['Ration', 'Ration'],
   'Extra meal': ['Zusätzliche Mahlzeit', 'Repas supplémentaire'],
+  'with': ['mit', 'avec'],
+  'an added meal counts with the meal whose hours cover the time it is served at': ['eine zusätzliche Mahlzeit zählt zu der Mahlzeit, in deren Stunden sie serviert wird', 'un repas supplémentaire compte avec le repas dont les heures couvrent l’heure où il est servi'],
   'Power: the kitchen’s energy meter, read': ['Strom: der Energiezähler der Küche, gelesen', 'Électricité : le compteur d’énergie de la cuisine, lu'],
   'an added meal between its own hours': ['eine zusätzliche Mahlzeit zwischen ihren eigenen Uhrzeiten', 'un repas supplémentaire entre ses propres horaires'],
   'No state filed yet': ['Noch kein Zustand erfasst', 'Aucun état saisi pour l’instant'],

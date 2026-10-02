@@ -186,9 +186,10 @@ function load({ quiet = false } = {}) {
         (meals[String(n)] || []).forEach((m) => {
           const slot = String(m.slot || '').toUpperCase();
           if (!isSlot(slot)) { errors.push(`meals.json day ${n}: "${m.slot}" is not a slot`); return; }
-          // an added meal's own hours, "16:00-17:00" — kept only when they parse; a named meal has fixed hours and carries none
-          const served = /^EXTRA\d+$/.test(slot) && ha.parseWindow(m.served) ? ha.parseWindow(m.served).join('-') : '';
-          if (m.served && !served) errors.push(`meals.json day ${n} ${slot}: "${m.served}" is not a pair of hours ("16:00-17:00")${/^EXTRA/.test(slot) ? '' : ' — the named meals have fixed hours'}`);
+          // the time an added meal is served at, "16:30" (the start of an older file's "16:00-17:00"): it counts with the
+          // named meal whose hours cover it; a named meal has fixed hours and carries none
+          const served = /^EXTRA\d+$/.test(slot) ? (ha.parseTime(m.served) || '') : '';
+          if (m.served && !served) errors.push(`meals.json day ${n} ${slot}: "${m.served}" is not a time ("16:30")${/^EXTRA/.test(slot) ? '' : ' — the named meals have fixed hours'}`);
           // A meal naming a recipe takes whatever it does not say itself from
           // the recipe book, so "recipe": "pfannenbrot" alone is a whole meal.
           const rec = m.recipe ? book.find((r) => r.slug === m.recipe) : null;

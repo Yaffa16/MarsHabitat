@@ -30,9 +30,11 @@ services:
       # names ADMIN_USER / ADMIN_PASSWORD are still read when those are absent.
       CONTROL_USER: "${CONTROL_USER:-}"
       CONTROL_PASSWORD: "${CONTROL_PASSWORD:-}"
-      # the screens' sign-in (/screens): panolab / panolab123 unless set in .env
+      # the screens' door (/screens): none unless both are set in .env
       SCREENS_USER: "${SCREENS_USER:-}"
       SCREENS_PASSWORD: "${SCREENS_PASSWORD:-}"
+      # the writing screen's operator name (BODENSTATION unless set)
+      SCREEN_OPERATOR: "${SCREEN_OPERATOR:-}"
       ADMIN_USER: "${ADMIN_USER:-control}"
       ADMIN_PASSWORD: "${ADMIN_PASSWORD:-}"
       SENSOR_TOKEN: "${SENSOR_TOKEN:?set SENSOR_TOKEN in .env}"

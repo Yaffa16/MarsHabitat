@@ -185,7 +185,9 @@ function stationData(ctx) {
     allDays,
     logDays,
     entryCounts: { published: logDays.reduce((n, d) => n + d.written, 0), days: logDays.filter((d) => d.written).length },
-    today: data.day(ctx.mission.clampedDay),
+    // Today's Meal shows the current day's meals with the power the kitchen meter read for each; before the run the panel
+    // shows the first day's plan, and the meter is read for today — the rehearsal day, NOW (data.mealsFor, powerDay)
+    today: data.day(ctx.mission.clampedDay, { powerDay: ctx.mission.phase === 'PRE_LAUNCH' ? 0 : null }),
     // The day's scientific mission, from content/missions.json (Today's Mission, at the head of the dashboard).
     mission: content.missionForDay(ctx.mission.clampedDay),
     counts: data.counts(),
@@ -238,15 +240,14 @@ app.get('/', (req, res) => {
 
 /* The installation's screens (views/pages/screens.js): one piece of the station a screen, full screen, nothing to
    scroll — /screen/<name>, the list at /screens. Dark and in German unless the address says otherwise (?theme=light,
-   ?lang=en|de|fr): the cookies do not reach a screen in the square — except the one that opens the door. The screens
-   are the installation's, not the public's: every one of them, the list and the writing screen's post ask for the
-   screens' own sign-in (lib/screens-auth.js — SCREENS_USER and SCREENS_PASSWORD, a cookie for a year once given).
-   Mission control's session does not open them: an operator signed in to /control is asked for the screens' password
-   like anyone else. A browser without the screens' cookie is sent to /screens/login and, signed in, on to where it
-   was going. */
+   ?lang=en|de|fr): the cookies do not reach a screen in the square. The screens open to anyone — unless .env puts a
+   door on them (lib/screens-auth.js — SCREENS_USER and SCREENS_PASSWORD, both set): then every one of them, the list
+   and the writing screen's post ask for that sign-in (a cookie for a year once given), mission control's session does
+   not open them, and a browser without the screens' cookie is sent to /screens/login and, signed in, on to where it
+   was going. Without the door, /screens/login simply leads to the list. */
 const screensAuth = require('./lib/screens-auth');
 function requireScreens(req, res, next) {
-  if (screensAuth.signedIn(req)) return next();
+  if (screensAuth.signedIn(req)) return next();                        // always, without a door
   res.set('Cache-Control', 'no-store').redirect(`/screens/login?next=${encodeURIComponent(req.originalUrl)}`);
 }
 const screensNext = (req) => { const n = String((req.query && req.query.next) || (req.body && req.body.next) || ''); return screensAuth.guarded(n) ? n : '/screens'; };
@@ -257,6 +258,7 @@ app.get('/screens/login', (req, res) => {
 app.post('/screens/login', (req, res) => {
   const S = require('./views/pages/screens'), ip = hashIp(req.ip), next = screensNext(req);
   res.set('Cache-Control', 'no-store');
+  if (!screensAuth.enabled) return res.redirect(next);                  // no door: nothing to sign in to
   if (screensAuth.throttled(ip)) return res.status(429).send(S.login(screenCtx(req), { next, error: 'Too many tries. Wait ten minutes, then sign in again.' }));
   if (!screensAuth.accepted(req.body.username, req.body.password)) {
     screensAuth.failed(ip);
@@ -266,7 +268,7 @@ app.post('/screens/login', (req, res) => {
   screensAuth.signIn(res);
   res.redirect(next);
 });
-app.post('/screens/logout', (req, res) => { screensAuth.signOut(res); res.redirect('/screens/login'); });
+app.post('/screens/logout', (req, res) => { screensAuth.signOut(res); res.redirect(screensAuth.enabled ? '/screens/login' : '/screens'); });
 function screenCtx(req) {
   const base = req.ctx();
   const lang = i18n.LANGS.includes(req.query.lang) ? req.query.lang : 'de';
@@ -275,28 +277,33 @@ function screenCtx(req) {
 }
 app.get('/screens', requireScreens, (req, res) => res.set('Cache-Control', 'no-store').send(require('./views/pages/screens').index(screenCtx(req))));
 app.get('/screen/:name', requireScreens, (req, res, next) => {
-  const ctx = screenCtx(req);
+  const ctx = req.params.name === 'write' ? writeCtx(req) : screenCtx(req);
   const html = require('./views/pages/screens').render(req.params.name, ctx, { ...stationData(ctx), recent: data.board(400, null) });
   if (!html) return next();
   res.set('Cache-Control', 'no-store').send(html);
 });
 
 /* The writing screen (views/pages/screens.js, write): the composer full screen, for writing to the crew at the venue.
-   Every message sent from it is a new visitor's — a callsign minted for it alone (lib/callsign.js, mint), no cookie
-   set, so the next person at the screen is nobody's continuation: no transit lock across them, no callsign carried
-   over. The checks are the composer's (the channel open, the words within bounds); the hourly limit is the screen's
-   own, per address, since all its messages come from one (KIOSK_HOURLY_LIMIT, 60 an hour). The fragment the screen's
-   script asks for comes in the screen's language (?lang=), which no cookie could carry. */
+   Its operator is the ground station itself: every message sent from it goes out under ONE name — BODENSTATION (the
+   ground station, in German; SCREEN_OPERATOR in .env for another) — which is the callsign the message carries, on the
+   board, in mission control and in the record, and the name the composer's head shows at the screen. Behind the name
+   each message is still a new visitor's — a visitor row minted for it alone (lib/callsign.js, mint), no cookie set —
+   so the next person at the screen is nobody's continuation: no transit lock across them. The checks are the
+   composer's (the channel open, the words within bounds); the hourly limit is the screen's own, per address, since all
+   its messages come from one (KIOSK_HOURLY_LIMIT, 60 an hour). The fragment the screen's script asks for comes in the
+   screen's language (?lang=), which no cookie could carry. */
 const KIOSK_HOURLY_LIMIT = Number(process.env.KIOSK_HOURLY_LIMIT || 60);
+const SCREEN_OPERATOR = (process.env.SCREEN_OPERATOR || 'BODENSTATION').trim().slice(0, 40) || 'BODENSTATION';
+const writeCtx = (req) => ({ ...screenCtx(req), callsign: SCREEN_OPERATOR });   // the screen's composer: the operator in its head
 app.get('/screen/write/composer', requireScreens, (req, res) => {
-  const ctx = screenCtx(req);
+  const ctx = writeCtx(req);
   res.set('Cache-Control', 'no-store').type('html').send(composerBlock(ctx, { inFlight: null, error: null, draft: '', kiosk: ctx.lang }));
 });
 app.post('/screen/write', requireScreens, (req, res) => {
-  const ctx = screenCtx(req);
+  const ctx = writeCtx(req);
   const S = require('./views/pages/screens');
   const answer = (extra = {}, visitor = null) => {                  // the fragment for the screen's script, or the whole screen
-    const c = visitor ? { ...ctx, callsign: visitor.callsign } : ctx;
+    const c = ctx;                                                    // the operator's name stays in the head, sent or not
     const inFlight = visitor ? data.inFlightFor(visitor.id) : null;
     res.set('Cache-Control', 'no-store');
     if (isLive(req)) return res.type('html').send(composerBlock(c, { inFlight, error: extra.error || null, draft: extra.draft || '', kiosk: ctx.lang }));
@@ -313,13 +320,13 @@ app.post('/screen/write', requireScreens, (req, res) => {
   let tags = req.body.tags || [];
   if (!Array.isArray(tags)) tags = [tags];
   tags = tags.filter((t) => data.TAGS.includes(t)).slice(0, 3);
-  const visitor = callsign.mint();
+  const visitor = callsign.mint();                                  // a row of its own behind the name, never a cookie
   const geo = geometry(), submitted = new Date(), arrival = new Date(submitted.getTime() + TRANSIT_MS);
   db.prepare(
     `INSERT INTO message (visitor_id, callsign, body, tags, state, mission_day,
         submitted_at, arrival_at, light_seconds, distance_au, ip_hash)
      VALUES (?, ?, ?, ?, 'IN_TRANSIT', ?, ?, ?, ?, ?, ?)`
-  ).run(visitor.id, visitor.callsign, body, tags.join(','),
+  ).run(visitor.id, SCREEN_OPERATOR, body, tags.join(','),
         ctx.mission.phase === 'PRE_LAUNCH' ? 0 : ctx.mission.clampedDay,
         submitted.toISOString(), arrival.toISOString(), geo.lightSeconds, geo.distanceAu, ip);
   answer({}, visitor);

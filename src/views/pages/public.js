@@ -489,21 +489,15 @@ function ticker(ctx, { today } = {}) {
   if (!over) cells.push(`${T('Communication window daily')} <b>${esc(LP.windowWhen(ctx))}</b>`);   // when the crew answer — "19:00 CEST" (landing.js)
   const line = cells.map((c) => `<span class="tk-cell">${c}</span>`).join('<span class="tk-sep">·</span>');
   /* The header of every public page, after the design handoff's reference sheet: a row with the wordmark (the way home),
-     the run's badge — the countdown before it, the sol during it —, the habitat's clock, the theme and language switches
-     and, on a wider screen, the three-lines menu at its right end; under it the running line. The menu drops the reading
-     matter — About, What this is, Who we are — as a short list; a row leads to its section of the About page (/about,
-     info.js), where the texts live. */
-  // Drawn as a sheet from the foot of the screen where the menu is a phone's (a head and a sign on every row, which the
-  // wider screens hide); a phone held upright has no menu button — its bar's About key opens the page itself.
-  const sign = (d) => `<svg class="tk-ic" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
-  const MENU_ICONS = { 'about-project': '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><path d="M12 7.8h.01"/>', what: TAB_ICONS.habitat, 'who-we-are': LINE_ICONS.crew };
-  const menu = `
-    <button type="button" class="tk-menu" id="tk-menu" aria-expanded="false" aria-controls="tk-dropdown" aria-label="${esc(T('About, What this is, Who we are'))}"><span class="bars" aria-hidden="true"><i></i><i></i><i></i></span></button>
-    <div class="tk-dropdown" id="tk-dropdown" hidden>
-      <div class="tk-sheet-head"><b>${T('About')}</b><span>${T('Everything else on the station')}</span></div>
-      ${[['about-project', 'About', 'The habitat, the distance, the archive'], ['what', 'What this is', 'How the station behaves, in plain terms'], ['who-we-are', 'Who we are', 'Crew, company, production credits']]
-        .map(([id, title, sub]) => `<a class="tk-row" href="/about#${id}">${sign(MENU_ICONS[id])}<span class="fold-title">${esc(T(title))}</span><span class="fold-sub">${esc(T(sub))}</span></a>`).join('')}
-    </div>`;
+     the run's badge — the countdown before it, the sol during it —, and in the middle of the row the station's three ways
+     on — Write to the crew (the composer, /#write), Live Mission Dashboard (/#mission) and About (/about) —, then the
+     habitat's clock and the theme and language switches at its right end; under it the running line. The three links are
+     a wider screen's: a phone held upright has its bar of keys at the foot for the same ways (sheet.css hides them there),
+     and a screen in the square shows none of them (screen.css). No menu: the reading matter is one page, /about. */
+  const ways = [['/#write', 'Write to the crew'], ['/#mission', 'Live Mission Dashboard'], ['/about', 'About']];
+  const here = ctx.current || '';
+  const nav = `<nav class="tk-nav" aria-label="${esc(T('The station, page by page'))}">${ways.map(([href, label]) =>
+    `<a href="${href}"${here && href === here ? ' aria-current="page"' : ''}>${esc(T(label))}</a>`).join('')}</nav>`;
   return `
   <header class="ticker"
        data-tz="${esc(m.timezone)}" data-tasks="${esc(JSON.stringify(tasks))}"${over ? ' data-over="1"' : ''}
@@ -511,23 +505,13 @@ function ticker(ctx, { today } = {}) {
     <div class="tk-bar">
       <a class="tk-brand" href="/" aria-label="MARS!platz">MARS<span class="bang">!</span>platz</a>
       <span class="tk-sol"><i aria-hidden="true"></i>${pre ? `T−${m.countdown.days}d` : over ? T('Complete') : `SOL ${String(m.clampedDay).padStart(2, '0')}/${String(m.totalDays).padStart(2, '0')}`}</span>
-      <span class="tk-gap"></span>
+      ${nav}
       <div class="tk-clock"><span class="tk-clock-label">${T('HABITAT TIME')}</span> <b id="tk-clock">${esc(m.venueTime)}</b></div>
       <div class="tk-right">${L.statusStrip(ctx)}</div>
-      ${menu}
     </div>
     <div class="tk-window" role="marquee" aria-label="${esc(T('What is happening in the habitat'))}"><div class="tk-track" id="tk-track"><div class="tk-line">${line}</div><div class="tk-line" aria-hidden="true">${line}</div></div></div>
   </header>
   <script>
-  (function () {
-    var b = document.getElementById('tk-menu'), d = document.getElementById('tk-dropdown');
-    if (!b || !d) return;
-    function set(open) { d.hidden = !open; b.setAttribute('aria-expanded', open ? 'true' : 'false'); }
-    b.addEventListener('click', function () { set(d.hidden); });
-    d.querySelectorAll('.tk-row').forEach(function (r) { r.addEventListener('click', function () { set(false); }); });
-    document.addEventListener('click', function (e) { if (!d.hidden && !d.contains(e.target) && e.target !== b && !b.contains(e.target)) set(false); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !d.hidden) { set(false); b.focus(); } });
-  })();
   (function () {
     // The running line on a phone is moved by the page itself, a little every frame, rather than left to the stylesheet's
     // animation: a phone's browser has more than one way of holding a CSS animation still — a tap leaves the line
@@ -1470,7 +1454,8 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
      — and, under the list, which hours those are. The meta line sums the day: kcal, the metered watt hours ("so far"
      while a meal's hours still run), CO₂e from the recipe book. */
   const mealHours = (() => { try { return require('../../lib/home-assistant').mealsConfig().windows; } catch { return {}; } })();
-  const mealsWh = today && today.meals.some((x) => x.power_wh != null) ? today.meals.reduce((s, x) => s + (x.power_wh || 0), 0) : null;
+  // the day's watt hours: each window once — the meal that carries it (data.mealsFor), not an added meal counting with it
+  const mealsWh = today && today.meals.some((x) => x.energy_source === 'meter') ? today.meals.reduce((s, x) => s + (x.energy_source === 'meter' ? x.power_wh : 0), 0) : null;
   const mealsRunning = !!(today && today.meals.some((x) => x.power_running));
   const galley = dpanel({ id: 'galley', title: T('Today’s Meal'), meta: today && today.meals.length
       ? `${today.kcalPlanned} kcal${today.waterPlanned ? ` · ${today.waterPlanned.toFixed(1)} L` : ''}${mealsWh != null ? ` · ${mealsWh} Wh${mealsRunning ? ` ${T('so far')}` : ''}` : today.energyPlanned ? ` · ${today.energyPlanned} Wh` : ''}${today.co2ePlanned != null ? ` · ${+today.co2ePlanned.toFixed(2)} kg CO₂e` : ''}` : '', span: 4, cls: 'h-3 scroll' },
@@ -1478,10 +1463,11 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
       <div class="meal">
         <span class="meal-slot">${esc(L.slotName(T, x.slot))}</span>
         <b>${esc(x.name)}</b>
-        <span class="meal-figs">${esc(L.mealFigs(x, T))}</span>
+        <span class="meal-figs">${esc(L.mealFigs(x))}</span>
         ${L.mealEco(x, T)}
+        ${L.mealPower(x, T)}
       </div>`).join('')}</div>
-      <p class="meal-hours">${esc(T('Power: the kitchen’s energy meter, read'))} ${esc(L.mealHoursLine(T, mealHours))}${today.meals.some((x) => x.served) ? ` · ${esc(T('an added meal between its own hours'))}` : ''}</p>` : `<div class="empty">${T('No meals filed for today')}</div>`);
+      <p class="meal-hours">${esc(T('Power: the kitchen’s energy meter, read'))} ${esc(L.mealHoursLine(T, mealHours))}${today.meals.some((x) => x.power_with) ? ` · ${esc(T('an added meal counts with the meal whose hours cover the time it is served at'))}` : ''}</p>` : `<div class="empty">${T('No meals filed for today')}</div>`);
 
   // Each officer with their current condition — the latest state filed from
   // mission control, translated to language in src/lib/mood.js. The slider

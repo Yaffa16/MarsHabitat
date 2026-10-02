@@ -137,7 +137,7 @@ html:has(body.landing)::after { content: ""; position: fixed; inset: 0; z-index:
 :root[data-theme="dark"] body.landing::after { background: radial-gradient(circle at 50% 50%, rgba(120,140,255,.14) 0%, rgba(120,140,255,.06) 36%, rgba(120,140,255,0) 66%); }
 
 /* ------------------------------------------------------------ glass, pills */
-.dpanel, .device, .screen.board, .glance-link, .kpi, .run-strip, .dome-popup, dialog.popup, .tk-dropdown {
+.dpanel, .device, .screen.board, .glance-link, .kpi, .run-strip, .dome-popup, dialog.popup {
   background: var(--glass);
   -webkit-backdrop-filter: blur(26px) saturate(1.35); backdrop-filter: blur(26px) saturate(1.35);
   border: 1px solid var(--glass-edge);
@@ -161,8 +161,8 @@ body.landing .tags label:has(input:disabled) { opacity: .45; }
 .lab { font-family: var(--display); font-size: var(--fs-label); letter-spacing: .12em; text-transform: uppercase; color: var(--cobalt); font-weight: 500; }
 
 /* ----------------------------------------------------------- the ticker */
-/* a glass band across the whole width of the window, at its very top; what it carries — the menu, the clock, the running line,
-   the switches — is set in from the edges as far as the page's content is, so the menu button stands over the content's left edge */
+/* a glass band across the whole width of the window, at its very top; what it carries — the three links, the clock, the running
+   line, the switches — is set in from the edges as far as the page's content is */
 body.landing .ticker {
   --tk-inset: max(var(--gutter), calc((100% - 1920px) / 2 + var(--gutter)));
   position: relative; z-index: 40; display: flex; align-items: center; gap: 4px;
@@ -173,22 +173,6 @@ body.landing .ticker {
   color: var(--dim); font-family: var(--display); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase;
 }
 :root[data-theme="dark"] body.landing .ticker { background: var(--glass-soft); }
-body.landing .tk-menu {
-  flex: none; display: inline-flex; align-items: center; justify-content: center; width: 60px; height: 44px; border: 0; border-radius: 999px; cursor: pointer; padding: 0;
-  background: linear-gradient(180deg, #ff8a3d, #ff5a1f); box-shadow: 0 10px 24px -10px rgba(255,70,0,.7), 0 1px 0 rgba(255,255,255,.6) inset; transition: transform .15s ease;
-}
-body.landing .tk-menu:hover { transform: translateY(-1px); } body.landing .tk-menu:active { transform: translateY(1px); }
-body.landing .tk-menu .bars { display: flex; flex-direction: column; gap: 5px; width: 20px; }
-body.landing .tk-menu .bars i { display: block; height: 2px; border-radius: 2px; background: #0f1540; transition: transform .2s, opacity .2s; }
-body.landing .tk-menu[aria-expanded="true"] .bars i:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-body.landing .tk-menu[aria-expanded="true"] .bars i:nth-child(2) { opacity: 0; }
-body.landing .tk-menu[aria-expanded="true"] .bars i:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-body.landing .tk-dropdown { position: absolute; left: var(--tk-inset); top: 70px; width: min(560px, calc(100vw - 2 * var(--gutter))); padding: 8px; display: flex; flex-direction: column; gap: 4px; border-radius: 28px; z-index: 50; }
-body.landing .tk-dropdown[hidden] { display: none; }
-body.landing .tk-row { display: flex; align-items: baseline; gap: 14px; width: 100%; padding: 14px 18px; border: 0; border-radius: 18px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; text-transform: none; letter-spacing: 0; box-shadow: none; transform: none; }
-body.landing .tk-row:hover { background: rgba(var(--cobalt-rgb),.08); }
-body.landing .tk-row .fold-title { font-family: var(--display); font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
-body.landing .tk-row .fold-sub { margin-left: auto; font-size: var(--fs-label); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); text-align: right; }
 body.landing .tk-clock-label { display: none; }
 body.landing .tk-clock { flex: none; display: flex; align-items: center; gap: 8px; padding: 0 10px 0 14px; background: transparent; color: var(--ink); font-weight: 600; }
 body.landing .tk-clock b { font-size: 13px; letter-spacing: .1em; color: var(--ink); }
@@ -714,6 +698,16 @@ body.landing .hbt .t-fig { grid-column: span 5; grid-row: 1 / span 2; padding: 1
 body.landing .hbt .t-calories { grid-column: 15 / span 5; } body.landing .hbt .t-steps { grid-column: 20 / span 5; }
 body.landing .hbt .aux .t-res { grid-column: span 11; }
 body.landing .hbt .aux .t-pwr { grid-column: span 8; }                                                                   /* the orbit stands between the two (public.js, vizTile) */
+/* on a wider screen the second row is laid out by its contents: the stores' tile only as wide as its rings — one ring a
+   store, four stores four rings — the orbit at its own width beside it, and the power taking what is left */
+@media (min-width: 761px) and (min-height: 521px) {
+  body.landing .hbt .bento.aux { display: flex; flex-wrap: wrap; align-items: stretch; }
+  body.landing .hbt .aux .t-res { flex: 0 0 auto; width: auto; max-width: 100%; }
+  body.landing .hbt .aux .t-viz-orbit { flex: 0 0 auto; width: clamp(170px, 20%, 240px); }
+  body.landing .hbt .aux .t-pwr { flex: 1 1 260px; min-width: 0; }
+  body.landing .hbt .aux .gauges.rounds { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 6px 10px; }
+  body.landing .hbt .aux .gauge.round { flex: 0 0 auto; width: max(86px, calc(8.8 * var(--u))); }
+}
 body.landing .hbt .big { font-family: var(--display); font-weight: 600; letter-spacing: -.03em; line-height: 1; color: var(--ink); }
 body.landing .hbt .big em { font-size: 14px; color: var(--dim); margin-left: 4px; font-weight: 400; }
 body.landing .hbt .verdict, body.landing .dpanel.compact .hbt .verdict, body.landing .dpanel.compact .hbt .t-fig .verdict { font-size: var(--fs-note); color: var(--dim); margin-top: 4px; }
@@ -918,7 +912,7 @@ body.landing .folder-tabs { display: grid; gap: 8px; padding: 16px 20px 14px; bo
 body.landing .frows { display: grid; gap: 8px; }
 /* what only a phone gets (the block at the end of this file): the top bar's wordmark and sol, the menu's head, signs and page
    rows, the peek tiles under the doors, the groups above the index, the bottom bar */
-body.landing .tk-brand, body.landing .tk-sol, body.landing .tk-sheet-head, body.landing .tk-ic, body.landing .tk-row-phone, body.landing .peek, body.landing .fgroups, body.landing .tabbar, body.landing .masthead-btn.masthead-btn-page { display: none; }
+body.landing .tk-brand, body.landing .tk-sol, body.landing .peek, body.landing .fgroups, body.landing .tabbar, body.landing .masthead-btn.masthead-btn-page { display: none; }
 body.landing .frow { display: grid; grid-template-columns: 96px repeat(3, minmax(0, 1fr)); gap: 6px; align-items: stretch; padding: 4px; border-radius: 16px; background: rgba(var(--cobalt-rgb),.06); }
 :root[data-theme="dark"] body.landing .frow { background: rgba(255,255,255,.05); }
 body.landing .frow.n2 { grid-template-columns: 96px repeat(2, minmax(0, 1fr)); }                                        /* a row of two (the hardware without its bridge) */
@@ -1134,8 +1128,6 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
 @media (max-width: 760px), (max-height: 520px) {
   body.landing { --fs-tag: 11.5px; --fs-label: 12.5px; --fs-note: 15px; --fs-name: 16px; --fs-read: 17px; }   /* the type sizes, a little larger in the hand */
   body.landing .ticker { height: 50px; margin-top: 0; padding: 0 12px; gap: 2px; }                 /* edge to edge here too, its contents a little in from the sides */
-  body.landing .tk-dropdown { left: 12px; width: min(560px, calc(100vw - 24px)); }
-  body.landing .tk-menu { width: 52px; height: 40px; }
   body.landing .tk-clock { padding: 0 8px; } body.landing .tk-clock-label { display: none; }
   body.landing .tk-right { display: flex; flex: none; }
   body.landing .tk-right .status { gap: 4px; }
@@ -1269,7 +1261,6 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
      of the log: the room is the window's (a page of the booklet is inside a second scroller, whose own margin the window ignores) */
   html { scroll-padding-top: 92px; }
   body.landing .portal, body.landing #write, body.landing .dash, body.landing .folder, body.landing .logpage-day { scroll-margin-top: 0; }
-  body.landing .tk-menu { display: none; }                                                             /* its list opens from the bar's More key */
   body.landing .tk-brand { display: inline-block; flex: none; font-family: var(--display); font-size: 17px; font-weight: 600; letter-spacing: -.03em; text-transform: none; color: var(--ink); text-decoration: none; line-height: 52px; border: 0; }
   body.landing .tk-brand .bang { color: var(--mars); }
   body.landing .tk-sol { display: inline-flex; align-items: center; gap: 6px; flex: none; min-height: 28px; padding: 0 9px; border-radius: 999px; border: 1px solid var(--mars); color: var(--mars-ink); font-size: 11px; letter-spacing: .12em; font-weight: 600; text-transform: uppercase; }
@@ -1277,19 +1268,6 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
   body.landing .tk-clock { margin-left: auto; padding: 0 6px; }
   body.landing .tk-right { flex: none; }
   body.landing .tk-window { flex: 1 0 100%; order: 10; min-width: 0; height: 30px; margin: 0 -12px; padding: 0 12px; box-sizing: border-box; display: flex; align-items: center; border-top: 1px solid var(--glass-edge); }
-  /* the menu as a sheet over the page, above the bar, with the pages the bar does not carry */
-  body.landing .tk-dropdown { position: fixed; left: 0; right: 0; top: auto; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); width: 100%; max-height: 72vh; overflow: auto; margin: 0; padding: 12px 16px 16px; border-radius: 26px 26px 0 0; border: 0; background: #f7f8fc; box-shadow: 0 0 0 100vmax rgba(15,21,64,.28), 0 -30px 60px -30px rgba(0,0,0,.4); z-index: 55; }
-  :root[data-theme="dark"] body.landing .tk-dropdown { background: #1d1d22; box-shadow: 0 0 0 100vmax rgba(0,0,0,.55), 0 -30px 60px -30px rgba(0,0,0,.6); }
-  body.landing .tk-dropdown::before { content: ""; display: block; width: 40px; height: 5px; border-radius: 3px; background: var(--hair); margin: 0 auto 12px; }
-  body.landing .tk-sheet-head { display: flex; flex-direction: column; gap: 3px; padding: 0 4px 12px; text-transform: none; letter-spacing: 0; }
-  body.landing .tk-sheet-head b { font-family: var(--display); font-size: 19px; font-weight: 600; letter-spacing: -.02em; color: var(--ink); }
-  body.landing .tk-sheet-head span { font-family: var(--display); font-size: var(--fs-label); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
-  /* a row: its sign, its name over its line, a chevron */
-  body.landing .tk-row, body.landing .tk-row-phone { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto auto; align-items: center; column-gap: 12px; row-gap: 2px; padding: 11px 14px 11px 12px; border-radius: 14px; background: var(--tile); border: 1px solid rgba(var(--cobalt-rgb),.12); margin: 0 0 6px; text-decoration: none; }
-  body.landing .tk-row .tk-ic { display: block; grid-column: 1; grid-row: 1 / span 2; width: 22px; height: 22px; fill: none; stroke: var(--cobalt); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-  body.landing .tk-row .fold-title { grid-column: 2; font-size: 15px; line-height: 1.2; }
-  body.landing .tk-row .fold-sub { grid-column: 2; margin-left: 0; text-align: left; font-size: var(--fs-label); line-height: 1.3; }
-  body.landing .tk-row::after { content: ""; grid-column: 3; grid-row: 1 / span 2; width: 8px; height: 8px; border-right: 1.6px solid var(--faint); border-bottom: 1.6px solid var(--faint); transform: rotate(-45deg); }
   /* the reading pages — About, What this is, Who we are — as sheets too */
   body.landing dialog.popup:not(.dome-popup) { position: fixed; left: 0; right: 0; top: auto; bottom: 0; width: 100%; max-width: none; max-height: 92vh; margin: 0; border-radius: 26px 26px 0 0; }
   /* the portal's head: the words at the left, the one-way signal small at the right, so the composer's Transmit key is on the
@@ -1544,7 +1522,7 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
   /* 1 · no film over the screen */
   html:has(body.landing)::after, :root[data-theme="dark"]:has(body.landing)::after { display: none; }
   /* 2 · paper, not glass: nothing blurs what is behind it */
-  .dpanel, .device, .screen.board, .glance-link, .kpi, .run-strip, .dome-popup, dialog.popup, .tk-dropdown,
+  .dpanel, .device, .screen.board, .glance-link, .kpi, .run-strip, .dome-popup, dialog.popup,
   body.landing .cloud-latest, body.landing .folder, body.landing .folder-tabs, body.landing .ticker::before, body.landing .tabbar,
   body.landing.messages .board .feed-filter, body.landing.messages .device, body.landing .peek-tile,
   body.landing.inner .logpage-top, body.landing.inner .logpage-day, body.landing.inner .log-day, body.landing.inner .dl-card,
@@ -1558,7 +1536,6 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
   body.landing .tabbar { background: var(--paper-2); border-top-color: var(--hair); }
   :root[data-theme="dark"] body.landing .tabbar { background: var(--paper-2); }
   body.landing.messages .board .feed-filter { background: var(--paper-2); }
-  body.landing .tk-dropdown { box-shadow: 0 0 0 100vmax rgba(15,21,64,.28), 0 -8px 24px -18px rgba(0,0,0,.4); }
   body.landing dialog.popup::backdrop { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(15,21,64,.3); }
   body.landing .card.xc { background: #fff; box-shadow: none; border-color: var(--hair); }
   :root[data-theme="dark"] body.landing .card.xc { background: var(--tile); }

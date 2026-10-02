@@ -261,8 +261,9 @@
    day only, never added to the book. Without JavaScript the dropdown is still posted, and the
    server records the recipe the card names.
    "+ Add a meal" puts another card after the three (EXTRA1, EXTRA2, … — the form's template, numbered as it is
-   cloned), with the same dropdown and fields and its own hours; a card's × takes it off the day — saved without it,
-   the meal is gone. */
+   cloned), with the same dropdown and fields and the time it is served at — the clock's time as it is added, to be
+   changed on the card; the meal counts with Breakfast, Lunch or Dinner by it — and a card's × takes it off the day —
+   saved without it, the meal is gone. */
 (function () {
   'use strict';
   var src = document.getElementById('recipe-book');
@@ -346,6 +347,9 @@
       if (!card) return;
       var num = card.querySelector('.slot-n');
       if (num && n === 1) num.parentNode.removeChild(num);                    // the first added meal is "Extra meal", the second "Extra meal 2"
+      // served at: the time it is added, by this clock — the meal counts with the named meal whose hours cover it
+      var at = card.querySelector('input[name$="_at"]');
+      if (at && !at.value) { var d = new Date(); at.value = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
       cards.appendChild(card);
       var sel = card.querySelector('select.recipe-pick');
       if (sel) { wire(sel); sel.focus(); }

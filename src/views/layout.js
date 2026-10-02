@@ -271,10 +271,11 @@ function page({ title, ctx, body, current, bodyClass = '', head = '', scripts = 
     hideRail = true; hideNav = true;
   }
   if (aura && bodyClass.includes('inner')) {
-    // The inner pages' chrome is the landing page's: the ticker (its menu
-    // rows lead to the About page) and the wordmark as the way home. The
-    // foot carries the links between the pages.
-    hero = require('./pages/public').ticker(ctx) + masthead(ctx);
+    // The inner pages' chrome is the landing page's: the ticker (its three
+    // links in the middle — the composer, the dashboard, About — the one for
+    // this page marked) and the wordmark as the way home. The foot carries
+    // the links between the pages.
+    hero = require('./pages/public').ticker({ ...ctx, current }) + masthead(ctx);
   }
   return `<!doctype html>
 <html lang="${lang}" data-theme="${ctx.theme === 'light' ? 'light' : 'dark'}"><head>
@@ -497,18 +498,31 @@ function slotName(T, slot) {
 }
 
 /**
- * A meal's figures on one line for the public pages: kcal; the water the plan
- * names, when it does; and the power it drew — the kitchen's energy meter read
- * between the meal's hours (data.mealsFor), "so far" while the hours are
- * still running. A meal whose hours have not come, or whose meter has nothing
- * for them yet, shows no power rather than a nought.
+ * A meal's figures on one line for the public pages: kcal, and the water the
+ * plan names, when it does. The power stands on a line of its own (mealPower).
  */
-function mealFigs(m, T = (x) => x) {
+function mealFigs(m) {
   const parts = [`${m.kcal || 0} kcal`];
   if (m.water_litres) parts.push(`${m.water_litres} L`);
-  if (m.power_wh != null) parts.push(`${m.power_wh} Wh${m.power_running ? ` ${T('so far')}` : ''}`);
-  else if (m.energy_wh) parts.push(`${m.energy_wh} Wh`);
   return parts.join(' · ');
+}
+
+/**
+ * A meal's power, as its own line under its figures: the kitchen's energy
+ * meter read between the meal's hours (data.mealsFor) — "Power 216 Wh ·
+ * 06:00–09:00", "so far" while the hours still run, a dash while the meter has
+ * nothing for them yet; an added meal shows the hours and figure of the named
+ * meal it counts with ("· with Dinner"). Null for a meal with no hours at all
+ * (an added meal without a time), and for one whose power is the file's figure.
+ */
+function mealPowerText(m, T = (x) => x) {
+  if (!m.window) return m.energy_wh && m.energy_source === 'filed' ? `${T('Power')} ${m.energy_wh} Wh` : null;
+  const fig = m.power_wh != null ? `${m.power_wh} Wh${m.power_running ? ` ${T('so far')}` : ''}` : '—';
+  return `${T('Power')} ${fig} · ${m.window[0]}–${m.window[1]}${m.power_with ? ` · ${T('with')} ${slotName(T, m.power_with)}` : ''}`;
+}
+function mealPower(m, T = (x) => x) {
+  const text = mealPowerText(m, T);
+  return text ? `<span class="meal-figs meal-power">${esc(text)}</span>` : '';
 }
 
 /** The hours the kitchen meter is read for each named meal, as a line: "Breakfast 06:00–09:00 · Lunch 09:00–14:00 · …". */
@@ -520,6 +534,6 @@ module.exports = {
   masthead, pageNav,
   page, panel, eyebrow, readout, orbitPlot, sparkline, pipeline, scaleStrip,
   statusStrip, langSwitch, themeSwitch, sym, legend, SYMBOL_KEY, esc, NAV, MESSAGE_STATES,
-  mealEco, mealEcoText, MEAL_NUTRIENTS, slotName, mealFigs, mealHoursLine,
+  mealEco, mealEcoText, MEAL_NUTRIENTS, slotName, mealFigs, mealPower, mealPowerText, mealHoursLine,
   clientTable, ASSET_V,   // the installation's screens (pages/screens.js) build their own shell from these
 };

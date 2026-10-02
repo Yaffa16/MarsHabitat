@@ -1,13 +1,14 @@
 'use strict';
 /**
- * The screens' door. The installation's screens — /screens and every
- * /screen/<name>, with the writing screen's composer and its post — open
- * only to a browser that has signed in with the screens' user and password
- * (SCREENS_USER and SCREENS_PASSWORD in .env; panolab / panolab123 unless
- * they are set). Nothing else opens them — not mission control's session:
- * an operator signed in to /control is asked for the screens' password like
- * anyone else. Anyone who types the address into a browser lands on the
- * sign-in page instead.
+ * The screens' door — OPTIONAL, and off unless .env sets it. The
+ * installation's screens — /screens and every /screen/<name>, with the
+ * writing screen's composer and its post — open to anyone while
+ * SCREENS_USER and SCREENS_PASSWORD are not both set in .env (the station
+ * ships without them: no password on the screens). Set the two and the
+ * screens open only to a browser that has signed in with them; nothing else
+ * opens them then — not mission control's session: an operator signed in
+ * to /control is asked for the screens' password like anyone else, and
+ * anyone who types the address into a browser lands on the sign-in page.
  *
  * The sign-in is a cookie, mcs_screens, that carries a signature of the
  * credentials — never the credentials themselves. It holds for a year, so a
@@ -19,9 +20,11 @@
  */
 const crypto = require('crypto');
 
-const USER = (process.env.SCREENS_USER || 'panolab').trim();
-const PASSWORD = process.env.SCREENS_PASSWORD || 'panolab123';
-const fromEnv = !!(process.env.SCREENS_USER || process.env.SCREENS_PASSWORD);
+const USER = (process.env.SCREENS_USER || '').trim();
+const PASSWORD = process.env.SCREENS_PASSWORD || '';
+/** The door is on only with both the user and the password set in .env. */
+const enabled = !!(USER && PASSWORD);
+const fromEnv = enabled;
 
 /** The cookie's value: a signature of the credentials under the station's salt. */
 const token = () => crypto.createHmac('sha256', `${process.env.IP_SALT || 'mcs'}|screens`).update(`${USER}\n${PASSWORD}`).digest('hex');
@@ -37,8 +40,9 @@ function accepted(user, password) {
   return same(String(user || '').trim(), USER) && same(String(password || ''), PASSWORD);
 }
 
-/** Has this browser signed in to the screens? */
+/** Has this browser signed in to the screens? (With no door, everyone has.) */
 function signedIn(req) {
+  if (!enabled) return true;
   return !!(req.cookies && req.cookies.mcs_screens && same(req.cookies.mcs_screens, token()));
 }
 
@@ -62,4 +66,4 @@ function cleared(ip) { tries.delete(ip); }
  *  among them may be the way on after signing in (no open redirect). */
 const guarded = (p) => /^\/screens?(\/|\?|$)/.test(String(p || '')) && !/^\/screens\/(login|logout)(\/|\?|$)/.test(String(p || ''));
 
-module.exports = { USER, fromEnv, accepted, signedIn, signIn, signOut, throttled, failed, cleared, guarded };
+module.exports = { USER, enabled, fromEnv, accepted, signedIn, signIn, signOut, throttled, failed, cleared, guarded };

@@ -172,7 +172,7 @@ body.screen .is-cut { visibility: hidden; }
 body.screen.screen-landing .stage { padding: 0 var(--gutter) 10px; }
 body.screen.screen-landing .sheet-p1 { display: flex; flex-direction: column; }
 body.screen.screen-landing .dome-nudge, body.screen.screen-landing .dome-foot { display: none; }
-body.screen.screen-landing .tk-right, body.screen.screen-landing .tk-menu, body.screen.screen-landing .tk-dropdown { display: none !important; }   /* the switches and the menu are for a visitor with a hand on the page */
+body.screen.screen-landing .tk-right, body.screen.screen-landing .tk-nav { display: none !important; }   /* the switches and the links are for a visitor with a hand on the page */
 body.screen.screen-landing .dome-panel.has-line { --foot-h: 0px; }
 /* the list of the screens */
 body.screen.screen-index .stage-body { overflow: auto; justify-content: flex-start; }

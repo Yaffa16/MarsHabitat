@@ -412,7 +412,9 @@ function mealsBlock(day, meals, e = null, recipes = [], hours = { meter: '', win
   const extras = meals.filter((m) => !dataLib.FIXED_SLOTS.includes(m.slot));
   const kcal = meals.reduce((a, m) => a + (m.kcal || 0), 0);
   const sum = (get) => { const v = meals.map(get).filter((x) => x != null); return v.length ? v.reduce((a, b) => a + b, 0) : null; };
-  const co2 = sum((m) => m.co2e_kg), wfp = sum((m) => m.water_footprint_l), wh = sum((m) => m.power_wh);
+  const co2 = sum((m) => m.co2e_kg), wfp = sum((m) => m.water_footprint_l);
+  // the day's watt hours: each window once — the meal that carries it (data.mealsFor), not the added meals that count with it
+  const wh = sum((m) => (m.energy_source === 'meter' ? m.power_wh : null));
   const anyRunning = meals.some((m) => m.power_running);
   // The book, for control.js to fill a slot from: '<' escaped so no name can close the script.
   const book = JSON.stringify(recipes.filter((r) => !r.placeholder)
@@ -448,12 +450,14 @@ function mealsBlock(day, meals, e = null, recipes = [], hours = { meter: '', win
     </details>`;
   };
 
-  // What the meter read for the meal, under its name: the figure, so far while its hours run; nothing yet; or no hours.
+  // What the meter read for the meal, under its name: the figure, so far while its hours run; nothing yet. An added
+  // meal counts with the named meal whose hours cover the time it is served at, and shows that meal's hours and figure.
   const powerLine = (slot, m, isExtra) => {
     const win = m.window || (!isExtra && hours.windows[slot] ? hours.windows[slot].split('-') : null);
-    if (!win) return `<p class="note meal-power is-none">Power · give the meal its hours below and the kitchen meter is read between them.</p>`;
-    if (m.power_wh != null) return `<p class="note meal-power"><b>${m.power_wh} Wh</b>${m.power_running ? ' so far' : ''} · the kitchen meter, ${hhmm(win)}</p>`;
-    return `<p class="note meal-power is-none">Power · the kitchen meter, ${hhmm(win)} — no reading for these hours yet.</p>`;
+    const withWhom = isExtra && m.power_with ? ` — counts with ${dataLib.slotLabel(m.power_with)}` : '';
+    if (!win) return `<p class="note meal-power is-none">Power · counts with the meal whose hours cover the time it is served at (below), once saved.</p>`;
+    if (m.power_wh != null) return `<p class="note meal-power"><b>${m.power_wh} Wh</b>${m.power_running ? ' so far' : ''} · the kitchen meter, ${hhmm(win)}${withWhom}</p>`;
+    return `<p class="note meal-power is-none">Power · the kitchen meter, ${hhmm(win)}${withWhom} — no reading for these hours yet.</p>`;
   };
 
   // One card. `slot` is its field prefix; an added meal has its hours and its × as well.
@@ -466,12 +470,8 @@ function mealsBlock(day, meals, e = null, recipes = [], hours = { meter: '', win
           ${picker(slot, m)}
           <label class="f${mark(e, `${slot}_name`)}"><span>Name</span>
             <input type="text" name="${slot}_name" value="${esc(m.name || '')}" placeholder="Dish"></label>
-          ${extra ? `<div class="grid g2 meal-hours" style="gap:0 8px">
-            <label class="f${mark(e, `${slot}_from`)}"><span>Served from</span>
-              <input type="time" name="${slot}_from" value="${m.served ? esc(m.served.split('-')[0]) : ''}"></label>
-            <label class="f${mark(e, `${slot}_to`)}"><span>to</span>
-              <input type="time" name="${slot}_to" value="${m.served ? esc(m.served.split('-')[1]) : ''}"></label>
-          </div>` : ''}
+          ${extra ? `<label class="f meal-at${mark(e, `${slot}_at`)}"><span>Served at — counts with Breakfast, Lunch or Dinner by this time</span>
+            <input type="time" name="${slot}_at" value="${esc(m.served_at || (m.served ? m.served.slice(0, 5) : ''))}"></label>` : ''}
           <label class="f${mark(e, `${slot}_components`)}"><span>Components, one per line</span>
             <textarea name="${slot}_components" rows="3">${esc(m.components || '')}</textarea></label>
           <div class="grid g2" style="gap:0 8px">
@@ -498,7 +498,8 @@ function mealsBlock(day, meals, e = null, recipes = [], hours = { meter: '', win
     CO₂e and water footprint are filled in — every field stays editable. <b>Empty</b> clears the slot to fill in by hand, on the
     go; it is saved for that day only and never adds a recipe. <b>Add a meal</b> puts a further meal beside the three, with
     the same choice. The power each meal used is not typed: it is the kitchen's energy meter, read between the meal's
-    hours${hoursLine ? ` (${hoursLine})` : ''} — an added meal between the hours its card names.</p>
+    hours${hoursLine ? ` (${hoursLine})` : ''}; an added meal counts with the one of the three whose hours cover the time it
+    is served at — the time it was added, unless its card says another.</p>
     <script type="application/json" id="recipe-book">${book}</script>
     <form method="post" action="/control/meals" class="meals-form" data-next-extra="${nextN}">
       <input type="hidden" name="day" value="${day}">

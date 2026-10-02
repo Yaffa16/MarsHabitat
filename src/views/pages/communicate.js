@@ -106,7 +106,7 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '', kiosk = '' 
         <p class="note" style="margin-top:12px">${T('The crew left the habitat on')}
         ${esc(ctx.mission.end_date)}; ${T('the channel closed at the end of')} ${esc(ctx.mission.closeDate)}. ${T('Nothing sent now would reach anyone.')}</p>
         <p><a class="btn" href="/archive">${T('Read what was sent')}</a></p>`}
-      ${ctx.callsign ? `<div class="honesty">
+      ${ctx.callsign && !kiosk ? `<div class="honesty">
         ${T('YOUR CALLSIGN')} <b>${esc(ctx.callsign)}</b> ${T('IS STILL RESERVED.')}<br>
         ${T('IT WILL BE WAITING IF YOU COME BACK.')}
       </div>` : ''}

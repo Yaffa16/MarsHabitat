@@ -22,8 +22,9 @@
 
 /* ------------------------------------------------------------ the header: two rows */
 /* A glass band across the top of the window that stays there while the page scrolls under it: the first row carries the
-   name (the way home), the sol, the habitat's clock, the switches and — on a wider screen — the orange menu key at its right
-   end; under a hairline, the running line, fading out at both edges. */
+   name (the way home), the sol, in the middle the three ways on — Write to the crew, Live Mission Dashboard, About —,
+   the habitat's clock and the switches; under a hairline, the running line, fading out at both edges. The three links
+   are a wider screen's: a phone held upright has its bar of keys at the foot instead. */
 body.landing .ticker {
   position: sticky; top: 0; z-index: 40; display: block; height: auto; min-height: 0; padding: 0; gap: 0;
 }
@@ -35,12 +36,15 @@ body.landing .tk-sol { display: inline-flex; align-items: center; gap: 7px; flex
   border: 1px solid var(--mars); background: rgba(255,90,31,.07); color: var(--mars-ink);
   font-family: var(--display); font-size: var(--fs-label); font-weight: 600; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
 body.landing .tk-sol i { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--mars); box-shadow: 0 0 8px 2px rgba(255,90,31,.7); animation: live 2.4s ease-in-out infinite; }
-body.landing .tk-gap { flex: 1 1 auto; min-width: 0; }
+/* the three ways on, in the middle of the row: pills like the switches, the one for this page filled */
+body.landing .tk-nav { flex: 1 1 auto; min-width: 0; display: flex; justify-content: center; align-items: center; gap: 6px; padding: 0 10px; }
+body.landing .tk-nav a { display: inline-flex; align-items: center; min-height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--glass-edge); background: transparent;
+  color: var(--ink); font-family: var(--display); font-size: var(--fs-label); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; text-decoration: none; white-space: nowrap; transition: background .15s ease; }
+body.landing .tk-nav a:hover { background: rgba(var(--cobalt-rgb),.08); }
+body.landing .tk-nav a[aria-current="page"] { background: var(--cobalt); border-color: var(--cobalt); color: #fff; }
 body.landing .tk-clock { flex: none; margin: 0; padding: 0 4px 0 0; align-items: baseline; }
 body.landing .tk-clock b { font-variant-numeric: tabular-nums; }
 body.landing .tk-right { flex: none; padding: 0; }
-body.landing .tk-menu { flex: none; width: 54px; height: 40px; }
-body.landing .tk-dropdown { left: auto; right: var(--tk-inset); top: 72px; background: var(--glass-solid); }   /* solid enough that the page under it does not read through */
 /* the running line: the width of the window, its words starting where the page's content does */
 body.landing .tk-window {
   display: flex; align-items: center; height: 36px; margin: 0; padding: 0 var(--tk-inset); box-sizing: border-box; overflow: hidden;
@@ -54,10 +58,24 @@ body.landing .tk-cell { font-size: 12px; }
   html { scroll-padding-top: 112px; }                                                  /* what a link brings into view lands under the header */
 }
 
+/* a narrower desk: the row makes room for the three links — the clock without its label, the pills tighter, the theme key
+   its mark alone (as a phone has it), and under 880 px the sol badge goes */
+@media (min-width: 761px) and (max-width: 1180px) {
+  body.landing .tk-clock-label { display: none; }
+  body.landing .tk-nav { gap: 4px; padding: 0 6px; }
+  body.landing .tk-nav a { padding: 0 9px; font-size: var(--fs-tag); letter-spacing: .05em; }
+}
+@media (min-width: 761px) and (max-width: 1000px) {
+  body.landing .status .theme button { min-width: 34px; padding: 0 8px; font-size: 0; gap: 0; justify-content: center; }
+  body.landing .status .theme .theme-mark { font-size: 12px; }
+  body.landing .tk-clock { padding: 0; }
+}
+@media (min-width: 761px) and (max-width: 880px) { body.landing .tk-sol { display: none; } body.landing .tk-nav a { padding: 0 7px; letter-spacing: .02em; } }
 /* a phone held upright: the bar's row and the running line under it, 83 px in all (the index of folders and the board's
-   chips stick under it at that height, aura.css); no menu key — the bar of keys at the foot opens the reading matter */
+   chips stick under it at that height, aura.css); no links in the bar — the bar of keys at the foot is the way on */
 @media (max-width: 760px) and (min-height: 521px) {
   body.landing .ticker { padding: 0; }
+  body.landing .tk-nav { display: none; }
   body.landing .tk-bar { height: 52px; gap: 8px; padding: 0 16px; }
   body.landing .tk-brand { font-size: 17px; line-height: 52px; }
   body.landing .tk-sol { min-height: 28px; padding: 0 10px; font-size: 11.5px; letter-spacing: .1em; }
@@ -92,12 +110,12 @@ body.landing .tk-cell { font-size: 12px; }
 @media (max-width: 349px) and (min-height: 521px) {
   body.landing .tk-sol { display: none; }
 }
-/* a phone held sideways: one row as on a desk, a little lower, the menu key at its end */
+/* a phone held sideways: one row as on a desk, a little lower, the three links small */
 @media (max-height: 520px) {
   body.landing .tk-bar { height: 50px; gap: 8px; padding: 0 16px; }
   body.landing .tk-brand { font-size: 16px; }
   body.landing .tk-window { height: 30px; padding: 0 16px; }
-  body.landing .tk-dropdown { top: 56px; right: 16px; }
+  body.landing .tk-nav a { min-height: 30px; padding: 0 9px; font-size: var(--fs-tag); }
 }
 
 /* the cross that closes a pop-up, by night as well as by day */
@@ -696,21 +714,12 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
      and exchanges around them — down to the window's foot; P01, the habitat, is a window tall too, its dome kept to a
      moderate size so the sheet around and above it has room */
   body.landing .space { height: max(660px, calc(100vh - 101px)); padding: 0 0 12px; box-sizing: border-box; }
-  body.landing .space-room { margin-top: 12px; --dome-w: clamp(210px, 32vh, 360px); }
-  /* the Earth in the lower left corner: the photograph of the limb, half again as wide as the room, turned 27° about the
-     centre of its horizon's circle (47.66 % across, 317 % down the picture: the circle of radius 997 about 674 × 1079 in
-     the 1414 × 340 picture) and set well to the left, so that the horizon curves in from the left edge a little under
-     two thirds of the way down and out at the foot before the middle — the globe in the corner, its haze over it, the
-     mesh of dots with it, and the room's breadth left to the way of the message; the picture's ends and its foot lie
-     outside the room, its top is black on black */
-  body.landing .space-earth { left: -108%; bottom: -5%; width: 151.2%; transform-origin: 47.66% 317.4%; transform: rotate(27deg); }
-  /* the habitat in the north-east, its name under its foot, to the right of it — the arc comes in to the foot from the
-     lower left and goes on from it to the upper right (public/sky.js, trajectory), so the name stands clear of both */
-  body.landing .space-dome { left: auto; right: 15%; top: 5%; transform: none; }
-  body.landing .space-tag-dome { right: auto; left: calc(50% + 26px); top: calc(100% + 2px); transform: none; }
-  /* the way a message goes: the trajectory, not the line (public/sky.js sets its paths from where the two stand) */
-  body.landing .space-line { display: none; }
-  body.landing .space-arc { display: block; }
+  /* the room as a phone has it, only wider: the Earth in the middle of the foot, its horizon curving away either side;
+     the habitat above it at the top, kept small — a quarter of the window's height at most — so the room between the
+     two is deep; the dashed line straight down from the habitat's foot onto the limb, the signal up it and the answer
+     down (the trajectory, the desk's arc of an earlier layout, stays off: public/sky.js keeps the sky's items either
+     side of the line, as on a phone) */
+  body.landing .space-room { margin-top: 12px; --dome-w: clamp(170px, 22vh, 250px); --dome-top: 10px; --earth-w: 118%; --earth-arc: clamp(100px, 14vh, 150px); }
   body.landing .sheet-p1 { height: max(660px, calc(100vh - 101px)); padding: 0 20px 48px; box-sizing: border-box; }   /* the ground line clear of the window's foot */
   body.landing .sheet-intro { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 28px; padding-top: 12px; }
   body.landing .sheet-intro .wordmark { margin: 0; font-size: clamp(36px, 3.4vw, 50px); line-height: .95; letter-spacing: -.035em; font-weight: 600; color: var(--ink); }   /* MARS!platz : Ground Station, the page's one heading */

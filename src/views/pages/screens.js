@@ -34,7 +34,7 @@ const SCREENS = [
   { name: 'landing', title: 'Landing page', fit: 'scale', minWidth: 1000, about: 'The first screen of the landing page — the name, the way to the habitat with the latest exchanges and pictures around the line — with the ticker' },
   { name: 'habitat', title: 'Habitat', fit: 'scale', minWidth: 960, about: 'The habitat’s instruments: the readings, the crew’s figures, the stores and the power' },
   { name: 'board', title: 'Message Board', fit: 'clip', about: 'The latest exchanges with the crew, as many as fit, live' },
-  { name: 'write', title: 'Write to the crew', fit: 'scale', minWidth: 640, about: 'The composer, full screen, for writing to the crew at the venue — every message from it under a callsign of its own' },
+  { name: 'write', title: 'Write to the crew', fit: 'scale', minWidth: 640, about: 'The composer, full screen, for writing to the crew at the venue — every message from it as the ground station’s, under its one operator name' },
   { name: 'mission', title: 'Today’s Mission', fit: 'scale', minWidth: 760, about: 'The day’s scientific mission: its question, Morning, Afternoon and EVA' },
   { name: 'blogs', title: 'Blogs', fit: 'none', about: 'The Commander Blog, the Daily Mission Report and the Health Report, one at a time — each post rolling by from top to bottom, then the next blog' },
   { name: 'day', title: 'Today', fit: 'scale', minWidth: 640, about: 'Today’s Schedule, Today’s Meal and the Crew Moods' },
@@ -163,7 +163,7 @@ function index(ctx) {
       <ul class="screen-list">${SCREENS.map((s) => `
         <li><a href="/screen/${s.name}"><b>${esc(T(s.title))}</b><span>/screen/${s.name}</span></a><p>${esc(T(s.about))}</p></li>`).join('')}
       </ul>
-      <form method="post" action="/screens/logout" class="screen-index-out"><button type="submit">${T('Sign out of the screens')}</button></form>
+      ${require('../../lib/screens-auth').enabled ? `<form method="post" action="/screens/logout" class="screen-index-out"><button type="submit">${T('Sign out of the screens')}</button></form>` : ''}
       <p class="screen-index-note">${T('Every screen is dark and in German unless its address says otherwise:')} <code>?theme=light</code> · <code>?lang=en</code> · <code>?lang=fr</code> — ${T('for example')} <code>/screen/board?lang=en&amp;theme=light</code>. ${T('What the site keeps live stays live on the screen; the rest reloads every five minutes and at midnight, when the sol turns.')}</p>
     </div>`;
   return shell(ctx, { name: 'index', title: 'Screens', body, fit: 'none' });

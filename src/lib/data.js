@@ -107,40 +107,65 @@ function slotParts(slot) {
 function slotLabel(slot) { const p = slotParts(slot); return p.n ? `${p.label} ${p.n}` : p.label; }
 
 /**
- * A day's meals, in the day's order, each with the power it drew: the kitchen's
- * energy meter read between the meal's hours (src/lib/home-assistant.js,
- * mealPower) — breakfast 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00,
- * an added meal between its own hours. Where the meter has a figure it is the
- * meal's energy (`energy_wh`, `energy_source` 'meter'); where it has none the
- * meal keeps what the file says (`energy_source` 'filed', or 'none' at 0).
- * `power_wh` is the meter's figure alone (null without one), `window` the
- * hours read (['06:00', '09:00'], null for a meal without hours) and
- * `power_running` that the hours are still going now, so the figure is so far.
+ * A day's meals, in the day's order, each with the power it drew — the
+ * kitchen's energy meter read between the meal's hours (src/lib/home-assistant.js,
+ * mealPower): breakfast 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00. A
+ * meal added on the desk (EXTRA1, EXTRA2, …) has no hours of its own: it
+ * COUNTS WITH the named meal whose hours cover the time it is served at
+ * (`served`, "16:30" — the time it was added, unless the desk says another;
+ * home-assistant.js, slotForTime) and shows that meal's window and reading.
+ *
+ * On each meal: `window` the hours read (['15:00', '22:00'], null for a meal
+ * with no hours and no time), `power_wh` the meter's figure for them (null
+ * while the meter has none inside them), `power_running` that the hours are
+ * still going now (the figure is so far), `power_with` the named slot an
+ * added meal counts with ('DINNER'), and `energy_wh` — the figure that is
+ * summed for the day and the trends: the meter's, on the one meal that carries
+ * each window (the named meal; the first added meal of a window with no named
+ * meal), the file's `energy` where the meter has none, and null on an added
+ * meal that counts with another (`energy_source` 'meter', 'filed', 'none' or
+ * 'with'). `powerDay` reads the meter for another mission day than the meals'
+ * — the dashboard before the run shows the first day's plan with today's
+ * kitchen (day 0, NOW, is today).
  */
-function mealsFor(missionDay) {
+function mealsFor(missionDay, { powerDay = null } = {}) {
   const rows = db.prepare('SELECT * FROM meal WHERE mission_day = ?').all(missionDay).map(mealRow)
     .sort((a, b) => slotOrder(a.slot) - slotOrder(b.slot) || a.id - b.id);
   let ha = null;
   try { ha = require('./home-assistant'); } catch { ha = null; }
+  const readDay = powerDay == null ? missionDay : powerDay;
+  // the three windows, read once each — an added meal may count with a window whose named meal is not planned
+  const windows = {};
+  for (const slot of FIXED_SLOTS) windows[slot] = ha ? ha.mealPower(readDay, slot) : { wh: null, window: null, running: false };
+  const carried = new Set(rows.filter((m) => FIXED_SLOTS.includes(m.slot)).map((m) => m.slot));   // windows whose figure a named meal carries
   return rows.map((m) => {
-    const p = ha ? ha.mealPower(missionDay, m.slot, m.served || '') : null;
+    const fixed = FIXED_SLOTS.includes(m.slot);
+    const at = fixed ? null : (ha ? ha.parseTime(m.served) : null);
+    const withSlot = fixed ? m.slot : (at && ha ? ha.slotForTime(at) : null);
+    const p = withSlot ? windows[withSlot] : null;
     const metered = !!(p && p.wh != null);
+    // the one meal of a window that carries its watt hours into the sums: the named meal, else the first added one
+    let carries = fixed;
+    if (!fixed && withSlot && !carried.has(withSlot)) { carried.add(withSlot); carries = true; }
+    const energy = carries ? (metered ? p.wh : (m.energy_wh || 0)) : null;
     return {
       ...m, served: m.served || '',
+      served_at: at,
       window: p ? p.window : null,
       power_wh: metered ? p.wh : null,
       power_running: !!(p && p.running),
-      energy_wh: metered ? p.wh : (m.energy_wh || 0),
-      energy_source: metered ? 'meter' : m.energy_wh ? 'filed' : 'none',
+      power_with: fixed ? null : withSlot,
+      energy_wh: energy,
+      energy_source: !carries ? 'with' : metered ? 'meter' : m.energy_wh ? 'filed' : 'none',
     };
   });
 }
 
-function day(missionDay) {
+function day(missionDay, { powerDay = null } = {}) {
   const d = db.prepare('SELECT * FROM day WHERE mission_day = ?').get(missionDay);
   if (!d) return null;
   d.tasks = db.prepare('SELECT * FROM task WHERE mission_day = ? ORDER BY sort_order, time').all(missionDay);
-  d.meals = mealsFor(missionDay);
+  d.meals = mealsFor(missionDay, { powerDay });
   d.notes = db.prepare('SELECT * FROM day_note WHERE mission_day = ? ORDER BY posted_at DESC').all(missionDay);
   // The day-1 figure is the scale each gauge is drawn against.
   d.inventory = db.prepare(
