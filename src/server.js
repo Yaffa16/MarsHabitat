@@ -278,7 +278,9 @@ function screenCtx(req) {
 app.get('/screens', requireScreens, (req, res) => res.set('Cache-Control', 'no-store').send(require('./views/pages/screens').index(screenCtx(req))));
 app.get('/screen/:name', requireScreens, (req, res, next) => {
   const ctx = req.params.name === 'write' ? writeCtx(req) : screenCtx(req);
-  const html = require('./views/pages/screens').render(req.params.name, ctx, { ...stationData(ctx), recent: data.board(400, null) });
+  // the board screen is the ground station's board: its own messages — everything sent from the writing screen, under
+  // the station's name — stand on it whatever their state, before everyone's answered exchanges (data.board, callsign)
+  const html = require('./views/pages/screens').render(req.params.name, ctx, { ...stationData(ctx), recent: data.board(400, null, { callsign: callsign.STATION }) });
   if (!html) return next();
   res.set('Cache-Control', 'no-store').send(html);
 });
@@ -293,7 +295,7 @@ app.get('/screen/:name', requireScreens, (req, res, next) => {
    its messages come from one (KIOSK_HOURLY_LIMIT, 60 an hour). The fragment the screen's script asks for comes in the
    screen's language (?lang=), which no cookie could carry. */
 const KIOSK_HOURLY_LIMIT = Number(process.env.KIOSK_HOURLY_LIMIT || 60);
-const SCREEN_OPERATOR = (process.env.SCREEN_OPERATOR || 'BODENSTATION').trim().slice(0, 40) || 'BODENSTATION';
+const SCREEN_OPERATOR = callsign.STATION;                                           // BODENSTATION (lib/callsign.js)
 const writeCtx = (req) => ({ ...screenCtx(req), callsign: SCREEN_OPERATOR });   // the screen's composer: the operator in its head
 app.get('/screen/write/composer', requireScreens, (req, res) => {
   const ctx = writeCtx(req);
@@ -683,13 +685,15 @@ app.get('/api/board', (req, res) => {
   // words the cards carry would be in two languages.
   const T = i18n.LANGS.includes(req.query.lang) ? i18n.of(req.query.lang) : ctx.T;
   const limit = Math.min(400, Math.max(1, Number(req.query.limit) || BOARD_RECENT));
-  const recent = data.board(limit, ctx.visitor ? ctx.visitor.id : null);
+  // ?station=1: the installation's board screen asks for the ground station's board — its own messages are the ones
+  // under the station's name (everything the writing screen sends), not a cookie's (a screen has none)
+  const recent = req.query.station === '1' ? data.board(limit, null, { callsign: callsign.STATION }) : data.board(limit, ctx.visitor ? ctx.visitor.id : null);
   const counts = data.counts();
   res.set('Cache-Control', 'no-store').json({
     version: P.boardVersion(recent),
     phase: ctx.mission.phase,
     open: ctx.mission.open,                                                    // false once the station has closed (board.js turns the page)
-    cards: P.boardCards(recent, T),
+    cards: P.boardCards(recent, T, { mineLabel: req.query.station === '1' ? callsign.STATION : null }),
     count: recent.length,
     pendingMine: recent.filter((m) => m.mine && m.pending).length,
     total: counts.total,

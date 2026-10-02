@@ -2,26 +2,6 @@
   "0": [
     {
       "slot": "BREAKFAST",
-      "name": "Chili Non Carne",
-      "recipe": "chili-non-carne",
-      "components": "nb",
-      "kcal": 468,
-      "water": 0,
-      "prep": 45,
-      "energy": 0,
-      "nutrients": {
-        "protein_g": 22.85,
-        "fat_g": 16.55,
-        "carb_g": 37.88,
-        "fiber_g": 20,
-        "sugar_g": 18.41,
-        "sodium_mg": 1425.89
-      },
-      "co2e_kg": 0.5351,
-      "water_footprint_l": 979
-    },
-    {
-      "slot": "LUNCH",
       "name": "Pfannenbrot",
       "recipe": "pfannenbrot",
       "components": "",
@@ -41,7 +21,7 @@
       "water_footprint_l": 55.7
     },
     {
-      "slot": "DINNER",
+      "slot": "LUNCH",
       "name": "Chickpea Flatbread with Hummus",
       "recipe": "chickpea-flatbread-hummus",
       "components": "",
@@ -59,6 +39,47 @@
       },
       "co2e_kg": 0.301,
       "water_footprint_l": 402
+    },
+    {
+      "slot": "DINNER",
+      "name": "Pfannenbrot",
+      "recipe": "pfannenbrot",
+      "components": "",
+      "kcal": 108,
+      "water": 0,
+      "prep": 20,
+      "energy": 0,
+      "nutrients": {
+        "protein_g": 2.9,
+        "fat_g": 2.13,
+        "carb_g": 18.47,
+        "fiber_g": 1.49,
+        "sugar_g": 0.5,
+        "sodium_mg": 229.8
+      },
+      "co2e_kg": 0.0259,
+      "water_footprint_l": 55.7
+    },
+    {
+      "slot": "EXTRA1",
+      "name": "Chili Non Carne",
+      "recipe": "chili-non-carne",
+      "components": "",
+      "kcal": 468,
+      "water": 0,
+      "prep": 45,
+      "energy": 0,
+      "nutrients": {
+        "protein_g": 22.85,
+        "fat_g": 16.55,
+        "carb_g": 37.88,
+        "fiber_g": 20,
+        "sugar_g": 18.41,
+        "sodium_mg": 1425.89
+      },
+      "co2e_kg": 0.5351,
+      "water_footprint_l": 979,
+      "served": "19:42"
     }
   ],
   "1": [

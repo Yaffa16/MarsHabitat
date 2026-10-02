@@ -357,7 +357,7 @@ function scheduleBlock(day, tasks, e = null) {
         </tr>`).join('')}
         </tbody>
       </table></div>
-      <div class="actions"><button class="primary">Save ${dayN(day)}</button>${savedNote(e)}
+      <div class="actions"><button class="primary">Save</button>${savedNote(e)}
         <span class="note">A task with its name emptied is removed when the day is saved.</span></div>
     </form>`, 'mars-side');
 }
@@ -366,11 +366,11 @@ function scheduleBlock(day, tasks, e = null) {
  *  person — two blocks on the Habitat tab, one line per officer each, both
  *  writing content/crew-figures.json (a save touches only its own figure);
  *  the crew's totals are the sums, worked out on save. */
-function figureBlock(day, figures, crew, e, { key, chan, title, label, unit, button }) {
+function figureBlock(day, figures, crew, e, { key, chan, title, label, unit }) {
   const f = figures[String(day)] || {}, per = f.crew || {};
   const fmt = (v) => (v == null ? '—' : Number(v).toLocaleString('en-GB'));
   return panel(chan, `
-    ${eyebrow(`${title} · ${dayN(day)}`)}
+    ${eyebrow(title)}
     <p class="note block-hint">One line per officer. Saving writes <b>content/crew-figures.json</b>; the crew's total is the sum.
     Leave a field blank to record nothing for that officer that day.</p>
     <form method="post" action="/control/crew-figures">
@@ -380,14 +380,14 @@ function figureBlock(day, figures, crew, e, { key, chan, title, label, unit, but
         <label class="f fig-officer${mark(e, `${key}_${c.id}`)}"><span>${esc(officer.shown(c.designation))} · ${label}</span>
           <input type="number" min="0" name="${key}_${c.id}" value="${v[key] ?? ''}" placeholder="${unit}"></label>`; }).join('')}
       </div>
-      <p class="note">Crew total on record for this day: <b>${fmt(f[key])}</b> ${unit}${Object.keys(per).length ? '' : f[key] != null ? ' — filed as a total, before the officers were counted separately' : ''}.</p>
-      <div class="actions"><button class="primary">${button} for ${dayN(day)}</button>${savedNote(e)}</div>
+      ${Object.keys(per).length || f[key] == null ? '' : `<p class="note">Filed as a total before the officers were counted separately: <b>${fmt(f[key])}</b> ${unit}.</p>`}
+      <div class="actions"><button class="primary">Save</button>${savedNote(e)}</div>
     </form>`, 'mars-side');
 }
 const stepsBlock = (day, figures, crew, e) => figureBlock(day, figures, crew, e,
-  { key: 'steps', chan: 'STEPS TAKEN', title: 'Steps taken', label: 'steps', unit: 'steps', button: 'Save steps' });
+  { key: 'steps', chan: 'STEPS TAKEN', title: 'Steps taken', label: 'steps', unit: 'steps' });
 const caloriesBlock = (day, figures, crew, e) => figureBlock(day, figures, crew, e,
-  { key: 'calories', chan: 'CALORIES CONSUMED', title: 'Calories consumed', label: 'kcal', unit: 'kcal', button: 'Save calories' });
+  { key: 'calories', chan: 'CALORIES CONSUMED', title: 'Calories consumed', label: 'kcal', unit: 'kcal' });
 
 /* The recipe book's figures, per serving, as the food plan and the book show them. */
 const { NUTRIENTS } = require('../../lib/content');
@@ -410,12 +410,6 @@ const hhmm = (w) => (w ? `${w[0]}–${w[1]}` : '');
 function mealsBlock(day, meals, e = null, recipes = [], hours = { meter: '', windows: {} }) {
   const find = (slot) => meals.find((m) => m.slot === slot) || {};
   const extras = meals.filter((m) => !dataLib.FIXED_SLOTS.includes(m.slot));
-  const kcal = meals.reduce((a, m) => a + (m.kcal || 0), 0);
-  const sum = (get) => { const v = meals.map(get).filter((x) => x != null); return v.length ? v.reduce((a, b) => a + b, 0) : null; };
-  const co2 = sum((m) => m.co2e_kg), wfp = sum((m) => m.water_footprint_l);
-  // the day's watt hours: each window once — the meal that carries it (data.mealsFor), not the added meals that count with it
-  const wh = sum((m) => (m.energy_source === 'meter' ? m.power_wh : null));
-  const anyRunning = meals.some((m) => m.power_running);
   // The book, for control.js to fill a slot from: '<' escaped so no name can close the script.
   const book = JSON.stringify(recipes.filter((r) => !r.placeholder)
     .map((r) => ({ slug: r.slug, name: r.name, kcal: r.kcal, prep_minutes: r.prep_minutes, nutrients: r.nutrients, co2e_kg: r.co2e_kg, water_total_l: r.water_total_l })))
@@ -508,11 +502,7 @@ function mealsBlock(day, meals, e = null, recipes = [], hours = { meter: '', win
       </div>
       <template class="meal-extra-tpl">${card('EXTRA__N__', 'Extra meal', {}, { extra: true, n: '__N__' })}</template>
       <div class="actions meal-add-row"><button type="button" class="ghost meal-add">+ Add a meal</button></div>
-      <div class="kv" style="margin-top:6px"><dt>Day total</dt>
-        <dd>${kcal} kcal offered across ${meals.length} meal${meals.length === 1 ? '' : 's'}${
-          wh != null ? ` · ${wh} Wh from the kitchen meter${anyRunning ? ' so far' : ''}` : ''}${
-          co2 != null ? ` · ${+co2.toFixed(3)} kg CO₂e` : ''}${wfp != null ? ` · ${+wfp.toFixed(1)} L water footprint` : ''}</dd></div>
-      <div class="actions"><button class="primary">Save food plan for ${dayN(day)}</button>${savedNote(e)}</div>
+      <div class="actions"><button class="primary">Save</button>${savedNote(e)}</div>
     </form>`, 'mars-side');
 }
 
@@ -533,7 +523,7 @@ function inventoryBlock(day, items, e = null) {
         </tr>`).join('')}</tbody>
       </table></div>
       <div class="actions">
-        <button class="primary">Save levels for ${dayN(day)}</button>${savedNote(e)}
+        <button class="primary">Save</button>${savedNote(e)}
         <div class="spacer"></div>
       </div>
     </form>`, 'mars-side');
@@ -552,8 +542,6 @@ function powerBlock(day, power, e = null) {
     const m = meter(c), manual = d[c.key] ?? null;
     return { c, m, manual, value: manual ?? m };
   });
-  const filed = rows.filter((r) => r.value != null);
-  const total = filed.reduce((s, r) => s + r.value, 0);
   const fmt = (v) => (v == null ? '' : (Math.round(v * 100) / 100).toFixed(2));
   // Every value is locked: Edit opens it, after asking — "These values are automated, are you sure you would like to
   // edit?" — the same way for every row. A metered row shows the meter's figure by default, and a figure typed by hand
@@ -587,16 +575,14 @@ function powerBlock(day, power, e = null) {
           </td></tr>`;
   };
   return panel('POWER', `
-    ${eyebrow(`Power consumed · ${dayN(day)}`)}
+    ${eyebrow('Power consumed')}
     <form method="post" action="/control/power" class="pw-form">
       <input type="hidden" name="day" value="${day}">
       <div class="tw"><table>
         <thead><tr><th>Category</th><th>kWh that day</th></tr></thead>
         <tbody>${rows.map(row).join('')}</tbody>
       </table></div>
-      <div class="kv" style="margin-top:6px"><dt>Day total</dt>
-        <dd>${filed.length ? `${total.toFixed(2)} kWh across ${filed.length} categor${filed.length === 1 ? 'y' : 'ies'}` : 'nothing recorded for this day'}</dd></div>
-      <div class="actions"><button class="primary">Save power for ${dayN(day)}</button>${savedNote(e)}</div>
+      <div class="actions"><button class="primary">Save</button>${savedNote(e)}</div>
     </form>
     <script>
     (function () {

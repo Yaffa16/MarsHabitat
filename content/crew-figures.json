@@ -1,3 +1,21 @@
 {
+  "1": {
+    "crew": {
+      "COMMUNICATION OFFICER": {
+        "steps": 1000,
+        "calories": 5000
+      },
+      "SCIENCE OFFICER": {
+        "steps": 1250,
+        "calories": 50000
+      },
+      "HEALTH OFFICER": {
+        "steps": 125,
+        "calories": 5421
+      }
+    },
+    "steps": 2375,
+    "calories": 60421
+  },
   "_note": "Calories consumed and steps taken, per officer and per day. Filed each day on the Habitat tab of mission control (Steps taken, Calories consumed), or written here as \"1\": { \"crew\": { \"COMMUNICATION OFFICER\": { \"calories\": 1720, \"steps\": 2200 }, \"SCIENCE OFFICER\": { … }, \"HEALTH OFFICER\": { … } }, \"calories\": 5010, \"steps\": 6420 } — the two totals being the sums. A day left out records nothing; that is not the same as recording a zero. Emptied by the reset."
 }

@@ -33,7 +33,7 @@ const V = L.ASSET_V;
 const SCREENS = [
   { name: 'landing', title: 'Landing page', fit: 'scale', minWidth: 1000, about: 'The first screen of the landing page — the name, the way to the habitat with the latest exchanges and pictures around the line — with the ticker' },
   { name: 'habitat', title: 'Habitat', fit: 'scale', minWidth: 960, about: 'The habitat’s instruments: the readings, the crew’s figures, the stores and the power' },
-  { name: 'board', title: 'Message Board', fit: 'clip', about: 'The latest exchanges with the crew, as many as fit, live' },
+  { name: 'board', title: 'Message Board', fit: 'clip', about: 'The ground station’s board, live: every message sent from the writing screen as it stands — in transit, awaiting a reply, answered — then the latest exchanges with the crew, as many as fit' },
   { name: 'write', title: 'Write to the crew', fit: 'scale', minWidth: 640, about: 'The composer, full screen, for writing to the crew at the venue — every message from it as the ground station’s, under its one operator name' },
   { name: 'mission', title: 'Today’s Mission', fit: 'scale', minWidth: 760, about: 'The day’s scientific mission: its question, Morning, Afternoon and EVA' },
   { name: 'blogs', title: 'Blogs', fit: 'none', about: 'The Commander Blog, the Daily Mission Report and the Health Report, one at a time — each post rolling by from top to bottom, then the next blog' },
@@ -120,11 +120,14 @@ function day(ctx, d) {
   return shell(ctx, { name: 'day', title: 'Today', body: `<div class="screen-three">${p.schedule}${p.galley}${p.crewPanel}</div>`, fit: 'scale' });
 }
 
-/** The message board: the latest exchanges, as many as fit, kept live by board.js (its filter bar stands unshown — the
-    script needs it — and the cards are cut clean at the foot by screen.js). */
+/** The message board — the ground station's: everything sent from the writing screen, under the station's name,
+    stands on it at once, whatever its state (in transit, awaiting a reply, answered), headed by that name; then
+    everyone's answered exchanges, as many as fit. Kept live by board.js (its filter bar stands unshown — the script
+    needs it — and the cards are cut clean at the foot by screen.js). */
 function board(ctx, d) {
-  // the screen polls for its own 400 cards in its own language (server.js /api/board) — no cookie reaches a screen
-  return shell(ctx, { name: 'board', title: 'Message Board', body: P.boardScreen(ctx, { recent: d.recent, poll: `/api/board?lang=${ctx.lang || 'de'}&limit=400` }), fit: 'clip', scripts: ['/board.js'] });
+  // the screen polls for its own 400 cards in its own language, as the station (server.js /api/board, ?station=1) —
+  // no cookie reaches a screen, and the board is the station's, not any visitor's
+  return shell(ctx, { name: 'board', title: 'Message Board', body: P.boardScreen(ctx, { recent: d.recent, poll: `/api/board?lang=${ctx.lang || 'de'}&limit=400&station=1`, mineLabel: require('../../lib/callsign').STATION }), fit: 'clip', scripts: ['/board.js'] });
 }
 
 /** The writing screen: the composer alone, full screen, for writing to the crew at the venue (the mission page's

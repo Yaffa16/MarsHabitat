@@ -99,6 +99,45 @@
   document.addEventListener('visibilitychange', function () { if (!document.hidden) tick(); });
   setInterval(tick, pollMs);
 
+  /* ---- the dashboard's strip (src/views/pages/media.js, cloudLatestInner): a click on a tile opens its picture IN PLACE —
+     a small frame under the strip, the picture at a moderate size with its time, a × to close — never a new tab or a
+     pop-up. The same tile again, the ×, or Escape closes it; a click with a modifier key, or without JavaScript, still
+     opens the original as the tile's link says. The frame stays through the strip's live updates (reconcile keeps the
+     tiles); should the open picture leave the strip, the frame goes with it. */
+  var latest = document.getElementById('cloud-latest');
+  if (latest) {
+    var peek = null, openId = null;
+    var closePeek = function () {
+      if (peek && peek.parentNode) peek.parentNode.removeChild(peek);
+      peek = null; openId = null;
+      [].forEach.call(latest.querySelectorAll('.mtile.is-open'), function (t) { t.classList.remove('is-open'); });
+    };
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest ? e.target.closest('#cloud-latest .mtile.kind-image[href]') : null;
+      if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;
+      e.preventDefault();
+      var id = a.getAttribute('data-id');
+      if (openId === id) { closePeek(); return; }
+      closePeek();
+      peek = document.createElement('div'); peek.className = 'cloud-peek';
+      var fig = document.createElement('figure'); fig.className = 'cloud-peek-fig';
+      var img = document.createElement('img'); img.className = 'cloud-peek-img'; img.alt = a.getAttribute('title') || ''; img.src = a.getAttribute('href');
+      var cap = document.createElement('figcaption'); cap.className = 'cloud-peek-cap';
+      var w = a.querySelector('.mtile-when'); cap.textContent = w ? w.textContent : '';
+      var x = document.createElement('button'); x.type = 'button'; x.className = 'cloud-peek-x popup-close'; x.setAttribute('aria-label', 'Close');
+      x.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+      x.addEventListener('click', closePeek);
+      fig.appendChild(img); fig.appendChild(cap); fig.appendChild(x); peek.appendChild(fig);
+      latest.appendChild(peek);
+      a.classList.add('is-open'); openId = id;
+      peek.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && peek) closePeek(); });
+    // the open picture gone from the strip (a live update): the frame goes with it
+    new MutationObserver(function () { if (openId && !latest.querySelector('.mtile[data-id="' + openId + '"]')) closePeek(); })
+      .observe(latest, { childList: true, subtree: true });
+  }
+
   /* ---- the lightbox (src/views/pages/media.js, lightbox): a click on a tile of the gallery opens its picture in place,
      in a small pop-up over the page, blurred behind it, instead of the original in a new tab — the picture, its
      time under it; the arrows beside it (and the arrow keys) go to the previous and the next tile as the gallery has

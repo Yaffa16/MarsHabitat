@@ -298,7 +298,11 @@ function published(limit = 100, filters = {}) {
 /** What the board holds: the viewer's own messages, every one whatever its state, and the newest `limit` exchanges the
  *  crew have answered (published) — the site's board shows the last nine (BOARD_RECENT), the installation's screen as
  *  many as fit. The viewer's own come first; boardCards (public.js) heads them MY MESSAGES. */
-function board(limit = 9, visitorId = null) {
+/*  `callsign` makes the board a name's rather than a visitor's: its own messages are every message that carries that
+    callsign, whatever became of them — the installation's board screen is the ground station's (callsign.STATION), so
+    everything written at the installation's writing screen, which all goes out under that one name, stands on the
+    square's board at once, in transit, awaiting a reply, answered — never the computer's cookie's. */
+function board(limit = 9, visitorId = null, { callsign = null } = {}) {
   settleTransits();
   const SELECT = `SELECT m.*, r.body AS response_body, r.published_at AS response_at, c.designation AS responder,
             s.launched_at, s.remote_id AS space_id
@@ -306,6 +310,11 @@ function board(limit = 9, visitorId = null) {
      LEFT JOIN response r ON r.message_id = m.id
      LEFT JOIN crew c ON c.id = r.crew_id
      LEFT JOIN space_relay s ON s.message_id = m.id AND s.state = 'SENT'`;
+  if (callsign) {
+    const mine = db.prepare(`${SELECT} WHERE m.callsign = ? ORDER BY m.submitted_at DESC LIMIT 100`).all(callsign);
+    const rest = db.prepare(`${SELECT} WHERE m.state = 'PUBLISHED' AND m.callsign != ? ORDER BY m.submitted_at DESC LIMIT ?`).all(callsign, limit);
+    return mine.concat(rest).map((m) => ({ ...m, mine: m.callsign === callsign, pending: m.state !== 'PUBLISHED' }));
+  }
   const vid = visitorId == null ? -1 : visitorId;
   const mine = vid < 0 ? [] : db.prepare(`${SELECT} WHERE m.visitor_id = ? ORDER BY m.submitted_at DESC LIMIT 100`).all(vid);
   const rest = db.prepare(`${SELECT} WHERE m.state = 'PUBLISHED' AND m.visitor_id != ? ORDER BY m.submitted_at DESC LIMIT ?`).all(vid, limit);

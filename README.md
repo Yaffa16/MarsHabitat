@@ -90,7 +90,7 @@ which is mission control's, sits behind the same login.
 
 | Page | Route | Holds |
 |---|---|---|
-| The station | `/` | **The header** across the top — the wordmark, the run's badge, the habitat's clock and a running line of the current activity, the next one, the habitat sensor's reading and the daily communication window · **four pages**: the way to the habitat with its sky, the note, the habitat in section and the world's slowest chat (see *The landing page: four pages in the glass dress*) · on a wider screen then the composer · the live message board · the mission dashboard (schedule, meal, mood, habitat, resources, trends, and below the trends **the three daily blogs** — Daily Mission Report, Health Report, Commander Blog). The crew log, the media, the whole mission day by day and the reading matter live on their own pages (`/logbook`, `/media`, `/at-a-glance`, `/about`) |
+| The station | `/` | **The header** across the top — the wordmark, the run's badge, the three links and a running line of the current activity, the next one, the habitat sensor's reading and the daily communication window · **four pages**: the way to the habitat with its sky, the note, the habitat in section and the world's slowest chat (see *The landing page: four pages in the glass dress*) · on a wider screen then the composer · the live message board · the mission dashboard (schedule, meal, mood, habitat, resources, trends, and below the trends **the three daily blogs** — Daily Mission Report, Health Report, Commander Blog). The crew log, the media, the whole mission day by day and the reading matter live on their own pages (`/logbook`, `/media`, `/at-a-glance`, `/about`) |
 | About | `/about` | The reading matter, one page: **About** (the project as the ZKM announces it — zkm.de/de/2026/10/marsplatz-red-dust-city: the run, the dome on the Marktplatz, the crew's brief, the daily EVAs, the ways to reach the crew, the opening and the funders — then the distance, the archive, the readings and *Messages sent to space* — two paragraphs on how a replied message goes out by radio through SpaceSpeak, after spacespeak.com/Learn/Science: the transmitters, the 2.4–5 GHz band, the directional antenna, the speed of light, then where the signal gets to and that it never stops), **What this is** (how the station behaves, in plain terms, with *The path of a message* beside it in six steps — Write, Transmit, Reached MARS!platz, Pending approval, Transmitted to space, Replied back) and **Who we are** (the three officers; the crew's eleven portraits, each with its name as the photograph's file gives it — *Firstname_Lastname.jpg* — in the order of the surnames; and the producer with the partners' logos — *In cooperation with* the Badisches Staatstheater and the Naturkundemuseum Karlsruhe, *Supporters* E.ON Foundation, LBBW Stiftung and the Innovationsfonds Kunst — small, each on a white tile), one after another under a row of three pills that jump to them (`src/views/pages/info.js`; the pictures and `public/crew/crew.json` by `tools/crew-pictures.py`). The reading matter runs the whole width of its section; the mission's facts and the path of a message stand under it in rows. A phone's **About** key opens it; on a desk the header's *About* link does |
 | Dashboard | `/dashboard` | The mission dashboard on a page of its own — the same section the station page carries on a desk: the head, the live images, the two doors, the strip of sols and the nine panels behind their index. Drawn for a phone first — where it leaves the strip of live images out (the newest pictures rise over the habitat instead, and fill the Media page); the phone's bar of keys leads here with **Dashboard**, and on a phone the station page keeps its four pages alone |
 | Messages | `/messages` | The portal on a page of its own — the composer and the live message board, the same pieces the station page shows on a desk. Drawn for a phone first: the exchanges flow with the page, the composer is a dock at the foot of the screen, which lowers itself once a message has crossed; the phone's bar of keys leads here with **Write**, and so does the door at the foot of the station page's sheet |
@@ -128,8 +128,13 @@ screens* key. (The archive, `/archive`, needs mission control's session as it al
   latest exchanges and pictures around the line — with the ticker (its light/language
   switches and its links are not drawn)
 - `/screen/habitat` — the Habitat instruments, live
-- `/screen/board` — the message board, read-only, live; two columns (one upright), each card's
-  line into space on one line, nothing to tap
+- `/screen/board` — **the ground station's message board**, read-only, live; two columns (one
+  upright), each card's line into space on one line, nothing to tap. Every message sent from
+  the writing screen stands on it at once, under **BODENSTATION**, whatever its state — in
+  transit, awaiting a reply, answered — headed by that name, before everyone's answered
+  exchanges: the board is the station's own, as a visitor's board on the site is theirs, never
+  the computer's cookie's. The screen polls `/api/board?…&station=1` for the same; the public
+  board shows a station message only once it is published, like any other
 - `/screen/write` — **the message-sending box, full screen**: the composer alone, for writing
   to the crew at the venue. Its operator is the ground station itself: the composer's head says
   **BODENSTATION** (the ground station, in German; `SCREEN_OPERATOR` in `.env` for another name)
@@ -166,7 +171,7 @@ address.
 |---|---|---|
 | Landing page | `/screen/landing` | The station's first screen — the ticker across the top, the name in its band, then the way to the habitat: the Earth, the line, the habitat far above, the latest exchanges and pictures either side of the line (*The landing page: four pages*). The one screen that keeps the ticker; the ticker's switches (light, language) and its links are not drawn |
 | Habitat | `/screen/habitat` | The Habitat panel of the dashboard: the readings, the crew's figures, the stores and the power — live. Set to be read from across a room: what each tile measures in 32px type, its scale under it in 18px, the figures 46–54px, and the drawings (the dial, the ruler, the radar, the orbit) smaller for it (`screen.css`, `#habitat`) |
-| Message Board | `/screen/board` | The latest exchanges, newest first, two across (one upright), as many as fit — live, a new exchange slides in as the board publishes it. Read-only: no composer, nothing to tap — a card's line into space stands on one line (*Diese Nachricht ist jetzt 20,02 Milliarden km von der Erde entfernt! · Gestartet vor 19 Stunden*) and opens no panel. The screen polls `/api/board?lang=<its language>&limit=400`, so the cards come back in the language the screen is in, all of them |
+| Message Board | `/screen/board` | The ground station's board: every message sent from the writing screen as it stands — in transit, awaiting a reply, answered — under BODENSTATION, then the latest exchanges, newest first, two across (one upright), as many as fit — live, a new exchange slides in as the board publishes it. Read-only: no composer, nothing to tap — a card's line into space stands on one line (*Diese Nachricht ist jetzt 20,02 Milliarden km von der Erde entfernt! · Gestartet vor 19 Stunden*) and opens no panel. The screen polls `/api/board?lang=<its language>&limit=400&station=1`, so the cards come back in the language the screen is in, all of them, the station's own among them |
 | Write to the crew | `/screen/write` | **The message-sending box, full screen** — the composer as the site has it (the crew's question of the day over it, the message box, the tags, the Transmit key), alone in the middle of the screen, for a touch screen in the square. **Every message sent from it is a new visitor's**: a callsign is minted for it alone (`src/lib/callsign.js`, `mint`; `POST /screen/write` in `server.js`), no cookie is set, so the next person at the screen starts afresh — no callsign carried over, no transit lock between them. Once a message is sent the crossing plays as on the site, then holds nine seconds on ARRIVED with the callsign named — *Your message went under the callsign DUST-465 — look for it on the Message Board once the crew have answered* — before the empty box comes back (`public/composer.js`, `data-hold`, `data-refresh`). The checks are the composer's (the channel open, the words within bounds); the hourly limit is the screen's own, per address, since all its messages come from one: `KIOSK_HOURLY_LIMIT`, sixty an hour. What is left half-written is cleared after three minutes with nobody touching the screen, and the page's own reloads wait while someone is writing or a message is crossing (`public/screen-write.js`) |
 | Today's Mission | `/screen/mission` | The day's mission from the sheet: its question, Morning, Afternoon, EVA, the question for the community hour — **typed out letter by letter** as if someone were writing it (`public/typed.js`: a cursor after the last letter, a halt at a full stop; typed to the end it stays three minutes, then is typed again; the site's dashboard shows the same panel still) |
 | Blogs | `/screen/blogs` | The three blogs **one at a time**, each filling the screen: its head stays, the day's post rolls by underneath from top to bottom at reading pace (`public/screen-blogs.js`, 28 px a second, five seconds' hold at the top and at the end; a post that fits is shown for fourteen), then the next blog takes the screen — the Commander Blog, the Daily Mission Report, the Health Report, round and round. The text is set at the size of the panels' own notes (about 23 px on a 1080p screen). A blog with nothing written yet shows its note and passes the turn on; the latest earlier post is carried forward, as the dashboard does |
@@ -223,7 +228,7 @@ page load. Everything editable lives here.
 | **Commanding officer** | The **Commander Blog** at the top, then the officer's state |
 | **Science officer** | The **Daily Mission Report** at the top, then the state |
 | **Health officer** | The **Health Report** at the top, then the state |
-| **Habitat** | The daily schedule (a task with its name emptied is removed on save), the meals — Breakfast, Lunch, Dinner, Other — **Steps taken** and **Calories consumed** (one line per officer each, both written to `crew-figures.json`), the inventory levels, and the day's power figures (with the category names, editable in place) |
+| **Habitat** | The daily schedule (a task with its name emptied is removed on save), the meals — Breakfast, Lunch, Dinner and **+ Add a meal** — **Steps taken** and **Calories consumed** (one line per officer each, both written to `crew-figures.json`; the crew's total is worked out on save and read on the station, not shown on the desk), the inventory levels, and the day's power figures (with the category names, editable in place). Every block's key reads **Save** and nothing more; Steps taken, Calories consumed and Power consumed head their blocks without naming the day (the day picker above says which day is open) |
 
 Every composer is the same: paragraphs and pictures in a column, a ＋ between every two, no
 template buttons, and two buttons under it — **Publish**, which makes the text live, and
@@ -511,7 +516,7 @@ the gallery, the exports and the ZIP. Full guide in `content/README.md`.
 On mission control's **Habitat** tab, **Breakfast**, **Lunch** and **Dinner** each open with a dropdown over the
 recipe book, **`content/recipes.json`**. Choosing a recipe fills the slot's name, kcal, **prep time**, the six
 nutrients (protein, fat, carbohydrate, fibre, sugar, sodium), CO₂e and water footprint — all per serving, all still
-editable before **Save food plan**. The dropdown's first option, **Empty — fill in the fields below by hand**, clears
+editable before **Save**. The dropdown's first option, **Empty — fill in the fields below by hand**, clears
 the slot to be written on the go: it is saved for that day only and never adds a recipe.
 
 The book ships with twelve recipes: Chili Non Carne and Pfannenbrot with their measured figures, and **ten sample
@@ -534,13 +539,16 @@ No meal has its power typed in. Each meal's watt hours are the **kitchen's energ
 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00** on the habitat's clock (on both sides of 25 October, when the
 clocks go back). **An added meal counts with one of the three** — the one whose hours begin last before the time it
 is served at (a tea at 16:30 is dinner's; a snack at 14:30 lunch's; one at 05:30 breakfast's; `slotForTime`) — and
-shows that meal's hours and figure, marked *with Dinner*; the day's total counts each window once (the named meal
-carries it, or the first added meal in a window with no named meal). The figure stands with every meal wherever it
-is shown — on the desk's card (*216 Wh · the kitchen meter, 06:00–09:00*), on the dashboard's **Today's Meal** as a
-line of its own under the meal's figures (*Power 216 Wh · 06:00–09:00*), with a line under the meals saying which
-hours are read, in At a Glance and in the record (Markdown, JSON with `energySource`, `hours`, `servedAt` and
-`countsWith`, PDF) — *so far* while the hours are still running, a dash while the meter has nothing for them yet.
-Where the meter has a figure it replaces the file's `energy`, which stands in only where it has none. **Before the
+shows that meal's hours and figure, marked *with Dinner*; the record's totals count each window once (the named meal
+carries it, or the first added meal in a window with no named meal) — the desk sums nothing: each card carries its
+own figure and there is no day total under the meals. The figure stands with every meal wherever it is shown — on
+the desk's card (*216 Wh · the kitchen meter, 06:00–09:00*), on the dashboard's **Today's Meal** beside the kcal on
+the meal's own line, always with its unit and **0 Wh** when the meter has nothing for the hours (*436 kcal · 216 Wh*;
+*120 kcal · 373 Wh (with Dinner)* for an added meal; `layout.mealFigs`) — the hours themselves are not named on the
+dashboard and there is no line under the meals about the meter; the hours are in At a Glance (a line under each
+day's meals) and in the record (Markdown, JSON with `energySource`, `hours`, `servedAt` and `countsWith`, PDF) —
+*so far* on the desk and in the booklet while the hours are still running. Where the meter has a figure it replaces
+the file's `energy`, which stands in only where it has none. **Before the
 run**, Today's Meal shows the first day's plan with **today's** kitchen readings (NOW, the rehearsal day), so the
 figures are there to be looked at during the rehearsals; from the first sol on, each day's meals read their own day.
 The meter and the hours live in the `meals` block of `content/home-assistant.json` (`meter`, the entity id without
@@ -710,7 +718,12 @@ wrong — and a **Read the folder now** button; `/api/cloud` says the same witho
 the folder as a strip of its own — a glass card under the dashboard's heading, above the At a
 Glance and Media doors, carrying the LIVE badge and the pictures and nothing else (when the
 folder was last read is the badge's tooltip; a failed read is still said, in orange) — kept
-live on the same frequency (`#cloud-latest`, `cloudLatestInner()` in `src/views/pages/media.js`). "Most recently added" means when the file arrived in the folder (Nextcloud
+live on the same frequency (`#cloud-latest`, `cloudLatestInner()` in `src/views/pages/media.js`). **A click on a
+picture of the strip opens it in place**, never on a new page: a small frame under the strip, no wider than the
+picture and no taller than 320px, its time under it and a × on its corner; the same tile again, the × or Escape
+closes it, and the open tile is outlined in orange (`.cloud-peek` in `public/cloud.js` and `aura.css`; the frame
+stays through the strip's live updates and goes when its picture leaves the strip). Without JavaScript, or with a
+modifier key, the tile opens the original as its link says. "Most recently added" means when the file arrived in the folder (Nextcloud
 numbers every file as it arrives; in a mounted folder, the file's change time), not the date
 the picture itself carries — a phone's photograph taken yesterday and uploaded now is the
 newest. The grid on `/media` is in the same order.
@@ -849,14 +862,21 @@ port mapping put it. Neither the tunnel nor Home Assistant changes.
 
 The real devices inside the habitat — as configured now: the cricket terrarium's temperature
 (`m5_temperatur_cricket_temperature`), NO₂, O₂ and CO from the environment sensor, and the
-Shelly plug's energy meter — hang off a Home Assistant instance on the venue network. The
-station server polls its REST API and draws them **inside the Habitat panel**, under a
-*Habitat hardware* heading below the node's tiles, the stores and the power (there is no
-separate Habitat hardware tab): one tile per device with the current
-reading, when it last changed and its last 24 hours as a sparkline, and beneath the tiles
-one combined chart with every device on the same day — each line on its own scale, named at
-its end in its own colour, exactly as the Trends panel does it. The panel refreshes itself
-on the poll cycle without a reload; without JavaScript the server-rendered panel stands.
+Shelly plug's power draw and energy meter — hang off a Home Assistant instance on the venue
+network. The station server polls its REST API and draws them **inside the Sensors tab**,
+below the node's tiles, the stores and the power, with no heading of their own (there is no
+separate Habitat hardware tab): **one day chart per kind of quantity** — temperature, power,
+air quality, … — midnight to midnight on the habitat's clock, the devices of a kind as lines
+on one axis in one unit (`hwChart` in `src/views/pages/public.js`). **The current reading is
+on the chart itself**: the newest reading of the chart's first line stands in a pill above the
+line's end, the pill sized from its text so it holds the figure and its unit whole (*12 W*,
+*22.4 °C*); the legend beneath names each line in its colour with the day's low and high and
+carries no reading. The energy meter's day is on the Power panel (as kWh) rather than drawn
+here. The panel refreshes itself on the poll cycle without a reload; without JavaScript the
+server-rendered panel stands. In the **Trends** under the charts the hardware appears as one
+value per day — a gauge's daily mean, a meter's daily added amount — except a **power draw**
+(a gauge in watts, the kitchen socket's): a draw is not a trend, its day is on the meter's line
+as energy.
 
 Three things will change, and none of them is code:
 
@@ -983,9 +1003,10 @@ window tall with its cards in the middle and air around them, a margin at both s
   which keeps to the band between the habitat and the Earth and off the line — and on the Earth
   stands the nudge to scroll on, which the sky keeps clear of too. The picture of the Earth is a
   little wider than the room on a desk and the width of the screen on a phone. On a desk the name and
-  the run stand in the low band over it (*ZKM | Hertzlab*, the dates in
-  Mars orange, the thirteen sols, and *opens in N days* before the run, *SOL 05 of 13* during
-  it); **on a phone the page has the whole first screen to itself**, the width of the screen and
+  the run stand in the band over it, one under the other — **MARS!platz** large, *Ground
+  Station* under it, *ZKM | Hertzlab*, then the run on one line (the dates in Mars orange, the
+  thirteen sols, and *opens in N days* before the run, *SOL 05 of 13* during it); **on a phone
+  the page has the whole first screen to itself**, the width of the screen and
   its height between the header and the bar of keys — the note on the next page carries the
   name. The drawing is decorative and hidden from assistive technology; the exchanges in the
   sky are the board's own. (To change either picture, replace the file under `public/space/`:
@@ -1328,8 +1349,8 @@ not an afterthought:
 with the wordmark (the way home), the run's badge with its pulsing dot — the countdown before
 the run, the sol during it —, **in the middle of the row the station's three ways on** — *Write
 to the crew* (the composer, `/#write`), *Live Mission Dashboard* (`/#mission`) and *About*
-(`/about`), the one for the page you are on filled —, the habitat's clock, the round theme key
-and the language (the current one filled, the others under it); under it the **running line** —
+(`/about`), the one for the page you are on filled —, the round theme key and the language (the
+current one filled, the others under it) — no clock; under it the **running line** —
 what the crew are doing, what is next, the habitat's latest reading, and *Communication window
 daily 19:00 CEST* (`ticker()` in `src/views/pages/public.js`). There is no menu: the reading
 matter is one page, `/about`. Anything a link brings into view lands under the header
@@ -1773,8 +1794,7 @@ Who we are are a page of their own, `/about`, which the header's *About* link le
 carries no top bar; its navigation lives in the dark footer slab. Subpages keep the status rail
 and **Mission · Messages · Crew log · About**.
 
-Across the very top runs **the ticker**: an orange cell with the habitat's clock (venue time,
-ticking), then a continuously running line — the SOL, **what the crew are currently doing**
+Across the very top runs **the ticker**: the header's row, then a continuously running line — the SOL, **what the crew are currently doing**
 (the schedule task whose time it is, with its detail — "14:00 · Maintenance — West panel seal,
 third attempt" — switching to the next as its time comes), what is next, the node's current
 reading (or *no current reading*). Every five minutes it fetches
@@ -1809,9 +1829,11 @@ dashboard's panels behind **one index** on the head of one glass panel: three tr
 equal width, each named at its left and holding its keys — *Sensors*: **one** key, the **Sensors**
 panel (the sensor tiles, the crew's figures, the resource rings and the power bars — the type
 inside it set larger than the other panels', what each tile measures at 20px and the figures at
-36px — then the habitat hardware's day charts, without a heading of their own, then the
-**Trends** under a head of their own, drawn smaller than they were as a tab; `/#trends` lands on
-them there); *Daily Life*: **Today's Schedule**, **Today's Meal** and **Crew Moods**; *Blogs*:
+36px; the tiles' lines under their figures are short — the temperature's figure stands alone,
+the air quality's says *IAQ index* and no more — then the habitat hardware's day charts, without
+a heading of their own, then the **Trends** under a head of their own and nothing under it, drawn
+smaller than they were as a tab; `/#trends` lands on them there); *Daily Life*: **Today's
+Schedule**, **Today's Meal** and **Crew Moods**; *Blogs*:
 the three blogs. Every key carries a line icon in the hand of the dome's
 keys and its name. The page opens on the Sensors. A press on a key opens
 that folder beneath the index (the key turns cobalt, and the name of its track with it), the

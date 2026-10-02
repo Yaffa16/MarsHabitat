@@ -87,4 +87,13 @@ function mint() {
   return { id: info.lastInsertRowid, callsign: cs, token, created_at: stamp };
 }
 
-module.exports = { identify, generate, usable, keep, mint, WORDS };
+/**
+ * The ground station's own name — the operator every message from the
+ * installation's writing screen goes out under (server.js, POST /screen/write),
+ * and whose messages the installation's board screen shows as its own,
+ * answered or not (data.board, callsign). BODENSTATION — the ground station,
+ * in German — unless SCREEN_OPERATOR in .env says another.
+ */
+const STATION = (process.env.SCREEN_OPERATOR || 'BODENSTATION').trim().slice(0, 40) || 'BODENSTATION';
+
+module.exports = { identify, generate, usable, keep, mint, WORDS, STATION };

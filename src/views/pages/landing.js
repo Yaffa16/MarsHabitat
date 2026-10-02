@@ -78,7 +78,7 @@ function intro(ctx, where = 'desk') {
   const H = where === 'desk' ? 'h1' : 'p';                            // one heading for the page: the name over the habitat
   return `
     <div class="sheet-intro is-${where}">
-      <${H} class="wordmark">MARS<span class="bang">!</span>platz<span class="wm-ground"> : ${T('Ground Station')}</span></${H}>
+      <${H} class="wordmark">MARS<span class="bang">!</span>platz<span class="wm-sep"> : </span><span class="wm-ground">${T('Ground Station')}</span></${H}>
       <p class="tagline"><b>ZKM | Hertzlab</b></p>
       <p class="run-dates"><b>${esc(m.runLabel)}</b> · ${m.totalDays} ${T('sols in the habitat')} · <span class="run-now">${now}</span></p>
     </div>`;

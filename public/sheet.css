@@ -22,8 +22,8 @@
 
 /* ------------------------------------------------------------ the header: two rows */
 /* A glass band across the top of the window that stays there while the page scrolls under it: the first row carries the
-   name (the way home), the sol, in the middle the three ways on — Write to the crew, Live Mission Dashboard, About —,
-   the habitat's clock and the switches; under a hairline, the running line, fading out at both edges. The three links
+   name (the way home), the sol, in the middle the three ways on — Write to the crew, Live Mission Dashboard, About —
+   and the switches at its end (no clock); under a hairline, the running line, fading out at both edges. The three links
    are a wider screen's: a phone held upright has its bar of keys at the foot instead. */
 body.landing .ticker {
   position: sticky; top: 0; z-index: 40; display: block; height: auto; min-height: 0; padding: 0; gap: 0;
@@ -42,9 +42,7 @@ body.landing .tk-nav a { display: inline-flex; align-items: center; min-height: 
   color: var(--ink); font-family: var(--display); font-size: var(--fs-label); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; text-decoration: none; white-space: nowrap; transition: background .15s ease; }
 body.landing .tk-nav a:hover { background: rgba(var(--cobalt-rgb),.08); }
 body.landing .tk-nav a[aria-current="page"] { background: var(--cobalt); border-color: var(--cobalt); color: #fff; }
-body.landing .tk-clock { flex: none; margin: 0; padding: 0 4px 0 0; align-items: baseline; }
-body.landing .tk-clock b { font-variant-numeric: tabular-nums; }
-body.landing .tk-right { flex: none; padding: 0; }
+body.landing .tk-right { flex: none; margin-left: auto; padding: 0; }   /* at the row's end, whatever stands before it */
 /* the running line: the width of the window, its words starting where the page's content does */
 body.landing .tk-window {
   display: flex; align-items: center; height: 36px; margin: 0; padding: 0 var(--tk-inset); box-sizing: border-box; overflow: hidden;
@@ -54,21 +52,18 @@ body.landing .tk-window {
 }
 body.landing .tk-cell { font-size: 12px; }
 @media (min-width: 761px) and (min-height: 521px) {
-  body.landing .tk-clock-label { display: inline; }
   html { scroll-padding-top: 112px; }                                                  /* what a link brings into view lands under the header */
 }
 
-/* a narrower desk: the row makes room for the three links — the clock without its label, the pills tighter, the theme key
-   its mark alone (as a phone has it), and under 880 px the sol badge goes */
+/* a narrower desk: the row makes room for the three links — the pills tighter, the theme key its mark alone (as a phone
+   has it), and under 880 px the sol badge goes */
 @media (min-width: 761px) and (max-width: 1180px) {
-  body.landing .tk-clock-label { display: none; }
   body.landing .tk-nav { gap: 4px; padding: 0 6px; }
   body.landing .tk-nav a { padding: 0 9px; font-size: var(--fs-tag); letter-spacing: .05em; }
 }
 @media (min-width: 761px) and (max-width: 1000px) {
   body.landing .status .theme button { min-width: 34px; padding: 0 8px; font-size: 0; gap: 0; justify-content: center; }
   body.landing .status .theme .theme-mark { font-size: 12px; }
-  body.landing .tk-clock { padding: 0; }
 }
 @media (min-width: 761px) and (max-width: 880px) { body.landing .tk-sol { display: none; } body.landing .tk-nav a { padding: 0 7px; letter-spacing: .02em; } }
 /* a phone held upright: the bar's row and the running line under it, 83 px in all (the index of folders and the board's
@@ -79,8 +74,6 @@ body.landing .tk-cell { font-size: 12px; }
   body.landing .tk-bar { height: 52px; gap: 8px; padding: 0 16px; }
   body.landing .tk-brand { font-size: 17px; line-height: 52px; }
   body.landing .tk-sol { min-height: 28px; padding: 0 10px; font-size: 11.5px; letter-spacing: .1em; }
-  body.landing .tk-clock { margin: 0; padding: 0; }
-  body.landing .tk-clock b { font-size: 12.5px; letter-spacing: .06em; }
   body.landing .tk-window { height: 30px; margin: 0; padding: 0 16px; }
   body.landing .tk-window::before { background: linear-gradient(90deg, var(--paper-2), rgba(247,248,252,0)); }
   body.landing .tk-window::after { background: linear-gradient(270deg, var(--paper-2), rgba(247,248,252,0)); }
@@ -91,7 +84,6 @@ body.landing .tk-cell { font-size: 12px; }
   body.landing .tk-bar { gap: 6px; padding: 0 12px; }
   body.landing .tk-brand { font-size: 16px; }
   body.landing .tk-sol { padding: 0 8px; gap: 5px; letter-spacing: .04em; }
-  body.landing .tk-clock b { font-size: 11.5px; letter-spacing: .04em; }
   body.landing .tk-window { padding: 0 12px; }
 }
 /* the language key and its list, and the bar of keys' names: at the type floor, never under it */
@@ -136,7 +128,7 @@ body.landing .sheet-meta.is-ruled { padding-bottom: 16px; border-bottom: 1px sol
 body.landing .sheet-intro { position: relative; z-index: 1; }
 body.landing .sheet-intro.is-phone { display: none; }
 body.landing .sheet-intro .run-now { color: var(--ink); }
-body.landing .sheet-intro .wordmark .wm-ground { font-size: .58em; font-weight: 500; letter-spacing: -.02em; color: var(--ink); white-space: nowrap; }   /* Ground Station, after the name, smaller and lighter */
+body.landing .sheet-intro .wordmark .wm-ground { font-size: .58em; font-weight: 500; letter-spacing: -.02em; color: var(--ink); white-space: nowrap; }   /* Ground Station, smaller and lighter: after the name on a phone, under it on a desk */
 
 /* ---- P01: the habitat */
 body.landing .sheet-p1 { display: flex; flex-direction: column; }
@@ -721,10 +713,13 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
      side of the line, as on a phone) */
   body.landing .space-room { margin-top: 12px; --dome-w: clamp(170px, 22vh, 250px); --dome-top: 10px; --earth-w: 118%; --earth-arc: clamp(100px, 14vh, 150px); }
   body.landing .sheet-p1 { height: max(660px, calc(100vh - 101px)); padding: 0 20px 48px; box-sizing: border-box; }   /* the ground line clear of the window's foot */
-  body.landing .sheet-intro { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 28px; padding-top: 12px; }
-  body.landing .sheet-intro .wordmark { margin: 0; font-size: clamp(36px, 3.4vw, 50px); line-height: .95; letter-spacing: -.035em; font-weight: 600; color: var(--ink); }   /* MARS!platz : Ground Station, the page's one heading */
-  body.landing .sheet-intro .run-dates { margin: 0; text-align: left; white-space: nowrap; text-wrap: nowrap; }       /* on one line beside the name (a narrower desk lets it wrap, below) */
-  body.landing .sheet-intro .tagline { margin: 0; text-align: left; }
+  /* the name's band: MARS!platz large, and under it, one under the other — Ground Station, ZKM | Hertzlab, the run */
+  body.landing .sheet-intro { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding-top: 12px; }
+  body.landing .sheet-intro .wordmark { margin: 0; font-size: clamp(36px, 3.4vw, 50px); line-height: .95; letter-spacing: -.035em; font-weight: 600; color: var(--ink); }   /* MARS!platz, the page's one heading */
+  body.landing .sheet-intro .wordmark .wm-sep { display: none; }
+  body.landing .sheet-intro .wordmark .wm-ground { display: block; margin-top: 6px; font-size: .5em; line-height: 1.1; }
+  body.landing .sheet-intro .tagline { margin: 8px 0 0; text-align: left; }
+  body.landing .sheet-intro .run-dates { margin: 6px 0 0; max-width: none; text-align: left; white-space: nowrap; text-wrap: nowrap; }   /* one line (a narrower desk lets it wrap, below) */
   body.landing:not(.inner) .dome-panel { flex: 1 1 auto; margin-top: 10px; }
   body.landing:not(.inner) .dome-stage { flex: 0 0 auto; height: clamp(220px, 36vh, 400px); max-height: 50cqw; min-height: 0; }
   body.landing .dome-panel.has-line { --foot-h: 64px; padding-bottom: 0; }

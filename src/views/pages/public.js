@@ -362,7 +362,7 @@ function composerDevice(ctx, { inFlight = null, error = null, draft = '', kiosk 
  * everyone's published exchanges and this visitor's own messages, whatever
  * their state. Drawn on the mission page and on the messages page alike.
  */
-function boardScreen(ctx, { recent = [], poll = '/api/board' } = {}) {
+function boardScreen(ctx, { recent = [], poll = '/api/board', mineLabel = null } = {}) {
   const T = ctx.T;
   // This visitor's messages that mission control has not yet published. They
   // are in the page, but only surface under MY MESSAGES.
@@ -377,7 +377,7 @@ function boardScreen(ctx, { recent = [], poll = '/api/board' } = {}) {
             <h2>${T('Message Board')}</h2>
             <span class="live" id="feed-live" title="${esc(T('The board refreshes itself every few seconds'))}">${T('LIVE')}</span>
           </div>
-          <div class="scroller feed"><div class="cards" id="feed-cards">${boardCards(recent, T)}
+          <div class="scroller feed"><div class="cards" id="feed-cards">${boardCards(recent, T, { mineLabel })}
             <div class="empty" id="feed-empty"${recent.length ? ' style="display:none"' : ''}
               data-none="${esc(T('Nothing transmitted yet — the first message could be yours'))}"
               data-filtered="${esc(T('No messages match this filter'))}">${
@@ -491,7 +491,7 @@ function ticker(ctx, { today } = {}) {
   /* The header of every public page, after the design handoff's reference sheet: a row with the wordmark (the way home),
      the run's badge — the countdown before it, the sol during it —, and in the middle of the row the station's three ways
      on — Write to the crew (the composer, /#write), Live Mission Dashboard (/#mission) and About (/about) —, then the
-     habitat's clock and the theme and language switches at its right end; under it the running line. The three links are
+     theme and language switches at its right end (no clock); under it the running line. The three links are
      a wider screen's: a phone held upright has its bar of keys at the foot for the same ways (sheet.css hides them there),
      and a screen in the square shows none of them (screen.css). No menu: the reading matter is one page, /about. */
   const ways = [['/#write', 'Write to the crew'], ['/#mission', 'Live Mission Dashboard'], ['/about', 'About']];
@@ -506,7 +506,6 @@ function ticker(ctx, { today } = {}) {
       <a class="tk-brand" href="/" aria-label="MARS!platz">MARS<span class="bang">!</span>platz</a>
       <span class="tk-sol"><i aria-hidden="true"></i>${pre ? `T−${m.countdown.days}d` : over ? T('Complete') : `SOL ${String(m.clampedDay).padStart(2, '0')}/${String(m.totalDays).padStart(2, '0')}`}</span>
       ${nav}
-      <div class="tk-clock"><span class="tk-clock-label">${T('HABITAT TIME')}</span> <b id="tk-clock">${esc(m.venueTime)}</b></div>
       <div class="tk-right">${L.statusStrip(ctx)}</div>
     </div>
     <div class="tk-window" role="marquee" aria-label="${esc(T('What is happening in the habitat'))}"><div class="tk-track" id="tk-track"><div class="tk-line">${line}</div><div class="tk-line" aria-hidden="true">${line}</div></div></div>
@@ -558,11 +557,8 @@ function ticker(ctx, { today } = {}) {
     if (!el) return;
     var tz = el.getAttribute('data-tz') || 'Europe/Berlin';
     function fmt(opts) { return new Intl.DateTimeFormat('en-GB', Object.assign({ timeZone: tz, hour12: false }, opts)).format(new Date()); }
-    var clock = document.getElementById('tk-clock');
-    function tick() { try { clock.textContent = fmt({ hour: '2-digit', minute: '2-digit', second: '2-digit' }); } catch (e) { /* keep the server's */ } }
-    setInterval(tick, 1000); tick();
-    // After the run nothing is updated by automation: the clock still ticks,
-    // but the schedule and the readings are never asked for again.
+    // (the habitat's clock is no longer in the bar; the running line keeps the habitat's time where it says it)
+    // After the run nothing is updated by automation: the schedule and the readings are never asked for again.
     var over = el.getAttribute('data-over') === '1';
     if (over) return;
     var all = function (sel) { return [].slice.call(el.querySelectorAll(sel)); };
@@ -957,17 +953,14 @@ function hwChart(hw, group, members, tz, T = same) {
   const ticks = Array.from({ length: 25 }, (_, k) => ({ t: hw.since + k * 3600000, k }));
   const unit = group.unit ? esc(group.unit) : '';
   const yLabel = (v) => v.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: ax.dec });
-  const u = (s) => (s.unit ? ' ' + esc(s.unit) : '');
-  const reading = (s) => s.kind === 'counter' && s.today != null
-    ? `+${hwNum(s.today, s.decimals)}${u(s)} ${T('today')}`
-    : `${hwNum(s.value, s.decimals)}${u(s)}`;
   // The night, 22:00 to 06:00 at the venue, a darker band either side of the day.
   const band = (h0, h1) => `<rect x="${sx(hw.since + h0 * 3600000).toFixed(1)}" y="${padT}" width="${(sx(hw.since + h1 * 3600000) - sx(hw.since + h0 * 3600000)).toFixed(1)}" height="${ih}" class="hw-night"/>`;
   const now = hw.liveNow && hw.liveNow > hw.since && hw.liveNow < hw.now ? sx(hw.liveNow) : null;
   // The newest reading of the first line, in a tag above its end.
   const lead = series[0];
   const tagText = `${hwNum(lead.s.kind === 'counter' && lead.s.today != null ? lead.s.today : lead.s.value, lead.s.decimals)}${lead.s.unit ? ' ' + lead.s.unit : ''}`;
-  const tagW = 12 + tagText.length * 6.6, tagX = Math.min(W - padR - tagW, Math.max(padL, lead.ex - tagW / 2)), tagY = Math.max(2, lead.ey - 30);
+  // the tag: a pill wide and tall enough to hold the figure (the type is larger than the plot's own: aura.css, .hw-tag)
+  const tagW = 20 + tagText.length * 8.4, tagH = 26, tagX = Math.min(W - padR - tagW, Math.max(padL, lead.ex - tagW / 2)), tagY = Math.max(2, lead.ey - 38);
   return `<figure class="hw-chart hw-${esc(group.key.replace(/[^a-z0-9]+/gi, '-'))}">
   <figcaption class="hw-title"><b>${esc(T(group.title))}</b>${unit ? ` <span class="hw-unit">${unit}${group.key === 'power' ? ` · ${T('hourly average')}` : ''}</span>` : ''}</figcaption>
   <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(T(group.title))} — ${esc(T('today, midnight to midnight venue time, one line per device, on one scale in'))} ${unit || '—'}">
@@ -987,11 +980,11 @@ function hwChart(hw, group, members, tz, T = same) {
       ${r.pts.slice(0, -1).map(([x, y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.8" fill="${r.colour}" class="hw-dot"/>`).join('')}
       <circle cx="${r.ex.toFixed(1)}" cy="${r.ey.toFixed(1)}" r="9" fill="${r.colour}" class="hw-pulse"/>
       <circle cx="${r.ex.toFixed(1)}" cy="${r.ey.toFixed(1)}" r="4.2" fill="${r.colour}" class="hw-end"/>`).join('')}
-    <g class="hw-tag"><rect x="${tagX.toFixed(1)}" y="${tagY.toFixed(1)}" width="${tagW.toFixed(1)}" height="20" rx="10" fill="${lead.colour}"/>
-      <text x="${(tagX + tagW / 2).toFixed(1)}" y="${(tagY + 13.8).toFixed(1)}" text-anchor="middle">${esc(tagText)}</text></g>
+    <g class="hw-tag"><rect x="${tagX.toFixed(1)}" y="${tagY.toFixed(1)}" width="${tagW.toFixed(1)}" height="${tagH}" rx="${tagH / 2}" fill="${lead.colour}"/>
+      <text x="${(tagX + tagW / 2).toFixed(1)}" y="${(tagY + tagH / 2).toFixed(1)}" text-anchor="middle" dominant-baseline="central">${esc(tagText)}</text></g>
   </svg>
   <ul class="hw-legend">${series.map((r) => `
-    <li><i style="background:${r.colour}"></i><span class="hw-name">${esc(r.s.label)}</span><span class="hw-val" style="color:${r.colour}">${reading(r.s)}</span>${
+    <li><i style="background:${r.colour}"></i><span class="hw-name">${esc(r.s.label)}</span>${
       r.s.kind === 'counter' ? '' : `<span class="hw-range">${T('low')} ${hwNum(r.lo, r.s.decimals)} · ${T('high')} ${hwNum(r.hi, r.s.decimals)}</span>`}</li>`).join('')}
   </ul>
 </figure>`;
@@ -1242,8 +1235,10 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
       ...ingest.map((c) => ({ id: 'ingest-' + c.metric, name: T(c.label), unit: c.unit, group: T('Habitat'), domain: c.domain, points: c.points })),
       // The habitat's own hardware, through Home Assistant: one line per
       // device, one value per day — a gauge's daily mean, a meter's daily
-      // added amount. Appears from the first day a reading was stored.
-      ...hardwareDaily.filter((h) => Object.keys(h.points).length).map((h) => ({
+      // added amount. Appears from the first day a reading was stored. A
+      // power draw (a gauge in watts — the kitchen's socket) is not a trend:
+      // its day is on the meter's line, as energy.
+      ...hardwareDaily.filter((h) => Object.keys(h.points).length && !(h.kind === 'gauge' && /^k?w$/i.test(String(h.unit || '')))).map((h) => ({
         id: 'hw-' + h.id, name: h.label, unit: h.unit, group: T('Hardware'), points: h.points })),
       ...items.map((it) => ({ id: 'store-' + it.key, name: it.label, unit: it.unit, group: T('Resources'),
         scaleMax: it.start_quantity || it.quantity || 1, ...level(it.key) })),
@@ -1289,7 +1284,7 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
   const trends = dpanel({ id: 'trends', title: T('Trends'), span: 12 }, trendsBlock);
   const trendsInSensors = trendsInside ? `
     <div class="hbt-trends-in" id="trends">
-      <div class="hbt-sec"><h3>${T('Trends')}</h3><span class="sub">${T('Every channel, store and count over the run')}</span></div>
+      <div class="hbt-sec"><h3>${T('Trends')}</h3></div>
       ${trendsBlock}
     </div>` : '';
 
@@ -1353,7 +1348,7 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
         ${figureTile(crewFigures, m, { key: 'steps', label: 'Steps taken', unit: T('steps'), colour: 'var(--ink)', fmt: (v) => v.toLocaleString('en-GB'), T, crew })}
         <section class="tile t-iaq lvl">
           <h3>${T('Air quality')}</h3>
-          <span class="sub">${T('IAQ index')} · ${T('Scale')} 0–500 · ${T('as the sensor classifies it')}</span>
+          <span class="sub">${T('IAQ index')}</span>
           <div class="big" id="iaqVal" style="margin-top:12px">—<em>IAQ</em></div>
           <div class="verdict" id="iaqVerdict"></div>
           <div id="hbt-iaq"></div>
@@ -1449,11 +1444,10 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
   const blogCommander = blogPanel({ id: 'blog-commander', title: T('Commander Blog'),
     posts: commanderToday, empty: 'No commander blog yet for' });
 
-  /* ---- today's meals: each with its kcal and the power it drew — the kitchen's energy meter read between the meal's
-     hours (breakfast 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00; an added meal between its own), data.mealsFor
-     — and, under the list, which hours those are. The meta line sums the day: kcal, the metered watt hours ("so far"
-     while a meal's hours still run), CO₂e from the recipe book. */
-  const mealHours = (() => { try { return require('../../lib/home-assistant').mealsConfig().windows; } catch { return {}; } })();
+  /* ---- today's meals: each with its kcal and, beside it, the power it drew — the kitchen's energy meter read between
+     the meal's hours (breakfast 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00; an added meal counts with the one of
+     its hour), data.mealsFor — always with its unit, 0 Wh where the meter has nothing yet. The meta line sums the day:
+     kcal, the metered watt hours ("so far" while a meal's hours still run), CO₂e from the recipe book. */
   // the day's watt hours: each window once — the meal that carries it (data.mealsFor), not an added meal counting with it
   const mealsWh = today && today.meals.some((x) => x.energy_source === 'meter') ? today.meals.reduce((s, x) => s + (x.energy_source === 'meter' ? x.power_wh : 0), 0) : null;
   const mealsRunning = !!(today && today.meals.some((x) => x.power_running));
@@ -1463,11 +1457,9 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
       <div class="meal">
         <span class="meal-slot">${esc(L.slotName(T, x.slot))}</span>
         <b>${esc(x.name)}</b>
-        <span class="meal-figs">${esc(L.mealFigs(x))}</span>
+        <span class="meal-figs">${esc(L.mealFigs(x, T))}</span>
         ${L.mealEco(x, T)}
-        ${L.mealPower(x, T)}
-      </div>`).join('')}</div>
-      <p class="meal-hours">${esc(T('Power: the kitchen’s energy meter, read'))} ${esc(L.mealHoursLine(T, mealHours))}${today.meals.some((x) => x.power_with) ? ` · ${esc(T('an added meal counts with the meal whose hours cover the time it is served at'))}` : ''}</p>` : `<div class="empty">${T('No meals filed for today')}</div>`);
+      </div>`).join('')}</div>` : `<div class="empty">${T('No meals filed for today')}</div>`);
 
   // Each officer with their current condition — the latest state filed from
   // mission control, translated to language in src/lib/mood.js. The slider
@@ -1792,14 +1784,16 @@ function messageCard(m, tz, T = same) {
  * page on load and again by /api/board for the live refresh, so the two
  * cannot drift apart: one function defines what the board holds.
  */
-function boardCards(recent, T = same) {
+function boardCards(recent, T = same, { mineLabel = null } = {}) {
   const tz = (missionLib.config() || {}).timezone || 'Europe/Berlin';
   // The viewer's own messages first, under their own heading — whatever
   // state they are in — then everyone's published exchanges. Without any
-  // of the viewer's own there are no headings, just the board.
+  // of the viewer's own there are no headings, just the board. The
+  // installation's board is the ground station's: its group is headed by
+  // the station's name (mineLabel), not MY MESSAGES.
   const mine = recent.filter((m) => m.mine), rest = recent.filter((m) => !m.mine);
   if (!mine.length) return rest.map((m) => messageCard(m, tz, T)).join('');
-  return `<div class="board-group" data-group="mine">${T('My messages')} <span class="board-group-n">${mine.length}</span></div>`
+  return `<div class="board-group" data-group="mine">${mineLabel ? esc(mineLabel) : T('My messages')} <span class="board-group-n">${mine.length}</span></div>`
     + mine.map((m) => messageCard(m, tz, T)).join('')
     + `<div class="board-group" data-group="all">${T('All messages')}</div>`
     + rest.map((m) => messageCard(m, tz, T)).join('');

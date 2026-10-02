@@ -498,31 +498,18 @@ function slotName(T, slot) {
 }
 
 /**
- * A meal's figures on one line for the public pages: kcal, and the water the
- * plan names, when it does. The power stands on a line of its own (mealPower).
+ * A meal's figures on one line for the public pages: kcal, the water the plan
+ * names (when it does), and the power it drew — the kitchen's energy meter
+ * read between the meal's hours (data.mealsFor), as watt hours with the unit
+ * always, 0 Wh where the meter has nothing (yet) for them; an added meal
+ * shows the figure of the named meal it counts with, marked so.
  */
-function mealFigs(m) {
+function mealFigs(m, T = (x) => x) {
   const parts = [`${m.kcal || 0} kcal`];
   if (m.water_litres) parts.push(`${m.water_litres} L`);
+  const wh = m.power_wh != null ? m.power_wh : m.energy_source === 'filed' && m.energy_wh ? m.energy_wh : 0;
+  parts.push(`${wh} Wh${m.power_with ? ` (${T('with')} ${slotName(T, m.power_with)})` : ''}`);
   return parts.join(' · ');
-}
-
-/**
- * A meal's power, as its own line under its figures: the kitchen's energy
- * meter read between the meal's hours (data.mealsFor) — "Power 216 Wh ·
- * 06:00–09:00", "so far" while the hours still run, a dash while the meter has
- * nothing for them yet; an added meal shows the hours and figure of the named
- * meal it counts with ("· with Dinner"). Null for a meal with no hours at all
- * (an added meal without a time), and for one whose power is the file's figure.
- */
-function mealPowerText(m, T = (x) => x) {
-  if (!m.window) return m.energy_wh && m.energy_source === 'filed' ? `${T('Power')} ${m.energy_wh} Wh` : null;
-  const fig = m.power_wh != null ? `${m.power_wh} Wh${m.power_running ? ` ${T('so far')}` : ''}` : '—';
-  return `${T('Power')} ${fig} · ${m.window[0]}–${m.window[1]}${m.power_with ? ` · ${T('with')} ${slotName(T, m.power_with)}` : ''}`;
-}
-function mealPower(m, T = (x) => x) {
-  const text = mealPowerText(m, T);
-  return text ? `<span class="meal-figs meal-power">${esc(text)}</span>` : '';
 }
 
 /** The hours the kitchen meter is read for each named meal, as a line: "Breakfast 06:00–09:00 · Lunch 09:00–14:00 · …". */
@@ -534,6 +521,6 @@ module.exports = {
   masthead, pageNav,
   page, panel, eyebrow, readout, orbitPlot, sparkline, pipeline, scaleStrip,
   statusStrip, langSwitch, themeSwitch, sym, legend, SYMBOL_KEY, esc, NAV, MESSAGE_STATES,
-  mealEco, mealEcoText, MEAL_NUTRIENTS, slotName, mealFigs, mealPower, mealPowerText, mealHoursLine,
+  mealEco, mealEcoText, MEAL_NUTRIENTS, slotName, mealFigs, mealHoursLine,
   clientTable, ASSET_V,   // the installation's screens (pages/screens.js) build their own shell from these
 };

@@ -302,9 +302,7 @@
 
     if (val !== null) {
       $('tempVal').innerHTML = val.toFixed(ch.decimals) + '<em>°C</em>';
-      var all = pts.map(function (p) { return p.temp; });
-      $('tempVerdict').textContent = Math.min.apply(null, all).toFixed(1) + '–' +
-        Math.max.apply(null, all).toFixed(1) + ' ' + tr('in view');
+      $('tempVerdict').textContent = '';                                       // the figure alone (no range of the ruler's view)
     }
   }
 

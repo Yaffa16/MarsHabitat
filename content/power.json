@@ -23,5 +23,13 @@
       "label": "Other"
     }
   ],
-  "days": {}
+  "days": {
+    "0": {
+      "heating": 15
+    },
+    "1": {
+      "heating": 653,
+      "food": 22000
+    }
+  }
 }

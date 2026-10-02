@@ -173,10 +173,6 @@ body.landing .ticker {
   color: var(--dim); font-family: var(--display); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase;
 }
 :root[data-theme="dark"] body.landing .ticker { background: var(--glass-soft); }
-body.landing .tk-clock-label { display: none; }
-body.landing .tk-clock { flex: none; display: flex; align-items: center; gap: 8px; padding: 0 10px 0 14px; background: transparent; color: var(--ink); font-weight: 600; }
-body.landing .tk-clock b { font-size: 13px; letter-spacing: .1em; color: var(--ink); }
-body.landing .tk-clock-label { font-size: var(--fs-tag); letter-spacing: .1em; color: var(--dim); opacity: 1; }
 body.landing .tk-window { flex: 1 1 auto; min-width: 0; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 36px), transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 36px), transparent 100%); }
 body.landing .tk-track { animation-duration: 46s; }
 body.landing .tk-cell { padding: 0; font-size: 12.5px; letter-spacing: .1em; color: var(--dim); }
@@ -756,7 +752,7 @@ body.landing .pwr-total b { font-family: var(--display); font-size: min(22px, ca
 body.landing .hbt .note, body.landing .dpanel.compact .hbt .note { border-radius: 14px; background: var(--well); box-shadow: var(--sh-inset); font-size: var(--fs-note); line-height: 1.45; }
 /* live images from the habitat: a glass strip of its own at the head of the dashboard — under its heading, above the two doors */
 body.landing .cloud-latest {
-  margin: 0; padding: 16px 20px; display: flex; gap: 18px; align-items: stretch; box-sizing: border-box;
+  margin: 0; padding: 16px 20px; display: flex; flex-wrap: wrap; gap: 18px; align-items: stretch; box-sizing: border-box;   /* wraps only for an opened picture's frame (cloud.js, .cloud-peek) */
   background: var(--glass); -webkit-backdrop-filter: blur(26px) saturate(1.35); backdrop-filter: blur(26px) saturate(1.35);
   border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); border-radius: 28px; color: var(--ink);
 }
@@ -770,6 +766,14 @@ body.landing .cloud-strip .mtile-visual { background: #101012; }
 body.landing .cloud-strip .mtile-stamp, body.landing .cloud-grid .mtile-stamp { display: block; padding: 6px 10px 7px; }
 body.landing .mtile-when { display: block; font-family: var(--display); font-size: var(--fs-tag); letter-spacing: .06em; text-transform: uppercase; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
 body.landing .cloud-strip .mtile-when { color: rgba(255,255,255,.78); }                                /* the strip's tiles are dark */
+/* a tile's picture opened in place (cloud.js): a small frame under the strip, no wider than the picture — the picture
+   at a moderate size (no taller than 320px) on the dark ground, its time under it, the × on its corner; the open tile marked */
+body.landing .cloud-peek { flex-basis: 100%; width: 100%; margin-top: 0; padding: 0; display: flex; justify-content: center; }
+body.landing .cloud-peek-fig { position: relative; margin: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: 100%; box-sizing: border-box; padding: 12px 14px 10px; border-radius: 16px; background: #101012; box-shadow: 0 10px 26px -14px rgba(0,0,0,.6); }
+body.landing .cloud-peek-img { display: block; width: auto; height: auto; max-width: 100%; max-height: min(36vh, 320px); border-radius: 10px; object-fit: contain; }
+body.landing .cloud-peek-cap { font-family: var(--display); font-size: var(--fs-tag); letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.78); }
+body.landing .cloud-peek-x { position: absolute; top: 8px; right: 8px; }
+body.landing .cloud-strip .mtile.is-open { outline: 2px solid var(--mars); outline-offset: 2px; }
 /* the lightbox on the media page (media.js, lightbox; public/cloud.js): a small pop-up — the picture no wider than 760px
    nor taller than 62vh, its time under it, the arrows beside it and the cross on its corner — over the page, blurred
    behind it */
@@ -852,7 +856,7 @@ body.landing .hw-area { animation: hw-fade 1.6s ease-out both; }
 body.landing .hw-dot { opacity: .45; }
 body.landing .hw-end { stroke: #fff; stroke-width: 2; }
 body.landing .hw-pulse { opacity: .35; transform-box: fill-box; transform-origin: center; animation: hw-pulse 2.2s ease-out infinite; }
-body.landing .hw-tag text { font-family: var(--display); font-size: 11px; font-weight: 600; letter-spacing: .02em; fill: #fff; }
+body.landing .hw-tag text { font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: .02em; fill: #fff; }   /* the figure in its pill (public.js, hwChart, sizes the pill to it) */
 body.landing .hw-tag { animation: hw-fade .8s ease-out 1s both; }
 body.landing .hw-legend li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
 body.landing .hw-legend .hw-name { color: var(--ink); }
@@ -1128,7 +1132,6 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
 @media (max-width: 760px), (max-height: 520px) {
   body.landing { --fs-tag: 11.5px; --fs-label: 12.5px; --fs-note: 15px; --fs-name: 16px; --fs-read: 17px; }   /* the type sizes, a little larger in the hand */
   body.landing .ticker { height: 50px; margin-top: 0; padding: 0 12px; gap: 2px; }                 /* edge to edge here too, its contents a little in from the sides */
-  body.landing .tk-clock { padding: 0 8px; } body.landing .tk-clock-label { display: none; }
   body.landing .tk-right { display: flex; flex: none; }
   body.landing .tk-right .status { gap: 4px; }
   body.landing .status .theme button { min-height: 30px; min-width: 30px; padding: 0 6px; font-size: 0; gap: 0; justify-content: center; }
@@ -1136,7 +1139,6 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
   body.landing .status .lang-menu > summary { min-height: 30px; min-width: 0; padding: 0 8px 0 10px; gap: 6px; font-size: 11px; letter-spacing: .04em; }
   body.landing .status .lang-menu > .lang { gap: 2px; padding: 4px; border-radius: 18px; }
   body.landing .status .lang button { min-height: 30px; min-width: 30px; padding: 0 5px; font-size: 11px; letter-spacing: .04em; }
-  body.landing .tk-clock { padding: 0 6px; font-size: 12px; }
   body.landing .tk-window { min-width: 40px; }
   body.landing .hero-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; margin: 20px 0 24px; padding: 0; min-height: 0; }
   body.landing:not(.inner) .masthead, body.landing:not(.inner) .masthead > div { display: contents; }   /* the wordmark, its lines, the lead and the button become the column's own rows */
@@ -1265,7 +1267,6 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
   body.landing .tk-brand .bang { color: var(--mars); }
   body.landing .tk-sol { display: inline-flex; align-items: center; gap: 6px; flex: none; min-height: 28px; padding: 0 9px; border-radius: 999px; border: 1px solid var(--mars); color: var(--mars-ink); font-size: 11px; letter-spacing: .12em; font-weight: 600; text-transform: uppercase; }
   body.landing .tk-sol i { width: 6px; height: 6px; border-radius: 50%; background: var(--mars); box-shadow: 0 0 8px 2px rgba(255,90,31,.7); animation: live 2.4s ease-in-out infinite; }
-  body.landing .tk-clock { margin-left: auto; padding: 0 6px; }
   body.landing .tk-right { flex: none; }
   body.landing .tk-window { flex: 1 0 100%; order: 10; min-width: 0; height: 30px; margin: 0 -12px; padding: 0 12px; box-sizing: border-box; display: flex; align-items: center; border-top: 1px solid var(--glass-edge); }
   /* the reading pages — About, What this is, Who we are — as sheets too */
@@ -1483,8 +1484,6 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
 @media (max-width: 400px) and (min-height: 521px) {
   body.landing .tk-brand { font-size: 16px; }
   body.landing .tk-sol { font-size: 10.5px; padding: 0 7px; gap: 5px; }
-  body.landing .tk-clock { padding: 0 4px; }
-  body.landing .tk-clock b { font-size: 11.5px; letter-spacing: .06em; }
 }
 @media (max-width: 349px) and (min-height: 521px) {
   body.landing .tk-sol { display: none; }

@@ -1,3 +1,20 @@
 {
+  "1": {
+    "extinguishers": {
+      "quantity": 4,
+      "consumption": 7
+    },
+    "food": {
+      "quantity": 5,
+      "consumption": 5
+    },
+    "medical": {
+      "quantity": 9,
+      "consumption": 2
+    },
+    "water": {
+      "consumption": 5
+    }
+  },
   "_note": "Quantity remaining at the end of each mission day and the daily draw, per store, over the thirteen days of the run — counted on the Habitat tab of mission control, or written here as \"5\": { \"water\": { \"quantity\": 440, \"consumption\": 36 } } (a \"_why\" line beside them is kept as the day's note). Only the days that were counted are here. On the site a day with no entry carries forward from the previous day at its draw; the record prints only what was counted. Emptied by the reset."
 }

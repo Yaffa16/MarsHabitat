@@ -493,7 +493,7 @@ echo "$FOOT" | grep -q "location.replace('/about?from=home'" && ok "the landing 
 echo "$FOOT" | grep -q 'id="crewlog"' && bad "the crew log panel is still on the landing page" || ok "no crew log panel on the landing page — the log lives at /logbook and in At a Glance"
 echo "$FOOT" | grep -q 'id="media"' && bad "the media panel is still on the landing page" || ok "no media panel — the media lives at /media and in At a Glance"
 echo "$FOOT" | grep -q 'id="whole"' && bad "the whole-mission panel is still on the landing page" || ok "no whole-mission panel — the run day by day lives in At a Glance"
-echo "$FOOT" | grep -q 'class="ticker"' && echo "$FOOT" | grep -q 'id="tk-clock"' && ok "a ticker runs across the top: the habitat's clock and the current activity" || bad "no ticker on the landing page"
+echo "$FOOT" | grep -q 'class="ticker"' && echo "$FOOT" | grep -q 'id="tk-track"' && ! echo "$FOOT" | grep -q 'tk-clock\|HABITAT TIME' && ok "a ticker runs across the top: the current activity on its running line; no clock in the bar any more" || bad "no ticker on the landing page, or the clock is still in it"
 echo "$FOOT" | grep -q 'id="tk-now"' && echo "$FOOT" | grep -q 'data-tasks=' && ok "the ticker says what the crew are currently doing and switches to the next task as its time comes" || bad "ticker has no current activity"
 echo "$FOOT" | grep -qF "fetch('/api/ticker'" && echo "$FOOT" | grep -qF "5 * 60 * 1000" && ok "and refreshes the schedule from the station every five minutes" || bad "ticker does not refresh on a cycle"
 TK=$(curl -s $B/api/ticker)
@@ -891,7 +891,7 @@ sleep 1
 HB1=$(curl -s -b $A "$B/control?tab=habitat&day=1")
 echo "$HB1" | grep -q '<b>300 Wh</b> · the kitchen meter, 06:00–09:00' && echo "$HB1" | grep -q '<b>600 Wh</b> · the kitchen meter, 15:00–22:00 — counts with Dinner' && echo "$HB1" | grep -q '<b>0 Wh</b> · the kitchen meter, 09:00–14:00' \
   && ok "each card on the desk shows what the meter read for its hours — 300 Wh for breakfast, 0 for lunch — and the tea at 16:00 counts with Dinner, 600 Wh" || bad "the desk's cards do not show the meter's figures"
-echo "$HB1" | grep -q '900 Wh from the kitchen meter' && ok "the day total adds each window once — 300 + 0 + 600" || bad "no metered total on the desk, or a window counted twice"
+echo "$HB1" | grep -q 'from the kitchen meter\|Day total' && bad "the desk still adds a day total under the meals" || ok "no day total under the desk's meals — each card carries its own figure and nothing is summed there"
 curl -s -b $A "$B/archive/day/1" | grep -q '400 kcal · 0 L water · 0 min · 300 Wh (the kitchen meter, 06:00–09:00)' && curl -s -b $A "$B/archive/day/1/export.md" | grep -q '50 kcal · 0 L water · 0 min · 600 Wh (the kitchen meter, 15:00–22:00)' \
   && ok "the record carries the metered figure with each meal and says where it came from — the tea, alone in dinner's hours, carries them" || bad "the record lacks the meter's figures"
 curl -s -b $A "$B/archive/export.json" | node -e '
@@ -903,19 +903,32 @@ let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const j = 
 curl -s -b $A -X POST -d "day=1" -d "BREAKFAST_name=Porridge" -d "BREAKFAST_kcal=400" -d "DINNER_name=Stew" -d "DINNER_kcal=500" -d "EXTRA1_name=Tea" -d "EXTRA1_kcal=50" -d "EXTRA1_at=16:00" -o /dev/null $B/control/meals
 sleep 1
 HB1B=$(curl -s -b $A "$B/control?tab=habitat&day=1")
-[ "$(echo "$HB1B" | grep -o '<b>600 Wh</b> · the kitchen meter, 15:00–22:00' | wc -l)" = "2" ] && echo "$HB1B" | grep -q '<b>600 Wh</b> · the kitchen meter, 15:00–22:00 — counts with Dinner' && echo "$HB1B" | grep -q '900 Wh from the kitchen meter' \
+[ "$(echo "$HB1B" | grep -o '<b>600 Wh</b> · the kitchen meter, 15:00–22:00' | wc -l)" = "2" ] && echo "$HB1B" | grep -q '<b>600 Wh</b> · the kitchen meter, 15:00–22:00 — counts with Dinner' \
   && curl -s -b $A "$B/archive/day/1/export.md" | grep -q '50 kcal · 0 L water · 0 min · power with Dinner (15:00–22:00, 600 Wh)' \
-  && ok "with a dinner planned, the tea shows dinner's 600 Wh as counting with it, and the day's total stays 900 — each window once" || bad "an added meal beside a named one is not counted with it"
+  && ok "with a dinner planned, the tea shows dinner's 600 Wh as counting with it, and the record says so" || bad "an added meal beside a named one is not counted with it"
 curl -s -b $A -o /tmp/day1.pdf $B/archive/day/1/export.pdf && pdftext /tmp/day1.pdf | grep -q "Wh: the kitchen's energy meter, read breakfast 06:00" && ok "the PDF's meals table says the watt hours are the kitchen meter's, and the hours" || bad "the PDF does not explain the watt hours"
-# today's meals on the dashboard, with the line under them (today has none filed yet in this suite: one is filed for the look)
-curl -s -b $A -X POST -d "day=$TODAY" -d "LUNCH_name=Lentil stew" -d "LUNCH_kcal=420" -o /dev/null $B/control/meals
+# today's meals on the dashboard: each meal's line is its kcal, then its water when the file has it, then the kitchen
+# meter's watt hours — the figure with its unit, 0 Wh when the meter has nothing for the hours — and no hours named
+# anywhere; an added meal beside the named one of its hours says which meal its figure counts with. No line under the
+# meals about the meter. (today has none filed yet in this suite: a lunch, a dinner and a tea at 16:00 are filed for
+# the look; the meter has no reading today, so every figure is 0)
+curl -s -b $A -X POST -d "day=$TODAY" -d "LUNCH_name=Lentil stew" -d "LUNCH_kcal=420" -d "DINNER_name=Stew" -d "DINNER_kcal=500" -d "EXTRA1_name=Tea" -d "EXTRA1_kcal=50" -d "EXTRA1_at=16:00" -o /dev/null $B/control/meals
 sleep 1.5
 LANDM=$(curl -s $B/)
-echo "$LANDM" | grep -q '<span class="meal-figs">420 kcal' && ! echo "$LANDM" | grep -q '420 kcal · 0 L · 0 Wh' && ok "a meal without a reading shows its kcal alone — no 0 L, no 0 Wh" || bad "the meal line still shows noughts"
-echo "$LANDM" | grep -q '<p class="meal-hours">Power: the kitchen’s energy meter, read Breakfast' && echo "$LANDM" | grep -q "$(printf 'Dinner\xc2\xa015:00–22:00')" \
-  && ok "Today's Meal says under the meals that the watt hours are the kitchen meter's, and which hours are read for each meal" || bad "the Today's Meal panel has no line about the meter"
-curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q 'Strom: der Energiezähler der Küche, gelesen Frühstück' && curl -s -H "Cookie: mcs_lang=fr" $B/ | grep -q 'Électricité : le compteur d’énergie de la cuisine, lu Petit-déjeuner' \
-  && ok "and in German and French" || bad "the meter line is not translated"
+echo "$LANDM" | grep -q '<span class="meal-figs">420 kcal · 0 Wh</span>' && echo "$LANDM" | grep -q '<span class="meal-figs">500 kcal · 0 Wh</span>' && echo "$LANDM" | grep -q '<span class="meal-figs">50 kcal · 0 Wh (with Dinner)</span>' \
+  && ok "Today's Meal: kcal, then the watt hours with their unit — 0 Wh when the meter has nothing — and the tea's as counting with Dinner; no hours on the line" || bad "the meal lines are not kcal · Wh as they should be"
+node -e '
+const L = require("./src/views/layout"); const E = (x) => x;
+process.exit(L.mealFigs({ kcal: 420, water_litres: 0.4, power_wh: null }, E) === "420 kcal · 0.4 L · 0 Wh" && L.mealFigs({ kcal: 420, energy_source: "filed", energy_wh: 250 }, E) === "420 kcal · 250 Wh" && L.mealFigs({ kcal: 400, power_wh: 300, power_running: true }, E) === "400 kcal · 300 Wh" ? 0 : 1);
+' && ok "a meal with water in the file reads kcal · L · Wh; a figure filed as a total before the meter stands in for a reading; the figure so far carries no mark" || bad "layout.mealFigs is not as it should be"
+echo "$LANDM" | grep -q 'class="meal-hours"\|Power: the kitchen' && bad "Today's Meal still carries the line about the meter and its hours" || ok "no line under Today's Meal about the meter or the hours it is read between — the figure stands with the meal"
+curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '50 kcal · 0 Wh (mit Abendessen)' && ! curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q 'class="meal-hours"' && curl -s -H "Cookie: mcs_lang=fr" $B/ | grep -q '50 kcal · 0 Wh (avec Dîner)' \
+  && ok "and in German and French — mit Abendessen, avec Dîner — without the meter line" || bad "the meal lines are not translated, or the meter line is back"
+# the booklet keeps the line: there the hours matter to a reader of the record
+curl -s $B/at-a-glance | grep -q '<p class="note meal-hours">Power: the kitchen’s energy meter, read Breakfast' && curl -s $B/at-a-glance | grep -q "$(printf 'Dinner\xc2\xa015:00–22:00')" \
+  && ok "At a Glance still says under each day's meals that the watt hours are the kitchen meter's, and the hours read for each meal" || bad "the booklet lost its line about the meter"
+grep -q "const wh = m.power_wh != null ? m.power_wh : m.energy_source === 'filed' && m.energy_wh ? m.energy_wh : 0;" src/views/layout.js && grep -q 'parts.push(`${wh} Wh${m.power_with' src/views/layout.js \
+  && ok "layout.mealFigs: the meter's figure, else a figure filed as a total before the meter, else 0 — always with its unit" || bad "layout.mealFigs does not put the watt hours beside the kcal"
 node -e '
 const i = require("./src/lib/i18n"); const T = i.of("de"), F = i.of("fr"); const L = require("./src/views/layout");
 process.exit(L.slotName(T, "EXTRA1") === "Zusätzliche Mahlzeit" && L.slotName(T, "EXTRA2") === "Zusätzliche Mahlzeit 2" && L.slotName(F, "EXTRA3") === "Repas supplémentaire 3" && L.slotName((x) => x, "RATION") === "Other" && L.slotName((x) => x, "BREAKFAST") === "Breakfast" ? 0 : 1);
@@ -943,6 +956,18 @@ echo "$HB1" | grep -q "These values are automated, are you sure you would like t
 echo "$LANDM" | grep -q '>Placeholder<' && bad "the Resources tile still says Placeholder" || ok "the Resources tile says no Placeholder — a store with no figure yet is an empty ring and a dash"
 grep -q '  body.landing .hbt .aux .t-res { flex: 0 0 auto; width: auto; max-width: 100%; }' public/aura.css && grep -q '  body.landing .hbt .aux .gauge.round { flex: 0 0 auto; width: max(86px, calc(8.8 \* var(--u))); }' public/aura.css && grep -q '  body.landing .hbt .bento.aux { display: flex; flex-wrap: wrap; align-items: stretch; }' public/aura.css \
   && ok "on a desk the Resources tile is only as wide as its rings — one a store — the power tile taking the rest of the row" || bad "the Resources tile is not sized by its stores"
+# the desk's words: every Save key reads Save and nothing more; no Day total under the meals or the power, no Crew total
+# under the steps or the calories; Steps taken, Calories consumed and Power consumed head their blocks without a day
+HBW=$(curl -s -b $A "$B/control?tab=habitat&day=1")
+[ "$(echo "$HBW" | grep -o '<button class="primary">Save</button>' | wc -l)" = "6" ] && ! echo "$HBW" | grep -q '<button class="primary">Save [a-z]' \
+  && ok "every Save key on the desk reads Save — the schedule, the meals, the steps, the calories, the inventory, the power — and nothing more" || bad "a Save key still says more than Save"
+echo "$HBW" | grep -q 'Day total\|Crew total\|crew total' && bad "a Day total or a Crew total is still on the desk" || ok "no Day total, no Crew total on the desk — the totals are worked out on save and read on the station"
+echo "$HBW" | grep -q '<div class="eyebrow">Power consumed</div>' && echo "$HBW" | grep -q '<div class="eyebrow">Calories consumed</div>' && echo "$HBW" | grep -q '<div class="eyebrow">Steps taken</div>' \
+  && ! echo "$HBW" | grep -q 'Power consumed · \|Calories consumed · \|Steps taken · ' \
+  && ok "Power consumed, Calories consumed and Steps taken head their blocks with no day after them; Meals and Schedule keep theirs" || bad "a figure block still names its day in its head"
+HBN=$(curl -s -b $A "$B/control?tab=habitat&day=0")
+echo "$HBN" | grep -q '<div class="eyebrow">Power consumed</div>' && echo "$HBN" | grep -q '<div class="eyebrow">Calories consumed</div>' && echo "$HBN" | grep -q '<div class="eyebrow">Steps taken</div>' && echo "$HBN" | grep -q '<div class="eyebrow">Meals · NOW</div>' \
+  && ok "and on NOW the three say no NOW either — the meals do" || bad "NOW is back in a figure block's head"
 
 echo "── crew figures"
 curl -s -b $A -X POST -d "day=3" -d "calories=4999" -d "steps=8123" -o /dev/null $B/control/crew-figures
@@ -967,8 +992,7 @@ curl -s $B/ | grep -q 'stroke-dasharray="2 3"' \
 echo "── editable content"
 curl -s $B/api/content | grep -q '"ok":true' && ok "content files loaded cleanly" || bad "content failed to load"
 curl -s $B/at-a-glance | grep -q "Hatch seal and pressure hold" && ok "authored schedule is live" || bad "schedule missing"
-node -e 'const d = require("./content/meals.json"); process.exit(Object.keys(d).some((k) => /^\d+$/.test(k) && k !== "0") ? 1 : 0);' \
-  && ok "the food plan ships empty (NOW, the rehearsal day, may be filed)" || bad "meals.json ships with run days in it"
+# (content/meals.json is the live food plan — the crew file days into it from the desk — so the suite no longer asks it to be empty)
 node -e '
 const fs = require("fs"), p = process.env.CONTENT_DIR + "/meals.json";
 const d = JSON.parse(fs.readFileSync(p, "utf8")); d["2"] = [{ slot: "DINNER", recipe: "black-bean-soup" }]; fs.writeFileSync(p, JSON.stringify(d, null, 2));'
@@ -1310,6 +1334,17 @@ grep -q "querySelector('.cloud-days')" public/cloud.js && grep -q "function reco
 grep -q 'id="cloud-latest"' src/views/pages/public.js && grep -q "cloud-latest" public/cloud.js && grep -q "slice(0, 6)" src/server.js && grep -q "Live images from the Habitat" src/views/pages/media.js \
   && ok "the Habitat panel carries Live images from the Habitat — the newest six from the cloud, on the same live beat" || bad "live-images strip missing"
 curl -s $B/ | grep -q 'cloud-latest' && bad "the latest strip shows without the bridge" || ok "no latest strip on the landing page until the bridge is configured"
+# a click on a picture of the strip opens it IN PLACE — a small frame under the strip, no wider than the picture and no
+# taller than 320px, its time under it and a × on its corner — never a new tab or a pop-up; the same tile again, the ×
+# or Escape closes it; a click with a modifier key, or without JavaScript, still opens the original as the link says
+grep -q "e.target.closest('#cloud-latest .mtile.kind-image\[href\]')" public/cloud.js && grep -q "if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;" public/cloud.js \
+  && grep -q "peek.className = 'cloud-peek'" public/cloud.js && grep -q "if (openId === id) { closePeek(); return; }" public/cloud.js && grep -q "x.className = 'cloud-peek-x popup-close'" public/cloud.js \
+  && grep -q "if (e.key === 'Escape' && peek) closePeek();" public/cloud.js && grep -q "latest.appendChild(peek);" public/cloud.js && ! grep -q "window.open" public/cloud.js \
+  && ok "cloud.js opens a strip picture in place under the strip (.cloud-peek) — the tile again, the × or Escape close it; no new page" || bad "the strip's in-place viewer is not wired as it should be"
+grep -q "body.landing .cloud-peek { flex-basis: 100%; width: 100%; margin-top: 0; padding: 0; display: flex; justify-content: center; }" public/aura.css \
+  && grep -q "body.landing .cloud-peek-img { display: block; width: auto; height: auto; max-width: 100%; max-height: min(36vh, 320px); border-radius: 10px; object-fit: contain; }" public/aura.css \
+  && grep -q "body.landing .cloud-latest {" public/aura.css && grep -q "flex-wrap: wrap" public/aura.css && grep -q "body.landing .cloud-strip .mtile.is-open { outline: 2px solid var(--mars); outline-offset: 2px; }" public/aura.css \
+  && ok "the frame is small — centred under the strip, the picture no taller than 320px — and the open tile is marked" || bad "the in-place frame is not sized as it should be"
 
 echo "── at a glance"
 GLA=$(curl -s $B/at-a-glance)
@@ -1415,8 +1450,8 @@ grep -q "font-size: clamp(20px, 1.2vw, 24px)" public/screen.css && ok "its text 
 grep -q 'body.screen .screen-blogs .blogp .dpanel-body > .empty { position: absolute; inset: 22px 40px 40px; min-height: 0; display: block; text-align: left;' public/screen.css \
   && ok "a blog with nothing written stands at the top left, across the width, like a post would" || bad "the empty blog note is not left-aligned across the width"
 # the board screen: its cards come back from the poll in the screen's own language, all 400 of them; nothing on it is tappable
-echo "$SCR" | grep -q 'data-poll="/api/board?lang=de&amp;limit=400"' && curl -s -b $SK "$B/screen/board?lang=en" | grep -q 'data-poll="/api/board?lang=en&amp;limit=400"' \
-  && ok "the board screen polls /api/board for its own language and its 400 cards" || bad "the board screen polls the visitor's board"
+echo "$SCR" | grep -q 'data-poll="/api/board?lang=de&amp;limit=400&amp;station=1"' && curl -s -b $SK "$B/screen/board?lang=en" | grep -q 'data-poll="/api/board?lang=en&amp;limit=400&amp;station=1"' \
+  && ok "the board screen polls /api/board for its own language and its 400 cards, as the ground station" || bad "the board screen polls the visitor's board"
 curl -s "$B/api/board?lang=de&limit=400" | grep -q 'Diese Nachricht ist jetzt' && curl -s "$B/api/board?lang=fr" | grep -q 'Ce message est maintenant' && ! curl -s "$B/api/board?lang=de" | grep -q 'This message is currently' \
   && ok "/api/board answers in the language asked for, so the ticking words and the cards' words agree" || bad "/api/board ignores ?lang"
 grep -q "if (document.body.classList.contains('screen')) return;" public/board.js && grep -q 'body.screen .card.xc .card-space { flex-direction: row; flex-wrap: wrap;' public/screen.css && grep -q 'body.screen .card.xc .card-space-more { display: contents; }' public/screen.css \
@@ -1448,6 +1483,13 @@ CS1=$(echo "$WR1" | grep -o 'class="transit transit-block" data-callsign="[A-Z0-
 sleep 4   # the transit (TRANSIT_SECONDS=3): then the screen's messages are in mission control's queue under the operator's name
 curl -s -b $A "$B/control?show=pending" | grep -q '<span class="cs">BODENSTATION</span>' \
   && ok "mission control's queue shows the screen's messages under BODENSTATION, not under a callsign of the computer's" || bad "the screen's messages do not reach the queue under the operator name"
+# the board screen is the ground station's board: everything sent from the writing screen stands on it at once, whatever
+# its state, under the station's name — the public board (a cookie's, or nobody's) shows nothing of it until it is published
+BD=$(curl -s -b $SK "$B/screen/board?lang=en")
+echo "$BD" | grep -q 'data-poll="/api/board?lang=en&amp;limit=400&amp;station=1"' && echo "$BD" | grep -q '<div class="board-group" data-group="mine">BODENSTATION <span class="board-group-n">' \
+  && echo "$BD" | grep -q 'First from the square' && echo "$BD" | grep -q 'Second from the square' && [ "$(echo "$BD" | grep -o '<span class="cs">BODENSTATION</span>' | wc -l)" -ge 2 ] \
+  && curl -s "$B/api/board?lang=en&limit=400&station=1" | grep -q 'First from the square' && ! curl -s "$B/api/board?lang=en&limit=400" | grep -q 'First from the square' && ! curl -s $B/ | grep -q 'First from the square' \
+  && ok "the board screen shows the writing screen's messages at once, unanswered, under BODENSTATION — and polls as the station; the public board shows them only once published" || bad "the board screen is not the ground station's board"
 curl -s -b $SK "$B/screen/write/composer?lang=fr" | grep -q 'action="/screen/write?lang=fr"' && curl -s -b $SK "$B/screen/write/composer?lang=fr" | grep -q 'placeholder="Écrivez à l’équipage."' && ! curl -s -b $SK "$B/screen/write/composer?lang=fr" | grep -q 'transit-block' \
   && [ "$(curl -s -b $SK -o /dev/null -w '%{http_code}' -d "body=Plain from the square" "$B/screen/write?lang=en")" = "200" ] \
   && [ "$(curl -s -b $SK -H 'X-Requested-With: fetch' -d "body=x" "$B/screen/write?lang=en" | grep -c 'Write something before transmitting')" = "1" ] \
@@ -1753,13 +1795,15 @@ echo "$LAND" | grep -q '<a class="glance-link mission-blog" href="#blog-science"
 ! echo "$LAND" | grep -q 'space-call\|Send a message to space' && ! grep -q 'space-call\|--call-h' public/sheet.css && ! grep -q 'Send a message to space' src/lib/i18n.js \
   && grep -q 'top: calc(var(--dome-top) + var(--dome-w) \* 0.676); bottom: calc(var(--earth-arc) - 6px);' public/sheet.css \
   && ok "no call under the habitat on the first page; the line to the Earth starts at the habitat's front foot" || bad "the call on the Earth is still there, or the line does not start at the habitat's foot"
-# the station's name large in the top left corner of the first page on a desk (landing.js, intro; sheet.css), the line and the run beside it
-echo "$LAND" | grep -q '<div class="sheet-intro is-desk">' && echo "$LAND" | grep -q '<h1 class="wordmark">MARS<span class="bang">!</span>platz<span class="wm-ground"> : Ground Station</span></h1>' \
-  && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '<span class="wm-ground"> : Bodenstation</span>' && grep -q 'body.landing .sheet-intro .wordmark .wm-ground { font-size: .58em; font-weight: 500;' public/sheet.css \
-  && grep -q '  body.landing .sheet-intro { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 28px; padding-top: 12px; }' public/sheet.css \
+# the station's name large in the top left corner of the first page on a desk (landing.js, intro; sheet.css), and under it,
+# one under the other, Ground Station, ZKM | Hertzlab and the run (a phone keeps "MARS!platz : Ground Station" on one line)
+echo "$LAND" | grep -q '<div class="sheet-intro is-desk">' && echo "$LAND" | grep -q '<h1 class="wordmark">MARS<span class="bang">!</span>platz<span class="wm-sep"> : </span><span class="wm-ground">Ground Station</span></h1>' \
+  && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '<span class="wm-ground">Bodenstation</span>' && grep -q 'body.landing .sheet-intro .wordmark .wm-ground { font-size: .58em; font-weight: 500;' public/sheet.css \
+  && grep -q '  body.landing .sheet-intro { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding-top: 12px; }' public/sheet.css \
+  && grep -q '  body.landing .sheet-intro .wordmark .wm-sep { display: none; }' public/sheet.css && grep -q '  body.landing .sheet-intro .wordmark .wm-ground { display: block; margin-top: 6px; font-size: .5em; line-height: 1.1; }' public/sheet.css \
   && grep -q '  body.landing .sheet-intro .wordmark { margin: 0; font-size: clamp(36px, 3.4vw, 50px); line-height: .95; letter-spacing: -.035em; font-weight: 600; color: var(--ink); }' public/sheet.css \
   && ! grep -q 'body.landing .sheet-intro .wordmark { position: absolute; width: 1px;' public/sheet.css \
-  && ok "MARS!platz : Ground Station stands large in the top left corner of the first page on a desk, the line and the run beside it" || bad "the name is not in the top left corner of the first page"
+  && ok "MARS!platz stands large in the top left corner of the first page on a desk — Ground Station, ZKM | Hertzlab and the run one under the other beneath it" || bad "the name's band is not stacked under the name"
 # the first page on a desk: as on a phone — the Earth in the middle of the foot, the habitat above it (small: a quarter of the
 # window's height at most), the dashed line straight between them; the trajectory of the earlier desk layout stays in the
 # markup and in sky.js, off (sheet.css shows the line, not the arc, on a desk)
@@ -1946,8 +1990,8 @@ echo "$LAND" | grep -q '<html lang="en" data-theme="dark">' && ! echo "$LAND" | 
   && ok "the theme turns without a reload (a fetch, answered 204) and the language comes back to the whole address, #part included — never to the landing page; an address off the station is not a way back" || bad "a switch still sends the visitor to the landing page, or follows an outside address"
 ! echo "$LAND" | grep -q 'class="orbits"' && echo "$LAND" | grep -q 'class="consent-sky"' && ! echo "$LAND" | grep -q 'consent-astro\|consent-planet' \
   && ok "no orbits behind the page; the cookie card's strip of night has nobody in it and no planet" || bad "the orbits or the cookie card's astronaut are still there"
-echo "$LAND" | grep -q '<div class="tk-bar">' && echo "$LAND" | grep -q 'class="tk-sol"' && echo "$LAND" | grep -q 'id="tk-clock"' \
-  && ok "the header: the wordmark, the run's badge, the habitat's clock, the switches, the running line" || bad "the header is not the handoff's"
+echo "$LAND" | grep -q '<div class="tk-bar">' && echo "$LAND" | grep -q 'class="tk-sol"' && echo "$LAND" | grep -q 'class="tk-nav"' && ! echo "$LAND" | grep -q 'class="tk-clock"' \
+  && ok "the header: the wordmark, the run's badge, the three links, the switches, the running line — no clock" || bad "the header is not as it should be"
 ! grep -q 'border-radius: 0 !important' public/sheet.css && ! grep -q 'backdrop-filter: none !important' public/sheet.css \
   && grep -q 'border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); border-radius: var(--r-lg); color: var(--ink);' public/sheet.css \
   && ok "the pages float on glass again — rounded, frosted, softly shadowed" || bad "the flat dress is still on"
@@ -2404,6 +2448,41 @@ sys.exit(0 if rows and rows[0] == ["pulledAt", "at", "t", "co2", "temp", "hum", 
 [ "$(ls "$DATA3"/readings/habitat/*/ 2>/dev/null | grep -c json)" -ge 1 ] && ok "every poll of the sensor is a JSON file in readings/habitat/" || bad "no habitat poll files"
 curl -s -b /tmp/a3.jar -o /tmp/record3.pdf -w '%{http_code}' $B3/archive/export.pdf | grep -q 200 && pdftext /tmp/record3.pdf > /tmp/record3.txt && grep -q "the habitat sensor" /tmp/record3.txt && ok "the PDF record names the habitat sensor as the source" || bad "PDF does not name the sensor"
 echo "$LAND3" | grep -q 'id="tk-hab"' && ok "the ticker still carries the habitat's reading" || bad "ticker lost the habitat"
+# the Sensors tab's words: the temperature tile without the "x–y in view" line, the air quality tile's line the index
+# alone (no scale, no "as the sensor classifies it"), the trends headed Trends alone
+echo "$LAND3" | grep -q '<span class="sub">IAQ index</span>' && ! echo "$LAND3" | grep -q 'as the sensor classifies it\|Scale 0–500' \
+  && ok "the air quality tile says IAQ index under its figure — no scale, no note on the classification" || bad "the air quality tile still carries the scale or the note"
+grep -q "\$('tempVerdict').textContent = '';" public/habitat.js && ! grep -q "in view" public/habitat.js \
+  && ok "the temperature tile carries no x–y in view line under its figure" || bad "habitat.js still writes the in-view range under the temperature"
+echo "$LAND3" | grep -q '<div class="hbt-sec"><h3>Trends</h3></div>' && ! echo "$LAND3" | grep -q 'Every channel, store and count over the run' \
+  && ok "the trends are headed Trends alone — no line under the heading" || bad "the trends' heading still carries its line"
+# the hardware's day charts, with readings stored for today — the cricket's temperature and the kitchen socket's draw:
+# the newest reading of a chart's first line sits in a pill above the line's end, large enough to hold the figure and
+# its unit (26 high, rounded, the text centred in it); the legend names each line with its low and high, no reading
+# beside it; the socket's draw (a gauge in watts) is not a trend — its day is on the meter's line, as energy
+DATA_DIR="$DATA3" CONTENT_DIR="$CONT3" node -e '
+const { db } = require("./src/db"); const mission = require("./src/lib/mission"); const m = mission.config();
+const today = mission.localDate(new Date(), m.timezone);
+const at = (hhmm) => mission.venueTimeUtc(today, hhmm, m.timezone);
+const ins = db.prepare("INSERT OR IGNORE INTO ha_reading (entity, t, value, state, unit) VALUES (?, ?, ?, ?, ?)");
+for (const [h, v] of [["00:05", 21.5], ["00:20", 21.9], ["00:40", 22.4]]) ins.run("m5_temperatur_cricket_temperature", at(h), v, String(v), "°C");
+for (const [h, v] of [["00:05", 9], ["00:20", 11], ["00:40", 12]]) ins.run("habitat_power_kitchen_leistung", at(h), v, String(v), "W");
+'
+LAND3H=$(curl -s $B3/)
+echo "$LAND3H" | grep -q '<figure class="hw-chart hw-power">' && echo "$LAND3H" | grep -q '<g class="hw-tag"><rect x="[0-9.]*" y="[0-9.]*" width="[0-9.]*" height="26" rx="13" fill="[^"]*"/>' \
+  && echo "$LAND3H" | grep -q 'text-anchor="middle" dominant-baseline="central">12 W</text></g>' && echo "$LAND3H" | grep -q 'dominant-baseline="central">22.4 °C</text></g>' \
+  && ok "each chart's newest reading stands in a pill above its line's end — 12 W, 22.4 °C — 26 high, the text centred in it" || bad "the chart's pill is not drawn as it should be"
+grep -q 'const tagW = 20 + tagText.length \* 8.4, tagH = 26' src/views/pages/public.js && grep -q 'body.landing .hw-tag text { font-family: var(--display); font-size: 13px; font-weight: 600;' public/aura.css \
+  && ok "the pill is sized from its text — 8.4 per character and 20 beside, at 13px — so it holds the figure whole" || bad "the pill's size is not set from its text"
+echo "$LAND3H" | grep -q '<li><i style="background:[^"]*"></i><span class="hw-name">Kitchen · power draw</span><span class="hw-range">low [0-9.]* · high [0-9.]*</span></li>' && ! echo "$LAND3H" | grep -q 'hw-val' \
+  && ok "the legend names each line with its low and high for the day, and no reading beside it — the reading is on the chart" || bad "the legend still carries the reading, or lost its range"
+echo "$LAND3H" | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
+  const i = s.indexOf("data-spec=\""); if (i < 0) process.exit(2);
+  const raw = s.slice(i + 11, s.indexOf("\"", i + 11)).replace(/&quot;/g, "\"").replace(/&#39;/g, "\x27").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+  const names = JSON.parse(raw).series.map((x) => x.name);
+  process.exit(names.includes("Cricket Temperature") && !names.includes("Kitchen · power draw") ? 0 : 1);
+});' && ok "the trends carry the cricket's temperature from the hardware but not the kitchen's power draw — a draw is not a trend" || bad "the kitchen's power draw is still among the trends, or the hardware is missing from them"
 kill $SRV3 2>/dev/null; wait $SRV3 2>/dev/null
 kill $MOCK 2>/dev/null; wait $MOCK 2>/dev/null
 rm -rf "$DATA3" "$CONT3"
