@@ -117,7 +117,7 @@ function contents(ctx, { days, counts, entryCounts, rehearsal = null }) {
 
 function dayRecord(ctx, { record, hasPrev, hasNext }) {
   const r = record;
-  const slot = { BREAKFAST: 'Breakfast', LUNCH: 'Lunch', DINNER: 'Dinner', RATION: 'Ration' };
+  const slot = (x) => require('../../lib/data').slotLabel(x);
 
   const base = r.rehearsal ? '/archive/now' : `/archive/day/${r.missionDay}`;
   const mediaDay = r.rehearsal ? 0 : r.missionDay;   // NOW's media hangs on day 0
@@ -201,10 +201,10 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
     ${panel('MEALS', `
       ${eyebrow('Meals')}
       ${r.day && r.day.meals.length ? r.day.meals.map((m) => `<div style="padding:8px 0;border-bottom:1px solid var(--rule)">
-        <div class="eyebrow">${esc(slot[m.slot] || m.slot)}</div>
+        <div class="eyebrow">${esc(slot(m.slot))}${m.served ? ` · ${esc(m.served.replace('-', '–'))}` : ''}</div>
         <h3>${esc(m.name)}</h3>
         ${m.components ? `<div class="note" style="white-space:pre-line;margin-bottom:6px">${esc(m.components)}</div>` : ''}
-        <div class="note">${asIs(m.kcal)} kcal · ${asIs(m.water_litres)} L water · ${asIs(m.prep_minutes)} min · ${asIs(m.energy_wh)} Wh</div>
+        <div class="note">${asIs(m.kcal)} kcal · ${asIs(m.water_litres)} L water · ${asIs(m.prep_minutes)} min · ${asIs(m.energy_wh)} Wh${m.energy_source === 'meter' ? ` (the kitchen meter${m.window ? `, ${m.window[0]}–${m.window[1]}` : ''}${m.power_running ? ', so far' : ''})` : ''}</div>
         ${m.notes ? `<p class="note">${esc(m.notes)}</p>` : ''}
       </div>`).join('') : '<p class="note">No meals entered for this day.</p>'}`, 'mars-side')}
 

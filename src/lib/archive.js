@@ -282,7 +282,7 @@ function habitatTab(missionDay) {
   return {
     schedule: day ? day.tasks.map((t) => ({ time: t.time, label: t.label, detail: t.detail, status: t.status })) : [],
     meals: day ? day.meals.map((m) => ({ slot: m.slot, name: m.name, components: m.components, kcal: m.kcal,
-      waterLitres: m.water_litres, prepMinutes: m.prep_minutes, energyWh: m.energy_wh, notes: m.notes || '',
+      waterLitres: m.water_litres, prepMinutes: m.prep_minutes, energyWh: m.energy_wh, energySource: m.energy_source, hours: m.window ? m.window.join('-') : null, notes: m.notes || '',
       recipe: m.recipe || '', nutrients: m.nutrients || null, co2eKg: m.co2e_kg ?? null, waterFootprintL: m.water_footprint_l ?? null })) : [],
     figures: (content.crewFigures() || {})[String(missionDay)] || null,
     stores: storesTable(missionDay, day, filed),
@@ -499,6 +499,8 @@ function shapeDay(r) {
     meals: r.day ? r.day.meals.map((m) => ({
       slot: m.slot, name: m.name, components: m.components, kcal: m.kcal,
       waterLitres: m.water_litres, prepMinutes: m.prep_minutes, energyWh: m.energy_wh,
+      // where the watt hours come from: 'meter' — the kitchen's energy meter between `hours` (data.mealsFor) — or 'filed'/'none'
+      energySource: m.energy_source || 'none', hours: m.window ? m.window.join('-') : null,
       recipe: m.recipe || '', nutrients: m.nutrients || null, co2eKg: m.co2e_kg ?? null, waterFootprintL: m.water_footprint_l ?? null })) : [],
     // the Habitat tab's inventory table: available at the start, used
     // today, left for the future, each figure marked counted (filed that
@@ -670,9 +672,9 @@ function recordMarkdown(r, heading, note = null) {
   out.push('#### Meals', '');
   if (r.day && r.day.meals.length) {
     for (const m of r.day.meals) {
-      out.push(`**${m.slot === 'RATION' ? 'Other' : m.slot[0] + m.slot.slice(1).toLowerCase()}: ${m.name}**  `);
+      out.push(`**${data.slotLabel(m.slot)}${m.served ? ` (${m.served.replace('-', '–')})` : ''}: ${m.name}**  `);
       if (m.components) out.push(m.components.split('\n').map((l) => `  ${l}`).join('  \n') + '  ');
-      out.push(`  ${fmtV(m.kcal)} kcal · ${fmtV(m.water_litres)} L water · ${fmtV(m.prep_minutes)} min · ${fmtV(m.energy_wh)} Wh`);
+      out.push(`  ${fmtV(m.kcal)} kcal · ${fmtV(m.water_litres)} L water · ${fmtV(m.prep_minutes)} min · ${fmtV(m.energy_wh)} Wh${m.energy_source === 'meter' ? ` (the kitchen meter${m.window ? `, ${m.window[0]}–${m.window[1]}` : ''}${m.power_running ? ', so far' : ''})` : ''}`);
       const eco = mealEcoLine(m);
       if (eco) out.push(`  ${eco}`);
       if (m.notes) out.push(`  _${m.notes}_`);

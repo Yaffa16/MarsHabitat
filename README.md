@@ -394,9 +394,9 @@ whichever suits the moment and it is live on the station within seconds:
 |---|---|---|
 | Resources — what is left of each store | `content/inventory-levels.json`: per day, per store, `{ "quantity": 618, "consumption": 46 }`. Only write the stores that changed; on the site the rest carry forward at their daily draw, while the record prints only what was counted | **Habitat** → Inventory levels, with the day picker on the day |
 | Calories and steps | `content/crew-figures.json`: per day, one entry per officer under `crew`, keyed by designation, and the crew's totals as the sums — `"5": { "crew": { "COMMUNICATION OFFICER": { "calories": 1720, "steps": 2200 }, "SCIENCE OFFICER": { … }, "HEALTH OFFICER": { … } }, "calories": 5010, "steps": 6420 }`. A day written with the totals alone still shows, as a total. The Habitat panel shows each officer's figure with the crew's total beneath; At a Glance carries the totals and the record each officer's figure with the totals as filed | **Habitat** → Steps taken and Calories consumed, day picker on the day |
-| Power consumed, by category | `content/power.json`: `"5": { "heating": 1.1, "food": 0.5, "lighting": 0.35, "electronics": 0.45, "other": 0.1 }` — kWh per day. The `categories` list above the days is editable too: rename a label, add or remove one; the key is the stable name in the record | **Habitat** → Power, day picker on the day; the name fields rename the categories everywhere |
+| Power consumed, by category | `content/power.json`: `"5": { "heating": 1.1, "food": 0.5, "lighting": 0.35, "electronics": 0.45, "other": 0.1 }` — kWh per day. The `categories` list above the days is editable too: rename a label, add or remove one; the key is the stable name in the record | **Habitat** → Power, day picker on the day; the name fields rename the categories everywhere. Every figure is locked behind an **Edit** key, which asks first — *These values are automated, are you sure you would like to edit?* |
 | Today's schedule | `content/schedule.json`: per day, `{ "time": "06:45", "label": "…", "detail": "…" }`; task status (done, active, skipped) is marked on the tab as the day runs | **Habitat** → Schedule |
-| Meals | `content/meals.json`: per day, slots BREAKFAST / LUNCH / DINNER / RATION with `kcal`, `water`, `prep`, `energy` | **Habitat** → Food plan |
+| Meals | `content/meals.json`: per day, slots BREAKFAST / LUNCH / DINNER and the meals added on the desk, EXTRA1, EXTRA2, … (each may name its hours, `"served": "16:00-17:00"`), with `kcal`, `water`, `prep`, `energy`. The power a meal drew is not this file's: it is the kitchen's energy meter read between the meal's hours (see *The meals' power*) | **Habitat** → Food plan — Breakfast, Lunch, Dinner and **+ Add a meal** |
 | Mission notes | `content/notes.json`: per day, `{ "kind": "LOG" \| "ANOMALY", "body": "…" }` | `POST /control/updates` (the notes composer) |
 | Blogs, findings, activities | written over the placeholders in `content/logbook.json` / `notes.json` | each officer's tab |
 
@@ -463,7 +463,7 @@ with a cue each for the crew to write into, the typical daily schedule on every 
 13 days), an empty food plan (`meals.json` — each day's meals are chosen from the recipe book on the Habitat tab), **four tracked resources** — potable water, food rations, medical kits and fire extinguishers — (their carried-in amounts and warning levels ship as
 0 — placeholders to be written into `crew-and-inventory.json` before the run, or the day-1 count
 filed on the Habitat tab, which every gauge is then drawn against; until then each store is
-shown as **Placeholder**, not as an empty store), and the sensor channels.
+shown dimmed with a dash, not as an empty store), and the sensor channels.
 The dailies — the stores' counts (`inventory-levels.json`), the steps and calories
 (`crew-figures.json`), the power (`power.json`) and the mission notes, findings and activities
 (`notes.json`) — ship empty and are filed on the tabs of mission control as the run goes, so
@@ -512,6 +512,31 @@ the slot to be written on the go: it is saved for that day only and never adds a
 The book ships with twelve recipes: Chili Non Carne and Pfannenbrot with their measured figures, and **ten sample
 recipes** marked `"sample": true` — invented names and figures to fill the list until the real ones are in. Every
 recipe carries a `prep_minutes`. The book is edited **in the file only**; mission control has no recipe editor.
+
+Beside the three, **+ Add a meal** puts a further card on the day — the same dropdown, the same fields, and two
+hours of its own (*Served from · to*) — as many as the day needs; a card's × takes it off again, and the next save
+is without it. Added meals are saved as `EXTRA1`, `EXTRA2`, … in their order (renumbered on every save, so taking
+one away leaves no gap) and shown as **Extra meal**, **Extra meal 2**, … on the dashboard, in At a Glance and in the
+record (*Zusätzliche Mahlzeit*, *Repas supplémentaire*). The old free-text **Other** slot is gone; a `RATION` row in
+an older file still loads, shown as *Other* and on the desk as an added meal.
+
+### The meals' power
+
+No meal has its power typed in. Each meal's watt hours are the **kitchen's energy meter**,
+`sensor.habitat_power_kitchen_energie`, read through Home Assistant and stored like every other hardware reading
+(`src/lib/home-assistant.js`, `ha_reading`): the meter's rise between the meal's hours on its day — **breakfast
+06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00** on the habitat's clock (on both sides of 25 October, when the
+clocks go back), an added meal between the hours its card names. The figure stands with the meal wherever it is
+shown — on the desk's card (*216 Wh · the kitchen meter, 06:00–09:00*), on the dashboard's **Today's Meal** with a
+line under the meals saying which hours are read, in At a Glance and in the record (Markdown, JSON with
+`energySource: "meter"` and `hours`, PDF) — and reads *so far* while the hours are still running. A meal whose hours
+have not come, or whose meter has no reading inside them, shows no watt hours at all rather than a nought; where
+the meter has a figure it replaces the file's `energy`, which stands in only where it has none. The meter and the
+hours live in the `meals` block of `content/home-assistant.json` (`meter`, the entity id without `sensor.`;
+`windows`, slot → `"HH:MM-HH:MM"`, `null` for a named meal that should carry no figure), hot-read like the rest of
+the file, with these values as the defaults in code — the meter is named by its **entity id**, so its label in the
+sensor list or in Home Assistant can change without touching this (`mealsConfig`, `mealPower` in
+`src/lib/home-assistant.js`; `data.mealsFor` puts the figure on every meal).
 
 A slot keeps its own copy of the figures in `meals.json` (`recipe`, `nutrients`, `co2e_kg`, `water_footprint_l`),
 so changing the book never rewrites a day already planned. In the file, a meal can also be just
@@ -1550,9 +1575,8 @@ what is left against what was carried in, the figure in its own unit, the percen
 and — the number that actually decides things inside a closed volume — **days remaining at the
 current draw**. Anything under its warning threshold turns orange. A store with no figure at all
 yet — nothing carried in written into `crew-and-inventory.json` and no count filed on the
-Habitat tab — stands as a **Placeholder** and says so: a dash in its ring, PLACEHOLDER in Mars
-under its name, and *no figure filed yet* in the dome's pop-up (`inventoryGauges()` in
-`src/views/pages/public.js`).
+Habitat tab — stands dimmed, a dash in its empty ring and no figure under its name; the dome's
+pop-up says *no figure filed yet* (`inventoryGauges()` in `src/views/pages/public.js`).
 
 Everything in the habitat was carried in and nothing is resupplied, so over thirteen days the row
 visibly empties. That is the point of putting it on the front page rather than on a subpage.
@@ -1658,7 +1682,8 @@ SPACESPEAK_PASSWORD=…
 ```
 
 Without the account the relay is off (and `SPACESPEAK_ENABLED=false` holds it off with the
-account set). Then try it before the run opens:
+account set); mission control then says nothing about it — the *Beamed into space* line over the
+queue appears only once the relay is on. Then try it before the run opens:
 
 ```
 docker compose exec station node tools/spacespeak-probe.js          # a dry run: signs in, opens the Send page, types a test line, presses nothing

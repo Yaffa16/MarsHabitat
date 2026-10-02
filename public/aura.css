@@ -634,6 +634,7 @@ body.landing .meal { padding: 12px 0; border-bottom: 1px solid var(--hair); disp
 body.landing .meal-slot { font-family: var(--display); font-size: var(--fs-label); letter-spacing: .12em; text-transform: uppercase; color: var(--mars-ink); }
 body.landing .meal b { font-size: 16.5px; font-weight: 600; color: var(--ink); }
 body.landing .meal-figs { font-size: var(--fs-note); color: var(--dim); }
+body.landing .meal-hours { margin: 10px 0 0; font-size: var(--fs-note); color: var(--dim); line-height: 1.5; }
 /* the crew */
 body.landing .officers { display: flex; flex-direction: column; }
 body.landing .officer { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; grid-template-areas: "orb id badge" "orb note badge"; gap: 2px 14px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--hair); background: transparent; box-shadow: none; border-radius: 0; }

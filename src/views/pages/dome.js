@@ -18,7 +18,8 @@
  * same data the dashboard uses, and refreshed from /api/dome without a
  * reload.
  */
-const { esc } = require('../layout');
+const L = require('../layout');
+const { esc } = L;
 const moodLib = require('../../lib/mood');
 const { shown: shownTitle } = require('../../lib/officer');   // the crew's titles as the station shows them
 
@@ -251,7 +252,7 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
     const i = store(key) || inv.find((x) => x.critical) || inv[0];
     if (!i) return fallback;
     // a store with no figure at all yet stands as a placeholder (public.js, inventoryGauges)
-    if (!(i.start_quantity || i.quantity)) return `${i.label}: ${T('Placeholder')} — ${T('no figure filed yet')}.`;
+    if (!(i.start_quantity || i.quantity)) return `${i.label}: ${T('no figure filed yet')}.`;
     return `${i.label}: ${qty(i.quantity)} ${i.unit} ${T('of')} ${i.start_quantity || i.quantity}${left(i)}.`;
   };
 
@@ -288,9 +289,8 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
 
   // The rooms the cutaway names that the keys do not (cutaway.js): the galley's meals today, the sleeping pods' hours
   // on the schedule, the health station's officer and the crew's figures.
-  const slotName = { BREAKFAST: 'Breakfast', LUNCH: 'Lunch', DINNER: 'Dinner', RATION: 'Ration' };
   const meals = today ? today.meals : [];
-  const mealLine = meals.length ? `${pre ? T('Planned for day 01') : T('Today')}: ${meals.map((x) => `${T(slotName[x.slot] || x.slot)} — ${x.name}`).join(' · ')}${today.kcalPlanned ? ` · ${today.kcalPlanned} kcal` : ''}.` : T('No meals filed for today.');
+  const mealLine = meals.length ? `${pre ? T('Planned for day 01') : T('Today')}: ${meals.map((x) => `${L.slotName(T, x.slot)} — ${x.name}`).join(' · ')}${today.kcalPlanned ? ` · ${today.kcalPlanned} kcal` : ''}.` : T('No meals filed for today.');
   const rests = tasks.filter((t) => /\b(sleep|rest|nap|lights out|bed|wake|schlaf|ruhe)\b/i.test(t.label));
   const restLine = rests.length ? `${pre ? T('On day 01’s schedule') : T('On today’s schedule')}: ${rests.map((t) => `${t.time} ${t.label}`).join(' · ')}.` : T('No rest is written on today’s schedule.');
 

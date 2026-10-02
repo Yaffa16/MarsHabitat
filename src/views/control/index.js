@@ -51,9 +51,10 @@ const whenFull = (iso) => {
   catch { return when(iso); }
 };
 const mark = (e, key) => (e && e.keys && e.keys[key] ? ' was-edited' : '');
+// A block never saved from the desk says nothing about it: the note appears with the first save.
 const savedNote = (e) => (e && e.savedAt
   ? `<span class="saved-at" title="${esc(e.savedAt)}">Last saved ${esc(when(e.savedAt))}${e.actor ? ` · ${esc(e.actor)}` : ''}</span>`
-  : '<span class="saved-at saved-never">Not saved from this desk yet</span>');
+  : '');
 
 /* ==================================================================== LOGIN */
 
@@ -139,17 +140,16 @@ function messageCard(m, crew, show, space = null) {
   </article>`;
 }
 
-/** The relay to space, as it stands: on or off, what is queued, sent, failed — over the queue. */
+/** The relay to space, as it stands — what is queued, sent, failed — over the queue. Only while the relay is on:
+ *  switched off (no SPACESPEAK_USER / SPACESPEAK_PASSWORD in .env) the desk says nothing about it. */
 function spaceStatus(sp) {
-  if (!sp) return '';
+  if (!sp || !sp.enabled) return '';
   const c = sp.counts;
-  const line = !sp.enabled
-    ? 'Off — set <b>SPACESPEAK_USER</b> and <b>SPACESPEAK_PASSWORD</b> in <b>.env</b> and restart, and every message you reply to is also beamed into space by radio.'
-    : `${sp.dryRun ? '<b>Dry run</b> — every step but the last; nothing is pressed. ' : ''}${sp.configured ? '' : '<b>No account set</b> — every send will fail. '}A message is handed to <b>${esc(sp.site.replace(/^https?:\/\//, ''))}</b> when its reply is published — nothing else is ever sent; one every ${sp.gapSeconds} s at most · `
+  const line = `${sp.dryRun ? '<b>Dry run</b> — every step but the last; nothing is pressed. ' : ''}${sp.configured ? '' : '<b>No account set</b> — every send will fail. '}A message is handed to <b>${esc(sp.site.replace(/^https?:\/\//, ''))}</b> when its reply is published — nothing else is ever sent; one every ${sp.gapSeconds} s at most · `
       + `<b>${c.sent}</b> sent${c.dryRun ? ` · ${c.dryRun} dry-run` : ''} · <b>${c.queued + c.sending}</b> queued · <b class="${c.failed ? 'space-bad' : ''}">${c.failed}</b> failed${c.skipped ? ` · ${c.skipped} skipped (unpublished before their turn)` : ''}`
       + (sp.lastError ? `<span class="space-last">Last trouble, message ${sp.lastError.messageId} at ${esc(when(sp.lastError.at))}: ${esc(sp.lastError.error)}</span>` : '');
-  return `<div class="space-status ${sp.enabled ? 'on' : 'off'}" id="space-status">
-    <span class="space-status-k">${sp.enabled ? '<i></i>Beamed into space' : 'Relay to space'}</span>
+  return `<div class="space-status on" id="space-status">
+    <span class="space-status-k"><i></i>Beamed into space</span>
     <span class="space-status-v">${line}</span>
   </div>`;
 }
@@ -391,16 +391,29 @@ const caloriesBlock = (day, figures, crew, e) => figureBlock(day, figures, crew,
 
 /* The recipe book's figures, per serving, as the food plan and the book show them. */
 const { NUTRIENTS } = require('../../lib/content');
-const RECIPE_SLOTS = ['BREAKFAST', 'LUNCH', 'DINNER'];     // the three slots with a dropdown; Other stays free text
+const dataLib = require('../../lib/data');
 const numVal = (v) => (v == null || v === '' ? '' : String(+Number(v).toFixed(4)));
+const hhmm = (w) => (w ? `${w[0]}–${w[1]}` : '');
 
-function mealsBlock(day, meals, e = null, recipes = []) {
-  const SLOTS = [['BREAKFAST', 'Breakfast'], ['LUNCH', 'Lunch'],
-                 ['DINNER', 'Dinner'], ['RATION', 'Other']];
+/**
+ * The day's meals: Breakfast, Lunch and Dinner, each with a dropdown over the
+ * recipe book, and after them the meals added on the desk — "+ Add a meal"
+ * puts another card beside them, with the same dropdown and the same fields,
+ * numbered EXTRA1, EXTRA2, … (public/control.js clones the template below;
+ * each card's × takes it away again). The power each meal used is not typed:
+ * it is the kitchen's energy meter read between the meal's hours — breakfast
+ * 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00 (content/home-assistant.json,
+ * `meals`), an added meal between the hours its card names — and each card
+ * shows the figure as it stands (data.mealsFor). Other, the old free-text
+ * slot, is gone; a day that still has one is shown as an added meal.
+ */
+function mealsBlock(day, meals, e = null, recipes = [], hours = { meter: '', windows: {} }) {
   const find = (slot) => meals.find((m) => m.slot === slot) || {};
+  const extras = meals.filter((m) => !dataLib.FIXED_SLOTS.includes(m.slot));
   const kcal = meals.reduce((a, m) => a + (m.kcal || 0), 0);
   const sum = (get) => { const v = meals.map(get).filter((x) => x != null); return v.length ? v.reduce((a, b) => a + b, 0) : null; };
-  const co2 = sum((m) => m.co2e_kg), wfp = sum((m) => m.water_footprint_l);
+  const co2 = sum((m) => m.co2e_kg), wfp = sum((m) => m.water_footprint_l), wh = sum((m) => m.power_wh);
+  const anyRunning = meals.some((m) => m.power_running);
   // The book, for control.js to fill a slot from: '<' escaped so no name can close the script.
   const book = JSON.stringify(recipes.filter((r) => !r.placeholder)
     .map((r) => ({ slug: r.slug, name: r.name, kcal: r.kcal, prep_minutes: r.prep_minutes, nutrients: r.nutrients, co2e_kg: r.co2e_kg, water_total_l: r.water_total_l })))
@@ -435,25 +448,30 @@ function mealsBlock(day, meals, e = null, recipes = []) {
     </details>`;
   };
 
-  return panel('DAILY FOOD PLAN', `
-    ${eyebrow(`Meals · ${dayN(day)}`)}
-    <p class="note block-hint">Choose Breakfast, Lunch or Dinner from the recipe book and its name, kcal, prep time, nutrients,
-    CO₂e and water footprint are filled in — every field stays editable. <b>Empty</b> clears the slot to fill in by hand, on the
-    go; it is saved for that day only and never adds a recipe. The recipes are in <b>content/recipes.json</b>.
-    Everything shown here is public on the station.</p>
-    <script type="application/json" id="recipe-book">${book}</script>
-    <form method="post" action="/control/meals" class="meals-form">
-      <input type="hidden" name="day" value="${day}">
-      <div class="grid g2">
-      ${SLOTS.map(([slot, label]) => {
-        const m = find(slot);
-        const withBook = RECIPE_SLOTS.includes(slot);
-        return `<div class="meal-slot-edit" data-slot="${slot}">
-          <h3 class="slot-name">${label}</h3>
-          ${withBook ? picker(slot, m) : ''}
+  // What the meter read for the meal, under its name: the figure, so far while its hours run; nothing yet; or no hours.
+  const powerLine = (slot, m, isExtra) => {
+    const win = m.window || (!isExtra && hours.windows[slot] ? hours.windows[slot].split('-') : null);
+    if (!win) return `<p class="note meal-power is-none">Power · give the meal its hours below and the kitchen meter is read between them.</p>`;
+    if (m.power_wh != null) return `<p class="note meal-power"><b>${m.power_wh} Wh</b>${m.power_running ? ' so far' : ''} · the kitchen meter, ${hhmm(win)}</p>`;
+    return `<p class="note meal-power is-none">Power · the kitchen meter, ${hhmm(win)} — no reading for these hours yet.</p>`;
+  };
+
+  // One card. `slot` is its field prefix; an added meal has its hours and its × as well.
+  const card = (slot, label, m, { extra = false, n = null } = {}) => `<div class="meal-slot-edit${extra ? ' meal-extra' : ''}" data-slot="${slot}">
+          <div class="meal-card-head">
+            <h3 class="slot-name">${label}${n ? ` <span class="slot-n">${n}</span>` : ''}</h3>
+            ${extra ? `<button type="button" class="ghost meal-remove" title="Take this meal off the day" aria-label="Remove this meal">×</button>` : ''}
+          </div>
+          ${powerLine(slot, m, extra)}
+          ${picker(slot, m)}
           <label class="f${mark(e, `${slot}_name`)}"><span>Name</span>
-            <input type="text" name="${slot}_name" value="${esc(m.name || '')}"
-              placeholder="${slot === 'RATION' ? 'Leave blank if none' : 'Dish'}"></label>
+            <input type="text" name="${slot}_name" value="${esc(m.name || '')}" placeholder="Dish"></label>
+          ${extra ? `<div class="grid g2 meal-hours" style="gap:0 8px">
+            <label class="f${mark(e, `${slot}_from`)}"><span>Served from</span>
+              <input type="time" name="${slot}_from" value="${m.served ? esc(m.served.split('-')[0]) : ''}"></label>
+            <label class="f${mark(e, `${slot}_to`)}"><span>to</span>
+              <input type="time" name="${slot}_to" value="${m.served ? esc(m.served.split('-')[1]) : ''}"></label>
+          </div>` : ''}
           <label class="f${mark(e, `${slot}_components`)}"><span>Components, one per line</span>
             <textarea name="${slot}_components" rows="3">${esc(m.components || '')}</textarea></label>
           <div class="grid g2" style="gap:0 8px">
@@ -462,14 +480,36 @@ function mealsBlock(day, meals, e = null, recipes = []) {
             <label class="f${mark(e, `${slot}_prep`)}"><span>Prep min</span>
               <input type="number" name="${slot}_prep" value="${m.prep_minutes || ''}"></label>
           </div>
-          ${withBook ? figures(slot, m) : ''}
+          ${figures(slot, m)}
           <label class="f${mark(e, `${slot}_notes`)}"><span>Note (shown publicly)</span>
             <input type="text" name="${slot}_notes" value="${esc(m.notes || '')}"></label>
         </div>`;
-      }).join('')}
+
+  const named = dataLib.FIXED_SLOTS.map((slot) => card(slot, dataLib.slotLabel(slot), find(slot)));
+  // the added meals as they are saved (EXTRA1, EXTRA2, …; an Other from an older file among them, as EXTRA too, renumbered on saving)
+  const addedSlots = extras.map((m, i) => (dataLib.isExtraSlot(m.slot) ? m.slot : `EXTRA${extras.length + 1 + i}`));
+  const added = extras.map((m, i) => card(addedSlots[i], 'Extra meal', m, { extra: true, n: dataLib.extraIndex(addedSlots[i]) > 1 ? dataLib.extraIndex(addedSlots[i]) : null }));
+  const nextN = addedSlots.reduce((hi, s) => Math.max(hi, dataLib.extraIndex(s)), 0) + 1;
+  const hoursLine = Object.entries(hours.windows || {}).map(([k, v]) => `${dataLib.slotLabel(k).toLowerCase()} ${v.replace('-', '–')}`).join(', ');
+
+  return panel('DAILY FOOD PLAN', `
+    ${eyebrow(`Meals · ${dayN(day)}`)}
+    <p class="note block-hint">Choose Breakfast, Lunch or Dinner from the recipe book and its name, kcal, prep time, nutrients,
+    CO₂e and water footprint are filled in — every field stays editable. <b>Empty</b> clears the slot to fill in by hand, on the
+    go; it is saved for that day only and never adds a recipe. <b>Add a meal</b> puts a further meal beside the three, with
+    the same choice. The power each meal used is not typed: it is the kitchen's energy meter, read between the meal's
+    hours${hoursLine ? ` (${hoursLine})` : ''} — an added meal between the hours its card names.</p>
+    <script type="application/json" id="recipe-book">${book}</script>
+    <form method="post" action="/control/meals" class="meals-form" data-next-extra="${nextN}">
+      <input type="hidden" name="day" value="${day}">
+      <div class="grid g2 meal-cards">
+      ${named.join('')}${added.join('')}
       </div>
+      <template class="meal-extra-tpl">${card('EXTRA__N__', 'Extra meal', {}, { extra: true, n: '__N__' })}</template>
+      <div class="actions meal-add-row"><button type="button" class="ghost meal-add">+ Add a meal</button></div>
       <div class="kv" style="margin-top:6px"><dt>Day total</dt>
-        <dd>${kcal} kcal offered across ${meals.length} slot${meals.length === 1 ? '' : 's'}${
+        <dd>${kcal} kcal offered across ${meals.length} meal${meals.length === 1 ? '' : 's'}${
+          wh != null ? ` · ${wh} Wh from the kitchen meter${anyRunning ? ' so far' : ''}` : ''}${
           co2 != null ? ` · ${+co2.toFixed(3)} kg CO₂e` : ''}${wfp != null ? ` · ${+wfp.toFixed(1)} L water footprint` : ''}</dd></div>
       <div class="actions"><button class="primary">Save food plan for ${dayN(day)}</button>${savedNote(e)}</div>
     </form>`, 'mars-side');
@@ -514,20 +554,25 @@ function powerBlock(day, power, e = null) {
   const filed = rows.filter((r) => r.value != null);
   const total = filed.reduce((s, r) => s + r.value, 0);
   const fmt = (v) => (v == null ? '' : (Math.round(v * 100) / 100).toFixed(2));
+  // Every value is locked: Edit opens it, after asking — "These values are automated, are you sure you would like to
+  // edit?" — the same way for every row. A metered row shows the meter's figure by default, and a figure typed by hand
+  // wins over the meter for that day; a row without a meter holds what was filed.
   const row = ({ c, m, manual, value }) => {
     const cls = (mark(e, `name_${c.key}`) || mark(e, `kwh_${c.key}`)).trim();
     const name = `<td><input type="text" name="name_${esc(c.key)}" value="${esc(c.label)}" aria-label="Category name" class="${mark(e, `name_${c.key}`).trim()}"></td>`;
     if (!c.sensor) {
-      return `<tr class="${cls}">${name}
-          <td><input type="number" step="0.01" min="0" name="kwh_${esc(c.key)}" value="${d[c.key] ?? ''}"
-               placeholder="nothing recorded" aria-label="${esc(c.label)} kWh" class="${mark(e, `kwh_${c.key}`).trim()}"></td></tr>`;
+      return `<tr class="${cls} pw-locked" data-key="${esc(c.key)}" data-label="${esc(c.label)}">${name}
+          <td><div class="pw-meter">
+            <input type="number" step="0.01" min="0" name="kwh_${esc(c.key)}" value="${d[c.key] ?? ''}" readonly
+               aria-label="${esc(c.label)} kWh" class="${mark(e, `kwh_${c.key}`).trim()}">
+            <button type="button" class="ghost pw-edit">Edit</button>
+          </div></td></tr>`;
     }
-    // A metered row: the meter's figure by default, locked; Edit asks first, and a figure typed by hand wins over the meter.
-    return `<tr class="${cls} pw-metered" data-key="${esc(c.key)}" data-label="${esc(c.label)}">${name}
+    return `<tr class="${cls} pw-metered pw-locked" data-key="${esc(c.key)}" data-label="${esc(c.label)}">${name}
           <td>
             <div class="pw-meter">
               <input type="number" step="0.01" min="0" name="kwh_${esc(c.key)}" value="${fmt(value)}" readonly
-                     data-meter="${fmt(m)}" placeholder="${m == null ? 'the meter has nothing yet' : ''}"
+                     data-meter="${fmt(m)}"
                      aria-label="${esc(c.label)} kWh" class="${mark(e, `kwh_${c.key}`).trim()}">
               <input type="hidden" name="meter_${esc(c.key)}" value="${fmt(m)}">
               <input type="hidden" name="edited_${esc(c.key)}" value="">
@@ -556,17 +601,18 @@ function powerBlock(day, power, e = null) {
     (function () {
       var form = document.currentScript.previousElementSibling;
       if (!form) return;
-      form.querySelectorAll('.pw-metered').forEach(function (tr) {
+      // every row: locked until Edit, which asks first — the one question for all of them
+      form.querySelectorAll('.pw-locked').forEach(function (tr) {
         var box = tr.querySelector('input[type=number]'), flag = tr.querySelector('input[name^="edited_"]'), label = tr.getAttribute('data-label');
         var edit = tr.querySelector('.pw-edit'), back = tr.querySelector('.pw-back');
         edit.addEventListener('click', function () {
           if (!box.readOnly) { box.focus(); return; }
-          if (!confirm('Are you sure you want to edit ' + label + '?\\n\\nThis value comes from the meter. A figure typed by hand replaces the meter\\'s for this day.')) return;
-          box.readOnly = false; flag.value = '1'; edit.textContent = 'Editing'; box.focus(); box.select();
+          if (!confirm('These values are automated, are you sure you would like to edit?')) return;
+          box.readOnly = false; if (flag) flag.value = '1'; edit.textContent = 'Editing'; box.focus(); box.select();
         });
         if (back) back.addEventListener('click', function () {
           if (!confirm('Are you sure you want to go back to the meter\\'s value (' + box.getAttribute('data-meter') + ' kWh) for ' + label + '?')) return;
-          box.value = box.getAttribute('data-meter'); flag.value = '1'; box.readOnly = true;
+          box.value = box.getAttribute('data-meter'); if (flag) flag.value = '1'; box.readOnly = true;
         });
       });
       form.addEventListener('submit', function (ev) {
@@ -690,7 +736,7 @@ function resetDialog(locked) {
  */
 function page(ctx, model) {
   const { user, f, content, show, tab, day, totalDays, tpl, plan = { exists: false }, resetLocked = false, edits = {}, drafts = {},
-          list, crew, counts, officers, tasks, meals, recipes = [], notes, figures, items, power = { categories: [], days: {} },
+          list, crew, counts, officers, tasks, meals, recipes = [], mealHours = { meter: '', windows: {} }, notes, figures, items, power = { categories: [], days: {} },
           media: mediaItems = [], mediaCounts = { total: 0, bytes: 0 }, mediaAccept = '', mediaMaxMb = 0, filter = 'all', space = null } = model;
 
   // NOW — the rehearsal day, mission day 0, dated today — heads the picker before the run, and all through a rehearsal
@@ -729,7 +775,7 @@ function page(ctx, model) {
       </div>`,
     habitat: `
       ${scheduleBlock(day, tasks, edits.schedule)}
-      ${mealsBlock(day, meals, edits.meals, recipes)}
+      ${mealsBlock(day, meals, edits.meals, recipes, mealHours)}
       ${stepsBlock(day, figures, crew, edits.steps)}
       ${caloriesBlock(day, figures, crew, edits.calories)}
       ${inventoryBlock(day, items, edits.inventory)}

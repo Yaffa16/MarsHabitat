@@ -1354,6 +1354,8 @@ body.landing .foot { margin-top: 44px; margin-bottom: 44px; }
 .meal-slot { font-family: var(--mono); font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--orange); }
 .meal b { font-size: 12.5px; letter-spacing: -0.01em; line-height: 1.3; }
 .meal-figs { font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.06em; color: var(--dim); }
+/* under the meals: the hours the kitchen meter is read for each (the watt hours above come from it) */
+.meal-hours { margin: 8px 0 0; font-family: var(--mono); font-size: 8px; letter-spacing: 0.06em; color: var(--dim); line-height: 1.5; }
 
 /* Crew, as rows */
 .officers { display: grid; gap: 8px; }
@@ -2066,8 +2068,23 @@ body.control .fig-grid { gap: 0 12px; }
 body.control .actions > form.theme { display: inline-flex; margin: 0; }
 body.control .block-title .fold-chev { margin-left: 10px; }
 body.control .block-state.draft { border-color: var(--c-line-strong); color: var(--c-text); font-weight: 600; }
-/* the meals: the four slots named large */
+/* the meals: each card named large; an added meal's × at the right of its name, its number small beside it */
 body.control .slot-name { margin: 0 0 10px; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; color: var(--c-text); }
+body.control .meal-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+body.control .meal-card-head .slot-name { margin-bottom: 4px; }
+body.control .slot-n { font-size: 14px; font-weight: 600; color: var(--c-muted); margin-left: 2px; }
+body.control .meal-remove { flex: none; min-height: 0; width: 28px; height: 28px; padding: 0; line-height: 1; font-size: 18px; border-radius: 50%; color: var(--c-muted); }
+body.control .meal-remove:hover { color: var(--c-bad); border-color: var(--c-bad); }
+/* what the kitchen meter read for the meal, under its name (data.mealsFor) — in orange while there is a figure */
+body.control .meal-power { margin: 0 0 10px; font-size: 12.5px; color: var(--c-muted); }
+body.control .meal-power b { color: var(--orange); font-weight: 700; }
+body.control .meal-power.is-none { color: var(--c-faint); }
+body.control .meal-add-row { margin: 4px 0 0; }
+body.control .meal-add { font-weight: 600; }
+/* the power block: every figure locked behind Edit, the figure and its keys on one line */
+body.control .pw-meter { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+body.control .pw-meter input[type=number] { flex: 1 1 110px; min-width: 0; }
+body.control .pw-meter input[readonly] { color: var(--c-muted); background: var(--c-panel); }
 /* the recipe book: a dropdown over each of Breakfast, Lunch and Dinner, the per-serving figures folded beneath */
 body.control .recipe-pick { width: 100%; }
 body.control .meal-slot-edit { min-width: 0; }

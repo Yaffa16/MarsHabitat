@@ -68,7 +68,7 @@ CREATE INDEX IF NOT EXISTS idx_task_day ON task(mission_day, sort_order);
 CREATE TABLE IF NOT EXISTS meal (
   id           INTEGER PRIMARY KEY,
   mission_day  INTEGER NOT NULL REFERENCES day(mission_day) ON DELETE CASCADE,
-  slot         TEXT NOT NULL,                   -- BREAKFAST | LUNCH | DINNER | RATION
+  slot         TEXT NOT NULL,                   -- BREAKFAST | LUNCH | DINNER | EXTRA1, EXTRA2, … (added meals) | RATION (older files: Other)
   name         TEXT NOT NULL,
   components   TEXT NOT NULL DEFAULT '',        -- one per line: "item | qty"
   kcal         INTEGER NOT NULL DEFAULT 0,
@@ -79,7 +79,8 @@ CREATE TABLE IF NOT EXISTS meal (
   recipe       TEXT NOT NULL DEFAULT '',        -- slug in content/recipes.json it was filled from, '' for a custom dish
   nutrients    TEXT NOT NULL DEFAULT '',        -- JSON: protein_g, fat_g, carb_g, fiber_g, sugar_g, sodium_mg (per serving)
   co2e_kg      REAL,                            -- per serving; NULL when not known
-  water_footprint_l REAL                        -- per serving; the recipe's water footprint, not water drunk
+  water_footprint_l REAL,                       -- per serving; the recipe's water footprint, not water drunk
+  served       TEXT NOT NULL DEFAULT ''         -- an added meal's own hours, "16:00-17:00": the kitchen meter is read between them (the three named meals have fixed hours)
 );
 CREATE INDEX IF NOT EXISTS idx_meal_day ON meal(mission_day);
 

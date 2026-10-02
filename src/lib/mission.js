@@ -48,7 +48,20 @@ function zoneOffsetMs(instant, tz) {
  * summer time on 25 October, so a fixed offset would drift mid-run too.
  */
 function venueMidnightUtc(dateStr, tz) {
-  const guess = Date.parse(dateStr + 'T00:00:00Z');
+  return venueTimeUtc(dateStr, '00:00', tz);
+}
+
+/**
+ * The UTC instant of a wall-clock time at the venue on a date — "06:00" on
+ * 2026-10-25 is 05:00Z that day (clocks went back at 03:00), 04:00Z the day
+ * before. The meal hours (src/lib/home-assistant.js) are read this way, so
+ * breakfast begins at six on the habitat's clock on both sides of the change.
+ */
+function venueTimeUtc(dateStr, hhmm, tz) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || '00:00'));
+  const hh = m ? String(Math.min(24, +m[1])).padStart(2, '0') : '00', mm = m ? m[2] : '00';
+  // 24:00 is the end of the day: midnight of the day after
+  const guess = hh === '24' ? Date.parse(dateStr + 'T00:00:00Z') + 86400000 : Date.parse(`${dateStr}T${hh}:${mm}:00Z`);
   let t = guess - zoneOffsetMs(new Date(guess), tz);
   // One correction pass resolves the case where the first guess lands on the
   // far side of a DST boundary.
@@ -245,4 +258,4 @@ function touchNow() {
 }
 
 module.exports = { config, state, dateForDay, dayName, touchNow, localDate, localTime, daysBetween, runLabel, dayLabel, shortDay, sync,
-                   venueMidnightUtc, zoneOffsetMs };
+                   venueMidnightUtc, venueTimeUtc, zoneOffsetMs };

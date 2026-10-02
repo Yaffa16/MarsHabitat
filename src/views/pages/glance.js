@@ -22,7 +22,6 @@ const { inventoryGauges } = require('./public');
 const officer = require('../../lib/officer');
 
 const ddd = (n) => String(n).padStart(3, '0');
-const slotName = { BREAKFAST: 'Breakfast', LUNCH: 'Lunch', DINNER: 'Dinner', RATION: 'Ration' };
 /* The day's date in words, in the visitor's language — the one place a
    date is spelled out rather than numbered. */
 const LOCALE = { de: 'de-DE', fr: 'fr-FR', en: 'en-GB' };
@@ -128,14 +127,15 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
 
   const meals = day && day.meals.length ? `
     <div class="glance-block">
-      ${eyebrow(`${T('Meals')}${state === 'planned' ? ` · ${T('planned')}` : ''} · ${day.kcalPlanned} kcal · ${day.waterPlanned.toFixed(1)} L ${T('water')} · ${day.energyPlanned} Wh${
+      ${eyebrow(`${T('Meals')}${state === 'planned' ? ` · ${T('planned')}` : ''} · ${day.kcalPlanned} kcal${day.waterPlanned ? ` · ${day.waterPlanned.toFixed(1)} L ${T('water')}` : ''} · ${day.energyPlanned} Wh${day.meals.some((x) => x.power_running) ? ` ${T('so far')}` : ''}${
         day.co2ePlanned != null ? ` · ${+day.co2ePlanned.toFixed(2)} kg CO₂e` : ''}${day.waterFootprintPlanned != null ? ` · ${+day.waterFootprintPlanned.toFixed(0)} L ${T('water footprint')}` : ''}`)}
       <div class="tw"><table>
         <thead><tr><th>${T('Slot')}</th><th>${T('Meal')}</th><th class="n">kcal</th><th class="n">${T('Water')} L</th><th class="n">Wh</th><th class="n">kg CO₂e</th><th class="n">${T('Water footprint')} L</th></tr></thead>
-        <tbody>${day.meals.map((x) => { const nutr = L.mealEcoText(x, T).nutr; return `<tr><th>${esc(T(slotName[x.slot] || x.slot))}</th><td>${esc(x.name)}${nutr ? `<br><small class="meal-nutr">${esc(nutr)}</small>` : ''}</td>
-          <td class="n">${x.kcal}</td><td class="n">${x.water_litres}</td><td class="n">${x.energy_wh}</td>
+        <tbody>${day.meals.map((x) => { const nutr = L.mealEcoText(x, T).nutr; return `<tr><th>${esc(L.slotName(T, x.slot))}</th><td>${esc(x.name)}${nutr ? `<br><small class="meal-nutr">${esc(nutr)}</small>` : ''}</td>
+          <td class="n">${x.kcal}</td><td class="n">${x.water_litres || '—'}</td><td class="n">${x.power_wh != null ? `${x.power_wh}${x.power_running ? '*' : ''}` : x.energy_wh || '—'}</td>
           <td class="n">${x.co2e_kg != null ? +Number(x.co2e_kg).toFixed(3) : '—'}</td><td class="n">${x.water_footprint_l != null ? +Number(x.water_footprint_l).toFixed(1) : '—'}</td></tr>`; }).join('')}</tbody>
       </table></div>
+      <p class="note meal-hours">${esc(T('Power: the kitchen’s energy meter, read'))} ${esc(L.mealHoursLine(T, (() => { try { return require('../../lib/home-assistant').mealsConfig().windows; } catch { return {}; } })()))}${day.meals.some((x) => x.served) ? ` · ${esc(T('an added meal between its own hours'))}` : ''}${day.meals.some((x) => x.power_running) ? ` · * ${esc(T('so far'))}` : ''}</p>
     </div>` : '';
 
   // The stores at the close of the day, twice over: first as the rings the

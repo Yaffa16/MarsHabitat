@@ -489,10 +489,37 @@ function mealEco(m, T = (x) => x) {
     + (nutr ? `<span class="meal-figs meal-nutr">${esc(nutr)}</span>` : '');
 }
 
+/** A meal's slot in the visitor's language: Breakfast, Lunch, Dinner; "Extra meal", "Extra meal 2" for the meals added
+ *  on the desk (EXTRA1, EXTRA2, …); Other for the slot older files used (src/lib/data.js, slotParts). */
+function slotName(T, slot) {
+  const p = require('../lib/data').slotParts(slot);
+  return `${T(p.label)}${p.n ? ` ${p.n}` : ''}`;
+}
+
+/**
+ * A meal's figures on one line for the public pages: kcal; the water the plan
+ * names, when it does; and the power it drew — the kitchen's energy meter read
+ * between the meal's hours (data.mealsFor), "so far" while the hours are
+ * still running. A meal whose hours have not come, or whose meter has nothing
+ * for them yet, shows no power rather than a nought.
+ */
+function mealFigs(m, T = (x) => x) {
+  const parts = [`${m.kcal || 0} kcal`];
+  if (m.water_litres) parts.push(`${m.water_litres} L`);
+  if (m.power_wh != null) parts.push(`${m.power_wh} Wh${m.power_running ? ` ${T('so far')}` : ''}`);
+  else if (m.energy_wh) parts.push(`${m.energy_wh} Wh`);
+  return parts.join(' · ');
+}
+
+/** The hours the kitchen meter is read for each named meal, as a line: "Breakfast 06:00–09:00 · Lunch 09:00–14:00 · …". */
+function mealHoursLine(T, windows = {}) {
+  return Object.entries(windows || {}).map(([slot, w]) => `${slotName(T, slot)}\u00a0${String(w).replace('-', '–')}`).join(' · ');
+}
+
 module.exports = {
   masthead, pageNav,
   page, panel, eyebrow, readout, orbitPlot, sparkline, pipeline, scaleStrip,
   statusStrip, langSwitch, themeSwitch, sym, legend, SYMBOL_KEY, esc, NAV, MESSAGE_STATES,
-  mealEco, mealEcoText, MEAL_NUTRIENTS,
+  mealEco, mealEcoText, MEAL_NUTRIENTS, slotName, mealFigs, mealHoursLine,
   clientTable, ASSET_V,   // the installation's screens (pages/screens.js) build their own shell from these
 };

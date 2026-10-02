@@ -253,8 +253,9 @@ router.get('/', (req, res) => {
     space: spacespeak.status(),
     officers,
     tasks: db.prepare('SELECT * FROM task WHERE mission_day = ? ORDER BY sort_order, time').all(day),
-    meals: db.prepare(`SELECT * FROM meal WHERE mission_day = ? ORDER BY
-      CASE slot WHEN 'BREAKFAST' THEN 1 WHEN 'LUNCH' THEN 2 WHEN 'DINNER' THEN 3 ELSE 4 END`).all(day).map(data.mealRow),
+    // the day's meals in their order, each with the power the kitchen meter read for it (data.mealsFor)
+    meals: data.mealsFor(day),
+    mealHours: require('../lib/home-assistant').mealsConfig(),
     recipes: content.recipeBook(),
     notes: notesFor(day),
     figures: content.crewFigures(),
@@ -756,20 +757,36 @@ router.post('/crew-figures', (req, res) => {
 router.post('/meals', (req, res) => {
   const ctx = req.ctx();
   const day = dayParam(req, ctx);
-  const SLOTS = ['BREAKFAST', 'LUNCH', 'DINNER', 'RATION'];
+  // Breakfast, Lunch and Dinner, then the meals added on the desk — EXTRA1, EXTRA2, … as the form carries them, in
+  // their order; they are numbered afresh on saving, so taking one away leaves no gap. A form from before the added
+  // meals may still post RATION (Other): it is kept as an added meal.
+  const extras = Object.keys(req.body || {}).map((k) => /^(EXTRA\d+)_name$/.exec(k)).filter(Boolean).map((m) => m[1])
+    .sort((a, b) => data.extraIndex(a) - data.extraIndex(b));
+  if (Object.prototype.hasOwnProperty.call(req.body || {}, 'RATION_name')) extras.push('RATION');
+  const SLOTS = [...data.FIXED_SLOTS, ...extras];
   const num = (v) => (v === '' || v == null ? 0 : Number(v) || 0);
 
   // Water and power are not edited here, so they are carried through from the
-  // existing meal rather than quietly zeroed.
+  // existing meal rather than quietly zeroed. (The power shown is the kitchen
+  // meter's, read live between the meal's hours — data.mealsFor — not this figure.)
   const current = db.prepare('SELECT * FROM meal WHERE mission_day = ?').all(day).map(data.mealRow);
   const book = content.recipeBook();
   // Blank stays blank: a recipe figure not given is not known, never 0.
   const opt = (v) => (v === '' || v == null || !Number.isFinite(Number(v)) ? null : Number(v));
+  const ha = require('../lib/home-assistant');
   const rows = [];
+  let extraN = 0;
+  const saveAs = {};                                           // the slot each posted slot is saved under (EXTRA3 → EXTRA2)
   for (const slot of SLOTS) {
     const name = String(req.body[`${slot}_name`] || '').trim();
     if (!name) continue;   // a slot with no name is a slot that is not served
     const was = current.find((m) => m.slot === slot) || {};
+    const isExtra = !data.FIXED_SLOTS.includes(slot);
+    const as = isExtra ? `EXTRA${++extraN}` : slot;
+    saveAs[slot] = as;
+    // an added meal's own hours, between which the kitchen meter is read for it: both given and in order, or none
+    const from = String(req.body[`${slot}_from`] || '').trim(), to = String(req.body[`${slot}_to`] || '').trim();
+    const served = isExtra ? (ha.parseWindow(`${from}-${to}`) || '') : '';
     // The recipe the slot was filled from — only if it is in the book.
     const slug = String(req.body[`${slot}_recipe`] ?? was.recipe ?? '').trim();
     const recipe = slug && book.some((r) => r.slug === slug) ? slug : '';
@@ -783,7 +800,7 @@ router.post('/meals', (req, res) => {
     const co2e = has('co2e') ? opt(req.body[`${slot}_co2e`]) : was.co2e_kg ?? null;
     const wfp = has('wfp') ? opt(req.body[`${slot}_wfp`]) : was.water_footprint_l ?? null;
     rows.push({
-      slot, name,
+      slot: as, name,
       ...(recipe ? { recipe } : {}),
       components: String(req.body[`${slot}_components`] || ''),
       kcal: num(req.body[`${slot}_kcal`]),
@@ -795,8 +812,12 @@ router.post('/meals', (req, res) => {
       ...(wfp != null ? { water_footprint_l: wfp } : {}),
       ...(String(req.body[`${slot}_notes`] || '').trim()
         ? { notes: String(req.body[`${slot}_notes`]).trim() } : {}),
+      ...(served ? { served: served.join('-') } : {}),
+      _posted: slot,                                           // the slot the form posted it under, for the marks below
     });
   }
+  const posted = new Map(rows.map((m) => [m._posted, m]));
+  for (const m of rows) delete m._posted;
 
   const r = content.edit('meals.json', (obj) => {
     if (rows.length) obj[String(day)] = rows;
@@ -809,8 +830,11 @@ router.post('/meals', (req, res) => {
   // only a value altered after the choice is. The dropdown itself is never marked.
   const r2 = (v, dp) => (v == null || v === '' ? '' : String(+Number(v).toFixed(dp)));
   const changed = [], picked = [];
+  // The marks are keyed by the slot the meal is saved under (an added meal renumbered on the way keeps its marks under
+  // its new number, where the redrawn page looks for them); an added meal taken away leaves marks nobody reads.
   for (const slot of SLOTS) {
-    const was = current.find((m) => m.slot === slot) || {}, is = rows.find((m) => m.slot === slot) || {};
+    const as = saveAs[slot] || slot;
+    const was = current.find((m) => m.slot === slot) || {}, is = posted.get(slot) || {};
     const choice = String(req.body[`${slot}_recipe`] ?? '');
     const rec = is.recipe && is.recipe !== (was.recipe || '') ? book.find((x) => x.slug === is.recipe) : null;
     const emptied = choice === '__empty' && (was.recipe || was.name);
@@ -822,40 +846,42 @@ router.post('/meals', (req, res) => {
     } else if (emptied) {
       base = { name: '', components: '', kcal: '', prep: '', co2e: '', wfp: '', n: {} };
     }
+    if (!same(was.served || '', is.served || '')) changed.push(`${as}_from`, `${as}_to`);
     if (base) {
-      picked.push(slot);
+      picked.push(as);
       const num0 = (v) => (v ? String(v) : '');                // 0 is how an empty number field is saved
-      if (!same(base.name, is.name || '')) changed.push(`${slot}_name`);
-      if (!same(base.components, is.components || '')) changed.push(`${slot}_components`);
-      if (!same(base.kcal, num0(is.kcal))) changed.push(`${slot}_kcal`);
-      if (!same(base.prep, num0(is.prep))) changed.push(`${slot}_prep`);
-      if (!same(was.notes, is.notes)) changed.push(`${slot}_notes`);
-      for (const { key } of content.NUTRIENTS) if (!same(base.n[key] ?? '', r2((is.nutrients || {})[key], 2))) changed.push(`${slot}_${key}`);
-      if (!same(base.co2e, r2(is.co2e_kg, 4))) changed.push(`${slot}_co2e`);
-      if (!same(base.wfp, r2(is.water_footprint_l, 1))) changed.push(`${slot}_wfp`);
+      if (!same(base.name, is.name || '')) changed.push(`${as}_name`);
+      if (!same(base.components, is.components || '')) changed.push(`${as}_components`);
+      if (!same(base.kcal, num0(is.kcal))) changed.push(`${as}_kcal`);
+      if (!same(base.prep, num0(is.prep))) changed.push(`${as}_prep`);
+      if (!same(was.notes, is.notes)) changed.push(`${as}_notes`);
+      for (const { key } of content.NUTRIENTS) if (!same(base.n[key] ?? '', r2((is.nutrients || {})[key], 2))) changed.push(`${as}_${key}`);
+      if (!same(base.co2e, r2(is.co2e_kg, 4))) changed.push(`${as}_co2e`);
+      if (!same(base.wfp, r2(is.water_footprint_l, 1))) changed.push(`${as}_wfp`);
       continue;
     }
-    if (!same(was.name, is.name)) changed.push(`${slot}_name`);
-    if (!same(was.components, is.components)) changed.push(`${slot}_components`);
-    if (!same(was.kcal || 0, is.kcal || 0)) changed.push(`${slot}_kcal`);
-    if (!same(was.prep_minutes || 0, is.prep || 0)) changed.push(`${slot}_prep`);
-    if (!same(was.notes, is.notes)) changed.push(`${slot}_notes`);
+    if (!same(was.name, is.name)) changed.push(`${as}_name`);
+    if (!same(was.components, is.components)) changed.push(`${as}_components`);
+    if (!same(was.kcal || 0, is.kcal || 0)) changed.push(`${as}_kcal`);
+    if (!same(was.prep_minutes || 0, is.prep || 0)) changed.push(`${as}_prep`);
+    if (!same(was.notes, is.notes)) changed.push(`${as}_notes`);
     for (const { key } of content.NUTRIENTS) {
-      if (!same((was.nutrients || {})[key], (is.nutrients || {})[key])) changed.push(`${slot}_${key}`);
+      if (!same((was.nutrients || {})[key], (is.nutrients || {})[key])) changed.push(`${as}_${key}`);
     }
-    if (!same(was.co2e_kg, is.co2e_kg)) changed.push(`${slot}_co2e`);
-    if (!same(was.water_footprint_l, is.water_footprint_l)) changed.push(`${slot}_wfp`);
+    if (!same(was.co2e_kg, is.co2e_kg)) changed.push(`${as}_co2e`);
+    if (!same(was.water_footprint_l, is.water_footprint_l)) changed.push(`${as}_wfp`);
   }
   // A slot chosen afresh starts clean: marks left from its earlier dish go,
   // the dropdown's own mark from before this rule too.
   const clear = db.prepare("DELETE FROM control_edit WHERE form = 'meals' AND day = ? AND key = ?");
-  for (const slot of SLOTS) {
-    const keys = ['name', 'components', 'kcal', 'prep', 'notes', 'co2e', 'wfp', ...content.NUTRIENTS.map((x) => x.key)];
+  for (const slot of new Set([...SLOTS, ...Object.values(saveAs)])) {
+    const keys = ['name', 'components', 'kcal', 'prep', 'notes', 'co2e', 'wfp', 'from', 'to', ...content.NUTRIENTS.map((x) => x.key)];
     if (picked.includes(slot)) for (const k of keys) if (!changed.includes(`${slot}_${k}`)) clear.run(day, `${slot}_${k}`);
     clear.run(day, `${slot}_recipe`);
   }
   noteEdits('meals', day, changed, req.user.username);
-  setFlash(req, r.ok ? `${DayWord(day)} food plan saved — ${rows.length} slots.` : `Saved, but: ${r.error}`, !r.ok);
+  const n = rows.length, added = rows.filter((m) => data.isExtraSlot(m.slot)).length;
+  setFlash(req, r.ok ? `${DayWord(day)} food plan saved — ${n} meal${n === 1 ? '' : 's'}${added ? ` (${added} added)` : ''}.` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, 'habitat', day);
 });
 

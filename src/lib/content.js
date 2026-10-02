@@ -171,7 +171,10 @@ function load({ quiet = false } = {}) {
 
     /* ------------------------------------------------------------ meals */
     if (meals) {
+      // Breakfast, Lunch, Dinner; the meals added on the desk (EXTRA1, EXTRA2, …); RATION, the slot older files used for Other
       const SLOTS = ['BREAKFAST', 'LUNCH', 'DINNER', 'RATION'];
+      const isSlot = (s) => SLOTS.includes(s) || /^EXTRA\d+$/.test(s);
+      const ha = require('./home-assistant');
       const book = recipeBook();
       // The file is the food plan: a day the file no longer mentions has no
       // meals, rather than keeping whatever an older version of the file held.
@@ -182,7 +185,10 @@ function load({ quiet = false } = {}) {
         db.prepare('DELETE FROM meal WHERE mission_day = ?').run(n);
         (meals[String(n)] || []).forEach((m) => {
           const slot = String(m.slot || '').toUpperCase();
-          if (!SLOTS.includes(slot)) { errors.push(`meals.json day ${n}: "${m.slot}" is not a slot`); return; }
+          if (!isSlot(slot)) { errors.push(`meals.json day ${n}: "${m.slot}" is not a slot`); return; }
+          // an added meal's own hours, "16:00-17:00" — kept only when they parse; a named meal has fixed hours and carries none
+          const served = /^EXTRA\d+$/.test(slot) && ha.parseWindow(m.served) ? ha.parseWindow(m.served).join('-') : '';
+          if (m.served && !served) errors.push(`meals.json day ${n} ${slot}: "${m.served}" is not a pair of hours ("16:00-17:00")${/^EXTRA/.test(slot) ? '' : ' — the named meals have fixed hours'}`);
           // A meal naming a recipe takes whatever it does not say itself from
           // the recipe book, so "recipe": "pfannenbrot" alone is a whole meal.
           const rec = m.recipe ? book.find((r) => r.slug === m.recipe) : null;
@@ -192,12 +198,12 @@ function load({ quiet = false } = {}) {
           const nutr = mealNutrients(m.nutrients) || (rec ? rec.nutrients : null);
           const numOr = (v, fb) => (v != null && v !== '' && Number.isFinite(Number(v)) ? Number(v) : fb);
           db.prepare(`INSERT INTO meal (mission_day, slot, name, components, kcal, water_litres,
-            prep_minutes, energy_wh, notes, recipe, nutrients, co2e_kg, water_footprint_l)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+            prep_minutes, energy_wh, notes, recipe, nutrients, co2e_kg, water_footprint_l, served)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
             .run(n, slot, name, m.components || '', numOr(m.kcal, rec ? Math.round(rec.kcal) : 0), m.water || 0,
                  numOr(m.prep, rec && rec.prep_minutes != null ? rec.prep_minutes : 0), m.energy || 0, m.notes || '', rec ? rec.slug : String(m.recipe || ''),
                  nutr ? JSON.stringify(nutr) : '',
-                 numOr(m.co2e_kg, rec ? rec.co2e_kg : null), numOr(m.water_footprint_l, rec ? rec.water_total_l : null));
+                 numOr(m.co2e_kg, rec ? rec.co2e_kg : null), numOr(m.water_footprint_l, rec ? rec.water_total_l : null), served);
           counts.meals++;
         });
       }

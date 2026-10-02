@@ -84,7 +84,8 @@ function inventoryGauges(inventory, { compact = false, strip = false, cells = fa
   // carried in, the figure in the centre, the name and days remaining beneath.
   // A store with no figure at all yet — nothing carried in written into
   // content/crew-and-inventory.json and no count filed on the Habitat tab —
-  // stands as a placeholder, and says so, rather than as an empty store.
+  // stands dimmed, its ring empty and a dash for its figure, rather than as an
+  // empty store; it carries no word for it.
   const placeholder = (i) => !(i.start_quantity || i.quantity);
   if (cells) {
     const R = 24, C = 2 * Math.PI * R;
@@ -96,7 +97,7 @@ function inventoryGauges(inventory, { compact = false, strip = false, cells = fa
       const low = !ph && i.warn_below > 0 && i.quantity <= i.warn_below;
       const daysLeft = i.consumption > 0 ? i.quantity / i.consumption : null;
       const num = Number.isInteger(i.quantity) ? String(i.quantity) : i.quantity.toFixed(1);
-      return `<div class="gauge round ${low ? 'low' : ''}${ph ? ' is-ph' : ''}" title="${esc(i.label)}: ${ph ? esc(T('Placeholder')) : `${i.quantity} ${esc(i.unit)} ${T('of')} ${startLabel} · ${esc(left(daysLeft, 1))}`}">
+      return `<div class="gauge round ${low ? 'low' : ''}${ph ? ' is-ph' : ''}" title="${esc(i.label)}${ph ? '' : `: ${i.quantity} ${esc(i.unit)} ${T('of')} ${startLabel} · ${esc(left(daysLeft, 1))}`}">
         <svg viewBox="0 0 60 60" aria-hidden="true">
           <circle cx="30" cy="30" r="${R}" class="round-track"/>
           <circle cx="30" cy="30" r="${R}" class="round-arc" stroke-dasharray="${C.toFixed(1)}"
@@ -105,7 +106,7 @@ function inventoryGauges(inventory, { compact = false, strip = false, cells = fa
           <text x="30" y="44" class="round-unit">${ph ? '' : esc(i.unit)}</text>
         </svg>
         <span class="cell-name">${esc(i.label)}</span>
-        <span class="cell-days${ph ? ' is-ph' : ''}">${ph ? T('Placeholder') : daysLeft != null ? (daysLeft < 99 ? `${daysLeft.toFixed(0)} ${T('days')}` : T('ample')) : T('no draw')}</span>
+        <span class="cell-days${ph ? ' is-ph' : ''}">${ph ? '' : daysLeft != null ? (daysLeft < 99 ? `${daysLeft.toFixed(0)} ${T('days')}` : T('ample')) : T('no draw')}</span>
       </div>`;
     }).join('')}</div>`;
   }
@@ -119,11 +120,11 @@ function inventoryGauges(inventory, { compact = false, strip = false, cells = fa
     return `<div class="gauge ${low ? 'low' : ''}${ph ? ' is-ph' : ''}">
       <div class="gauge-head">
         <span class="gauge-name">${esc(i.label)}</span>
-        <span class="gauge-val">${ph ? `<span class="is-ph">${T('Placeholder')}</span>` : `${i.quantity}<em>${esc(i.unit)}</em>`}</span>
+        <span class="gauge-val">${ph ? '<span class="is-ph">—</span>' : `${i.quantity}<em>${esc(i.unit)}</em>`}</span>
       </div>
       <div class="gauge-track"><i style="width:${pct.toFixed(1)}%"></i></div>
       <div class="gauge-foot">
-        <span>${ph ? T('no figure filed yet') : `${pct.toFixed(0)}% ${T('of')} ${startLabel} ${esc(i.unit)}`}</span>
+        <span>${ph ? '' : `${pct.toFixed(0)}% ${T('of')} ${startLabel} ${esc(i.unit)}`}</span>
         <span>${ph ? '' : left(daysLeft, 1)}</span>
       </div>
     </div>`;
@@ -296,7 +297,7 @@ function wholeMission(ctx, days, { openToday = true } = {}) {
         </div>`).join('')}</div>`
         : `<div class="empty">${T('No schedule filed for this day')}</div>`}
       ${d.meals.length ? `<div class="note" style="margin-top:10px">
-        ${d.meals.map((m) => `<b style="color:var(--ink)">${esc(T(m.slot[0] + m.slot.slice(1).toLowerCase()))}</b> ${esc(m.name)}`).join(' · ')}
+        ${d.meals.map((m) => `<b style="color:var(--ink)">${esc(L.slotName(T, m.slot))}</b> ${esc(m.name)}`).join(' · ')}
       </div>` : ''}
       ${d.notes && d.notes.length ? `<div class="rows mday-notes">
         <div class="eyebrow" style="margin:12px 0 6px">${T('Mission notes')}</div>
@@ -1158,7 +1159,6 @@ const folder = (T, rows, { id = 'day-folder', label = '' } = {}) => {
 function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { categories: [], days: {} }, allDays, logDays, entryCounts, ingest = [], media = [], mediaCounts = { total: 0, bytes: 0 }, mediaLookup = () => null, hardware = null, hardwareDaily = [], cloud = null, mission = null, nowLog = null, nowDay = null }, { trendsInside = false } = {}) {
   const m = ctx.mission, g = ctx.geo, T = ctx.T;
   const pre = m.phase === 'PRE_LAUNCH';
-  const slotName = { BREAKFAST: 'Breakfast', LUNCH: 'Lunch', DINNER: 'Dinner', RATION: 'Ration' };
   const day3 = String(m.clampedDay).padStart(3, '0');
   const sols = m.totalDays - m.clampedDay;
   const inventory = today ? today.inventory : [];
@@ -1465,15 +1465,23 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
   const blogCommander = blogPanel({ id: 'blog-commander', title: T('Commander Blog'),
     posts: commanderToday, empty: 'No commander blog yet for' });
 
+  /* ---- today's meals: each with its kcal and the power it drew — the kitchen's energy meter read between the meal's
+     hours (breakfast 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00; an added meal between its own), data.mealsFor
+     — and, under the list, which hours those are. The meta line sums the day: kcal, the metered watt hours ("so far"
+     while a meal's hours still run), CO₂e from the recipe book. */
+  const mealHours = (() => { try { return require('../../lib/home-assistant').mealsConfig().windows; } catch { return {}; } })();
+  const mealsWh = today && today.meals.some((x) => x.power_wh != null) ? today.meals.reduce((s, x) => s + (x.power_wh || 0), 0) : null;
+  const mealsRunning = !!(today && today.meals.some((x) => x.power_running));
   const galley = dpanel({ id: 'galley', title: T('Today’s Meal'), meta: today && today.meals.length
-      ? `${today.kcalPlanned} kcal · ${today.waterPlanned.toFixed(1)} L · ${today.energyPlanned} Wh${today.co2ePlanned != null ? ` · ${+today.co2ePlanned.toFixed(2)} kg CO₂e` : ''}` : '', span: 4, cls: 'h-3 scroll' },
+      ? `${today.kcalPlanned} kcal${today.waterPlanned ? ` · ${today.waterPlanned.toFixed(1)} L` : ''}${mealsWh != null ? ` · ${mealsWh} Wh${mealsRunning ? ` ${T('so far')}` : ''}` : today.energyPlanned ? ` · ${today.energyPlanned} Wh` : ''}${today.co2ePlanned != null ? ` · ${+today.co2ePlanned.toFixed(2)} kg CO₂e` : ''}` : '', span: 4, cls: 'h-3 scroll' },
     today && today.meals.length ? `<div class="meals">${today.meals.map((x) => `
       <div class="meal">
-        <span class="meal-slot">${esc(T(slotName[x.slot] || x.slot))}</span>
+        <span class="meal-slot">${esc(L.slotName(T, x.slot))}</span>
         <b>${esc(x.name)}</b>
-        <span class="meal-figs">${x.kcal} kcal · ${x.water_litres} L · ${x.energy_wh} Wh</span>
+        <span class="meal-figs">${esc(L.mealFigs(x, T))}</span>
         ${L.mealEco(x, T)}
-      </div>`).join('')}</div>` : `<div class="empty">${T('No meals filed for today')}</div>`);
+      </div>`).join('')}</div>
+      <p class="meal-hours">${esc(T('Power: the kitchen’s energy meter, read'))} ${esc(L.mealHoursLine(T, mealHours))}${today.meals.some((x) => x.served) ? ` · ${esc(T('an added meal between its own hours'))}` : ''}</p>` : `<div class="empty">${T('No meals filed for today')}</div>`);
 
   // Each officer with their current condition — the latest state filed from
   // mission control, translated to language in src/lib/mood.js. The slider

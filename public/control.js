@@ -253,13 +253,16 @@
 })();
 
 /* ---------------------------------------------------------- recipe book */
-/* Breakfast, Lunch and Dinner each have a dropdown over the recipe book
-   (content/recipes.json, carried into the page as #recipe-book). Choosing a
-   recipe fills the slot's name, kcal, prep time, nutrients, CO2e and water
+/* Breakfast, Lunch, Dinner and every added meal have a dropdown over the recipe
+   book (content/recipes.json, carried into the page as #recipe-book). Choosing a
+   recipe fills the card's name, kcal, prep time, nutrients, CO2e and water
    footprint; every field stays editable, and the save keeps what the fields
-   hold. The dropdown opens on "Choose meal"; "Empty" clears the slot to be filled in by hand — saved for that
+   hold. The dropdown opens on "Choose meal"; "Empty" clears the card to be filled in by hand — saved for that
    day only, never added to the book. Without JavaScript the dropdown is still posted, and the
-   server records the recipe the slot names. */
+   server records the recipe the card names.
+   "+ Add a meal" puts another card after the three (EXTRA1, EXTRA2, … — the form's template, numbered as it is
+   cloned), with the same dropdown and fields and its own hours; a card's × takes it off the day — saved without it,
+   the meal is gone. */
 (function () {
   'use strict';
   var src = document.getElementById('recipe-book');
@@ -280,10 +283,10 @@
     el.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
-  document.querySelectorAll('select.recipe-pick').forEach(function (sel) {
+  function wire(sel) {
     var slot = sel.getAttribute('data-slot');
     var form = sel.form;
-        sel.addEventListener('change', function () {
+    sel.addEventListener('change', function () {
       var v = sel.value;
       sel.setAttribute('data-base', v);                       // the choice itself is never marked
       var figs = form.querySelector('.meal-slot-edit[data-slot="' + slot + '"] .meal-recipe-figs');
@@ -313,8 +316,44 @@
         setTimeout(function () { figs.classList.remove('just-filled'); }, 1200);
       }
     });
-  });
+  }
+  document.querySelectorAll('select.recipe-pick').forEach(wire);
 
+  // a card's ×: off the day (asked first when the card has a dish on it)
+  function removable(card) {
+    var x = card.querySelector('.meal-remove');
+    if (!x) return;
+    x.addEventListener('click', function () {
+      var name = card.querySelector('input[name$="_name"]');
+      if (name && name.value.trim() && !window.confirm('Take ' + name.value.trim() + ' off this day? It is gone with the next save.')) return;
+      var form = card.closest('form');
+      card.parentNode.removeChild(card);
+      if (form) form.dispatchEvent(new Event('change', { bubbles: true }));   // the edits note counts afresh
+    });
+  }
+  document.querySelectorAll('.meals-form .meal-slot-edit.meal-extra').forEach(removable);
+
+  // + Add a meal: the template, numbered, after the last card
+  document.querySelectorAll('.meals-form').forEach(function (form) {
+    var add = form.querySelector('.meal-add'), tpl = form.querySelector('.meal-extra-tpl'), cards = form.querySelector('.meal-cards');
+    if (!add || !tpl || !cards) return;
+    add.addEventListener('click', function () {
+      var n = Number(form.getAttribute('data-next-extra')) || 1;
+      form.setAttribute('data-next-extra', String(n + 1));
+      var box = document.createElement('div');
+      box.innerHTML = tpl.innerHTML.replace(/__N__/g, String(n));
+      var card = box.firstElementChild;
+      if (!card) return;
+      var num = card.querySelector('.slot-n');
+      if (num && n === 1) num.parentNode.removeChild(num);                    // the first added meal is "Extra meal", the second "Extra meal 2"
+      cards.appendChild(card);
+      var sel = card.querySelector('select.recipe-pick');
+      if (sel) { wire(sel); sel.focus(); }
+      removable(card);
+      form.dispatchEvent(new Event('change', { bubbles: true }));
+      card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+  });
 })();
 
 /* ---------------------------------------------------------------- closed */

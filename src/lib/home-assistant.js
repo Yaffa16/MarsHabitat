@@ -55,7 +55,20 @@ const configured = () => !!(CFG.host && CFG.token);
 
 const DIR = process.env.CONTENT_DIR || path.join(__dirname, '../../content');
 const FILE = path.join(DIR, 'home-assistant.json');
-let cfgCache = { mtimeMs: -1, sensors: [], habitat: {}, error: null };
+
+/* The meals' power: the kitchen's energy meter and the hours of each named
+   meal, between which it is read for that meal — breakfast 06:00–09:00, lunch
+   09:00–14:00, dinner 15:00–22:00, on the habitat's clock. These are the
+   defaults; the `meals` block of content/home-assistant.json may name another
+   meter ("meter", the entity id without "sensor.") or other hours ("windows",
+   slot → "HH:MM-HH:MM"). The meter is named by its entity id, so a change of its
+   label in Home Assistant or in the sensor list changes nothing here. */
+const MEALS_DEFAULT = Object.freeze({
+  meter: 'habitat_power_kitchen_energie',
+  windows: Object.freeze({ BREAKFAST: '06:00-09:00', LUNCH: '09:00-14:00', DINNER: '15:00-22:00' }),
+});
+const noMeals = () => ({ meter: MEALS_DEFAULT.meter, windows: { ...MEALS_DEFAULT.windows } });
+let cfgCache = { mtimeMs: -1, sensors: [], habitat: {}, meals: noMeals(), error: null };
 
 /* The habitat sensor's channels, and the entity that feeds each: the keys
    the station knows (src/lib/critical.js), each mapped in the file's
@@ -67,11 +80,24 @@ const HABITAT_CHANNELS = ['co2', 'temp', 'hum', 'pres', 'light', 'voc', 'iaq', '
 function sensors() { return config().sensors; }
 /** The habitat sensor's mapping, channel → entity id, from the same file. */
 function habitatMap() { return config().habitat; }
+/** The meals' meter and hours, from the same file (the defaults above where it says nothing). */
+function mealsConfig() { return config().meals; }
+
+/** "06:00-09:00" (a hyphen or a dash between) → ['06:00', '09:00'], the end after the start; null for anything else. */
+function parseWindow(s) {
+  const m = /^\s*(\d{1,2}:\d{2})\s*[-–—]\s*(\d{1,2}:\d{2})\s*$/.exec(String(s || ''));
+  if (!m) return null;
+  const mins = (x) => { const [h, mi] = x.split(':').map(Number); return h > 24 || mi > 59 ? NaN : h * 60 + mi; };
+  const a = mins(m[1]), b = mins(m[2]);
+  if (!Number.isFinite(a) || !Number.isFinite(b) || b <= a) return null;
+  const pad = (x) => x.split(':').map((p) => p.padStart(2, '0')).join(':');
+  return [pad(m[1]), pad(m[2])];
+}
 
 function config() {
   let st = null;
   try { st = fs.statSync(FILE); } catch { /* no file: no sensors */ }
-  if (!st) { cfgCache = { mtimeMs: -1, sensors: [], habitat: {}, error: null }; return cfgCache; }
+  if (!st) { cfgCache = { mtimeMs: -1, sensors: [], habitat: {}, meals: noMeals(), error: null }; return cfgCache; }
   if (st.mtimeMs === cfgCache.mtimeMs) return cfgCache;
   try {
     const raw = JSON.parse(fs.readFileSync(FILE, 'utf8'));
@@ -79,6 +105,15 @@ function config() {
     for (const k of HABITAT_CHANNELS) {
       const v = raw && raw.habitat && raw.habitat[k];
       if (v && typeof v === 'string' && v.trim()) habitat[k] = v.trim().replace(/^sensor\./, '');
+    }
+    // the meals' meter and hours: the file's where it names them and they parse, the defaults otherwise
+    const meals = noMeals();
+    const mb = raw && raw.meals && typeof raw.meals === 'object' ? raw.meals : {};
+    if (typeof mb.meter === 'string' && /^(sensor\.)?[a-z0-9_]+$/i.test(mb.meter.trim())) meals.meter = mb.meter.trim().replace(/^sensor\./, '');
+    for (const slot of Object.keys(MEALS_DEFAULT.windows)) {
+      const w = mb.windows && mb.windows[slot];
+      if (w === null || w === false) { delete meals.windows[slot]; continue; }     // a named meal without hours: no figure for it
+      if (parseWindow(w)) meals.windows[slot] = parseWindow(w).join('-');
     }
     const list = (Array.isArray(raw) ? raw : raw.sensors || [])
       .filter((s) => s && s.id)
@@ -103,9 +138,9 @@ function config() {
         // reading has room to move (oxygen: 2 percentage points).
         span: Number.isFinite(Number(s.span)) && Number(s.span) > 0 ? Number(s.span) : null,
       }));
-    cfgCache = { mtimeMs: st.mtimeMs, sensors: list, habitat, error: null };
+    cfgCache = { mtimeMs: st.mtimeMs, sensors: list, habitat, meals, error: null };
     const mapped = Object.keys(habitat).length;
-    console.log(`[home-assistant] ${list.length} sensor${list.length === 1 ? '' : 's'} configured in content/home-assistant.json${mapped ? `, ${mapped} habitat channel${mapped === 1 ? '' : 's'} mapped` : ''}`);
+    console.log(`[home-assistant] ${list.length} sensor${list.length === 1 ? '' : 's'} configured in content/home-assistant.json${mapped ? `, ${mapped} habitat channel${mapped === 1 ? '' : 's'} mapped` : ''}; the meals read sensor.${meals.meter} (${Object.entries(meals.windows).map(([k, v]) => `${k.toLowerCase()} ${v}`).join(', ') || 'no hours'})`);
   } catch (e) {
     if (cfgCache.error !== e.message) console.warn(`[home-assistant] content/home-assistant.json is broken (${e.message}) — the last good list keeps serving`);
     cfgCache.error = e.message;
@@ -459,14 +494,41 @@ function counterToday(entity) {
    amount counted up to the reset is kept and counting goes on from zero,
    rather than the day reading as nothing. kWh; null with no reading yet. */
 const windowAll = db.prepare('SELECT value, unit FROM ha_reading WHERE entity = ? AND t >= ? AND t < ? AND value IS NOT NULL ORDER BY t');
-function counterBetween(entity, a, b) {
+function counterBetween(entity, a, b, decimals = 2) {
   const rows = windowAll.all(entity, a, b);
   if (!rows.length) return null;
   const before = lastBefore.get(entity, a);
   let prev = before && before.value != null ? before.value : rows[0].value, sum = 0;
   for (const r of rows) { sum += r.value >= prev ? r.value - prev : r.value; prev = r.value; }
   const wh = /^wh$/i.test(String(rows[rows.length - 1].unit || ''));
-  return Math.round((sum / (wh ? 1000 : 1)) * 100) / 100;
+  const f = 10 ** decimals;
+  return Math.round((sum / (wh ? 1000 : 1)) * f) / f;
+}
+
+/**
+ * What a meal drew from the kitchen's meter: the meter's consumption between the
+ * meal's hours on its mission day — breakfast 06:00–09:00, lunch 09:00–14:00,
+ * dinner 15:00–22:00 (mealsConfig), an added meal's own hours (`served`,
+ * "16:00-17:00") — in watt hours, whole. `window` is the hours read, as
+ * ['06:00', '09:00'], null when the meal has none (then nothing is read); `wh` is
+ * null while the meter has no reading inside them; `running` says the hours are
+ * still going at the venue (today's lunch at noon), so the figure is so far.
+ * NOW (day 0) is today. Nothing is read without a database row — a meter that
+ * is not configured, or not polled, simply has no readings, and the meal says so.
+ */
+function mealPower(missionDay, slot, served = '') {
+  const cfg = mealsConfig();
+  const win = parseWindow(served) || parseWindow(cfg.windows[String(slot || '').toUpperCase()] || '');
+  if (!win) return { wh: null, window: null, running: false, meter: cfg.meter };
+  let a, b;
+  try {
+    const mission = require('./mission'), m = mission.config(), date = mission.dateForDay(missionDay);
+    a = mission.venueTimeUtc(date, win[0], m.timezone);
+    b = mission.venueTimeUtc(date, win[1], m.timezone);
+  } catch { return { wh: null, window: win, running: false, meter: cfg.meter }; }
+  const now = Date.now();
+  const kwh = counterBetween(cfg.meter, a, Math.min(b, now + 1), 3);
+  return { wh: kwh == null ? null : Math.round(kwh * 1000), window: win, running: now >= a && now < b, meter: cfg.meter, from: a, to: b };
 }
 
 /* A meter's consumption on one mission day. The meter only ever grows, so the
@@ -556,4 +618,5 @@ function version(snap) {
     + (snap.down ? '|down' : '') + (snap.frozen ? '|frozen' : '');
 }
 
-module.exports = { start, poll, snapshot, readings, daily, daySummary, hourly, version, clear, sensors, sensorsFor, habitatMap, HABITAT_CHANNELS, fetchJson, configured, frozen, counterDay, counterToday, CFG };
+module.exports = { start, poll, snapshot, readings, daily, daySummary, hourly, version, clear, sensors, sensorsFor, habitatMap, HABITAT_CHANNELS, fetchJson, configured, frozen, counterDay, counterToday, counterBetween,
+                   mealsConfig, mealPower, parseWindow, MEALS_DEFAULT, CFG };

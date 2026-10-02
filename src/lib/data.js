@@ -84,11 +84,63 @@ function dailyAverages(days = 40, localDate = (d) => d.toISOString().slice(0, 10
 
 /* --------------------------------------------------------------- day content */
 
+/* ---- the meals' slots: Breakfast, Lunch and Dinner, then the meals added on the desk (EXTRA1, EXTRA2, …), then Other
+   (RATION, the slot older files used) */
+const FIXED_SLOTS = ['BREAKFAST', 'LUNCH', 'DINNER'];
+const isExtraSlot = (slot) => /^EXTRA\d+$/.test(String(slot || ''));
+const extraIndex = (slot) => (isExtraSlot(slot) ? Number(String(slot).slice(5)) : 0);
+/** Where a slot stands in the day: the three named meals in their order, the added meals after them in theirs. */
+function slotOrder(slot) {
+  const i = FIXED_SLOTS.indexOf(slot);
+  return i >= 0 ? i : isExtraSlot(slot) ? 10 + extraIndex(slot) : 1000;
+}
+/** How a slot is named: { label, n } — 'Breakfast'; 'Extra meal' with n = 2 for the second added meal ("Extra meal 2");
+ *  'Other' for RATION. The views translate the label and append the number. */
+function slotParts(slot) {
+  const s = String(slot || '').toUpperCase();
+  if (FIXED_SLOTS.includes(s)) return { label: s[0] + s.slice(1).toLowerCase(), n: null };
+  if (isExtraSlot(s)) return { label: 'Extra meal', n: extraIndex(s) > 1 ? extraIndex(s) : null };
+  if (s === 'RATION') return { label: 'Other', n: null };
+  return { label: s ? s[0] + s.slice(1).toLowerCase() : '', n: null };
+}
+/** The slot's name in English — "Breakfast", "Extra meal 2", "Other" — for the record and the desk. */
+function slotLabel(slot) { const p = slotParts(slot); return p.n ? `${p.label} ${p.n}` : p.label; }
+
+/**
+ * A day's meals, in the day's order, each with the power it drew: the kitchen's
+ * energy meter read between the meal's hours (src/lib/home-assistant.js,
+ * mealPower) — breakfast 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00,
+ * an added meal between its own hours. Where the meter has a figure it is the
+ * meal's energy (`energy_wh`, `energy_source` 'meter'); where it has none the
+ * meal keeps what the file says (`energy_source` 'filed', or 'none' at 0).
+ * `power_wh` is the meter's figure alone (null without one), `window` the
+ * hours read (['06:00', '09:00'], null for a meal without hours) and
+ * `power_running` that the hours are still going now, so the figure is so far.
+ */
+function mealsFor(missionDay) {
+  const rows = db.prepare('SELECT * FROM meal WHERE mission_day = ?').all(missionDay).map(mealRow)
+    .sort((a, b) => slotOrder(a.slot) - slotOrder(b.slot) || a.id - b.id);
+  let ha = null;
+  try { ha = require('./home-assistant'); } catch { ha = null; }
+  return rows.map((m) => {
+    const p = ha ? ha.mealPower(missionDay, m.slot, m.served || '') : null;
+    const metered = !!(p && p.wh != null);
+    return {
+      ...m, served: m.served || '',
+      window: p ? p.window : null,
+      power_wh: metered ? p.wh : null,
+      power_running: !!(p && p.running),
+      energy_wh: metered ? p.wh : (m.energy_wh || 0),
+      energy_source: metered ? 'meter' : m.energy_wh ? 'filed' : 'none',
+    };
+  });
+}
+
 function day(missionDay) {
   const d = db.prepare('SELECT * FROM day WHERE mission_day = ?').get(missionDay);
   if (!d) return null;
   d.tasks = db.prepare('SELECT * FROM task WHERE mission_day = ? ORDER BY sort_order, time').all(missionDay);
-  d.meals = db.prepare('SELECT * FROM meal WHERE mission_day = ? ORDER BY CASE slot WHEN \'BREAKFAST\' THEN 1 WHEN \'LUNCH\' THEN 2 WHEN \'DINNER\' THEN 3 ELSE 4 END').all(missionDay).map(mealRow);
+  d.meals = mealsFor(missionDay);
   d.notes = db.prepare('SELECT * FROM day_note WHERE mission_day = ? ORDER BY posted_at DESC').all(missionDay);
   // The day-1 figure is the scale each gauge is drawn against.
   d.inventory = db.prepare(
@@ -409,7 +461,7 @@ const TAGS = ['QUESTION', 'PERSONAL', 'HUMOUR', 'SCIENCE', 'HABITAT'];
 
 module.exports = {
   metrics, latest, history, evaluate, sensorPanels, dailyAverages,
-  day, mealRow, crewWithMood, moodHistory, moodRecord, moodRecordAll, moodSeries,
+  day, mealRow, mealsFor, FIXED_SLOTS, isExtraSlot, extraIndex, slotOrder, slotParts, slotLabel, crewWithMood, moodHistory, moodRecord, moodRecordAll, moodSeries,
   entriesForDay, entriesByCrew, entry, logbook, logSlotsPublic, logSlotsFor, BLOGS, entryCounts,
   settleTransits, published, board, inFlightFor, messagesFor, counts, dailyActivity,
   TAGS, STALE_SECONDS,

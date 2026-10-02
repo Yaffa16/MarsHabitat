@@ -791,7 +791,14 @@ echo "── the recipe book"
 [ -f "$CONTENT_DIR/recipes.json" ] && ok "content/recipes.json ships" || bad "no recipes.json"
 HB=$(curl -s -b $A "$B/control?tab=habitat&day=3")
 for S in BREAKFAST LUNCH DINNER; do echo "$HB" | grep -q "name=\"${S}_recipe\"" || bad "no recipe dropdown on $S"; done
-echo "$HB" | grep -q 'name="RATION_recipe"' && bad "Other has a recipe dropdown" || ok "Breakfast, Lunch and Dinner have a recipe dropdown, Other does not"
+echo "$HB" | grep -q 'data-slot="RATION"' && bad "the Other card is still on the desk" || ok "no Other card: Breakfast, Lunch and Dinner, each with a recipe dropdown"
+echo "$HB" | grep -q '<button type="button" class="ghost meal-add">+ Add a meal</button>' && echo "$HB" | grep -q '<template class="meal-extra-tpl">' && echo "$HB" | grep -q 'name="EXTRA__N___recipe" class="recipe-pick" data-slot="EXTRA__N__"' \
+  && echo "$HB" | grep -q 'name="EXTRA__N___from"' && echo "$HB" | grep -q 'class="ghost meal-remove"' \
+  && ok "+ Add a meal: a template card with the same recipe dropdown, its own hours (served from · to) and a × to take it off" || bad "no + Add a meal template, or it lacks the dropdown, the hours or the ×"
+echo "$HB" | grep -q 'The recipes are in' && bad "the recipes-are-in sentence is still on the desk" || ok "the food plan's hint no longer names content/recipes.json or says everything is public"
+echo "$HB" | grep -q 'Not saved from this desk yet' && bad "Not saved from this desk yet is still on the desk" || ok "a block never saved from the desk says nothing about it — no Not saved from this desk yet anywhere"
+echo "$HB" | grep -q 'the kitchen meter, 06:00–09:00' && echo "$HB" | grep -q '(breakfast 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00)' \
+  && ok "each named card says its hours and that its power is the kitchen meter's between them" || bad "the cards do not name the kitchen meter and the hours"
 echo "$HB" | grep -q 'value="__edit"' && bad "the dropdown still offers to edit the book" || ok "no edit entry in the dropdown"
 echo "$HB" | grep -q 'chan">RECIPE BOOK<' && bad "the recipe book editor is still on the desk" || ok "no recipe book editor on the desk"
 echo "$HB" | grep -q '<option value="" hidden selected>Choose meal</option>' && ok "the dropdown opens on Choose meal" || bad "no Choose meal default in the dropdown"
@@ -824,6 +831,100 @@ curl -s -b $A -X POST -d "day=6" -d "DINNER_recipe=__empty" -d "DINNER_name=Impr
 [ "$(node -e 'console.log(JSON.stringify(require(process.env.CONTENT_DIR + "/recipes.json").recipes.map((r) => r.slug)))')" = "$MB" ] \
   && node -e 'const d = require(process.env.CONTENT_DIR + "/meals.json")["6"].find((m) => m.slot === "DINNER"); process.exit(d.name === "Improvised stew" && d.nutrients.protein_g === 20 && !d.recipe ? 0 : 1);' \
   && ok "a slot filled by hand is saved for its day and adds no recipe" || bad "hand-filled slot wrong, or it touched the book"
+
+echo "── added meals, and the power each meal drew from the kitchen meter"
+# + Add a meal: the cards post as EXTRA<n>, in their order, and are saved as EXTRA1, EXTRA2, … (renumbered, so taking
+# one away leaves no gap); an added meal may name its hours (served); Other (RATION) from an older file is read as one.
+curl -s -b $A -X POST -d "day=2" -d "BREAKFAST_name=Oats" -d "BREAKFAST_kcal=400" \
+  -d "EXTRA2_name=Late broth" -d "EXTRA2_kcal=90" -d "EXTRA5_name=Afternoon tea" -d "EXTRA5_kcal=180" -d "EXTRA5_from=16:00" -d "EXTRA5_to=17:00" \
+  -d "EXTRA7_name=Bad hours" -d "EXTRA7_from=17:00" -d "EXTRA7_to=16:00" -o /dev/null $B/control/meals
+node -e '
+const d = require(process.env.CONTENT_DIR + "/meals.json")["2"];
+const slots = d.map((m) => m.slot).join(",");
+const tea = d.find((m) => m.name === "Afternoon tea"), bad = d.find((m) => m.name === "Bad hours");
+process.exit(slots === "BREAKFAST,EXTRA1,EXTRA2,EXTRA3" && tea.slot === "EXTRA2" && tea.served === "16:00-17:00" && bad.served === undefined ? 0 : 1);
+' && ok "added meals are saved as EXTRA1, EXTRA2, EXTRA3 in the order posted, one with its hours; hours out of order are dropped" || bad "added meals not saved as expected"
+sleep 1.5
+HB2=$(curl -s -b $A "$B/control?tab=habitat&day=2")
+echo "$HB2" | grep -q 'data-slot="EXTRA1"' && echo "$HB2" | grep -q 'data-slot="EXTRA3"' && echo "$HB2" | grep -q 'data-next-extra="4"' \
+  && echo "$HB2" | grep -q '<h3 class="slot-name">Extra meal <span class="slot-n">2</span></h3>' && echo "$HB2" | grep -q 'name="EXTRA2_from" value="16:00"' \
+  && ok "the desk reopens the day with its three added cards — Extra meal, Extra meal 2 (with its hours), Extra meal 3 — and the next one would be the fourth" || bad "the added cards do not reopen as saved"
+echo "$HB2" | grep -q 'food plan saved — 4 meals (3 added)' && ok "the save says how many meals, and how many of them added" || bad "the flash does not count the added meals"
+curl -s -b $A "$B/archive/day/2" | grep -q 'Extra meal 2 · 16:00–17:00' && ok "the record names an added meal by its number and its hours" || bad "the archive's day page does not name the added meal"
+curl -s -b $A "$B/archive/day/2/export.md" | grep -q '^\*\*Extra meal 2 (16:00–17:00): Afternoon tea\*\*' && ok "and so does the readable copy" || bad "the markdown copy does not name the added meal"
+# the Other slot of an older file is read as an added meal and shown as Other
+node -e '
+const fs = require("fs"), p = process.env.CONTENT_DIR + "/meals.json";
+const d = JSON.parse(fs.readFileSync(p, "utf8")); d["2"] = [{ slot: "RATION", name: "Emergency ration", kcal: 300 }, { slot: "EXTRA1", name: "Night snack", kcal: 120, served: "23:00-23:30" }]; fs.writeFileSync(p, JSON.stringify(d, null, 2));'
+sleep 2
+curl -s -b $A "$B/archive/day/2" | grep -q '<div class="eyebrow">Other</div>' && curl -s -b $A "$B/control?tab=habitat&day=2" | grep -q 'value="Emergency ration"' \
+  && ok "an Other from an older file still loads — shown as Other, and on the desk as an added meal" || bad "the old RATION slot is refused or lost"
+curl -s -b $A -X POST -d "day=2" -d "EXTRA1_name=Night snack" -d "EXTRA1_kcal=120" -d "EXTRA1_from=23:00" -d "EXTRA1_to=23:30" -o /dev/null $B/control/meals
+node -e 'const d = require(process.env.CONTENT_DIR + "/meals.json")["2"]; process.exit(d.length === 1 && d[0].slot === "EXTRA1" && d[0].served === "23:00-23:30" ? 0 : 1);' \
+  && ok "a card taken off the desk (not posted) is gone with the save; the one kept keeps its hours" || bad "removing an added meal did not take it off the day"
+# the power a meal drew: the kitchen meter (sensor.habitat_power_kitchen_energie, content/home-assistant.json `meals`)
+# read between the meal's hours on its day — breakfast 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00, an added meal
+# between its own — the meter only grows, so the hours' consumption is its rise inside them from where it stood before
+curl -s -b $A -X POST -d "day=1" -d "BREAKFAST_name=Porridge" -d "BREAKFAST_kcal=400" -d "LUNCH_name=Soup" -d "LUNCH_kcal=300" -d "EXTRA1_name=Tea" -d "EXTRA1_kcal=50" -d "EXTRA1_from=16:00" -d "EXTRA1_to=17:00" -o /dev/null $B/control/meals
+node -e '
+const { db } = require("./src/db"); const mission = require("./src/lib/mission"); const m = mission.config(), date = mission.dateForDay(1);
+const at = (hhmm) => mission.venueTimeUtc(date, hhmm, m.timezone);
+const ins = db.prepare("INSERT OR IGNORE INTO ha_reading (entity, t, value, state, unit) VALUES (?, ?, ?, ?, ?)");
+for (const [h, v] of [["05:00", 100.0], ["06:30", 100.1], ["08:59", 100.3], ["12:00", 100.3], ["16:20", 100.35], ["16:50", 100.4], ["21:00", 100.9]]) ins.run("habitat_power_kitchen_energie", at(h), v, String(v), "kWh");
+const ha = require("./src/lib/home-assistant");
+const b = ha.mealPower(1, "BREAKFAST"), l = ha.mealPower(1, "LUNCH"), d = ha.mealPower(1, "DINNER"), e = ha.mealPower(1, "EXTRA1", "16:00-17:00"), n = ha.mealPower(1, "EXTRA2");
+// breakfast: 100.0 before the hours, 100.3 at their end → 300 Wh; lunch: one reading, no rise → 0; dinner: from 100.3 (last before 15:00) to 100.9 → 600; tea 16:00–17:00: from 100.3 to 100.4 → 100; no hours → nothing read
+const ok = b.wh === 300 && b.window.join("-") === "06:00-09:00" && l.wh === 0 && d.wh === 600 && e.wh === 100 && n.wh === null && n.window === null && !b.running;
+if (!ok) console.error(JSON.stringify({ b, l, d, e, n }));
+process.exit(ok ? 0 : 1);
+' && ok "mealPower reads the meter's rise inside each meal's hours — breakfast 300 Wh, lunch 0, dinner 600, the added meal's own hours 100 — and nothing without hours" || bad "mealPower does not read the hours as expected"
+sleep 1
+HB1=$(curl -s -b $A "$B/control?tab=habitat&day=1")
+echo "$HB1" | grep -q '<b>300 Wh</b> · the kitchen meter, 06:00–09:00' && echo "$HB1" | grep -q '<b>100 Wh</b> · the kitchen meter, 16:00–17:00' && echo "$HB1" | grep -q 'the kitchen meter, 15:00–22:00 — no reading for these hours yet' \
+  && ok "each card on the desk shows what the meter read for its hours — 300 Wh for breakfast, 100 Wh for the added meal — and a dinner not served says so" || bad "the desk's cards do not show the meter's figures"
+echo "$HB1" | grep -q '400 Wh from the kitchen meter' && ok "the day total adds the metered watt hours" || bad "no metered total on the desk"
+curl -s -b $A "$B/archive/day/1" | grep -q '400 kcal · 0 L water · 0 min · 300 Wh (the kitchen meter, 06:00–09:00)' && curl -s -b $A "$B/archive/day/1/export.md" | grep -q '50 kcal · 0 L water · 0 min · 100 Wh (the kitchen meter, 16:00–17:00)' \
+  && ok "the record carries the metered figure with each meal and says where it came from" || bad "the record lacks the meter's figures"
+curl -s -b $A "$B/archive/export.json" | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const j = JSON.parse(s); const day = (j.days || []).find((d) => d.missionDay === 1); const ms = day ? day.meals : [];
+  const b = ms.find((x) => x.slot === "BREAKFAST"), t = ms.find((x) => x.slot === "EXTRA1");
+  process.exit(b && b.energyWh === 300 && b.energySource === "meter" && b.hours === "06:00-09:00" && t && t.energyWh === 100 && t.hours === "16:00-17:00" ? 0 : 1); });
+' && ok "the data copy says each meal's watt hours, their source (meter) and the hours read" || bad "the data copy lacks energySource/hours"
+curl -s -b $A -o /tmp/day1.pdf $B/archive/day/1/export.pdf && pdftext /tmp/day1.pdf | grep -q "Wh: the kitchen's energy meter, read breakfast 06:00" && ok "the PDF's meals table says the watt hours are the kitchen meter's, and the hours" || bad "the PDF does not explain the watt hours"
+# today's meals on the dashboard, with the line under them (today has none filed yet in this suite: one is filed for the look)
+curl -s -b $A -X POST -d "day=$TODAY" -d "LUNCH_name=Lentil stew" -d "LUNCH_kcal=420" -o /dev/null $B/control/meals
+sleep 1.5
+LANDM=$(curl -s $B/)
+echo "$LANDM" | grep -q '<span class="meal-figs">420 kcal' && ! echo "$LANDM" | grep -q '420 kcal · 0 L · 0 Wh' && ok "a meal without a reading shows its kcal alone — no 0 L, no 0 Wh" || bad "the meal line still shows noughts"
+echo "$LANDM" | grep -q '<p class="meal-hours">Power: the kitchen’s energy meter, read Breakfast' && echo "$LANDM" | grep -q "$(printf 'Dinner\xc2\xa015:00–22:00')" \
+  && ok "Today's Meal says under the meals that the watt hours are the kitchen meter's, and which hours are read for each meal" || bad "the Today's Meal panel has no line about the meter"
+curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q 'Strom: der Energiezähler der Küche, gelesen Frühstück' && curl -s -H "Cookie: mcs_lang=fr" $B/ | grep -q 'Électricité : le compteur d’énergie de la cuisine, lu Petit-déjeuner' \
+  && ok "and in German and French" || bad "the meter line is not translated"
+node -e '
+const i = require("./src/lib/i18n"); const T = i.of("de"), F = i.of("fr"); const L = require("./src/views/layout");
+process.exit(L.slotName(T, "EXTRA1") === "Zusätzliche Mahlzeit" && L.slotName(T, "EXTRA2") === "Zusätzliche Mahlzeit 2" && L.slotName(F, "EXTRA3") === "Repas supplémentaire 3" && L.slotName((x) => x, "RATION") === "Other" && L.slotName((x) => x, "BREAKFAST") === "Breakfast" ? 0 : 1);
+' && ok "an added meal is Extra meal / Zusätzliche Mahlzeit / Repas supplémentaire, numbered from the second; the old Other stays Other" || bad "slot names wrong"
+node -e '
+const m = require("./src/lib/mission");
+const u = (d, t) => new Date(m.venueTimeUtc(d, t, "Europe/Berlin")).toISOString();
+process.exit(u("2026-10-24", "06:00") === "2026-10-24T04:00:00.000Z" && u("2026-10-25", "06:00") === "2026-10-25T05:00:00.000Z" && u("2026-10-25", "22:00") === "2026-10-25T21:00:00.000Z" && u("2026-10-24", "24:00") === "2026-10-24T22:00:00.000Z" ? 0 : 1);
+' && ok "the hours are the habitat's clock on both sides of 25 October, when the clocks go back" || bad "venueTimeUtc wrong across the DST change"
+node -e '
+const ha = require("./src/lib/home-assistant");
+process.exit(JSON.stringify(ha.parseWindow("6:00-9:00")) === JSON.stringify(["06:00", "09:00"]) && JSON.stringify(ha.parseWindow("15:00 – 22:00")) === JSON.stringify(["15:00", "22:00"]) && ha.parseWindow("14:00-09:00") === null && ha.parseWindow("") === null && ha.parseWindow("25:00-26:00") === null
+  && ha.MEALS_DEFAULT.meter === "habitat_power_kitchen_energie" && ha.MEALS_DEFAULT.windows.BREAKFAST === "06:00-09:00" && ha.MEALS_DEFAULT.windows.LUNCH === "09:00-14:00" && ha.MEALS_DEFAULT.windows.DINNER === "15:00-22:00" ? 0 : 1);
+' && ok "the meter is sensor.habitat_power_kitchen_energie and the hours 06–09, 09–14, 15–22 unless content/home-assistant.json says otherwise; hours parse as HH:MM-HH:MM, end after start" || bad "the meals defaults or the hours parser are wrong"
+node -e '
+const fs = require("fs"), p = process.env.CONTENT_DIR + "/home-assistant.json";
+const d = JSON.parse(fs.readFileSync(p, "utf8")); d.meals = { meter: "sensor.other_meter", windows: { BREAKFAST: "07:00-10:00", LUNCH: null } }; fs.writeFileSync(p, JSON.stringify(d, null, 2));
+setTimeout(() => { const ha = require("./src/lib/home-assistant"); const c = ha.mealsConfig(); const ok = c.meter === "other_meter" && c.windows.BREAKFAST === "07:00-10:00" && !("LUNCH" in c.windows) && c.windows.DINNER === "15:00-22:00";
+  d.meals = { meter: "habitat_power_kitchen_energie", windows: { BREAKFAST: "06:00-09:00", LUNCH: "09:00-14:00", DINNER: "15:00-22:00" } }; fs.writeFileSync(p, JSON.stringify(d, null, 2)); process.exit(ok ? 0 : 1); }, 50);
+' && ok "the file may name another meter or other hours (and null for a meal without any); the rest keep the defaults — the meter is named by its entity id, never by its label" || bad "the meals block of content/home-assistant.json is not read"
+# the power block: every figure locked behind Edit, which asks "These values are automated, are you sure you would like to edit?"
+echo "$HB1" | grep -q "These values are automated, are you sure you would like to edit?" && [ "$(echo "$HB1" | grep -o 'class="[^"]*pw-locked[^"]*"' | wc -l)" -ge 5 ] && ! echo "$HB1" | grep -q 'the meter has nothing yet' \
+  && ok "every value in Power consumed is locked behind an Edit key, which asks: These values are automated, are you sure you would like to edit?" || bad "the power block's values are not all locked, or the prompt is wrong"
+# the Resources tile: a store with no figure yet carries no word for it
+echo "$LANDM" | grep -q '>Placeholder<' && bad "the Resources tile still says Placeholder" || ok "the Resources tile says no Placeholder — a store with no figure yet is an empty ring and a dash"
 
 echo "── crew figures"
 curl -s -b $A -X POST -d "day=3" -d "calories=4999" -d "steps=8123" -o /dev/null $B/control/crew-figures
@@ -1412,7 +1513,7 @@ process.exit(keys.every((k) => D[k] && D[k][0] && D[k][1]) ? 0 : 1);
 ' && ok "the two lines' words — one sentence for each kind of distance — are in the dictionary in German and French" || bad "the panel's rows are missing from the dictionary"
 curl -s $B/ | grep -q 'class="dev-space"' && bad "the composer says every message is beamed while the relay is off" || ok "with the relay off the composer says nothing about space"
 CQ=$(curl -s -b $A "$B/control?show=published")
-echo "$CQ" | grep -q 'Off — set <b>SPACESPEAK_USER</b>' && ok "mission control says the relay is off and how to turn it on" || bad "control does not report the relay"
+echo "$CQ" | grep -q 'SPACESPEAK_USER\|space-status' && bad "control still carries the relay-off line" || ok "with the relay off mission control says nothing about it — no Off — set SPACESPEAK_USER line"
 echo "$CQ" | grep -qE '<b class="msg-sent">sent [0-9]+ [A-Z][a-z]+ 20[0-9]{2}, [0-9]{2}:[0-9]{2}:[0-9]{2} [A-Z+0-9]+</b>' && ! echo "$CQ" | grep -q 'Beam again' \
   && ok "every message on the control page shows the day, time and zone it was sent, on the venue's clock — and there is no Beam again key" || bad "the control page lacks the full timestamp, or still offers Beam again"
 # a station with the relay on, sending to a stand-in for spacespeak.com
