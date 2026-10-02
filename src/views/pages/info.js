@@ -39,7 +39,7 @@ function aboutFold(ctx) {
      reach the crew, the question and the closing line, the opening, the project's name and its funders are the
      announcement's. */
   return `
-  <div class="about-full">
+  <div class="grid g-hero about-wide">
     <div class="prose">
       <h3>MARS!platz: Red Dust City</h3>
       ${p(T, 'A durational performance on Karlsruhe’s Marktplatz, Thursday 15 to Tuesday 27 October 2026. Admission is free.')}
@@ -69,17 +69,19 @@ function aboutFold(ctx) {
       ${p(T, 'Every message the crew answer is also beamed into space, by radio, through SpaceSpeak — a small network of transmitters around the world that sends short messages out of the atmosphere on request. The station hands the message over the moment its reply is published; SpaceSpeak encodes it and transmits it on a frequency between 2.4 and 5 gigahertz, a band chosen because it passes through the air and its water vapour almost untouched, from a directional antenna that gathers the transmitter’s power into a narrow cone pointed at the sky. Radio waves are light: they leave at the speed of light, 299,792 km every second.')}
       ${p(T, 'From then on the message is on its way for good. It passes the Moon’s orbit within two seconds, the orbit of Mars within minutes and Jupiter’s within the hour, leaves the planets behind in a matter of hours, and after two years is nearly halfway to Proxima Centauri, the nearest star. The signal grows fainter with every kilometre, spreading out as it goes — but there is no distance at which it stops: what leaves Earth by radio keeps travelling outwards, long after everyone who wrote or read it. The Message Board counts each message’s distance from the moment it was sent, and a tap on it names the object in the sky it has just passed.')}
     </div>
-    ${panel('MISSION', `
-      ${eyebrow(T('This mission'))}
-      <dl class="kv kv-row">
-        <div><dt>${T('DESIGNATION')}</dt><dd>${esc(ctx.mission.name)}</dd></div>
-        <div><dt>${T('RUN')}</dt><dd>${esc(ctx.mission.runLabelLong)}</dd></div>
-        <div><dt>${T('START')}</dt><dd>${esc(ctx.mission.startLabel)} · ${esc(ctx.mission.start_date)}</dd></div>
-        <div><dt>${T('END')}</dt><dd>${esc(ctx.mission.endLabel)} · ${esc(ctx.mission.end_date)}</dd></div>
-        <div><dt>${T('DURATION')}</dt><dd>${n} ${T(n === 1 ? 'day' : 'days')}</dd></div>
-        <div><dt>${T('CREW')}</dt><dd>3</dd></div>
-        <div><dt>${T('TIMEZONE')}</dt><dd>${esc(ctx.mission.timezone)}</dd></div>
-      </dl>`, 'mars-side')}
+    <div>
+      ${panel('MISSION', `
+        ${eyebrow(T('This mission'))}
+        <dl class="kv">
+          <dt>${T('DESIGNATION')}</dt><dd>${esc(ctx.mission.name)}</dd>
+          <dt>${T('RUN')}</dt><dd>${esc(ctx.mission.runLabelLong)}</dd>
+          <dt>${T('START')}</dt><dd>${esc(ctx.mission.startLabel)} · ${esc(ctx.mission.start_date)}</dd>
+          <dt>${T('END')}</dt><dd>${esc(ctx.mission.endLabel)} · ${esc(ctx.mission.end_date)}</dd>
+          <dt>${T('DURATION')}</dt><dd>${n} ${T(n === 1 ? 'day' : 'days')}</dd>
+          <dt>${T('CREW')}</dt><dd>3</dd>
+          <dt>${T('TIMEZONE')}</dt><dd>${esc(ctx.mission.timezone)}</dd>
+        </dl>`, 'mars-side')}
+    </div>
   </div>`;
 }
 

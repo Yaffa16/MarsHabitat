@@ -171,7 +171,7 @@ function index(ctx) {
 
 /** The screens' door (server.js, /screens/login; lib/screens-auth.js): the user and the password, and the address to go
  *  on to — the screen that was asked for, or the list. Wrong credentials come back here with a word; too many wrong
- *  tries with another. Mission control's session opens the screens too, so an operator signed in there is never asked. */
+ *  tries with another. Mission control's session does not open the screens: everyone is asked for their password. */
 function login(ctx, { next = '/screens', error = null } = {}) {
   const T = ctx.T;
   const body = `

@@ -4,8 +4,10 @@
  * /screen/<name>, with the writing screen's composer and its post — open
  * only to a browser that has signed in with the screens' user and password
  * (SCREENS_USER and SCREENS_PASSWORD in .env; panolab / panolab123 unless
- * they are set) or that holds mission control's session. Anyone who types
- * the address into a browser lands on the sign-in page instead.
+ * they are set). Nothing else opens them — not mission control's session:
+ * an operator signed in to /control is asked for the screens' password like
+ * anyone else. Anyone who types the address into a browser lands on the
+ * sign-in page instead.
  *
  * The sign-in is a cookie, mcs_screens, that carries a signature of the
  * credentials — never the credentials themselves. It holds for a year, so a

@@ -294,7 +294,7 @@ ${control || hideNav ? '' : nav(current, T)}
 ${control ? '' : foot(ctx, T, aura)}
 ${aura && ctx.consent === null ? consent(current, T, ctx.offer || '') : ''}
 ${control ? '' : tabbar(current, T)}
-${scripts.concat(control ? [] : ['/tabbar.js']).map((s) => `<script src="${s}?v=${ASSET_V}" defer></script>`).join('')}
+${scripts.concat(control ? [] : ['/tabbar.js'], ['/switches.js']).map((s) => `<script src="${s}?v=${ASSET_V}" defer></script>`).join('')}
 </body></html>`;
 }
 

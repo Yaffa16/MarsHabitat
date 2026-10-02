@@ -257,8 +257,7 @@
     $('co2Val').classList.toggle('hot', hotNow);
     $('co2Verdict').textContent = hotNow ? tr('Over') + ' ' + ch.alertAbove + ' ppm' : tr('Within limit');
     $('co2Verdict').classList.toggle('hot', hotNow);
-    $('co2Sub').textContent = tr('The ring is the day, midnight at the top') + ' \u00b7 ' + pts.length + ' ' + tr('readings') + ' \u00b7 ' +
-      Math.round(lo) + '\u2013' + Math.round(hi) + ' ppm ' + tr('today') + ' \u00b7 ' + tr('limit') + ' ' + ch.alertAbove + ' ppm';
+    $('co2Sub').textContent = tr('Scale') + ' ' + ch.domain[0] + '\u2013' + ch.domain[1] + ' ppm';   // the scale alone, as the other tiles have it (no count of readings, no range, no limit)
   }
 
   /* ------------------------------------------------- tile 2: the ruler */

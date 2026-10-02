@@ -240,17 +240,18 @@ app.get('/', (req, res) => {
    scroll — /screen/<name>, the list at /screens. Dark and in German unless the address says otherwise (?theme=light,
    ?lang=en|de|fr): the cookies do not reach a screen in the square — except the one that opens the door. The screens
    are the installation's, not the public's: every one of them, the list and the writing screen's post ask for the
-   screens' sign-in (lib/screens-auth.js — SCREENS_USER and SCREENS_PASSWORD, a cookie for a year once given) or for
-   mission control's session; a browser without either is sent to /screens/login and, signed in, on to where it was
-   going. */
+   screens' own sign-in (lib/screens-auth.js — SCREENS_USER and SCREENS_PASSWORD, a cookie for a year once given).
+   Mission control's session does not open them: an operator signed in to /control is asked for the screens' password
+   like anyone else. A browser without the screens' cookie is sent to /screens/login and, signed in, on to where it
+   was going. */
 const screensAuth = require('./lib/screens-auth');
 function requireScreens(req, res, next) {
-  if (screensAuth.signedIn(req) || control.currentUser(req)) return next();
+  if (screensAuth.signedIn(req)) return next();
   res.set('Cache-Control', 'no-store').redirect(`/screens/login?next=${encodeURIComponent(req.originalUrl)}`);
 }
 const screensNext = (req) => { const n = String((req.query && req.query.next) || (req.body && req.body.next) || ''); return screensAuth.guarded(n) ? n : '/screens'; };
 app.get('/screens/login', (req, res) => {
-  if (screensAuth.signedIn(req) || control.currentUser(req)) return res.redirect(screensNext(req));
+  if (screensAuth.signedIn(req)) return res.redirect(screensNext(req));
   res.set('Cache-Control', 'no-store').send(require('./views/pages/screens').login(screenCtx(req), { next: screensNext(req) }));
 });
 app.post('/screens/login', (req, res) => {
@@ -847,13 +848,25 @@ app.get('/api/status', (req, res) => {
 
 /* The theme and language switches keep their choice in a cookie — for a year
    once the visitor has accepted the station's cookies, for the visit only
-   until then. */
+   until then. Neither moves the visitor: the page's script (public/switches.js)
+   turns the theme on the page itself and posts the cookie in the background,
+   answered 204 — no reload, the page stays where it is; the language has to
+   reload, so its form carries the whole address the visitor was at, the #part
+   included (which a Referer never has), and the station sends them back to
+   exactly that. Without the script, the Referer is the way back, and the
+   landing page the last resort. */
 const keep = (req) => (req.cookies.mcs_consent === 'yes' ? 365 * 86400000 : undefined);
+const wayBack = (req) => {
+  const back = String((req.body && req.body.back) || '');
+  if (/^\/(?![\/\\])[^\s]*$/.test(back)) return back;                           // a path of this station, with its query and #part
+  return req.get('referer') || '/';
+};
 app.post('/theme', (req, res) => {
   const to = req.body.to === 'dark' ? 'dark' : 'light';
   res.cookie('mcs_theme', to, { httpOnly: false, sameSite: 'lax', maxAge: keep(req),
     secure: process.env.SECURE_COOKIES === 'true' });
-  res.redirect(req.get('referer') || '/');
+  if (isLive(req)) return res.status(204).end();
+  res.redirect(wayBack(req));
 });
 
 /* The language switch: the same shape as the theme — a cookie, a redirect
@@ -862,7 +875,7 @@ app.post('/lang', (req, res) => {
   const to = i18n.LANGS.includes(req.body.to) ? req.body.to : 'en';
   res.cookie('mcs_lang', to, { httpOnly: false, sameSite: 'lax', maxAge: keep(req),
     secure: process.env.SECURE_COOKIES === 'true' });
-  res.redirect(req.get('referer') || '/');
+  res.redirect(wayBack(req));
 });
 
 /* The stores' daily use — every item on every day of the run — as one CSV.

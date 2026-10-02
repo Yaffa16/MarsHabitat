@@ -99,7 +99,7 @@ which is mission control's, sits behind the same login.
 | Crew log | `/logbook` | All thirteen days in order, each officer's entry where written and its placeholder where not — a day strip to jump by, a chip per voice. Opened from the Crew log panel on the station, and from the nav |
 | Media | `/media` | Everything the crew send out — photographs and video — by day, with filters; `/media/:id` one item; `/media/export.zip` everything as one ZIP; `/media/manifest.json` every file with its SHA-256 |
 | Archive | `/archive` | **Mission control only.** Day-by-day permanent record — no messages, every reading; `/archive/day/:n`, **`/archive/export.pdf`** (the whole mission as one document), `/archive/export.md`, `/archive/export.json`, **`/archive/readings.zip`** (every reading ever pulled). `/archive/messages` is a separate, unlinked search over the message queue and is not part of the record |
-| Screens | `/screens` | **The installation's screens** — behind a sign-in of their own (`/screens/login`, *panolab* / *panolab123* unless `SCREENS_USER` and `SCREENS_PASSWORD` say otherwise; mission control's session opens them too) — one piece of the station a page, full screen, the whole of it in one glance, nothing to scroll: `/screen/landing`, `/screen/habitat`, `/screen/board`, `/screen/mission`, `/screen/blogs`, `/screen/day`, `/screen/trends`, `/screen/media` (see *The installation's screens*). `/screens` lists them |
+| Screens | `/screens` | **The installation's screens** — behind a sign-in of their own (`/screens/login`, *panolab* / *panolab123* unless `SCREENS_USER` and `SCREENS_PASSWORD` say otherwise; mission control's session does not open them) — one piece of the station a page, full screen, the whole of it in one glance, nothing to scroll: `/screen/landing`, `/screen/habitat`, `/screen/board`, `/screen/mission`, `/screen/blogs`, `/screen/day`, `/screen/trends`, `/screen/media` (see *The installation's screens*). `/screens` lists them |
 
 Every address the public subpages used to have (`/crew`, `/day`, `/schedule`, `/board`,
 `/communicate`) redirects to its section on the landing page, and `/what` and `/who-we-are` to
@@ -112,9 +112,10 @@ pop-ups over it) lead to the About page too. The footer of the landing page is t
 **The screens are the venue's, not the public's.** `/screens`, every `/screen/<name>` and the
 writing screen's post open only to a browser that has signed in at `/screens/login` with the
 screens' user and password — `SCREENS_USER` and `SCREENS_PASSWORD` in `.env`, *panolab* /
-*panolab123* unless set (`src/lib/screens-auth.js`) — or that holds mission control's session.
-Anyone who types a screen's address into a browser lands on the sign-in page and, signed in,
-goes on to the screen asked for. The sign-in is a cookie that holds for a year, so a display
+*panolab123* unless set (`src/lib/screens-auth.js`). Nothing else opens them: mission control's
+session does not, so an operator signed in to `/control` is asked for the screens' password like
+anyone else. Anyone who types a screen's address into a browser lands on the sign-in page and,
+signed in, goes on to the screen asked for. The sign-in is a cookie that holds for a year, so a display
 stays signed in across its own reloads and the station's restarts; it stops working the moment
 the password is changed. Ten wrong tries from one address in ten minutes are throttled; the list
 carries a *Sign out of the screens* key. (The archive, `/archive`, needs mission control's session
@@ -323,7 +324,7 @@ file that has gone missing is restored from it at start-up. The reset does not r
 
 ## The trend graph
 
-**Trends** on the landing page is the run: **15 to 27 October, every day on the axis**, SOL 01
+**Trends** on the landing page — inside the Sensors tab, under the tiles — is the run: **15 to 27 October, every day on the axis**, SOL 01
 to SOL 13, today marked; after 27 October it stands as the record, and it is the run before
 15 October too once Reset to 15 October has been pressed. Until then, after a fresh build, the
 axis starts on the build day and runs thirteen days from there, labelled by date, so what the
@@ -1773,11 +1774,14 @@ run) and the crew; then the strip of live images from the habitat — the LIVE b
 six newest pictures, nothing else; then one row of the two doors (At a Glance and Media, two
 small pills side by side) with the run as a strip of thirteen sols beside them; then
 **Today's Mission** (below); then the
-dashboard's nine panels behind **one index** on the head of one glass panel: three tracks of
-equal width, each named at its left and holding its keys — *Sensors*: the **Sensors** panel (the
-sensor tiles, the crew's figures, the resource rings and the power bars, with the habitat's
-hardware inside it) and the **Trends**; *Daily Life*: **Today's Schedule**, **Today's Meal** and
-**Crew Moods**; *Blogs*: the three blogs. Every key carries a line icon in the hand of the dome's
+dashboard's panels behind **one index** on the head of one glass panel: three tracks of
+equal width, each named at its left and holding its keys — *Sensors*: **one** key, the **Sensors**
+panel (the sensor tiles, the crew's figures, the resource rings and the power bars — the type
+inside it set larger than the other panels', what each tile measures at 20px and the figures at
+36px — then the habitat hardware's day charts, without a heading of their own, then the
+**Trends** under a head of their own, drawn smaller than they were as a tab; `/#trends` lands on
+them there); *Daily Life*: **Today's Schedule**, **Today's Meal** and **Crew Moods**; *Blogs*:
+the three blogs. Every key carries a line icon in the hand of the dome's
 keys and its name. The page opens on the Sensors. A press on a key opens
 that folder beneath the index (the key turns cobalt, and the name of its track with it), the
 arrow keys walk the keys, and a link into a panel — `/#habitat`, `/#crew`, `/#galley`,
@@ -1877,6 +1881,17 @@ whole page before it is sent: `<html lang="…">`, every label, every sentence o
 reading matter. Nothing is fetched and no third-party script is involved — the
 translation is the station's own, so it works with the network unplugged like everything
 else here.
+
+**Neither switch moves the visitor.** The theme turns on the page itself — `data-theme` on
+`<html>`, the switch's own words with it — and the cookie is posted in the background
+(`public/switches.js`; `/theme` answers a fetch with 204), so the page never reloads and never
+moves: the dashboard's open folder, the About page's section, the scroll all stay where they
+are. The language has to reload (the words are the server's), so its form carries the whole
+address the visitor was at, the `#part` included, which a browser's Referer never has, and the
+station sends them back to exactly that (`/lang`, `wayBack()` in `src/server.js`); without the
+script the Referer is the way back, and the landing page only the last resort. A press takes no
+focus either, since a button in the sticky header that gains focus makes some browsers scroll
+to where the header would stand unstuck.
 
 **Every word is controlled in one file: `src/lib/i18n.js`.** English is the source: the
 views are written in English, and the dictionary `D` in that file carries the German and

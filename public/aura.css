@@ -800,6 +800,35 @@ body.landing #hardware.dpanel { padding: 22px 28px; }
 body.landing .hw-charts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 /* the habitat's own hardware (Home Assistant), inside the Habitat panel under the tiles */
 body.landing .hw-in-habitat { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--hair); }
+/* the one Sensors tab of the dashboard (public.js, dashboard: trendsInside): the instruments, then the hardware's charts
+   (no heading of their own), then the trends under a head of their own — the charts drawn smaller than they were as
+   tabs of their own. Inside this tab, and only here, the type is set larger: what each tile measures, its scale, the
+   figure, the words beside it — Today's Mission and the other folders keep theirs. The panel is named (#habitat) so these
+   outrank the dress's .dpanel.compact rules; the screens (no .folder-body) have their own sizes in screen.css. */
+body.landing .folder-body .hbt-trends-in { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--hair); }
+body.landing .folder-body .hbt-trends-in .hbt-sec { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-bottom: 12px; }
+body.landing .folder-body .hbt-trends-in .hbt-sec h3 { font-family: var(--display); font-weight: 600; font-size: 22px; letter-spacing: -.01em; color: var(--ink); margin: 0; }
+body.landing .folder-body .hbt-trends-in .hbt-sec .sub { font-family: var(--display); font-size: 15px; color: var(--dim); }
+body.landing .folder-body .hbt-trends-in .tchart-svg { max-height: 300px; }
+body.landing .folder-body #habitat .hw-chart svg { max-height: 170px; }
+body.landing .folder-body #habitat .hbt .tile h3 { font-size: 20px; line-height: 1.15; margin: 0 0 4px; overflow-wrap: break-word; }
+body.landing .folder-body #habitat .hbt .sub, body.landing .folder-body #habitat .hbt .t-pwr .sub { font-size: 14px; line-height: 1.35; }
+body.landing .folder-body #habitat .hbt .lvl .big, body.landing .folder-body #habitat .hbt .spk .big, body.landing .folder-body #habitat .hbt .ruler-num .big { font-size: 36px; }
+body.landing .folder-body #habitat .hbt .dial-center .big { font-size: 48px; }
+body.landing .folder-body #habitat .hbt .big em { font-size: 18px; }
+body.landing .folder-body #habitat .hbt .verdict { font-size: 16px; margin-top: 4px; }
+body.landing .folder-body #habitat .hbt .dial-center .verdict { font-size: 15px; margin-top: 0; }
+body.landing .folder-body #habitat .hbt .fig-who { font-size: 12px; }
+body.landing .folder-body #habitat .hbt .fig-v { font-size: 20px; }
+body.landing .folder-body #habitat .hbt .fig-v em { font-size: 14px; }
+body.landing .folder-body #habitat .hbt .fig-total { font-size: 16px; }
+body.landing .folder-body #habitat .hbt .viz-k { font-size: 14px; letter-spacing: .12em; }
+body.landing .folder-body #habitat .cell-name { font-size: 15px; }
+body.landing .folder-body #habitat .cell-days { font-size: 13px; }
+body.landing .folder-body #habitat .cell-days.is-ph { font-size: 10px; letter-spacing: .08em; }
+body.landing .folder-body #habitat .hbt .empty, body.landing .folder-body #habitat .hbt .note, body.landing .folder-body #habitat #hbt-notes .note { font-size: 15px; line-height: 1.45; }
+body.landing .folder-body #habitat .dpanel-title h3 { font-size: 24px; }
+body.landing .folder-body #habitat .dpanel-meta { font-size: 13px; }
 body.landing .hw-in-habitat .hw-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-bottom: 12px; }
 body.landing .hw-in-habitat .hw-head h3 { font-family: var(--display); font-weight: 600; font-size: var(--fs-name); letter-spacing: -.005em; color: var(--ink); margin: 0; }
 body.landing .hw-in-habitat .hw-head .sub { font-family: var(--display); font-size: 13px; letter-spacing: 0; text-transform: none; color: var(--dim); line-height: 1.4; }
@@ -1077,16 +1106,14 @@ body.landing.about .about-sec {
 body.landing.about .about-sec-head { margin: 0 0 24px; padding: 0 0 18px; border-bottom: 1px solid var(--hair); }
 body.landing.about .about-sec-head .bigsec { margin: 0; font-size: clamp(28px, 2.6vw, 38px); line-height: 1.05; }
 body.landing.about .about-sec .g-hero { gap: 8px 44px; }
-/* the reading matter across the whole width of its section (About, What this is), the panel that stood beside it under
-   it: the mission's facts as a row of pairs, the path of a message as a row of six steps */
+/* the reading matter across the whole width of its column or section: About keeps the mission's facts beside it at the
+   right (the prose filling the rest of the width); What this is runs the whole width, the path of a message under it as
+   a row of six steps */
+body.landing.about .about-sec .about-wide .prose, body.landing.about .about-sec .about-wide .prose p { max-width: none; }
 body.landing.about .about-sec .about-full { display: grid; gap: 22px; }
 body.landing.about .about-sec .about-full .prose { max-width: none; }
 body.landing.about .about-sec .about-full .prose p { max-width: none; }
 body.landing.about .about-sec .about-full .panel { margin: 0; }
-body.landing.about .about-sec .kv-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px 24px; }
-body.landing.about .about-sec .kv-row > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-body.landing.about .about-sec .kv-row dt { font-family: var(--display); font-size: var(--fs-label); letter-spacing: .1em; color: var(--dim); }
-body.landing.about .about-sec .kv-row dd { margin: 0; font-family: var(--display); font-size: 15px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
 body.landing.about .about-sec .steps-row { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; border: 0; }
 body.landing.about .about-sec .steps-row .row { flex-direction: column; align-items: flex-start; gap: 8px; padding: 14px 16px; border: 1px solid var(--hair); border-radius: 14px; background: var(--tile); min-width: 0; }
 body.landing.about .about-sec .steps-row .row .t { min-width: 0; }

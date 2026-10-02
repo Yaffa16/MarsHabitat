@@ -1155,7 +1155,7 @@ const folder = (T, rows, { id = 'day-folder', label = '' } = {}) => {
 /* The dashboard's pieces, each on its own, so the dashboard can assemble them and the installation's screens
    (screens.js) can show one at a time: the headline figures, the strip of sols, the live pictures, Today's Mission and
    the nine panels — with the day they stand under. */
-function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { categories: [], days: {} }, allDays, logDays, entryCounts, ingest = [], media = [], mediaCounts = { total: 0, bytes: 0 }, mediaLookup = () => null, hardware = null, hardwareDaily = [], cloud = null, mission = null, nowLog = null, nowDay = null }) {
+function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { categories: [], days: {} }, allDays, logDays, entryCounts, ingest = [], media = [], mediaCounts = { total: 0, bytes: 0 }, mediaLookup = () => null, hardware = null, hardwareDaily = [], cloud = null, mission = null, nowLog = null, nowDay = null }, { trendsInside = false } = {}) {
   const m = ctx.mission, g = ctx.geo, T = ctx.T;
   const pre = m.phase === 'PRE_LAUNCH';
   const slotName = { BREAKFAST: 'Breakfast', LUNCH: 'Lunch', DINNER: 'Dinner', RATION: 'Ration' };
@@ -1290,16 +1290,35 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
 
 
 
+  /* ---- every trend as a chart: the habitat's channels, each store, the
+     crew's counts. habitat.js draws them from the spec above plus its own
+     habitat rows, and redraws when the period selector changes. The screens
+     have them as a panel of their own (the Trends screen); the dashboard
+     stands them inside the Sensors panel, under the tiles and the hardware's
+     charts, drawn smaller (aura.css, .hbt-trends-in) — one Sensors tab holds
+     the instruments, the hardware and the trends, and a link to #trends
+     lands on them there. */
+  const trendsBlock = `
+    <div class="trends" id="hbt-trends" data-date="${esc(m.today)}" data-day-start="${missionLib.venueMidnightUtc(m.today, m.timezone)}" data-axis-start="${esc(axis.start)}" data-axis-end="${esc(axis.end)}" data-axis-run="${axis.run ? '1' : '0'}" data-spec="${esc(JSON.stringify(trendSpec))}">
+      <div id="hbt-tcharts"></div>
+    </div>`;
+  const trends = dpanel({ id: 'trends', title: T('Trends'), span: 12 }, trendsBlock);
+  const trendsInSensors = trendsInside ? `
+    <div class="hbt-trends-in" id="trends">
+      <div class="hbt-sec"><h3>${T('Trends')}</h3><span class="sub">${T('Every channel, store and count over the run')}</span></div>
+      ${trendsBlock}
+    </div>` : '';
+
   /* ---- the habitat's own hardware, through Home Assistant — the Cricket
      temperature sensor, the Shelly plug and whatever else is listed in
-     content/home-assistant.json — drawn inside the Habitat panel, under the
-     node's tiles, the stores and the power. Rendered only when the bridge is
-     configured in .env; /public/hardware.js keeps it live from /api/hardware
-     (it looks for #hw-live, wherever that stands). */
+     content/home-assistant.json — its day charts drawn inside the Sensors
+     panel, under the node's tiles, the stores and the power, as part of the
+     one Sensors tab: no heading of their own (each chart carries its name).
+     Rendered only when the bridge is configured in .env; /public/hardware.js
+     keeps it live from /api/hardware (it looks for #hw-live, wherever that
+     stands). */
   const hardwareSection = hardware && hardware.configured && (hardware.sensors || []).length
-    ? `<section class="hw-in-habitat" id="hardware">
-        <div class="hw-head"><h3>${T('Habitat hardware')}</h3>
-          <span class="sub">Home Assistant · ${hardware.sensors.length} ${T(hardware.sensors.length === 1 ? 'device' : 'devices')} · ${T('read by the station every')} ${hardware.pollMs >= 120000 ? `${Math.round(hardware.pollMs / 60000)} min` : `${Math.round(hardware.pollMs / 1000)} s`} · ${T('one point per hour')}</span></div>
+    ? `<section class="hw-in-habitat" id="hardware" aria-label="${esc(T('Habitat hardware'))}">
         <div class="hbt hw"><div id="hw-live" data-poll="${hardware.pollMs}" data-version="${esc(require('../../lib/home-assistant').version(hardware))}">${hardwareInner(hardware, T)}</div></div>
       </section>`
     : '';
@@ -1381,21 +1400,13 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
       </div>
       <div id="hbt-notes"></div>
     </div>
-    ${hardwareSection}`);
+    ${hardwareSection}${trendsInSensors}`);
 
   /* ---- the newest stills out of the cloud folder, as a strip of their own at
      the head of the dashboard — under its heading, above the two doors (At a
      Glance, Media) — kept live by /public/cloud.js on the folder's cadence. */
   const cloudStrip = cloud ? `<div class="cloud-latest" id="cloud-latest" data-version="${esc(cloud.snapshot.version || '')}" data-poll="${(Number(cloud.snapshot.checkSeconds) || 20) * 1000}">${require('./media').cloudLatestInner(T, cloud, { tz: m.timezone })}</div>` : '';
 
-  /* ---- every trend as a chart: the habitat's channels, each store, the
-     crew's counts. habitat.js draws them from the spec above plus its own
-     habitat rows, and redraws when the period selector changes. */
-  const trends = dpanel({ id: 'trends', title: T('Trends'),
-    span: 12 }, `
-    <div class="trends" id="hbt-trends" data-date="${esc(m.today)}" data-day-start="${missionLib.venueMidnightUtc(m.today, m.timezone)}" data-axis-start="${esc(axis.start)}" data-axis-end="${esc(axis.end)}" data-axis-run="${axis.run ? '1' : '0'}" data-spec="${esc(JSON.stringify(trendSpec))}">
-      <div id="hbt-tcharts"></div>
-    </div>`);
 
   /* ---- the three daily blogs, the front row of the stack of folders: the science
      officer's Daily Mission Report, the health officer's Health Report
@@ -1624,7 +1635,7 @@ function vizTile(T, id, { n = 3 } = {}) {
 }
 
 function dashboard(ctx, args) {
-  const { m, T, day3, blogDate, kpis, strip, cloudStrip, missionPanel, habitat, trends, schedule, galley, crewPanel, blogCommander, blogHealth, blogScience } = dashboardPanels(ctx, args);
+  const { m, T, day3, blogDate, kpis, strip, cloudStrip, missionPanel, habitat, schedule, galley, crewPanel, blogCommander, blogHealth, blogScience } = dashboardPanels(ctx, args, { trendsInside: true });
   return `
   <section class="dash" id="mission">
     <header class="dash-head" data-stop>
@@ -1651,8 +1662,7 @@ function dashboard(ctx, args) {
     <div class="dash-grid">
       ${folder(T, [
         { label: T('Sensors'), tabs: [
-          { id: 'habitat', label: T('Sensors'), html: habitat },
-          { id: 'trends', label: T('Trends'), html: trends } ] },
+          { id: 'habitat', label: T('Sensors'), html: habitat } ] },
         { label: T('Daily Life'), tabs: [
           { id: 'schedule', label: T('Today’s Schedule'), html: schedule },
           { id: 'galley', label: T('Today’s Meal'), html: galley },

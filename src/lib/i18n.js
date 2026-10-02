@@ -153,6 +153,7 @@ const D = {
   // ---- dashboard
   'Mission dashboard': ['Missions-Dashboard', 'Tableau de bord de mission'],
   'Trends': ['Trends', 'Tendances'],
+  'Every channel, store and count over the run': ['Jeder Kanal, jeder Vorrat und jede Zählung über den Lauf', 'Chaque canal, chaque réserve et chaque compte sur toute la période'],
   'Meal': ['Mahlzeit', 'Repas'],
   'Today’s Meal': ['Mahlzeit heute', 'Repas du jour'],
   'Crew Moods': ['Stimmung der Crew', 'Humeur de l’équipage'],
@@ -981,7 +982,6 @@ const D = {
   'Over': ['Über', 'Au-dessus de'],
   'in view': ['im Blick', 'dans la vue'],
   'limit': ['Grenzwert', 'limite'],
-  'The ring is the day, midnight at the top': ['Der Ring ist der Tag, Mitternacht oben', 'L’anneau est le jour, minuit en haut'],
   'TODAY': ['HEUTE', 'AUJOURD’HUI'],
   'ago': ['her', 'plus tôt'],
   'The record closed on': ['Die Aufzeichnung wurde geschlossen am', 'L’archive a été close le'],

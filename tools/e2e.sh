@@ -1086,6 +1086,14 @@ grep -q "window.location.reload" src/views/pages/public.js && grep -q "d.phase !
 echo "── three blogs, the hardware inside the Habitat, the imprint"
 LANDING=$(curl -s $B/)
 echo "$LANDING" | grep -q 'id="ftab-hardware"' && bad "the Habitat hardware tab is still in the folder" || ok "no Habitat hardware tab in the dashboard folder"
+# one Sensors tab (public.js, dashboard: trendsInside): the instruments, the hardware's charts without a heading of their
+# own, and the trends under the tiles, drawn smaller — no Trends tab; a link to #trends lands in the Sensors tab
+! echo "$LANDING" | grep -q 'id="ftab-trends"' && echo "$LANDING" | grep -q '<div class="hbt-trends-in" id="trends">' && echo "$LANDING" | grep -q 'id="hbt-tcharts"' \
+  && [ "$(echo "$LANDING" | grep -o 'id="hbt-trends"' | wc -l)" = "1" ] && ! echo "$LANDING" | grep -q '<h3>Habitat hardware</h3>' && ! grep -q "read by the station every" src/views/pages/public.js \
+  && grep -q "body.landing .folder-body .hbt-trends-in .tchart-svg { max-height: 300px; }" public/aura.css && grep -q "body.landing .folder-body #habitat .hw-chart svg { max-height: 170px; }" public/aura.css \
+  && ok "one Sensors tab: the trends stand inside it under the tiles, drawn smaller, the hardware's charts carry no heading, and there is no Trends tab" || bad "the Trends tab is still there, or the trends and the hardware are not inside the Sensors tab"
+grep -q "body.landing .folder-body #habitat .hbt .tile h3 { font-size: 20px;" public/aura.css && grep -q "body.landing .folder-body #habitat .hbt .lvl .big, body.landing .folder-body #habitat .hbt .spk .big, body.landing .folder-body #habitat .hbt .ruler-num .big { font-size: 36px; }" public/aura.css \
+  && ! grep -q "folder-body .mission-today\|folder-body #mission-today" public/aura.css && ok "inside the Sensors tab the type is set larger — what each tile measures 20px, the figures 36px — and only there: Today's Mission keeps its type" || bad "the Sensors tab's type is not enlarged, or the enlargement reaches past it"
 echo "$LANDING" | grep -q 'href="/imprint"' && ok "the foot links the station's own imprint page" || bad "no imprint link in the foot"
 IMP=$(curl -s $B/imprint)
 echo "$IMP" | grep -q "Lorenzstraße 19" && echo "$IMP" | grep -q "DE 143588970" && echo "$IMP" | grep -q "Kennzeichnung i.S.d. § 5 TMG" && echo "$IMP" | grep -q "Center for Art and Media" \
@@ -1236,8 +1244,8 @@ curl -s $B/ | grep -q '>At a Glance<' && ok "and the footer navigation carries i
 echo "── the installation's screens"
 # the screens' door (src/lib/screens-auth.js; server.js, requireScreens): /screens, every /screen/<name>, the writing
 # screen's composer and its post open only to a browser signed in with the screens' user and password (SCREENS_USER and
-# SCREENS_PASSWORD; panolab / panolab123 unless set) or holding mission control's session — anyone else is sent to
-# /screens/login and, signed in, on to the screen asked for; no address off the screens is a way on (no open redirect)
+# SCREENS_PASSWORD; panolab / panolab123 unless set) — mission control's session does not open them — anyone else is sent
+# to /screens/login and, signed in, on to the screen asked for; no address off the screens is a way on (no open redirect)
 [ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' $B/screens)" = "302 $B/screens/login?next=%2Fscreens" ] && [ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' $B/screen/board)" = "302 $B/screens/login?next=%2Fscreen%2Fboard" ] \
   && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/screen/write/composer)" = "302" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' -d 'body=hello' $B/screen/write)" = "302" ] \
   && ok "a browser that has not signed in is sent from the screens, their list and the writing screen's post to /screens/login, with the screen it asked for" || bad "the screens open without a sign-in"
@@ -1250,12 +1258,14 @@ SK=$(mktemp)
   && ok "panolab / panolab123 signs in: a cookie for the screens, and on to the screen asked for" || bad "the screens' credentials do not sign in"
 [ "$(curl -s -o /dev/null -w '%{redirect_url}' -d 'username=panolab&password=panolab123&next=https%3A%2F%2Fevil.example%2F' $B/screens/login)" = "$B/screens" ] && [ "$(curl -s -o /dev/null -w '%{redirect_url}' -d 'username=panolab&password=panolab123&next=%2Fcontrol' $B/screens/login)" = "$B/screens" ] \
   && ok "an address off the screens is not a way on after signing in" || bad "the sign-in redirects anywhere it is told"
-[ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/screens)" = "200" ] && [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/screens/login)" = "302" ] && ok "mission control's session opens the screens too, and skips the sign-in page" || bad "mission control is asked to sign in to the screens"
+[ "$(curl -s -b $A -o /dev/null -w '%{http_code} %{redirect_url}' $B/screens)" = "302 $B/screens/login?next=%2Fscreens" ] && [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/screen/board)" = "302" ] && [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/screens/login)" = "200" ] \
+  && ok "mission control's session does not open the screens: an operator signed in to /control is asked for the screens' password like anyone else" || bad "mission control's session opens the screens without their password"
 curl -s -b $SK $B/screens | grep -q 'action="/screens/logout"' && SK2=$(mktemp) && cp $SK $SK2 && curl -s -b $SK2 -c $SK2 -o /dev/null -X POST $B/screens/logout && [ "$(curl -s -b $SK2 -o /dev/null -w '%{http_code}' $B/screens)" = "302" ] \
   && ok "the list carries a way out, and after it the screens ask again" || bad "no way out of the screens, or it does not sign out"
 grep -q "maxAge: 365 \* 86400000" src/lib/screens-auth.js && grep -q "crypto.timingSafeEqual" src/lib/screens-auth.js && grep -q "const TRIES = 10, WINDOW_MS = 10 \* 60 \* 1000;" src/lib/screens-auth.js \
   && ok "the cookie holds for a year (a display stays signed in across its reloads and the station's restarts), the comparison is constant-time, and ten wrong tries in ten minutes are throttled" || bad "the screens' door is missing a part"
 [ "$(curl -s -b $SK -o /dev/null -w '%{http_code}' $B/screens)" = "200" ] && ok "the list of the screens answers at /screens, signed in" || bad "/screens does not answer"
+curl -s -b $SK $B/screen/trends | grep -q 'id="trends"' && [ "$(curl -s -b $SK $B/screen/trends | grep -o 'id="hbt-trends"' | wc -l)" = "1" ] && ok "the Trends screen keeps its panel of its own, the trends drawn once on it" || bad "the Trends screen lost its panel, or draws the trends twice"
 grep -q "body.screen.screen-habitat #habitat .hbt .tile h3 { font-size: 32px; line-height: 1.1; margin: 0 0 4px; }" public/screen.css && grep -q "body.screen.screen-habitat #habitat .hbt .sub, body.screen.screen-habitat #habitat .hbt .t-pwr .sub { font-size: 18px; line-height: 1.3; }" public/screen.css \
   && grep -q "body.screen.screen-habitat #habitat .hbt .dial-wrap svg { max-width: 220px; }" public/screen.css && grep -q "body.screen.screen-habitat #habitat .hbt .tile.t-viz svg { max-height: 96px; }" public/screen.css \
   && ok "the habitat screen is set to be read across a room — what each tile measures in 32px, its scale in 18px, the drawings smaller — by rules that name the panel (#habitat) and so outrank the dress's" || bad "the habitat screen's type is not enlarged for the room"
@@ -1806,6 +1816,16 @@ echo "$LAND" | grep -q '<html lang="en" data-theme="dark">' && ! echo "$LAND" | 
   && [ "$(curl -s -H 'Cookie: mcs_theme=light' $B/ | grep -o '<html lang="en" data-theme="light">' | wc -l)" = "1" ] \
   && curl -s -D - -o /dev/null -d "to=light" $B/theme | grep -qi "set-cookie: mcs_theme=light" \
   && ok "the station is dark until a visitor chooses light with the switch, and keeps that choice" || bad "the station is not dark by default"
+# the switches keep the place (public/switches.js; server.js, /theme and /lang): the theme turns on the page itself and the
+# cookie is posted in the background (a fetch is answered 204, nothing to follow); the language's form carries the whole
+# address — the #part too — and the station sends the browser back to it, never to the landing page
+[ "$(curl -s -o /dev/null -w '%{http_code}' -H 'X-Requested-With: fetch' -d "to=light" $B/theme)" = "204" ] \
+  && [ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' -d "to=dark&back=%2Fdashboard%23crew" $B/theme)" = "302 $B/dashboard#crew" ] \
+  && [ "$(curl -s -o /dev/null -w '%{redirect_url}' -d "to=de&back=%2Fabout%23who-we-are" $B/lang)" = "$B/about#who-we-are" ] \
+  && [ "$(curl -s -o /dev/null -w '%{redirect_url}' -e "$B/media" -d "to=en" $B/lang)" = "$B/media" ] \
+  && [ "$(curl -s -o /dev/null -w '%{redirect_url}' -d "to=en&back=https%3A%2F%2Fevil.example%2F" $B/lang)" = "$B/" ] && [ "$(curl -s -o /dev/null -w '%{redirect_url}' -d "to=en&back=%2F%2Fevil.example" $B/lang)" = "$B/" ] \
+  && echo "$LAND" | grep -q '<script src="/switches.js?v=' && grep -q "root.setAttribute('data-theme', to);" public/switches.js && grep -q "'X-Requested-With': 'fetch'" public/switches.js && grep -q "back.value = here();" public/switches.js \
+  && ok "the theme turns without a reload (a fetch, answered 204) and the language comes back to the whole address, #part included — never to the landing page; an address off the station is not a way back" || bad "a switch still sends the visitor to the landing page, or follows an outside address"
 ! echo "$LAND" | grep -q 'class="orbits"' && echo "$LAND" | grep -q 'class="consent-sky"' && ! echo "$LAND" | grep -q 'consent-astro\|consent-planet' \
   && ok "no orbits behind the page; the cookie card's strip of night has nobody in it and no planet" || bad "the orbits or the cookie card's astronaut are still there"
 echo "$LAND" | grep -q '<div class="tk-bar">' && echo "$LAND" | grep -q 'class="tk-sol"' && echo "$LAND" | grep -q 'id="tk-clock"' \
@@ -2054,7 +2074,7 @@ grep -q "data-axis-run" public/habitat.js && grep -q "win.run ? (s.planned" publ
 grep -q "No current reading from the sensor node" public/habitat.js && grep -q "carries no readings for node" public/habitat.js && ok "the habitat panel explains empty tiles instead of showing dashes" || bad "no explanation for empty tiles"
 grep -q "function clearTiles" public/habitat.js && grep -q "!isCurrent()" public/habitat.js && grep -q "staleAfterMs: 30 \* 60 \* 1000" public/habitat.js && grep -q "newest >= dayStart()" public/habitat.js \
   && ok "the tiles show today's readings only while the newest is under thirty minutes old — otherwise nothing" || bad "stale or yesterday's readings would be shown as live"
-grep -q "midnight at the top" public/habitat.js && grep -q "(p.t - day0) / DAY" public/habitat.js \
+grep -q "(p.t - day0) / DAY" public/habitat.js && grep -q "the scale alone, as the other tiles have it" public/habitat.js && ! grep -q "tr('The ring is the day" public/habitat.js \
   && ok "the CO₂ dial is a 24-hour cycle — each reading at its time-of-day angle, midnight at the top" || bad "the CO₂ dial is not on the 24-hour clock"
 curl -s $B/ | grep -q 'data-day-start="[0-9]' && ok "the page carries the venue's midnight, so today is the venue's today on every phone" || bad "no day start on the page"
 grep -q "CRITICAL_SENSOR_ID" docker-compose.yml && grep -q "READINGS_DAYS_BEFORE" docker-compose.yml && ok "the feed and readings settings in .env reach the container" || bad "compose does not pass the feed settings through"
