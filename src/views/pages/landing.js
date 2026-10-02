@@ -24,8 +24,7 @@
  * message (the one the composer carries), and the hour the crew's
  * communication window opens (WINDOW_TIME, windowWhen), written with the
  * venue's zone as it is on the day the page is read — CEST until the clocks
- * go back on 25 October, CET after — and, for a visitor reading from
- * anywhere, that this is Berlin time.
+ * go back on 25 October, CET after.
  *
  * Also the line under the dome (underLine): it turns every few seconds
  * through what is happening in the habitat now, the signal's time and the
@@ -36,7 +35,7 @@ const { esc } = require('../layout');
 const orbital = require('../../lib/orbital');
 const { stamp, responder } = require('./sky');
 
-const WINDOW_TIME = '16:00';                                 // the crew answer from four in the afternoon, every day of the run
+const WINDOW_TIME = '19:00';                                 // the crew answer from seven in the evening — the communication hour — every day of the run
 const LOCALE = { en: 'en-GB', de: 'de-DE', fr: 'fr-FR' };
 
 /** "15 October", "15. Oktober", "15 octobre". */
@@ -52,12 +51,12 @@ function zoneName(iso, tz, lang) {
     return p ? p.value : '';
   } catch { return ''; }
 }
-/** When the crew answer, as every page writes it — the hour, the venue's zone as it is that day and, since the portal
-    is read from anywhere, whose clock that is: "16:00 CEST (Berlin time)". The ticker (public.js) writes it too. */
+/** When the crew answer, as every page writes it — the hour and the venue's zone as it is that day: "19:00 CEST"
+    (CET once the clocks have gone back). The ticker (public.js) writes it too. */
 function windowWhen(ctx) {
-  const m = ctx.mission, T = ctx.T || ((s) => s);
+  const m = ctx.mission;
   const zone = zoneName(m.today || m.start_date, m.timezone, ctx.lang || 'en');
-  return `${WINDOW_TIME}${zone ? ' ' + zone : ''} (${T('Berlin time')})`;
+  return `${WINDOW_TIME}${zone ? ' ' + zone : ''}`;
 }
 
 /** A sentence of the dictionary with its live figures put in ({date}, {time}, …), the figures already escaped. */
@@ -67,9 +66,10 @@ const fill = (T, key, vals) => Object.entries(vals).reduce((s, [k, v]) => s.spli
 const meta = (left, right = '', cls = '') => `<div class="sheet-meta${cls ? ' ' + cls : ''}"><span>${left}</span>${right ? `<span>${right}</span>` : ''}</div>`;
 
 /* ---------------------------------------------------------------- P01 */
-/** The station's name, the line under it and the run — over the habitat on a wider screen (`desk`), at the head of the
-    note on a phone, where the habitat has the first screen to itself (`phone`); each is drawn where it is shown, and the
-    other is not drawn at all (sheet.css). */
+/** The station's name — MARS!platz : Ground Station — the line under it and the run — in the band over the first page on
+    a wider screen (`desk`: the name large in the top left corner, the line and the run beside it on its baseline), at
+    the head of the note on a phone, where the first page has the screen to itself (`phone`); each is drawn where it is
+    shown, and the other is not drawn at all (sheet.css). */
 function intro(ctx, where = 'desk') {
   const T = ctx.T, m = ctx.mission;
   const pre = m.phase === 'PRE_LAUNCH', n = m.daysUntilStart;
@@ -78,8 +78,8 @@ function intro(ctx, where = 'desk') {
   const H = where === 'desk' ? 'h1' : 'p';                            // one heading for the page: the name over the habitat
   return `
     <div class="sheet-intro is-${where}">
-      <${H} class="wordmark">MARS<span class="bang">!</span>platz</${H}>
-      <p class="tagline">${T('Communication Station')} · <b>ZKM | Hertzlab</b></p>
+      <${H} class="wordmark">MARS<span class="bang">!</span>platz<span class="wm-ground"> : ${T('Ground Station')}</span></${H}>
+      <p class="tagline"><b>ZKM | Hertzlab</b></p>
       <p class="run-dates"><b>${esc(m.runLabel)}</b> · ${m.totalDays} ${T('sols in the habitat')} · <span class="run-now">${now}</span></p>
     </div>`;
 }
@@ -90,13 +90,19 @@ function intro(ctx, where = 'desk') {
  * a photograph of its limb from orbit (public/space/earth.jpg), the horizon
  * curving away, and over it a mesh of dots that thins out quickly with
  * height; the habitat far above it at the top — the geodesic dome as a line
- * drawing (public/space/habitat.png), white on the night; and a dashed line
- * between them, the way a message goes, with a signal climbing it and the
- * crew's answer coming down. On either side of the line the latest
+ * drawing (public/space/habitat.png), white on the night, named Red Dust
+ * City in Mars orange; and the way a message goes between them: on a phone
+ * a dashed line straight up, with a signal climbing it and the crew's answer
+ * coming down; on a wider screen the Earth stands in the lower left corner
+ * of the room, its horizon curving away, the habitat in the north-east, and
+ * between them **the trajectory** (trajectory, below): an arc leaving the
+ * horizon straight up, rising to the habitat and carrying on past it into
+ * space — the signal climbs it, flares at the habitat, the answer comes back
+ * down it while the signal goes on into the dark. Around it the latest
  * exchanges with Earth and the newest pictures out of the habitat come and
  * go (sky.js draws them into the page; public/sky.js places them clear of
- * the Earth, the habitat and the line — data-sky-solid, data-sky-round — and
- * keeps them current). A field of stars behind it all. The name and the run
+ * the Earth, the habitat and the line or the arc — data-sky-solid,
+ * data-sky-round — and keeps them current). A field of stars behind it all. The name and the run
  * stand in the band over it on a wider screen (intro); a phone has the page
  * to itself. On the Earth, the nudge to scroll on (scrollNudge). Decorative
  * but for the sky's items: the drawing is hidden from assistive technology,
@@ -135,9 +141,10 @@ function space(ctx, { sky = null } = {}) {
       <div class="space-stars" aria-hidden="true"></div>
       <div class="space-dome" data-sky-solid aria-hidden="true">
         <img class="space-dome-img" src="/space/habitat.png" alt="" width="${HABITAT.w}" height="${HABITAT.h}" decoding="async">
-        <span class="space-tag space-tag-dome" data-sky-solid>MARS · HABITAT ONE</span>
+        <span class="space-tag space-tag-dome" data-sky-solid>RED DUST CITY</span>
       </div>
       <i class="space-line" data-sky-solid aria-hidden="true"></i>
+      ${trajectory()}
       <div class="space-earth" aria-hidden="true">
         <img class="space-earth-img" src="/space/earth.jpg" alt="" width="${EARTH.w}" height="${EARTH.h}" decoding="async">
         ${halo('desk')}${halo('phone')}
@@ -147,6 +154,31 @@ function space(ctx, { sky = null } = {}) {
       ${scrollNudge(ctx)}
     </div>
   </section>`;
+}
+
+/** The trajectory, on a wider screen (sheet.css shows it there and the vertical line on a phone): the way a message
+ *  goes, drawn as an arc of a great circle from the Earth's horizon — leaving it straight up from the ground, as a
+ *  launch does — to the habitat's front foot in the north-east, and on from the habitat's far side into space, where it
+ *  thins and fades (no line crosses the habitat). Along it: a white signal climbs to the habitat and flares there; the crew's answer comes back down the arc in
+ *  Mars orange while the signal carries on, out past the habitat, into the dark. The paths are set by public/sky.js
+ *  from where the layout puts the Earth and the habitat (the trajectory); the motion is the SVG's own (SMIL) along
+ *  them, ten seconds a round, and stands still where motion is asked to be less (sheet.css). */
+function trajectory() {
+  const T = 10;                                         // one round: up, the flare, back and on, a pause
+  const motion = (path, pts, times) => `<animateMotion dur="${T}s" repeatCount="indefinite" calcMode="linear" keyPoints="${pts}" keyTimes="${times}" rotate="0"><mpath href="#${path}"/></animateMotion>`;
+  const fade = (values, times) => `<animate attributeName="opacity" dur="${T}s" repeatCount="indefinite" calcMode="linear" values="${values}" keyTimes="${times}"/>`;
+  return `
+      <svg class="space-arc" id="space-arc" aria-hidden="true">
+        <defs>
+          <linearGradient id="arc-fade" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+        </defs>
+        <path class="arc-up" id="arc-up" d="M0 0"/>
+        <path class="arc-on" id="arc-on" d="M0 0"/>
+        <circle class="arc-flare" r="3">${fade('0;0;.9;0;0', '0;.4;.42;.5;1')}<animate attributeName="r" dur="${T}s" repeatCount="indefinite" values="2;2;16;2;2" keyTimes="0;.4;.47;.5;1"/></circle>
+        <circle class="arc-sig" r="4">${motion('arc-up', '0;1;1', '0;.4;1')}${fade('0;1;1;0;0', '0;.03;.39;.42;1')}</circle>
+        <circle class="arc-ans" r="4">${motion('arc-up', '1;1;0;0', '0;.46;.86;1')}${fade('0;0;1;1;0;0', '0;.46;.49;.83;.87;1')}</circle>
+        <circle class="arc-far" r="3">${motion('arc-on', '0;0;1;1', '0;.42;.8;1')}${fade('0;0;1;0;0', '0;.42;.5;.8;1')}</circle>
+      </svg>`;
 }
 
 /* ---------------------------------------------------------------- the note */
@@ -206,7 +238,7 @@ function slowChat(ctx) {
   const light = orbital.formatLightTime(ctx.geo.lightSeconds);
   const secs = Number(process.env.TRANSIT_SECONDS || 12);
   const crossing = `${secs} ${T(secs === 1 ? 'second' : 'seconds')}`;
-  const when = windowWhen(ctx);                                            // "16:00 CEST (Berlin time)"
+  const when = windowWhen(ctx);                                            // "19:00 CEST"
   const me = ctx.callsign || ctx.offer || '';
   return `
   <section class="sheet sheet-p4" id="slowest-chat" aria-labelledby="ch-03-title" data-page>
@@ -312,9 +344,9 @@ function underLine(ctx, { recent = [], today = null } = {}) {
 function scrollNudge(ctx) {
   const T = ctx.T;
   return `
-      <a class="dome-nudge" id="dome-nudge" href="#note" aria-label="${esc(T('Scroll down'))}" title="${esc(T('Scroll down'))}">
+      <a class="dome-nudge" id="dome-nudge" href="#note" data-sky-solid aria-label="${esc(T('Scroll down'))}" title="${esc(T('Scroll down'))}">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v15"/><path d="M5.5 12.5 12 19l6.5-6.5"/></svg>
       </a>`;
 }
 
-module.exports = { intro, space, note, slowChat, underLine, scrollNudge, WINDOW_TIME, windowWhen, dayMonth, zoneName };
+module.exports = { intro, space, note, slowChat, underLine, scrollNudge, trajectory, WINDOW_TIME, windowWhen, dayMonth, zoneName };

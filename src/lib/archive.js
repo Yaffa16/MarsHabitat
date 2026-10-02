@@ -216,8 +216,8 @@ function dayRecord(missionDay) {
  *   officers  one block per crew member, in the crew's order: the
  *             commanding officer's Commander Blog for the day (the
  *             published entry, placeholders left out), the other officers'
- *             blog — the science officer's Daily Science Findings, the
- *             health officer's Daily Health Blog, as the
+ *             blog — the science officer's Daily Mission Report, the
+ *             health officer's Health Report, as the
  *             notes of that kind — and every crew state filed for them that
  *             day. A report kind with no officer to hang on goes to
  *             `reportsUnassigned`; notes of other kinds (LOG, ANOMALY …) to
@@ -228,7 +228,7 @@ function dayRecord(missionDay) {
  *             the figures as the tab shows them, each marked counted (filed
  *             that day) or carried (from the day before at its draw).
  */
-const REPORT_OF = [['SCIENCE', /SCIENCE/i, 'Daily Science Findings'], ['HEALTH', /HEALTH/i, 'Daily Health Blog']];
+const REPORT_OF = [['SCIENCE', /SCIENCE/i, 'Daily Mission Report'], ['HEALTH', /HEALTH/i, 'Health Report']];
 function dress(r) {
   const crew = db.prepare('SELECT id, designation, role FROM crew ORDER BY sort_order, id').all();
   const content = require('./content');
@@ -511,7 +511,7 @@ function shapeDay(r) {
       item: v.label, key: v.key, unit: v.unit, quantity: v.quantity, consumption: v.consumption })),
     storesNote: r.filed.why || null,
     // by officer: the Commander Blog (commanding officer), the Daily Science
-    // Findings / Daily Health Blog (science, health officer) and the states filed
+    // Findings / Health Report (science, health officer) and the states filed
     officers: r.officers.map((o) => ({ crew: o.designation, role: o.role,
       ...(o.hasBlog ? { commanderBlog: o.entry ? { body: o.entry.body, writtenAt: o.entry.written_at, updatedAt: o.entry.updated_at } : null } : {}),
       report: o.reportKind ? { kind: o.reportKind, label: o.reportLabel, bodies: o.reports.map((x) => x.body) } : null,

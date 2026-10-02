@@ -277,7 +277,7 @@
   var FADE = 1200, LIFE_MSG = 10000, LIFE_PIC = 9000, TICK = 1200, VARY = 0.3, AHEAD = 700;
   // Their sizes: a snapshot's width, and the width an exchange may take for its words — on a phone as wide as the room
   // beside the line allows (LANE, below), on a desk a fixed width.
-  var SIZE = { phone: { pic: 176, line: 184 }, desk: { pic: 184, line: 380 } };
+  var SIZE = { phone: { pic: 176, line: 184 }, desk: { pic: 136, line: 300 } };   // a desk's are small, to stand beside the line
   var GAP = 16, EDGE = 6, STEP = 8;                // the room kept around each; from the sky's edges; the grid the places are on
   var PIC_RATIO = 1.6;
 
@@ -320,6 +320,76 @@
   }
   function ready(p) { var im = loaded[p.id]; return !!(im && im.complete && im.naturalWidth); }
 
+  /* ------------------------------------------------------------ the trajectory (a desk; landing.js, trajectory)
+     The way a message goes, drawn from where the layout has put the Earth and the habitat: a straight line from the
+     Earth's horizon to the habitat's front foot — the horizon is a circle, the picture turned about its centre
+     (sheet.css); the launch point is on it, a little up the limb from the radius through the habitat's foot, so the line
+     leaves the ground nearly straight up, as a launch does, and runs straight to the habitat — and on from the far side
+     of the habitat in the same direction, out of the room (a second line, drawn fading): the drawing's silhouette is
+     near enough a circle, and the second line begins where the way leaves it, so no line crosses the habitat. The
+     signal, the answer and the one that goes on ride these paths (SMIL, in the markup); the flare stands at the
+     habitat's foot. The sky keeps its items off the line and close to it (onWay,
+     nearWay, below). Drawn again whenever the room changes size. */
+  var arc = panel.querySelector('.space-arc'), way = [];
+  function arcShown() { return !!(arc && getComputedStyle(arc).display !== 'none'); }
+  function trajectory() {
+    way = [];
+    if (!arcShown()) return;
+    var earth = panel.querySelector('.space-earth'), globe = panel.querySelector('.space-globe'), dome = panel.querySelector('.space-dome');
+    var up = arc.querySelector('#arc-up'), on = arc.querySelector('#arc-on'), flare = arc.querySelector('.arc-flare'), grad = arc.querySelector('#arc-fade');
+    if (!earth || !globe || !dome || !up || !on) return;
+    var W = sky.clientWidth, H = sky.clientHeight;
+    var gb = box(globe), C = { x: gb.x + gb.w / 2, y: gb.y + gb.h / 2 }, R = earth.offsetWidth * 997 / 1414;   // the horizon's circle on the screen
+    var db = box(dome), F = { x: db.x + db.w / 2, y: db.y + db.h * 0.971 };                                  // the habitat's front foot
+    if (!(R > 0) || !db.w) return;
+    var a = Math.atan2(F.y - C.y, F.x - C.x) - 10 * Math.PI / 180;                                           // the launch point: on the horizon, a little up the limb from the radius through the foot, so it stands clear of the room's foot
+    var S = { x: C.x + R * Math.cos(a), y: C.y + R * Math.sin(a) };
+    var tx = F.x - S.x, ty = F.y - S.y, tl = Math.hypot(tx, ty) || 1; tx /= tl; ty /= tl;                   // the way: straight from the launch point to the foot
+    // on from the far side of the habitat: the drawing's silhouette is near enough a circle about a point a little
+    // below its middle (public/space/habitat.png, measured), cut off at the foot — the second line begins where the way
+    // leaves that circle, a little clear of the drawing, and runs straight to where it leaves the room (and a little beyond)
+    var cd = { x: db.x + db.w / 2, y: db.y + db.h * 0.73 }, rd = db.w * 0.48;
+    var dx = F.x - cd.x, dy = F.y - cd.y, bq = dx * tx + dy * ty, s = -bq + Math.sqrt(Math.max(0, bq * bq - (dx * dx + dy * dy - rd * rd))) + 10;
+    var X = { x: F.x + tx * s, y: F.y + ty * s };
+    var t = Infinity;
+    if (tx > 0) t = Math.min(t, (W + 30 - X.x) / tx); else if (tx < 0) t = Math.min(t, (-30 - X.x) / tx);
+    if (ty > 0) t = Math.min(t, (H + 30 - X.y) / ty); else if (ty < 0) t = Math.min(t, (-30 - X.y) / ty);
+    if (!isFinite(t) || t < 40) t = 40;
+    var E = { x: X.x + tx * t, y: X.y + ty * t };
+    var f = function (p) { return p.x.toFixed(1) + ' ' + p.y.toFixed(1); };
+    up.setAttribute('d', 'M' + f(S) + ' L' + f(F));
+    on.setAttribute('d', 'M' + f(X) + ' L' + f(E));
+    if (flare) { flare.setAttribute('cx', F.x.toFixed(1)); flare.setAttribute('cy', F.y.toFixed(1)); }
+    if (grad) { grad.setAttribute('x1', X.x.toFixed(1)); grad.setAttribute('y1', X.y.toFixed(1)); grad.setAttribute('x2', E.x.toFixed(1)); grad.setAttribute('y2', E.y.toFixed(1)); }
+    var i, n, L = Math.hypot(F.x - S.x, F.y - S.y);
+    for (i = 0, n = Math.max(8, Math.round(L / 22)); i <= n; i++) way.push({ x: S.x + (F.x - S.x) * i / n, y: S.y + (F.y - S.y) * i / n });
+    for (i = 0, n = Math.max(8, Math.round(t / 22)); i <= n; i++) way.push({ x: X.x + (E.x - X.x) * i / n, y: X.y + (E.y - X.y) * i / n });
+  }
+  // does the box come within the margin of the line?
+  function onWay(a) {
+    var m = GAP + 4, i, p;
+    for (i = 0; i < way.length; i++) { p = way[i]; if (p.x > a.x - m && p.x < a.x + a.w + m && p.y > a.y - m && p.y < a.y + a.h + m) return true; }
+    return false;
+  }
+  // is the box near the line — within NEAR_WAY of it (its nearest edge), where the sky keeps the exchanges and the pictures?
+  var NEAR_WAY = 48;
+  function nearWay(a) {
+    if (!way.length) return true;
+    var m = GAP + NEAR_WAY, i, p;
+    for (i = 0; i < way.length; i++) { p = way[i]; if (p.x > a.x - m && p.x < a.x + a.w + m && p.y > a.y - m && p.y < a.y + a.h + m) return true; }
+    return false;
+  }
+  var drawn = null;
+  function redraw() { clearTimeout(drawn); drawn = setTimeout(trajectory, 60); }
+  if (arc) {
+    trajectory();
+    window.addEventListener('resize', redraw);
+    window.addEventListener('load', redraw);
+    if (window.ResizeObserver) new ResizeObserver(redraw).observe(panel);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(redraw);
+    [upright, desk].forEach(function (mq) { if (!mq) return; if (mq.addEventListener) mq.addEventListener('change', redraw); else if (mq.addListener) mq.addListener(redraw); });
+  }
+
   /* ------------------------------------------------------------ placing: in the room, clear of everything */
   // Where the next one comes is picked afresh among the places free: on a grid of a few pixels, in the band between the
   // habitat and the Earth, close to the line — its margin, or a little way out from it — clear of the room's solids (the
@@ -332,10 +402,12 @@
   function box(el) { var r = el.getBoundingClientRect(), k = sky.getBoundingClientRect(); return { x: r.left - k.left, y: r.top - k.top, w: r.width, h: r.height }; }
   // the discs, in the sky's own coordinates: a disc's centre is its box's, a half disc's the middle of its box's foot;
   // its radius half the box's width, or the part of it the page gives (data-r — the Earth's air reaches past its globe)
+  // (the globe's radius from its laid-out width, not its box: on a desk the Earth is turned about the globe's centre,
+  // sheet.css, which leaves the centre where it is and makes the box larger than the globe)
   function rounds() {
     return [].map.call(panel.querySelectorAll('[data-sky-round]'), function (el) {
-      var b = box(el), half = el.getAttribute('data-sky-round') === 'half', f = Number(el.getAttribute('data-r')) || 0.5;
-      return { cx: b.x + b.w / 2, cy: half ? b.y + b.h : b.y + b.h / 2, r: b.w * f };
+      var b = box(el), half = el.getAttribute('data-sky-round') === 'half', f = Number(el.getAttribute('data-r')) || 0.5, w = el.offsetWidth || b.w;
+      return { cx: b.x + b.w / 2, cy: half ? b.y + b.h : b.y + b.h / 2, r: w * f };
     }).filter(function (c) { return c.r > 0; });
   }
   // (the line itself is kept clear of by the lanes, below, not as a solid)
@@ -362,6 +434,7 @@
   // highest point of what the sky keeps clear of — its horizon and a margin) — never beside the habitat, never on the Earth
   function band() {
     var H = sky.clientHeight, d = panel.querySelector('.space-dome'), b = d ? box(d) : null, top = b && b.h ? b.y + b.h + 26 : EDGE, bottom = H - EDGE;
+    if (arcShown()) return { top: EDGE, bottom: H - EDGE };                   // a desk: the whole room — the habitat is a solid, the Earth a disc, the arc is kept off below
     rounds().forEach(function (c) { bottom = Math.min(bottom, c.cy - c.r - GAP); });
     return { top: Math.max(EDGE, Math.round(top)), bottom: Math.round(bottom) };
   }
@@ -378,7 +451,7 @@
     for (i = 0; i < xs.length; i++) for (y = bd.top; y + h <= bd.bottom; y += STEP) tries.push({ x: xs[i], y: y, w: w, h: h });
     shuffle(tries);
     var far = function (t) { return lately.every(function (p) { return Math.abs(p.x - t.x) + Math.abs(p.y - t.y) > Math.min(W, H) / 3; }); };
-    var ok = function (t, list) { return clear(t, discs) && list.every(function (b) { return !clash(t, b); }); };
+    var ok = function (t, list) { return clear(t, discs) && !onWay(t) && nearWay(t) && list.every(function (b) { return !clash(t, b); }); };
     var best = null;
     for (i = 0; i < tries.length; i++) { if (ok(tries[i], busy)) { if (far(tries[i])) return tries[i]; if (!best) best = tries[i]; } }
     if (best) return best;                                         // somewhere free, if not somewhere new

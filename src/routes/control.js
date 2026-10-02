@@ -312,7 +312,7 @@ router.post('/report', (req, res, next) => upload.array('file', 50)(req, res, (e
   audit(req.user.username, 'DayNote', day, kind.toLowerCase() + (text ? '' : ' cleared'));
   noteEdits(`report:${kindKey}`, day, same(wasReport, text) ? [] : ['body'], req.user.username);
   dropDraft(`report:${kindKey}`, day);
-  const label = kind === 'SCIENCE' ? 'Daily Science Findings' : 'Daily Health Blog';
+  const label = kind === 'SCIENCE' ? 'Daily Mission Report' : 'Health Report';
   setFlash(req, r.ok ? `${label} ${text ? 'published' : 'cleared'} for ${dayWord(day)}.` + (attached ? ` ${attached} file${attached === 1 ? '' : 's'} added.` : '') + (mediaError ? ` One file was refused: ${mediaError}` : '')
     : `Saved, but: ${r.error}`, !r.ok || !!mediaError);
   toTab(res, tabOf(req.body.back) === 'messages' ? kindKey : req.body.back, day);
@@ -488,10 +488,10 @@ router.post('/logbook', (req, res, next) => upload.array('file', 50)(req, res, (
   const dropFiles = () => { for (const f of req.files || []) { try { require('fs').unlinkSync(f.path); } catch (e) { /* gone */ } } };
   if (!member) { dropFiles(); setFlash(req, 'No such crew member.', true); return toTab(res, tab, day); }
   // The Commander Blog is the only blog kept in the log: the science and
-  // health officers write the Daily Science Findings and the Daily Health
+  // health officers write the Daily Mission Report and the Daily Health
   // Blog, which are their reports (POST /control/report).
   if (member.designation !== content.BLOG_OFFICER) {
-    dropFiles(); setFlash(req, 'Only the commanding officer has a blog here — the Commander Blog. The science and health officers write the Daily Science Findings and the Daily Health Blog on their tabs.', true);
+    dropFiles(); setFlash(req, 'Only the commanding officer has a blog here — the Commander Blog. The science and health officers write the Daily Mission Report and the Health Report on their tabs.', true);
     return toTab(res, tab, day);
   }
   const draft = req.body.action === 'draft';

@@ -162,16 +162,21 @@ class Layout {
   table(cols, rows, { size = 8.5, headSize = 7.5, zebra = true, pad = 4, maxRowLines = 12 } = {}) {
     const total = cols.reduce((s, c) => s + (c.w || 1), 0);
     const widths = cols.map((c) => (CW * (c.w || 1)) / total);
-    const lh = size * 1.3;
+    const lh = size * 1.3, hlh = headSize * 1.25;
+    // A heading wider than its column is wrapped over up to four lines (a word longer than the column is cut), the
+    // head as tall as the longest; the lines stand on the head's floor, so a short heading sits level with the last
+    // line of a long one. Ten columns of readings keep their names apart this way.
+    const heads = cols.map((c, i) => this.pdf.wrap(c.label, 'bold', headSize, widths[i] - pad * 2).slice(0, 4));
+    const hn = Math.max(1, ...heads.map((h) => h.length)), hh = hn * hlh + pad * 2;
     const head = () => {
-      this.need(lh + pad * 2 + 4);
-      this.pdf.rect(this.page, M.left, this.y - 1, CW, lh + pad * 2 - 2, { fill: PALE });
+      this.need(hh + 4);
+      this.pdf.rect(this.page, M.left, this.y - 1, CW, hh - 2, { fill: PALE });
       let x = M.left;
-      cols.forEach((c, i) => {
-        this.pdf.text(this.page, x + pad, this.y + pad + headSize, c.label, { font: 'bold', size: headSize, align: c.align || 'left', maxWidth: widths[i] - pad * 2 });
+      heads.forEach((lines, i) => {
+        lines.forEach((l, k) => this.pdf.text(this.page, x + pad, this.y + pad + headSize + (hn - lines.length + k) * hlh, l, { font: 'bold', size: headSize, align: cols[i].align || 'left', maxWidth: widths[i] - pad * 2 }));
         x += widths[i];
       });
-      this.y += lh + pad * 2;
+      this.y += hh;
     };
     head();
     rows.forEach((row, r) => {
@@ -472,9 +477,10 @@ function readingsSection(L, R) {
   if (!R || !R.count) return;
   L.h3(`Every reading of the day · ${R.count.toLocaleString('en-GB')} readings`, { keep: 90 });
   L.para('Each as it was stored. Times are habitat time, to the second.', { color: GREY, size: 8.5 });
-  const opts = { size: 7, headSize: 6.5, pad: 2.5, maxRowLines: 3 };
-  // Column heads are short — the channel code and unit — with the full names
-  // on a line above, so ten columns fit the page.
+  const opts = { size: 7, headSize: 6, pad: 2.5, maxRowLines: 3 };
+  // The station's column heads are short — the channel code and unit — with
+  // the full names on a line above, so ten columns fit the page; the node's
+  // carry their names, wrapped over the head's lines (table).
   const short = (c) => (c.channel && !/\?/.test(c.channel) ? c.channel : c.metric.slice(0, 8)) + (c.unit ? ` ${c.unit}` : '');
   if (R.station.rows.length) {
     L.h3(`Habitat · the station's channels · every reading · ${R.station.readings.toLocaleString('en-GB')} readings`, { keep: 80 });
@@ -484,7 +490,7 @@ function readingsSection(L, R) {
   }
   if (R.external.rows.length) {
     L.h3(`Habitat · ${habitatSource()} · every reading · ${R.external.readings.toLocaleString('en-GB')} readings`, { keep: 70 });
-    const cols = [{ label: 'Time', w: 1.1, font: 'mono' }, ...R.external.columns.map((c) => ({ label: `${c.label} ${c.unit}`, w: 1, align: 'right' }))];
+    const cols = [{ label: 'Time', w: 0.9, font: 'mono' }, ...R.external.columns.map((c) => ({ label: `${c.label} ${c.unit}`.trim(), w: 1, align: 'right' }))];
     L.table(cols, R.external.rows.map((row) => [row.at, ...R.external.columns.map((c) => asIs(row.values[c.key]))]), opts);
   }
   for (const h of R.hardware) {

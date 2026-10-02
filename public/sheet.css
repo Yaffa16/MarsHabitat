@@ -118,6 +118,7 @@ body.landing .sheet-meta.is-ruled { padding-bottom: 16px; border-bottom: 1px sol
 body.landing .sheet-intro { position: relative; z-index: 1; }
 body.landing .sheet-intro.is-phone { display: none; }
 body.landing .sheet-intro .run-now { color: var(--ink); }
+body.landing .sheet-intro .wordmark .wm-ground { font-size: .58em; font-weight: 500; letter-spacing: -.02em; color: var(--ink); white-space: nowrap; }   /* Ground Station, after the name, smaller and lighter */
 
 /* ---- P01: the habitat */
 body.landing .sheet-p1 { display: flex; flex-direction: column; }
@@ -198,12 +199,12 @@ body.landing .space-stars { position: absolute; inset: 0; z-index: 0; pointer-ev
 /* the habitat, far: the drawing, its name under it beside the line, and a faint light behind it */
 body.landing .space-dome { position: absolute; z-index: 1; left: 50%; top: var(--dome-top); width: var(--dome-w); transform: translateX(-50%); }
 body.landing .space-dome::before { content: ""; position: absolute; z-index: -1; left: -30%; right: -30%; top: -20%; bottom: -30%; pointer-events: none;
-  background: radial-gradient(ellipse 50% 58% at 50% 68%, rgba(150,170,255,.22) 0%, rgba(150,170,255,.08) 45%, rgba(150,170,255,0) 100%); }
+  background: radial-gradient(ellipse 50% 58% at 50% 68%, rgba(255,106,46,.26) 0%, rgba(255,90,31,.1) 45%, rgba(255,90,31,0) 100%); }   /* Red Dust City: a Mars light behind the drawing */
 body.landing .space-dome-img { display: block; width: 100%; height: auto; }
 body.landing .space-tag { position: absolute; z-index: 1; margin: 0; white-space: nowrap; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-tag); line-height: 1; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.62); }
-body.landing .space-tag-dome { top: 100%; right: calc(50% + 14px); margin-top: 0; }
+body.landing .space-tag-dome { top: 100%; right: calc(50% + 14px); margin-top: 0; font-family: var(--display); font-size: 15px; font-weight: 600; letter-spacing: .2em; color: var(--hud-hot); text-shadow: 0 0 14px rgba(255,106,46,.55); }   /* the habitat's name, Red Dust City, in Mars orange */
 /* the line: dashed, from the habitat's front foot down onto the Earth's limb; a signal climbs it, and the answer comes down in Mars orange */
-body.landing .space-line { position: absolute; z-index: 2; left: 50%; width: 2px; margin-left: -1px; top: calc(var(--dome-top) + var(--dome-w) * 0.676); bottom: calc(var(--earth-arc) - 6px);   /* over the Earth's haze, down onto the limb */
+body.landing .space-line { position: absolute; z-index: 2; left: 50%; width: 2px; margin-left: -1px; top: calc(var(--dome-top) + var(--dome-w) * 0.676); bottom: calc(var(--earth-arc) - 6px);   /* from the habitat's front foot, over the Earth's haze, down onto the limb */
   background: repeating-linear-gradient(180deg, rgba(255,255,255,.6) 0 6px, transparent 6px 12px); }
 body.landing .space-line::before, body.landing .space-line::after { content: ""; position: absolute; left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; opacity: 0; }
 body.landing .space-line::before { bottom: 0; background: #fff; box-shadow: 0 0 10px 2px rgba(120,170,255,.9); animation: space-up 9s linear infinite; }
@@ -211,6 +212,19 @@ body.landing .space-line::after { top: 0; background: var(--hud-hot); box-shadow
 @keyframes space-up { 0% { bottom: 0; opacity: 0; } 4% { opacity: 1; } 42% { bottom: calc(100% - 8px); opacity: 1; } 46%, 100% { bottom: calc(100% - 8px); opacity: 0; } }
 @keyframes space-down { 0%, 52% { top: 0; opacity: 0; } 56% { opacity: 1; } 94% { top: calc(100% - 8px); opacity: 1; } 98%, 100% { top: calc(100% - 8px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { body.landing .space-line::before, body.landing .space-line::after { animation: none; } }
+/* the trajectory (landing.js, trajectory; public/sky.js sets its paths): a desk's way for a message — a straight line
+   from the Earth's horizon in the lower left corner up to the habitat in the north-east, dashed like a phone's line,
+   and on past the habitat into space, thinner, fading out along a gradient; the signal, the answer and the one that
+   goes on are the SVG's own motion; the flare at the habitat a ring that opens and closes as the signal arrives. Shown
+   on a desk only (below); a phone keeps its vertical line. */
+body.landing .space-arc { display: none; position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+body.landing .space-arc .arc-up { fill: none; stroke: rgba(255,255,255,.6); stroke-width: 2; stroke-dasharray: 6 6; stroke-linecap: butt; }
+body.landing .space-arc .arc-on { fill: none; stroke: url(#arc-fade); stroke-width: 1.5; stroke-dasharray: 4 8; }
+body.landing .space-arc .arc-sig { fill: #fff; filter: drop-shadow(0 0 6px rgba(120,170,255,.95)); }
+body.landing .space-arc .arc-ans { fill: var(--hud-hot); filter: drop-shadow(0 0 6px rgba(var(--hud-hot-rgb),.9)); }
+body.landing .space-arc .arc-far { fill: #fff; filter: drop-shadow(0 0 5px rgba(255,255,255,.8)); }
+body.landing .space-arc .arc-flare { fill: none; stroke: #fff; stroke-width: 1.5; filter: drop-shadow(0 0 6px rgba(255,255,255,.9)); }
+@media (prefers-reduced-motion: reduce) { body.landing .space-arc circle { display: none; } }
 /* the Earth: the picture the width of the room and more, centred under the line, its limb's apex the arc's height above
    the room's foot (the limb is 24.1 % down the picture, its haze above it; the rest curves away below); the mesh of dots
    drawn about the limb in the same box, and — never seen — the globe's circle for the sky to keep clear of */
@@ -229,6 +243,12 @@ body.landing .space .dome-nudge { position: absolute; z-index: 3; left: 50%; bot
    is plain; a snapshot in the same frame, in colour, its time in white over it. Three lines of a message (the whole of
    it is on the board). */
 body.landing .space .sky-text { -webkit-line-clamp: 3; padding: 0; text-shadow: none; }
+@media (min-width: 761px) and (min-height: 521px) {                                               /* a desk: small, beside the line (public/sky.js, SIZE) */
+  body.landing .space .sky-text { font-size: 12.5px; line-height: 1.25; }
+  body.landing .space .sky-who, body.landing .space .sky-when { font-size: 9px; letter-spacing: .12em; }
+  body.landing .space .sky-who { display: block; width: 100%; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }   /* a line too long for the frame ends in an ellipsis */
+  body.landing .space .sky-msg { padding: 7px 10px 8px; }
+}
 body.landing .space .sky-msg { padding: 9px 12px 10px; border-color: rgba(255,255,255,.34); box-shadow: none; }
 body.landing .space .sky-who, body.landing .space .sky-when { padding: 0; background: none; clip-path: none; color: rgba(255,255,255,.74); font-size: 10px; letter-spacing: .14em; }
 body.landing .space .sky-part { gap: 4px; }
@@ -343,34 +363,50 @@ body.landing .know-more.is-write:hover { color: #0f1540; box-shadow: 0 18px 32px
    keys on the ground either side of the shell. Nothing else: no sheet under it (the sequencer's grey sheet stays in
    sky.js, habitatSheet, unused; the dome with its floating keys in dome.js), no sky over it, no frame of corners — the
    card's head names the page and says what to do (Click a room on a desk, Tap a room on a touch screen), the drawing
-   stands on its ground line. The pop-up opens in the room kept over the crown (inside.js, --pop-room). A phone has the
-   page to itself. */
-body.landing .sheet-p3 { margin: 64px 0 0; }
+   stands on its ground line. On a desk the drawing stands at the left of the card and the pop-up opens in the column at
+   its right (inside.js, column), where at rest the hint alone stands (it gives way while a pop-up is open). A phone has
+   the page to itself: the drawing alone, the pop-up over it. */
+body.landing .sheet-p3 { position: relative; z-index: 2; margin: 64px 0 0; }                      /* over the page after it: the pop-up under the picture (inside.js, place) reaches onto it */
 body.landing .hab-card { padding: 26px 22px 30px;
   background: var(--glass); -webkit-backdrop-filter: blur(26px) saturate(1.35); backdrop-filter: blur(26px) saturate(1.35);
   border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); border-radius: var(--r-lg); color: var(--ink); }
-body.landing:not(.inner) .hab-card .dome-panel, :root[data-theme="dark"] body.landing .hab-card .dome-panel { --room: 90px; flex: none; margin: 0; padding: 0; background: none; }
+body.landing:not(.inner) .hab-card .dome-panel, :root[data-theme="dark"] body.landing .hab-card .dome-panel { --room: 18px; flex: none; margin: 0; padding: 0; background: none; }   /* a little air between the head and the drawing: the pop-up stands beside the drawing, not over it */
 /* the head as the other cards' label row: the name small in Mars at the left, the hint at the right, a rule under them */
 body.landing .hab-card .dome-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 var(--room); padding: 0 0 16px; border-bottom: 1px solid var(--hair); }
-body.landing .hab-card .dome-title h2 { margin: 0; font-family: var(--display); font-size: var(--fs-label); line-height: 1.4; letter-spacing: .12em; text-transform: uppercase; font-weight: 500; color: var(--mars-ink); }
+body.landing .hab-card .dome-title h2 { margin: 0; font-family: var(--display); font-size: var(--fs-label); line-height: 1.4; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--mars-ink); }
 body.landing .hab-card .dome-meta.dome-hint { font-family: var(--display); font-size: var(--fs-note); letter-spacing: 0; text-transform: none; font-weight: 400; color: var(--dim); }
 body.landing .dome-hint-tap { display: none; }
 @media (hover: none) { body.landing .dome-hint-click { display: none; } body.landing .dome-hint-tap { display: inline; } }
 body.landing:not(.inner) .hab-card .dome-screen { padding: 0; }
-/* the drawing as large as a window allows under the head and over the ground line (the stage keeps the drawing's box, inside.js VIEW) */
-body.landing:not(.inner) .hab-card .dome-stage { flex: none; height: auto; aspect-ratio: 1656 / 750; max-height: min(calc(100vh - 440px), 50cqw); min-height: 240px; margin: 0 auto; }
-body.landing .hab-card .dome-caption { margin: 0; }
-body.landing .hab-card .dome-caption::before { margin: 0 -22px; }                                /* the ground line, out to the card's edges */
-body.landing .hab-card .dome-legend { display: none; }                                         /* the keys on the picture are the way in */
+/* the screen: the drawing at the left and the column at the right, a little under a third of the card. The card is the
+   height of a page (below) and the drawing fills what is left of it beside the column — the stage is that box, and the
+   script shapes the drawing's box to it (inside.js, fit: wider with the ground either side, taller with more sky) */
+body.landing:not(.inner) .hab-card { display: flex; flex-direction: column; min-height: 0; }
+body.landing:not(.inner) .hab-card .dome-panel.is-inside { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+body.landing:not(.inner) .hab-card .dome-head { flex: none; }
+body.landing:not(.inner) .hab-card .dome-screen { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 30%, 400px); column-gap: 28px; align-items: stretch; }
+body.landing:not(.inner) .hab-card .dome-stage { flex: none; width: 100%; max-width: none; height: 100%; min-height: 300px; aspect-ratio: auto; max-height: none; margin: 0; }
+/* the column: the hint, vertically in the middle of the column, beside the middle of the drawing; while a pop-up is
+   open (over it, inside.js column) it fades out of the way */
+body.landing .is-inside .in-aside { position: relative; align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 16px; min-width: 0; transition: opacity .25s ease; }
+body.landing .is-inside.has-popup .in-aside { opacity: 0; pointer-events: none; }
+body.landing .is-inside .in-aside-hint { margin: 0; font-family: var(--display); font-size: var(--fs-note); line-height: 1.5; color: var(--dim); }
+body.landing .is-inside .in-aside-hint .dome-meta { display: inline; font-family: inherit; font-size: inherit; letter-spacing: 0; text-transform: none; color: inherit; }
+/* the pop-up in the column is narrow: its head stacks the name over the stamp, so the name keeps to one line */
 @media (min-width: 761px) and (min-height: 521px) {
-  body.landing .sheet-p3 { min-height: calc(100vh - 101px); box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; margin: 0; padding: clamp(40px, 6vh, 88px) 0; }
+  body.landing .is-inside dialog.dome-popup .popup-head > div { flex-direction: column; align-items: flex-start; gap: 2px; }
+}
+body.landing .hab-card .dome-caption { display: none; }                                         /* no ground line under the drawing: the plain's own foot is the card's */
+body.landing .hab-card .dome-head .dome-legend, body.landing .hab-card .dome-screen > .dome-legend { display: none; }   /* (the index stands in the column, above) */
+body.landing .hab-card .dome-head .dome-hint { display: none; }                                   /* on a desk the hint stands in the column; a phone shows the head's (below) */
+@media (min-width: 761px) and (min-height: 521px) {
+  body.landing .sheet-p3 { min-height: calc(100vh - 101px); box-sizing: border-box; display: flex; flex-direction: column; justify-content: stretch; margin: 0; padding: 24px 0; }   /* the page's height: the card fills it (its own flex, above) */
+  body.landing .sheet-p3 .hab-card { flex: 1 1 auto; }
   body.landing .hab-card { padding: 34px 44px 40px; }
-  body.landing .hab-card .dome-caption::before { margin: 0 -44px; }
 }
 @media (min-width: 761px) and (max-width: 1100px) and (min-height: 521px) {
   body.landing .hab-card { padding: 26px 28px 30px; }
-  body.landing .hab-card .dome-caption::before { margin: 0 -28px; }
-  body.landing:not(.inner) .hab-card .dome-panel { --room: 72px; }
+  body.landing:not(.inner) .hab-card .dome-screen { grid-template-columns: minmax(0, 1fr) clamp(260px, 34%, 320px); column-gap: 20px; }   /* a narrower desk: a narrower column */
 }
 /* a phone held upright: the page is the dome's — the width of the screen and its height between the header and the bar
    of keys, the head at its top, the dome standing on its ground line at its foot, the pop-up opening over the dome
@@ -381,18 +417,18 @@ body.landing .hab-card .dome-legend { display: none; }                          
   :root body.landing:not(.inner) .hab-card .dome-panel { order: 0; margin: 0 calc(-1 * var(--gutter)); padding: 24px var(--gutter) 56px; }
   body.landing:not(.inner) .hab-card .dome-head { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: 0; padding: 0 0 12px; }
   body.landing:not(.inner) .hab-card .dome-meta.dome-hint { display: block; }                   /* the hint under the name (station.css hides a phone's dome-meta) */
-  body.landing:not(.inner) .hab-card .dome-screen { padding-top: 0; }
-  body.landing:not(.inner) .hab-card .dome-stage { max-height: none; min-height: 0; }
-  body.landing .hab-card .dome-caption::before { margin: 0 calc(-1 * var(--gutter)); }
+  body.landing:not(.inner) .hab-card .dome-screen { display: block; padding-top: 0; }
+  body.landing:not(.inner) .hab-card .dome-stage { width: 100%; max-width: none; height: auto; max-height: none; min-height: 0; }
 }
 
-/* the drawing on the plain: the photograph fills the drawing's box (inside.js, the <image>, sliced to it from its top,
-   so the habitat stands on the ground at the picture's foot and the horizon runs behind its lower rooms), its corners
-   rounded like the cards'; the lines in warm white (the <use>s take it as currentColor), each room a dark panel — the
+/* the drawing on the plain: the photograph stands behind the drawing (inside.js, PLAIN_BOX: its horizon behind the
+   lower rooms, its sky over the dome up to its black, clipped to the drawing's box), its corners rounded like the
+   cards'; the lines in warm white (the <use>s take it as currentColor), each room a dark panel — the
    inside of the habitat — until it is lit. Lit (under the hand, with its pop-up open, with keyboard focus — every layer
    of a room carries its id, inside.js lit): the dark lifts and a warm lamp comes on over the floor, a glow bleeds
    through the walls (the outline blurred, breathing slowly while lit), a bright band sweeps across the room once, its
-   lines turn pure white and its name's tag fills with the same light. The names on tags in the dome's hand, set in the
+   lines turn pure white and its name's tag fills with the same light — and a room that has its picture (five do:
+   inside.js, pic) shows itself in colour, the picture coming in over the room in place of its lines. The names on tags in the dome's hand, set in the
    drawing's units (19, where the dome's 1000-unit box took 11.5), enlarged by the script where the drawing is drawn
    small (inside.js, tagScale) — the tags at the foot straddle the ground line, so the drawing may spill out of its box. */
 body.landing .dome-panel.is-inside { --in-ink: rgba(255,244,232,.86); --in-ink-lit: #ffffff; --in-floor: rgba(26,9,4,.58); --in-floor-lit: rgba(26,9,4,.26); --in-lamp: #ffd27a; --in-tag-ink: #0f1540; }
@@ -400,9 +436,15 @@ body.landing .dome-panel.is-inside { --in-ink: rgba(255,244,232,.86); --in-ink-l
 body.landing .is-inside .dome-screen { overflow: visible; }                                         /* the tags on the ground line hang under the drawing's box */
 body.landing .is-inside .dome-stage { z-index: 2; }                                                  /* over the card's own rule, which the tags on the ground line straddle */
 body.landing .is-inside .dome-svg.inside-svg { overflow: visible; }
-body.landing .is-inside .in-plain { clip-path: inset(0 round 26px); pointer-events: none; }
-body.landing .is-inside .in-ink { color: var(--in-ink); fill: currentColor; stroke: currentColor; stroke-width: 1; stroke-linejoin: round; pointer-events: none; transition: color .25s; }   /* a hair of stroke: the lines keep their weight where the drawing is scaled down */
+body.landing .is-inside .in-plain { pointer-events: none; }                                       /* clipped to the drawing's box by its clipPath (inside.js) */
+body.landing .is-inside .in-dome { fill: var(--in-floor); pointer-events: none; }                  /* the whole dome a dark panel on the plain, the rooms cut out of it (their own floors stand in them, the same dark until lit) */
+body.landing .is-inside .in-ink { color: var(--in-ink); fill: currentColor; stroke: currentColor; stroke-width: 1; stroke-linejoin: round; pointer-events: none; transition: color .25s, opacity .25s; }   /* a hair of stroke: the lines keep their weight where the drawing is scaled down */
 body.landing .is-inside .in-ink-room.lit { color: var(--in-ink-lit); }
+/* a room that has its picture: lit, the picture is there at once (the band sweeps over it) and the room's lines give way
+   to it (the picture carries its own, in white); dark again, the picture goes and the lines are back as quickly */
+body.landing .is-inside .in-pic { opacity: 0; pointer-events: none; transition: opacity .18s ease-out; }
+body.landing .is-inside .in-pic.lit { opacity: 1; transition: opacity .1s ease-out; }
+body.landing .is-inside .in-ink-room.has-pic.lit { opacity: 0; transition: color .25s, opacity .1s ease-out; }
 body.landing .is-inside .in-floor { fill: var(--in-floor); pointer-events: none; transition: fill .3s; }
 body.landing .is-inside .in-floor.lit { fill: var(--in-floor-lit); }
 body.landing .is-inside .in-lamp { fill: url(#in-lamp-light); opacity: 0; pointer-events: none; transition: opacity .25s ease-out; }
@@ -427,21 +469,39 @@ body.landing .is-inside .in-key:hover .dome-pod, body.landing .is-inside .in-key
 body.landing .is-inside dialog.dome-popup.is-hover[open] { z-index: 35; animation: in-pop .22s ease-out both; }
 @keyframes in-pop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
-  body.landing .is-inside .in-floor, body.landing .is-inside .in-lamp, body.landing .is-inside .in-halo, body.landing .is-inside .in-ink, body.landing .is-inside .in-tag rect, body.landing .is-inside .in-tag text { transition: none; }
+  body.landing .is-inside .in-floor, body.landing .is-inside .in-lamp, body.landing .is-inside .in-halo, body.landing .is-inside .in-ink, body.landing .is-inside .in-pic, body.landing .is-inside .in-tag rect, body.landing .is-inside .in-tag text { transition: none; }
   body.landing .is-inside .in-halo.lit { animation: none; opacity: .8; }
   body.landing .is-inside .in-sweep.lit { animation: none; }
   body.landing .is-inside dialog.dome-popup.is-hover[open] { animation: none; }
 }
-/* a phone, or a short screen: the shell edge to edge — the drawing's box the phone's (inside.js, VIEW_PHONE), the plain
-   out to the edges of the screen, the two keys in front of the habitat under its ground line, drawn larger under the
-   thumb — and the names off the picture (the rooms are tapped and the pop-up names them) */
+/* a phone, or a short screen: the whole shell edge to edge — the drawing's box the phone's (inside.js, VIEW_PHONE), the
+   plain out to the edges of the screen, the two keys in front of the habitat under its ground line, drawn larger under
+   the thumb — and the names off the picture (the rooms are tapped and the pop-up names them) */
 @media (max-width: 760px), (max-height: 520px) {
-  body.landing .is-inside .dome-screen { margin: 0 calc(-1 * var(--gutter)); }
-  body.landing:not(.inner) .hab-card .is-inside .dome-stage, body.landing .is-inside .dome-stage { aspect-ratio: 1412 / 920; }
+  body.landing .is-inside .dome-screen { display: block; margin: 0 calc(-1 * var(--gutter)); }
+  body.landing .is-inside .in-aside { display: none; }                                            /* the drawing alone: a room is tapped, and the pop-up opens over the drawing */
+  body.landing .hab-card .dome-head .dome-hint { display: block; }
+  body.landing:not(.inner) .hab-card .is-inside .dome-stage, body.landing .is-inside .dome-stage { width: 100%; height: auto; aspect-ratio: 1420 / 1050; max-height: min(calc(100vh - 160px), 74cqw); }
+  body.landing .is-inside .dome-svg.inside-svg { overflow: hidden; }                              /* nothing of the drawing past the screen's edges */
   body.landing .is-inside .dome-hex-body, body.landing .is-inside .dome-hex:hover .dome-hex-body, body.landing .is-inside .dome-hex.lit .dome-hex-body { transform: none; }   /* the keys are drawn larger by the script (inside.js, PHONE_KEY), not by the stylesheet as the dome's were */
-  body.landing .is-inside .in-plain { clip-path: none; }
   body.landing .is-inside .in-tag { display: none; }
-  body.landing .is-inside .dome-caption::before { margin-left: calc(-1 * var(--gutter)); margin-right: calc(-1 * var(--gutter)); }
+}
+
+/* ---- Today's Mission, in larger type than the dashboard's other panels: the sheet is read across the room */
+body.landing .mission-today .dpanel-title h3 { font-size: 24px; }
+body.landing .mission-no, body.landing .mission-k { font-size: 14px; }
+body.landing .mission-title { font-size: clamp(32px, 3.1vw, 46px); }
+body.landing .mission-q { font-size: 21px; line-height: 1.45; }
+body.landing .mission-part h4 { font-size: 14.5px; }
+body.landing .mission-part p, body.landing .mission-part li { font-size: 18px; line-height: 1.5; }
+body.landing .mission-part .mission-sub { font-size: 13.5px; }
+body.landing .mission-cq { font-size: 22px; }
+body.landing .mission-cq.is-de { font-size: 17px; }
+@media (max-width: 760px) {
+  body.landing .mission-title { font-size: 30px; }
+  body.landing .mission-q { font-size: 19px; }
+  body.landing .mission-part p, body.landing .mission-part li { font-size: 17px; }
+  body.landing .mission-cq { font-size: 20px; }
 }
 
 /* ---- the chat's heading: its name large and bold, a short orange rule, and its welcome under it */
@@ -631,15 +691,30 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
 
 /* ====================================================================== a wider screen */
 @media (min-width: 761px) and (min-height: 521px) {
-  /* P00 is the first screen: the name in a low band across its top, then the room — the Earth, the line, the habitat far
-     above, the sky's pictures and exchanges around them — down to the window's foot; P01, the habitat, is a window tall
-     too, its dome kept to a moderate size so the sheet around and above it has room */
+  /* P00 is the first screen: a low band across its top — the station's name large in its top left corner, the line and
+     the run beside it on its baseline — then the room — the Earth, the line, the habitat far above, the sky's pictures
+     and exchanges around them — down to the window's foot; P01, the habitat, is a window tall too, its dome kept to a
+     moderate size so the sheet around and above it has room */
   body.landing .space { height: max(660px, calc(100vh - 101px)); padding: 0 0 12px; box-sizing: border-box; }
-  body.landing .space-room { margin-top: 12px; }
+  body.landing .space-room { margin-top: 12px; --dome-w: clamp(210px, 32vh, 360px); }
+  /* the Earth in the lower left corner: the photograph of the limb, half again as wide as the room, turned 27° about the
+     centre of its horizon's circle (47.66 % across, 317 % down the picture: the circle of radius 997 about 674 × 1079 in
+     the 1414 × 340 picture) and set well to the left, so that the horizon curves in from the left edge a little under
+     two thirds of the way down and out at the foot before the middle — the globe in the corner, its haze over it, the
+     mesh of dots with it, and the room's breadth left to the way of the message; the picture's ends and its foot lie
+     outside the room, its top is black on black */
+  body.landing .space-earth { left: -108%; bottom: -5%; width: 151.2%; transform-origin: 47.66% 317.4%; transform: rotate(27deg); }
+  /* the habitat in the north-east, its name under its foot, to the right of it — the arc comes in to the foot from the
+     lower left and goes on from it to the upper right (public/sky.js, trajectory), so the name stands clear of both */
+  body.landing .space-dome { left: auto; right: 15%; top: 5%; transform: none; }
+  body.landing .space-tag-dome { right: auto; left: calc(50% + 26px); top: calc(100% + 2px); transform: none; }
+  /* the way a message goes: the trajectory, not the line (public/sky.js sets its paths from where the two stand) */
+  body.landing .space-line { display: none; }
+  body.landing .space-arc { display: block; }
   body.landing .sheet-p1 { height: max(660px, calc(100vh - 101px)); padding: 0 20px 48px; box-sizing: border-box; }   /* the ground line clear of the window's foot */
-  body.landing .sheet-intro { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 28px; padding-top: 14px; }
-  body.landing .sheet-intro .wordmark { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }   /* the name stands in the sheet below; this one is for the page's outline only */
-  body.landing .sheet-intro .run-dates { margin: 0; text-align: left; }
+  body.landing .sheet-intro { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 28px; padding-top: 12px; }
+  body.landing .sheet-intro .wordmark { margin: 0; font-size: clamp(36px, 3.4vw, 50px); line-height: .95; letter-spacing: -.035em; font-weight: 600; color: var(--ink); }   /* MARS!platz : Ground Station, the page's one heading */
+  body.landing .sheet-intro .run-dates { margin: 0; text-align: left; white-space: nowrap; text-wrap: nowrap; }       /* on one line beside the name (a narrower desk lets it wrap, below) */
   body.landing .sheet-intro .tagline { margin: 0; text-align: left; }
   body.landing:not(.inner) .dome-panel { flex: 1 1 auto; margin-top: 10px; }
   body.landing:not(.inner) .dome-stage { flex: 0 0 auto; height: clamp(220px, 36vh, 400px); max-height: 50cqw; min-height: 0; }
@@ -678,7 +753,7 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
 /* a narrower desk: the name's band in one column, the note in one column, the steps as a column on their card as a
    phone has them */
 @media (min-width: 761px) and (max-width: 1100px) and (min-height: 521px) {
-  body.landing .sheet-intro .run-dates { white-space: normal; }
+  body.landing .sheet-intro .run-dates { white-space: normal; text-wrap: balance; }
   body.landing .note-body { grid-template-columns: minmax(0, 1fr); gap: 0; }
   body.landing .steps { grid-template-columns: minmax(0, 1fr); row-gap: 0; padding: 36px 36px 10px; }
   body.landing .step { display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: 20px; padding: 0 0 34px; }
@@ -718,6 +793,7 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
   body.landing .space .sky-who { font-size: 10px; letter-spacing: .05em; }   /* the line in a narrow lane: the word and the callsign */
   body.landing .space .sky-msg { padding: 8px 10px 9px; }
   body.landing .space .dome-nudge { bottom: 8px; margin-left: -23px; }
+  body.landing .space-tag-dome { font-size: 12.5px; }
   :root body.landing:not(.inner) .dome-panel { order: 1; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter) 56px; box-sizing: border-box; display: flex; flex-direction: column;
     height: max(440px, calc(100vh - 149px)); height: max(440px, calc(100svh - 149px - env(safe-area-inset-bottom, 0px))); }   /* the dome's ground clear of the bar of keys */
   body.landing:not(.inner) .dome-head { display: none; }

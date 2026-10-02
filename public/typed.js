@@ -23,7 +23,7 @@
   var slots = [];                                // { on, off, text, li } in reading order
   (function walk(n) {
     for (var c = n.firstChild; c; c = c.nextSibling) {
-      if (c.nodeType === 1) { if (c.getAttribute('aria-hidden') === 'true' || /^(script|style)$/i.test(c.tagName)) continue; walk(c); }
+      if (c.nodeType === 1) { if (c.getAttribute('aria-hidden') === 'true' || /^(script|style)$/i.test(c.tagName) || (c.classList && c.classList.contains('mission-blog'))) continue; walk(c); }   // the key to the Science Blog is the site's, not the screen's (screen.css hides it)
       else if (c.nodeType === 3 && /\S/.test(c.nodeValue)) {
         var text = c.nodeValue, wrap = document.createElement('span'), on = document.createElement('span'), off = document.createElement('span');
         wrap.className = 'tw'; on.className = 'tw-on'; off.className = 'tw-off'; off.textContent = text;

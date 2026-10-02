@@ -1,6 +1,6 @@
 /* MARS!platz — inside the habitat (src/views/pages/cutaway.js; the styles under "inside the habitat" in sheet.css).
  *
- * The cutaway drawing of Habitat One, a part of it in colour under the hand, and beside it what that part is. Until a
+ * The cutaway drawing of Red Dust City, a part of it in colour under the hand, and beside it what that part is. Until a
  * part is chosen the panel says what to do (Click to know what is inside); then one part is selected at a time: the
  * hand over its outline on the drawing, a touch on it, a press on its chip under the drawing (a desk's — a phone has
  * no chips), or the keyboard (the outlines and the chips take focus; Enter or Space selects, the arrow keys move along

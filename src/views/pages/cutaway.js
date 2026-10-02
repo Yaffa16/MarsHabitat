@@ -1,7 +1,7 @@
 'use strict';
 /**
  * Inside the habitat — the page after the note on the landing page: the
- * cutaway drawing of Habitat One that was handed over (public/habitat/
+ * cutaway drawing of Red Dust City that was handed over (public/habitat/
  * cutaway-lines.webp — its three floors under the geodesic dome, in white
  * line on the Mars ground) with, beside it, what each part of it is. The
  * hand over a part of the drawing (or a touch, or the keyboard) shows that
@@ -44,7 +44,7 @@ const MODULES = [
   { id: 'nap', label: 'Nap pod', fig: ['nap-text'], href: '#schedule', poly: [[925, 505], [1150, 505], [1150, 672], [925, 672]],
     about: ['Two sleeping pods, each a bunk closed off from the light and the sound of the habitat. Rest is on the schedule like everything else: the hours are written on the day’s plan, and the crew keep to them as they keep to the rest.'] },
   { id: 'health', label: 'Health station', fig: ['health-text', 'health-more'], href: '#crew', poly: [[1150, 505], [1362, 505], [1426, 560], [1446, 672], [1150, 672]],
-    about: ['The health station: a bed, the monitors and the medicine cabinet, where the health officer looks after the crew — their condition, their steps, what they have eaten — and the life support with them, and where the Daily Health Blog is written each day.'] },
+    about: ['The health station: a bed, the monitors and the medicine cabinet, where the health officer looks after the crew — their condition, their steps, what they have eaten — and the life support with them, and where the Health Report is written each day.'] },
   { id: 'water', label: 'Water recycling system', fig: ['recycling-text', 'recycling-more'], href: '#habitat', poly: [[195, 678], [600, 678], [600, 836], [195, 836]], about: [ABOUT.recycling] },
   { id: 'power', label: 'Power generation', fig: ['power-text', 'generator-text'], href: '#habitat', poly: [[915, 690], [1215, 690], [1215, 836], [915, 836]], about: [ABOUT.power, ABOUT.generator] },
 ];

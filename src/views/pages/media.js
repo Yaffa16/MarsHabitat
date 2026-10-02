@@ -201,11 +201,29 @@ function cloudDays(T, items, opts = {}) {
     </div>`;
 }
 
-/** The cloud folder as a grid: every image, newest first, each opening the
- *  original. Drawn only when the bridge is configured; if the folder is
- *  empty or the cloud has not answered yet, it says so rather than vanishing. */
+/** The cloud folder as a grid: every image, newest first, each opening in
+ *  place — in the lightbox, a pop-up over the page with the picture large,
+ *  its time, the way to the previous and the next and to the original
+ *  (public/cloud.js; without JavaScript the tile opens the original in a new
+ *  tab, as it always did). Drawn only when the bridge is configured; if the
+ *  folder is empty or the cloud has not answered yet, it says so rather than
+ *  vanishing. */
 function cloudGrid(T, cloud, opts) {
-  return `<section class="logpage-day media-day cloud-gallery" id="gallery" data-version="${esc(cloud.snapshot.version || '')}" data-poll="${(Number(cloud.snapshot.checkSeconds) || 20) * 1000}">${cloudGridInner(T, cloud, opts)}</section>`;
+  return `<section class="logpage-day media-day cloud-gallery" id="gallery" data-version="${esc(cloud.snapshot.version || '')}" data-poll="${(Number(cloud.snapshot.checkSeconds) || 20) * 1000}">${cloudGridInner(T, cloud, opts)}</section>
+    ${lightbox(T)}`;
+}
+
+/** The lightbox: a pop-up over the page for one picture of the gallery — the picture as large as the window allows, its
+ *  time under it and a link to the original, a cross to close it, arrows to the previous and the next (the arrow keys
+ *  too; Escape and a click beside the picture close it). Empty until a tile is clicked (public/cloud.js fills it). */
+function lightbox(T) {
+  return `<dialog class="lightbox" id="lightbox" aria-label="${esc(T('photograph'))}">
+      <div class="lb-box">
+        <button type="button" class="lb-btn lb-prev" data-lb="prev" aria-label="${esc(T('Previous'))}">‹</button>
+        <figure class="lb-fig"><button type="button" class="lb-btn lb-close" data-lb="close" aria-label="${esc(T('Close'))}">×</button><img class="lb-img" alt=""><figcaption class="lb-cap"><span class="lb-when"></span></figcaption></figure>
+        <button type="button" class="lb-btn lb-next" data-lb="next" aria-label="${esc(T('Next'))}">›</button>
+      </div>
+    </dialog>`;
 }
 
 /** The grid's inside — the head and the pictures, day by day — on its own so

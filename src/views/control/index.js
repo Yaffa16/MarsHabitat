@@ -718,13 +718,13 @@ function page(ctx, model) {
       </div>`,
     science: `
       <div class="officer-stack">
-        ${reportBlock(officers.science, 'science', 'Daily Science Findings',
+        ${reportBlock(officers.science, 'science', 'Daily Mission Report',
           'Samples, measurements, the greenhouse, anything the habitat did that was worth recording.', day, tpl.SCIENCE, 'science', 1, edits['report:science'], drafts['report:science'])}
         ${moodBlock(officers.science, 2, edits[`mood:${officers.science.id}`])}
       </div>`,
     health: `
       <div class="officer-stack">
-        ${reportBlock(officers.health, 'health', 'Daily Health Blog', '', day, tpl.HEALTH, 'health', 1, edits['report:health'], drafts['report:health'])}
+        ${reportBlock(officers.health, 'health', 'Health Report', '', day, tpl.HEALTH, 'health', 1, edits['report:health'], drafts['report:health'])}
         ${moodBlock(officers.health, 2, edits[`mood:${officers.health.id}`])}
       </div>`,
     habitat: `

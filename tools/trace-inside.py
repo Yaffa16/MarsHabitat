@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 The habitat in section — the linework of public/habitat/inside.svg, traced
-from the picture handed over (the cutaway of Habitat One: white lines on
+from the picture handed over (the cutaway of Red Dust City: white lines on
 Mars-brown paper, 1536 x 1024).
 
     python3 tools/trace-inside.py path/to/cutaway.png public/habitat/inside.svg
@@ -34,7 +34,7 @@ ROOMS = {
     'crew':       [(610, 515), (935, 515), (975, 560), (975, 660), (935, 710), (610, 710), (600, 650), (600, 585)],
     'nap':        [(1050, 530), (1270, 530), (1300, 565), (1300, 660), (1270, 695), (1050, 695), (1020, 660), (1020, 565)],
     'recycling':  [(395, 728), (690, 728), (725, 775), (660, 862), (285, 862), (330, 775)],
-    'power':      [(870, 728), (1125, 728), (1125, 862), (860, 862), (830, 775)],
+    'power':      [(870, 728), (1138, 728), (1199, 790), (1199, 862), (860, 862), (830, 775)],
 }
 MARGIN = 16    # a path counts as a room's when its box lies inside the room's box, this much out
 

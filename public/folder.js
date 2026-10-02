@@ -5,9 +5,10 @@
  * each, their keys in three named rows; on a phone the rows are one at a
  * time, chosen by a segmented control of the three names. A press on a key
  * brings that folder to the front: its panel shows, the others wait. A link into one
- * of the panels (#habitat, #crew, #galley, #schedule — from the dome's keys,
+ * of the panels (#habitat, #crew, #galley, #schedule — from the habitat's rooms,
  * the foot, or an address someone typed) does the same and brings the stack
- * into view. The arrow keys walk the tabs; Home and End go to the ends.
+ * into view; a link to something inside a panel (#sensors, #stores, #power)
+ * opens its folder and lands on it. The arrow keys walk the tabs; Home and End go to the ends.
  * Nothing is remembered: every page opens on the first folder, the Habitat.
  */
 (function () {
@@ -59,14 +60,22 @@
   // phone, under the bar that stays at the top) — the browser's own jump to the panel would put the tabs above the top of
   // the window, so the stack is placed again after it (once the page has loaded, and once more a moment later, for a
   // browser that jumps late)
+  // A link to something inside a panel (#sensors, #stores, #power — the habitat's instruments, the stores and the power
+  // inside the Habitat folder) opens that folder too, and lands on the thing itself.
   function fromHash() {
     var id = (location.hash || '').slice(1);
-    if (!id || !tabOf(id)) return;
-    front(id);
+    if (!id) return;
+    var el = null, folder = id;
+    if (!tabOf(id)) {
+      el = document.getElementById(id); var page = el && el.closest ? el.closest('.fpage[data-folder]') : null;
+      if (!page) return;
+      folder = page.getAttribute('data-folder');
+    }
+    front(folder);
     var body = stack.querySelector('.folder-body'); if (body) body.scrollTop = 0;
     var bar = document.querySelector('.ticker'), room = 28;
     if (bar && getComputedStyle(bar).position === 'sticky') room = bar.getBoundingClientRect().height + 9;
-    var top = stack.getBoundingClientRect().top + window.pageYOffset - room;
+    var top = (el || stack).getBoundingClientRect().top + window.pageYOffset - room;
     window.scrollTo(0, Math.max(0, top));
   }
   window.addEventListener('hashchange', fromHash);

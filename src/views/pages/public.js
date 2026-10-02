@@ -485,7 +485,7 @@ function ticker(ctx, { today } = {}) {
     cells.push(`${T('Next:')} <b id="tk-next">${nextTask ? say(nextTask) : T('nothing more today')}</b>`);
   }
   cells.push(`${T('Habitat:')} <b id="tk-hab">${T('awaiting reading')}</b>`);   // the one-way signal is read where a message is written, and nowhere else
-  if (!over) cells.push(`${T('Communication window daily')} <b>${esc(LP.windowWhen(ctx))}</b>`);   // when the crew answer — "16:00 CEST (Berlin time)" (landing.js)
+  if (!over) cells.push(`${T('Communication window daily')} <b>${esc(LP.windowWhen(ctx))}</b>`);   // when the crew answer — "19:00 CEST" (landing.js)
   const line = cells.map((c) => `<span class="tk-cell">${c}</span>`).join('<span class="tk-sep">·</span>');
   /* The header of every public page, after the design handoff's reference sheet: a row with the wordmark (the way home),
      the run's badge — the countdown before it, the sol during it —, the habitat's clock, the theme and language switches
@@ -699,7 +699,7 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
   </script>
   ${LP.space(ctx, { sky: habitatSky(ctx, { recent, cloud }) })}
   ${LP.note(ctx)}
-  <section class="sheet sheet-p3 habitat-page" id="inside" aria-label="${esc(T('The habitat'))}" data-page>
+  <section class="sheet sheet-p3 habitat-page" id="inside" aria-label="${esc(T('What’s inside the habitat'))}" data-page>
     <div class="hab-card">
       ${habitatInside(ctx, { today, crew, recent, power, counts, crewFigures })}
     </div>
@@ -1304,13 +1304,13 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
       </section>`
     : '';
 
-  const habitat = dpanel({ id: 'habitat', title: T('Habitat'), meta: T('Live sensors and Habitat measurements'), span: 12, cls: 'compact',
+  const habitat = dpanel({ id: 'habitat', title: T('Sensors'), meta: T('Live sensors and Habitat measurements'), span: 12, cls: 'compact',
     live: T('The readings refresh by themselves as the sensors report') }, `
     <!-- The habitat's instruments. The station server polls the habitat sensor
          (through Home Assistant — or the external node, src/lib/critical.js)
          and stores every reading in its own database; /public/habitat.js draws
          these tiles from /api/habitat/data and refreshes on the station's cycle. -->
-    <div class="hbt">
+    <div class="hbt" id="sensors">
       <div class="bento" id="hbt-bento" hidden>
         <section class="tile t-co2">
           <h3>${T('Carbon dioxide')}</h3>
@@ -1369,15 +1369,15 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
         </section>${vizTile(T, 'radar', { n: crew.length })}
       </div>
       <div class="bento aux">
-        <section class="tile t-res">
+        <section class="tile t-res" id="stores">
           <h3>${T('Resources')}</h3>
           <span class="sub">${T('Carried in · never resupplied')}</span>
           ${inventoryGauges(inventory, { cells: true, T })}
-        </section>
-        <section class="tile t-pwr">
+        </section>${vizTile(T, 'orbit')}
+        <section class="tile t-pwr" id="power">
           <h3>${T('Power consumed')}</h3>
           <div id="pwr-live">${powerTileInner(ctx, power)}</div>
-        </section>${vizTile(T, 'orbit')}
+        </section>
       </div>
       <div id="hbt-notes"></div>
     </div>
@@ -1398,7 +1398,7 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
     </div>`);
 
   /* ---- the three daily blogs, the front row of the stack of folders: the science
-     officer's Daily Science Findings, the health officer's Daily Health Blog
+     officer's Daily Mission Report, the health officer's Health Report
      (the day's health activities) and the Commander Blog — which is the
      commanding officer's Daily Blog, under the name the station gives it.
      All three are written in mission control (the Science, Health and
@@ -1447,10 +1447,10 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
     posts.length ? `<div class="blog-scroll" tabindex="0" role="region" aria-label="${esc(title)}">${
       posts.map((html) => `<div class="card log-entry"><div class="card-body entry-post">${html}</div></div>`).join('')}</div>`
     : `<div class="empty">${T(empty)} ${nowWritten ? T('today') : `SOL ${day3}`}${pre && !nowWritten ? ` — ${T('occupied from')} ${esc(m.startLabel)}` : ''}</div>`);
-  const blogScience = blogPanel({ id: 'blog-science', title: T('Daily Science Findings'),
-    posts: reportToday('SCIENCE'), empty: 'No science findings yet for' });
-  const blogHealth = blogPanel({ id: 'blog-health', title: T('Daily Health Blog'),
-    posts: reportToday('HEALTH'), empty: 'No health blog yet for' });
+  const blogScience = blogPanel({ id: 'blog-science', title: T('Daily Mission Report'),
+    posts: reportToday('SCIENCE'), empty: 'No mission report yet for' });
+  const blogHealth = blogPanel({ id: 'blog-health', title: T('Health Report'),
+    posts: reportToday('HEALTH'), empty: 'No health report yet for' });
   const blogCommander = blogPanel({ id: 'blog-commander', title: T('Commander Blog'),
     posts: commanderToday, empty: 'No commander blog yet for' });
 
@@ -1560,6 +1560,10 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
         <div class="mission-parts">${part('morning', 'Morning')}${part('afternoon', 'Afternoon')}${part('eva', 'EVA')}</div>
         <div class="mission-foot">
           ${community}
+          <a class="glance-link mission-blog" href="#blog-science" title="${esc(T('Daily Mission Report'))}">
+            <span class="glance-link-title">${T('Mission Report')}</span>
+            <span class="glance-link-arrow">-&gt;</span>
+          </a>
         </div>
       </div>
     </section>`;
@@ -1578,7 +1582,7 @@ function dashLive(T) {
 /* Two instruments without a reading among the habitat's tiles — visual elements in the bento, each on a row of its own
    (aura.css draws them, public/live.js moves what moves in them): Astronauts tracked, at the end of the sensors' third
    row — a radar with a sweep going round, rings and a rim of ticks, and inside it one dot an astronaut (`n`, the crew's
-   number), each wandering about the disc and lit as the sweep passes over it; the orbit beside the stores and the power
+   number), each wandering about the disc and lit as the sweep passes over it; the orbit between the stores and the power
    — a wireframe globe turning, a satellite going round it on a dotted orbit. Decoration, nothing more: hidden from
    assistive technology, not one figure in them (the dots are as many as the crew, which the head's figure says in
    words); the readings are the other tiles'. */
@@ -1646,17 +1650,17 @@ function dashboard(ctx, args) {
     ${missionPanel}
     <div class="dash-grid">
       ${folder(T, [
-        { label: T('Habitat'), tabs: [
-          { id: 'habitat', label: T('Habitat'), html: habitat },
+        { label: T('Sensors'), tabs: [
+          { id: 'habitat', label: T('Sensors'), html: habitat },
           { id: 'trends', label: T('Trends'), html: trends } ] },
-        { label: T('Today'), tabs: [
+        { label: T('Daily Life'), tabs: [
           { id: 'schedule', label: T('Today’s Schedule'), html: schedule },
           { id: 'galley', label: T('Today’s Meal'), html: galley },
           { id: 'crew', label: T('Crew Moods'), html: crewPanel } ] },
         { label: T('Blogs'), tabs: [
           { id: 'blog-commander', label: T('Commander Blog'), html: blogCommander },
-          { id: 'blog-health', label: T('Daily Health Blog'), html: blogHealth },
-          { id: 'blog-science', label: T('Daily Science Findings'), html: blogScience } ] },
+          { id: 'blog-health', label: T('Health Report'), html: blogHealth },
+          { id: 'blog-science', label: T('Daily Mission Report'), html: blogScience } ] },
       ], { label: `${T('Mission dashboard')} · SOL ${day3} · ${shortDay(blogDate)}` })}
     </div>
   </section>`;

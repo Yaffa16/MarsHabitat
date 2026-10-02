@@ -13,12 +13,17 @@
  * before), set MISSION_OVERRIDE=true together with MISSION_START and
  * MISSION_END. Without MISSION_OVERRIDE those two variables do nothing, and
  * the server says so in its log at start.
+ *
+ * The habitat's name is a fact of the piece too — Red Dust City, as the ZKM
+ * announces it — and lives here as well: MISSION_NAME in .env is read only
+ * for a rehearsal (with MISSION_OVERRIDE), so that an old line cannot call
+ * the habitat by a name it no longer has.
  */
 const RUN = Object.freeze({
   START: '2026-10-15',
   END: '2026-10-27',
   TZ: 'Europe/Berlin',
-  NAME: 'MARS — HABITAT ONE',
+  NAME: 'MARS — RED DUST CITY',
   DAYS: 13,
 });
 
@@ -32,7 +37,7 @@ function dates() {
     return { start: s, end: e, tz: process.env.MISSION_TZ || RUN.TZ, name: process.env.MISSION_NAME || RUN.NAME, override: true };
   }
   return {
-    start: RUN.START, end: RUN.END, tz: RUN.TZ, name: process.env.MISSION_NAME || RUN.NAME, override: false,
+    start: RUN.START, end: RUN.END, tz: RUN.TZ, name: RUN.NAME, override: false,
     // A stale or stray date in the environment is worth a line in the log.
     ignored: (s && s !== RUN.START) || (e && e !== RUN.END) ? { start: s, end: e } : null,
   };

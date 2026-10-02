@@ -89,13 +89,13 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
   const day = r.day;
   // The three blogs of the day, each a card of its own: the Commander Blog
   // (the commanding officer's entry, with what they sent out that day),
-  // the Daily Science Findings and the Daily Health Blog (the reports).
+  // the Daily Mission Report and the Health Report (the reports).
   const findings = day ? day.notes.filter((x) => x.published_at && x.kind === 'SCIENCE') : [];
   const health = day ? day.notes.filter((x) => x.published_at && x.kind === 'HEALTH') : [];
   const posts = [
     ...written.map((e) => ({ title: 'Commander Blog', html: MV.entryHtml(e.body, (r.media || []).filter((x) => x.crew_id === e.crew_id), { lookup: mediaLookup, T }) })),
-    ...findings.map((x) => ({ title: 'Daily Science Findings', html: MV.entryHtml(x.body, [], { lookup: mediaLookup, T }) })),
-    ...health.map((x) => ({ title: 'Daily Health Blog', html: MV.entryHtml(x.body, [], { lookup: mediaLookup, T }) })),
+    ...findings.map((x) => ({ title: 'Daily Mission Report', html: MV.entryHtml(x.body, [], { lookup: mediaLookup, T }) })),
+    ...health.map((x) => ({ title: 'Health Report', html: MV.entryHtml(x.body, [], { lookup: mediaLookup, T }) })),
   ];
   // one state per officer: the last filed that day
   const lastMood = new Map();

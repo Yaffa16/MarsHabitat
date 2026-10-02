@@ -294,8 +294,36 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
   const rests = tasks.filter((t) => /\b(sleep|rest|nap|lights out|bed|wake|schlaf|ruhe)\b/i.test(t.label));
   const restLine = rests.length ? `${pre ? T('On day 01’s schedule') : T('On today’s schedule')}: ${rests.map((t) => `${t.time} ${t.label}`).join(' · ')}.` : T('No rest is written on today’s schedule.');
 
+  // The habitat's sensors: the newest reading the station holds, while it is current (critical.js keeps the rows and says
+  // how old a reading may be); else when the last one was.
+  let sensors = { text: T('No reading yet.'), more: '' };
+  try {
+    const critical = require('../../lib/critical');
+    const last = critical.rows(2).pop();
+    if (last) {
+      const snap = { staleMs: critical.source() === 'home-assistant' ? Math.max(5 * 60 * 1000, 3 * critical.CFG.habitatPollMs) : 30 * 60 * 1000 };
+      const at = (() => { try { return new Intl.DateTimeFormat('en-GB', { timeZone: m.timezone, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(last.t)); } catch { return ''; } })();
+      if (Date.now() - last.t <= snap.staleMs) {
+        const bits = [];
+        if (last.co2 != null) bits.push(`CO₂ ${Math.round(last.co2)} ppm`);
+        if (last.temp != null) bits.push(`${Number(last.temp).toFixed(1)} °C`);
+        if (last.hum != null) bits.push(`${Math.round(last.hum)} %`);
+        if (last.pres != null) bits.push(`${Math.round(last.pres)} hPa`);
+        if (last.iaq != null) bits.push(`IAQ ${Math.round(last.iaq)}`);
+        sensors = { text: `${bits.join(' · ')}.`, more: at ? `${T('Read at')} ${at}.` : '' };
+      } else sensors = { text: `${T('No current reading')}.`, more: at ? `${T('The last was at')} ${at}.` : '' };
+    }
+  } catch { /* no readings table yet */ }
+  // The day's scientific mission (content/missions.json): its number and title, and its central question.
+  let mission = { text: `${T('No mission filed for')} SOL ${sol}.`, more: '' };
+  try {
+    const ms = require('../../lib/content').missionForDay(pre ? 1 : m.clampedDay);
+    if (ms) mission = { text: `${pre ? `${T('Day 01’s mission')}: ` : ''}${T('Mission No.')} ${ms.no} · ${ms.title}.`, more: ms.question ? `${ms.question}` : '' };
+  } catch { /* no missions file */ }
+
   return {
     stamp, sol, phase: m.phase,
+    sensors, mission,
     crew:       { text: `${name(comm)} — ${cond(comm)} · ${name(sci)} — ${cond(sci)} · ${name(health)} — ${cond(health)}.`, more: `${doing}${next}` },
     kitchen:    { text: mealLine, more: storeLine('food', '') },
     nap:        { text: restLine, more: '' },
@@ -399,7 +427,7 @@ function labelSvg(h, T) {
 /* What each part of the habitat is — the still text of each pop-up. The
    live sentences come from figures(). */
 const ABOUT = {
-  crew: 'Three crew members are always in the habitat for the thirteen days of the run: a commanding officer who relays every message from Earth, a science officer who runs the experiments and watches the habitat’s systems, and a health officer who keeps the crew fit and the life support in order. Between them they write three blogs a day — the Commander Blog, the Daily Science Findings and the Daily Health Blog — and file their condition from inside.',
+  crew: 'Three crew members are always in the habitat for the thirteen days of the run: a commanding officer who relays every message from Earth, a science officer who runs the experiments and watches the habitat’s systems, and a health officer who keeps the crew fit and the life support in order. Between them they write three blogs a day — the Commander Blog, the Daily Mission Report and the Health Report — and file their condition from inside.',
   science: 'The science bench: the habitat’s own experiments — samples, cultures, readings — and the daily science findings the science officer writes up. The sensor node beside it measures temperature, humidity, carbon dioxide and more every twenty minutes.',
   recycling: 'Nothing is thrown away. Used water passes through a planted filter bed, a screw press and a settling funnel and comes back as water for the plants and the crew. This loop decides how long the stores last.',
   aeroponics: 'Three shelves of plants grown without soil, their roots in nutrient-rich water — the habitat’s fresh food and part of its air. What grows here is counted with the food rations.',
@@ -445,7 +473,7 @@ function habitatDome(ctx, args) {
   // (Click on a desk, Tap on a touch screen: sheet.css shows the one that applies)
   const meta = args.hint
     ? `<span class="dome-meta dome-hint"><span class="dome-hint-click">${T('Click a key to know what is inside.')}</span><span class="dome-hint-tap">${T('Tap a key to know what is inside.')}</span></span>`
-    : '<span class="dome-meta">HABITAT ONE · R75-2</span>';
+    : '<span class="dome-meta">RED DUST CITY · R75-2</span>';
   return `
   <section class="dome-panel${sky && sky.on ? ' has-sky' : ''}${line ? ' has-line' : ''}" id="habitat-dome" aria-label="${esc(T('The habitat'))}">
     <header class="dome-head">

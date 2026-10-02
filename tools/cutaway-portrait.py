@@ -1,4 +1,4 @@
-"""The cutaway drawing of Habitat One laid out for a phone held upright: the same rooms, cut from the drawing handed over
+"""The cutaway drawing of Red Dust City laid out for a phone held upright: the same rooms, cut from the drawing handed over
 (1536 x 1024, three floors under a wide dome) and set again under a dome as wide as the picture, on five floors — the
 communication station under the crown, the growing shelves and the science bench at ground level inside the dome, and
 below the ground, dug in, the kitchen with the sleeping pods, the lounge with the health station, and the water loop with

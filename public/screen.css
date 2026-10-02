@@ -86,6 +86,7 @@ body.screen.screen-trends .tchart-svg { max-height: calc(100vh - 220px); width: 
 body.screen.screen-trends #trends .dpanel-body { min-height: 0; }
 /* today's mission: the three parts fill the width, one under the other upright */
 body.screen.screen-mission .mission-today { padding: 26px 34px 28px; }
+body.screen .mission-blog { display: none; }                                                        /* the key to the Science Blog is the site's: nothing to press on a screen */
 body.screen.screen-mission .mission-lead { max-width: none; }
 body.screen.screen-mission .mission-title { font-size: clamp(28px, 2.6vw, 40px); }
 body.screen.screen-mission .mission-q { font-size: 18px; }

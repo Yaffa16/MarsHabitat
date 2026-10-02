@@ -52,7 +52,6 @@ const D = {
   'Language': ['Sprache', 'Langue'],
 
   // ---- masthead
-  'Communication Station': ['Kommunikationsstation', 'Station de communication'],
   'the only way to reach the crew': ['der einzige Weg, die Crew zu erreichen', 'le seul moyen de joindre l’équipage'],
   'the only way to reach the crew, once they are inside':
     ['der einzige Weg, die Crew zu erreichen, sobald sie drinnen ist', 'le seul moyen de joindre l’équipage, une fois à l’intérieur'],
@@ -481,16 +480,16 @@ const D = {
   'Nothing has been sent out of the habitat yet': ['Aus dem Habitat wurde noch nichts gesendet', 'Rien n’est encore sorti de l’habitat'],
   'occupied from': ['bewohnt ab', 'occupé à partir du'],
   // the three daily blogs under the trend graph (src/views/pages/public.js)
-  'Daily Science Findings': ['Tägliche wissenschaftliche Befunde', 'Observations scientifiques quotidiennes'],
-  'Daily Health Blog': ['Täglicher Gesundheitsblog', 'Blog santé quotidien'],
+  'Daily Mission Report': ['Täglicher Missionsbericht', 'Rapport de mission quotidien'],
+  'Health Report': ['Gesundheitsbericht', 'Rapport de santé'],
   'Commander Blog': ['Commander-Blog', 'Blog du commandement'],
   'ALL BLOGS': ['ALLE BLOGS', 'TOUS LES BLOGS'],
   'blog posts': ['Blogbeiträge', 'billets de blog'],
   'Nothing written in this blog yet': ['In diesem Blog steht noch nichts', 'Rien d’écrit dans ce blog pour l’instant'],
-  'Three blogs come out of the habitat each day: the Commander Blog, the Daily Science Findings and the Daily Health Blog. Nobody edits them on the way out.': ['Jeden Tag kommen drei Blogs aus dem Habitat: der Commander-Blog, die täglichen wissenschaftlichen Befunde und der tägliche Gesundheitsblog. Niemand bearbeitet sie auf dem Weg nach draußen.', 'Chaque jour, trois blogs sortent de l’habitat : le blog du commandement, les observations scientifiques quotidiennes et le blog santé quotidien. Personne ne les modifie en chemin.'],
+  'Three blogs come out of the habitat each day: the Commander Blog, the Daily Mission Report and the Health Report. Nobody edits them on the way out.': ['Jeden Tag kommen drei Blogs aus dem Habitat: der Commander-Blog, der tägliche Missionsbericht und der Gesundheitsbericht. Niemand bearbeitet sie auf dem Weg nach draußen.', 'Chaque jour, trois blogs sortent de l’habitat : le blog du commandement, le rapport de mission quotidien et le rapport de santé. Personne ne les retouche en chemin.'],
   // each is followed by the day it speaks of: "… for SOL 005"
-  'No science findings yet for': ['Noch keine wissenschaftlichen Befunde für', 'Pas encore d’observations scientifiques pour'],
-  'No health blog yet for': ['Noch kein Gesundheitsblog für', 'Pas encore de blog santé pour'],
+  'No mission report yet for': ['Noch kein Missionsbericht für', 'Pas encore de rapport de mission pour'],
+  'No health report yet for': ['Noch kein Gesundheitsbericht für', 'Pas encore de rapport de santé pour'],
   'No commander blog yet for': ['Noch kein Commander-Blog für', 'Pas encore de blog du commandement pour'],
   'No schedule filed yet': ['Noch kein Plan erfasst', 'Aucun programme saisi pour l’instant'],
 
@@ -604,6 +603,12 @@ const D = {
     ['Jeder veröffentlichte Nachrichtenwechsel bleibt hier. Über den Lauf hinweg wächst das Archiv zu etwas, das weder die Künstlerinnen und Künstler noch das Publikum allein geschrieben haben: eine Aufzeichnung dessen, was Menschen auf der Erde die drei Crewmitglieder im Habitat fragen wollten, und wie sich diese Fragen im Verlauf der Mission verschoben.',
      'Chaque échange publié reste ici. Au fil de la période, l’archive s’accumule en quelque chose que ni les artistes ni le public n’ont écrit seuls : la trace de ce que des gens sur Terre ont voulu demander aux trois membres d’équipage dans l’habitat, et de la façon dont ces questions ont changé au cours de la mission.'],
   'The readings': ['Die Messwerte', 'Les mesures'],
+  'The crew are not the habitat’s only inhabitants. Three live crickets share it with them, a robot dog goes with them on the EVA, and an emotional support robot keeps them company; on the hydroponic shelves the fresh food grows without soil, its roots in nutrient water. Each is cared for, counted and written into the record like the people — the mission’s question of who and what gets cared for begins at home.':
+    ['Die Crew ist nicht die einzige Bewohnerin des Habitats. Drei lebende Grillen teilen es mit ihr, ein Roboterhund begleitet sie auf die EVA, und ein emotionaler Unterstützungsroboter leistet ihr Gesellschaft; in den Hydroponik-Regalen wächst das frische Essen ohne Erde, die Wurzeln im Nährwasser. Jedes von ihnen wird versorgt, gezählt und wie die Menschen ins Protokoll geschrieben — die Frage der Mission, wer und was Fürsorge bekommt, beginnt zu Hause.',
+     'L’équipage n’est pas le seul habitant de l’habitat. Trois grillons vivants le partagent avec lui, un chien robot l’accompagne en EVA, et un robot de soutien émotionnel lui tient compagnie ; sur les étagères hydroponiques, la nourriture fraîche pousse sans terre, les racines dans l’eau nutritive. Chacun est soigné, compté et inscrit au registre comme les humains — la question de la mission, qui et quoi reçoit des soins, commence à la maison.'],
+  'The More than Human room of the habitat drawing on the first page leads here; what the crickets, the dog, the robot and the plants are doing today is in the crew’s entries.':
+    ['Der Raum Mehr als menschlich in der Habitat-Zeichnung auf der ersten Seite führt hierher; was die Grillen, der Hund, der Roboter und die Pflanzen heute tun, steht in den Einträgen der Crew.',
+     'La pièce Plus qu’humain du dessin de l’habitat, sur la première page, mène ici ; ce que font aujourd’hui les grillons, le chien, le robot et les plantes est dans les entrées de l’équipage.'],
   'Messages sent to space': ['Nachrichten ins All', 'Des messages envoyés dans l’espace'],
   'Every message the crew answer is also beamed into space, by radio, through SpaceSpeak — a small network of transmitters around the world that sends short messages out of the atmosphere on request. The station hands the message over the moment its reply is published; SpaceSpeak encodes it and transmits it on a frequency between 2.4 and 5 gigahertz, a band chosen because it passes through the air and its water vapour almost untouched, from a directional antenna that gathers the transmitter’s power into a narrow cone pointed at the sky. Radio waves are light: they leave at the speed of light, 299,792 km every second.':
     ['Jede Nachricht, die die Crew beantwortet, wird außerdem per Funk ins All gesendet — über SpaceSpeak, ein kleines Netz von Sendern rund um die Welt, das kurze Nachrichten auf Bestellung aus der Atmosphäre hinausschickt. Die Station übergibt die Nachricht in dem Moment, in dem ihre Antwort veröffentlicht wird; SpaceSpeak kodiert sie und sendet sie auf einer Frequenz zwischen 2,4 und 5 Gigahertz — einem Band, das gewählt ist, weil es Luft und Wasserdampf fast ungehindert durchdringt — über eine Richtantenne, die die Leistung des Senders zu einem schmalen, gen Himmel gerichteten Kegel bündelt. Radiowellen sind Licht: Sie brechen mit Lichtgeschwindigkeit auf, 299.792 km in jeder Sekunde.',
@@ -807,7 +812,7 @@ const D = {
   'what is inside, and what it is doing now': ['was drinnen ist, und was es gerade tut', 'ce qu’il y a dedans, et ce que cela fait maintenant'],
   'The figures refresh by themselves': ['Die Zahlen aktualisieren sich von selbst', 'Les chiffres se rafraîchissent d’eux-mêmes'],
   'The habitat as a dome, with what is inside it': ['Das Habitat als Kuppel, mit dem, was darin ist', 'L’habitat en dôme, avec ce qu’il contient'],
-  'HABITAT ONE': ['HABITAT EINS', 'HABITAT UN'],
+  'RED DUST CITY': ['RED DUST CITY', 'RED DUST CITY'],
   'press a hexagon to open its panel': ['ein Sechseck drücken, um sein Feld zu öffnen', 'appuyer sur un hexagone pour ouvrir son panneau'],
   'Science lab': ['Wissenschaftslabor', 'Laboratoire scientifique'],
   'Plants': ['Pflanzen', 'Plantes'],
@@ -828,6 +833,10 @@ const D = {
     'Der Uplink. Jede auf dieser Station geschriebene Nachricht überquert die Distanz zum Habitat und wartet auf die Kommandantin, die sie von innen liest und beantwortet; die Antwort kommt auf jedem geöffneten Telefon zurück aufs Board. Die reale Lichtlaufzeit zwischen Erde und Mars steht neben dem Composer.',
     'La liaison. Chaque message écrit sur cette station traverse la distance jusqu’à l’habitat et attend le commandant, qui le lit et y répond depuis l’intérieur ; la réponse revient sur le tableau de chaque téléphone ouvert. Le vrai temps-lumière entre la Terre et Mars est affiché à côté du composeur.'],
   'Hydroponics': ['Hydroponik', 'Hydroponie'],
+  'More than Human': ['Mehr als menschlich', 'Plus qu’humain'],
+  'Read More than Human on the About page': ['Mehr als menschlich auf der Über-Seite lesen', 'Lire Plus qu’humain sur la page À propos'],
+  'Open the Daily Schedule': ['Den Tagesplan öffnen', 'Ouvrir le programme du jour'],
+  'Ground Station': ['Bodenstation', 'Station au sol'],
   'Communication': ['Kommunikation', 'Communication'],
   'Power generator': ['Stromgenerator', 'Générateur électrique'],
   'press a part of the habitat to see what is happening in it': ['einen Teil des Habitats drücken, um zu sehen, was darin geschieht', 'appuyer sur une partie de l’habitat pour voir ce qui s’y passe'],
@@ -843,6 +852,55 @@ const D = {
   'Tap a key to know what is inside.': ['Tippe auf eine Taste, um zu erfahren, was drinnen ist.', 'Touchez une touche pour savoir ce qu’il y a à l’intérieur.'],
   // the habitat in section — the cutaway drawing, every room a key, the hint in its head (src/views/pages/inside.js, habitatInside)
   'Point at a room to know what is inside.': ['Zeige auf einen Raum, um zu erfahren, was drinnen ist.', 'Pointez une pièce pour savoir ce qu’il y a à l’intérieur.'],
+  'What’s inside the habitat': ['Was im Habitat ist', 'Ce qu’il y a dans l’habitat'],
+  'Daily Life': ['Alltag', 'Vie quotidienne'],
+  'Science Mission': ['Wissenschaftsmission', 'Mission scientifique'],
+  'Resource Management': ['Ressourcenmanagement', 'Gestion des ressources'],
+  'Sensors': ['Sensoren', 'Capteurs'],
+  'Open the Media Gallery': ['Die Mediengalerie öffnen', 'Ouvrir la galerie médias'],
+  // what each part of the habitat is — two lines each (src/views/pages/inside.js, ROOMS and KEYS)
+  'The habitat’s other inhabitants: three live crickets, a robot dog and an emotional support robot — and the hydroponic shelves, where the fresh food grows without soil.':
+    ['Die anderen Bewohner des Habitats: drei lebende Grillen, ein Roboterhund und ein emotionaler Unterstützungsroboter — und die Hydroponik-Regale, in denen das frische Essen ohne Erde wächst.',
+     'Les autres habitants de l’habitat : trois grillons vivants, un chien robot et un robot de soutien émotionnel — et les étagères hydroponiques, où pousse la nourriture fraîche sans terre.'],
+  'Three shelves of plants grown without soil, their roots in nutrient water — the habitat’s fresh food and part of its air; what grows here is counted with the rations.':
+    ['Drei Regale mit Pflanzen ohne Erde, die Wurzeln in Nährwasser — die frische Nahrung des Habitats und ein Teil seiner Luft; was hier wächst, zählt zu den Rationen.',
+     'Trois étagères de plantes sans terre, les racines dans l’eau nutritive — la nourriture fraîche de l’habitat et une part de son air ; ce qui pousse ici compte avec les rations.'],
+  'The uplink: every message written here crosses to the habitat and waits for the commanding officer, whose answer comes back to the board on every open phone.':
+    ['Der Uplink: Jede hier geschriebene Nachricht geht hinüber ins Habitat und wartet auf die Kommandantin, deren Antwort auf jedem offenen Handy zurück aufs Board kommt.',
+     'La liaison montante : chaque message écrit ici traverse jusqu’à l’habitat et attend le commandant, dont la réponse revient sur le tableau de chaque téléphone ouvert.'],
+  'Each day has a scientific mission — a sheet with its central question, the work of the morning, the afternoon and the EVA, and a question for the community hour.':
+    ['Jeder Tag hat eine wissenschaftliche Mission — ein Blatt mit seiner zentralen Frage, der Arbeit des Vormittags, des Nachmittags und der EVA und einer Frage für die Community-Stunde.',
+     'Chaque jour a sa mission scientifique — une fiche avec sa question centrale, le travail du matin, de l’après-midi et de l’EVA, et une question pour l’heure communautaire.'],
+  'An environment sensor inside the habitat reads CO₂, temperature, humidity, pressure, VOCs and the air quality every minute, a light sensor beside it the light — all kept in the record.':
+    ['Ein Umweltsensor im Habitat misst jede Minute CO₂, Temperatur, Luftfeuchte, Luftdruck, VOCs und die Luftqualität, ein Lichtsensor daneben das Licht — alles bleibt in der Aufzeichnung.',
+     'Un capteur d’environnement dans l’habitat lit chaque minute le CO₂, la température, l’humidité, la pression, les COV et la qualité de l’air, un capteur de lumière à côté la lumière — tout est gardé dans le registre.'],
+  'The round room under the crown, nobody’s station — where the three meet, eat and plan the day. Each files their condition from inside; what they send out is on the Media page.':
+    ['Der runde Raum unter der Kuppelspitze, niemandes Station — wo die drei sich treffen, essen und den Tag planen. Jede und jeder meldet von innen das eigene Befinden; was sie nach draußen schicken, ist auf der Medienseite.',
+     'La pièce ronde sous le sommet, le poste de personne — où les trois se retrouvent, mangent et planifient la journée. Chacun y note son état de l’intérieur ; ce qu’ils envoient est sur la page Médias.'],
+  'Two sleeping pods, each a bunk closed off from the light and the sound of the habitat. Rest is on the schedule like everything else, and the crew keep to it.':
+    ['Zwei Schlafkapseln, jede eine Koje, abgeschirmt vom Licht und den Geräuschen des Habitats. Die Ruhe steht wie alles andere im Zeitplan, und die Crew hält sich daran.',
+     'Deux capsules de repos, chacune une couchette fermée à la lumière et au bruit de l’habitat. Le repos est à l’horaire comme tout le reste, et l’équipage s’y tient.'],
+  'Everything was carried in and nothing is resupplied: water, rations, medical kits, extinguishers. Used water passes through the recycling loop; the crew count the stores each evening.':
+    ['Alles wurde hineingetragen, nichts wird nachgeliefert: Wasser, Rationen, Medizinkits, Feuerlöscher. Gebrauchtes Wasser geht durch den Recyclingkreislauf; die Crew zählt die Vorräte jeden Abend.',
+     'Tout a été apporté et rien n’est réapprovisionné : eau, rations, trousses médicales, extincteurs. L’eau usée passe par la boucle de recyclage ; l’équipage compte les réserves chaque soir.'],
+  'Everything runs on what the crew can make and store: the bicycle generator charges the one battery. Heating, food, lighting and electronics draw on it, counted in kilowatt-hours every day.':
+    ['Alles läuft mit dem, was die Crew erzeugen und speichern kann: Der Fahrradgenerator lädt die eine Batterie. Heizung, Essen, Licht und Elektronik zehren davon, jeden Tag in Kilowattstunden gezählt.',
+     'Tout fonctionne avec ce que l’équipage peut produire et stocker : le générateur à vélo charge l’unique batterie. Chauffage, cuisine, lumière et électronique y puisent, comptés en kilowattheures chaque jour.'],
+  'The Mission Dashboard is the station’s instrument panel: the live readings, today’s schedule and meal, the crew’s condition, the trends and the three daily blogs, on one page.':
+    ['Das Missions-Dashboard ist das Instrumentenbrett der Station: die Live-Messwerte, der heutige Zeitplan und die Mahlzeit, das Befinden der Crew, die Trends und die drei täglichen Blogs, auf einer Seite.',
+     'Le tableau de bord de mission est le panneau d’instruments de la station : les mesures en direct, l’horaire et le repas du jour, l’état de l’équipage, les tendances et les trois blogs quotidiens, sur une page.'],
+  'An EVA — extra-vehicular activity — is the crew’s daily walk outside in their suits, on the Mars landscape of Karlsruhe’s Marktplatz; its hour is on the schedule, its pictures on the Media page.':
+    ['Eine EVA — extra-vehicular activity — ist der tägliche Gang der Crew nach draußen in ihren Anzügen, auf der Marslandschaft des Karlsruher Marktplatzes; ihre Stunde steht im Zeitplan, ihre Bilder auf der Medienseite.',
+     'Une EVA — activité extravéhiculaire — est la sortie quotidienne de l’équipage en combinaison, sur le paysage martien de la Marktplatz de Karlsruhe ; son heure est à l’horaire, ses images sur la page Médias.'],
+  // the rooms' sentences after Now (dome.js figures: sensors, mission)
+  'No reading yet.': ['Noch kein Messwert.', 'Pas encore de mesure.'],
+  'No current reading': ['Kein aktueller Messwert', 'Aucune mesure actuelle'],
+  'Read at': ['Gelesen um', 'Lu à'],
+  'The last was at': ['Der letzte war um', 'La dernière était à'],
+  'Day 01’s mission': ['Die Mission von Tag 01', 'La mission du jour 01'],
+  // the key under Today's Mission on the dashboard (public.js, missionPanel)
+  'Mission Report': ['Missionsbericht', 'Rapport de mission'],
+  // the call on the Earth, the first page of the landing page (landing.js, call)
   'Tap a room to know what is inside.': ['Tippe auf einen Raum, um zu erfahren, was drinnen ist.', 'Touchez une pièce pour savoir ce qu’il y a à l’intérieur.'],
   'The habitat in section: its rooms under the dome, on the Mars plain': ['Das Habitat im Schnitt: seine Räume unter der Kuppel, auf der Marsebene', 'L’habitat en coupe : ses pièces sous le dôme, sur la plaine martienne'],
 
@@ -1041,8 +1099,6 @@ const D = {
   'sols to go': ['Sols verbleiben', 'sols restants'],
   'the last day': ['der letzte Tag', 'le dernier jour'],
   'Communication window daily': ['Kommunikationsfenster täglich', 'Fenêtre de communication tous les jours à'],
-  // whose clock the window's hour is in, after the hour and its zone: "16:00 CEST (Berlin time)" (landing.js, windowWhen)
-  'Berlin time': ['Berliner Zeit', 'heure de Berlin'],
   'Switch between light and dark': ['Zwischen hell und dunkel wechseln', 'Basculer entre clair et sombre'],
 };
 

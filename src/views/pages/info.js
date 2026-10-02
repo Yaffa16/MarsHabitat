@@ -53,6 +53,10 @@ function aboutFold(ctx) {
       <h3>${T('The archive as the work')}</h3>
       ${p(T, 'Every published exchange stays here. Over the run the archive accumulates into something neither the artists nor the audience wrote alone: a record of what people on Earth wanted to ask the three crew members in the habitat, and how those questions shifted as the mission went on.')}
 
+      <h3 id="more-than-human">${T('More than Human')}</h3>
+      ${p(T, 'The crew are not the habitat’s only inhabitants. Three live crickets share it with them, a robot dog goes with them on the EVA, and an emotional support robot keeps them company; on the hydroponic shelves the fresh food grows without soil, its roots in nutrient water. Each is cared for, counted and written into the record like the people — the mission’s question of who and what gets cared for begins at home.')}
+      ${p(T, 'The More than Human room of the habitat drawing on the first page leads here; what the crickets, the dog, the robot and the plants are doing today is in the crew’s entries.')}
+
       <h3>${T('The readings')}</h3>
       ${p(T, 'The sensors that produce the readings on this page are mounted in the habitat on the Marktplatz. When the habitat warms up because a crowd is standing around it, the number moves. The data is not a simulation of a Mars habitat; it is a measurement of the real one, with the crew in it.')}
 

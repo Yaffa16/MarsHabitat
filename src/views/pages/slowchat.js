@@ -24,7 +24,7 @@ const { esc } = require('../layout');
 const orbital = require('../../lib/orbital');
 
 const ENTRY_TIME = '17:00';                                  // the crew go in at five on the first afternoon (the mock-up's hour)
-const WINDOW_TIME = '16:00';                                 // the crew answer from four in the afternoon, every day of the run
+const WINDOW_TIME = '19:00';                                 // the crew answer from seven in the evening — the communication hour — every day of the run
 const LOCALE = { en: 'en-GB', de: 'de-DE', fr: 'fr-FR' };
 
 /** "15 October", "15. Oktober", "15 octobre". */

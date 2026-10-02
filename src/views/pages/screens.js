@@ -36,7 +36,7 @@ const SCREENS = [
   { name: 'board', title: 'Message Board', fit: 'clip', about: 'The latest exchanges with the crew, as many as fit, live' },
   { name: 'write', title: 'Write to the crew', fit: 'scale', minWidth: 640, about: 'The composer, full screen, for writing to the crew at the venue — every message from it under a callsign of its own' },
   { name: 'mission', title: 'Today’s Mission', fit: 'scale', minWidth: 760, about: 'The day’s scientific mission: its question, Morning, Afternoon and EVA' },
-  { name: 'blogs', title: 'Blogs', fit: 'none', about: 'The Commander Blog, the Daily Science Findings and the Daily Health Blog, one at a time — each post rolling by from top to bottom, then the next blog' },
+  { name: 'blogs', title: 'Blogs', fit: 'none', about: 'The Commander Blog, the Daily Mission Report and the Health Report, one at a time — each post rolling by from top to bottom, then the next blog' },
   { name: 'day', title: 'Today', fit: 'scale', minWidth: 640, about: 'Today’s Schedule, Today’s Meal and the Crew Moods' },
   { name: 'trends', title: 'Trends', fit: 'scale', minWidth: 520, about: 'The run’s trends on one graph' },
   { name: 'media', title: 'Media', fit: 'clip', about: 'The newest pictures out of the habitat in one grid, as many as fit, live' },
@@ -107,7 +107,7 @@ function mission(ctx, d) {
 }
 
 /** The three blogs one at a time, each filling the screen: its head, then the day's post rolling by from top to bottom
-    at reading pace (public/screen-blogs.js) — the Commander Blog, then the Daily Science Findings, then the Daily Health
+    at reading pace (public/screen-blogs.js) — the Commander Blog, then the Daily Mission Report, then the Daily Health
     Blog, round and round. A blog with nothing written yet shows its note for a moment and passes the turn on. */
 function blogs(ctx, d) {
   const p = P.dashboardPanels(ctx, d);

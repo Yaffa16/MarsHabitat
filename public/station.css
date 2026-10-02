@@ -1381,8 +1381,8 @@ body.landing .foot { margin-top: 44px; margin-bottom: 44px; }
 .log-entry .card-day { text-transform: uppercase; }
 .log-entry .card-body { padding: 5px 12px 9px; font-size: 12px; line-height: 1.45; white-space: pre-line; }
 
-/* The three daily blogs under the trend graph — Daily Science Findings, Daily
-   Health Blog, Commander Blog. Each panel shows the current day's post and
+/* The three daily blogs under the trend graph — Daily Mission Report, Health
+   Report, Commander Blog. Each panel shows the current day's post and
    nothing else. It is as tall as that post, up to a limit, and the post
    scrolls inside the panel from there. The three share a row, so they stand
    at the height of the fullest. */

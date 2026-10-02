@@ -145,7 +145,7 @@ function masthead(ctx, { home = false, status = true, lead = '', cta = '' } = {}
   <header class="masthead">
     <div>
       <h1 class="wordmark">${home ? mark : `<a href="/" title="${esc(T('Back to the station'))}">${mark}</a>`}</h1>
-      <p class="tagline">${T('Communication Station')} · <b>ZKM | Hertzlab</b></p>
+      <p class="tagline"><b>ZKM | Hertzlab</b></p>
       <p class="run-dates"><b>${esc(m.runLabel)}</b> · ${m.totalDays} ${T('sols in the habitat')}${pre
         ? ` · ${T('opens in')} ${n} ${T(n === 1 ? 'day' : 'days')}`
         : m.phase === 'ACTIVE' ? ` · SOL ${String(m.clampedDay).padStart(2, '0')} ${T('of')} ${m.totalDays}` : ''}</p>${
