@@ -17,8 +17,8 @@
  * (TRANSIT_SECONDS, read the way server.js reads it), the visitor's own
  * callsign on the example message (the one the composer carries); the hour
  * the crew's communication window opens is the production's (WINDOW_TIME),
- * written with the venue's zone as it is on the day the page is read — CEST
- * until the clocks go back on 25 October, CET after.
+ * written with the venue's zone as the station names it — CET, in every
+ * language, all through the run.
  */
 const { esc } = require('../layout');
 const orbital = require('../../lib/orbital');
@@ -32,14 +32,8 @@ function dayMonth(iso, lang) {
   try { return new Date(iso + 'T12:00:00Z').toLocaleDateString(LOCALE[lang] || 'en-GB', { day: 'numeric', month: 'long', timeZone: 'UTC' }); }
   catch { return iso; }
 }
-/** The venue's zone on that day, as it is written there: CEST (MESZ in German) through the run. */
-function zoneName(iso, tz, lang) {
-  try {
-    const p = new Intl.DateTimeFormat(lang === 'de' ? 'de-DE' : 'en-GB', { timeZone: tz, timeZoneName: 'short' })
-      .formatToParts(new Date(iso + 'T12:00:00Z')).find((x) => x.type === 'timeZoneName');
-    return p ? p.value : '';
-  } catch { return ''; }
-}
+/** The venue's zone, as the station names it everywhere and in every language: CET (landing.js has the word). */
+function zoneName() { return require('./landing').ZONE; }
 
 const ICON = {
   entry: '<path d="M2.5 19.5h19"/><path d="M4.5 19.5a7.5 7.5 0 0 1 15 0"/><path d="M10.4 19.5v-2.6a1.6 1.6 0 0 1 3.2 0v2.6"/><path d="M7.2 14.2a5 5 0 0 1 2.3-2.4" style="opacity:.55"/><circle cx="16" cy="15" r=".9" fill="currentColor" stroke="none"/>',
@@ -109,7 +103,7 @@ function slowestChat(ctx) {
       </li>
     </ol>
     <p class="slow-cta"><a class="btn primary masthead-btn slow-write" href="#write">${T('Write to the crew')} <span aria-hidden="true">↓</span></a>
-      <a class="btn primary masthead-btn slow-write slow-write-page" href="/messages#write">${T('Write to the crew')} <span aria-hidden="true">→</span></a></p>
+      <a class="btn primary masthead-btn slow-write slow-write-page" href="/write#write">${T('Write to the crew')} <span aria-hidden="true">→</span></a></p>
   </section>`;
 }
 

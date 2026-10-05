@@ -44,10 +44,11 @@ const when = (iso) => {
   const tz = (missionLib.config() || {}).timezone || 'Europe/Berlin';
   return new Date(iso).toLocaleString('en-GB', { timeZone: tz, day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
-/** The moment a message was sent, in full: the day, the time and the zone, on the venue's clock — "28 Sept 2026, 16:28 CEST". */
+/** The moment a message was sent, in full: the day, the time and the zone, on the venue's clock — "28 Sept 2026, 16:28:54 CET"
+    (the zone is always named CET, as everywhere on the station; the clock is the venue's own). */
 const whenFull = (iso) => {
   const tz = (missionLib.config() || {}).timezone || 'Europe/Berlin';
-  try { return new Date(iso).toLocaleString('en-GB', { timeZone: tz, day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' }); }
+  try { return new Date(iso).toLocaleString('en-GB', { timeZone: tz, day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' CET'; }
   catch { return when(iso); }
 };
 const mark = (e, key) => (e && e.keys && e.keys[key] ? ' was-edited' : '');
@@ -140,20 +141,6 @@ function messageCard(m, crew, show, space = null) {
   </article>`;
 }
 
-/** The relay to space, as it stands — what is queued, sent, failed — over the queue. Only while the relay is on:
- *  switched off (no SPACESPEAK_USER / SPACESPEAK_PASSWORD in .env) the desk says nothing about it. */
-function spaceStatus(sp) {
-  if (!sp || !sp.enabled) return '';
-  const c = sp.counts;
-  const line = `${sp.dryRun ? '<b>Dry run</b> — every step but the last; nothing is pressed. ' : ''}${sp.configured ? '' : '<b>No account set</b> — every send will fail. '}A message is handed to <b>${esc(sp.site.replace(/^https?:\/\//, ''))}</b> when its reply is published — nothing else is ever sent; one every ${sp.gapSeconds} s at most · `
-      + `<b>${c.sent}</b> sent${c.dryRun ? ` · ${c.dryRun} dry-run` : ''} · <b>${c.queued + c.sending}</b> queued · <b class="${c.failed ? 'space-bad' : ''}">${c.failed}</b> failed${c.skipped ? ` · ${c.skipped} skipped (unpublished before their turn)` : ''}`
-      + (sp.lastError ? `<span class="space-last">Last trouble, message ${sp.lastError.messageId} at ${esc(when(sp.lastError.at))}: ${esc(sp.lastError.error)}</span>` : '');
-  return `<div class="space-status on" id="space-status">
-    <span class="space-status-k"><i></i>Beamed into space</span>
-    <span class="space-status-v">${line}</span>
-  </div>`;
-}
-
 /** How one message stands with SpaceSpeak — a mark in its top line. Only a replied, published message is ever handed
  *  over (routes/control.js), so a message still waiting carries no mark; a published one without a row was published
  *  while the relay was off. */
@@ -192,7 +179,6 @@ function queue({ list, crew, counts, show, space = null }) {
       <span id="queue-new-text">New messages have arrived.</span>
       <a class="btn" href="/control?show=pending#queue">Show them</a>
     </div>
-    ${spaceStatus(space)}
     ${list.length ? list.map((m) => messageCard(m, crew, show, space)).join('')
       : `<div class="empty">${show === 'pending' ? 'Nothing waiting — every message has been answered' : 'Nothing in this view'}</div>`}
   </section>`;
@@ -359,6 +345,29 @@ function scheduleBlock(day, tasks, e = null) {
       </table></div>
       <div class="actions"><button class="primary">Save</button>${savedNote(e)}
         <span class="note">A task with its name emptied is removed when the day is saved.</span></div>
+    </form>`, 'mars-side');
+}
+
+/** The day's scientific mission, on the Science officer's tab: the plan in content/missions.json names one for
+ *  each day (the default); the officer may set another in its place from the list — Default puts the plan's back.
+ *  What is chosen stands wherever the day's mission is shown (routes/control.js, /mission; content.missionForDay).
+ *  NOW has no mission of its own (before the run the dashboard shows day 01's), so the block stands on the run's
+ *  days alone. */
+function missionBlock(day, plan, e = null) {
+  if (!day || !plan) return '';
+  const name = (m) => `Mission No. ${m.no} · ${m.title}`;
+  const def = plan.missions.find((m) => m.no === plan.default) || null;
+  const cur = plan.chosen != null ? String(plan.chosen) : '';
+  return panel('SCIENCE MISSION', `
+    ${eyebrow(`Science mission · day ${dd(day)}`)}
+    <form method="post" action="/control/mission">
+      <input type="hidden" name="day" value="${day}">
+      <label class="f${mark(e, 'mission')}"><span>Mission</span>
+        <select name="mission">
+          <option value=""${cur === '' ? ' selected' : ''}>Default${def ? ` — ${esc(name(def))}` : ' — none'}</option>
+          ${plan.missions.map((m) => `<option value="${m.no}"${cur === String(m.no) ? ' selected' : ''}>${esc(name(m))}</option>`).join('')}
+        </select></label>
+      <div class="actions"><button class="primary">Save</button>${savedNote(e)}</div>
     </form>`, 'mars-side');
 }
 
@@ -724,7 +733,7 @@ function resetDialog(locked) {
 function page(ctx, model) {
   const { user, f, content, show, tab, day, totalDays, tpl, plan = { exists: false }, resetLocked = false, edits = {}, drafts = {},
           list, crew, counts, officers, tasks, meals, recipes = [], mealHours = { meter: '', windows: {} }, notes, figures, items, power = { categories: [], days: {} },
-          media: mediaItems = [], mediaCounts = { total: 0, bytes: 0 }, mediaAccept = '', mediaMaxMb = 0, filter = 'all', space = null } = model;
+          media: mediaItems = [], mediaCounts = { total: 0, bytes: 0 }, mediaAccept = '', mediaMaxMb = 0, filter = 'all', space = null, missionPlan = null } = model;
 
   // NOW — the rehearsal day, mission day 0, dated today — heads the picker before the run, and all through a rehearsal
   // against made-up dates: what is filed under it stays apart from the run's days and shows in the record marked as a
@@ -751,6 +760,7 @@ function page(ctx, model) {
       </div>`,
     science: `
       <div class="officer-stack">
+        ${missionBlock(day, missionPlan, edits.mission)}
         ${reportBlock(officers.science, 'science', 'Daily Mission Report',
           'Samples, measurements, the greenhouse, anything the habitat did that was worth recording.', day, tpl.SCIENCE, 'science', 1, edits['report:science'], drafts['report:science'])}
         ${moodBlock(officers.science, 2, edits[`mood:${officers.science.id}`])}

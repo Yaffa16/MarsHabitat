@@ -181,7 +181,7 @@ function tabbar(current, T = same) {
   return `<nav class="tabbar" aria-label="${esc(T('The station, page by page'))}">
     ${tab('home', '/', 'Home', landing ? ' is-on' : '')}
     ${tab('dashboard', '/dashboard', 'Dashboard', current === '/dashboard' ? ' is-on' : '')}
-    ${tab('write', '/messages#write', 'Write', current === '/messages' ? ' is-on' : '')}
+    ${tab('write', '/write#write', 'Write', current === '/write' ? ' is-on' : '')}
     ${tab('media', '/media', 'Media', current === '/media' ? ' is-on' : '')}
     ${tab('more', '/about', 'About', current === '/about' ? ' is-on' : '')}
   </nav>`;
@@ -245,14 +245,37 @@ function clientTable(lang) {
   return `<script>window.MCS_T=${json};function t(s){return (window.MCS_T||{})[s]||s}</script>`;
 }
 
+/* The composer's pop-up (src/views/pages/public.js, portal) and the Write key that floats at the foot of the window at
+   the right, on every public page: the key opens the window over the page (public/write.js), a message crosses in it,
+   and its Message Board key leads to the wall. While a message is crossing the key is the crossing itself — a ring
+   filling as the message goes, the countdown, the state — whatever page the visitor is on (write.js keeps it going).
+   A phone keeps its bar's Write key, which leads to the Write page's dock (tabbar.js); the floating key is a wider
+   screen's. What is crossing for this visitor is read here unless the page hands it over (the Write page, with a
+   refused post's word and draft). */
+function writeKit(ctx, { inFlight, error = null, draft = '' } = {}) {
+  const T = ctx.T || same;
+  if (inFlight === undefined) {
+    try { inFlight = ctx.visitor ? require('../lib/data').inFlightFor(ctx.visitor.id) : null; } catch { inFlight = null; }
+  }
+  return `
+${require('./pages/public').portal(ctx, { inFlight, error, draft })}
+<a class="write-float${inFlight ? ' is-crossing' : ''}" href="#write" id="write-fab" aria-controls="write" aria-expanded="false"><span class="wf-idle"><svg class="wf-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M13.5 6.5l3 3"/></svg><span>${T('Write to the crew')}</span></span><span class="wf-cross" aria-live="polite"><svg class="wf-ring" viewBox="0 0 36 36" aria-hidden="true"><circle class="wf-track" cx="18" cy="18" r="15"/><circle class="wf-arc" cx="18" cy="18" r="15" pathLength="100" stroke-dasharray="0 100"/></svg><span class="wf-txt"><b class="wf-clock">--:--</b><small class="wf-state">${T('Sending')}</small></span></span></a>`;
+}
+
 /**
  * `hero` renders full-bleed above the rail — the landing page passes its
  * Mars-surface masthead through it. `hideNav` drops the top navigation on
  * pages whose links live in the footer instead (the landing page, per the
- * MARS!PLATZ layout).
+ * MARS!PLATZ layout). `masthead: false` leaves the inner pages' masthead —
+ * the wordmark and ZKM | Hertzlab under the header — off a page (the Write
+ * page, the dashboard page). Every public page carries the composer's
+ * pop-up and the Write key that floats at the foot of the window at the
+ * right (writeKit); `composer` hands the Write page's own state to it (a
+ * message crossing, a refused post's word and draft) — elsewhere the kit
+ * reads what is crossing for this visitor itself.
  */
 function page({ title, ctx, body, current, bodyClass = '', head = '', scripts = [], styles = [],
-                hero = '', hideNav = false, hideRail = false }) {
+                hero = '', hideNav = false, hideRail = false, masthead: withMasthead = true, composer = null }) {
   const control = bodyClass.includes('control') || bodyClass.includes('habitat');
   // Mission control and the archive stay English whatever the cookie says.
   const translate = !control && !String(current || '').startsWith('/archive');
@@ -275,14 +298,18 @@ function page({ title, ctx, body, current, bodyClass = '', head = '', scripts = 
     // links in the middle — the composer, the dashboard, About — the one for
     // this page marked) and the wordmark as the way home. The foot carries
     // the links between the pages.
-    hero = require('./pages/public').ticker({ ...ctx, current }) + masthead(ctx);
+    hero = require('./pages/public').ticker({ ...ctx, current }) + (withMasthead ? masthead(ctx) : '');
   }
+  // the composer's pop-up and the floating Write key, on every public page (public/write.js opens and closes the box;
+  // the Write page's own message in transit, or a refused post's word, comes through `composer`)
+  const kit = aura ? writeKit(ctx, composer || {}) : '';
+  if (aura) scripts = scripts.filter((s) => s !== '/composer.js' && s !== '/write.js').concat(['/composer.js', '/write.js']);
   return `<!doctype html>
 <html lang="${lang}" data-theme="${ctx.theme === 'light' ? 'light' : 'dark'}"><head>
 <meta charset="utf-8">${aura ? '\n<script>document.documentElement.className += " js"</script>' : ''}
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<title>${esc(T(title))} — ${T('Mars Communication Station')}</title>
+<title>${current === '/' || title === 'Mission' ? T('MARS!platz – Ground Station') : `${esc(T(title))} — ${T('MARS!platz – Ground Station')}`}</title>
 <meta name="description" content="${esc(T('A live communication interface between an Earth-based audience and the crew of the MARS habitat.'))}">
 <link rel="stylesheet" href="/station.css?v=${ASSET_V}">${styles.map((s) => `\n<link rel="stylesheet" href="${s}?v=${ASSET_V}">`).join('')}
 ${translate ? clientTable(lang) : ''}
@@ -292,6 +319,7 @@ ${hero}
 ${hideRail ? '' : rail(ctx, bodyClass.includes('landing'), T)}
 ${control || hideNav ? '' : nav(current, T)}
 <main class="shell">${body}</main>
+${kit}
 ${control ? '' : foot(ctx, T, aura)}
 ${aura && ctx.consent === null ? consent(current, T, ctx.offer || '') : ''}
 ${control ? '' : tabbar(current, T)}

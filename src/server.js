@@ -32,7 +32,9 @@ app.disable('x-powered-by');
 app.use(express.urlencoded({ extended: false, limit: '64kb' }));
 app.use(express.json({ limit: '256kb' }));
 app.use(require('./lib/cookies'));
-app.use(express.static(path.join(__dirname, '../public'), { maxAge: '1h' }));
+// redirect: false — a folder's address (/crew, the portraits' folder) is not sent to /crew/, so the old page's address
+// below can send it on to its section of the Write page
+app.use(express.static(path.join(__dirname, '../public'), { maxAge: '1h', redirect: false }));
 // The scientific missions' sheets, one PDF a mission, from the missions/ folder beside content/ (the Today's Mission
 // panel links to the day's; content/missions.json says which sheet is which day's). PDFs only; nothing else in the
 // folder is served.
@@ -343,38 +345,52 @@ app.get('/dashboard', (req, res) => {
   res.send(P.dashboardPage(ctx, stationData(ctx)));
 });
 
-/* The messages page: the portal — the board and the composer — on a page of
-   its own, drawn for a phone first; the bar of keys there leads to it. The
-   same data as the mission page's portal, rendered by the same pieces. */
-app.get('/messages', (req, res) => {
+/* The Write page: the composer and the board, nothing else — the exchanges one under the other, flowing on the page,
+   the newest BOARD_PAGE of them drawn here and the older ones fetched as the reader scrolls (/api/board?before=,
+   public/board.js) (views/pages/public.js, writePage). The mission page's composer, the header's Write link and the
+   bar's Write key lead here, and a message sent from the mission page is followed here. The old /messages lands here
+   too. The dashboard is a page of its own, /dashboard. */
+app.get('/write', (req, res) => {
   const ctx = req.ctx();
-  res.send(P.messages(ctx, {
-    recent: data.board(BOARD_RECENT, ctx.visitor ? ctx.visitor.id : null),
+  const recent = data.board(BOARD_PAGE, ctx.visitor ? ctx.visitor.id : null);
+  res.send(P.writePage(ctx, {
+    recent,
+    more: recent.filter((m) => !m.mine).length >= BOARD_PAGE,                 // a full first page: older exchanges may follow
+    poll: `/api/board?limit=${BOARD_PAGE}&wall=1`,                              // the wall polls for its own cards (noteCard)
     inFlight: ctx.visitor ? data.inFlightFor(ctx.visitor.id) : null,
     error: req.query.err ? String(req.query.err).slice(0, 160) : null,
   }));
 });
+app.get('/messages', (req, res) => res.redirect(301, '/write'));
 
-/* The station has few pages: this one, the messages page, the media page,
-   At a Glance, the crew log and mission control. Every other address a
-   public subpage used to have points at its section on the landing page,
-   so old links, bookmarks and printed material still land somewhere. */
+/* The station has few pages: the mission page, the Write page, the dashboard page, the media page, At a Glance, the
+   crew log, About and mission control. Every other address a public subpage used to have points at its section on the
+   Write page or the dashboard page, so old links, bookmarks and printed material still land somewhere. */
 const SECTION = {
-  '/habitat': '#habitat', '/crew': '#crew',
-  '/day': '#mission', '/schedule': '#mission',
-  '/board': '#exchanges', '/communicate': '#write',
+  '/habitat': '/dashboard#habitat', '/crew': '/dashboard#crew',
+  '/day': '/dashboard#mission', '/schedule': '/dashboard#mission',
+  '/board': '/write#exchanges', '/communicate': '/write#write',
 };
 for (const [from, to] of Object.entries(SECTION)) {
-  app.get(from, (req, res) => res.redirect(301, '/' + to));
+  app.get(from, (req, res) => res.redirect(301, to));
 }
 /* About, What this is and Who we are: the reading matter, a page of its own
    (views/pages/info.js) — the About key of a phone's bar and the rows of the
    ticker's menu lead here; the old addresses of the other two land on their
    section of it. */
-app.get('/about', (req, res) => res.send(require('./views/pages/info').aboutPage(req.ctx(), { crew: data.crewWithMood() })));
+app.get('/about', (req, res) => {
+  const ctx = req.ctx();
+  // the habitat's section carries the picture with every module a key and its pop-ups' live sentences (inside.js,
+  // habitatInside — dome.js figures): the day, the crew, the latest exchanges, the power, the counts and the crew's figures
+  const habitat = {
+    today: data.day(ctx.mission.clampedDay, { powerDay: ctx.mission.phase === 'PRE_LAUNCH' ? 0 : null }),
+    crew: data.crewWithMood(), recent: data.published(3), power: content.powerLive(), counts: data.counts(), crewFigures: content.crewFigures(),
+  };
+  res.send(require('./views/pages/info').aboutPage(ctx, { crew: data.crewWithMood(), habitat }));
+});
 app.get('/what', (req, res) => res.redirect(301, '/about#what'));
 app.get('/who-we-are', (req, res) => res.redirect(301, '/about#who-we-are'));
-app.get('/day/:n', (req, res) => res.redirect(301, '/#mission'));
+app.get('/day/:n', (req, res) => res.redirect(301, '/dashboard#mission'));
 
 /* The crew log as a page of its own: every day of the run, every officer's
    slot — the entry where it is written, its placeholder where it is not,
@@ -385,48 +401,42 @@ app.get('/at-a-glance', (req, res) => {
   const ctx = req.ctx();
   archive.rollupPending();
   const records = Array.from({ length: ctx.mission.totalDays }, (_, i) => archive.dayRecord(i + 1));
-  // The external node's day, summarised per channel, so each page of the
-  // booklet carries the habitat as it was that day — every channel the node
-  // transmits, its own battery and signal strength included.
+  // The last reading of the day per channel, so each page of the booklet
+  // carries the habitat as it stood at the end of that day (as it stands
+  // now, for today): every channel the external node transmits — its own
+  // battery and signal strength included — and the station's own ingest
+  // channels. The hardware's last readings come with the day record
+  // (home-assistant.daySummary).
   const KEYS = ['co2', 'temp', 'hum', 'light', 'pres', 'bat', 'rssi', 'voc', 'iaq'];
-  const stmt = db.prepare(`SELECT ${KEYS.map((k) => `MIN(${k}) ${k}_lo, MAX(${k}) ${k}_hi, AVG(${k}) ${k}_av, COUNT(${k}) ${k}_n`).join(', ')}
-    FROM external_reading WHERE t >= ? AND t < ?`);
-  // And every reading of the day whole — each poll of the node and each
-  // batch the station's own devices posted, as data points across the day's
-  // 24 hours, so a day's page carries not the summary alone but the data.
   const nodeRows = db.prepare(`SELECT t, ${KEYS.join(', ')} FROM external_reading WHERE t >= ? AND t < ? ORDER BY t`);
+  // (the seed's and the simulator's readings are not the habitat's — left out, as the record leaves them out)
   const ingestRows = db.prepare(`SELECT sr.metric, sr.value, sr.recorded_at, sm.label, sm.unit
     FROM sensor_reading sr LEFT JOIN sensor_metric sm ON sm.metric = sr.metric
-    WHERE sr.recorded_at >= ? AND sr.recorded_at < ? ORDER BY sm.sort_order, sr.metric, sr.recorded_at`);
+    WHERE sr.recorded_at >= ? AND sr.recorded_at < ? AND sr.device_id NOT IN (${archive.FAKE_DEVICES.map(() => '?').join(', ')})
+    ORDER BY sm.sort_order, sr.metric, sr.recorded_at`);
   const dayData = (start, end) => {
-    const row = stmt.get(start, end) || {};
-    const node = KEYS.map((k) => ({ key: k, lo: row[`${k}_lo`], hi: row[`${k}_hi`], av: row[`${k}_av`], n: row[`${k}_n`] || 0 })).filter((x) => x.n > 0);
-    // One series per channel: every value the day held, with its instant.
-    const series = [];
-    const rows = nodeRows.all(start, end);
-    for (const k of KEYS) {
-      const pts = rows.filter((x) => x[k] != null).map((x) => ({ t: x.t, v: x[k] }));
-      if (pts.length) series.push({ key: k, points: pts });
-    }
-    for (const x of ingestRows.all(new Date(start).toISOString(), new Date(end).toISOString())) {
+    const last = new Map();
+    for (const x of nodeRows.all(start, end)) for (const k of KEYS) if (x[k] != null) last.set(k, { key: k, last: x[k], lastAt: x.t });
+    const node = KEYS.filter((k) => last.has(k)).map((k) => last.get(k));
+    const ingest = [];
+    for (const x of ingestRows.all(new Date(start).toISOString(), new Date(end).toISOString(), ...archive.FAKE_DEVICES)) {
       const t = Date.parse(x.recorded_at);
       if (!Number.isFinite(t)) continue;
-      let s = series.find((y) => y.key === 'ingest-' + x.metric);
-      if (!s) { s = { key: 'ingest-' + x.metric, label: x.label || x.metric, unit: x.unit || '', points: [] }; series.push(s); }
-      s.points.push({ t, v: x.value });
+      let s = ingest.find((y) => y.key === x.metric);
+      if (!s) { s = { key: x.metric, label: x.label || x.metric, unit: x.unit || '' }; ingest.push(s); }
+      s.last = x.value; s.lastAt = t;
     }
-    return { node, series };
+    return { node, ingest };
   };
   for (const r of records) {
     const w = archive.windowFor(r.missionDay);
-    const start = Date.parse(w.start);
-    Object.assign(r, { dayStart: start }, dayData(start, Date.parse(w.end)));
+    Object.assign(r, dayData(Date.parse(w.start), Date.parse(w.end)));
   }
   // Before the run, the booklet opens on NOW — the rehearsal day, mission
   // day 0 — as a complete day page, so the real feel of a filled one can be
-  // had weeks early: today's pulled readings for the habitat, and everything
+  // had weeks early: the habitat's sensors as they read now, and everything
   // mission control has filed under NOW — its schedule, meals, counts and
-  // power, its blogs, exchanges and media — with any states filed today
+  // power, its blogs and media — with any states filed today
   // (src/lib/archive.js, rehearsalRecord). Clearly marked, not part of the
   // record, gone on 15 October.
   let rehearsal = null;
@@ -434,7 +444,7 @@ app.get('/at-a-glance', (req, res) => {
     const start = missionLib.venueMidnightUtc(ctx.mission.today, ctx.mission.timezone);
     const end = start + 86400000;
     const base = archive.rehearsalRecord(ctx.mission) || {};
-    rehearsal = { ...base, date: ctx.mission.today, dayStart: start, ...dayData(start, end) };
+    rehearsal = { ...base, date: ctx.mission.today, ...dayData(start, end) };
   }
   res.send(GL.page(ctx, { records, rehearsal }));
 });
@@ -634,8 +644,9 @@ app.get('/archive/message/:id', requireControl, (req, res, next) => {
 
 /* =========================================================== COMMUNICATION */
 
-const MAX_CHARS = Number(process.env.MESSAGE_MAX_CHARS || 500);
-const BOARD_RECENT = Math.max(1, Number(process.env.BOARD_RECENT || 9));   // the answered exchanges the board shows, newest first
+const MAX_CHARS = Number(process.env.MESSAGE_MAX_CHARS || 1000);   // a message's length: a thousand characters unless .env says otherwise
+const BOARD_RECENT = Math.max(1, Number(process.env.BOARD_RECENT || 9));   // the answered exchanges the first poll of a board shows, newest first (the sky, the screens)
+const BOARD_PAGE = Math.max(5, Number(process.env.BOARD_PAGE || 20));      // the Write page's board: a page of exchanges, the next fetched as the reader scrolls
 const TRANSIT_MS = Number(process.env.TRANSIT_SECONDS || 12) * 1000;
 
 /** Errors bounce back to the landing page, which is where the composer lives. */
@@ -659,9 +670,8 @@ function composerFragment(req, res, extra = {}) {
 function composeView(req, res, extra = {}) {
   if (isLive(req)) return composerFragment(req, res, extra);
   const q = extra.error ? `?err=${encodeURIComponent(extra.error)}` : '';
-  // a plain post from the messages page goes back to the messages page
-  const back = /\/messages(?:[?#]|$)/.test(req.get('referer') || '') ? '/messages' : '/';
-  res.redirect(`${back}${q}#write`);
+  // a plain post goes back to the Write page, with the pop-up open (the composer is nowhere else)
+  res.redirect(`/write${q}#write`);
 }
 
 /* The composer as it stands for this visitor — what a reload would show.
@@ -685,6 +695,17 @@ app.get('/api/board', (req, res) => {
   // words the cards carry would be in two languages.
   const T = i18n.LANGS.includes(req.query.lang) ? i18n.of(req.query.lang) : ctx.T;
   const limit = Math.min(400, Math.max(1, Number(req.query.limit) || BOARD_RECENT));
+  const wall = req.query.wall === '1';                                       // the Write page's wall of notes asks for its own cards (noteCard)
+  // ?before=<id>: the Write page's board asking for the page of exchanges older than the oldest it has (board.js, as
+  // the reader scrolls) — the published ones alone, the reader's own are all on the first page; `more` says whether
+  // a page older than this one may follow
+  if (req.query.before !== undefined) {
+    const id = Math.round(Number(req.query.before));
+    if (!Number.isFinite(id) || id < 1) return res.status(400).json({ error: 'before: a message id' });
+    const at = /^\d{4}-\d\d-\d\dT[\d:.]+Z$/.test(String(req.query.at || '')) ? String(req.query.at) : null;   // the moment it was sent, as the card carries it
+    const older = data.board(limit, ctx.visitor ? ctx.visitor.id : null, { before: { id, at } });
+    return res.set('Cache-Control', 'no-store').json({ cards: P.boardCards(older, T, { wall }), count: older.length, more: older.length >= limit });
+  }
   // ?station=1: the installation's board screen asks for the ground station's board — its own messages are the ones
   // under the station's name (everything the writing screen sends), not a cookie's (a screen has none)
   const recent = req.query.station === '1' ? data.board(limit, null, { callsign: callsign.STATION }) : data.board(limit, ctx.visitor ? ctx.visitor.id : null);
@@ -693,7 +714,7 @@ app.get('/api/board', (req, res) => {
     version: P.boardVersion(recent),
     phase: ctx.mission.phase,
     open: ctx.mission.open,                                                    // false once the station has closed (board.js turns the page)
-    cards: P.boardCards(recent, T, { mineLabel: req.query.station === '1' ? callsign.STATION : null }),
+    cards: P.boardCards(recent, T, { wall }),
     count: recent.length,
     pendingMine: recent.filter((m) => m.mine && m.pending).length,
     total: counts.total,
@@ -751,7 +772,7 @@ app.post('/communicate', (req, res) => {
   // (out of the atmosphere it goes only once the crew have replied — routes/control.js hands it to the relay then)
 
   if (isLive(req)) return composerFragment(req, res);
-  res.redirect('/#write');
+  res.redirect('/write#write');                                               // the message is followed on the Write page
 });
 
 /* ================================================================ SENSOR API */
@@ -918,11 +939,16 @@ app.get('/api/habitat/data', (req, res) => {
    token and the Home Assistant address never leave the server. */
 app.get('/api/hardware', (req, res) => {
   const snap = homeAssistant.snapshot(24);
+  // `w`: the width the page shows a chart at, in CSS pixels (hardware.js measures its tiles) — the charts are drawn
+  // for it, so their type keeps its size on a desk and on a phone alike
+  const asked = Math.round(Number(req.query.w));
+  const width = Number.isFinite(asked) && asked >= 240 ? Math.min(1400, asked) : 720;
   res.set('Cache-Control', 'no-store').json({
     version: homeAssistant.version(snap),
     frozen: snap.frozen,
     pollMs: snap.pollMs,
-    html: snap.configured && snap.sensors.length ? P.hardwareInner(snap, req.ctx().T) : '',
+    w: width,
+    html: snap.configured && snap.sensors.length ? P.hardwareInner(snap, req.ctx().T, { width }) : '',
     // the power tile, whose metered category moves with the readings
     power: P.powerTileInner(req.ctx(), content.powerLive()),
   });

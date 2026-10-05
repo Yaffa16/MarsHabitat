@@ -2,11 +2,11 @@
 
    Filtering — the cards are already in the page, so filtering by tag or by
    "my messages" is instant, and losing JavaScript simply leaves the published
-   board visible. The viewer's own messages come first, under a MY MESSAGES
-   heading, whatever state they are in — cards stamped data-pending are the
-   ones mission control has not published yet, and they only ever reach
-   their own sender's page. Everyone else's published exchanges follow under
-   ALL MESSAGES. The MY MESSAGES chip narrows the board to the viewer's own.
+   board visible. The cards stand in one sequence, the newest first, by the
+   moment each was sent — the viewer's own among the rest, whatever state
+   they are in; cards stamped data-pending are the ones mission control has
+   not published yet, and they only ever reach their own sender's page. The
+   MY MESSAGES chip narrows the board to the viewer's own.
 
    Live refresh — the board polls /api/board every few seconds and swaps the
    cards in place when the server reports a change, so a reply published from
@@ -16,11 +16,18 @@
    network is down; the LIVE mark in the foot dims while it cannot reach the
    station.
 
-   On a phone held upright the board flows with the page instead of scrolling
-   inside its own box (aura.css), so it shows twenty exchanges of the current
-   view at a time and a Show more key beneath them brings the next twenty;
-   a change of filter starts again from the first twenty. Wider screens list
-   every card, as before. */
+   The wall of notes (the Write page, public.js boardWall; the feed carries
+   data-wall) flows with the page and has no end of its own: the first page
+   of exchanges is drawn by the server, and as the reader nears its last
+   card the page before it is fetched (/api/board?before=<the oldest id on
+   the wall>) and laid on, until the beginning of the correspondence. A
+   live refresh there lays the fresh cards in by their ids — new ones at
+   the top, changed ones in their place — and keeps what the reader has
+   scrolled on to; the reader's place on the page is kept too. The band at
+   the foot of a note names its tags: a press on one narrows the wall to it.
+   (The installation's board screen keeps the older way: every card swapped
+   for the fresh set.) The Show more key of the old phone board is gone;
+   a phone's wall loads as it scrolls like any other. */
 (function () {
   'use strict';
   /* The visitor's language: t() reads the table the page carries in its
@@ -39,6 +46,8 @@
   var allLink = document.getElementById('feed-all');
   var counter = document.getElementById('feed-counter');
   var live = document.getElementById('feed-live');
+  var wall = feed.hasAttribute('data-wall');
+  var end = document.getElementById('feed-end');
 
   // The page decides which chip starts active (MY MESSAGES once you have
   // sent something); the script follows it.
@@ -46,35 +55,25 @@
   var filter = initial ? (initial.getAttribute('data-filter') || '') : '';
   var cards = [];
 
-  var groups = [];
   function collect() {
     cards = Array.prototype.slice.call(cardsBox.querySelectorAll('.card'));
-    groups = Array.prototype.slice.call(cardsBox.querySelectorAll('.board-group'));
   }
 
   /* ------------------------------------------------------------- filtering */
   function apply() {
     var f = filter;
     var shown = 0;
-    var shownMine = 0, shownRest = 0;
     cards.forEach(function (c) {
       var show = true;
-      var mine = c.hasAttribute('data-mine');
       if (f === 'mine') {
-        show = mine;
+        show = c.hasAttribute('data-mine');
       } else if (f.indexOf('tag:') === 0) {
         var tags = ',' + (c.getAttribute('data-tags') || '') + ',';
         show = tags.indexOf(',' + f.slice(4) + ',') !== -1;
       }
       c.classList.toggle('is-hidden', !show);
       c.classList.toggle('is-listed', show);
-      if (show) { shown++; if (mine) shownMine++; else shownRest++; }
-    });
-    // The two headings stand only when both groups have something under them
-    // in this view; the MY MESSAGES view needs no heading at all.
-    groups.forEach(function (g) {
-      var which = g.getAttribute('data-group');
-      g.hidden = f === 'mine' || (which === 'mine' ? !shownMine : !shownRest || !shownMine);
+      if (show) shown++;
     });
     if (empty) {
       empty.textContent = cards.length
@@ -86,39 +85,99 @@
     bar.hidden = cards.length === 0;
     if (foot) foot.hidden = cards.length === 0;
     page();
+    if (typeof setEnd === 'function') setEnd();
   }
 
-  /* ------------------------------------------------- a phone: twenty at a time */
+  /* ----------------------------------------- the wall: the page before, as the reader nears the end */
   var PAGE = 20, limit = PAGE;
-  var more = document.getElementById('feed-more');
-  var upright = window.matchMedia ? window.matchMedia('(max-width: 760px) and (min-height: 521px)') : null;
-  function page() {
-    var cap = upright && upright.matches ? limit : Infinity;
-    var listed = cards.filter(function (c) { return c.classList.contains('is-listed'); });
-    listed.forEach(function (c, i) { c.classList.toggle('is-more', i >= cap); });
-    if (more) {
-      var left = listed.length - Math.min(cap, listed.length);
-      more.hidden = left <= 0;
-      more.textContent = t('Show more') + ' \u00b7 ' + left;
-    }
+  function page() { /* every card listed: the wall grows as it scrolls (below), the screens hold every card */ }
+  var idOf = function (c) { return Number((c.id || '').replace(/^m/, '')) || 0; };
+  var loading = false, exhausted = !wall || feed.getAttribute('data-more') !== '1';
+  function sentAt(c) { var t = c.querySelector('time.note-when[datetime]') || c.querySelector('time[datetime]'); return t ? t.getAttribute('datetime') : ''; }   // the moment sent (the answer's time stands first in an answered note)
+  function oldest() {                                                        // the oldest published exchange on the wall that is not the reader's own: its id and the moment it was sent
+    var last = null;
+    cards.forEach(function (c) {
+      if (!idOf(c) || c.hasAttribute('data-mine')) return;
+      if (!last || sentAt(c) < sentAt(last) || (sentAt(c) === sentAt(last) && idOf(c) < idOf(last))) last = c;
+    });
+    return last ? { id: idOf(last), at: sentAt(last) } : null;
   }
-  if (more) more.addEventListener('click', function () { limit += PAGE; page(); });
-  if (upright) {
-    var onUpright = function () { limit = PAGE; page(); };
-    if (upright.addEventListener) upright.addEventListener('change', onUpright); else if (upright.addListener) upright.addListener(onUpright);
+  function setEnd() {
+    if (!end) return;
+    end.hidden = cards.length === 0;
+    end.classList.toggle('is-done', exhausted);
+    var span = end.querySelector('span'); if (span) span.textContent = end.getAttribute(exhausted ? 'data-done' : 'data-loading');
+  }
+  function loadOlder() {
+    if (!wall || loading || exhausted || !window.fetch) return;
+    var before = oldest(); if (!before) { exhausted = true; setEnd(); return; }
+    loading = true;
+    fetch(url + (url.indexOf('?') === -1 ? '?' : '&') + 'before=' + before.id + (before.at ? '&at=' + encodeURIComponent(before.at) : ''), { cache: 'no-store', credentials: 'same-origin' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (data) {
+        if (data.cards) {
+          var box = document.createElement('div'); box.innerHTML = data.cards;
+          Array.prototype.slice.call(box.querySelectorAll('.card')).forEach(function (c) {
+            if (document.getElementById(c.id)) return;                        // already on the wall (it arrived in the meantime)
+            c.setAttribute('data-older', '1');
+            cardsBox.insertBefore(c, empty);
+          });
+        }
+        if (!data.more || !data.count) exhausted = true;
+        collect(); apply();
+      })
+      .catch(function () { /* the next approach to the end tries again */ })
+      .then(function () { loading = false; setEnd(); if (seek) sought(); else if (!exhausted && nearEnd()) loadOlder(); });
+  }
+  function nearEnd() {
+    if (!end || end.hidden) return false;
+    var r = end.getBoundingClientRect();
+    return r.top < (window.innerHeight || document.documentElement.clientHeight) + 600;
+  }
+  // a link to one exchange (/write#m57, from the sky's notes) that is further down than the first page: the pages before
+  // are fetched until the note is on the wall (or the wall is at its beginning), and the page goes to it
+  var seek = wall ? /^#m(\d+)$/.exec(location.hash || '') : null, seeking = 0;
+  function sought() {
+    if (!seek) return;
+    var el = document.getElementById('m' + seek[1]);
+    if (el) { seek = null; setTimeout(function () { el.scrollIntoView({ block: 'center' }); el.classList.add('is-sought'); }, 50); return; }
+    if (!exhausted && seeking++ < 40) loadOlder();
+    else seek = null;
+  }
+  if (wall && end) {
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (entries) { if (entries.some(function (e) { return e.isIntersecting; })) loadOlder(); }, { rootMargin: '600px 0px' }).observe(end);
+    } else {
+      var onScroll = function () { if (nearEnd()) loadOlder(); };
+      window.addEventListener('scroll', onScroll, { passive: true }); window.addEventListener('resize', onScroll);
+    }
+    setEnd();
   }
 
-  bar.addEventListener('click', function (e) {
-    var btn = e.target.closest ? e.target.closest('button[data-filter]') : null;
-    if (!btn) return;
+  function choose(which) {
     Array.prototype.forEach.call(bar.querySelectorAll('button'), function (b) {
-      b.classList.remove('active');
+      b.classList.toggle('active', (b.getAttribute('data-filter') || '') === which);
     });
-    btn.classList.add('active');
-    filter = btn.getAttribute('data-filter') || '';
+    filter = which;
     limit = PAGE;
     apply();
     if (scroller) scroller.scrollTop = 0;
+  }
+  bar.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('button[data-filter]') : null;
+    if (!btn) return;
+    choose(btn.getAttribute('data-filter') || '');
+  });
+  // the band at the foot of a note: its tags are keys that narrow the wall to that tag, and bring its chip into view
+  cardsBox.addEventListener('click', function (e) {
+    var key = e.target.closest ? e.target.closest('.note-tag[data-filter]') : null;
+    if (!key) return;
+    e.preventDefault(); e.stopPropagation();
+    var which = key.getAttribute('data-filter') || '';
+    var chip = bar.querySelector('button[data-filter="' + which + '"]');
+    choose(chip ? which : '');
+    var top = bar.getBoundingClientRect().top;
+    if (top < 0 || top > 160) bar.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
   /* ---------------------------------------------------------- live refresh */
@@ -130,19 +189,56 @@
   var wait = BASE_MS;
   var timer = null;
 
+  /* the wall lays the fresh set in by id: a card already there is replaced where it stands, a new one goes in above the
+     first card older than it (the wall is in order of sending), a card of the reader's own that is gone goes, and a card
+     the fresh set has left behind (older than its oldest) stays as the wall's older part. The reader's place is kept:
+     the card at the top of the window stays where it was. */
+  function merge(html) {
+    var box = document.createElement('div'); box.innerHTML = html;
+    var fresh = Array.prototype.slice.call(box.querySelectorAll('.card'));
+    var key = function (c) { return sentAt(c) + '|' + String(idOf(c) + 1e9); };    // the order of the wall: the moment sent, the id breaking a tie
+    var minPub = null;
+    fresh.forEach(function (c) { if (!c.hasAttribute('data-mine') && (minPub === null || key(c) < minPub)) minPub = key(c); });
+    var ids = {}; fresh.forEach(function (c) { ids[c.id] = true; });
+    var anchor = null, anchorTop = 0, headH = 0;
+    var bar0 = document.querySelector('.ticker'); if (bar0 && getComputedStyle(bar0).position === 'sticky') headH = bar0.getBoundingClientRect().height;
+    for (var i = 0; i < cards.length; i++) { var r = cards[i].getBoundingClientRect(); if (r.bottom > headH + 8) { anchor = cards[i]; anchorTop = r.top; break; } }
+    cards.forEach(function (c) {
+      if (ids[c.id]) return;
+      if (c.hasAttribute('data-mine') || minPub === null || key(c) >= minPub) { cardsBox.removeChild(c); if (anchor === c) anchor = null; }   // gone from the station's set
+      else c.setAttribute('data-older', '1');                                      // older than the fresh set's oldest: the wall's older part now
+    });
+    fresh.forEach(function (c) {
+      var old = document.getElementById(c.id);
+      if (old) { if (old.getAttribute('data-older')) c.setAttribute('data-older', '1'); cardsBox.replaceChild(c, old); if (anchor === old) anchor = c; return; }
+      var k = key(c), at = null;
+      var now = Array.prototype.slice.call(cardsBox.querySelectorAll('.card'));
+      for (var j = 0; j < now.length; j++) { if (key(now[j]) < k) { at = now[j]; break; } }
+      cardsBox.insertBefore(c, at || empty);
+    });
+    collect();
+    apply();
+    if (anchor && anchor.parentNode) {
+      var d = anchor.getBoundingClientRect().top - anchorTop;
+      if (d) window.scrollBy(0, d);
+    }
+  }
+
   function swap(data) {
+    if (wall) { merge(data.cards); counts(data); return; }
     // Keep the reader's place: if they have scrolled into the board, new
     // cards arriving above them must not shove the one they are reading.
     var top = scroller ? scroller.scrollTop : 0;
     var before = scroller ? scroller.scrollHeight : 0;
     cards.forEach(function (c) { cardsBox.removeChild(c); });
-    groups.forEach(function (g) { cardsBox.removeChild(g); });
     if (empty) empty.insertAdjacentHTML('beforebegin', data.cards);
     else cardsBox.insertAdjacentHTML('afterbegin', data.cards);
     collect();
     apply();
     if (scroller && top > 0) scroller.scrollTop = top + (scroller.scrollHeight - before);
-
+    counts(data);
+  }
+  function counts(data) {
     if (mineCount) {
       mineCount.textContent = String(data.pendingMine);
       mineCount.hidden = !data.pendingMine;
@@ -189,6 +285,7 @@
   collect();
   apply();
   poll();
+  if (seek && !document.getElementById('m' + seek[1])) sought();              // a link to an exchange further down the wall
 
   /* composer.js calls this the moment a message leaves and again when it
      arrives: go back to ALL (where the viewer's own messages head the board),
@@ -196,17 +293,7 @@
      just sent is on the screen without waiting for the next poll. */
   window.MCSBoard = {
     refresh: function (which) {
-      if (typeof which === 'string') {
-        var btn = bar.querySelector('button[data-filter="' + which + '"]');
-        if (btn) {
-          Array.prototype.forEach.call(bar.querySelectorAll('button'), function (b) { b.classList.remove('active'); });
-          btn.classList.add('active');
-          filter = which;
-          limit = PAGE;
-          apply();
-          if (scroller) scroller.scrollTop = 0;
-        }
-      }
+      if (typeof which === 'string' && bar.querySelector('button[data-filter="' + which + '"]')) choose(which);
       wait = BASE_MS;
       poll();
     },

@@ -277,10 +277,15 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
   // Today's EVA — the crew's walk outside — from the schedule: on now, still to come, or already made.
   const evas = tasks.filter((t) => /\bEVA\b/i.test(t.label));
   const evaOn = evas.find((t) => t === nowT), evaNext = evas.find((t) => t.time > hhmm), evaPast = evas.filter((t) => t.time <= hhmm).pop();
-  const evaLine = pre ? (evas[0] ? `${T('Day 01’s EVA is at')} ${evas[0].time}: ${evas[0].label}.` : T('The run has not begun yet.'))
-    : evaOn ? `${T('Now')}: ${evaOn.label}${evaOn.detail ? ' — ' + evaOn.detail : ''}.`
-      : evaNext ? `${T('Today’s EVA is at')} ${evaNext.time}: ${evaNext.label}.`
-        : evaPast ? `${T('Today’s EVA was at')} ${evaPast.time}: ${evaPast.label}.` : T('No EVA on today’s schedule.');
+  // (October's text sheet: the EVA's line names the day's science mission, not the task — "Day 01’s EVA is at 16:00 –
+  // Care as a Finite Resource"; the EVA's walk is the mission's)
+  let missionTitle = '';
+  try { const ms0 = require('../../lib/content').missionForDay(pre ? 1 : m.clampedDay); if (ms0) missionTitle = ms0.title; } catch { /* no missions file */ }
+  const evaOf = (t) => (missionTitle ? ` – ${missionTitle}` : `: ${t.label}`);
+  const evaLine = pre ? (evas[0] ? `${T('Day 01’s EVA is at')} ${evas[0].time}${evaOf(evas[0])}.` : T('The run has not begun yet.'))
+    : evaOn ? `${T('Now')}: ${evaOn.label}${missionTitle ? ' – ' + missionTitle : evaOn.detail ? ' — ' + evaOn.detail : ''}.`
+      : evaNext ? `${T('Today’s EVA is at')} ${evaNext.time}${evaOf(evaNext)}.`
+        : evaPast ? `${T('Today’s EVA was at')} ${evaPast.time}${evaOf(evaPast)}.` : T('No EVA on today’s schedule.');
 
   // The latest exchange with Earth.
   const ex = recent.find((r) => r.state === 'PUBLISHED' && r.response_body) || recent.find((r) => r.state === 'PUBLISHED');
@@ -304,12 +309,10 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
       const snap = { staleMs: critical.source() === 'home-assistant' ? Math.max(5 * 60 * 1000, 3 * critical.CFG.habitatPollMs) : 30 * 60 * 1000 };
       const at = (() => { try { return new Intl.DateTimeFormat('en-GB', { timeZone: m.timezone, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(last.t)); } catch { return ''; } })();
       if (Date.now() - last.t <= snap.staleMs) {
-        const bits = [];
+        const bits = [];                                                 // CO₂, temperature, humidity — and nothing else (October's text sheet)
         if (last.co2 != null) bits.push(`CO₂ ${Math.round(last.co2)} ppm`);
         if (last.temp != null) bits.push(`${Number(last.temp).toFixed(1)} °C`);
         if (last.hum != null) bits.push(`${Math.round(last.hum)} %`);
-        if (last.pres != null) bits.push(`${Math.round(last.pres)} hPa`);
-        if (last.iaq != null) bits.push(`IAQ ${Math.round(last.iaq)}`);
         sensors = { text: `${bits.join(' · ')}.`, more: at ? `${T('Read at')} ${at}.` : '' };
       } else sensors = { text: `${T('No current reading')}.`, more: at ? `${T('The last was at')} ${at}.` : '' };
     }
@@ -318,8 +321,35 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
   let mission = { text: `${T('No mission filed for')} SOL ${sol}.`, more: '' };
   try {
     const ms = require('../../lib/content').missionForDay(pre ? 1 : m.clampedDay);
-    if (ms) mission = { text: `${pre ? `${T('Day 01’s mission')}: ` : ''}${T('Mission No.')} ${ms.no} · ${ms.title}.`, more: ms.question ? `${ms.question}` : '' };
+    if (ms) mission = { text: `${pre ? `${T('Day 01’s mission')}: ` : `${T('Today’s mission')}: `}${ms.title}.`, more: ms.question ? `${ms.question}` : '' };   // the title, no number (October's text sheet)
   } catch { /* no missions file */ }
+  // The communication hour (the text sheet's Communication room): when the next one is — today's, or tomorrow's once
+  // it has passed — and the question of the day for it (the mission's community question, in the visitor's language)
+  const LP = require('./landing');
+  const hourAt = LP.windowWhen(ctx);                                       // "19:00 CET"
+  const [wh, wm] = LP.WINDOW_TIME.split(':').map(Number);
+  const [nh, nm] = hhmm.split(':').map(Number);
+  const minsTo = (wh * 60 + wm) - (nh * 60 + nm);
+  const inWords = (mins) => (mins >= 60 ? `${Math.floor(mins / 60)} h ${String(mins % 60).padStart(2, '0')} min` : `${mins} min`);
+  const hourLine = pre ? `${T('The communication hour is daily at')} ${hourAt}.`
+    : minsTo > 0 ? `${T('Communication hour today at')} ${hourAt} — ${T('in')} ${inWords(minsTo)}.`
+      : minsTo > -60 ? `${T('The communication hour is on now')} (${hourAt}).` : `${T('The next communication hour is tomorrow at')} ${hourAt}.`;
+  let questionLine = '';
+  try {
+    const ms = require('../../lib/content').missionForDay(pre ? 1 : m.clampedDay);
+    const q = ms && ms.community ? (ms.community[ctx.lang] || ms.community.en || '') : '';
+    if (q) questionLine = `${T('Today’s question')}: ${q}`;
+  } catch { /* no missions file */ }
+  // The meals' hours on the schedule (the text sheet's Water Recycling room: the dishes are done after each)
+  const mealTasks = tasks.filter((t) => /\b(breakfast|lunch|dinner|supper|meal|cook|frühstück|mittag|abend|essen|kochen)/i.test(t.label));
+  const mealHours = mealTasks.length ? `${T('Meals today')}: ${mealTasks.map((t) => `${t.time} ${t.label}`).join(' · ')}.` : '';
+  // The crickets' box (the text sheet's More-than-Human room): its temperature from the habitat's hardware, when read
+  let cricketLine = '';
+  try {
+    const ha = require('../../lib/home-assistant');
+    const c = ha.configured() ? ha.snapshot().sensors.find((x) => /cricket/i.test(x.id) || /cricket/i.test(x.label)) : null;
+    if (c && c.value != null) cricketLine = `${T('Cricket box')}: ${Number(c.value).toFixed(1)} ${c.unit || '°C'}.`;
+  } catch { /* no hardware */ }
 
   return {
     stamp, sol, phase: m.phase,
@@ -328,10 +358,10 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
     kitchen:    { text: mealLine, more: storeLine('food', '') },
     nap:        { text: restLine, more: '' },
     health:     { text: `${name(health)}: ${cond(health)}.`, more: `${steps}${kcal ? ` · ${kcal}` : ''}.` },
-    comms:      { text: exLine, more: `${name(comm)}: ${cond(comm)}.` },
+    comms:      { text: `${hourLine}${questionLine ? ' ' + questionLine : ''}`, more: exLine },
     science:    { text: `${name(sci)}: ${cond(sci)}.`, more: `${doing}${next}` },
-    recycling:  { text: storeLine('water', T('No inventory filed for today.')), more: T('The loop runs whenever there is grey water to pass; the crew count the tank at the end of the day.') },
-    aeroponics: { text: storeLine('food', T('No inventory filed for today.')), more: `${T('First harvest planned for SOL 10.')}` },
+    recycling:  { text: storeLine('water', T('No inventory filed for today.')), more: mealHours || T('The loop runs whenever there is grey water to pass; the crew count the tank at the end of the day.') },
+    aeroponics: { text: cricketLine || storeLine('food', T('No inventory filed for today.')), more: cricketLine ? storeLine('food', '') : `${T('First harvest planned for SOL 10.')}` },
     power:      { text: powerLine, more: '' },
     generator:  { text: `${steps}${kcal ? ` · ${kcal}` : ''}.`, more: powerLine },
     eva:        { text: evaLine, more: evaNext && evaOn ? `${T('Up next')} ${evaNext.time}: ${evaNext.label}.` : '' },

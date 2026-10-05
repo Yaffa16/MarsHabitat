@@ -261,6 +261,8 @@ router.get('/', (req, res) => {
     figures: content.crewFigures(),
     power: content.power(),
     items: inventoryFor(day),
+    // the day's scientific mission: the plan's default and the desk's choice, and the missions to choose from
+    missionPlan: content.missionChoice(day),
     edits: editsFor(day),
     drafts: draftsFor(day),
     // Every slot of the crew log, for the Crew log tab: each day, each officer.
@@ -750,6 +752,33 @@ router.post('/crew-figures', (req, res) => {
   noteEdits(form, day, changed, req.user.username);
   setFlash(req, r.ok ? `${DayWord(day)} ${form === 'calories' ? 'calories consumed' : 'steps taken'} saved.` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, 'habitat', day);
+});
+
+/* ========================================================== SCIENCE MISSION */
+
+/* The day's scientific mission, chosen on the Science officer's tab: the plan in content/missions.json (`days`) is
+   the default for each day; a choice is written beside it (`chosen`, day → mission number) and stands in its place
+   wherever the day's mission is shown (content.missionForDay) — Today's Mission on the dashboard, the habitat's
+   Science Station, the mission screen; an empty choice puts the default back. */
+router.post('/mission', (req, res) => {
+  const ctx = req.ctx();
+  const day = dayParam(req, ctx);
+  const raw = String(req.body.mission ?? '').trim();
+  const no = raw === '' ? null : Number(raw);
+  if (no != null && !content.missionsFile().missions.some((m) => m && Number(m.no) === no)) {
+    setFlash(req, 'No such mission.', true);
+    return toTab(res, 'science', day);
+  }
+  const before = content.missionChoice(day).chosen;
+  const r = content.edit('missions.json', (obj) => {
+    const chosen = obj.chosen && typeof obj.chosen === 'object' ? obj.chosen : {};
+    if (no == null) delete chosen[String(day)]; else chosen[String(day)] = no;
+    if (Object.keys(chosen).length) obj.chosen = chosen; else delete obj.chosen;
+  });
+  audit(req.user.username, 'Mission', day, no == null ? 'default' : `mission ${no}`);
+  noteEdits('mission', day, before === no ? [] : ['mission'], req.user.username);
+  setFlash(req, r.ok ? `${DayWord(day)} science mission saved.` : `Saved, but: ${r.error}`, !r.ok);
+  toTab(res, 'science', day);
 });
 
 /* ================================================================ FOOD PLAN */

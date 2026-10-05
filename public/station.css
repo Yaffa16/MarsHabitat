@@ -410,6 +410,7 @@ p { margin: 0 0 13px; max-width: 66ch; color: var(--ink); }
 .card-sent { display: flex; gap: 10px; padding: 4px 16px 0; font-size: 8.5px; letter-spacing: 0.12em; color: var(--faint); }
 .card-sent span:last-child { margin-left: auto; }
 .card .card-body { padding: 12px 16px 14px; font-size: 14.5px; line-height: 1.5; color: var(--ink); flex: 1; }
+.card .card-tags { padding: 0 16px 12px; font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }   /* the message's tags, under its text */
 .card .card-reply { margin: 0 12px 12px; padding: 12px 14px; border-radius: var(--r-sm); background: var(--orange-soft); }
 .card .card-reply .who { font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--orange); font-weight: 700; margin-bottom: 6px; }
 .card .card-reply p { margin: 0; font-size: 14px; line-height: 1.5; }
@@ -1041,6 +1042,7 @@ button.primary:active { transform: translateY(2px); }
 .board .card .card-state { margin-left: auto; background: transparent; border: 0; padding: 0; color: var(--on-screen-dim); font-size: 8.5px; letter-spacing: 0.16em; }
 .board .card .card-state.warn { color: var(--orange); }
 .board .card .card-body { padding: 8px 0 0; color: var(--on-screen); font-size: 14px; line-height: 1.5; }
+.board .card .card-tags { padding: 6px 0 0; color: var(--on-screen-dim); }
 .board .card .card-reply { margin: 7px 0 0; padding: 0; background: transparent; }
 .board .card .card-reply .who { display: none; }
 .board .card .card-reply p { color: var(--orange); font-size: 14px; }
@@ -1985,14 +1987,7 @@ body.control .msg.pending .reply-box { box-shadow: none; border: 2px solid var(-
 body.control .msg .reply-box { border: 2px solid var(--c-line); background: var(--c-field); }
 body.control .msg .reply-box:focus { border-color: var(--orange); outline: 0; }
 body.control .flash { background: var(--c-panel); border: 1px solid var(--c-line); box-shadow: none; color: var(--c-text); }
-/* the relay to space over the queue, and its mark on every message (control/index.js, spaceStatus / spaceMark) */
-body.control .space-status { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin: 0 0 14px; padding: 10px 14px; border-radius: 4px; border: 1px solid var(--c-line); background: var(--c-panel); font-size: 13px; color: var(--c-muted); line-height: 1.5; }
-body.control .space-status-k { font-weight: 600; color: var(--c-text); white-space: nowrap; }
-body.control .space-status.on .space-status-k i { display: inline-block; width: 8px; height: 8px; margin-right: 7px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 0 3px var(--orange-soft); vertical-align: 1px; }
-body.control .space-status-v { flex: 1 1 320px; }
-body.control .space-status-v b { color: var(--c-text); font-weight: 600; }
-body.control .space-status-v .space-bad, body.control .space-status-v .space-last { color: var(--c-bad); }
-body.control .space-status-v .space-last { display: block; margin-top: 2px; }
+/* the relay to space: its mark on every message (control/index.js, spaceMark) */
 body.control .badge.space-sent { color: var(--orange); border-color: var(--orange); text-decoration: none; }
 body.control .badge.space-sent:hover { background: var(--orange-soft); }
 body.control .badge.space-wait { color: var(--c-muted); border-style: dashed; }
@@ -2258,24 +2253,16 @@ body.landing.inner .foot { margin-top: 44px; margin-bottom: 44px; }
 
 /* ============================================================ BOARD STAMPS */
 /* Every card on the board carries when it was sent — and, once the crew have
-   answered, when the reply came — in the venue's own time. The viewer's own
-   messages head the board under MY MESSAGES; everyone's follow under ALL. */
+   answered, when the reply came — in the venue's own time. The cards stand
+   in one sequence, the newest first; the viewer's own among the rest, with
+   a rule of orange at the left. */
 .card-when { display: flex; flex-wrap: wrap; gap: 4px 6px; padding: 4px 16px 0; font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; color: var(--faint); }
 .card-when time { white-space: nowrap; }
 .card-when .card-when-reply { color: var(--orange); }
 .board .card .card-when { padding: 5px 0 0; font-size: 9.5px; color: var(--on-screen-dim); }
 .board .card .card-when .card-when-reply { color: var(--orange); }
-.board-group {
-  display: flex; align-items: center; gap: 8px; padding: 10px 0 6px; margin-top: 4px;
-  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--on-screen-dim);
-  border-bottom: 1px solid var(--screen-rule);
-}
-.board-group[data-group="mine"] { color: var(--orange); }
-.board-group[data-group="all"] { margin-top: 18px; }
-.board-group .board-group-n { display: inline-block; min-width: 16px; padding: 1px 6px; border-radius: 9px; background: var(--orange); color: var(--orange-ink); font-size: 8.5px; text-align: center; letter-spacing: 0; }
-.board-group[hidden] { display: none; }
 .board .card[data-mine] { box-shadow: inset 2px 0 0 var(--orange); padding-left: 10px; }
-@media (max-width: 700px) { body:not(.control) .card-when, body:not(.control) .board-group { font-size: 10px; } }
+@media (max-width: 700px) { body:not(.control) .card-when { font-size: 10px; } }
 
 /* At a Glance: the button under the mission dashboard, and the day sections. */
 .glance-link {
@@ -2458,7 +2445,7 @@ textarea.blog-box { min-height: 340px; font-size: 16px; line-height: 1.65; }
 .ed-blocks { padding: 10px 12px 4px; min-height: 0; }
 /* the sheet: one document, text flowing round the pictures */
 .ed-doc { position: relative; padding: 18px 20px 12px; min-height: 240px; outline: 0; font-size: 16px; line-height: 1.65; color: var(--c-text, var(--ink)); cursor: text; }
-.ed-doc p { margin: 0 0 0.9em; }
+.ed-doc p { margin: 0 0 0.9em; max-width: none; }   /* the sheet's own width — not the 66ch a page's paragraph is kept to */
 .ed-doc p:last-child { margin-bottom: 0; }
 .ed-doc.is-empty::before { content: attr(data-placeholder); position: absolute; left: 20px; top: 18px; right: 20px; color: var(--c-faint, var(--dim)); pointer-events: none; }
 .ed-fig { position: relative; display: table; max-width: 100%; margin: 6px 0 16px; border: 0; border-radius: 0; background: transparent; overflow: visible; user-select: none; -webkit-user-select: none; }

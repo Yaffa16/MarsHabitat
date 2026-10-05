@@ -1,151 +1,130 @@
 'use strict';
 /**
- * The habitat in section — the third page of the landing page: the cutaway
- * drawing of Red Dust City that was handed over (the geodesic shell, and under
- * it the rooms, floor by floor: the more-than-human room — the crickets, the
- * robot dog, the support robot and the hydroponic shelves — the communication
- * station under the dish, the laboratory (the science mission); the
- * sensors, the crew's round room under the crown, the sleeping pod; the
- * stores and the water recycling loop (resource management) and the
- * bicycle generator with the power store), its lines in warm white
- * **on the Mars plain** — the photograph handed over (public/habitat/
- * ground.jpg: the red plain, the hills at the horizon, the dusty sky), set
- * behind the drawing so the habitat stands on the ground at the picture's
- * foot and the horizon runs behind its lower rooms. The whole of the dome
- * is a dark panel on it — the inside of the habitat, the shell's outer
- * arc its edge (SHELL) — and each room a panel of its own in it, the same
- * dark until it is lit, with its furniture drawn in white. **Every room is a key**: under the hand its lights come on — the
- * room fills with a warm light, a glow bleeds through its walls, a bright
- * sweep crosses it once, its lines turn pure white, its name's tag fills —
- * and five of the rooms show themselves in colour: the cut-outs of the
- * coloured cutaway that were handed over (public/habitat/rooms/<id>.webp —
- * the plant shelves, the communication station, the laboratory, the crew's
- * room, the power room; PICS), each coming in over the room in place of its
- * lines, and going when the room goes dark — and its pop-up opens, saying what that part of the habitat is and what is
- * happening in it now (the same sentences the dome's keys carried, dome.js
- * figures, refreshed every twenty seconds from /api/dome). On a desk the
- * drawing stands at the left and the pop-up opens on the hand alone in the
- * column at its right — where, at rest, the hint alone stands — and goes
- * when the hand leaves the room and the pop-up; a touch screen opens it on
- * a tap, the keyboard on Enter. Two keys are not rooms: EVA, the crew's
- * daily walk outside, and the Dashboard — round keys on the ground either
- * side of the shell (on a phone, in front of it, under the ground line).
+ * The habitat in section — a section of the About page (info.js, before Who we are; once the third page of the landing
+ * page): the cutaway
+ * drawing of the habitat handed over as two pictures (public/Svg_File/
+ * mars-habitat-lineart-modules.svg and mars-habitat-colored-modules.svg —
+ * each a stack of pictures: the Mars plain, the geodesic dome, and the
+ * thirteen modules under it, each in its own box): the dome on the plain
+ * drawn in its white lines (public/habitat/scene-lines.webp, the line-art
+ * stack composed, 1536 × 1024), and **every module a key**: under the hand
+ * the module shows itself in colour — its cut-out of the coloured picture
+ * (public/habitat/modules/<id>.webp, cut at twice the size for sharpness)
+ * comes in over its lines, a bright sweep crosses it once, its name comes
+ * up on a tag at its floor line — and its pop-up opens, saying what that
+ * part of the habitat is and what is happening in it now (the same
+ * sentences the dome's keys carried, dome.js figures, refreshed every
+ * twenty seconds from /api/dome). On a desk the drawing stands at the left
+ * and the pop-up opens on the hand alone in the column at its right —
+ * where, at rest, the hint alone stands — and goes when the hand leaves the
+ * module and the pop-up; a touch screen opens it on a tap, the keyboard on
+ * Enter. Two keys are not modules: EVA, the crew's daily walk outside, and
+ * the Dashboard — round keys on the ground in front of the habitat. Under
+ * the picture a line says what it is: AI generated image.
  *
- * The linework is public/habitat/inside.svg — traced from the picture by
- * tools/trace-inside.py, every line a filled path in currentColor, one path
- * per room and one for the shell — drawn here with <use>, so the page
- * carries the rooms' outlines, the keys and the pop-ups alone and the
- * browser keeps the drawing. The outlines (ROOMS, in the picture's own
- * 1536 × 1024 coordinates) are the same the tracer sorts the lines by. The
- * box the page shows (VIEW): the sky over the dome up to its black, the
- * whole shell edge to edge, and under the ground line the two keys in front
- * of the habitat — a phone shows it as it is; a desk, where the card fills
- * the window, fits it to the stage beside the column (the script, fit:
- * wider with the ground either side, or taller with more sky).
+ * The modules' boxes (rect, in the picture's own 1536 × 1024 coordinates)
+ * are the line-art file's own layers, trimmed where two of them overlapped,
+ * and their names are the file's layer names. The box the page shows
+ * (VIEW) is the whole picture — a phone shows it as it is; a desk, where
+ * the card fills the window, fits it to the stage beside the column (the
+ * script, fit: a wider stage shows less of the sky over the dome, a taller
+ * one more of it).
  */
 const { esc } = require('../layout');
 const { figures, LINE_ICONS } = require('./dome');
 
-/* The picture's box, and the parts of it the page shows. */
+/* The picture's box — the whole of it is shown. */
 const PIC = { w: 1536, h: 1024 };
-const APEX_X = 766;                           // the dome's axis
-const VIEW = { x: 56, y: -12, w: 1420, h: 1082 };          // the box: the sky over the dome up to its black, the whole shell edge to edge, the ground under it for the keys
+const APEX_X = 769;                           // the dome's axis (its feet at 8 and 1530)
+const VIEW = { x: 0, y: 0, w: PIC.w, h: PIC.h };
 const VIEW_PHONE = VIEW;                                   // (a phone shows the box as it is; a desk fits it to its stage — the script, fit)
-/* The plain behind the drawing: the photograph (1536 × 1024, its horizon 500 down, its sky black for its first 100
-   rows) is set so its horizon runs at HORIZON in the drawing's coordinates — behind the lower rooms, the dome standing
-   on the ground in front of it — and scaled so its top meets the top of the box: the black of its sky over the crown
-   (which stands at 136, where the black gives way to the dusty red), the orange at the horizon. The box clips it (the
-   clipPath below; its corners rounded like the cards' on a desk). A desk's box is taller or wider than VIEW (fit, in the
-   script): the script sets the photograph again for it, the same way. */
-const PHOTO = { w: 1536, h: 1024, horizon: 500 };
-const HORIZON = 657;
-const PLAIN_BOX = (() => { const k = (HORIZON - VIEW.y) / PHOTO.horizon; const w = PHOTO.w * k, h = PHOTO.h * k; return { x: APEX_X - w / 2, y: VIEW.y, w, h }; })();
-const SHELL = { x1: 64, x2: 1467, y: 862, r: 702.4 };        // the shell's outer arc: a circle through its two feet and its crown (766, 136)
-const APEX = { x: APEX_X, y: 136 };         // the crown of the shell
-const GROUND = 862;                          // the ground line the dome stands on
-const INK = '/habitat/inside.svg';           // the linework, by the tracer
-const PLAIN = '/habitat/ground.jpg?v=2';     // the Mars plain behind it (the query: a new picture, past the browser's hour of cache)
-const ROOM_PICS = '/habitat/rooms/';         // the rooms in colour, one picture per room that has one (<id>.webp)
+const SKY_MIN = 120;                          // how far down the sky a wider desk's box may begin: the dome's crown stands at 195
+const GROUND = 838;                           // the ground line the dome stands on
+const SCENE = '/habitat/scene-lines.webp?v=1';   // the drawing: the dome on the plain in its lines (the line-art stack, composed)
+const MODULE_PICS = '/habitat/modules/';      // the modules in colour, one cut-out each (<id>.webp), at twice the picture's size
 
-/* The rooms, in the order the chips name them: each with its outline (poly, in the picture's coordinates), where its
-   name stands (tag — on the room's floor line), the fields of dome.js figures() whose live sentences it carries (fig),
-   what it is (about — the dome's words where the key exists) and the panel of the dashboard it leads to (href). */
+/* The modules, in the order the picture has them floor by floor: each with its box (rect: x, y, width, height, in the
+   picture's coordinates — the line-art file's layer, trimmed where two overlapped), its name (the file's layer name),
+   the fields of dome.js figures() whose live sentences it carries (fig), what it is (about — the words the dome's keys
+   and the earlier drawing carried, where there are any) and the panel of the dashboard it leads to (href). A module with
+   no sentences of its own (the lockers) lights up and is named, and opens nothing. */
 const ROOMS = [
-  { id: 'aeroponics', label: 'More than Human', href: '/about#more-than-human', btn: 'Read More than Human on the About page', fig: ['aeroponics-text', 'aeroponics-more'],
-    about: ['The habitat’s other inhabitants: three live crickets, a robot dog and an emotional support robot — and the hydroponic shelves, where the fresh food grows without soil.'],
-    poly: [[330, 357], [540, 357], [572, 392], [572, 485], [540, 517], [330, 517], [296, 485], [296, 392]], tag: [434, 517], pic: [285, 350, 294, 162] },
-  { id: 'comms', label: 'Communication', href: '#exchanges', fig: ['comms-text', 'comms-more'], about: ['The uplink: every message written here crosses to the habitat and waits for the commanding officer, whose answer comes back to the board on every open phone.'],
-    poly: [[588, 350], [612, 322], [690, 290], [766, 278], [842, 290], [920, 322], [942, 350], [942, 452], [915, 478], [614, 478], [588, 452]], tag: [765, 478], pic: [583, 261, 364, 218] },
-  { id: 'science', label: 'Science Mission', href: '#mission-today', fig: ['mission-text', 'mission-more'],
-    about: ['Each day has a scientific mission — a sheet with its central question, the work of the morning, the afternoon and the EVA, and a question for the community hour.'],
-    poly: [[990, 357], [1210, 357], [1255, 392], [1255, 485], [1210, 517], [990, 517], [960, 485], [960, 392]], tag: [1107, 517], pic: [949, 352, 302, 163] },
-  { id: 'health', label: 'Sensors', href: '#sensors', fig: ['sensors-text', 'sensors-more'],
-    about: ['An environment sensor inside the habitat reads CO₂, temperature, humidity, pressure, VOCs and the air quality every minute, a light sensor beside it the light — all kept in the record.'],
-    poly: [[255, 530], [540, 530], [600, 585], [600, 650], [560, 695], [255, 695], [220, 650], [220, 585]], tag: [410, 695] },
-  { id: 'crew', label: 'Crew', href: '/media', btn: 'Open the Media Gallery', fig: ['crew-text', 'crew-more'],
-    about: ['The round room under the crown, nobody’s station — where the three meet, eat and plan the day. Each files their condition from inside; what they send out is on the Media page.'],
-    poly: [[610, 515], [935, 515], [975, 560], [975, 660], [935, 710], [610, 710], [600, 650], [600, 585]], tag: [772, 710], pic: [563, 499, 402, 196] },
-  { id: 'nap', label: 'Nap pod', href: '#schedule', btn: 'Open the Daily Schedule', fig: ['nap-text'],
-    about: ['Two sleeping pods, each a bunk closed off from the light and the sound of the habitat. Rest is on the schedule like everything else, and the crew keep to it.'],
-    poly: [[1050, 530], [1270, 530], [1300, 565], [1300, 660], [1270, 695], [1050, 695], [1020, 660], [1020, 565]], tag: [1160, 695] },
-  { id: 'recycling', label: 'Resource Management', href: '#stores', fig: ['recycling-text', 'aeroponics-text'],
-    about: ['Everything was carried in and nothing is resupplied: water, rations, medical kits, extinguishers. Used water passes through the recycling loop; the crew count the stores each evening.'],
-    poly: [[395, 728], [690, 728], [725, 775], [660, 862], [285, 862], [330, 775]], tag: [505, 862] },
-  { id: 'power', label: 'Power', href: '#power', fig: ['power-text', 'generator-text'], about: ['Everything runs on what the crew can make and store: the bicycle generator charges the one battery. Heating, food, lighting and electronics draw on it, counted in kilowatt-hours every day.'],
-    poly: [[870, 728], [1138, 728], [1199, 790], [1199, 862], [860, 862], [830, 775]], tag: [992, 862], pic: [811, 724, 388, 155] },   // the outline out to the picture's right wall, 74 past the drawn one: the cabinet stands there
+  { id: 'hydroponics', label: 'More-than-Human', href: '/dashboard#stores', btn: 'Open the Resources', fig: ['aeroponics-text', 'aeroponics-more'], rect: [270, 346, 325, 147],
+    about: ['The habitat’s other astronauts: live crickets performing as our alternate protein source, a robot dog as an astronaut’s best friend and helper for space walks and an emotional support robot assisting in our mental health — and the gardens and hydroponic shelves, where fresh food can grow without soil.'] },
+  { id: 'comms', label: 'Communication', href: '/write#exchanges', btn: 'Open the Message Board', fig: ['comms-text', 'comms-more'], rect: [595, 314, 349, 179],
+    about: ['The crew is reachable by online message through this ground station website, by postcard and by direct communication each day at 19:00. All messages written here are also literally sent into space!'] },
+  { id: 'science', label: 'Science Mission', href: '/dashboard#mission-today', btn: 'Open Today’s Mission', fig: ['mission-text', 'mission-more', 'sensors-text', 'sensors-more'], rect: [944, 349, 306, 144],
+    about: ['Each of our days has a specific research mission, centered around one of the five topics MARS! is composed of: Habitat, Mental Health, Food, Governance or Resource Management. We take a hard look at our society from the red planet looking down on Earth.',
+      'Sensors: everything is tracked inside the Red Dust City Habitat — CO₂, temperature, humidity, food rations, crew happiness. Keep in the loop and alert us if something seems amiss.'] },
+  { id: 'airlock', label: 'Airlock', href: '/dashboard#schedule', btn: 'Open the Daily Schedule', fig: ['eva-text', 'eva-more'], rect: [102, 493, 109, 177],
+    about: ['Going outside on Mars requires space suits and passing through an air lock. An EVA — extra-vehicular activity — is the crew’s daily walk on the Mars landscape of Karlsruhe’s Marktplatz at 16:00. Its mission is connected to the science mission of the day.'] },
+  { id: 'kitchen', label: 'Kitchen', href: '/dashboard#galley', fig: ['kitchen-text', 'kitchen-more'], rect: [211, 493, 278, 177], about: [] },
+  { id: 'storage', label: 'Storage', href: '/dashboard#stores', fig: ['recycling-text', 'aeroponics-text'], rect: [489, 493, 89, 177],
+    about: ['Everything was carried in and nothing is resupplied: water, rations, medical kits, extinguishers. Used water passes through the recycling loop; the crew count the stores each evening.'] },
+  { id: 'lounge', label: 'Crew', href: '/media', btn: 'Open the Media Gallery', fig: ['crew-more'], rect: [578, 493, 335, 187],
+    about: ['Three astronauts from ZKM — Commander/Comms, Health Officer, and Science Officer — have volunteered to lead this experiment and are now stationed in the Red Dust City Habitat, each with their own role and responsibilities. You can check what they’re doing in the livestream gallery, see their moods and find out more about their daily duties.'] },
+  { id: 'quarters', label: 'Living Quarters', href: '/dashboard#crew', btn: 'Open Crew Moods', fig: ['crew-text'], rect: [913, 493, 238, 178],
+    about: ['Each day has a strict schedule the astronauts adhere to and the Habitat is divided into specific zones for working, cooking, playing and sleeping — because going out for a stroll requires serious effort. Have a look in the media gallery or look inside our windows on the MARS!platz to see how we are using the space.'] },
+  { id: 'health', label: 'Health Station', href: '/dashboard#crew', fig: ['health-text', 'health-more'], rect: [1151, 493, 288, 178], about: [] },
+  { id: 'lockers', label: 'Equipment Lockers', href: null, fig: [], rect: [46, 666, 149, 164], about: [] },
+  { id: 'recycling', label: 'Water Recycling', href: '/dashboard#stores', btn: 'Open the Resources', fig: ['recycling-text', 'recycling-more'], rect: [195, 670, 420, 165],
+    about: ['When every liter of water has to be carried up by space rocket, we become more mindful of our usage. Our water recycling system is one of the things we brought to reflect on resources and how we are currently treating them on Earth.'] },
+  { id: 'cycle', label: 'Cycle (Power Generation)', href: '/dashboard#power', fig: ['generator-text', 'generator-more'], rect: [904, 680, 191, 155],
+    about: ['A bicycle generator: pedalling charges the battery. The health officer’s workout is also the habitat’s power plant — the steps and the kilowatt-hours are the same effort.'] },
+  { id: 'power', label: 'Electricity', href: '/dashboard#power', btn: 'Open the Power Balance', fig: ['generator-text', 'power-text'], rect: [1095, 680, 122, 155],
+    about: ['We measure our energy expenditure: how much comes in, how much goes out: from calorie intake to taken steps, from power produced by muscle to electricity consumption. Check out our power balance in the dashboard!'] },
 ];
-/* The rooms' pictures (pic: x, y, width, height): the cut-outs of the coloured cutaway handed over as SVG wrappers, each
-   a PNG placed at its room's position in the picture's own coordinates — kept as public/habitat/rooms/<id>.webp, each
-   drawn in the box it was handed over in, so it registers with the lines. */
+const hasPopup = (r) => !!(r.fig.length || r.about.length);
 
-/* The two keys that are not rooms — round keys with line icons, as the dome drew them, in front of the habitat under
-   its ground line, drawn larger than the picture's units: on a desk a little (desk, DESK_KEY), with the name on a tag
-   under the key, clear of the rooms' tags on the ground line; on a phone more, under the thumb (at, PHONE_KEY), the
-   name on a tag over the key (which the stylesheet hides there with the rooms' tags). */
+/* The two keys that are not modules — round keys with line icons, as the dome drew them, on the ground in front of the
+   habitat, either side of its axis, drawn larger than the picture's units: on a desk a little (desk, DESK_KEY), with the
+   name on a tag under the key; on a phone more, under the thumb (at, PHONE_KEY), the name on a tag over the key (which
+   the stylesheet hides there with the modules' tags). */
 const KEYS = [
-  { id: 'dashboard', label: 'Dashboard', href: '#mission', fig: ['dashboard-text'], at: [626, 952], desk: [626, 945], btn: 'Open the Mission Dashboard',
+  { id: 'dashboard', label: 'Dashboard', href: '/dashboard#mission', fig: ['dashboard-text'], at: [626, 940], desk: [626, 906], btn: 'Open the Mission Dashboard',
     about: ['The Mission Dashboard is the station’s instrument panel: the live readings, today’s schedule and meal, the crew’s condition, the trends and the three daily blogs, on one page.'] },
-  { id: 'eva', label: 'EVA', href: '#schedule', fig: ['eva-text', 'eva-more'], at: [906, 952], desk: [906, 945],
-    about: ['An EVA — extra-vehicular activity — is the crew’s daily walk outside in their suits, on the Mars landscape of Karlsruhe’s Marktplatz; its hour is on the schedule, its pictures on the Media page.'] },
+  { id: 'eva', label: 'Going Outside', href: '/dashboard#schedule', btn: 'Open the Daily Schedule', fig: ['eva-text', 'eva-more'], at: [912, 940], desk: [912, 906],
+    about: ['Going outside on Mars requires space suits and passing through an air lock. An EVA — extra-vehicular activity — is the crew’s daily walk on the Mars landscape of Karlsruhe’s Marktplatz at 16:00. Its mission is connected to the science mission of the day.'] },
 ];
-const PARTS = ROOMS.concat(KEYS);
+const PARTS = ROOMS.filter(hasPopup).concat(KEYS);
 const DESK_KEY = 1.15, PHONE_KEY = 1.9;             // how much larger than the picture's units the two keys are drawn: on a desk, on a phone
 const KEY_TAG = 42 + 12 + 20;                        // how far from a key's centre its name's tag stands (over it on a phone, under it on a desk)
 
-/* The pop-ups' marks: the dome's line icons, and two of its hand for the rooms the dome had no key for. */
+/* The pop-ups' marks: the dome's line icons, by the module they stand for, and a few of the same hand for the modules
+   the dome had no key for. */
 const ICONS = Object.assign({}, LINE_ICONS, {
-  health: '<path d="M4.5 15.5a7.5 7.5 0 0 1 15 0"/><path d="M12 15.5l3.8-4.6"/><circle cx="12" cy="15.5" r="1.5"/><path d="M4.5 15.5h2"/><path d="M17.5 15.5h2"/><path d="M12 8v2"/>',   // the sensors: a gauge, its needle up
-  nap: '<path d="M3 18.5v-11"/><path d="M3 15.5h18v3"/><path d="M3 12.5h18"/><circle cx="7.5" cy="9.5" r="1.8"/><path d="M11 12.5v-2A1.5 1.5 0 0 1 12.5 9H19a2 2 0 0 1 2 2v1.5"/>',   // the bunk
+  hydroponics: LINE_ICONS.aeroponics,
+  airlock: '<rect x="5" y="3.5" width="14" height="17" rx="3"/><circle cx="12" cy="12" r="3.2"/><path d="M12 8.8v-2"/><path d="M12 17.2v-2"/>',   // the hatch
+  kitchen: '<path d="M4 11h16"/><path d="M5.5 11v6a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-6"/><path d="M8 11V8.5a4 4 0 0 1 8 0V11"/><path d="M3 11h18"/>',   // the pot
+  storage: '<rect x="4" y="9" width="16" height="11" rx="1.5"/><path d="M4 12.5h16"/><path d="M6.5 9V5.5h11V9"/><path d="M10 15.5h4"/>',   // the crate
+  lounge: LINE_ICONS.crew,
+  quarters: '<path d="M3 18.5v-11"/><path d="M3 15.5h18v3"/><path d="M3 12.5h18"/><circle cx="7.5" cy="9.5" r="1.8"/><path d="M11 12.5v-2A1.5 1.5 0 0 1 12.5 9H19a2 2 0 0 1 2 2v1.5"/>',   // the bunk
+  health: '<path d="M12 4.5v15"/><path d="M4.5 12h15"/><rect x="4.5" y="4.5" width="15" height="15" rx="3.5"/>',   // the cross
+  cycle: LINE_ICONS.generator,
 });
 
 const S = 42;                                        // the outside keys' radius, in the picture's units
 const KEY_ICON = (S / 27).toFixed(3);                // the dome drew a 24-unit icon in a key of radius 27
-const pts = (poly) => poly.map(([x, y]) => `${x},${y}`).join(' ');
-const box = (poly) => { const xs = poly.map((p) => p[0]), ys = poly.map((p) => p[1]); const x = Math.min(...xs), y = Math.min(...ys); return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y }; };
 const tagWidth = (text) => Math.round(text.length * 11.6 + 40);   // the name's tag, estimated from the name (19-unit type)
+const rectOf = (r) => ({ x: r.rect[0], y: r.rect[1], w: r.rect[2], h: r.rect[3] });
 
 /** A key's mark for the pop-up's head: the round key with its line icon, as the dome drew it. */
 const mark = (p) => `<svg class="dome-mark" viewBox="-30 -30 60 60" aria-hidden="true"><circle class="dome-pod" r="27"/>
         <g class="dome-ic dome-ic-line" transform="translate(-12 -12)">${ICONS[p.id]}</g></svg>`;
 
-/** A room's layers, bottom to top, each carrying the room's id: the glow through its walls (its outline blurred, unseen
- *  until lit), its dark floor, its lamp (a warm light over the floor, unseen until lit), its lines, its picture where it
- *  has one (over every line, the shell's too — the picture carries its own; unseen until lit, when the room's lines give
- *  way to it), the sweep that crosses it once when lit (a band clipped to the room), then the outline itself as the key,
- *  and its name on a tag. */
-const halo = (r) => `<polygon class="in-halo" data-hex="${r.id}" points="${pts(r.poly)}" filter="url(#in-glow)"/>`;
-const floor = (r) => `<polygon class="in-floor" data-hex="${r.id}" points="${pts(r.poly)}"/>`;
-const lamp = (r) => `<polygon class="in-lamp" data-hex="${r.id}" points="${pts(r.poly)}"/>`;
-const picture = (r) => r.pic ? `<image class="in-pic" data-hex="${r.id}" href="${ROOM_PICS}${r.id}.webp" x="${r.pic[0]}" y="${r.pic[1]}" width="${r.pic[2]}" height="${r.pic[3]}"/>` : '';
-const ink = (r) => `<use class="in-ink in-ink-room${r.pic ? ' has-pic' : ''}" data-hex="${r.id}" href="${INK}#r-${r.id}"/>`;
+/** A module's layers, bottom to top, each carrying the module's id: its picture in colour (over its lines; unseen until
+ *  lit, when it comes in over them), the sweep that crosses it once when lit (a band clipped to the module), then its
+ *  box itself as the key, and its name on a tag at its floor line (unseen until lit). */
+const picture = (r) => { const b = rectOf(r); return `<image class="in-pic" data-hex="${r.id}" href="${MODULE_PICS}${r.id}.webp?v=1" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" preserveAspectRatio="none"/>`; };
 function sweep(r) {
-  const b = box(r.poly), w = Math.round(b.w * 0.26);
+  const b = rectOf(r), w = Math.round(b.w * 0.26);
   return `<g clip-path="url(#in-clip-${r.id})"><rect class="in-sweep" data-hex="${r.id}" x="${b.x}" y="${b.y - 20}" width="${w}" height="${b.h + 40}"/></g>`;
 }
 function roomSvg(r, T) {
-  const name = T(r.label), w = tagWidth(name), [tx, ty] = r.tag;
+  const name = T(r.label), w = tagWidth(name), b = rectOf(r), tx = Math.round(b.x + b.w / 2), ty = b.y + b.h;
+  const popup = hasPopup(r);
   return `<g class="in-part" data-part="${r.id}">
-        <polygon class="in-room" data-hex="${r.id}" points="${pts(r.poly)}" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="dome-${r.id}"><title>${esc(name)}</title></polygon>
+        <rect class="in-room" data-hex="${r.id}" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" role="button" tabindex="0"${popup ? ` aria-haspopup="dialog" aria-controls="dome-${r.id}"` : ''}><title>${esc(name)}</title></rect>
         <g class="dome-tag in-tag" data-hex="${r.id}" data-x="${tx}" data-y="${ty}" aria-hidden="true"><rect x="${tx - w / 2}" y="${ty - 20}" width="${w}" height="40" rx="20"/><text x="${tx}" y="${ty + 6.5}" text-anchor="middle">${esc(name)}</text></g>
       </g>`;
 }
@@ -178,8 +157,8 @@ function habitatInside(ctx, args) {
         <button type="button" class="popup-close" data-close aria-label="${esc(T('Close'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </div>
       <div class="popup-body">
-        <p class="dome-now"><span class="dome-now-k">${T('Now')}</span> ${p.fig.map((k) => { const [id, part] = k.split('-'); return `<span data-field="${k}">${esc((f[id] || {})[part] || '')}</span>`; }).join(' ')}</p>
         ${p.about.map((t) => `<p>${esc(T(t))}</p>`).join('')}
+        <p class="dome-now"><span class="dome-now-k">${T('Now')}</span> ${p.fig.map((k) => { const [id, part] = k.split('-'); return `<span data-field="${k}">${esc((f[id] || {})[part] || '')}</span>`; }).join(' ')}</p>
         <p><a class="btn" href="${p.href}" data-close>${T(p.btn || 'Open its panel on the dashboard')} →</a></p>
       </div>
     </dialog>`;
@@ -187,31 +166,26 @@ function habitatInside(ctx, args) {
   const hint = `<span class="dome-meta dome-hint"><span class="dome-hint-click">${T('Point at a room to know what is inside.')}</span><span class="dome-hint-tap">${T('Tap a room to know what is inside.')}</span></span>`;
   const vb = (v) => `${v.x} ${v.y} ${v.w} ${v.h}`;
   return `
-  <section class="dome-panel is-inside" id="habitat-dome" aria-label="${esc(T('What’s inside the habitat'))}">
+  <section class="dome-panel is-inside" id="habitat-dome" aria-label="${esc(T('What’s inside the habitat?'))}">
     <header class="dome-head">
-      <div class="dome-title"><h2>${T('What’s inside the habitat')}</h2></div>
+      <div class="dome-title"><h2>${T('What’s inside the habitat?')}</h2></div>
       ${hint}
     </header>
     <div class="dome-screen">
       <!-- a desk: the drawing at the left and, at its right, the column the pop-up opens in — at rest the hint alone
            (sheet.css lays the two out; a phone has the drawing alone) -->
       <div class="dome-stage">
-        <svg class="dome-svg inside-svg" viewBox="${vb(VIEW)}" data-view="${vb(VIEW)}" data-view-phone="${vb(VIEW_PHONE)}" preserveAspectRatio="xMidYMax meet" role="img" aria-label="${esc(T('The habitat in section: its rooms under the dome, on the Mars plain'))}">
+        <svg class="dome-svg inside-svg" viewBox="${vb(VIEW)}" data-view="${vb(VIEW)}" data-view-phone="${vb(VIEW_PHONE)}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(T('The habitat in section: its rooms under the dome, on the Mars plain'))}">
           <defs>
-            <linearGradient id="in-lamp-light" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6df" stop-opacity=".72"/><stop offset=".55" stop-color="#ffd995" stop-opacity=".42"/><stop offset="1" stop-color="#ffb55a" stop-opacity=".26"/></linearGradient>
             <linearGradient id="in-sweep-light" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".42" stop-color="#fff" stop-opacity=".5"/><stop offset=".5" stop-color="#fff" stop-opacity=".95"/><stop offset=".58" stop-color="#fff" stop-opacity=".5"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-            <filter id="in-glow" x="-25%" y="-35%" width="150%" height="170%"><feGaussianBlur stdDeviation="18"/></filter>
-            ${ROOMS.map((r) => `<clipPath id="in-clip-${r.id}"><polygon points="${pts(r.poly)}"/></clipPath>`).join('')}
+            ${ROOMS.map((r) => { const b = rectOf(r); return `<clipPath id="in-clip-${r.id}"><rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}"/></clipPath>`; }).join('')}
           </defs>
-          <clipPath id="in-plain-clip"><rect class="in-plain-frame" x="${VIEW.x}" y="${VIEW.y}" width="${VIEW.w}" height="${VIEW.h}" rx="26"/></clipPath>
-          <image class="in-plain" href="${PLAIN}" x="${PLAIN_BOX.x.toFixed(1)}" y="${PLAIN_BOX.y}" width="${PLAIN_BOX.w.toFixed(1)}" height="${PLAIN_BOX.h.toFixed(1)}" preserveAspectRatio="none" clip-path="url(#in-plain-clip)" aria-hidden="true"/>
-          <path class="in-dome" fill-rule="evenodd" d="M${SHELL.x1} ${SHELL.y}A${SHELL.r} ${SHELL.r} 0 1 1 ${SHELL.x2} ${SHELL.y}Z${ROOMS.map((r) => 'M' + r.poly.map(([x, y]) => `${x} ${y}`).join('L') + 'Z').join('')}" aria-hidden="true"/>
-          <g class="in-halos" aria-hidden="true">${ROOMS.map(halo).join('')}</g>
-          <g class="in-floors" aria-hidden="true">${ROOMS.map(floor).join('')}</g>
-          <g class="in-lamps" aria-hidden="true">${ROOMS.map(lamp).join('')}</g>
-          <g class="in-inks"><use class="in-ink in-ink-shell" href="${INK}#shell"/>${ROOMS.map(ink).join('')}</g>
-          <g class="in-pics" aria-hidden="true">${ROOMS.map(picture).join('')}</g>
-          <g class="in-sweeps" aria-hidden="true">${ROOMS.map(sweep).join('')}</g>
+          <clipPath id="in-frame-clip"><rect class="in-frame" x="${VIEW.x}" y="${VIEW.y}" width="${VIEW.w}" height="${VIEW.h}" rx="26"/></clipPath>
+          <g class="in-picture" clip-path="url(#in-frame-clip)">
+            <image class="in-scene" href="${SCENE}" x="0" y="0" width="${PIC.w}" height="${PIC.h}" preserveAspectRatio="none" aria-hidden="true"/>
+            <g class="in-pics" aria-hidden="true">${ROOMS.map(picture).join('')}</g>
+            <g class="in-sweeps" aria-hidden="true">${ROOMS.map(sweep).join('')}</g>
+          </g>
           <g class="in-rooms">${ROOMS.map((r) => roomSvg(r, T)).join('')}</g>
           <g class="dome-hexes">${KEYS.map((k) => keySvg(k, T)).join('')}</g>
         </svg>
@@ -220,12 +194,13 @@ function habitatInside(ctx, args) {
         <p class="in-aside-hint">${hint}</p>
       </aside>
     </div>
+    <p class="in-credit">${T('AI generated image')}</p>
     <p class="dome-caption" aria-hidden="true"></p>
     ${PARTS.map(popup).join('')}
     <script>
     (function () {
       var root = document.getElementById('habitat-dome'); if (!root) return;
-      var VB = [${VIEW.x}, ${VIEW.y}, ${VIEW.w}, ${VIEW.h}], AX = ${APEX.x};
+      var VB = [${VIEW.x}, ${VIEW.y}, ${VIEW.w}, ${VIEW.h}], AX = ${APEX_X};
       var hover = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);   // a desk: the hand alone opens a room
       function dialogOf(id) { var d = document.getElementById('dome-' + id); return d && d.tagName === 'DIALOG' ? d : null; }
       var by = {}, from = {}, shown = null;              // how each pop-up was opened ('hand', 'hover' or 'key'board), from which element; the pop-up open on the hand
@@ -285,17 +260,26 @@ function habitatInside(ctx, args) {
       // fit it, its foot at the stage's foot).
       function picture() {
         var svg = root.querySelector('.dome-svg'), sr = svg.getBoundingClientRect();
-        var scale = Math.min(sr.width / VB[2], sr.height / VB[3]), side = (sr.width - VB[2] * scale) / 2;
-        return { x: sr.left + sr.width / 2 + (AX - (VB[0] + VB[2] / 2)) * scale, left: sr.left + side, right: sr.right - side, top: sr.top + (sr.height - VB[3] * scale), bottom: sr.bottom };
+        var scale = Math.min(sr.width / VB[2], sr.height / VB[3]), side = (sr.width - VB[2] * scale) / 2, over = (sr.height - VB[3] * scale) / 2;   // centred in its stage
+        return { x: sr.left + sr.width / 2 + (AX - (VB[0] + VB[2] / 2)) * scale, left: sr.left + side, right: sr.right - side, top: sr.top + over, bottom: sr.bottom - over };
       }
       function below() { var t = document.querySelector('.ticker'); return t ? Math.max(0, t.getBoundingClientRect().bottom) : 0; }   // the header's foot
       function upright() { return window.matchMedia && window.matchMedia('(max-width: 760px) and (min-height: 521px)').matches; }
       function phone() { return window.matchMedia && window.matchMedia('(max-width: 760px), (max-height: 520px)').matches; }
+      // A phone held upright: the pop-up over the picture where there is room for it under the header; else under the
+      // picture — the lit module stays in view — as tall as the screen allows (its body scrolls inside); on a screen
+      // too short for that, over the picture after all.
       function above(d) {
-        var vw = window.innerWidth, m = 8;
-        var w = Math.min(vw - 2 * m, 560); d.style.width = w + 'px'; d.style.margin = '0';
-        var h = d.getBoundingClientRect().height, pic = picture();
-        var top = Math.max(below() + m, pic.top - 10 - h);
+        var vw = window.innerWidth, vh = window.innerHeight, m = 8;
+        var w = Math.min(vw - 2 * m, 560); d.style.width = w + 'px'; d.style.margin = '0'; d.style.maxHeight = '';
+        var h = d.getBoundingClientRect().height, pic = picture(), lo = below() + m;
+        var top = pic.top - 10 - h;
+        if (top < lo) {
+          top = pic.bottom + 10;
+          var room = vh - m - top;
+          if (room < 200) top = Math.max(lo, vh - m - h);
+          else if (h > room) d.style.maxHeight = room + 'px';
+        }
         put(d, Math.round((vw - w) / 2), Math.round(top));
       }
       function beside(d, el) {
@@ -331,6 +315,7 @@ function habitatInside(ctx, args) {
       // The hand: a moment over a part opens its pop-up; a moment after it has left the part and the pop-up, the pop-up goes.
       var enterT = null, leaveT = null, over = null;
       function arrive(id, el) {
+        if (!dialogOf(id)) { over = null; clearTimeout(enterT); clearTimeout(leaveT); leaveT = setTimeout(function () { if (over == null && shown != null) shut(shown); }, 320); return; }   // a part with no pop-up (the lockers): lit and named, and the last pop-up goes
         over = id; clearTimeout(leaveT); clearTimeout(enterT);
         if (shown && shown !== id) { enterT = setTimeout(function () { if (over === id) open(id, 'hover', el); }, 60); }
         else enterT = setTimeout(function () { if (over === id) open(id, 'hover', el); }, 140);
@@ -378,25 +363,22 @@ function habitatInside(ctx, args) {
         }).catch(function () { /* next time */ }).finally(function () { busy = false; });
       }
       setInterval(refresh, 20000);
-      // The box the page shows: on a phone the box as it is (VIEW: the sky over the dome, the shell edge to edge, the
-      // ground under it with the two keys); on a desk the shape of its stage — the card fills the window and the stage
-      // is what is left beside the column (sheet.css) — the box widened for a wider stage (the ground either side) or
-      // made taller for a taller one (more sky over the dome), its foot and the dome's axis where they were, and the
-      // plain set again to fill it the same way (its top at the box's top). The two keys are drawn larger on a phone.
-      var drawing = root.querySelector('.dome-svg'), frame = root.querySelector('.in-plain-frame'), plain = root.querySelector('.in-plain'), onView = '';
-      var BASE = [${VIEW.x}, ${VIEW.y}, ${VIEW.w}, ${VIEW.h}], PHOTO = { w: ${PHOTO.w}, h: ${PHOTO.h}, horizon: ${PHOTO.horizon} }, HORIZON = ${HORIZON};
+      // The box the page shows: on a phone the whole picture (VIEW); on a desk the shape of its stage — the card fills
+      // the window and the stage is what is left beside the column (sheet.css) — a wider stage shows less of the sky
+      // over the dome (the box's top moved down, never past SKY_MIN), a taller one all of it with room over it; its
+      // foot and the dome's axis where they were. The two keys are drawn larger on a phone.
+      var drawing = root.querySelector('.dome-svg'), frame = root.querySelector('.in-frame'), onView = '';
+      var BASE = [${VIEW.x}, ${VIEW.y}, ${VIEW.w}, ${VIEW.h}], SKY_MIN = ${SKY_MIN};
       function fit() {
         var p = phone(), v = BASE.slice(), sr = drawing.getBoundingClientRect();
         if (!p && sr.width > 0 && sr.height > 0) {
           var ar = sr.width / sr.height, foot = BASE[1] + BASE[3];
-          if (ar >= BASE[2] / BASE[3]) { var w = Math.round(BASE[3] * ar); v = [Math.round(AX - w / 2), BASE[1], w, BASE[3]]; }
-          else { var h = Math.round(BASE[2] / ar); v = [BASE[0], foot - h, BASE[2], h]; }
+          if (ar > BASE[2] / BASE[3]) { var h = Math.max(foot - SKY_MIN, Math.round(BASE[2] / ar)); v = [BASE[0], foot - h, BASE[2], h]; }
         }
         var key = (p ? 'phone ' : 'desk ') + v.join(' ');
         if (key === onView) return; onView = key;
         drawing.setAttribute('viewBox', v.join(' ')); VB = v;
-        if (frame) { frame.setAttribute('x', v[0]); frame.setAttribute('y', v[1]); frame.setAttribute('width', v[2]); frame.setAttribute('height', v[3]); frame.setAttribute('rx', p ? 0 : 26); }
-        if (plain) { var k = (HORIZON - v[1]) / PHOTO.horizon, pw = PHOTO.w * k, ph = PHOTO.h * k; plain.setAttribute('x', (AX - pw / 2).toFixed(1)); plain.setAttribute('y', v[1]); plain.setAttribute('width', pw.toFixed(1)); plain.setAttribute('height', ph.toFixed(1)); }
+        if (frame) { frame.setAttribute('x', v[0]); frame.setAttribute('y', v[1]); frame.setAttribute('width', v[2]); frame.setAttribute('height', v[3]); }
         keyK = p ? ${PHONE_KEY} : ${DESK_KEY};
         root.querySelectorAll('.in-key').forEach(function (k) {
           var at = (k.getAttribute(p ? 'data-at' : 'data-desk') || '').split(',');
@@ -427,4 +409,4 @@ function habitatInside(ctx, args) {
   </section>`;
 }
 
-module.exports = { habitatInside, ROOMS, KEYS, VIEW, VIEW_PHONE, INK, PLAIN, ROOM_PICS };
+module.exports = { habitatInside, ROOMS, KEYS, VIEW, VIEW_PHONE, SCENE, MODULE_PICS };

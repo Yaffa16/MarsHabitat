@@ -30,7 +30,7 @@
       var body = form.querySelector('textarea[name=body]');
       var count = form.querySelector('.counter');
       if (body && count) {
-        var max = Number(body.getAttribute('maxlength')) || 500;
+        var max = Number(body.getAttribute('maxlength')) || 1000;
         var update = function () {
           count.textContent = body.value.length + ' / ' + max;
           count.classList.toggle('over', body.value.length > max * 0.9);

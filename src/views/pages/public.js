@@ -6,7 +6,6 @@ const data = require('../../lib/data');
 const { TAGS } = data;
 const { composerBlock } = require('./communicate');
 const { habitatDome, LINE_ICONS } = require('./dome');
-const { habitatInside } = require('./inside');
 const { habitatSky } = require('./sky');
 const LP = require('./landing');
 const MV = require('./media');
@@ -334,21 +333,23 @@ function composerPrompt(ctx) {
           <span class="dev-prompt-n">${T('Answer it below — or ask the crew something of your own.')}</span>
         </div>`;
 }
-function composerDevice(ctx, { inFlight = null, error = null, draft = '', kiosk = '' } = {}) {
+function composerDevice(ctx, { inFlight = null, error = null, draft = '', kiosk = '', meta = false } = {}) {
   const T = ctx.T;
+  // `meta`: the Write page's pop-up says, in its head, the one-way signal a message is about to cross and the distance
+  const signal = meta ? `<span class="dev-signal" title="${esc(T('One-way signal'))}">${T('One-way signal')} <b>${esc(orbital.formatLightTime(ctx.geo.lightSeconds))}</b> · ${ctx.geo.distanceAu.toFixed(3)} au</span>` : `<span class="dev-chan">${T('Uplink')}</span>`;
   return `<section class="device composer-device${inFlight ? ' sending' : ''}" aria-label="${esc(T('Composer'))}">
-        <h2 class="dev-title">${T('Write to the crew')}</h2>
+        <h2 class="dev-title" id="dev-title">${T('Write to the crew')}</h2>
         <button type="button" class="dev-close" aria-label="${esc(T('Close'))}" title="${esc(T('Close'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
         <span class="dev-led" aria-hidden="true"></span>
         <span class="dev-grip" aria-hidden="true"></span>
         <span class="dev-knob" aria-hidden="true"></span>
         <span class="dev-vents" aria-hidden="true"></span>
         <div class="dev-head">
-          <span>${T('Operator')}</span>
+          <span>${T(meta ? 'Your callsign' : 'Operator')}</span>
           ${ctx.callsign ? `<span class="dev-chip" title="${esc(T('Your callsign for this visit — no account, no name'))}">${esc(ctx.callsign)}</span>`
             : ctx.offer ? `<span class="dev-chip dev-chip-later" title="${esc(T('Your callsign for this visit — no account, no name'))}">${esc(ctx.offer)}</span>`
             : `<span class="dev-chip dev-chip-later" title="${esc(T('Your callsign for this visit — no account, no name'))}">${T('Callsign on sending')}</span>`}
-          <span class="dev-chan">${T('Uplink')}</span>
+          ${signal}
         </div>${composerPrompt(ctx)}
         <div class="dev-body" id="dev-body"${kiosk ? ` data-kiosk="1" data-refresh="/screen/write/composer?lang=${esc(kiosk)}"` : ''}>${composerBlock(ctx, { inFlight, error, draft, kiosk })}</div>
       </section>`;
@@ -362,12 +363,12 @@ function composerDevice(ctx, { inFlight = null, error = null, draft = '', kiosk 
  * everyone's published exchanges and this visitor's own messages, whatever
  * their state. Drawn on the mission page and on the messages page alike.
  */
-function boardScreen(ctx, { recent = [], poll = '/api/board', mineLabel = null } = {}) {
+function boardScreen(ctx, { recent = [], poll = '/api/board' } = {}) {
   const T = ctx.T;
-  // This visitor's messages that mission control has not yet published. They
-  // are in the page, but only surface under MY MESSAGES.
+  // This visitor's messages that mission control has not yet published —
+  // in the page among the rest, counted on the MY MESSAGES chip.
   const pendingMine = recent.filter((m) => m.mine && m.pending).length;
-  const openOnMine = false;   // ALL opens first; the viewer's own messages head it
+  const openOnMine = false;   // ALL opens first
   // the page polls /api/board for the same cards it was drawn with (the installation's board screen names its own
   // address: its language and its 400 cards — views/pages/screens.js)
   return `<div class="feed-wrap"><div class="feed-scroll" id="feed" data-poll="${esc(poll)}" data-open="${ctx.mission.open ? 1 : 0}"
@@ -377,7 +378,7 @@ function boardScreen(ctx, { recent = [], poll = '/api/board', mineLabel = null }
             <h2>${T('Message Board')}</h2>
             <span class="live" id="feed-live" title="${esc(T('The board refreshes itself every few seconds'))}">${T('LIVE')}</span>
           </div>
-          <div class="scroller feed"><div class="cards" id="feed-cards">${boardCards(recent, T, { mineLabel })}
+          <div class="scroller feed"><div class="cards" id="feed-cards">${boardCards(recent, T)}
             <div class="empty" id="feed-empty"${recent.length ? ' style="display:none"' : ''}
               data-none="${esc(T('Nothing transmitted yet — the first message could be yours'))}"
               data-filtered="${esc(T('No messages match this filter'))}">${
@@ -409,49 +410,9 @@ function dashboardPage(ctx, d) {
     mediaLookup: d.mediaLookup, hardware: d.hardware, hardwareDaily: d.hardwareDaily, cloud: d.cloud, mission: d.mission,
   });
   return L.page({
-    title: 'Mission dashboard', ctx, body, hideNav: true, hideRail: true, bodyClass: 'landing inner dashboard',
+    title: 'Mission dashboard', ctx, body, hideNav: true, hideRail: true, bodyClass: 'landing inner dashboard', masthead: false,
     current: '/dashboard', scripts: ['/habitat.js', '/hardware.js', '/folder.js', '/live.js'].concat(d.cloud ? ['/cloud.js'] : []),
     styles: ['/aura.css'],
-  });
-}
-
-/**
- * The messages page, /messages: the portal on a page of its own — the board
- * and the composer as the mission page has them, without the rest. Drawn for
- * a phone first: there the exchanges flow with the page and the composer is a
- * pop-up over the foot of the screen, above the bar of keys, that the bar's
- * Write key shows and hides (aura.css, tabbar.js); the bar's Write key and
- * the mission page's doors lead here, /messages#write opening it with the
- * composer shown. On a wider screen it is an inner page like the media page,
- * the two side by side as on the mission page.
- */
-function messages(ctx, { recent = [], inFlight = null, error = null, draft = '' } = {}) {
-  const T = ctx.T;
-  const body = `
-  <section class="portal portal-page" id="write">
-  <header class="portal-head">
-    <div>
-      <h2 class="bigsec">${T('Messages')}</h2>
-      <p class="dash-sub">${T('Communication Portal')} · ${T('Uplink')} · ${esc(ctx.mission.name)} · ${ctx.geo.distanceAu.toFixed(3)} au</p>
-    </div>
-    <div class="dash-clock">
-      <span class="dash-clock-label">${T('One-way signal')}</span>
-      <b>${esc(orbital.formatLightTime(ctx.geo.lightSeconds))}</b>
-    </div>
-  </header>
-  <div class="portal-grid">
-    <aside class="portal-letters" aria-hidden="true">${'MARSPLATZ'.split('').map((c) => `<span>${c}</span>`).join('')}</aside>
-    <div class="portal-main">
-      <!-- On a phone the composer is a pop-up over the board (tabbar.js; aura.css): the cross at its top right, a touch
-           beside it or Escape lowers it, and it lowers itself once a message has crossed, so the board is read then. -->
-      ${composerDevice(ctx, { inFlight, error, draft })}
-    </div>
-    <section class="feed-col" id="exchanges">${boardScreen(ctx, { recent })}</section>
-  </div>
-  </section>`;
-  return L.page({
-    title: 'Messages', ctx, body, hideNav: true, hideRail: true, bodyClass: 'landing inner messages',
-    current: '/messages', scripts: ['/composer.js', '/board.js'], styles: ['/aura.css'],
   });
 }
 
@@ -486,18 +447,24 @@ function ticker(ctx, { today } = {}) {
     cells.push(`${T('Next:')} <b id="tk-next">${nextTask ? say(nextTask) : T('nothing more today')}</b>`);
   }
   cells.push(`${T('Habitat:')} <b id="tk-hab">${T('awaiting reading')}</b>`);   // the one-way signal is read where a message is written, and nowhere else
-  if (!over) cells.push(`${T('Communication window daily')} <b>${esc(LP.windowWhen(ctx))}</b>`);   // when the crew answer — "19:00 CEST" (landing.js)
+  if (!over) cells.push(`${T('Communication window daily')} <b>${esc(LP.windowWhen(ctx))}</b>`);   // when the crew answer — "19:00 CET" (landing.js)
   const line = cells.map((c) => `<span class="tk-cell">${c}</span>`).join('<span class="tk-sep">·</span>');
   /* The header of every public page, after the design handoff's reference sheet: a row with the wordmark (the way home),
      the run's badge — the countdown before it, the sol during it —, and in the middle of the row the station's three ways
-     on — Write to the crew (the composer, /#write), Live Mission Dashboard (/#mission) and About (/about) —, then the
+     on — Write to the crew (the Write page, /write), Live Mission Dashboard (/dashboard) and About (/about) —, then the
      theme and language switches at its right end (no clock); under it the running line. The three links are
      a wider screen's: a phone held upright has its bar of keys at the foot for the same ways (sheet.css hides them there),
      and a screen in the square shows none of them (screen.css). No menu: the reading matter is one page, /about. */
-  const ways = [['/#write', 'Write to the crew'], ['/#mission', 'Live Mission Dashboard'], ['/about', 'About']];
+  // the three keys, each with its sign in the line-icon hand of the dome's keys: the pen, the four panels, the i — the
+  // Write key in Mars, the station's primary colour (the Write link opens the Write page's pop-up)
+  const ways = [
+    ['/write#write', 'Write to the crew', 'tk-write', '<path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M13.5 6.5l3 3"/>'],
+    ['/dashboard', 'Live Mission Dashboard', 'tk-dash', '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>'],
+    ['/about', 'About', 'tk-about', '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><path d="M12 7.5v.5"/>'],
+  ];
   const here = ctx.current || '';
-  const nav = `<nav class="tk-nav" aria-label="${esc(T('The station, page by page'))}">${ways.map(([href, label]) =>
-    `<a href="${href}"${here && href === here ? ' aria-current="page"' : ''}>${esc(T(label))}</a>`).join('')}</nav>`;
+  const nav = `<nav class="tk-nav" aria-label="${esc(T('The station, page by page'))}">${ways.map(([href, label, cls, icon]) =>
+    `<a class="${cls}" href="${href}"${here && href.replace(/#.*$/, '') === here ? ' aria-current="page"' : ''}><svg class="tk-ic" viewBox="0 0 24 24" aria-hidden="true">${icon}</svg><span>${esc(T(label))}</span></a>`).join('')}</nav>`;
   return `
   <header class="ticker"
        data-tz="${esc(m.timezone)}" data-tasks="${esc(JSON.stringify(tasks))}"${over ? ' data-over="1"' : ''}
@@ -649,70 +616,116 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
      running line. */
   const hero = ticker(ctx, { today });
 
-  /* The days of the run, spelled down the right-hand margin. */
-  const dayRail = `<aside class="day-rail" aria-hidden="true">
-    ${Array.from({ length: ctx.mission.totalDays }, (_, i) => {
-      const n = i + 1, now = ctx.mission.clampedDay;
-      const cls = pre ? '' : n === now ? 'now' : n < now ? 'past' : '';
-      return `${i ? `<i class="${!pre && n <= now ? 'past' : ''}"></i>` : ''}<span class="${cls}">${String(n).padStart(2, '0')}</span>`;
-    }).join('')}
-    <span class="day-rail-cap">SOL</span>
-  </aside>`;
-
   /* The landing page (landing.js): first the way to the habitat — the Earth, the line up to the habitat, and around
      it the sky of the latest exchanges and the newest pictures from the cloud folder, the scroll nudge on the Earth —
-     with the name over it on a wider screen; the note (a phone has the name at its head), with its doors and its Know
-     more key to the About page; the habitat — the dome with its floating keys, each opening a pop-up that says what that
-     part of the habitat is and what is happening in it now — drawn now as the habitat in section (inside.js,
-     habitatInside): the cutaway drawing handed over, every room a key, EVA and the Dashboard as round keys on the ground
-     outside the shell — on a card of glass, with no sheet under it and no sky over it: the drawing and its pop-ups alone;
-     the world's slowest chat; then, on a wider screen, the portal and the dashboard (a phone has them as pages of their
-     own, aura.css, sheet.css). On a phone every data-page is a page of the scroll: a swipe goes to the next (sheet.css,
-     public/sky.js). (The dome with its floating keys — dome.js, habitatDome — and the earlier cutaway — cutaway.js,
-     public/cutaway.js — are not drawn any more; the code stays, in case the run wants either back; the dome's figures()
-     still write every pop-up's sentences and /api/dome.) */
+     with the name over it on a wider screen; the second page (landing.js, note — a phone has the name at its head): the
+     note, and under it the two calls, SEND A MESSAGE TO THE CREW, approved messages are beamed into space, and FOLLOW
+     WHAT THE CREW IS DOING — LIVE; the world's slowest chat. The composer is the pop-up every public page carries
+     (layout.js, writeKit): the Write doors here (#write) open it over the page on a wider screen, and lead a phone to
+     the Write page's dock (tabbar.js); the board is on the Write page (/write, writePage below), the mission dashboard
+     on its own page (/dashboard). On a phone every data-page is a page of the scroll: a swipe goes to the next (sheet.css,
+     public/sky.js). (The habitat in section — inside.js, habitatInside: the picture with every module a key — stands on
+     the About page, before Who we are; the dome with its floating keys — dome.js, habitatDome — and the earlier cutaway
+     — cutaway.js, public/cutaway.js — are not drawn any more; the code stays, in case the run wants either back; the
+     dome's figures() still write every pop-up's sentences and /api/dome.) */
   const body = `
   <script>
   // the reading matter was three pop-ups over this page once, opened from the address: those addresses — /#about,
   // /#about-project, /#what, /#who-we-are — lead to the About page, where it is now; by way of /about?from=home, which no
-  // browser can have kept as the permanent redirect back to /#about that /about used to be
-  (function () { var h = location.hash; if (/^#(about|about-project|what|who-we-are)$/.test(h)) location.replace('/about?from=home' + (h === '#about' ? '' : h)); })();
+  // browser can have kept as the permanent redirect back to /#about that /about used to be. The board is on the Write
+  // page (/#exchanges leads to the wall; /#write opens the pop-up here, as on every page) and the dashboard on its own
+  // page: /#mission and every panel of it lead to /dashboard.
+  (function () { var h = location.hash; if (/^#(about|about-project|what|inside|who-we-are)$/.test(h)) location.replace('/about?from=home' + (h === '#about' ? '' : h));
+    else if (h === '#exchanges') location.replace('/write' + h);
+    else if (/^#(mission|mission-today|habitat|sensors|stores|power|hardware|trends|schedule|galley|crew|blog-commander|blog-health|blog-science)$/.test(h)) location.replace('/dashboard' + h); })();
   </script>
   ${LP.space(ctx, { sky: habitatSky(ctx, { recent, cloud }) })}
   ${LP.note(ctx)}
-  <section class="sheet sheet-p3 habitat-page" id="inside" aria-label="${esc(T('What’s inside the habitat'))}" data-page>
-    <div class="hab-card">
-      ${habitatInside(ctx, { today, crew, recent, power, counts, crewFigures })}
-    </div>
-  </section>
   ${LP.slowChat(ctx)}
-  <section class="portal" id="write" data-stop>
-  <!-- The portal's heading, in the dress of the dashboard's: the channel's
-       code, the title, the line beneath; at the right the one-way light-time
-       a message is about to cross, where the dashboard shows the elapsed. -->
-  <header class="portal-head">
-    <div>
-      <h2 class="bigsec">${T('Send a message to the Crew')}</h2>
-      <p class="dash-sub">${T('Communication Portal')} · ${T('Uplink')} · ${esc(ctx.mission.name)} · ${ctx.geo.distanceAu.toFixed(3)} au</p>
-    </div>
-    <div class="dash-clock">
-      <span class="dash-clock-label">${T('One-way signal')}</span>
-      <b>${esc(orbital.formatLightTime(ctx.geo.lightSeconds))}</b>
-    </div>
-  </header>
-  <div class="portal-grid">
-    <aside class="portal-letters" aria-hidden="true">${'MARSPLATZ'.split('').map((c) => `<span>${c}</span>`).join('')}</aside>
-    <div class="portal-main">${composerDevice(ctx, { inFlight, error, draft })}</div>
-    <section class="feed-col" id="exchanges">${boardScreen(ctx, { recent })}</section>
-    ${dayRail}
-  </div>
-  </section>
-
-  ${dashboard(ctx, { crew, today, counts, crewFigures, power, allDays, logDays, entryCounts, ingest, media, mediaCounts, mediaLookup, hardware, hardwareDaily, cloud, mission })}
   `;
   return L.page({
     title: 'Mission', ctx, body, hero, hideNav: true, hideRail: true, bodyClass: 'landing',
-    current: '/', scripts: ['/composer.js', '/board.js', '/habitat.js', '/hardware.js', '/folder.js', '/live.js'].concat(cloud ? ['/cloud.js'] : [], ['/sky.js']),   // the page scrolls freely: no stops
+    current: '/', scripts: ['/live.js', '/sky.js'],   // the page scrolls freely: no stops
+    styles: ['/aura.css'],
+  });
+}
+
+/**
+ * The composer's pop-up (`#write`), on every public page (layout.js, writeKit): the composer device, with the callsign
+ * and the one-way signal in its head, in a box that opens over the page at the foot of the window, at the right
+ * (public/write.js on a wider screen: the floating Write key, a #write door and /write#write open it, its cross, Escape
+ * or a click beside it close it; the message's crossing plays in it, with a Message Board key to the wall, and on the
+ * Write page it closes by itself once the message has arrived). A phone has the box as the Write page's dock at the
+ * foot of the screen (tabbar.js) and nothing of it elsewhere.
+ */
+function portal(ctx, { inFlight = null, error = null, draft = '' } = {}) {
+  const T = ctx.T;
+  return `
+  <section class="portal portal-pop" id="write" data-stop role="dialog" aria-modal="false" aria-labelledby="dev-title" aria-label="${esc(T('Write to the crew'))}">
+  <div class="portal-grid">
+    <div class="portal-main">${composerDevice(ctx, { inFlight, error, draft, meta: true })}</div>
+  </div>
+  </section>`;
+}
+
+/**
+ * The board as a wall of notes (the Write page, under the composer): the exchanges as cards on the page's ground — three
+ * across on a wide screen, two on a narrower one, one on a phone, each row starting level — the newest first, flowing with
+ * the page and never in a box. The first BOARD_PAGE exchanges are drawn here; as the reader nears the end, board.js
+ * fetches the page before them (/api/board?before=) and lays it on, until the beginning of the correspondence
+ * (`more` says whether there is anything older than this first page). Over the cards a bar that stays under the header:
+ * the board's name and its LIVE mark, the count, the chips that narrow the wall (ALL, MY MESSAGES, a tag). The
+ * viewer's own messages stand among the rest, whatever their state.
+ */
+function boardWall(ctx, { recent = [], more = false, poll = '/api/board?limit=20' } = {}) {
+  const T = ctx.T;
+  const pendingMine = recent.filter((m) => m.mine && m.pending).length;
+  const counts = data.counts();
+  return `<div class="feed-wrap wall-wrap"><div class="feed-scroll" id="feed" data-poll="${esc(poll)}" data-open="${ctx.mission.open ? 1 : 0}"
+          data-version="${boardVersion(recent)}" data-more="${more ? 1 : 0}" data-wall="1">
+        <div class="board wall">
+          <div class="wall-bar" id="feed-bar">
+            <div class="board-head">
+              <h2>${T('Message Board')}</h2>
+              <span class="live" id="feed-live" title="${esc(T('The board refreshes itself every few seconds'))}">${T('LIVE')}</span>
+              <span class="wall-count" id="feed-counter">${counts.published} ${T('exchanges')} · ${counts.total} ${T('sent')}</span>
+            </div>
+            <div class="feed-filter" id="feed-filter" role="group" aria-label="${esc(T('Filter the board'))}"${
+            recent.length ? '' : ' hidden'}>
+            <button type="button" class="chip active" data-filter="">${T('ALL')}</button>
+            <button type="button" class="chip mine" data-filter="mine">${T('MY MESSAGES')} <span
+              class="chip-count" id="feed-mine-count"${pendingMine ? '' : ' hidden'}>${pendingMine}</span></button>
+            ${TAGS.map((t) => `<button type="button" class="chip" data-filter="tag:${t}">#${T(t)}</button>`).join('')}
+            </div>
+          </div>
+          <div class="cards" id="feed-cards">${boardCards(recent, T, { wall: true })}
+            <div class="empty" id="feed-empty"${recent.length ? ' style="display:none"' : ''}
+              data-none="${esc(T('Nothing transmitted yet — the first message could be yours'))}"
+              data-filtered="${esc(T('No messages match this filter'))}">${
+              T(recent.length ? 'No messages match this filter' : 'Nothing transmitted yet — the first message could be yours')}</div>
+          </div>
+          <div class="feed-end${more ? '' : ' is-done'}" id="feed-end" data-loading="${esc(T('Loading older exchanges…'))}" data-done="${esc(T('The beginning of the correspondence'))}"${recent.length ? '' : ' hidden'}><span>${
+            T(more ? 'Loading older exchanges…' : 'The beginning of the correspondence')}</span></div>
+        </div>
+      </div></div>`;
+}
+
+/**
+ * The Write page, /write: the board as a wall of notes (boardWall), under the header alone (no masthead), with the
+ * composer's pop-up every public page carries (layout.js, writeKit; portal below) — nothing else; the mission
+ * dashboard is a page of its own (/dashboard, dashboardPage). Where the header's Write link and the phone bar's Write
+ * key lead (/write#write opens the page with the pop-up open). The wall's bar stays under the header all the way
+ * down; the Write key floats at the foot of the window at the right, as on every page (public/write.js); on a phone
+ * the pop-up is the dock over the foot of the screen that the bar's Write key shows and hides (aura.css, tabbar.js;
+ * the page keeps the messages page's dress for it).
+ */
+function writePage(ctx, d) {
+  const body = `
+  <section class="wall-sec" id="exchanges" aria-label="${esc(ctx.T('Message Board'))}">${boardWall(ctx, { recent: d.recent, more: d.more, poll: d.poll })}</section>`;
+  return L.page({
+    title: 'Write to the crew', ctx, body, hideNav: true, hideRail: true, bodyClass: 'landing inner messages write', masthead: false,
+    composer: { inFlight: d.inFlight, error: d.error, draft: d.draft },
+    current: '/write', scripts: ['/board.js', '/live.js'],
     styles: ['/aura.css'],
   });
 }
@@ -899,10 +912,12 @@ function hwTicks(lo, hi, n = 4, fromZero = false) {
  * Each line is named at its right-hand end in its own colour with the
  * current reading. A thin mark stands on the current time.
  */
-function hwChart(hw, group, members, tz, T = same) {
-  // Half the panel wide: the charts stand side by side, the names and
-  // readings in a legend beneath the plot.
-  const W = 500, H = 250, padL = 44, padR = 16, padT = 26, padB = 30;
+function hwChart(hw, group, members, tz, T = same, W = HW_W) {
+  // The chart is drawn for the width it is shown at (W, in CSS pixels —
+  // hardware.js asks /api/hardware for the width its tiles have, so the
+  // type keeps its size on a desk and on a phone alike; HW_W until it does),
+  // a fixed height: the plot fills its tile, the legend beneath it.
+  const H = 240, padL = 44, padR = 16, padT = 26, padB = 30;
   const iw = W - padL - padR, ih = H - padT - padB, bottom = padT + ih;
   const span = Math.max(1, hw.now - hw.since);
   const sx = (t) => padL + ((t - hw.since) / span) * iw;
@@ -960,7 +975,8 @@ function hwChart(hw, group, members, tz, T = same) {
   const lead = series[0];
   const tagText = `${hwNum(lead.s.kind === 'counter' && lead.s.today != null ? lead.s.today : lead.s.value, lead.s.decimals)}${lead.s.unit ? ' ' + lead.s.unit : ''}`;
   // the tag: a pill wide and tall enough to hold the figure (the type is larger than the plot's own: aura.css, .hw-tag)
-  const tagW = 20 + tagText.length * 8.4, tagH = 26, tagX = Math.min(W - padR - tagW, Math.max(padL, lead.ex - tagW / 2)), tagY = Math.max(2, lead.ey - 38);
+  // over the line's end, or under it where the line runs near the top of the plot (the clock of the moment stands there)
+  const tagW = 20 + tagText.length * 8.4, tagH = 26, tagX = Math.min(W - padR - tagW, Math.max(padL, lead.ex - tagW / 2)), tagY = lead.ey - 38 >= padT + 2 ? lead.ey - 38 : lead.ey + 12;
   return `<figure class="hw-chart hw-${esc(group.key.replace(/[^a-z0-9]+/gi, '-'))}">
   <figcaption class="hw-title"><b>${esc(T(group.title))}</b>${unit ? ` <span class="hw-unit">${unit}${group.key === 'power' ? ` · ${T('hourly average')}` : ''}</span>` : ''}</figcaption>
   <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(T(group.title))} — ${esc(T('today, midnight to midnight venue time, one line per device, on one scale in'))} ${unit || '—'}">
@@ -970,7 +986,7 @@ function hwChart(hw, group, members, tz, T = same) {
     ${band(0, 6)}${band(22, 24)}
     ${ax.ticks.map((v) => `<line x1="${padL}" y1="${sy(v).toFixed(1)}" x2="${W - padR}" y2="${sy(v).toFixed(1)}" class="hw-grid"/>
       <text x="${padL - 7}" y="${(sy(v) + 3.5).toFixed(1)}" text-anchor="end" class="hw-ax">${yLabel(v)}</text>`).join('')}
-    ${ticks.map(({ t, k }) => (k % 3 ? '' : `<text x="${sx(t).toFixed(1)}" y="${H - padB + 16}" text-anchor="${k === 0 ? 'start' : k === ticks.length - 1 ? 'end' : 'middle'}" class="hw-ax"${k % 6 ? ' opacity="0.55"' : ''}>${String(k).padStart(2, '0')}</text>`)).join('')}
+    ${ticks.map(({ t, k }) => (k % (W < 400 ? 6 : 3) ? '' : `<text x="${sx(t).toFixed(1)}" y="${H - padB + 16}" text-anchor="${k === 0 ? 'start' : k === ticks.length - 1 ? 'end' : 'middle'}" class="hw-ax"${k % 6 ? ' opacity="0.55"' : ''}>${String(k).padStart(2, '0')}</text>`)).join('')}
     ${unit ? `<text x="${padL - 7}" y="${padT - 12}" text-anchor="end" class="hw-ax hw-ax-unit">${unit}</text>` : ''}
     ${now != null ? `<rect x="${now.toFixed(1)}" y="${padT}" width="${(W - padR - now).toFixed(1)}" height="${ih}" class="hw-ahead"/>
       <line x1="${now.toFixed(1)}" y1="${padT}" x2="${now.toFixed(1)}" y2="${bottom}" class="hw-now"><title>${T('now')} · ${hwClock(hw.liveNow, tz)}</title></line>
@@ -994,7 +1010,8 @@ function hwChart(hw, group, members, tz, T = same) {
  *  content/home-assistant.json; a device keeps its colour by its position
  *  in that list, whichever chart it lands on. Energy meters are not drawn
  *  here: their day's kWh is on the Power panel (content/power.json). */
-function hwCharts(hw, tz, T = same) {
+const HW_W = 720;                            // the width a chart is drawn for until the page says its own (hardware.js)
+function hwCharts(hw, tz, T = same, W = HW_W) {
   const groups = new Map();
   (hw.sensors || []).forEach((s, i) => {
     const g = hwGroupOf(s);
@@ -1003,7 +1020,7 @@ function hwCharts(hw, tz, T = same) {
     if (!e) groups.set(g.key, e = { group: g, members: [] });
     e.members.push({ s, colour: hwColour(i) });
   });
-  const charts = [...groups.values()].map((e) => hwChart(hw, e.group, e.members, tz, T)).filter(Boolean);
+  const charts = [...groups.values()].map((e) => hwChart(hw, e.group, e.members, tz, T, W)).filter(Boolean);
   return charts.length ? `<div class="hw-charts">${charts.join('')}</div>` : '';
 }
 
@@ -1034,16 +1051,17 @@ function powerTileInner(ctx, power) {
  * here and by /api/hardware alike, so what the browser swaps in is exactly
  * what the server would have served.
  */
-function hardwareInner(hw, T = same) {
+function hardwareInner(hw, T = same, { width = HW_W } = {}) {
   const tz = hwTz();
   const list = hw.sensors || [];
+  const W = Math.max(240, Math.min(1400, Math.round(Number(width) || HW_W)));
   // The charts are the panel: no tiles, one day chart per kind of quantity
   // (temperature, energy, …), each on a proper axis in its unit, every
   // device a line named at its end with the current reading. The
   // diagnostics the tiles used to carry (a sensor not in the feed) become a
   // note above them.
   const missing = list.filter((s) => s.missing);
-  const chart = hwCharts(hw, tz, T);
+  const chart = hwCharts(hw, tz, T, W);
   return `
     ${hw.down ? `<p class="note hw-down">${L.sym('warn')} ${T('Home Assistant could not be reached on the last poll')}${
       hw.lastPollAt ? ` ${T('at')} ${hwClock(hw.lastPollAt, tz)}` : ''} — ${T('these are the last readings stored.')}</p>` : ''}
@@ -1073,12 +1091,13 @@ const dpanel = ({ id, title, meta = '', span = 4, cls = '', href = null, live = 
     <div class="dpanel-body">${inner}</div>
   </section>`;
 
-/* The dashboard's panels behind one index: three rows of keys — the habitat's
-   (Habitat, Trends), the day's (Today's Schedule, Today's
-   Meal, Crew Moods), the blogs' — each row a track with its name at the left,
-   all three of one width, on the head of one glass panel; beneath them the
-   folder that is open, showing its panel. The page opens on the first key of
-   the first row, the Habitat (which carries the habitat's own hardware too). A press on a key brings that folder to the front
+/* The dashboard's panels behind one index: the keys in three tracks — the
+   sensors' (Sensors), the day's (Today's Schedule, Today's Meal, Crew Moods),
+   the blogs' — each track named, its keys one under the other: a rail at the
+   left of the folder on a wider screen, the open folder's panel beside it;
+   on a phone the tracks are one at a time, chosen by a segmented control of
+   the three names, with the track's keys as tabs under it (aura.css). The page opens on the
+   first key of the first track, the Sensors (which carries the habitat's own hardware too). A press on a key brings that folder to the front
    (public/folder.js); the panels keep their ids, so every link into them —
    #habitat, #crew, #galley, #schedule from the dome's keys and the foot —
    still lands on them: the script opens the right folder and brings the index
@@ -1094,6 +1113,7 @@ const TAB_ICONS = {
   habitat: '<path d="M4 17a8 8 0 0 1 16 0"/><path d="M3 17h18"/><path d="M12 9v8"/><path d="M6.5 12.5h11"/>',                       // the dome, its base line, a rib and a ring
   hardware: '<rect x="7" y="7" width="10" height="10" rx="2"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><path d="M10 10h4v4h-4z"/>',      // a chip with its pins
   trends: '<path d="M3 17l5-6 4 3 5-8 4 5"/><path d="M3 21h18"/>',                                                                  // a line rising across the days
+  'mission-today': '<path d="M5 21V4"/><path d="M5 4h12l-2.5 4L17 12H5"/>',                                                         // the day's flag
   schedule: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',                                                          // the clock
   galley: '<path d="M7 3v18"/><path d="M5 3v5a2 2 0 0 0 4 0V3"/><path d="M17 3c-2 1.5-3 4-3 7a2 2 0 0 0 2 2h1v9"/>',                   // fork and knife
   crew: LINE_ICONS.crew,
@@ -1103,18 +1123,23 @@ const TAB_ICONS = {
 };
 const tabIcon = (id) => TAB_ICONS[id] ? `<svg class="ftab-ic" viewBox="0 0 24 24" aria-hidden="true">${TAB_ICONS[id]}</svg>` : '';
 
-const folder = (T, rows, { id = 'day-folder', label = '' } = {}) => {
+const folder = (T, rows, { id = 'day-folder', label = '', title = '' } = {}) => {
   rows = rows.map((row) => ({ label: row.label, tabs: row.tabs.filter(Boolean) })).filter((row) => row.tabs.length);
   const tabs = rows.flatMap((row) => row.tabs);
   const tab = (t, i) => `<button type="button" class="ftab${i === 0 ? ' is-front' : ''}" role="tab" id="ftab-${t.id}" aria-controls="fpage-${t.id}" aria-selected="${i === 0 ? 'true' : 'false'}"${i === 0 ? '' : ' tabindex="-1"'} data-folder="${t.id}">${tabIcon(t.id)}<span class="ftab-l">${esc(t.label)}</span></button>`;
   return `
   <section class="folder span-12" id="${id}" data-stop aria-label="${esc(label)}">
     <div class="folder-tabs">
-      <!-- a phone's first row: the groups as a segmented control (aura.css shows it under 760 px only);
-           a press opens the group's first folder, and the row of its keys takes the place of the row shown -->
+      <!-- the rail: its heading, then the tracks one under the other, each named, its keys stacked — at the left of the
+           folder on a wider screen (sticky under the header). A phone's first row instead: the groups as a segmented
+           control (aura.css shows it under 760 px only); a press opens the group's first folder, and the row of its
+           keys takes the place of the row shown -->
+      <div class="frail">${title ? `
+      <div class="folder-head"><h2 class="folder-title">${esc(title)}</h2></div>` : ''}
       <div class="fgroups" role="group" aria-label="${esc(label)}">${rows.map((row, r) => `<button type="button" class="fgroup${r === 0 ? ' is-cur' : ''}" data-group="${r}" aria-pressed="${r === 0 ? 'true' : 'false'}">${esc(row.label)}</button>`).join('')}</div>
       <div class="frows" role="tablist" aria-label="${esc(label)}">${rows.map((row, r) => `
       <div class="frow n${row.tabs.length}${r === 0 ? ' is-cur' : ''}" data-group="${r}"><span class="frow-k" aria-hidden="true">${esc(row.label)}</span>${row.tabs.map((t) => tab(t, tabs.indexOf(t))).join('')}</div>`).join('')}
+      </div>
       </div>
     </div>
     <div class="folder-body">${tabs.map((t, i) => `
@@ -1298,7 +1323,7 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
      stands). */
   const hardwareSection = hardware && hardware.configured && (hardware.sensors || []).length
     ? `<section class="hw-in-habitat" id="hardware" aria-label="${esc(T('Habitat hardware'))}">
-        <div class="hbt hw"><div id="hw-live" data-poll="${hardware.pollMs}" data-version="${esc(require('../../lib/home-assistant').version(hardware))}">${hardwareInner(hardware, T)}</div></div>
+        <div class="hbt hw"><div id="hw-live" data-poll="${hardware.pollMs}" data-version="${esc(require('../../lib/home-assistant').version(hardware))}" data-w="${HW_W}">${hardwareInner(hardware, T)}</div></div>
       </section>`
     : '';
 
@@ -1371,7 +1396,7 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
           <h3>${T('Resources')}</h3>
           <span class="sub">${T('Carried in · never resupplied')}</span>
           ${inventoryGauges(inventory, { cells: true, T })}
-        </section>${vizTile(T, 'orbit')}
+        </section>${vizTile(T, 'city')}
         <section class="tile t-pwr" id="power">
           <h3>${T('Power consumed')}</h3>
           <div id="pwr-live">${powerTileInner(ctx, power)}</div>
@@ -1579,25 +1604,15 @@ function dashLive(T) {
 /* Two instruments without a reading among the habitat's tiles — visual elements in the bento, each on a row of its own
    (aura.css draws them, public/live.js moves what moves in them): Astronauts tracked, at the end of the sensors' third
    row — a radar with a sweep going round, rings and a rim of ticks, and inside it one dot an astronaut (`n`, the crew's
-   number), each wandering about the disc and lit as the sweep passes over it; the orbit between the stores and the power
-   — a wireframe globe turning, a satellite going round it on a dotted orbit. Decoration, nothing more: hidden from
-   assistive technology, not one figure in them (the dots are as many as the crew, which the head's figure says in
-   words); the readings are the other tiles'. */
+   number), each wandering about the disc and lit as the sweep passes over it; Karlsruhe between the stores and the
+   power — the city as its fan, the plan drawn from the Schloss: rings and the thirty-two rays, Red Dust City at the
+   Marktplatz, the ground station at the ZKM and the dashed link between them with a signal going along it, a sweep going
+   slowly round. Decoration, nothing more: hidden from assistive technology, not one figure in them (the dots are as
+   many as the crew, which the head's figure says in words); the readings are the other tiles'. */
 function vizTile(T, id, { n = 3 } = {}) {
   const tile = (key, inner) => `
         <section class="tile t-viz t-viz-${id}" aria-hidden="true"><span class="viz-k">${T(key)}</span>${inner}</section>`;
-  if (id === 'orbit') {
-    // the globe: meridians as ellipses (aura.css narrows and widens each in turn, so the globe seems to turn), parallels
-    // as flat ellipses, the globe seen a little from above
-    const R = 40, meridians = [0, 1, 2].map((i) => `<ellipse cx="60" cy="60" rx="${R}" ry="${R}" style="animation-delay:${(-i * 6).toFixed(0)}s"/>`).join('');
-    const parallels = [-0.66, -0.33, 0, 0.33, 0.66].map((f) => { const y = 60 + R * f, w = Math.sqrt(R * R - (R * f) ** 2); return `<ellipse cx="60" cy="${y.toFixed(1)}" rx="${w.toFixed(1)}" ry="${(w * 0.22).toFixed(1)}"/>`; }).join('');
-    return tile('Orbit', `
-          <svg class="dl-globe" viewBox="0 0 120 120">
-            <circle class="dl-ring" cx="60" cy="60" r="${R}"/><g class="dl-par">${parallels}</g><g class="dl-mer">${meridians}</g>
-            <ellipse class="dl-orbit" cx="60" cy="60" rx="56" ry="18" transform="rotate(-24 60 60)"/>
-            <g class="dl-sat-turn" transform="rotate(-24 60 60)"><circle class="dl-sat" cx="116" cy="60" r="2.6"/></g>
-          </svg>`);
-  }
+  if (id === 'city') return tile('Karlsruhe', cityFan(T));
   const ticks = Array.from({ length: 48 }, (_, i) => {
     const a = (i / 48) * Math.PI * 2, long = i % 6 === 0, r1 = long ? 50 : 53, r2 = 57;
     return `<line x1="${(60 + r1 * Math.cos(a)).toFixed(2)}" y1="${(60 + r1 * Math.sin(a)).toFixed(2)}" x2="${(60 + r2 * Math.cos(a)).toFixed(2)}" y2="${(60 + r2 * Math.sin(a)).toFixed(2)}"${long ? ' class="dl-tick-l"' : ''}/>`;
@@ -1618,6 +1633,50 @@ function vizTile(T, id, { n = 3 } = {}) {
             <g class="dl-sweep"><path d="M60 60 L60 13 A47 47 0 0 1 93.2 26.8 Z" fill="url(#dl-sweep)"/><line x1="60" y1="60" x2="60" y2="13"/></g>
             <g class="dl-crew">${astros}</g>
           </svg>`);
+}
+
+/* Karlsruhe as its fan (the stores' row, vizTile 'city'): the plan of the city drawn from the Schloss, as the mock-up
+   draws it — a disc of rings and the thirty-two rays of the fan, north up, nothing written on the rings and no N — and on
+   it, to scale, the three places of the station: the Schloss at the centre (a small square), Red Dust City at the
+   Marktplatz (a dot of Mars with a ring pulsing out of it, 480 m south of the Schloss), the ground station at the ZKM
+   (a diamond of cobalt, 2 km to the south-west) and the dashed link between the two with a signal going along it; a
+   sweep of Mars going slowly round, as a radar's. 31 units a kilometre, the disc 2.4 km across its radius; the places'
+   offsets from the Schloss (49.0138 N, 8.4044 E) in kilometres east and south. aura.css draws and moves it; asked for
+   less motion it stands. */
+const CITY = { s: 31, R: 74, c: 80, rays: 32, places: { marktplatz: [-0.05, 0.48], zkm: [-1.54, 1.35] } };
+function cityFan(T) {
+  const { s, R, c, rays } = CITY;
+  const f = (v) => String(+v.toFixed(1));                                    // one decimal, no float dust
+  const at = ([e, so]) => ({ x: +(c + e * s).toFixed(1), y: +(c + so * s).toFixed(1) });
+  const rdc = at(CITY.places.marktplatz), gs = at(CITY.places.zkm);
+  const rings = [0.5, 1, 1.5, 2].map((km) => `<circle class="dl-ring${km % 1 ? ' dl-dash' : ''}" cx="${c}" cy="${c}" r="${(km * s).toFixed(1)}"/>`).join('');
+  const fan = Array.from({ length: rays }, (_, i) => {
+    const a = (i / rays) * Math.PI * 2, r0 = 5;
+    return `<line x1="${(c + r0 * Math.sin(a)).toFixed(2)}" y1="${(c - r0 * Math.cos(a)).toFixed(2)}" x2="${(c + R * Math.sin(a)).toFixed(2)}" y2="${(c - R * Math.cos(a)).toFixed(2)}"/>`;
+  }).join('');
+  const sweep = `M${c} ${c} L${c} ${c - R} A${R} ${R} 0 0 1 ${(c + R * Math.sin(Math.PI / 8)).toFixed(1)} ${(c - R * Math.cos(Math.PI / 8)).toFixed(1)} Z`;
+  return `
+          <svg class="dl-city" viewBox="0 0 160 160" style="--lx:${f(gs.x - rdc.x)}px;--ly:${f(gs.y - rdc.y)}px">
+            <defs>
+              <linearGradient id="dl-fan-sweep" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="var(--mars)" stop-opacity="0"/><stop offset="1" stop-color="var(--mars)" stop-opacity=".5"/></linearGradient>
+            </defs>
+            <circle class="dl-city-disc" cx="${c}" cy="${c}" r="${R}"/>
+            <g class="dl-fan">${fan}</g>
+            ${rings}
+            <circle class="dl-ring dl-rim" cx="${c}" cy="${c}" r="${R}"/>
+            <g class="dl-fan-sweep"><path d="${sweep}" fill="url(#dl-fan-sweep)"/></g>
+            <line class="dl-link" x1="${rdc.x}" y1="${rdc.y}" x2="${gs.x}" y2="${gs.y}"/>
+            <circle class="dl-link-sig" cx="${rdc.x}" cy="${rdc.y}" r="1.6"/>
+            <rect class="dl-schloss" x="${f(c - 2.5)}" y="${f(c - 2.5)}" width="5" height="5"/>
+            <text class="dl-city-t dl-dim" x="${f(c + 6)}" y="${f(c + 2.5)}">${T('Schloss')}</text>
+            <circle class="dl-rdc-ping" cx="${rdc.x}" cy="${rdc.y}" r="3.4"/>
+            <circle class="dl-rdc" cx="${rdc.x}" cy="${rdc.y}" r="3.4"/>
+            <text class="dl-city-t dl-hot" x="${f(rdc.x + 7)}" y="${f(rdc.y + 1)}">${T('Red Dust City')}</text>
+            <text class="dl-city-t dl-dim" x="${f(rdc.x + 7)}" y="${f(rdc.y + 10)}">${T('Marktplatz')}</text>
+            <rect class="dl-gs" x="${f(gs.x - 3)}" y="${f(gs.y - 3)}" width="6" height="6" transform="rotate(45 ${gs.x} ${gs.y})"/>
+            <text class="dl-city-t dl-cool" x="${f(gs.x + 7)}" y="${f(gs.y + 1)}">${T('Ground station')}</text>
+            <text class="dl-city-t dl-dim" x="${f(gs.x + 7)}" y="${f(gs.y + 10)}">${T('ZKM')}</text>
+          </svg>`;
 }
 
 function dashboard(ctx, args) {
@@ -1644,12 +1703,12 @@ function dashboard(ctx, args) {
       </a>
       ${strip}
     </div>
-    ${missionPanel}
     <div class="dash-grid">
       ${folder(T, [
         { label: T('Sensors'), tabs: [
           { id: 'habitat', label: T('Sensors'), html: habitat } ] },
         { label: T('Daily Life'), tabs: [
+          { id: 'mission-today', label: T('Today’s Mission'), html: missionPanel },
           { id: 'schedule', label: T('Today’s Schedule'), html: schedule },
           { id: 'galley', label: T('Today’s Meal'), html: galley },
           { id: 'crew', label: T('Crew Moods'), html: crewPanel } ] },
@@ -1657,7 +1716,7 @@ function dashboard(ctx, args) {
           { id: 'blog-commander', label: T('Commander Blog'), html: blogCommander },
           { id: 'blog-health', label: T('Health Report'), html: blogHealth },
           { id: 'blog-science', label: T('Daily Mission Report'), html: blogScience } ] },
-      ], { label: `${T('Mission dashboard')} · SOL ${day3} · ${shortDay(blogDate)}` })}
+      ], { label: `${T('Mission dashboard')} · SOL ${day3} · ${shortDay(blogDate)}`, title: T('Mission dashboard') })}
     </div>
   </section>`;
 }
@@ -1723,17 +1782,28 @@ function agoText(secs, T) {
   const d = Math.round(n / 86400);
   return d <= 1 ? T('a day ago') : T('{n} days ago').replace('{n}', String(d));
 }
-function spaceLine(m, T = same) {
+function spaceLine(m, T = same, { compact = false } = {}) {
   // the count starts the moment the message was sent
   const at = Date.parse(m.submitted_at || '');
   if (Number.isNaN(at)) return '';
   const lang = T.lang || 'en';
   const secs = Math.max(0, (Date.now() - at) / 1000);
+  const attrs = `data-launched="${esc(new Date(at).toISOString())}" data-au="${Number(m.distance_au || 0).toFixed(4)}" data-ls="${Math.round(Number(m.light_seconds || 0))}" data-callsign="${esc(m.callsign || '')}"`;
+  // the wall's foot (the Write page): the figure alone with its sign — the orbit — and how long ago it left, the › to
+  // its journey; board.js moves the same .sp-km and .sp-ago on
+  if (compact) {
+    return `<div class="card-space card-space-compact" ${attrs} title="${esc(T('This message is currently {km} km from Earth!').replace('{km}', fmtBig(secs * KM_PER_S, lang, T)))}">
+      <svg class="sp-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(-24 12 12)"/><circle class="sp-dot" cx="20.6" cy="7.6" r="1.6"/></svg>
+      <span class="card-space-line"><b class="sp-km">${fmtBig(secs * KM_PER_S, lang, T)}</b> km</span>
+      <span class="card-space-launched"><span class="sp-ago">${esc(agoText(secs, T))}</span></span>
+      <span class="card-space-go" title="${esc(T('Follow its journey'))}">›</span>
+    </div>`;
+  }
   const sentence = esc(T('This message is currently {km} km from Earth!'))
     .replace('{km}', `<b class="sp-km">${fmtBig(secs * KM_PER_S, lang, T)}</b>`);
   // the card is opened by a tap (board.js): the one thing the message is heading for — Mars as it stood that day is
   // the message's own distance (orbital.js at the moment it was sent)
-  return `<div class="card-space" data-launched="${esc(new Date(at).toISOString())}" data-au="${Number(m.distance_au || 0).toFixed(4)}" data-ls="${Math.round(Number(m.light_seconds || 0))}" data-callsign="${esc(m.callsign || '')}">
+  return `<div class="card-space" ${attrs}>
       <span class="card-space-line">${sentence}</span>
       <span class="card-space-more"><span class="card-space-launched">${T('Launched')} <span class="sp-ago">${esc(agoText(secs, T))}</span></span>
       <span class="card-space-go">${T('Follow its journey')} ›</span></span>
@@ -1742,19 +1812,23 @@ function spaceLine(m, T = same) {
 
 /** `T` puts the card's chrome — the state, Earth, CREW ANSWER, the tags —
  *  into the visitor's language. The archive passes nothing and gets
- *  English; what was written is never touched either way. */
-function messageCard(m, tz, T = same) {
+ *  English; what was written is never touched either way. The line of small
+ *  print over the message is the callsign, Earth and the time it was sent;
+ *  its tags stand under the text. The reply's own line (who answered, the
+ *  habitat, when) is drawn only where `replyMeta` asks for it — the archive;
+ *  the boards carry the answer alone. */
+function messageCard(m, tz, T = same, { replyMeta = true, wall = false } = {}) {
   const fresh = m.response_at && (Date.now() - Date.parse(m.response_at)) < 6 * 3600000;
   const tags = (m.tags || '').split(',').filter(Boolean);
   const st = cardStatus(m);
   const short = (label) => label.replace(/^[A-Za-z]{2,3} /, '');                    // the day and the time, without the weekday
   const sent = short(whenLabel(m.submitted_at, tz)), replied = m.response_body ? short(whenLabel(m.response_at, tz)) : '';
   const home = (() => { try { return missionLib.config().name; } catch { return ''; } })() || T('Mars habitat');
-  const meta = tags.map((t) => '#' + esc(T(t))).concat(
-    `<span class="cs">${esc(m.callsign)}</span>`, T('Earth'), `<time datetime="${esc(m.submitted_at)}">${esc(sent)}</time>`).join(' · ');
+  if (wall) return noteCard(m, { fresh, tags, st, sent, replied, T });
+  const meta = [`<span class="cs">${esc(m.callsign)}</span>`, T('Earth'), `<time datetime="${esc(m.submitted_at)}">${esc(sent)}</time>`].join(' · ');
   // A card that is both the viewer's and unpublished is stamped data-pending:
-  // the stylesheet keeps it out of the common board and board.js reveals it
-  // under MY MESSAGES. Such cards only ever reach their own sender's page.
+  // without the script the stylesheet keeps it off the board; board.js lists
+  // it with the rest. Such cards only ever reach their own sender's page.
   return `<article class="card xc${fresh ? ' fresh' : ''}${m.response_body ? ' has-reply' : ''}" id="m${m.id}"
       data-tags="${esc(tags.join(','))}"${m.mine ? ' data-mine="1"' : ''}${
       m.mine && m.pending ? ' data-pending="1"' : ''}>
@@ -1765,12 +1839,13 @@ function messageCard(m, tz, T = same) {
         <span class="card-ref">Ref ${String(m.id).padStart(5, '0')}</span>
       </div>
       <div class="card-body">${esc(m.body)}</div>
+      ${tags.length ? `<div class="card-tags">${tags.map((t) => '#' + esc(T(t))).join(' · ')}</div>` : ''}
     </div>
     ${spaceLine(m, T)}
     ${m.response_body ? `<div class="card-reply">
       <div class="who">${T('Crew answer')}</div>
       <p>${esc(m.response_body)}</p>
-      <div class="card-reply-meta">${esc(m.responder ? T(officer.shown(m.responder)) : T('Mars habitat'))} · ${esc(home)} · <time datetime="${esc(m.response_at)}">${esc(replied)}</time></div>
+      ${replyMeta ? `<div class="card-reply-meta">${esc(m.responder ? T(officer.shown(m.responder)) : T('Mars habitat'))} · ${esc(home)} · <time datetime="${esc(m.response_at)}">${esc(replied)}</time></div>` : ''}
     </div>` : `<div class="card-state-line"><span class="badge card-state ${st.cls}">${T(st.label)}</span></div>`}
     <div class="card-foot">
       <span>${orbital.formatLightTime(m.light_seconds)}</span>
@@ -1779,24 +1854,69 @@ function messageCard(m, tz, T = same) {
   </article>`;
 }
 
+/* A note on the wall (the Write page's board, boardWall; messageCard with `wall`): the card after the handed-over
+   reference — a flat card with a folded corner, its head a disc with the writer's initials, the callsign and Earth
+   beside it, the reference number at the right; the message as the note's title, and right after it its tags, each a
+   key that narrows the wall to that tag (board.js), in the message's own colour; under them the crew's answer as a
+   quoted card of its own, after the second reference — the crew's disc, who answered and where, the day and time of the
+   answer at its right, the answer under them — or the message's state where the answer will stand; a foot with the
+   message's distance into space (spaceLine, compact — board.js moves it on and a tap on the card opens its journey)
+   and the day and time it was sent. The disc's colour comes from the callsign, so one writer's notes share it; the
+   viewer's own carry a fold in Mars. */
+function noteCard(m, { fresh, tags, st, sent, replied, T }) {
+  const cs = String(m.callsign || '');
+  let h = 0; for (const ch of cs) h = (h * 31 + ch.charCodeAt(0)) % 360;             // a hue of the callsign's own
+  const initials = (cs.match(/[A-Za-z0-9]/g) || []).slice(0, 2).join('').toUpperCase() || '·';
+  const title = (d) => { const x = officer.shown(d); return T(x.charAt(0) + x.slice(1).toLowerCase()); };   // "Commanding officer", as the crew panel writes it
+  const who = m.responder ? title(m.responder) : T('Crew');
+  return `<article class="card xc note${fresh ? ' fresh' : ''}${m.response_body ? ' has-reply' : ''}" id="m${m.id}"
+      data-tags="${esc(tags.join(','))}"${m.mine ? ' data-mine="1"' : ''}${
+      m.mine && m.pending ? ' data-pending="1"' : ''}>
+    <header class="note-head">
+      <span class="note-av" aria-hidden="true" style="--av:${h}">${esc(initials)}</span>
+      <span class="note-who"><span class="cs">${esc(cs)}</span><span class="note-role">${m.mine ? T('Earth') + ' · ' + T('you') : T('Earth')}</span></span>
+      ${fresh ? `<span class="badge new">${T('New')}</span>` : ''}
+      <span class="card-ref">Ref ${String(m.id).padStart(5, '0')}</span>
+    </header>
+    <div class="note-main">
+      <p class="card-body note-title">${esc(m.body)}</p>
+      ${tags.length ? `<div class="note-tags">${tags.map((t) => `<button type="button" class="note-tag tag-${esc(t.toLowerCase())}" data-filter="tag:${esc(t)}">#${esc(T(t))}</button>`).join('')}</div>` : ''}
+      ${m.response_body ? `<div class="card-reply note-answer">
+        <div class="note-ahead">
+          <span class="note-aav" aria-hidden="true">${esc(initialsOf(who))}</span>
+          <span class="note-awho"><span class="cs">${esc(who)}</span><span class="note-role">${T('Crew answer')} · ${T('Mars habitat')}</span></span>
+          ${replied ? `<time class="note-awhen" datetime="${esc(m.response_at)}">${esc(replied)}</time>` : ''}
+        </div>
+        <p>${esc(m.response_body)}</p>
+      </div>` : `<div class="card-state-line"><span class="badge card-state ${st.cls}">${T(st.label)}</span></div>`}
+    </div>
+    <footer class="note-foot">
+      ${spaceLine(m, T, { compact: true })}
+      <time class="note-when" datetime="${esc(m.submitted_at)}">${esc(sent)}</time>
+    </footer>
+  </article>`;
+}
+/** Two letters for a disc: the initials of a name's first two words (Commanding Officer → CO), or its first two letters. */
+function initialsOf(name) {
+  const words = String(name || '').split(/[\s-]+/).filter(Boolean);
+  const s = words.length > 1 ? words.slice(0, 2).map((w) => w.charAt(0)).join('') : String(name || '').slice(0, 2);
+  return s.toUpperCase() || '·';
+}
+
 /**
- * The cards of the landing-page board, as one fragment. Rendered into the
- * page on load and again by /api/board for the live refresh, so the two
- * cannot drift apart: one function defines what the board holds.
+ * The cards of the board, as one fragment. Rendered into the page on load and
+ * again by /api/board for the live refresh, so the two cannot drift apart: one
+ * function defines what the board holds. `wall`: the Write page's notes
+ * (noteCard) rather than the screens' cards.
  */
-function boardCards(recent, T = same, { mineLabel = null } = {}) {
+function boardCards(recent, T = same, { wall = false } = {}) {
   const tz = (missionLib.config() || {}).timezone || 'Europe/Berlin';
-  // The viewer's own messages first, under their own heading — whatever
-  // state they are in — then everyone's published exchanges. Without any
-  // of the viewer's own there are no headings, just the board. The
-  // installation's board is the ground station's: its group is headed by
-  // the station's name (mineLabel), not MY MESSAGES.
-  const mine = recent.filter((m) => m.mine), rest = recent.filter((m) => !m.mine);
-  if (!mine.length) return rest.map((m) => messageCard(m, tz, T)).join('');
-  return `<div class="board-group" data-group="mine">${mineLabel ? esc(mineLabel) : T('My messages')} <span class="board-group-n">${mine.length}</span></div>`
-    + mine.map((m) => messageCard(m, tz, T)).join('')
-    + `<div class="board-group" data-group="all">${T('All messages')}</div>`
-    + rest.map((m) => messageCard(m, tz, T)).join('');
+  // One sequence, the newest first, by the moment each message was sent —
+  // the viewer's own (or the installation's, on the station's board) among
+  // the rest in their place, whatever state they are in; no group of them
+  // at the top and no headings. Each card's reply carries no line of its own.
+  const at = (m) => Date.parse(m.submitted_at || '') || 0;
+  return recent.slice().sort((a, b) => at(b) - at(a) || b.id - a.id).map((m) => messageCard(m, tz, T, { replyMeta: false, wall })).join('');
 }
 
 /**
@@ -1867,6 +1987,6 @@ function single(ctx, { message }) {
 }
 
 module.exports = {
-  mission, messages, dashboardPage, complete, inventoryGauges, boardCards, boardVersion, archive, single, messageCard,
-  hardwareInner, powerTileInner, ticker, dashboardPanels, boardScreen, habitatDome, composerDevice,
+  mission, writePage, dashboardPage, complete, inventoryGauges, boardCards, boardVersion, archive, single, messageCard,
+  hardwareInner, powerTileInner, ticker, dashboardPanels, boardScreen, habitatDome, composerDevice, portal,
 };

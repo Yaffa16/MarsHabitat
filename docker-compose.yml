@@ -43,7 +43,7 @@ services:
 
       # --- behaviour -------------------------------------------------------
       TRANSIT_SECONDS: "${TRANSIT_SECONDS:-12}"
-      MESSAGE_MAX_CHARS: "${MESSAGE_MAX_CHARS:-500}"
+      MESSAGE_MAX_CHARS: "${MESSAGE_MAX_CHARS:-1000}"
       HOURLY_LIMIT: "${HOURLY_LIMIT:-6}"
       SENSOR_STALE_SECONDS: "${SENSOR_STALE_SECONDS:-300}"
       MEDIA_MAX_MB: "${MEDIA_MAX_MB:-4096}"

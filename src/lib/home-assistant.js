@@ -576,15 +576,16 @@ const dayAgg = db.prepare(
 const dayFirst = db.prepare(
   'SELECT value FROM ha_reading WHERE entity = ? AND t >= ? AND t < ? AND value IS NOT NULL ORDER BY t LIMIT 1');
 const dayLast = db.prepare(
-  'SELECT value FROM ha_reading WHERE entity = ? AND t >= ? AND t < ? AND value IS NOT NULL ORDER BY t DESC LIMIT 1');
+  'SELECT value, t FROM ha_reading WHERE entity = ? AND t >= ? AND t < ? AND value IS NOT NULL ORDER BY t DESC LIMIT 1');
 
 /**
  * The hardware's day for the permanent record: per configured sensor the
  * low, high, mean and sample count of the readings inside the day's window,
- * and — for a counter — what the day added (last reading minus first; a
- * meter only rises). `window` is the archive's UTC window for the mission
- * day ({ start, end } as ISO strings, archive.windowFor). Sensors with no
- * reading that day are left out.
+ * its last reading of the day (`last`, at `lastAt`) with the decimals it is
+ * printed to, and — for a counter — what the day added (last reading minus
+ * first; a meter only rises). `window` is the archive's UTC window for the
+ * mission day ({ start, end } as ISO strings, archive.windowFor). Sensors
+ * with no reading that day are left out.
  */
 function daySummary(window) {
   const a = Date.parse(window.start), b = Date.parse(window.end);
@@ -593,15 +594,17 @@ function daySummary(window) {
   for (const s of sensorsFor(a, b)) {
     const r = dayAgg.get(s.id, a, b);
     if (!r || !r.n) continue;
+    const last = dayLast.get(s.id, a, b);
     let added = null;
     if (s.kind === 'counter') {
-      const first = dayFirst.get(s.id, a, b), last = dayLast.get(s.id, a, b);
+      const first = dayFirst.get(s.id, a, b);
       if (first && last && first.value != null && last.value != null) {
         added = Math.round(Math.max(0, last.value - first.value) * 100) / 100;
       }
     }
-    out.push({ id: s.id, label: s.label, unit: s.unit || '', kind: s.kind,
-      low: r.lo, high: r.hi, mean: r.av, samples: r.n, added, ...(s.retired ? { retired: true } : {}) });
+    out.push({ id: s.id, label: s.label, unit: s.unit || '', kind: s.kind, decimals: s.decimals,
+      low: r.lo, high: r.hi, mean: r.av, samples: r.n, added,
+      last: last ? last.value : null, lastAt: last ? last.t : null, ...(s.retired ? { retired: true } : {}) });
   }
   return out;
 }

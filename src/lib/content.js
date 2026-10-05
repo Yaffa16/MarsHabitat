@@ -796,13 +796,27 @@ const slugify = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/
 function missionsFile() {
   try {
     const obj = JSON.parse(fs.readFileSync(path.join(DIR, 'missions.json'), 'utf8')) || {};
-    return { days: obj.days && typeof obj.days === 'object' ? obj.days : {}, missions: Array.isArray(obj.missions) ? obj.missions : [] };
-  } catch { return { days: {}, missions: [] }; }
+    return { days: obj.days && typeof obj.days === 'object' ? obj.days : {}, missions: Array.isArray(obj.missions) ? obj.missions : [],
+      chosen: obj.chosen && typeof obj.chosen === 'object' ? obj.chosen : {} };
+  } catch { return { days: {}, missions: [], chosen: {} }; }
 }
-/** The mission the crew are on that day of the run, or null where the file names none. */
+/** A day's mission as planned and as chosen: `days` in the file is the plan (the default for each day); `chosen`
+ *  (day → mission number) is what the science officer set on the desk in its place (routes/control.js, /mission) —
+ *  null where the day keeps its default. The missions as a list (number and title) for the desk's choice. */
+function missionChoice(missionDay) {
+  const { days, missions, chosen } = missionsFile();
+  const key = String(missionDay);
+  const has = (no) => missions.some((m) => m && Number(m.no) === Number(no));
+  const def = days[key] != null && has(days[key]) ? Number(days[key]) : null;
+  const pick = Object.prototype.hasOwnProperty.call(chosen, key) && chosen[key] != null && has(chosen[key]) ? Number(chosen[key]) : null;
+  return { default: def, chosen: pick, missions: missions.filter((m) => m && m.no != null).map((m) => ({ no: Number(m.no), title: String(m.title || `Mission ${m.no}`) })) };
+}
+/** The mission the crew are on that day of the run — the one chosen on the desk, else the plan's — or null where
+ *  neither names one. */
 function missionForDay(missionDay) {
-  const { days, missions } = missionsFile();
-  const no = days[String(missionDay)];
+  const { days, missions, chosen } = missionsFile();
+  const key = String(missionDay);
+  const no = Object.prototype.hasOwnProperty.call(chosen, key) && chosen[key] != null ? chosen[key] : days[key];
   if (no == null) return null;
   const m = missions.find((x) => x && Number(x.no) === Number(no));
   if (!m) return null;
@@ -957,4 +971,4 @@ module.exports = { load, watch, status, edit, templates, crewFigures, power, pow
                    resourceLogRows, resourceLogCsv, LOG_FILE,
                    planStatus, savePlan, ensurePlan, reset, resetLocked, resetEpoch, inventoryStart, PLAN_DIR, PLAN_FILES,
                    PLACEHOLDER, BLOG_OFFICER, isPlaceholder, placeholderCue, placeholderPublic, placeholderFor,
-                   NUTRIENTS, mealNutrients, recipesFile, recipeBook, slugify, missionsFile, missionForDay };
+                   NUTRIENTS, mealNutrients, recipesFile, recipeBook, slugify, missionsFile, missionForDay, missionChoice };

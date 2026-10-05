@@ -297,12 +297,16 @@ function published(limit = 100, filters = {}) {
  */
 /** What the board holds: the viewer's own messages, every one whatever its state, and the newest `limit` exchanges the
  *  crew have answered (published) — the site's board shows the last nine (BOARD_RECENT), the installation's screen as
- *  many as fit. The viewer's own come first; boardCards (public.js) heads them MY MESSAGES. */
+ *  many as fit. boardCards (public.js) lists them in one sequence, the newest first, by the moment each was sent. */
 /*  `callsign` makes the board a name's rather than a visitor's: its own messages are every message that carries that
     callsign, whatever became of them — the installation's board screen is the ground station's (callsign.STATION), so
     everything written at the installation's writing screen, which all goes out under that one name, stands on the
     square's board at once, in transit, awaiting a reply, answered — never the computer's cookie's. */
-function board(limit = 9, visitorId = null, { callsign = null } = {}) {
+/*  `before` ({ id, at }: a message's id and the moment it was sent) asks for the page of published exchanges sent before
+    that message — the Write page's board fetching the next page as the reader scrolls (public/board.js): the published
+    ones alone, in the same order (by the moment sent, the id breaking a tie); the viewer's own messages are all on the
+    first page and are not repeated here. */
+function board(limit = 9, visitorId = null, { callsign = null, before = null } = {}) {
   settleTransits();
   const SELECT = `SELECT m.*, r.body AS response_body, r.published_at AS response_at, c.designation AS responder,
             s.launched_at, s.remote_id AS space_id
@@ -316,6 +320,13 @@ function board(limit = 9, visitorId = null, { callsign = null } = {}) {
     return mine.concat(rest).map((m) => ({ ...m, mine: m.callsign === callsign, pending: m.state !== 'PUBLISHED' }));
   }
   const vid = visitorId == null ? -1 : visitorId;
+  if (before != null) {
+    const rows = before.at
+      ? db.prepare(`${SELECT} WHERE m.state = 'PUBLISHED' AND m.visitor_id != ? AND (m.submitted_at < ? OR (m.submitted_at = ? AND m.id < ?))
+                    ORDER BY m.submitted_at DESC, m.id DESC LIMIT ?`).all(vid, before.at, before.at, before.id, limit)
+      : db.prepare(`${SELECT} WHERE m.state = 'PUBLISHED' AND m.visitor_id != ? AND m.id < ? ORDER BY m.submitted_at DESC, m.id DESC LIMIT ?`).all(vid, before.id, limit);
+    return rows.map((m) => ({ ...m, mine: false, pending: false }));
+  }
   const mine = vid < 0 ? [] : db.prepare(`${SELECT} WHERE m.visitor_id = ? ORDER BY m.submitted_at DESC LIMIT 100`).all(vid);
   const rest = db.prepare(`${SELECT} WHERE m.state = 'PUBLISHED' AND m.visitor_id != ? ORDER BY m.submitted_at DESC LIMIT ?`).all(vid, limit);
   return mine.concat(rest).map((m) => ({
@@ -352,6 +363,7 @@ function counts() {
     awaitingResponse: g(
       "SELECT COUNT(*) n FROM message m LEFT JOIN response r ON r.message_id = m.id WHERE m.state = 'APPROVED' AND r.id IS NULL"),
     published: g("SELECT COUNT(*) n FROM message WHERE state = 'PUBLISHED'"),
+    sentToSpace: g("SELECT COUNT(DISTINCT message_id) n FROM space_relay WHERE state = 'SENT'"),   // beamed out (SpaceSpeak)
     rejected: g("SELECT COUNT(*) n FROM message WHERE state = 'REJECTED'"),
     total: g('SELECT COUNT(*) n FROM message'),
     visitors: g('SELECT COUNT(*) n FROM visitor'),

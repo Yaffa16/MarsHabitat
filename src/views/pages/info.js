@@ -3,6 +3,7 @@ const L = require('../layout');
 const { esc, panel, eyebrow } = L;
 const orbital = require('../../lib/orbital');
 const officer = require('../../lib/officer');
+const { habitatInside } = require('./inside');
 
 /**
  * The project, the station's behaviour and the credits — About, What this is
@@ -152,35 +153,42 @@ function whoFold(crew, T) {
 }
 
 /**
- * The reading matter as a page: About, What this is and Who we are one after
- * another, each under its own head — its name and the line beneath, in the
- * dress of the dashboard's heads — with a row of three pills
- * at the top that jump to them. Once three pop-ups over the landing page; now
- * the page the About key opens (layout.js, tabbar()), where the ticker's menu
- * rows lead (public.js, ticker()) and where the old addresses land: /what and
- * /who-we-are (server.js), and the landing page's #about, #about-project,
- * #what and #who-we-are (public.js, mission()). Beside the prose, the panels
- * that remain: the mission's facts (About), the path of a message in six
- * steps (What this is), the crew — the three officers and the portraits — and the producer with the partners (Who we are).
+ * The reading matter as a page: About, What this is, the habitat in section
+ * and Who we are one after another, each under its own head — its name and
+ * the line beneath, in the dress of the dashboard's heads — with a row of
+ * four pills at the top that jump to them. Once three pop-ups over the
+ * landing page; now the page the About key opens (layout.js, tabbar()),
+ * where the ticker's menu rows lead (public.js, ticker()) and where the old
+ * addresses land: /what and /who-we-are (server.js), and the landing page's
+ * #about, #about-project, #what and #who-we-are (public.js, mission()).
+ * Beside the prose, the panels that remain: the mission's facts (About), the
+ * path of a message in six steps (What this is), the habitat's picture with
+ * every module a key (What's inside the habitat — inside.js, habitatInside,
+ * which was the landing page's third page), the crew — the three officers
+ * and the portraits — and the producer with the partners (Who we are).
  */
 const PARTS = [
   ['about-project', 'About', 'The project, the distance, the archive'],
   ['what', 'What this is', 'How the station behaves, in plain terms'],
+  ['inside', 'What’s inside the habitat?', null],
   ['who-we-are', 'Who we are', 'The crew, the producer, the partners'],
 ];
 
-function aboutPage(ctx, { crew = [] } = {}) {
+function aboutPage(ctx, { crew = [], habitat = null } = {}) {
   const T = ctx.T;
-  const inner = { 'about-project': () => aboutFold(ctx), what: () => whatFold(ctx), 'who-we-are': () => whoFold(crew, T) };
+  // the habitat's section: its head's line is the drawing's hint (Point at a room… on a desk, Tap a room… on a touch
+  // screen — sheet.css shows the one that applies), and the drawing itself stands under it on the section's sheet
+  const hint = `<span class="dome-meta dome-hint"><span class="dome-hint-click">${T('Point at a room to know what is inside.')}</span><span class="dome-hint-tap">${T('Tap a room to know what is inside.')}</span></span>`;
+  const inner = { 'about-project': () => aboutFold(ctx), what: () => whatFold(ctx), inside: () => `<div class="hab-card">${habitatInside(ctx, habitat || {})}</div>`, 'who-we-are': () => whoFold(crew, T) };
   const body = `
   <nav class="about-jump" aria-label="${esc(T('About, What this is, Who we are'))}">
     ${PARTS.map(([id, title]) => `<a href="#${id}">${esc(T(title))}</a>`).join('')}
   </nav>
   ${PARTS.map(([id, title, sub]) => `
-  <section class="about-sec" id="${id}" aria-labelledby="${id}-title">
+  <section class="about-sec${id === 'inside' ? ' habitat-sec' : ''}" id="${id}" aria-labelledby="${id}-title">
     <header class="about-sec-head">
       <h2 class="bigsec" id="${id}-title">${esc(T(title))}</h2>
-      <p class="dash-sub">${esc(T(sub))}</p>
+      <p class="dash-sub">${sub ? esc(T(sub)) : hint}</p>
     </header>
     ${inner[id]()}
   </section>`).join('')}`;

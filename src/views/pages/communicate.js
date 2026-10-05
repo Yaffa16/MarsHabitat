@@ -4,7 +4,7 @@ const { esc, panel, eyebrow, orbitPlot, pipeline } = L;
 const orbital = require('../../lib/orbital');
 const { TAGS } = require('../../lib/data');
 
-const MAX = Number(process.env.MESSAGE_MAX_CHARS || 500);
+const MAX = Number(process.env.MESSAGE_MAX_CHARS || 1000);
 // The channel is open by default before the run so the station can be used and
 // shown in full. Set this to hold it shut until the crew are actually inside.
 const HOLD_BEFORE_LAUNCH = process.env.HOLD_CHANNEL_BEFORE_LAUNCH === 'true';
@@ -131,7 +131,7 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '', kiosk = '' 
       </div>
     </label>
     <div class="tagbar">
-      <span class="lbl">${T('Tags · choose 3')}</span>
+      <span class="lbl">${T('Tags · choose up to 3')}</span>
       <span class="counter tags-note">${T('CHOOSE UP TO 3 TAGS')}</span>
       <div class="tags" ${ghost ? '' : `id="${uid('tags')}"`}>
         ${TAGS.map((t) => `<label><input type="checkbox" ${ghost ? '' : 'name="tags"'} value="${t}"><span>#${T(t)}</span></label>`).join('')}
@@ -171,7 +171,8 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '', kiosk = '' 
           ${T('at a distance of')} ${inFlight.distance_au.toFixed(3)} au.
           <span class="sr-only">${T('Arrives')} <span id="tarr">${esc(inFlight.arrival_at.slice(11, 19))} UTC</span></span>
         </div>${kiosk && ctx.callsign ? `
-        <div class="kiosk-cs">${T('Your message went under the callsign')} <b>${esc(ctx.callsign)}</b> — ${T('look for it on the Message Board once the crew have answered.')}</div>` : ''}
+        <div class="kiosk-cs">${T('Your message went under the callsign')} <b>${esc(ctx.callsign)}</b> — ${T('look for it on the Message Board once the crew have answered.')}</div>` : ''}${kiosk ? '' : `
+        <a class="btn primary transit-board" href="/write#exchanges">${T('Message Board')} <span aria-hidden="true">→</span></a>`}
       </div>
     </div>
     </div>` : '';

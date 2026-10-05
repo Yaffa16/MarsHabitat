@@ -125,17 +125,17 @@ body.screen.screen-mission .mission-part p, body.screen.screen-mission .mission-
 @media (orientation: portrait) {
   body.screen.screen-mission .mission-parts { grid-template-columns: minmax(0, 1fr); }
 }
-/* the message board: the latest exchanges in two columns (one upright), as many as fit — the rest cut clean (screen.js);
+/* the message board: the latest exchanges in three columns (one upright), as many as fit — the rest cut clean (screen.js);
    the filter bar and the key for more stand unshown, the script needs them */
 body.screen.screen-board .feed-wrap { min-height: 0; height: 100%; position: relative; }
 body.screen.screen-board .feed-scroll { position: absolute; inset: 0; }
 body.screen.screen-board .screen.board { height: 100%; box-sizing: border-box; display: flex; flex-direction: column; min-height: 0; padding: 26px 30px 20px; }
 body.screen.screen-board .board .scroller { flex: 1 1 auto; min-height: 0; max-height: none; overflow: hidden; margin: 0; }
-body.screen.screen-board .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-content: start; }   /* two across: room for the line into space on one line */
+body.screen.screen-board .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-content: start; }   /* three across */
 @media (orientation: portrait) {
   body.screen.screen-board .cards { grid-template-columns: minmax(0, 1fr); }                           /* one upright, for the same reason */
 }
-body.screen.screen-board .feed-filter, body.screen.screen-board .feed-more, body.screen.screen-board .board-group { display: none !important; }
+body.screen.screen-board .feed-filter, body.screen.screen-board .feed-more { display: none !important; }
 body.screen.screen-board .board-head h2 { font-size: 26px; }
 body.screen.screen-board .card.xc .card-body { font-size: 19px; }
 body.screen.screen-board .card-reply p { font-size: 21px; }

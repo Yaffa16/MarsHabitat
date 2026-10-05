@@ -37,11 +37,16 @@ body.landing .tk-sol { display: inline-flex; align-items: center; gap: 7px; flex
   font-family: var(--display); font-size: var(--fs-label); font-weight: 600; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
 body.landing .tk-sol i { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--mars); box-shadow: 0 0 8px 2px rgba(255,90,31,.7); animation: live 2.4s ease-in-out infinite; }
 /* the three ways on, in the middle of the row: pills like the switches, the one for this page filled */
-body.landing .tk-nav { flex: 1 1 auto; min-width: 0; display: flex; justify-content: center; align-items: center; gap: 6px; padding: 0 10px; }
-body.landing .tk-nav a { display: inline-flex; align-items: center; min-height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--glass-edge); background: transparent;
-  color: var(--ink); font-family: var(--display); font-size: var(--fs-label); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; text-decoration: none; white-space: nowrap; transition: background .15s ease; }
-body.landing .tk-nav a:hover { background: rgba(var(--cobalt-rgb),.08); }
-body.landing .tk-nav a[aria-current="page"] { background: var(--cobalt); border-color: var(--cobalt); color: #fff; }
+/* the three keys: plain buttons, each with its sign and its name — black tiles with white words, in both themes, and the
+   page's own key filled in cobalt (October: "selected blue, not selected black") */
+body.landing .tk-nav { flex: 1 1 auto; min-width: 0; display: flex; justify-content: center; align-items: center; gap: 8px; padding: 0 10px; }
+body.landing .tk-nav a, :root[data-theme="dark"] body.landing .tk-nav a { display: inline-flex; align-items: center; gap: 9px; min-height: 40px; padding: 0 18px 0 14px; border-radius: 12px; border: 1px solid #0f1116; background: #0f1116;
+  color: #fff; font-family: var(--display); font-size: 14px; font-weight: 600; letter-spacing: 0; text-transform: none; text-decoration: none; white-space: nowrap; box-shadow: 0 1px 2px rgba(15,21,64,.2); transition: background .15s ease, transform .15s ease, box-shadow .15s ease; }
+:root[data-theme="dark"] body.landing .tk-nav a { border-color: #3a3a44; box-shadow: 0 1px 2px rgba(0,0,0,.5); }
+body.landing .tk-nav a .tk-ic { flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+body.landing .tk-nav a:hover, :root[data-theme="dark"] body.landing .tk-nav a:hover { transform: translateY(-1px); box-shadow: 0 6px 16px -8px rgba(15,21,64,.5); background: #22242c; color: #fff; }
+body.landing .tk-nav a[aria-current="page"], :root[data-theme="dark"] body.landing .tk-nav a[aria-current="page"], body.landing .tk-nav a[aria-current="page"]:hover, :root[data-theme="dark"] body.landing .tk-nav a[aria-current="page"]:hover { background: var(--cobalt-fill); border-color: var(--cobalt-fill); color: #fff; box-shadow: 0 8px 18px -10px rgba(47,69,232,.8); }
+
 body.landing .tk-right { flex: none; margin-left: auto; padding: 0; }   /* at the row's end, whatever stands before it */
 /* the running line: the width of the window, its words starting where the page's content does */
 body.landing .tk-window {
@@ -58,14 +63,14 @@ body.landing .tk-cell { font-size: 12px; }
 /* a narrower desk: the row makes room for the three links — the pills tighter, the theme key its mark alone (as a phone
    has it), and under 880 px the sol badge goes */
 @media (min-width: 761px) and (max-width: 1180px) {
-  body.landing .tk-nav { gap: 4px; padding: 0 6px; }
-  body.landing .tk-nav a { padding: 0 9px; font-size: var(--fs-tag); letter-spacing: .05em; }
+  body.landing .tk-nav { gap: 6px; padding: 0 6px; }
+  body.landing .tk-nav a { min-height: 36px; padding: 0 12px 0 10px; gap: 7px; font-size: 13px; }
 }
 @media (min-width: 761px) and (max-width: 1000px) {
   body.landing .status .theme button { min-width: 34px; padding: 0 8px; font-size: 0; gap: 0; justify-content: center; }
   body.landing .status .theme .theme-mark { font-size: 12px; }
 }
-@media (min-width: 761px) and (max-width: 880px) { body.landing .tk-sol { display: none; } body.landing .tk-nav a { padding: 0 7px; letter-spacing: .02em; } }
+@media (min-width: 761px) and (max-width: 880px) { body.landing .tk-sol { display: none; } body.landing .tk-nav a { padding: 0 9px 0 8px; font-size: 12.5px; } }
 /* a phone held upright: the bar's row and the running line under it, 83 px in all (the index of folders and the board's
    chips stick under it at that height, aura.css); no links in the bar — the bar of keys at the foot is the way on */
 @media (max-width: 760px) and (min-height: 521px) {
@@ -107,7 +112,8 @@ body.landing .tk-cell { font-size: 12px; }
   body.landing .tk-bar { height: 50px; gap: 8px; padding: 0 16px; }
   body.landing .tk-brand { font-size: 16px; }
   body.landing .tk-window { height: 30px; padding: 0 16px; }
-  body.landing .tk-nav a { min-height: 30px; padding: 0 9px; font-size: var(--fs-tag); }
+  body.landing .tk-nav a { min-height: 30px; padding: 0 9px 0 8px; font-size: 12px; gap: 6px; }
+  body.landing .tk-nav a .tk-ic { width: 15px; height: 15px; }
 }
 
 /* the cross that closes a pop-up, by night as well as by day */
@@ -365,37 +371,28 @@ body.landing .know-more.is-write { background: linear-gradient(180deg, #ff8a3d, 
 body.landing .know-more.is-write:hover { color: #0f1540; box-shadow: 0 18px 32px -14px rgba(255,70,0,.9), 0 1px 0 rgba(255,255,255,.55) inset; }
 :root[data-theme="dark"] body.landing .know-more.is-write, :root[data-theme="dark"] body.landing .know-more.is-write:hover { color: #1a0a02; }
 
-/* ---- P03: the habitat (src/views/pages/inside.js, habitatInside; the pop-ups and the two round keys are drawn by
-   aura.css, the dome's) — on a card of glass like the note's: the habitat in section, the cutaway drawing handed over
-   (public/habitat/inside.svg — its lines alone, white by night and cobalt ink by day, on the page's own ground), every
-   room a key: a faint floor, lit under the hand, its name on a tag on its floor line, each opening a pop-up that says
-   what that part of the habitat is and what is happening in it now; EVA and the Dashboard, which are not rooms, as round
-   keys on the ground either side of the shell. Nothing else: no sheet under it (the sequencer's grey sheet stays in
-   sky.js, habitatSheet, unused; the dome with its floating keys in dome.js), no sky over it, no frame of corners — the
-   card's head names the page and says what to do (Click a room on a desk, Tap a room on a touch screen), the drawing
-   stands on its ground line. On a desk the drawing stands at the left of the card and the pop-up opens in the column at
-   its right (inside.js, column), where at rest the hint alone stands (it gives way while a pop-up is open). A phone has
-   the page to itself: the drawing alone, the pop-up over it. */
-body.landing .sheet-p3 { position: relative; z-index: 2; margin: 64px 0 0; }                      /* over the page after it: the pop-up under the picture (inside.js, place) reaches onto it */
-body.landing .hab-card { padding: 26px 22px 30px;
-  background: var(--glass); -webkit-backdrop-filter: blur(26px) saturate(1.35); backdrop-filter: blur(26px) saturate(1.35);
-  border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); border-radius: var(--r-lg); color: var(--ink); }
-body.landing:not(.inner) .hab-card .dome-panel, :root[data-theme="dark"] body.landing .hab-card .dome-panel { --room: 18px; flex: none; margin: 0; padding: 0; background: none; }   /* a little air between the head and the drawing: the pop-up stands beside the drawing, not over it */
-/* the head as the other cards' label row: the name small in Mars at the left, the hint at the right, a rule under them */
-body.landing .hab-card .dome-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 var(--room); padding: 0 0 16px; border-bottom: 1px solid var(--hair); }
-body.landing .hab-card .dome-title h2 { margin: 0; font-family: var(--display); font-size: var(--fs-label); line-height: 1.4; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--mars-ink); }
-body.landing .hab-card .dome-meta.dome-hint { font-family: var(--display); font-size: var(--fs-note); letter-spacing: 0; text-transform: none; font-weight: 400; color: var(--dim); }
+/* ---- the habitat (src/views/pages/inside.js, habitatInside; the pop-ups and the two round keys are drawn by aura.css,
+   the dome's) — a section of the About page (info.js, before Who we are; once the landing page's third page): under the
+   section's head — its name, and the hint for its line (Point at a room… on a desk, Tap a room… on a touch screen) —
+   the habitat in section, the cutaway picture handed over (public/habitat/scene-lines.webp — the dome on the Mars plain
+   in its white lines; the modules in colour as cut-outs, public/habitat/modules/), every module a key: in colour under
+   the hand, its name on a tag at its floor line while it is lit, each opening a pop-up that says what that part of the
+   habitat is and what is happening in it now; EVA and the Dashboard, which are not modules, as round keys on the ground
+   in front of the habitat; under the picture, the line that says what it is (AI generated image). The drawing's own
+   head stands unshown (the section's names it). On a desk the drawing stands at the left of the section and the pop-up
+   opens in the column at its right (inside.js, column), where at rest the hint alone stands (it gives way while a
+   pop-up is open). A phone has the drawing the width of the section, the pop-up under it. */
+body.landing .hab-card { position: relative; z-index: 2; padding: 0; margin: 0; background: none; border: 0; box-shadow: none; color: var(--ink); }   /* the section is the sheet; over the sections after it: the pop-up under the picture reaches onto them */
+body.landing .hab-card .dome-panel, :root[data-theme="dark"] body.landing .hab-card .dome-panel { --room: 18px; flex: none; margin: 0; padding: 0; background: none; }   /* (no frame of corners: aura.css draws the dome's in the dark too) */
+body.landing .hab-card .dome-head { display: none; }                                              /* the section's head names the page and carries the hint */
+body.landing .hab-card .dome-meta.dome-hint, body.landing.about .about-sec-head .dome-meta.dome-hint { display: inline; font-family: var(--display); font-size: var(--fs-note); letter-spacing: 0; text-transform: none; font-weight: 400; color: var(--dim); }
 body.landing .dome-hint-tap { display: none; }
 @media (hover: none) { body.landing .dome-hint-click { display: none; } body.landing .dome-hint-tap { display: inline; } }
-body.landing:not(.inner) .hab-card .dome-screen { padding: 0; }
-/* the screen: the drawing at the left and the column at the right, a little under a third of the card. The card is the
-   height of a page (below) and the drawing fills what is left of it beside the column — the stage is that box, and the
-   script shapes the drawing's box to it (inside.js, fit: wider with the ground either side, taller with more sky) */
-body.landing:not(.inner) .hab-card { display: flex; flex-direction: column; min-height: 0; }
-body.landing:not(.inner) .hab-card .dome-panel.is-inside { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
-body.landing:not(.inner) .hab-card .dome-head { flex: none; }
-body.landing:not(.inner) .hab-card .dome-screen { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 30%, 400px); column-gap: 28px; align-items: stretch; }
-body.landing:not(.inner) .hab-card .dome-stage { flex: none; width: 100%; max-width: none; height: 100%; min-height: 300px; aspect-ratio: auto; max-height: none; margin: 0; }
+/* the screen: the drawing at the left and the column at the right, a little under a third of the section; the drawing
+   at the picture's own shape (3 : 2), as wide as the room beside the column (the script fits the picture to the stage,
+   inside.js fit — at this shape, all of it) */
+body.landing .hab-card .dome-screen { padding: 0; display: grid; grid-template-columns: minmax(0, 1fr) clamp(300px, 30%, 400px); column-gap: 28px; align-items: stretch; }
+body.landing .hab-card .dome-stage { flex: none; width: 100%; max-width: none; height: auto; aspect-ratio: 1536 / 1024; min-height: 0; max-height: none; margin: 0; }
 /* the column: the hint, vertically in the middle of the column, beside the middle of the drawing; while a pop-up is
    open (over it, inside.js column) it fades out of the way */
 body.landing .is-inside .in-aside { position: relative; align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 16px; min-width: 0; transition: opacity .25s ease; }
@@ -406,62 +403,35 @@ body.landing .is-inside .in-aside-hint .dome-meta { display: inline; font-family
 @media (min-width: 761px) and (min-height: 521px) {
   body.landing .is-inside dialog.dome-popup .popup-head > div { flex-direction: column; align-items: flex-start; gap: 2px; }
 }
-body.landing .hab-card .dome-caption { display: none; }                                         /* no ground line under the drawing: the plain's own foot is the card's */
-body.landing .hab-card .dome-head .dome-legend, body.landing .hab-card .dome-screen > .dome-legend { display: none; }   /* (the index stands in the column, above) */
-body.landing .hab-card .dome-head .dome-hint { display: none; }                                   /* on a desk the hint stands in the column; a phone shows the head's (below) */
-@media (min-width: 761px) and (min-height: 521px) {
-  body.landing .sheet-p3 { min-height: calc(100vh - 101px); box-sizing: border-box; display: flex; flex-direction: column; justify-content: stretch; margin: 0; padding: 24px 0; }   /* the page's height: the card fills it (its own flex, above) */
-  body.landing .sheet-p3 .hab-card { flex: 1 1 auto; }
-  body.landing .hab-card { padding: 34px 44px 40px; }
-}
+body.landing .hab-card .dome-caption { display: none; }                                         /* no ground line under the drawing */
+body.landing .hab-card .in-credit { margin: 16px 0 0; font-family: var(--display); font-size: var(--fs-label); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }   /* under the picture: what it is */
+body.landing .hab-card .dome-head .dome-legend, body.landing .hab-card .dome-screen > .dome-legend { display: none; }
 @media (min-width: 761px) and (max-width: 1100px) and (min-height: 521px) {
-  body.landing .hab-card { padding: 26px 28px 30px; }
-  body.landing:not(.inner) .hab-card .dome-screen { grid-template-columns: minmax(0, 1fr) clamp(260px, 34%, 320px); column-gap: 20px; }   /* a narrower desk: a narrower column */
+  body.landing .hab-card .dome-screen { grid-template-columns: minmax(0, 1fr) clamp(260px, 34%, 320px); column-gap: 20px; }   /* a narrower desk: a narrower column */
 }
-/* a phone held upright: the page is the dome's — the width of the screen and its height between the header and the bar
-   of keys, the head at its top, the dome standing on its ground line at its foot, the pop-up opening over the dome
-   (dome.js, above); no card around it */
+/* a phone held upright: the drawing the width of the section at its own shape, the pop-up under it (inside.js, above) */
 @media (max-width: 760px) and (min-height: 521px) {
-  body.landing .sheet-p3.habitat-page { margin: 0; padding: 0; min-height: 0; display: block; }
-  body.landing .hab-card { padding: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; border: 0; box-shadow: none; border-radius: 0; }
-  :root body.landing:not(.inner) .hab-card .dome-panel { order: 0; margin: 0 calc(-1 * var(--gutter)); padding: 24px var(--gutter) 56px; }
-  body.landing:not(.inner) .hab-card .dome-head { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: 0; padding: 0 0 12px; }
-  body.landing:not(.inner) .hab-card .dome-meta.dome-hint { display: block; }                   /* the hint under the name (station.css hides a phone's dome-meta) */
-  body.landing:not(.inner) .hab-card .dome-screen { display: block; padding-top: 0; }
-  body.landing:not(.inner) .hab-card .dome-stage { width: 100%; max-width: none; height: auto; max-height: none; min-height: 0; }
+  body.landing .hab-card .dome-screen { display: block; padding-top: 0; }
+  body.landing .hab-card .dome-stage { width: 100%; max-width: none; height: auto; max-height: none; min-height: 0; }
 }
 
-/* the drawing on the plain: the photograph stands behind the drawing (inside.js, PLAIN_BOX: its horizon behind the
-   lower rooms, its sky over the dome up to its black, clipped to the drawing's box), its corners rounded like the
-   cards'; the lines in warm white (the <use>s take it as currentColor), each room a dark panel — the
-   inside of the habitat — until it is lit. Lit (under the hand, with its pop-up open, with keyboard focus — every layer
-   of a room carries its id, inside.js lit): the dark lifts and a warm lamp comes on over the floor, a glow bleeds
-   through the walls (the outline blurred, breathing slowly while lit), a bright band sweeps across the room once, its
-   lines turn pure white and its name's tag fills with the same light — and a room that has its picture (five do:
-   inside.js, pic) shows itself in colour, the picture coming in over the room in place of its lines. The names on tags in the dome's hand, set in the
-   drawing's units (19, where the dome's 1000-unit box took 11.5), enlarged by the script where the drawing is drawn
-   small (inside.js, tagScale) — the tags at the foot straddle the ground line, so the drawing may spill out of its box. */
-body.landing .dome-panel.is-inside { --in-ink: rgba(255,244,232,.86); --in-ink-lit: #ffffff; --in-floor: rgba(26,9,4,.58); --in-floor-lit: rgba(26,9,4,.26); --in-lamp: #ffd27a; --in-tag-ink: #0f1540; }
+/* the drawing: the dome on the plain in its white lines (inside.js, SCENE — the line-art picture handed over, the
+   whole of it in the box, its corners rounded like the cards' on a desk, the frame clip), every module a key. Lit
+   (under the hand, with its pop-up open, with keyboard focus — every layer of a module carries its id, inside.js lit):
+   the module shows itself in colour — its cut-out of the coloured picture comes in over its lines — a bright band
+   sweeps across it once, and its name comes up on a tag at its floor line (unseen otherwise: the picture carries its
+   own detail, and the names would stand in it). The names are on tags in the dome's hand, set in the drawing's units
+   (19, where the dome's 1000-unit box took 11.5), enlarged by the script where the drawing is drawn small (inside.js,
+   tagScale). */
+body.landing .dome-panel.is-inside { --in-lamp: #ffd27a; --in-tag-ink: #0f1540; }
 :root[data-theme="dark"] body.landing .dome-panel.is-inside { --in-tag-ink: #f1f3ff; }
-body.landing .is-inside .dome-screen { overflow: visible; }                                         /* the tags on the ground line hang under the drawing's box */
-body.landing .is-inside .dome-stage { z-index: 2; }                                                  /* over the card's own rule, which the tags on the ground line straddle */
+body.landing .is-inside .dome-screen { overflow: visible; }                                         /* the keys' tags under the ground may hang under the drawing's box */
+body.landing .is-inside .dome-stage { z-index: 2; }                                                  /* over the card's own rule */
 body.landing .is-inside .dome-svg.inside-svg { overflow: visible; }
-body.landing .is-inside .in-plain { pointer-events: none; }                                       /* clipped to the drawing's box by its clipPath (inside.js) */
-body.landing .is-inside .in-dome { fill: var(--in-floor); pointer-events: none; }                  /* the whole dome a dark panel on the plain, the rooms cut out of it (their own floors stand in them, the same dark until lit) */
-body.landing .is-inside .in-ink { color: var(--in-ink); fill: currentColor; stroke: currentColor; stroke-width: 1; stroke-linejoin: round; pointer-events: none; transition: color .25s, opacity .25s; }   /* a hair of stroke: the lines keep their weight where the drawing is scaled down */
-body.landing .is-inside .in-ink-room.lit { color: var(--in-ink-lit); }
-/* a room that has its picture: lit, the picture is there at once (the band sweeps over it) and the room's lines give way
-   to it (the picture carries its own, in white); dark again, the picture goes and the lines are back as quickly */
-body.landing .is-inside .in-pic { opacity: 0; pointer-events: none; transition: opacity .18s ease-out; }
-body.landing .is-inside .in-pic.lit { opacity: 1; transition: opacity .1s ease-out; }
-body.landing .is-inside .in-ink-room.has-pic.lit { opacity: 0; transition: color .25s, opacity .1s ease-out; }
-body.landing .is-inside .in-floor { fill: var(--in-floor); pointer-events: none; transition: fill .3s; }
-body.landing .is-inside .in-floor.lit { fill: var(--in-floor-lit); }
-body.landing .is-inside .in-lamp { fill: url(#in-lamp-light); opacity: 0; pointer-events: none; transition: opacity .25s ease-out; }
-body.landing .is-inside .in-lamp.lit { opacity: 1; transition: opacity .7s ease-out .3s; }                  /* the band crosses the dark room first, then the lamp comes on */
-body.landing .is-inside .in-halo { fill: var(--in-lamp); opacity: 0; pointer-events: none; transition: opacity .3s ease-out; }
-body.landing .is-inside .in-halo.lit { opacity: .9; transition: opacity .8s ease-out .35s; animation: in-breathe 2.8s ease-in-out 1.2s infinite alternate; }
-@keyframes in-breathe { from { opacity: .62; } to { opacity: .95; } }
+body.landing .is-inside .in-scene { pointer-events: none; }                                       /* clipped to the drawing's box by its clipPath (inside.js) */
+/* a module lit: the picture is there at once (the band sweeps over it); dark again, it goes as quickly */
+body.landing .is-inside .in-pic { opacity: 0; pointer-events: none; transition: opacity .22s ease-out; }
+body.landing .is-inside .in-pic.lit { opacity: 1; transition: opacity .12s ease-out; }
 body.landing .is-inside .in-sweep { fill: url(#in-sweep-light); opacity: 0; pointer-events: none; transform-box: fill-box; transform-origin: center; }
 body.landing .is-inside .in-sweep.lit { animation: in-sweep 1.1s cubic-bezier(.4,.4,.3,1) 1 both; }
 @keyframes in-sweep { 0% { opacity: 0; transform: translateX(-130%) skewX(-18deg); } 10% { opacity: 1; } 90% { opacity: 1; } 100% { opacity: 0; transform: translateX(450%) skewX(-18deg); } }
@@ -470,8 +440,10 @@ body.landing .is-inside .in-room:focus-visible { stroke: #fff; stroke-width: 3; 
 body.landing .is-inside .in-tag { cursor: pointer; pointer-events: all; }
 body.landing .is-inside .in-tag rect { transition: fill .25s, stroke .25s; }
 body.landing .is-inside .in-tag text { font-size: 19px; fill: var(--in-tag-ink); transition: fill .25s; }
-body.landing .is-inside .in-part .in-tag.lit rect, body.landing .is-inside .in-part .in-tag:hover rect { fill: #fff6df; stroke: var(--in-lamp); stroke-width: 2; }   /* a room's name lit with the room's light */
-body.landing .is-inside .in-part .in-tag.lit text, body.landing .is-inside .in-part .in-tag:hover text { fill: #3a1606; }
+body.landing .is-inside .in-part .in-tag { opacity: 0; pointer-events: none; transition: opacity .2s ease-out; }   /* a module's name shows while the module is lit */
+body.landing .is-inside .in-part .in-tag.lit { opacity: 1; pointer-events: all; }
+body.landing .is-inside .in-part .in-tag.lit rect { fill: #fff6df; stroke: var(--in-lamp); stroke-width: 2; }   /* a module's name lit with the module's light */
+body.landing .is-inside .in-part .in-tag.lit text { fill: #3a1606; }
 body.landing .is-inside .in-key .dome-pod { stroke-width: 1.6; }                                  /* the outside keys are drawn larger than the dome's: their lines with them */
 body.landing .is-inside .in-key .dome-ic-line { stroke-width: 1.5; }
 body.landing .is-inside .in-key:hover .dome-pod, body.landing .is-inside .in-key.lit .dome-pod, body.landing .is-inside .in-key:focus-visible .dome-pod { stroke-width: 7; }
@@ -479,19 +451,17 @@ body.landing .is-inside .in-key:hover .dome-pod, body.landing .is-inside .in-key
 body.landing .is-inside dialog.dome-popup.is-hover[open] { z-index: 35; animation: in-pop .22s ease-out both; }
 @keyframes in-pop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
-  body.landing .is-inside .in-floor, body.landing .is-inside .in-lamp, body.landing .is-inside .in-halo, body.landing .is-inside .in-ink, body.landing .is-inside .in-pic, body.landing .is-inside .in-tag rect, body.landing .is-inside .in-tag text { transition: none; }
-  body.landing .is-inside .in-halo.lit { animation: none; opacity: .8; }
+  body.landing .is-inside .in-pic, body.landing .is-inside .in-tag, body.landing .is-inside .in-tag rect, body.landing .is-inside .in-tag text { transition: none; }
   body.landing .is-inside .in-sweep.lit { animation: none; }
   body.landing .is-inside dialog.dome-popup.is-hover[open] { animation: none; }
 }
-/* a phone, or a short screen: the whole shell edge to edge — the drawing's box the phone's (inside.js, VIEW_PHONE), the
-   plain out to the edges of the screen, the two keys in front of the habitat under its ground line, drawn larger under
-   the thumb — and the names off the picture (the rooms are tapped and the pop-up names them) */
+/* a phone, or a short screen: the whole picture edge to edge (inside.js, VIEW_PHONE), the two keys in front of the
+   habitat under its ground line, drawn larger under the thumb — and the names off the picture (the modules are tapped
+   and the pop-up names them) */
 @media (max-width: 760px), (max-height: 520px) {
-  body.landing .is-inside .dome-screen { display: block; margin: 0 calc(-1 * var(--gutter)); }
-  body.landing .is-inside .in-aside { display: none; }                                            /* the drawing alone: a room is tapped, and the pop-up opens over the drawing */
-  body.landing .hab-card .dome-head .dome-hint { display: block; }
-  body.landing:not(.inner) .hab-card .is-inside .dome-stage, body.landing .is-inside .dome-stage { width: 100%; height: auto; aspect-ratio: 1420 / 1050; max-height: min(calc(100vh - 160px), 74cqw); }
+  body.landing .is-inside .dome-screen { display: block; margin: 0; }
+  body.landing .is-inside .in-aside { display: none; }                                            /* the drawing alone: a module is tapped, and the pop-up opens under the drawing */
+  body.landing:not(.inner) .hab-card .is-inside .dome-stage, body.landing .is-inside .dome-stage { width: 100%; height: auto; aspect-ratio: 1536 / 1024; max-height: min(calc(100vh - 160px), 74cqw); }
   body.landing .is-inside .dome-svg.inside-svg { overflow: hidden; }                              /* nothing of the drawing past the screen's edges */
   body.landing .is-inside .dome-hex-body, body.landing .is-inside .dome-hex:hover .dome-hex-body, body.landing .is-inside .dome-hex.lit .dome-hex-body { transform: none; }   /* the keys are drawn larger by the script (inside.js, PHONE_KEY), not by the stylesheet as the dome's were */
   body.landing .is-inside .in-tag { display: none; }
@@ -520,6 +490,13 @@ body.landing .part-head { display: grid; justify-items: start; gap: 12px; paddin
 body.landing .part-title { margin: 0; font-family: var(--display); font-size: 34px; line-height: 1.04; font-weight: 600; letter-spacing: -.028em; color: var(--ink); text-wrap: balance; }
 body.landing .part-rule { display: block; width: 56px; height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--mars), rgba(255,90,31,.2)); }
 body.landing .part-lead { margin: 6px 0 0; max-width: 64ch; font-size: var(--fs-read); line-height: 1.62; color: var(--dim); text-wrap: pretty; }
+/* How it works: — the small line between the welcome and the three steps; a link in a step's words; the project's name
+   at the head of the note's lead, a link to its page at ZKM */
+body.landing .steps-how { margin: 22px 0 -4px; font-family: var(--display); font-size: var(--fs-label); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--mars-ink); }
+body.landing .step-link { color: var(--cobalt); font-weight: 600; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+body.landing .step-link:hover { color: var(--ink); }
+body.landing .note-project { color: inherit; text-decoration: none; border-bottom: 2px solid rgba(255,90,31,.6); }
+body.landing .note-project:hover { color: var(--mars-ink); border-bottom-color: var(--mars); }
 /* a line across the page sets the chat apart from the note */
 body.landing .sheet-p4::before { content: ""; display: block; height: 1px; margin: 0 0 40px; background: linear-gradient(90deg, transparent, var(--hair) 12%, var(--hair) 88%, transparent); }
 
@@ -592,6 +569,15 @@ body.landing .composer-device { padding-top: 70px; }
   /* the pop-up on the messages page: the cross that closes it keeps the top right corner; the vents step in beside it */
   html.js body.landing.messages .dev-vents { right: 62px; }
   body.landing.messages .composer-device { padding-top: 52px; }
+}
+/* the composer's pop-up on every page (aura.css, the composer's pop-up) is a plain window: no light, grip, knob or vents
+   — its title and its cross at the top, the rule of Mars along its top edge. On a phone the Write page's dock keeps the
+   device's light and vents, as it was drawn. */
+body.landing .portal-pop .dev-led, body.landing .portal-pop .dev-grip, body.landing .portal-pop .dev-knob, body.landing .portal-pop .dev-vents { display: none; }
+body.landing .portal-pop .composer-device { padding-top: 24px; }
+@media (max-width: 760px) and (min-height: 521px) {
+  body.landing.messages .portal-pop .dev-led, body.landing.messages .portal-pop .dev-vents { display: block; }
+  body.landing.messages .portal-pop .composer-device { padding-top: 52px; }
 }
 /* the cloud gallery on the narrowest phones: a column never wider than the room it has */
 body.landing .cloud-grid { grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); }
@@ -870,6 +856,120 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
   body.landing .sheet-p4 { margin-top: 52px; }
 }
 
+/* ====================================================================== the two calls (landing.js, calls) */
+/* Right after the room: two doors side by side, each a card of glass with a drawing across its top and its words under
+   it, the whole card the door — SEND A MESSAGE TO THE CREW in Mars, with the thing to know, that approved messages are
+   sent into space, and FOLLOW WHAT THE CREW IS DOING — LIVE in cobalt. A light of the card's colour in its top corner,
+   a faint grid behind the drawing. The uplink's drawing: a dish sending at the foot, its waves going out, the dashed way
+   up to the habitat with WRITTEN and APPROVED on it and INTO SPACE at its end, a signal going along it again and again
+   (SMIL). The live drawing: a trace of a day's readings drawing itself across, erasing from its start, a dot at its
+   head, a LIVE mark in the corner. Where less motion is asked for the drawings stand: the trace whole, the signal gone. */
+body.landing .calls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: stretch; margin: 14px 0 0; }   /* under the note on a phone, beside it on a desk (below) */
+body.landing .call { --accent: var(--mars); --accent-rgb: 255,90,31; position: relative; display: flex; flex-direction: column; box-sizing: border-box; min-width: 0; padding: 22px 26px 26px; overflow: hidden; text-decoration: none; color: var(--ink);
+  background: var(--glass); -webkit-backdrop-filter: blur(26px) saturate(1.35); backdrop-filter: blur(26px) saturate(1.35); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); border-radius: var(--r-lg);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+body.landing .call.call-live { --accent: var(--cobalt); --accent-rgb: var(--cobalt-rgb); }
+:root[data-theme="light"] body.landing .call { border-color: rgba(15,21,64,.07); }
+body.landing .call::before { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(62% 52% at 88% -4%, rgba(var(--accent-rgb),.2), rgba(var(--accent-rgb),0) 70%); }
+/* the thing to know, set large: APPROVED MESSAGES ARE BEAMED INTO SPACE in capitals, in a gradient of Mars and light
+   with a glow of Mars about the letters and a shimmer of light passing along them now and then — by day the light in
+   the gradient is a pale peach (white would vanish on the white card), by night white */
+body.landing .call-write .call-punch { margin: 14px 0 0; }
+body.landing .call-beam { display: inline-block; max-width: 22ch; font-size: 30px; line-height: 1.1; font-weight: 800; letter-spacing: .01em; text-transform: uppercase; text-wrap: balance;
+  background: linear-gradient(100deg, #ffb27f 0%, #ff6a2e 32%, #ffd9c2 50%, #ff6a2e 68%, #ffb27f 100%); background-size: 240% 100%; background-position: 100% 0;
+  -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; -webkit-text-stroke: .5px rgba(190,60,10,.35);
+  filter: drop-shadow(0 0 16px rgba(255,106,46,.45)) drop-shadow(0 1px 1px rgba(15,21,64,.2)); animation: call-shimmer 6s ease-in-out infinite; }
+:root[data-theme="dark"] body.landing .call-beam { background-image: linear-gradient(100deg, #ffb27f 0%, #ff6a2e 32%, #fff 50%, #ff6a2e 68%, #ffb27f 100%); -webkit-text-stroke: 0;
+  filter: drop-shadow(0 0 18px rgba(255,106,46,.6)) drop-shadow(0 2px 2px rgba(0,0,0,.4)); }
+@keyframes call-shimmer { 0%, 55% { background-position: 100% 0; } 85%, 100% { background-position: 0% 0; } }
+body.landing .call:hover { transform: translateY(-3px); border-color: rgba(var(--accent-rgb),.5); box-shadow: 0 30px 60px -30px rgba(var(--accent-rgb),.45), var(--glass-shadow); color: var(--ink); }
+body.landing .call:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+/* the drawing across the top */
+body.landing .call-art { position: relative; z-index: 1; display: block; width: 100%; height: auto; aspect-ratio: 560 / 150; overflow: visible; margin: 0 0 6px; }
+body.landing .call-art text { font-family: var(--display); font-size: 10px; font-weight: 600; letter-spacing: .14em; text-anchor: middle; fill: var(--dim); }
+body.landing .call-grid line { stroke: var(--ink); stroke-opacity: .07; stroke-width: 1; }
+body.landing .call-dish path { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+body.landing .call-dish .call-dish-cup { fill: rgba(var(--cobalt-rgb),.1); }
+body.landing .call-dish .call-dish-feed { fill: var(--mars); stroke: none; }
+body.landing .call-waves path { fill: none; stroke: var(--mars); stroke-width: 2; stroke-linecap: round; opacity: 0; animation: call-wave 2.4s ease-out infinite; }
+body.landing .call-waves path:nth-child(2) { animation-delay: .4s; }
+body.landing .call-waves path:nth-child(3) { animation-delay: .8s; }
+@keyframes call-wave { 0% { opacity: 0; } 25% { opacity: .9; } 100% { opacity: 0; } }
+body.landing .call-way-line { fill: none; stroke: url(#call-way); stroke-width: 2; stroke-dasharray: 6 6; }
+body.landing .call-stations circle { fill: var(--paper); stroke: var(--mars); stroke-width: 2; }
+body.landing .call-hab text { fill: var(--mars-ink); font-weight: 700; }                 /* INTO SPACE under the way's open end — nothing drawn there (October) */
+body.landing .call-sig { fill: #fff; stroke: var(--mars); stroke-width: 2; filter: drop-shadow(0 0 6px rgba(255,90,31,.85)); }
+body.landing .call-sig.is-tail { fill: var(--mars); stroke: none; opacity: .55; filter: none; }
+/* the live card carries no drawing: a LIVE pill on its line, its words in the middle of the card */
+body.landing .call-live .call-text { justify-content: center; }
+body.landing .call-livepill { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; padding: 3px 9px 3px 7px; border: 1px solid var(--mars); border-radius: 999px; font-size: 10.5px; letter-spacing: .16em; color: var(--mars-ink); background: rgba(255,90,31,.08); vertical-align: 1px; }
+body.landing .call-livepill i { width: 6px; height: 6px; border-radius: 50%; background: var(--mars); box-shadow: 0 0 8px 2px rgba(255,90,31,.6); animation: live 1.6s ease-in-out infinite; }
+/* the words */
+body.landing .call-text { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1 1 auto; }   /* the words centred */
+body.landing .call-k { font-family: var(--display); font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); }
+body.landing .call-live .call-k { color: var(--cobalt); }
+body.landing .call-title { margin: 10px 0 0; font-family: var(--display); font-size: 30px; line-height: 1.1; font-weight: 600; letter-spacing: -.022em; color: var(--ink); text-wrap: balance; }
+body.landing .call-punch { margin: 12px 0 0; font-family: var(--display); font-size: 19px; line-height: 1.3; font-weight: 600; letter-spacing: -.01em; color: var(--accent); text-wrap: balance; }
+body.landing .call-live .call-punch { color: var(--cobalt); }
+body.landing .call-body { margin: 12px 0 0; max-width: 46ch; font-size: var(--fs-read); line-height: 1.6; color: var(--dim); text-wrap: pretty; }
+body.landing .call-key { display: inline-flex; align-items: center; gap: 12px; min-height: 46px; margin: 22px 0 0; padding: 0 20px 0 22px; box-sizing: border-box; border-radius: 999px; font-family: var(--display); font-size: 15.5px; font-weight: 600; letter-spacing: -.005em;
+  background: var(--cobalt-fill); color: #fff; box-shadow: 0 14px 28px -14px rgba(47,69,232,.8); transition: filter .15s ease, transform .15s ease; }
+body.landing .call-key span[aria-hidden] { font-size: 16px; }
+body.landing .call-text .call-key { margin-top: auto; }                                   /* the key at the foot of the card, the two cards' keys level */
+body.landing .call-text > :nth-last-child(2) { margin-bottom: 22px; }                      /* air between the last of the words and the key */
+body.landing .call-key.is-write { background: linear-gradient(180deg, #ff8a3d, #ff5a1f); color: #0f1540; box-shadow: 0 14px 28px -14px rgba(255,70,0,.8), 0 1px 0 rgba(255,255,255,.55) inset; }
+:root[data-theme="dark"] body.landing .call-key.is-write { color: #1a0a02; }
+body.landing .call:hover .call-key { filter: brightness(1.08); transform: translateX(2px); }
+@media (min-width: 761px) and (min-height: 521px) {
+  /* the second page on a desk (October: "the description at the left, the two buttons at the right"): the note at the
+     left — its label, its lead, its paragraph, one under the other — and the two calls one over the other at its right,
+     the three cards one rectangle; the calls compact, their words at the left, the drawing small over them, so the whole
+     stands in one window where the window allows */
+  body.landing .sheet-p2 { padding: 28px 0 32px; }
+  body.landing .page2 { display: grid; grid-template-columns: minmax(0, 1fr) min(460px, 42%); gap: 20px; align-items: stretch; }   /* the note fills the page's left and stands as tall as the two calls, the calls a narrow column at its right edge — the three cards one rectangle (October: "the layout as I showed", "make the width smaller") */
+  body.landing .note-card { display: flex; flex-direction: column; padding: 24px 32px 26px; }
+  body.landing .note-body { display: flex; flex-direction: column; justify-content: center; gap: 0; flex: 1 1 auto; padding: 6px 0 12px; }   /* the words in the middle of the card's height, the label at its top */
+  body.landing .note-lead { margin-top: 0; font-size: 21px; line-height: 1.38; }
+  body.landing .note-more { margin-top: 16px; font-size: 15.5px; line-height: 1.58; }
+  body.landing .calls { grid-template-columns: minmax(0, 1fr); gap: 14px; max-width: none; margin: 0; }
+  body.landing .call { padding: 16px 22px 18px; }                                                    /* low cards (October: "reduce the height of all three") */
+  body.landing .call-text { align-items: flex-start; text-align: left; }
+  body.landing .call-art { width: 280px; height: 75px; max-width: 100%; margin: 0 0 2px; }   /* 560 : 150, at the left of the card */
+  body.landing .note-aside { margin: 0; padding: 0; }
+  body.landing .call-k { font-size: 10.5px; }
+  body.landing .call-title { margin-top: 6px; font-size: 22px; }
+  body.landing .call-punch { margin-top: 8px; font-size: 16px; }
+  body.landing .call-write .call-punch { margin-top: 8px; }
+  body.landing .call-beam { font-size: 20px; max-width: 26ch; }
+  body.landing .call-body { margin-top: 8px; max-width: 60ch; font-size: 14px; line-height: 1.5; }
+  body.landing .call-text > :nth-last-child(2) { margin-bottom: 12px; }
+  body.landing .call-key { min-height: 38px; padding: 0 16px 0 18px; font-size: 14px; }
+}
+@media (max-width: 760px) and (min-height: 521px) {
+  body.landing .calls { gap: 14px; margin-top: 14px; }
+  body.landing .call { padding: 16px 16px 20px; }
+  body.landing .call-art { margin: 0 0 2px; }
+  body.landing .call-title { font-size: 25px; }
+  body.landing .call-punch { font-size: 17px; }
+  body.landing .call-beam { font-size: 25px; }
+  body.landing .call-body { font-size: 15px; line-height: 1.55; }
+  body.landing .call-key { min-height: 44px; margin-top: 18px; }
+  body.landing .call-art text { font-size: 14px; }                                        /* the drawing is small here: its words a size up */
+
+  body.landing:not(.inner) [data-page].is-tall .call { scroll-snap-align: start; }
+  body.landing:not(.inner) [data-page].is-tall .call.no-stop { scroll-snap-align: none; }
+}
+@media (max-height: 520px) {
+  body.landing .call-title { font-size: 26px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.landing .call-waves path { animation: none; opacity: .5; }
+  body.landing .call-sig { display: none; }
+  body.landing .call-livepill i { animation: none; }
+  body.landing .call-beam { animation: none; }
+  body.landing .call, body.landing .call:hover { transform: none; }
+}
+
 /* ====================================================================== the ground: plain */
 /* The page stands on plain white by day and plain black by night — no drafting grid, no stars, no warm and cool lights
    behind the sections, no film grain over the window (the rules that drew them are in aura.css, under the ground; the
@@ -880,3 +980,40 @@ body.landing::before, body.landing::after { display: none; }                    
 html:has(body.landing)::after, :root[data-theme="dark"]:has(body.landing)::after { display: none; }   /* the grain */
 :root[data-theme="light"] { --paper: #fff; }
 :root[data-theme="dark"] { --paper: #000; }
+
+/* ====================================================================== the first page's room by day */
+/* The light theme turns the room to daylight: the Earth in daylight at its foot — public/space/earth-day.jpg, a strip cut
+   from Earth_Day.png with the night strip's proportions and its limb's apex the same 24 % down, so the line, the mesh and
+   the globe the sky keeps clear of are the night's (landing.js, space) — and over it a pale sky, white at the top turning
+   to the haze of the picture at its foot; no stars. The habitat's drawing turns dark on it (the picture is white lines on
+   nothing: inverted), its Mars light stays; the line and the arc are dashed in ink, the signal and the flare cobalt, the
+   answer Mars as ever; the mesh of dots cobalt on the haze; the sky's frames cobalt and their words ink, the crew's
+   answer still framed in Mars. The night strip is not fetched by day (data-src) — switches.js fetches it if the theme is
+   turned, and the day strip the other way. */
+body.landing .space-earth-img.is-day { display: none; }
+:root[data-theme="light"] body.landing .space-earth-img.is-night { display: none; }
+:root[data-theme="light"] body.landing .space-earth-img.is-day { display: block; }
+:root[data-theme="light"] body.landing .space-room { --hud: #2f45e8; --hud-rgb: 47,69,232; --hud-hot: #ff5a1f; --hud-hot-rgb: 255,90,31; --hud-ground: rgba(255,255,255,.88); --seq-ground: #fff;
+  color: var(--ink); background: linear-gradient(180deg, #ffffff 0%, #fcfdfe 40%, #f4f9fe 72%, #f3f8fd 100%); box-shadow: inset 0 0 0 1px rgba(15,21,64,.08); }   /* a hairline: the room's edge on the white page */
+:root[data-theme="light"] body.landing .space-stars { display: none; }
+:root[data-theme="light"] body.landing .space-halo circle { stroke: #2f45e8; }
+:root[data-theme="light"] body.landing .space-dome-img { filter: invert(1) opacity(.84); }
+:root[data-theme="light"] body.landing .space-dome::before { opacity: .75; }
+:root[data-theme="light"] body.landing .space-tag { color: rgba(15,21,64,.62); }
+:root[data-theme="light"] body.landing .space-tag-dome { text-shadow: none; }
+:root[data-theme="light"] body.landing .space-line { background: repeating-linear-gradient(180deg, rgba(15,21,64,.5) 0 6px, transparent 6px 12px); }
+:root[data-theme="light"] body.landing .space-line::before { background: #2f45e8; box-shadow: 0 0 10px 2px rgba(47,69,232,.5); }
+:root[data-theme="light"] body.landing .space-arc .arc-up { stroke: rgba(15,21,64,.45); }
+:root[data-theme="light"] body.landing .space-arc stop { stop-color: #0f1540; }
+:root[data-theme="light"] body.landing .space-arc .arc-sig { fill: #2f45e8; filter: drop-shadow(0 0 6px rgba(47,69,232,.55)); }
+:root[data-theme="light"] body.landing .space-arc .arc-far { fill: #0f1540; filter: drop-shadow(0 0 5px rgba(15,21,64,.3)); }
+:root[data-theme="light"] body.landing .space-arc .arc-flare { stroke: #2f45e8; filter: drop-shadow(0 0 6px rgba(47,69,232,.55)); }
+:root[data-theme="light"] body.landing .space .dome-nudge { color: var(--ink); }
+/* the sky's items by day */
+:root[data-theme="light"] body.landing .space .sky-msg { border-color: rgba(47,69,232,.6); box-shadow: 0 0 0 1px rgba(47,69,232,.08), 0 10px 24px -14px rgba(15,21,64,.35); }
+:root[data-theme="light"] body.landing .space .sky-who, :root[data-theme="light"] body.landing .space .sky-when { color: var(--cobalt); }
+:root[data-theme="light"] body.landing .space .sky-part.is-crew .sky-who { color: var(--hud-hot); }
+:root[data-theme="light"] body.landing .space .sky-text { color: var(--ink); text-shadow: none; }
+:root[data-theme="light"] body.landing .space .sky-when::before { background: var(--cobalt); box-shadow: 0 0 5px rgba(47,69,232,.6); }
+:root[data-theme="light"] body.landing .space .sky-frame { border-color: rgba(47,69,232,.7); box-shadow: 0 0 14px rgba(47,69,232,.12); background: #fff; }
+:root[data-theme="light"] body.landing .space .sky-note { border-color: rgba(var(--cobalt-rgb),.28); background-color: rgba(255,255,255,.97); color: var(--ink); box-shadow: 0 18px 40px -16px rgba(15,21,64,.55); }

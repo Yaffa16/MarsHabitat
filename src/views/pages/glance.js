@@ -2,19 +2,19 @@
 /**
  * At a Glance — the whole mission, day by day, on one public page: everything
  * each day held, in day order. The crew's blog entries with their photographs,
- * what was eaten and what it cost, what each store was drawn down to, how the
- * habitat behaved, the crew's condition (as sentences — the numbers are never
- * public), the exchanges published, the media sent out and the mission notes.
+ * the schedule, what was eaten and what it cost, what each store was drawn
+ * down to (Resources), the power, the habitat's sensors as they last read
+ * that day, the crew's condition (as sentences — the numbers are never
+ * public) and the mission notes. The exchanges with Earth are not on it.
  * Days ahead show the plan, marked as planned.
  *
  * Built from the same day records as the archive, filtered to what is public:
- * published entries and exchanges only, no placeholder cues, no slider values,
- * no rejected traffic. Opened from the button under the mission dashboard.
+ * published entries only, no placeholder cues, no slider values. Opened from
+ * the button under the mission dashboard.
  */
 const L = require('../layout');
 const { esc, panel, eyebrow } = L;
 const mood = require('../../lib/mood');
-const orbital = require('../../lib/orbital');
 const MV = require('./media');
 const content = require('../../lib/content');
 const mediaLookup = require('../../lib/media').get;
@@ -30,56 +30,13 @@ const f1 = (v) => (v == null ? '—' : Number(v).toFixed(1));
 const same = (s) => s;
 
 /* The habitat tile bank, shared by the run's day pages and the rehearsal
-   page: the node's channels labelled, and one tile per channel with the
-   day's mean large, its low–high range and reading count beneath. */
+   page: one tile per sensor channel — the node's channels labelled — with
+   the day's last reading large, in its unit. */
 const NODE_LABELS = { co2: ['CO₂', 'ppm', 0], temp: ['Temperature', '°C', 1], hum: ['Humidity', '%', 0], light: ['Light', 'lx', 0], pres: ['Pressure', 'hPa', 0], bat: ['Node battery', 'V', 2], rssi: ['Signal', 'dBm', 0], voc: ['VOC', 'ppm', 2], iaq: ['Air quality index', '', 0] };
-const tile = (label, unit, av, lo, hi, n, dec, T = same) => `<div class="glance-tile">
+const tile = (label, unit, v, dec, T = same) => `<div class="glance-tile">
     <span class="gt-label">${esc(T(label))}</span>
-    <span class="gt-value">${av == null ? '—' : Number(av).toFixed(dec)}<em>${esc(unit)}</em></span>
-    <span class="gt-range">${lo == null ? '' : `${Number(lo).toFixed(dec)}–${Number(hi).toFixed(dec)} · ${n} ${T(n === 1 ? 'reading' : 'readings')}`}</span>
+    <span class="gt-value">${v == null ? '—' : Number(v).toFixed(dec)}<em>${esc(unit)}</em></span>
   </div>`;
-
-/**
- * One channel's day as a chart: every reading a point, placed by its instant
- * across the 24 hours from the venue's midnight, joined by a line. Drawn
- * server-side as plain SVG — the booklet needs no script for it, and the
- * page prints and archives with the data in it. The y-scale is the day's own
- * (padded a little), with the low and high written at the edges; the x-axis
- * is the day, gridded every six hours, in habitat time by construction.
- */
-function dayChart(s, dayStart, label, unit, dec, tz, tr = same) {
-  const hm = (t) => { try { return new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour12: false, hour: '2-digit', minute: '2-digit' }).format(new Date(t)); } catch { return new Date(t).toISOString().slice(11, 16); } };
-  const W = 560, H = 140, L = 46, R = 10, T = 12, B = 24;
-  const PW = W - L - R, PH = H - T - B;
-  const DAY = 86400000;
-  const pts = s.points;
-  let lo = Math.min(...pts.map((p) => p.v)), hi = Math.max(...pts.map((p) => p.v));
-  if (hi === lo) { hi += 1; lo -= 1; }
-  const pad = (hi - lo) * 0.08;
-  lo -= pad; hi += pad;
-  const x = (t) => L + Math.max(0, Math.min(1, (t - dayStart) / DAY)) * PW;
-  const y = (v) => T + (1 - (v - lo) / (hi - lo)) * PH;
-  const f = (v) => Number(v).toFixed(dec);
-  const grid = [0, 6, 12, 18, 24].map((h) => {
-    const gx = L + (h / 24) * PW;
-    return `<line class="gc-grid" x1="${gx}" y1="${T}" x2="${gx}" y2="${T + PH}"/>` +
-      `<text class="gc-ax" x="${gx}" y="${H - 8}" text-anchor="middle">${String(h).padStart(2, '0')}:00</text>`;
-  }).join('');
-  const line = pts.length > 1 ? `<polyline class="gc-line" points="${pts.map((p) => `${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ')}"/>` : '';
-  const dots = pts.map((p) => `<circle class="gc-dot" cx="${x(p.t).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="2.4"><title>${hm(p.t)} ${tr('habitat time')} · ${f(p.v)} ${esc(unit)}</title></circle>`).join('');
-  const first = pts[0], last = pts[pts.length - 1];
-  return `<div class="glance-chart">
-    <div class="gc-head"><b>${esc(tr(label))}</b><span>${pts.length} ${tr(pts.length === 1 ? 'reading' : 'readings')} · ${f(Math.min(...pts.map((p) => p.v)))}–${f(Math.max(...pts.map((p) => p.v)))} ${esc(unit)} · ${tr('first')} ${hm(first.t)} · ${tr('last')} ${hm(last.t)} ${tr('habitat time')}</span></div>
-    <svg class="gc-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(tr(label))}: ${esc(tr('every reading of the day'))}">
-      <line class="gc-grid base" x1="${L}" y1="${T + PH}" x2="${L + PW}" y2="${T + PH}"/>
-      <line class="gc-grid" x1="${L}" y1="${T}" x2="${L + PW}" y2="${T}"/>
-      ${grid}
-      <text class="gc-ax" x="${L - 6}" y="${T + 4}" text-anchor="end">${f(hi)}</text>
-      <text class="gc-ax" x="${L - 6}" y="${T + PH + 3}" text-anchor="end">${f(lo)}</text>
-      ${line}${dots}
-    </svg>
-  </div>`;
-}
 
 function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
   const n = r.missionDay;
@@ -108,11 +65,9 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
       </div>
       <span class="badge ${rehearsal ? 'warn' : state === 'today' ? 'mars' : ''}">${T(rehearsal ? 'Before the run' : state === 'today' ? 'Today' : state === 'past' ? 'Complete' : 'Planned')}</span>
     </header>
-    ${rehearsal ? `<p class="note" style="margin:0 0 14px">${T('A preview, not the record: a run day’s page as it will look, filled with what there is')} <b>${T('today')}</b> — ${T('the habitat’s readings as the sensors are sending them now, and everything mission control has filed under NOW, the rehearsal day — its schedule, meals, counts and power, the blogs, the exchanges and the media — with any states filed today. Nothing of it touches the run’s days. This page disappears on 15 October, when SOL 001 takes its place.')}</p>` : ''}
+    ${rehearsal ? `<p class="note" style="margin:0 0 14px">${T('A preview, not the record: a run day’s page as it will look, filled with what there is')} <b>${T('today')}</b> — ${T('the habitat’s readings as the sensors are sending them now, and everything mission control has filed under NOW, the rehearsal day — its schedule, meals, counts and power, the blogs and the media — with any states filed today. Nothing of it touches the run’s days. This page disappears on 15 October, when SOL 001 takes its place.')}</p>` : ''}
     <div class="spec glance-spec">
       <span><b>${posts.length}</b> ${T('blog posts')}</span>
-      <span><b>${r.messages.length}</b> ${T('exchanges')}</span>
-      <span><b>${r.traffic.sent}</b> ${T('messages from Earth')}</span>
       <span><b>${r.media.length}</b> ${T('media sent out')}</span>
     </div>`;
 
@@ -143,7 +98,7 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
   // then the same figures as a table, for the exact numbers.
   const consumption = day && day.inventory.length ? `
     <div class="glance-block">
-      ${eyebrow(`${T('Consumption')}${state === 'planned' ? ` · ${T('planned')}` : ''} · ${T('at the close of the day · what is left of what was carried in')}`)}
+      ${eyebrow(T('Resources'))}
       ${inventoryGauges(day.inventory, { cells: true, T })}
       <div class="tw"><table>
         <thead><tr><th>${T('Store')}</th><th class="n">${T('Remaining')}</th><th class="n">${T('Used that day')}</th><th class="n">${T('Days left')}</th></tr></thead>
@@ -171,16 +126,17 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
       <div class="pwr-total"><span>${T('Day total')}</span><b>${pd.total.toFixed(2)} kWh</b></div></div>
     </div>` : (state !== 'planned' ? `<div class="glance-block">${eyebrow(T('Power consumed'))}<div class="empty">${T('Not counted for this day')}</div></div>` : '');
 
-  // The habitat as it was that day, drawn as the dashboard draws it: a tile
-  // per channel, the day's mean large, its low–high range and sample count
-  // beneath. The external node's channels first, then anything the station's
-  // own ingest recorded.
-  const nodeTiles = (r.node || []).map((x) => { const [label, unit, dec] = NODE_LABELS[x.key] || [x.key, '', 1]; return tile(label, unit, x.av, x.lo, x.hi, x.n, dec, T); });
-  const ingestTiles = r.habitat.map((h) => tile(h.label || h.metric, h.unit || '', h.avg_value, h.min_value, h.max_value, h.samples, 1, T));
+  // The habitat as it stood at the end of that day (as it stands now, for
+  // today): a tile per sensor channel with the day's last reading — the
+  // external node's channels first, then the station's own ingest channels,
+  // then the habitat hardware through Home Assistant — and nothing else of
+  // the day's readings (the record has them all, reading by reading).
+  const nodeTiles = (r.node || []).map((x) => { const [label, unit, dec] = NODE_LABELS[x.key] || [x.key, '', 1]; return tile(label, unit, x.last, dec, T); });
+  const ingestTiles = (r.ingest || []).map((h) => tile(h.label || h.key, h.unit || '', h.last, 1, T));
+  const hardwareTiles = (r.hardware || []).filter((h) => h.last != null && !h.retired).map((h) => tile(h.label, h.unit || '', h.last, Number.isFinite(Number(h.decimals)) ? Number(h.decimals) : 1, T));
   // The crew's counted figures for the day — calories consumed and steps
   // taken, as the Habitat dashboard carries them — drawn as tiles of the
-  // same bank, so the day's habitat is whole: what the sensors measured and
-  // what the crew counted, side by side.
+  // same bank.
   const fig = content.crewFigures()[String(n)] || {};
   const figTile = (label, unit, v) => (v == null ? '' : `<div class="glance-tile">
       <span class="gt-label">${esc(T(label))}</span>
@@ -188,20 +144,10 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
       <span class="gt-range">${T('crew total · counted that day')}</span>
     </div>`);
   const figTiles = figTile('Calories consumed', 'kcal', fig.calories) + figTile('Steps taken', 'steps', fig.steps);
-  // Every reading of the day, drawn whole: one chart per channel, each pull
-  // a point across the day's 24 hours (habitat time). This is the data the
-  // Habitat display was drawn from — the summary tiles above, the readings
-  // themselves here.
-  const charts = (r.series || []).map((s) => {
-    const [label, unit, dec] = s.label != null ? [s.label, s.unit, 1] : (NODE_LABELS[s.key] || [s.key, '', 1]);
-    return dayChart(s, r.dayStart, label, unit, dec, m.timezone, T);
-  }).join('');
-  const habitat = (nodeTiles.length || ingestTiles.length || figTiles) ? `
+  const habitat = (nodeTiles.length || ingestTiles.length || hardwareTiles.length || figTiles) ? `
     <div class="glance-block">
-      ${eyebrow(T(rehearsal ? 'Habitat · today, as the sensors are seeing it' : 'Habitat · the day as the sensors saw it, and as the crew counted it'))}
-      <div class="glance-tiles">${nodeTiles.join('')}${ingestTiles.join('')}${figTiles}</div>
-      ${charts ? `<div class="gc-note">${T('Every reading the station pulled or received that day, point by point, across the day (habitat time).')}</div>
-      <div class="glance-charts">${charts}</div>` : ''}
+      ${eyebrow(T('Habitat'))}
+      <div class="glance-tiles">${nodeTiles.join('')}${ingestTiles.join('')}${hardwareTiles.join('')}${figTiles}</div>
     </div>` : (state !== 'planned' ? `<div class="glance-block">${eyebrow(T('Habitat'))}<div class="empty">${T('No readings on this day')}</div></div>` : '');
 
   const states = lastMood.size ? `
@@ -211,17 +157,6 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
         <div class="row"><div class="t">${esc(T(t.condition))}</div>
           <div class="m"><b>${esc(officer.shown(s.designation))}</b><span>${esc(t.lines.map(T).join('; '))}${s.activity ? ` — ${esc(s.activity)}` : ''}</span></div>
         </div>`; }).join('')}</div>
-    </div>` : '';
-
-  const exchanges = r.messages.length ? `
-    <div class="glance-block">
-      ${eyebrow(T('Exchanges with Earth'))}
-      <div class="cards">${r.messages.map((x) => `<article class="card">
-        <div class="card-top"><span class="cs">${esc(x.callsign)}</span>
-          <span class="card-day">${orbital.formatLightTime(x.light_seconds)}</span></div>
-        <div class="card-body">${esc(x.body)}</div>
-        ${x.response_body ? `<div class="card-reply"><div class="who">${esc(x.responder ? officer.shown(x.responder) : T('Mars habitat'))}</div><p>${esc(x.response_body)}</p></div>` : ''}
-      </article>`).join('')}</div>
     </div>` : '';
 
   const schedule = day && day.tasks.length ? `
@@ -243,14 +178,7 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
           <div class="m entry-post">${MV.entryHtml(x.body, [], { lookup: mediaLookup, T })}</div></div>`).join('')}</div>
     </div>` : '';
 
-  // media not carried by a written entry above — unattributed, or an
-  // officer's who wrote nothing that day — still belongs to the day
-  const shownCrew = new Set(written.map((e) => e.crew_id));
-  const loose = (r.media || []).filter((x) => !x.crew_id || !shownCrew.has(x.crew_id));
-  const mediaBlock = loose.length ? `
-    <div class="glance-block">${eyebrow(T('Also sent out'))}${MV.strip(loose)}</div>` : '';
-
-  const body = head + blog + exchanges + schedule + meals + consumption + power + habitat + states + notesBlock + mediaBlock;
+  const body = head + blog + schedule + meals + consumption + power + habitat + states + notesBlock;
   if (rehearsal) {
     return `<div class="bk-page" id="today" data-day="0" role="group" aria-roledescription="${esc(T('page'))}" aria-label="${esc(T('Rehearsal · today, before the run'))}">${
       panel(T('REHEARSAL · NOT THE RECORD'), body, 'mars-side glance-day')

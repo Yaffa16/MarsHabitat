@@ -1,18 +1,18 @@
 /* MARS!platz — the bottom bar on a phone (src/views/layout.js, tabbar()),
  * and the little a phone held upright needs besides.
  *
- * Five keys under the thumb: Home (the landing page), Dashboard, Write (the
- * messages page — the composer and the board), Media and About (the page of
- * the reading matter — the same texts the three-lines menu leads to on a
- * wider screen), which are pages of their own — the landing page keeps the
- * dashboard and the portal for wider screens only. The bar is drawn on every
- * public page; the stylesheet shows it only on a phone held upright, and
- * what follows runs only there:
+ * Five keys under the thumb: Home (the landing page), Dashboard (the
+ * dashboard page), Write (the Write page — the composer and the board, the
+ * wall of notes), Media and About (the page of the reading matter — the
+ * same texts the header's About link leads to on a wider screen), which are
+ * pages of their own — the landing page keeps the composer alone. The bar
+ * is drawn on every public page; the stylesheet shows it only on a phone
+ * held upright, and what follows runs only there:
  *  - every door into the portal or the dashboard (the dome's keys, a link
- *    into #write or #habitat) leads to the messages page or the dashboard
+ *    into #write or #habitat) leads to the Write page or the dashboard
  *    page instead, since the landing page shows neither;
- *  - on the messages page the composer is a pop-up over the foot of the
- *    screen: /messages#write opens the page with it shown, the Write key
+ *  - on the Write page the composer is a pop-up over the foot of the
+ *    screen: /write#write opens the page with it shown, the Write key
  *    shows and hides it, a touch on the page beside it (or Escape) hides
  *    it; its writing box grows with the text, while the keyboard is up the
  *    bar of keys steps aside and the pop-up rides the keyboard's edge, and a
@@ -35,12 +35,12 @@
   // the doors into the portal and the dashboard lead to their pages on a phone held upright — the composer's doors with it open
   var DASH = /^\/?#(mission|mission-today|habitat|sensors|stores|power|hardware|trends|schedule|galley|crew|blog-commander|blog-health|blog-science)$/;
   function doors() {
-    if (!phone() || document.body.classList.contains('dashboard')) return;      // on the dashboard page a link into a panel is right as it is
+    if (!phone() || document.body.classList.contains('dashboard') || document.body.classList.contains('write')) return;      // on the dashboard page and the Write page a link into a panel is right as it is
     [].forEach.call(document.querySelectorAll('a[href^="#"], a[href^="/#"]'), function (a) {
       var href = a.getAttribute('href');
       if (a.closest('.tabbar')) return;
-      if (/^\/?#write$/.test(href)) a.setAttribute('href', '/messages#write');
-      else if (/^\/?#exchanges$/.test(href)) a.setAttribute('href', '/messages');
+      if (/^\/?#write$/.test(href)) a.setAttribute('href', '/write#write');
+      else if (/^\/?#exchanges$/.test(href)) a.setAttribute('href', '/write#exchanges');
       else if (DASH.test(href)) a.setAttribute('href', '/dashboard' + href.replace(/^\//, ''));
     });
   }

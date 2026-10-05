@@ -192,8 +192,8 @@
     // The stops of the scroll are wherever the stylesheet has the scroll stop, read off it, and the end. Two closer than a
     // flick of the thumb (the last step of the chat and the end, often) would make a swipe that hardly moves: the part's
     // stop gives way (no-stop).
-    var CAND = 'body.landing:not(.inner) :is([data-page], .note-card, .steps, .step, .foot)';
-    var PART = 'body.landing:not(.inner) [data-page] :is(.note-card, .steps, .step)';
+    var CAND = 'body.landing:not(.inner) :is([data-page], .call, .note-card, .steps, .step, .foot)';
+    var PART = 'body.landing:not(.inner) [data-page] :is(.call, .note-card, .steps, .step)';
     function marks() {
       var cs = getComputedStyle(document.documentElement), h = window.innerHeight;
       var pt = parseFloat(cs.scrollPaddingTop) || 0, pb = parseFloat(cs.scrollPaddingBottom) || 0;
@@ -575,7 +575,7 @@
     stay(on);
     var el = tpl.content.firstElementChild.cloneNode(true);
     var link = el.querySelector('.sky-note-open'), id = on.getAttribute('data-id');
-    if (!pic && link) link.href = '/messages' + (id ? '#m' + id : '');   // the key leads to this exchange on the board
+    if (!pic && link) link.href = '/write' + (id ? '#m' + id : '#exchanges');   // the key leads to this exchange on the board, on the Write page
 
     var W = sky.clientWidth, H = sky.clientHeight, w = Math.min(W - 2 * EDGE, phone() ? NOTE_W.phone : NOTE_W.desk);
     el.style.width = w + 'px'; el.style.left = '0px'; el.style.top = '0px';

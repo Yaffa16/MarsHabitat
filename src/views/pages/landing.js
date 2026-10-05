@@ -23,8 +23,9 @@
  * read the way server.js reads it), the visitor's own callsign on the example
  * message (the one the composer carries), and the hour the crew's
  * communication window opens (WINDOW_TIME, windowWhen), written with the
- * venue's zone as it is on the day the page is read — CEST until the clocks
- * go back on 25 October, CET after.
+ * venue's zone as the station names it — CET, in every language, all through
+ * the run (the hour itself is the venue's own, Europe/Berlin, on either side
+ * of 25 October, when the clocks go back).
  *
  * Also the line under the dome (underLine): it turns every few seconds
  * through what is happening in the habitat now, the signal's time and the
@@ -43,16 +44,12 @@ function dayMonth(iso, lang) {
   try { return new Date(iso + 'T12:00:00Z').toLocaleDateString(LOCALE[lang] || 'en-GB', { day: 'numeric', month: 'long', timeZone: 'UTC' }); }
   catch { return iso; }
 }
-/** The venue's zone on that day, as it is written there: CEST (MESZ in German) through the run. */
-function zoneName(iso, tz, lang) {
-  try {
-    const p = new Intl.DateTimeFormat(lang === 'de' ? 'de-DE' : 'en-GB', { timeZone: tz, timeZoneName: 'short' })
-      .formatToParts(new Date(iso + 'T12:00:00Z')).find((x) => x.type === 'timeZoneName');
-    return p ? p.value : '';
-  } catch { return ''; }
-}
-/** When the crew answer, as every page writes it — the hour and the venue's zone as it is that day: "19:00 CEST"
-    (CET once the clocks have gone back). The ticker (public.js) writes it too. */
+/** The venue's zone, as the station names it everywhere and in every language: CET — never the summer-time
+    abbreviation (CEST, MESZ), whatever the day; the clock itself keeps the venue's own time (Europe/Berlin). */
+const ZONE = 'CET';
+function zoneName() { return ZONE; }
+/** When the crew answer, as every page writes it — the hour and the venue's zone: "19:00 CET". The ticker (public.js)
+    writes it too. */
 function windowWhen(ctx) {
   const m = ctx.mission;
   const zone = zoneName(m.today || m.start_date, m.timezone, ctx.lang || 'en');
@@ -110,7 +107,13 @@ function intro(ctx, where = 'desk') {
  *
  * The Earth's picture is 1414 × 340 (EARTH), its bright limb a circle of
  * radius 997 centred at (674, 1079) in it, its apex 82 down from the top
- * (24 % of the height; the haze above it is fainter); the mesh is rings of
+ * (24 % of the height; the haze above it is fainter). By day (the light
+ * theme) the room is daylight and the Earth is public/space/earth-day.jpg —
+ * a strip cut from Earth_Day.png (rows 1230 to 1484 of it, 1055 × 254) with
+ * the night strip's proportions and its limb's apex the same 24 % down, so
+ * the same geometry, mesh and globe serve both; sheet.css shows one strip
+ * or the other (the room by day), and the one the page did not open with is
+ * fetched only if the theme is turned (data-src; switches.js). The mesh is rings of
  * dots about that circle, from just over the limb up — every ring the same
  * angular pitch (pathLength puts the dashes in degrees), so the dots line
  * up along the radii too, into a mesh — a set for a desk and a closer set
@@ -120,6 +123,7 @@ function intro(ctx, where = 'desk') {
  * foot 97 % of the way down.
  */
 const EARTH = { w: 1414, h: 340, cx: 674, cy: 1079, r: 997 };
+const EARTH_DAY = { w: 1055, h: 254 };                       // the day strip: the same proportions (4.16 : 1), its limb's apex 61 down (24 %), centred at 509, radius 743
 const HABITAT = { w: 1004, h: 699, foot: 0.971 };
 function halo(kind) {
   // desk: rings 13 apart, dots 0.6° apart; phone (the picture a quarter the size): rings 32 apart, dots 2.2° apart;
@@ -146,7 +150,8 @@ function space(ctx, { sky = null } = {}) {
       <i class="space-line" data-sky-solid aria-hidden="true"></i>
       ${trajectory()}
       <div class="space-earth" aria-hidden="true">
-        <img class="space-earth-img" src="/space/earth.jpg" alt="" width="${EARTH.w}" height="${EARTH.h}" decoding="async">
+        <img class="space-earth-img is-night" ${ctx.theme === 'light' ? 'data-src' : 'src'}="/space/earth.jpg" alt="" width="${EARTH.w}" height="${EARTH.h}" decoding="async">
+        <img class="space-earth-img is-day" ${ctx.theme === 'light' ? 'src' : 'data-src'}="/space/earth-day.jpg" alt="" width="${EARTH_DAY.w}" height="${EARTH_DAY.h}" decoding="async">
         ${halo('desk')}${halo('phone')}
         <i class="space-globe" data-sky-round data-r="0.52" style="${globe}"></i>
       </div>
@@ -182,32 +187,115 @@ function trajectory() {
 }
 
 /* ---------------------------------------------------------------- the note */
-/** What MARS is and what this website is for — and, under it, the two doors (Write to the crew, Mission dashboard) and
-    the key to the About page, where the mission is told. */
+/** The second page: what MARS! is and what this website is for (the words of October's text sheet), and under the
+    note the two calls (calls, below) — the page's doors to the composer and to the dashboard. The project's name at the
+    head of the lead is a link to the project's page at ZKM. */
+const ZKM_MARS = 'https://zkm.de/en/projects/mars';
 function note(ctx) {
   const T = ctx.T;
-  // the first word is the performance's name, set bold, in every language
-  const lead = esc(T('MARS is a durational performance in which three crew members are always in the habitat for the thirteen days of the run.')).replace(/^MARS\b/, '<b>MARS</b>');
+  // the first word is the project's name, set bold and linked, in every language
+  const lead = esc(T('MARS! – Mobilizing Awareness for Resilient Societies! – is a three-part project of ZKM | Karlsruhe, the current part being a 13-day field test of prototypes and experiments in the heart of Karlsruhe.'))
+    .replace(/^MARS!/, `<a class="note-project" href="${ZKM_MARS}" target="_blank" rel="noopener"><b>MARS!</b></a>`);
+  // the second page: the station's name at its head on a phone, the note, and beside it (under it on a phone) the two
+  // calls — the doors of the page (no keys under the note's words any more: the two cards are the doors; the About
+  // page is the header's)
+  // on a desk the note stands at the left and the two calls one over the other at its right (page2, sheet.css); a phone
+  // stacks them, the note first
   return `
   <section class="sheet sheet-p2" id="note" aria-label="${esc(T('Durational performance'))}" data-page>
     ${intro(ctx, 'phone')}
-    <div class="note-card">
-      ${meta(T('Durational performance'), '', 'is-ruled')}
-      <div class="note-body">
-        <p class="note-lead">${lead}</p>
-        <div class="note-aside">
-          <p class="note-more">${T('This website is your portal into the mission: a space to communicate with the astronauts, follow their activities, and observe life inside the habitat throughout the duration of the performance.')}</p>
-          <!-- the two doors under the description — to the composer and to the mission dashboard (on a phone held upright
-               tabbar.js leads them to the messages page and the dashboard page) — and the key to the About page -->
-          <p class="note-cta note-doors">
-            <a class="know-more is-write" href="#write"><span>${T('Write to the crew')}</span><span aria-hidden="true">→</span></a>
-            <a class="know-more is-dash" href="#mission"><span>${T('Mission dashboard')}</span><span aria-hidden="true">→</span></a>
-            <a class="know-more" href="/about"><span>${T('Know more')}</span><span aria-hidden="true">→</span></a>
-          </p>
+    <div class="page2">
+      <div class="note-card">
+        ${meta(T('Durational performance'), '', 'is-ruled')}
+        <div class="note-body">
+          <p class="note-lead">${lead}</p>
+          <div class="note-aside">
+            <p class="note-more">${T('MARS! turns the Marktplatz into MARS!platz. Can we go to Mars to save the Earth? Three astronauts are finding out, and you can help! Write them a message, have a look on the mission dashboard to find out if their food supply is running low or see what they’re currently researching.')}</p>
+          </div>
         </div>
       </div>
+      ${calls(ctx)}
     </div>
   </section>`;
+}
+
+/* ---------------------------------------------------------------- the two calls */
+/**
+ * The two calls of the station, under the note on the second page (note, above; the grid alone is drawn here): two
+ * doors side by side — one to the composer, one to the dashboard — each a card with its words under a drawing, or
+ * without one. The first, in Mars: SEND A MESSAGE TO THE CREW — and, as the thing to know, that
+ * every message mission control approves is sent into space: a dish at the foot of the drawing sending, its waves
+ * going out, the dashed way up into space, a signal going along it again and again, and nothing at the way's end but
+ * the words — the way ends in the open, the signal goes off it (October: first no dome on the Mars disc, then no disc
+ * at all, "have nothing there"); under the way the three states a message goes through, WRITTEN · APPROVED · INTO
+ * SPACE; the Write key (the count of messages sent into space so far is not written any more — data.counts,
+ * sentToSpace, stays). The thing to
+ * know is set large, in capitals, in a gradient of Mars and light with a glow and a shimmer passing along it now and
+ * then — APPROVED MESSAGES ARE BEAMED INTO SPACE (October: "the entire part should look exciting"; the galaxy it was
+ * cut out of for an hour stays drawn, tools/galaxy.py and public/space/galaxy.jpg, unused). The second, in cobalt,
+ * carries no drawing: FOLLOW WHAT THE CREW IS DOING — LIVE with a LIVE pill on its line, its sentence, the dashboard's
+ * key (no count of messages sent into space, no line of what the crew are doing and no "Thirteen sols, as they happen":
+ * October asked for all three to go).
+ * The whole card is the door (a phone's Write door leads to the Write page, tabbar.js). sheet.css lays them out and
+ * moves what moves; asked for less motion, the drawing stands.
+ */
+function calls(ctx) {
+  const T = ctx.T;
+  // the uplink's drawing: the dish sending at the foot — a parabola facing up and to the right, its feed at the focus, a
+  // stand under it — its waves going out from the focus, the dashed way from the dish's mouth up into space (a cubic;
+  // WRITTEN and APPROVED stand on it, points of the curve; INTO SPACE under its open end), the signal along it (SMIL; sheet.css
+  // hides the signal where less motion is asked for)
+  const P = [[88, 82], [170, 54], [320, 42], [468, 40]];
+  const bez = (t) => { const k = 1 - t, [a, b, c, d] = P; return [0, 1].map((i) => +(k * k * k * a[i] + 3 * k * k * t * b[i] + 3 * k * t * t * c[i] + t * t * t * d[i]).toFixed(1)); };
+  const WAY = `M${P[0][0]} ${P[0][1]} C ${P[1][0]} ${P[1][1]}, ${P[2][0]} ${P[2][1]}, ${P[3][0]} ${P[3][1]}`;
+  const [wx, wy] = bez(0.16), [ax, ay] = bez(0.56);
+  const F = [74, 88];                                                                       // the focus, the waves' centre
+  const wave = (r) => { const a0 = -82 * Math.PI / 180, a1 = -8 * Math.PI / 180; return `M${(F[0] + r * Math.cos(a0)).toFixed(1)} ${(F[1] + r * Math.sin(a0)).toFixed(1)} A${r} ${r} 0 0 1 ${(F[0] + r * Math.cos(a1)).toFixed(1)} ${(F[1] + r * Math.sin(a1)).toFixed(1)}`; };
+  const uplink = `
+        <svg class="call-art" viewBox="0 0 560 150" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <defs>
+            <linearGradient id="call-way" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="var(--mars)" stop-opacity=".15"/><stop offset="1" stop-color="var(--mars)" stop-opacity=".9"/></linearGradient>
+            <path id="call-way-path" d="${WAY}"/>
+          </defs>
+          <g class="call-grid">${[20, 46, 72, 98, 124].map((y) => `<line x1="0" y1="${y}" x2="560" y2="${y}"/>`).join('')}</g>
+          <g class="call-dish">
+            <path d="M60 104 L50 136"/><path d="M36 136 h30"/>
+            <path d="M57 64 Q 42 122 100 107" class="call-dish-cup"/><path d="M60 104 L${F[0]} ${F[1]}"/>
+            <circle cx="${F[0]}" cy="${F[1]}" r="3" class="call-dish-feed"/>
+          </g>
+          <g class="call-waves"><path d="${wave(24)}"/><path d="${wave(38)}"/><path d="${wave(52)}"/></g>
+          <path class="call-way-line" d="${WAY}"/>
+          <g class="call-stations">
+            <circle cx="${wx}" cy="${wy}" r="4"/><text x="${wx}" y="${wy + 20}">${esc(T('Written').toUpperCase())}</text>
+            <circle cx="${ax}" cy="${ay}" r="4"/><text x="${ax}" y="${ay + 20}">${esc(T('Approved').toUpperCase())}</text>
+          </g>
+          <g class="call-hab">
+            <text x="${P[3][0]}" y="${P[3][1] + 20}">${esc(T('Into space').toUpperCase())}</text>
+          </g>
+          <circle class="call-sig" r="4"><animateMotion dur="4.2s" repeatCount="indefinite" calcMode="spline" keySplines=".3 0 .4 1" keyTimes="0;1"><mpath href="#call-way-path"/></animateMotion></circle>
+          <circle class="call-sig is-tail" r="2.5"><animateMotion dur="4.2s" begin="0.25s" repeatCount="indefinite" calcMode="spline" keySplines=".3 0 .4 1" keyTimes="0;1"><mpath href="#call-way-path"/></animateMotion></circle>
+        </svg>`;
+  return `
+    <div class="calls" id="calls">
+      <a class="call call-write" href="#write">
+        ${uplink}
+        <div class="call-text">
+          <span class="call-k">01 · ${T('Uplink')}</span>
+          <h2 class="call-title">${T('Send a message to the crew')}</h2>
+          <p class="call-punch"><strong class="call-beam">${T('Approved messages are beamed into space')}</strong></p>
+          <p class="call-body">${T('Mission control reads every message. The ones it approves are beamed into space by radio.')}</p>
+          <span class="call-key is-write">${T('Write to the crew')} <span aria-hidden="true">→</span></span>
+        </div>
+      </a>
+      <a class="call call-live" href="/dashboard">
+        <div class="call-text">
+          <span class="call-k">02 · ${T('Live feed')} <span class="call-livepill"><i aria-hidden="true"></i>${T('LIVE')}</span></span>
+          <h2 class="call-title">${T('Follow what the crew is doing — live')}</h2>
+          <p class="call-body">${T('The habitat’s sensors, today’s mission and schedule, the galley, the crew’s reports and moods — live from Red Dust City, every day of the run.')}</p>
+          <span class="call-key is-dash">${T('Live Mission Dashboard')} <span aria-hidden="true">→</span></span>
+        </div>
+      </a>
+    </div>`;
 }
 
 /* ---------------------------------------------------------------- the chat's heading */
@@ -238,20 +326,21 @@ function slowChat(ctx) {
   const light = orbital.formatLightTime(ctx.geo.lightSeconds);
   const secs = Number(process.env.TRANSIT_SECONDS || 12);
   const crossing = `${secs} ${T(secs === 1 ? 'second' : 'seconds')}`;
-  const when = windowWhen(ctx);                                            // "19:00 CEST"
+  const when = windowWhen(ctx);                                            // "19:00 CET"
   const me = ctx.callsign || ctx.offer || '';
   return `
   <section class="sheet sheet-p4" id="slowest-chat" aria-labelledby="ch-03-title" data-page>
-    ${partHead(T, { title: 'Welcome to the World’s Slowest Chat', id: 'ch-03-title',
-      lead: fill(T, 'Every day at {time}, the Habitat opens its communication window. Come to MARS!platz at Karlsruhe’s Marktplatz or connect through the online portal to speak with the astronauts and discover what is happening inside the Habitat.', { time: esc(when) }) })}
+    ${partHead(T, { title: 'Welcome to the World’s Slowest Chat (that also zips into space!)', id: 'ch-03-title',
+      lead: fill(T, 'As our ground station personnel, you can discuss the question of the day with us, send us messages about things we should know or find out for you or send a message to space via our habitat. The Comms Officer will answer your messages personally. You can also drop us a postcard on MARS!platz or come to our daily Communication Hour at {time} to speak to us directly.', { time: esc(when) }) })}
+    <p class="steps-how">${T('How it works:')}</p>
     <ol class="steps" aria-label="${esc(T('How a message reaches the crew'))}">
       <li class="step s-up">
         ${stepHead('up', '01', T('Uplink'))}
         <div class="step-body">
           <h3>${T('Send a message')}</h3>
-          <div class="step-card is-earth">${me ? `<span class="step-who">${esc(me)}</span>` : ''}${T('What does it smell like in there?')}</div>
-          <p>${T('A message from Earth enters the communications queue. It will take time to reach the crew.')}
-            <span class="step-space">${T('Every message goes two ways: to the crew in the Mars habitat — and, by radio, out into space, where it travels on at the speed of light. Tap it on the Message Board to see how far it has come.')}</span></p>
+          <div class="step-card is-earth">${me ? `<span class="step-who">${esc(me)}</span>` : ''}${T('Have you checked your CO₂ sensors lately? They seem to be running dangerously high')}</div>
+          <p>${T('Your message from Earth will travel to Mars to reach the crew on MARS!platz, where it will be seen and answered accordingly.')}
+            <span class="step-space">${T('At the same time, your message will also travel into space. Click on the Message Board to see how far your message has gone. Keep it family friendly.')}</span></p>
         </div>
       </li>
       <li class="step s-transit">
@@ -270,12 +359,12 @@ function slowChat(ctx) {
         <div class="step-body">
           <h3>${T('Crew response')}</h3>
           <p class="step-flag">${T('Downlink received')}</p>
-          <div class="step-card is-crew"><span class="step-who">${T('Crew answer')}</span>${T('Lentils. Mostly lentils.')}</div>
-          <p>${fill(T, 'At {time}, the communications window opens. Messages from Earth are answered by the crew; answered questions can be seen on the Message Board.', { time: b(when) })}</p>
+          <div class="step-card is-crew"><span class="step-who">${T('Crew answer')}</span>${T('Yes, CO₂ levels were elevated. We took countermeasures and sensors indicate we are back at normal parameters. Thanks for the heads up!')}</div>
+          <p>${fill(T, 'Messages will be answered during the day and can be viewed on the {board}. Also, at {time}, the daily communication window opens where people on MARS!platz can communicate directly with the crew.', { board: `<a class="step-link" href="/write#exchanges">${esc(T('message board'))}</a>`, time: b(when) })}</p>
         </div>
       </li>
     </ol>
-    <p class="p4-cta"><a class="sheet-cta" href="/messages#write"><span>${T('Write to the crew')}</span><span aria-hidden="true">→</span></a></p>
+    <p class="p4-cta"><a class="sheet-cta" href="#write"><span>${T('Write to the crew')}</span><span aria-hidden="true">→</span></a></p>
   </section>`;
 }
 
@@ -349,4 +438,4 @@ function scrollNudge(ctx) {
       </a>`;
 }
 
-module.exports = { intro, space, note, slowChat, underLine, scrollNudge, trajectory, WINDOW_TIME, windowWhen, dayMonth, zoneName };
+module.exports = { intro, space, calls, note, slowChat, underLine, scrollNudge, trajectory, WINDOW_TIME, ZONE, windowWhen, dayMonth, zoneName };

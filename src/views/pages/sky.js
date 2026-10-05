@@ -116,7 +116,7 @@ function skyNotes(T) {
           <div class="sky-note is-msg" role="note">${x}
             <b class="sky-note-k"><i></i>${T('LATEST COMMUNICATION')}</b>
             <span class="sky-note-t">${T('The latest communication from the habitat')}</span>
-            <a class="sky-note-btn sky-note-open" href="/messages">${T('Message Board')}</a>
+            <a class="sky-note-btn sky-note-open" href="/write#exchanges">${T('Message Board')}</a>
           </div>
         </template>`;
 }

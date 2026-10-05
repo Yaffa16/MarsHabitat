@@ -38,6 +38,8 @@
       var input = form.querySelector('input[name=to]'), to = input && input.value === 'light' ? 'light' : 'dark';
       root.setAttribute('data-theme', to);
       document.querySelectorAll('form[action="/theme"]').forEach(function (f) { relabel(f, to); });
+      // the first page's Earth: the page opened with one strip (night or day); the other is fetched the first time the theme turns
+      document.querySelectorAll('img.space-earth-img[data-src]').forEach(function (im) { im.src = im.getAttribute('data-src'); im.removeAttribute('data-src'); });
       try {
         fetch('/theme', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'fetch' }, body: 'to=' + encodeURIComponent(to) }).catch(function () {});
       } catch (err) { /* the choice holds on the page; the cookie comes with the next post */ }

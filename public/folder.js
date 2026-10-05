@@ -1,8 +1,9 @@
 /* MARS!platz — the stack of folders on the dashboard (src/views/pages/public.js, folder()).
  *
- * Eight panels — the habitat's (Habitat, with the habitat's own hardware inside it, and Trends), the
+ * Seven panels — the Sensors (with the habitat's own hardware and the trends inside it), the
  * day's (Today's Schedule, Meal, Crew Moods), the three blogs — one folder
- * each, their keys in three named rows; on a phone the rows are one at a
+ * each, their keys in three named tracks, one under the other: a rail at the
+ * left of the folder on a wider screen; on a phone the tracks are one at a
  * time, chosen by a segmented control of the three names. A press on a key
  * brings that folder to the front: its panel shows, the others wait. A link into one
  * of the panels (#habitat, #crew, #galley, #schedule — from the habitat's rooms,
