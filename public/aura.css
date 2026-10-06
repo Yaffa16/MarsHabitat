@@ -570,12 +570,12 @@ body.landing .board .empty, body.landing .dpanel .empty, body.landing .empty { f
    stand on a card and the crew's answer, on the page's own paper inside it, stands off the card */
 :root { --note-bg: #f0f1f5; --note-edge: #dcdfe8; --note-fold: #dfe2ea; --note-shadow: 0 1px 2px rgba(15,21,64,.07), 0 8px 20px -8px rgba(15,21,64,.16), 0 26px 50px -22px rgba(15,21,64,.32); }
 :root[data-theme="dark"] { --note-bg: #212127; --note-edge: #34343c; --note-fold: #3a3a42; --note-shadow: 0 0 0 1px rgba(255,255,255,.04), 0 0 36px rgba(255,255,255,.055), 0 24px 48px -18px rgba(0,0,0,.95); }
-body.landing .wall-sec { position: relative; margin: 0; padding: 8px 0 72px; scroll-margin-top: 112px; }
+body.landing .wall-sec { position: relative; margin: 0; padding: 8px 0 72px; scroll-margin-top: 124px; }
 body.landing .wall-wrap { min-height: 0; }                                            /* no box: the wall is as tall as its notes */
 body.landing .wall-wrap .feed-scroll { position: static; display: block; }
 body.landing .board.wall { padding: 0; background: none; border: 0; box-shadow: none; border-radius: 0; }
 /* the bar under the header */
-body.landing .wall-bar { position: sticky; top: 101px; z-index: 6; display: flex; flex-wrap: nowrap; align-items: center; gap: 10px 22px; margin: 0 calc(-1 * var(--gutter)); padding: 12px var(--gutter) 12px;
+body.landing .wall-bar { position: sticky; top: 113px; z-index: 6; display: flex; flex-wrap: nowrap; align-items: center; gap: 10px 22px; margin: 0 calc(-1 * var(--gutter)); padding: 12px var(--gutter) 12px;
   border-bottom: 1px solid var(--hair); background: var(--glass-solid); -webkit-backdrop-filter: blur(18px) saturate(1.3); backdrop-filter: blur(18px) saturate(1.3); }
 body.landing .wall-bar .board-head { flex: none; display: grid; grid-template-columns: auto auto; grid-template-areas: "h live" "count count"; align-items: center; column-gap: 12px; row-gap: 2px; padding: 0; border: 0; }
 body.landing .wall-bar .board-head h2 { grid-area: h; font-size: 19px; margin: 0; }
@@ -1160,7 +1160,7 @@ body.landing .folder .frow .ftab.is-front .ftab-ic, :root[data-theme="dark"] bod
 @media (min-width: 761px) and (min-height: 521px) {
   body.landing .folder { display: grid; grid-template-columns: 236px minmax(0, 1fr); align-items: stretch; overflow: clip; }
   body.landing .folder-tabs { display: block; min-width: 0; padding: 18px 14px 20px; border-bottom: 0; border-right: 1px solid var(--hair); }
-  body.landing .frail { position: sticky; top: 112px; display: grid; gap: 12px; }
+  body.landing .frail { position: sticky; top: 124px; display: grid; gap: 12px; }
   body.landing .frows { display: grid; gap: 10px; }
   body.landing .folder-head { padding: 4px 6px 0; }
   body.landing .folder-title { margin: 0; font-family: var(--display); font-size: 19px; font-weight: 600; letter-spacing: -.015em; line-height: 1.15; color: var(--ink); text-wrap: balance; }
@@ -1175,10 +1175,10 @@ body.landing .folder .frow .ftab.is-front .ftab-ic, :root[data-theme="dark"] bod
    the top of the folder's content as the content scrolls past it, so only the content moves (the blogs' heads, bands of
    their own, stay the same way). A phone keeps its own stops (the block at the end of this file). */
 @media (min-width: 761px) and (min-height: 521px) {
-  body.landing.dashboard .dash-links { position: sticky; top: 101px; z-index: 8; margin: 0 calc(-1 * var(--gutter)); padding: 10px var(--gutter) 10px; background: var(--glass-solid); -webkit-backdrop-filter: blur(18px) saturate(1.2); backdrop-filter: blur(18px) saturate(1.2); border-bottom: 1px solid var(--hair); }
-  body.landing.dashboard .frail { top: 178px; }
-  body.landing.dashboard .folder-body .dpanel:not(.blogp) > .dpanel-head { position: sticky; top: 166px; z-index: 4; margin: calc(-1 * min(24px, calc(2.7 * var(--u)))) -28px 12px; padding: min(24px, calc(2.7 * var(--u))) 28px 12px; background: var(--glass-solid); border-bottom: 1px solid var(--hair); }
-  body.landing.dashboard .folder-body .dpanel.blogp > .dpanel-head { position: sticky; top: 178px; z-index: 4; }
+  body.landing.dashboard .dash-links { position: sticky; top: 113px; z-index: 8; margin: 0 calc(-1 * var(--gutter)); padding: 10px var(--gutter) 10px; background: var(--glass-solid); -webkit-backdrop-filter: blur(18px) saturate(1.2); backdrop-filter: blur(18px) saturate(1.2); border-bottom: 1px solid var(--hair); }
+  body.landing.dashboard .frail { top: 190px; }
+  body.landing.dashboard .folder-body .dpanel:not(.blogp) > .dpanel-head { position: sticky; top: 178px; z-index: 4; margin: calc(-1 * min(24px, calc(2.7 * var(--u)))) -28px 12px; padding: min(24px, calc(2.7 * var(--u))) 28px 12px; background: var(--glass-solid); border-bottom: 1px solid var(--hair); }
+  body.landing.dashboard .folder-body .dpanel.blogp > .dpanel-head { position: sticky; top: 190px; z-index: 4; }
   body.landing.dashboard .folder > .folder-body { min-height: calc(100vh - 190px); }
 }
 @media (min-width: 761px) and (max-width: 1100px) and (min-height: 521px) {
@@ -1375,6 +1375,19 @@ body.landing.about .about-sec .steps-row .row .m b { display: block; font-weight
 @media (max-width: 1100px) { body.landing.about .about-sec .steps-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 600px) { body.landing.about .about-sec .steps-row { grid-template-columns: minmax(0, 1fr); } }
 body.landing.about .about-sec .prose h3 { margin: 26px 0 6px; font-size: 19px; font-weight: 600; letter-spacing: -.01em; scroll-margin-top: 96px; }   /* a heading a link lands on (More than Human, from the habitat) stands clear of the header */
+body.landing.about .about-sec .prose p.kicker { margin: -2px 0 10px; font-family: var(--display); font-size: 15px; font-weight: 500; letter-spacing: .01em; color: var(--dim); }   /* the line under a heading (Playacting Mars in the middle of the city) */
+body.landing.about .about-sec .prose a { color: inherit; text-decoration: underline; text-decoration-color: rgba(var(--cobalt-rgb),.5); text-underline-offset: 3px; }
+body.landing.about .about-sec .prose a:hover { text-decoration-color: var(--cobalt); }
+/* Who we are: the three officers of the day — the brief over the role, the portrait of the person on shift (when the
+   shift plan names one), the role, their state */
+body.landing.about .officers-today { gap: 22px 26px; }
+body.landing.about .officer-card { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
+body.landing.about .officer-card .eyebrow { margin: 0; }
+body.landing.about .officer-pic { margin: 4px 0 2px; width: min(100%, 180px); }
+body.landing.about .officer-pic img { display: block; width: 100%; height: auto; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 12px; background: #101012; }
+body.landing.about .officer-pic figcaption { margin-top: 8px; font-family: var(--display); font-size: 14px; font-weight: 600; line-height: 1.25; color: var(--ink); }
+body.landing.about .officer-title { margin: 0; font-family: var(--mono); font-size: 15px; letter-spacing: .06em; }
+body.landing.about .officer-mood { margin: 0; }
 body.landing.about .about-sec .prose h3:first-child { margin-top: 0; }
 body.landing.about .about-sec .prose p { font-size: var(--fs-read); line-height: 1.6; }
 body.landing.about .about-sec .panel { background: var(--tile); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; border: 1px solid rgba(var(--cobalt-rgb),.12); border-radius: 18px; }

@@ -153,6 +153,12 @@
       // is the board, the message just sent at its head under MY MESSAGES, marked AWAITING REPLY
       if (crossed && !document.body.classList.contains('crossing') && phone() && isOpen()) setOpen(false, false);
     }).observe(stage, { childList: true });
+    // and before that — the message arrived, the dial holding on ARRIVED (composer.js, mcs:arrived) — the pop-up lowers
+    // itself a breath before the empty form would come back, so the box is not seen again (October)
+    document.addEventListener('mcs:arrived', function (e) {
+      if (!phone() || !isOpen()) return;
+      setTimeout(function () { if (phone() && isOpen()) setOpen(false, false); }, Math.max(300, ((e.detail && e.detail.hold) || 2600) - 250));
+    });
     boxes().forEach(grow); hold();
     onUpright(function () { boxes().forEach(grow); hold(); });
     // Transmit: the pop-up's size is noted, and the board's head comes into view, where the message just sent appears

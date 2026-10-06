@@ -3,13 +3,17 @@ const L = require('../layout');
 const { esc, panel, eyebrow } = L;
 const orbital = require('../../lib/orbital');
 const officer = require('../../lib/officer');
+const moodLib = require('../../lib/mood');
+const content = require('../../lib/content');
 const { habitatInside } = require('./inside');
 
 /**
- * The project, the station's behaviour and the credits — About, What this is
- * and Who we are — as one page of their own, /about (aboutPage, below): the
- * About key on a phone's bar of keys and the rows of the ticker's menu lead
- * there, each row to its section.
+ * The project, the habitat in section and the credits — About, What's inside
+ * the habitat and Who we are — as one page of their own, /about (aboutPage,
+ * below): the About key on a phone's bar of keys and the rows of the ticker's
+ * menu lead there, each row to its section. (What this is — how the station
+ * behaves, with the path of a message — and, under About, More than Human and
+ * The readings were on the page until October asked for them to go.)
  */
 
 /* Who we are: the crew's portraits — public/crew, made by tools/crew-pictures.py from the photographs in
@@ -29,42 +33,55 @@ const logos = (list) => `<div class="logos">${list.map(([f, name]) => `<span cla
 
 /* The prose is written in English and carried, paragraph by paragraph, in
    src/lib/i18n.js — one key per paragraph, so a paragraph can be reworded
-   in one language without touching the other two. */
+   in one language without touching the other two. `fill` puts links (or a
+   figure) into a translated paragraph at its {marks}. */
 const p = (T, text) => `<p>${T(text)}</p>`;
+const fill = (T, key, vals) => Object.entries(vals).reduce((s, [k, v]) => s.split(`{${k}}`).join(v), esc(T(key)));
+const out = (href, text) => `<a href="${href}" target="_blank" rel="noopener">${text}</a>`;
+
+/* The run's two moments and the count of its scientific missions, as the About page states them (October's text
+   sheet, ABOUT_WEBSITE_TEXTS): the crew go in at 17:00 on the first day and come out at 17:00 on the last, and the
+   missions are eleven. (content/missions.json plans a mission for every day but the last, which is twelve; the sheet
+   says eleven, and the sheet is what the page says.) */
+const START_END_TIME = '17:00';
+const SCIENTIFIC_MISSIONS = 11;
 
 function aboutFold(ctx) {
   const T = ctx.T;
   const n = ctx.mission.totalDays;
-  /* The project, as the ZKM announces it — zkm.de/de/2026/10/marsplatz-red-dust-city — paragraph by paragraph; then
-     what this station adds to it. Nothing here is invented: the run, the dome, the crew's brief, the EVAs, the ways to
-     reach the crew, the question and the closing line, the opening, the project's name and its funders are the
-     announcement's. */
+  /* The project in the words of October's text sheet (ABOUT_WEBSITE_TEXTS): what MARS! is and how it came to the
+     Marktplatz — the workshops and the exhibition linked to their pages at zkm.de — then why it is done in the middle
+     of the city, the habitat, and the insight; after them what this station adds (More than Human, the readings, the
+     messages sent to space). The distance to Mars in the "Why" is the station's own figure for the day the crew go in
+     (lib/orbital): the sheet's 26 million kilometres was the distance of a close approach, not October's. */
+  const goIn = new Date(`${ctx.mission.start_date}T15:00:00Z`);                         // 17:00 at the venue, in October
+  const km = orbital.geometry(goIn).distanceKm;
+  const million = Math.round(km / 1e6);
   return `
   <div class="grid g-hero about-wide">
     <div class="prose">
-      <h3>MARS!platz: Red Dust City</h3>
-      ${p(T, 'A durational performance on Karlsruhe’s Marktplatz, Thursday 15 to Tuesday 27 October 2026. Admission is free.')}
-      ${p(T, 'Large space agencies and private companies are hard at work on a future for people on Mars. What would that future look like — and shouldn’t the people be part of designing it? MARS!platz asks exactly that.')}
-      ${p(T, 'For six months Hertzlab, the artistic research and development department of the ZKM, worked with artists, experts and the citizen scientists of the open group Red Dust Society on how people could live on Mars: how to build and use a habitat, how to keep a crew mentally well, how to feed it and grow food, how to organise living together, and how to keep track of and save resources. What came out of it now goes into an analogue simulation — a large public experiment that tests which of the ideas hold up.')}
-      ${p(T, 'A white dome on the Marktplatz marks the outpost of the first people to land: Red Dust City. For the thirteen days of the run three crew members are always in the habitat — a Commanding Officer, a Science Officer and a Health Officer — living and working under the conditions of a long-duration mission and testing what visitors of the ZKM and citizens of Karlsruhe have developed: the design and use of the habitat, strategies for the crew’s mental health, a balanced plan for food and growing, rules for organising a community, and the documenting and saving of resources.')}
-      ${p(T, 'Every day the crew go out in their spacesuits on an EVA — an extra-vehicular activity — to run experiments on the Marktplatz. A detailed hourly programme says what is being tested when, and what came of it.')}
-      ${p(T, 'You can talk to the crew: online, right here, through the world’s slowest chat; over the radio; at the ZKM; or on the Marktplatz itself. How would you live on Mars? Help design a possible future — solutions for Mars are also solutions for life on Earth.')}
-      ${p(T, 'MARS!platz: Red Dust City is part of MARS! Mobilizing Awareness for Resilient Societies!, the ZKM’s programme for 2026, which the exhibition MARS! opened at the ZKM from 6 June to 13 September 2026. The opening on the Marktplatz is on Thursday 15 October 2026 from 16:00 to 17:00.')}
+      ${p(T, 'In the project MARS! – Mobilizing Awareness for Resilient Societies!, we want to challenge the signifier the planet Mars has become as a refuge planet for the richest of us, and to use it instead to address very pressing Earth matters. We will imagine for a moment that we, the global society, have decided to make Mars settlements a democratic Commons project. Rather than being left behind on a burning planet and looking on as the wealthy leave towards redder pastures, we will make Mars a democratic project for the rest of us, designing practical and utopian aspects of the question “What would we do if we could start over?”')}
+      ${p(T, 'To this end, we invited scientists and citizen scientists to come together at ZKM | Karlsruhe to design and prototype key features of what a Mars settlement would look like: a habitat able to withstand adverse weather conditions; a recycling system that makes the best use of valuable resources; a social order that is able to work under crisis and duress; a care system for a planet that did not ask for human presence.')}
+      ${p(T, 'During the project that began in January 2026, we noticed that all the skills needed for a democratic Mars settlement were also needed to adjust to a climate-changed Earth, giving us the necessary competence to start building a better society today. Going to Mars slowly became MARS!, and we became aware of what we need to do in order to become a resilient society right here, where we are.')}
+      <p>${fill(T, 'The five prototype workshops {habitat}, {mental}, {food}, {governance}, and {resources} turned into a {exhibition} that ran at ZKM from June to September 2026. This, the MARS!platz performance, is the third part of the project: a field test where ideas, concepts and prototypes gathered in the workshop and exhibition phase are now tested under analogue conditions, by us, directly in the heart of the city, the Karlsruhe Marktplatz. Turned into MARS!platz for two weeks, we live, eat and sleep under the stars of Karlsruhe, testing out how we, as ordinary citizens and artistic researchers, would cope with a new beginning that is never quite remote from what we’re bringing with us.', {
+        habitat: out('https://zkm.de/en/2026/01/open-hertzlab-mars-habitat', T('Habitat')),
+        mental: out('https://zkm.de/en/2026/02/open-hertzlab-mars-mental-health', T('Mental Health')),
+        food: out('https://zkm.de/en/2026/03/open-hertzlab-mars-food', T('Food')),
+        governance: out('https://zkm.de/en/2026/04/open-hertzlab-mars-governance', T('Governance')),
+        resources: out('https://zkm.de/en/2026/05/open-hertzlab-mars-resource-management', T('Resource Management')),
+        exhibition: out('https://zkm.de/en/2026/06/mars', T('concept exhibition')),
+      })}</p>
 
-      <h3>${T('Distance as the material')}</h3>
-      ${p(T, 'Networked communication is built to remove distance. A message is written and delivered in the same breath, and the gap between two people becomes invisible. That invisibility is the thing this piece takes apart.')}
-      ${p(T, 'Here a message has to travel. You watch it go. You wait. It is read by someone who decides whether it goes further. A reply is written and comes back the other way. The exchange that a messaging app would have completed in under a second is stretched out until you can feel its shape — and the number in the rail above reminds you that the real crossing is longer still.')}
-      ${p(T, 'The delay is not friction added for effect. It is the subject.')}
+      <h3>${T('Why are we doing this?')}</h3>
+      <p class="kicker">${T('Playacting Mars in the middle of the city')}</p>
+      <p>${fill(T, 'When the three artistic research astronauts of ZKM move into their habitat on Marktplatz in October 2026, the actual planet Mars will be {million} million kilometres away from Earth. It is, as yet, unsure if we would ever be able to get there, or if this is a desirable goal. What we do know is that space travel is a catalyst, a motor of dreams and imaginations and problem solving. Since January 2026, we have seen again and again that the imagination of being a spacefaring society is sparking innovation and solutions that could also be applied here on Earth, to aid in the transformation and change needed to cope with Earth’s changing climate and social parameters.', { million: String(million) })}</p>
+      ${p(T, 'Because ZKM is so much more than a museum, ideas born in it cannot be contained by its walls. We needed to go out, to seek new interactions and come into contact with new ideas and new people. Instead of imitating space agencies who host “analogue missions” in remote areas, we decided that the middle of a densely populated city is just the right environment to simulate life on the loneliest planet in our solar system.')}
 
-      <h3>${T('The archive as the work')}</h3>
-      ${p(T, 'Every published exchange stays here. Over the run the archive accumulates into something neither the artists nor the audience wrote alone: a record of what people on Earth wanted to ask the three crew members in the habitat, and how those questions shifted as the mission went on.')}
+      <h3>${T('The Habitat – Red Dust City')}</h3>
+      ${p(T, 'The dome (lent to us by Staatstheater Karlsruhe) has a diameter of just under 10 m, making it a 75 square metre habitat for three astronauts from ZKM | Hertzlab, the artistic research department at ZKM. In three roles – Commander, Health Officer, Science Officer – we will simulate a Martian settlement, cooking, working and sleeping in the Habitat. The city society is invited to act as our ground station, to write us messages, to look into our daily activities, to meet us while we’re out on walks in our space suits or to communicate with us directly each day. Every day, 11 days in total, we tackle one big question that was raised during the project: How do people collaborate, if communication is disrupted by distance? Does human survival on Mars depend on art and beauty being present? How much is the cost (in terms of energy expenditure) of keeping a human alive? And how do we, from our anthropocentric perspective, perceive the more-than-human spacefaring existences of our “Spaceship Earth”?')}
 
-      <h3 id="more-than-human">${T('More than Human')}</h3>
-      ${p(T, 'The crew are not the habitat’s only inhabitants. Three live crickets share it with them, a robot dog goes with them on the EVA, and an emotional support robot keeps them company; on the hydroponic shelves the fresh food grows without soil, its roots in nutrient water. Each is cared for, counted and written into the record like the people — the mission’s question of who and what gets cared for begins at home.')}
-      ${p(T, 'The More than Human room of the habitat drawing on the first page leads here; what the crickets, the dog, the robot and the plants are doing today is in the crew’s entries.')}
-
-      <h3>${T('The readings')}</h3>
-      ${p(T, 'The sensors that produce the readings on this page are mounted in the habitat on the Marktplatz. When the habitat warms up because a crowd is standing around it, the number moves. The data is not a simulation of a Mars habitat; it is a measurement of the real one, with the crew in it.')}
+      <h3>${T('The Insight')}</h3>
+      ${p(T, 'What we are offering through this project is an invitation that we’re extending to the city society of Karlsruhe, to engage not only with the real possibility of space flight, but also to imagine themselves as beings in space already, on a spaceship called Earth. In order to remain viable for a broad range of living things, Earth needs care and stewardship as much as a space station would. Through the interaction with us – discussing, writing, receiving messages – we hope to encourage a change of perspective that leads us in turn closer to home.')}
 
       <h3>${T('Messages sent to space')}</h3>
       ${p(T, 'Every message the crew answer is also beamed into space, by radio, through SpaceSpeak — a small network of transmitters around the world that sends short messages out of the atmosphere on request. The station hands the message over the moment its reply is published; SpaceSpeak encodes it and transmits it on a frequency between 2.4 and 5 gigahertz, a band chosen because it passes through the air and its water vapour almost untouched, from a directional antenna that gathers the transmitter’s power into a narrow cone pointed at the sky. Radio waves are light: they leave at the speed of light, 299,792 km every second.')}
@@ -76,66 +93,41 @@ function aboutFold(ctx) {
         <dl class="kv">
           <dt>${T('DESIGNATION')}</dt><dd>${esc(ctx.mission.name)}</dd>
           <dt>${T('RUN')}</dt><dd>${esc(ctx.mission.runLabelLong)}</dd>
-          <dt>${T('START')}</dt><dd>${esc(ctx.mission.startLabel)} · ${esc(ctx.mission.start_date)}</dd>
-          <dt>${T('END')}</dt><dd>${esc(ctx.mission.endLabel)} · ${esc(ctx.mission.end_date)}</dd>
+          <dt>${T('START')}</dt><dd>${esc(ctx.mission.startLabel)} · ${START_END_TIME}</dd>
+          <dt>${T('END')}</dt><dd>${esc(ctx.mission.endLabel)} · ${START_END_TIME}</dd>
           <dt>${T('DURATION')}</dt><dd>${n} ${T(n === 1 ? 'day' : 'days')}</dd>
           <dt>${T('CREW')}</dt><dd>3</dd>
-          <dt>${T('TIMEZONE')}</dt><dd>${esc(ctx.mission.timezone)}</dd>
+          <dt>${T('SCIENTIFIC MISSIONS')}</dt><dd>${SCIENTIFIC_MISSIONS}</dd>
         </dl>`, 'mars-side')}
     </div>
   </div>`;
 }
 
-function whatFold(ctx) {
-  const T = ctx.T;
-  const light = orbital.formatLightTime(ctx.geo.lightSeconds);
-  const cs = `<b style="font-family:var(--mono);color:var(--earth)">${esc(ctx.callsign)}</b>`;
-  return `
-  <div class="about-full">
-    <div class="prose">
-      <h3>${T(ctx.callsign ? 'You already have a callsign' : 'You will get a callsign')}</h3>
-      <p>${ctx.callsign ? `${T('The moment you opened this page the station assigned you one — yours is')} ${cs}.`
-        : T('The station assigns you one — a word and a number, such as BASALT-625 — the moment you accept its cookie, or the moment you first send.')} ${T('It is stored in a cookie on your device and nowhere else. There is no account, no email, no name. If you clear your browser you will be issued a new one and lose the thread of your earlier messages.')}</p>
+/* The three officers in the order of October's text sheet — Commanding, Health, Science — each a card: over the role
+   its brief (the role line from content/crew-and-inventory.json: Order & Communications, Health & Life Support,
+   Research & Systems), then the portrait of the person on shift that day (content/shifts.json, content.crewOnShift —
+   the day's crew from 08:00 at the venue; no portrait while the plan names nobody), then the role's name, then their
+   state as mission control filed it — the words the dashboard's Crew Moods carry. */
+const OFFICER_ORDER = ['COMMUNICATION OFFICER', 'HEALTH OFFICER', 'SCIENCE OFFICER'];
+const person = (who) => CREW.find((c) => c.file.replace(/\.jpg$/i, '').toLowerCase() === who || String(c.last).toLowerCase() === who) || null;
 
-      <h3>${T('What happens when you send something')}</h3>
-      ${p(T, 'You write a message and choose up to three tags. When you transmit it, the composer is replaced by a transit display and you cannot send again until that message has arrived. The station computes the arrival time on the server, so closing the tab, reloading, or switching devices will not shorten the wait.')}
-      <p>${T('The message then joins a queue that a human reads. Mission control decides whether it goes to the crew and whether it is published. Until it is answered it is visible only to you, under')} <b>${T('MY MESSAGES')}</b> ${T('on the board. Not every message is carried forward, and that is a real editorial decision rather than a spam filter.')}</p>
-
-      <h3>${T('The delay is compressed, and we say so')}</h3>
-      <p>${T('At this moment a radio signal takes')} <b>${light}</b> ${T('to reach Mars, and the same again to come back. The station shows you that figure where you write. But the animated crossing you watch after pressing transmit runs in about ten seconds. Pretending otherwise would make the piece a lie about physics rather than a piece about distance. The real number is stored with your message and travels with it into the archive.')}</p>
-
-      <h3>${T('Where the habitat readings come from')}</h3>
-      ${p(T, 'Temperature, humidity and the other channels in the Habitat section are measured by a sensor node in the physical performance space. When the node stops reporting, the dashboard says so rather than freezing on its last value.')}
-
-      <h3>${T('What the crew readings are not')}</h3>
-      ${p(T, 'The crew readings are filed by mission control on two axes and translated into sentences. They are a report about three people, written by people, transmitted deliberately. They are not sentiment analysis and they are not automated.')}
-    </div>
-    ${panel('SEQUENCE', `
-      ${eyebrow(T('The path of a message'))}
-      <div class="rows steps-row">
-        ${[
-          ['Write', 'You are writing. Nothing has left Earth.'],
-          ['Transmit', 'You pressed send. The station timestamps it, and the message crosses the gap — you cannot send again until it has arrived.'],
-          ['Reached MARS!platz', 'It has reached the habitat on the Marktplatz.'],
-          ['Pending approval', 'A human at mission control reads it and decides whether it goes to the crew.'],
-          ['Transmitted to space', 'Cleared, it is beamed on into space by radio, through SpaceSpeak.'],
-          ['Replied back', 'The crew write back; question and answer are published on the board.'],
-        ].map(([a, b], i) => `<div class="row"><div class="t">${String(i + 1).padStart(2, '0')}</div>
-          <div class="m"><b>${T(a)}</b><span>${T(b)}</span></div></div>`).join('')}
-      </div>`, 'earth-side')}
-  </div>`;
-}
-
-function whoFold(crew, T) {
+function whoFold(crew, T, ctx) {
+  const onShift = content.crewOnShift(ctx.mission);
+  const ordered = OFFICER_ORDER.map((d) => crew.find((c) => String(c.designation).toUpperCase() === d)).filter(Boolean)
+    .concat(crew.filter((c) => !OFFICER_ORDER.includes(String(c.designation).toUpperCase())));
   return `
   ${panel('CREW', `
-    <div class="grid g3">
-    ${crew.map((c) => `
-      <div>
-        <div class="eyebrow">${esc(c.role)}</div>
-        <h3 style="font-family:var(--mono);letter-spacing:.06em">${esc(officer.shown(c.designation))}</h3>
-        <p class="note">${esc(c.status)} · ${T('currently')} ${esc(c.activity ? c.activity.toLowerCase() : T('unlogged'))}</p>
-      </div>`).join('')}
+    <div class="grid g3 officers-today">
+    ${ordered.map((c) => {
+      const who = onShift[String(c.designation).toUpperCase()], pic = who ? person(who) : null;
+      const t = moodLib.translate(c.mood);
+      return `
+      <div class="officer-card">
+        <div class="eyebrow">${esc(T(c.role))}</div>
+        ${pic ? `<figure class="officer-pic"><img src="/crew/${esc(pic.file)}" alt="${esc(pic.first)} ${esc(pic.last)}" width="800" height="1200" loading="lazy" decoding="async"><figcaption>${esc(pic.first)} ${esc(pic.last)}</figcaption></figure>` : ''}
+        <h3 class="officer-title">${esc(officer.shown(c.designation))}</h3>
+        <p class="note officer-mood">${c.mood ? `${esc(T(t.condition))} · ${esc(T(t.lines[0]))}` : T('No state filed yet')}</p>
+      </div>`; }).join('')}
     </div>`, 'mars-side')}
   ${CREW.length ? panel('THE CREW', `
     <div class="crew-wall">
@@ -144,7 +136,7 @@ function whoFold(crew, T) {
   ${panel('PRODUCTION', `
     ${eyebrow(T('Produced by'))}
     <p>ZKM | ${T('Center for Art and Media Karlsruhe')}<br>
-    Hertzlab<br>
+    ${esc(T('Department for Artistic Research & Development'))}, ${out('https://zkm.de/en/hertzlab', 'ZKM | Hertzlab')}<br>
     Lorenzstraße 19, 76135 Karlsruhe, ${T('Germany')}</p>
     <div class="partners">
       <div class="partner-row">${eyebrow(T('In cooperation with'))}${logos(PARTNERS.cooperation)}</div>
@@ -153,23 +145,22 @@ function whoFold(crew, T) {
 }
 
 /**
- * The reading matter as a page: About, What this is, the habitat in section
- * and Who we are one after another, each under its own head — its name and
- * the line beneath, in the dress of the dashboard's heads — with a row of
- * four pills at the top that jump to them. Once three pop-ups over the
- * landing page; now the page the About key opens (layout.js, tabbar()),
- * where the ticker's menu rows lead (public.js, ticker()) and where the old
- * addresses land: /what and /who-we-are (server.js), and the landing page's
- * #about, #about-project, #what and #who-we-are (public.js, mission()).
- * Beside the prose, the panels that remain: the mission's facts (About), the
- * path of a message in six steps (What this is), the habitat's picture with
- * every module a key (What's inside the habitat — inside.js, habitatInside,
- * which was the landing page's third page), the crew — the three officers
- * and the portraits — and the producer with the partners (Who we are).
+ * The reading matter as a page: About, the habitat in section and Who we are
+ * one after another, each under its own head — its name and the line
+ * beneath, in the dress of the dashboard's heads — with a row of three pills
+ * at the top that jump to them. Once three pop-ups over the landing page;
+ * now the page the About key opens (layout.js, tabbar()), where the ticker's
+ * menu rows lead (public.js, ticker()) and where the old addresses land:
+ * /what and /who-we-are (server.js), and the landing page's #about,
+ * #about-project, #what and #who-we-are (public.js, mission()). Beside the
+ * prose, the panels that remain: the mission's facts (About), the habitat's
+ * picture with every module a key (What's inside the habitat — inside.js,
+ * habitatInside, which was the landing page's third page), the crew — the
+ * three officers and the portraits — and the producer with the partners
+ * (Who we are).
  */
 const PARTS = [
-  ['about-project', 'About', 'The project, the distance, the archive'],
-  ['what', 'What this is', 'How the station behaves, in plain terms'],
+  ['about-project', 'About', 'MARS! – Mobilizing Awareness for Resilient Societies!'],
   ['inside', 'What’s inside the habitat?', null],
   ['who-we-are', 'Who we are', 'The crew, the producer, the partners'],
 ];
@@ -179,9 +170,9 @@ function aboutPage(ctx, { crew = [], habitat = null } = {}) {
   // the habitat's section: its head's line is the drawing's hint (Point at a room… on a desk, Tap a room… on a touch
   // screen — sheet.css shows the one that applies), and the drawing itself stands under it on the section's sheet
   const hint = `<span class="dome-meta dome-hint"><span class="dome-hint-click">${T('Point at a room to know what is inside.')}</span><span class="dome-hint-tap">${T('Tap a room to know what is inside.')}</span></span>`;
-  const inner = { 'about-project': () => aboutFold(ctx), what: () => whatFold(ctx), inside: () => `<div class="hab-card">${habitatInside(ctx, habitat || {})}</div>`, 'who-we-are': () => whoFold(crew, T) };
+  const inner = { 'about-project': () => aboutFold(ctx), inside: () => `<div class="hab-card">${habitatInside(ctx, habitat || {})}</div>`, 'who-we-are': () => whoFold(crew, T, ctx) };
   const body = `
-  <nav class="about-jump" aria-label="${esc(T('About, What this is, Who we are'))}">
+  <nav class="about-jump" aria-label="${esc(T('On this page'))}">
     ${PARTS.map(([id, title]) => `<a href="#${id}">${esc(T(title))}</a>`).join('')}
   </nav>
   ${PARTS.map(([id, title, sub]) => `

@@ -107,13 +107,11 @@ function intro(ctx, where = 'desk') {
  *
  * The Earth's picture is 1414 × 340 (EARTH), its bright limb a circle of
  * radius 997 centred at (674, 1079) in it, its apex 82 down from the top
- * (24 % of the height; the haze above it is fainter). By day (the light
- * theme) the room is daylight and the Earth is public/space/earth-day.jpg —
- * a strip cut from Earth_Day.png (rows 1230 to 1484 of it, 1055 × 254) with
- * the night strip's proportions and its limb's apex the same 24 % down, so
- * the same geometry, mesh and globe serve both; sheet.css shows one strip
- * or the other (the room by day), and the one the page did not open with is
- * fetched only if the theme is turned (data-src; switches.js). The mesh is rings of
+ * (24 % of the height; the haze above it is fainter). The one picture
+ * serves by night and by day (October: "the same image for day and night —
+ * the default night image"): the light theme leaves the room as it is by
+ * night, space with the same Earth at its foot (the day strip once cut from
+ * Earth_Day.png, public/space/earth-day.jpg, stays on disk, unused). The mesh is rings of
  * dots about that circle, from just over the limb up — every ring the same
  * angular pitch (pathLength puts the dashes in degrees), so the dots line
  * up along the radii too, into a mesh — a set for a desk and a closer set
@@ -123,7 +121,6 @@ function intro(ctx, where = 'desk') {
  * foot 97 % of the way down.
  */
 const EARTH = { w: 1414, h: 340, cx: 674, cy: 1079, r: 997 };
-const EARTH_DAY = { w: 1055, h: 254 };                       // the day strip: the same proportions (4.16 : 1), its limb's apex 61 down (24 %), centred at 509, radius 743
 const HABITAT = { w: 1004, h: 699, foot: 0.971 };
 function halo(kind) {
   // desk: rings 13 apart, dots 0.6° apart; phone (the picture a quarter the size): rings 32 apart, dots 2.2° apart;
@@ -150,8 +147,7 @@ function space(ctx, { sky = null } = {}) {
       <i class="space-line" data-sky-solid aria-hidden="true"></i>
       ${trajectory()}
       <div class="space-earth" aria-hidden="true">
-        <img class="space-earth-img is-night" ${ctx.theme === 'light' ? 'data-src' : 'src'}="/space/earth.jpg" alt="" width="${EARTH.w}" height="${EARTH.h}" decoding="async">
-        <img class="space-earth-img is-day" ${ctx.theme === 'light' ? 'src' : 'data-src'}="/space/earth-day.jpg" alt="" width="${EARTH_DAY.w}" height="${EARTH_DAY.h}" decoding="async">
+        <img class="space-earth-img" src="/space/earth.jpg" alt="" width="${EARTH.w}" height="${EARTH.h}" decoding="async">
         ${halo('desk')}${halo('phone')}
         <i class="space-globe" data-sky-round data-r="0.52" style="${globe}"></i>
       </div>

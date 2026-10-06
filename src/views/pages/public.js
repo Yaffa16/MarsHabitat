@@ -52,8 +52,6 @@ function complete(ctx, { counts, recent }) {
         <dt>${T('MISSION')}</dt><dd>${esc(m.name)}</dd>
         <dt>${T('DURATION')}</dt><dd>${dayWord(T, m.totalDays)}</dd>
         <dt>${T('EXCHANGES')}</dt><dd>${counts.published} ${T('published')}</dd>
-        <dt>${T('MESSAGES SENT')}</dt><dd>${counts.total}</dd>
-        <dt>${T('CALLSIGNS ISSUED')}</dt><dd>${counts.visitors}</dd>
       </dl>
       <p class="note" style="margin-top:16px">${T('The communication channel is closed. The archive is not — it stays readable, and it stays part of the work.')}</p>`, 'earth-side')}
   </div>
@@ -335,7 +333,9 @@ function composerPrompt(ctx) {
 }
 function composerDevice(ctx, { inFlight = null, error = null, draft = '', kiosk = '', meta = false } = {}) {
   const T = ctx.T;
-  // `meta`: the Write page's pop-up says, in its head, the one-way signal a message is about to cross and the distance
+  // `meta`: the Write page's pop-up says, in its head, the one-way signal a message is about to cross and the distance.
+  // The head names no operator and no callsign on the site (October: "remove the operator name") — only the writing
+  // screen's keeps OPERATOR · BODENSTATION; the callsign a visitor writes under is on the cookie card and on the board
   const signal = meta ? `<span class="dev-signal" title="${esc(T('One-way signal'))}">${T('One-way signal')} <b>${esc(orbital.formatLightTime(ctx.geo.lightSeconds))}</b> · ${ctx.geo.distanceAu.toFixed(3)} au</span>` : `<span class="dev-chan">${T('Uplink')}</span>`;
   return `<section class="device composer-device${inFlight ? ' sending' : ''}" aria-label="${esc(T('Composer'))}">
         <h2 class="dev-title" id="dev-title">${T('Write to the crew')}</h2>
@@ -344,11 +344,9 @@ function composerDevice(ctx, { inFlight = null, error = null, draft = '', kiosk 
         <span class="dev-grip" aria-hidden="true"></span>
         <span class="dev-knob" aria-hidden="true"></span>
         <span class="dev-vents" aria-hidden="true"></span>
-        <div class="dev-head">
-          <span>${T(meta ? 'Your callsign' : 'Operator')}</span>
-          ${ctx.callsign ? `<span class="dev-chip" title="${esc(T('Your callsign for this visit — no account, no name'))}">${esc(ctx.callsign)}</span>`
-            : ctx.offer ? `<span class="dev-chip dev-chip-later" title="${esc(T('Your callsign for this visit — no account, no name'))}">${esc(ctx.offer)}</span>`
-            : `<span class="dev-chip dev-chip-later" title="${esc(T('Your callsign for this visit — no account, no name'))}">${T('Callsign on sending')}</span>`}
+        <div class="dev-head${kiosk ? '' : ' is-bare'}">${kiosk ? `
+          <span>${T('Operator')}</span>
+          <span class="dev-chip" title="${esc(T('Your callsign for this visit — no account, no name'))}">${esc(ctx.callsign || ctx.offer || T('Callsign on sending'))}</span>` : ''}
           ${signal}
         </div>${composerPrompt(ctx)}
         <div class="dev-body" id="dev-body"${kiosk ? ` data-kiosk="1" data-refresh="/screen/write/composer?lang=${esc(kiosk)}"` : ''}>${composerBlock(ctx, { inFlight, error, draft, kiosk })}</div>
@@ -635,7 +633,7 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
   // browser can have kept as the permanent redirect back to /#about that /about used to be. The board is on the Write
   // page (/#exchanges leads to the wall; /#write opens the pop-up here, as on every page) and the dashboard on its own
   // page: /#mission and every panel of it lead to /dashboard.
-  (function () { var h = location.hash; if (/^#(about|about-project|what|inside|who-we-are)$/.test(h)) location.replace('/about?from=home' + (h === '#about' ? '' : h));
+  (function () { var h = location.hash; if (/^#(about|about-project|what|inside|who-we-are)$/.test(h)) location.replace('/about?from=home' + (h === '#about' || h === '#what' ? '' : h));
     else if (h === '#exchanges') location.replace('/write' + h);
     else if (/^#(mission|mission-today|habitat|sensors|stores|power|hardware|trends|schedule|galley|crew|blog-commander|blog-health|blog-science)$/.test(h)) location.replace('/dashboard' + h); })();
   </script>
@@ -912,12 +910,14 @@ function hwTicks(lo, hi, n = 4, fromZero = false) {
  * Each line is named at its right-hand end in its own colour with the
  * current reading. A thin mark stands on the current time.
  */
-function hwChart(hw, group, members, tz, T = same, W = HW_W) {
+function hwChart(hw, group, members, tz, T = same, W = HW_W, H = HW_H) {
   // The chart is drawn for the width it is shown at (W, in CSS pixels —
   // hardware.js asks /api/hardware for the width its tiles have, so the
   // type keeps its size on a desk and on a phone alike; HW_W until it does),
-  // a fixed height: the plot fills its tile, the legend beneath it.
-  const H = 240, padL = 44, padR = 16, padT = 26, padB = 30;
+  // and a fixed height (H — HW_H, unless the page asks for a lower one: the
+  // installation's screens, where a short screen has no room for a tall
+  // chart): the plot fills its tile, the legend beneath it.
+  const padL = 44, padR = 16, padT = 26, padB = 30;
   const iw = W - padL - padR, ih = H - padT - padB, bottom = padT + ih;
   const span = Math.max(1, hw.now - hw.since);
   const sx = (t) => padL + ((t - hw.since) / span) * iw;
@@ -1010,8 +1010,8 @@ function hwChart(hw, group, members, tz, T = same, W = HW_W) {
  *  content/home-assistant.json; a device keeps its colour by its position
  *  in that list, whichever chart it lands on. Energy meters are not drawn
  *  here: their day's kWh is on the Power panel (content/power.json). */
-const HW_W = 720;                            // the width a chart is drawn for until the page says its own (hardware.js)
-function hwCharts(hw, tz, T = same, W = HW_W) {
+const HW_W = 720, HW_H = 240;                // the width and the height a chart is drawn for until the page says its own (hardware.js)
+function hwCharts(hw, tz, T = same, W = HW_W, H = HW_H) {
   const groups = new Map();
   (hw.sensors || []).forEach((s, i) => {
     const g = hwGroupOf(s);
@@ -1020,7 +1020,7 @@ function hwCharts(hw, tz, T = same, W = HW_W) {
     if (!e) groups.set(g.key, e = { group: g, members: [] });
     e.members.push({ s, colour: hwColour(i) });
   });
-  const charts = [...groups.values()].map((e) => hwChart(hw, e.group, e.members, tz, T, W)).filter(Boolean);
+  const charts = [...groups.values()].map((e) => hwChart(hw, e.group, e.members, tz, T, W, H)).filter(Boolean);
   return charts.length ? `<div class="hw-charts">${charts.join('')}</div>` : '';
 }
 
@@ -1051,17 +1051,18 @@ function powerTileInner(ctx, power) {
  * here and by /api/hardware alike, so what the browser swaps in is exactly
  * what the server would have served.
  */
-function hardwareInner(hw, T = same, { width = HW_W } = {}) {
+function hardwareInner(hw, T = same, { width = HW_W, height = HW_H } = {}) {
   const tz = hwTz();
   const list = hw.sensors || [];
   const W = Math.max(240, Math.min(1400, Math.round(Number(width) || HW_W)));
+  const H = Math.max(120, Math.min(400, Math.round(Number(height) || HW_H)));
   // The charts are the panel: no tiles, one day chart per kind of quantity
   // (temperature, energy, …), each on a proper axis in its unit, every
   // device a line named at its end with the current reading. The
   // diagnostics the tiles used to carry (a sensor not in the feed) become a
   // note above them.
   const missing = list.filter((s) => s.missing);
-  const chart = hwCharts(hw, tz, T, W);
+  const chart = hwCharts(hw, tz, T, W, H);
   return `
     ${hw.down ? `<p class="note hw-down">${L.sym('warn')} ${T('Home Assistant could not be reached on the last poll')}${
       hw.lastPollAt ? ` ${T('at')} ${hwClock(hw.lastPollAt, tz)}` : ''} — ${T('these are the last readings stored.')}</p>` : ''}
@@ -1323,7 +1324,7 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
      stands). */
   const hardwareSection = hardware && hardware.configured && (hardware.sensors || []).length
     ? `<section class="hw-in-habitat" id="hardware" aria-label="${esc(T('Habitat hardware'))}">
-        <div class="hbt hw"><div id="hw-live" data-poll="${hardware.pollMs}" data-version="${esc(require('../../lib/home-assistant').version(hardware))}" data-w="${HW_W}">${hardwareInner(hardware, T)}</div></div>
+        <div class="hbt hw"><div id="hw-live" data-poll="${hardware.pollMs}" data-version="${esc(require('../../lib/home-assistant').version(hardware))}" data-w="${HW_W}" data-h="${HW_H}">${hardwareInner(hardware, T)}</div></div>
       </section>`
     : '';
 
@@ -1500,7 +1501,7 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
         <span class="officer-face band-${face ? moodLib.FACES.indexOf(face) : 'none'}" aria-hidden="true">${face ? moodLib.faceSvg(face) : moodLib.faceSvg({ mouth: 'M11 20 h10', eyes: 'dot' })}</span>
         <div class="officer-id">
           <b>${esc(officer.shown(c.designation))}</b>
-          <span class="officer-role">${esc(c.role)}</span>
+          <span class="officer-role">${esc(T(c.role))}</span>
         </div>
         <span class="badge${c.mood ? ' ok' : ''}">${esc(T(t.condition))}</span>
         <div class="officer-note">${c.mood ? esc(T(t.lines[0])) : T('No state filed yet')}</div>

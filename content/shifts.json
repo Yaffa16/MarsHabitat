@@ -1,0 +1,11 @@
+{
+  "_note": "Who is in the habitat each day of the run — the shift plan (October). For each mission day (1 = Thursday 15 October … 13 = Tuesday 27 October), the person in each role, by their surname as public/crew/crew.json spells the picture's file name (bechtloff, dipper, gerigk, jain, kautz, lintermann, lorenz, schmidt, stricot, vlaminck-maurer, wilcox). The About page shows the day's three portraits over the roles from 08:00 at the venue, the morning the day crew come on, until 08:00 the next morning — the nights, when people are rotated out, are not shown. A day with no entry, or a role with none, shows the role without a portrait. The keys are the designations the station files under: COMMUNICATION OFFICER (shown everywhere as the Commanding Officer), HEALTH OFFICER, SCIENCE OFFICER. Edit and save; the station reads the file fresh. `_example` shows the shape and is not read.",
+  "_example": {
+    "1": {
+      "COMMUNICATION OFFICER": "jain",
+      "HEALTH OFFICER": "lorenz",
+      "SCIENCE OFFICER": "dipper"
+    }
+  },
+  "days": {}
+}

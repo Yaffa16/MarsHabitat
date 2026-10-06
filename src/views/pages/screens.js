@@ -27,9 +27,12 @@ const V = L.ASSET_V;
 
 /** The screens, in the order the list shows them: the name in the address, the title, how the body is made to fit. */
 /* `fit`: scale — the piece is scaled to the height of the screen, up (to twice) as well as down; clip — the piece is
-   not scaled (only read larger on a large screen) and the rows that would be cut at the foot are hidden. `minWidth`: how
-   narrow the piece may be made by scaling up (the width it keeps its layout at) — the scale is capped so the screen's
-   width, divided by the scale, stays at least this. */
+   not scaled (only read larger on a large screen) and the rows that would be cut at the foot are hidden; fill — not
+   scaled either: the piece is laid out to the stage's height by screen.css (the trends' graph, which is as wide as its
+   panel whatever the scale, so scaling cannot make it fill the height — it is drawn to the height instead). `fitLandscape`:
+   another way of fitting for a screen held landscape (the trends: scaled when upright, where the graph carries its
+   legend under it, filled when landscape). `minWidth`: how narrow the piece may be made by scaling up (the width it keeps
+   its layout at) — the scale is capped so the screen's width, divided by the scale, stays at least this. */
 const SCREENS = [
   { name: 'landing', title: 'Landing page', fit: 'scale', minWidth: 1000, about: 'The first screen of the landing page — the name, the way to the habitat with the latest exchanges and pictures around the line — with the ticker' },
   { name: 'habitat', title: 'Habitat', fit: 'scale', minWidth: 960, about: 'The habitat’s instruments: the readings, the crew’s figures, the stores and the power' },
@@ -38,14 +41,16 @@ const SCREENS = [
   { name: 'mission', title: 'Today’s Mission', fit: 'scale', minWidth: 760, about: 'The day’s scientific mission: its question, Morning, Afternoon and EVA' },
   { name: 'blogs', title: 'Blogs', fit: 'none', about: 'The Commander Blog, the Daily Mission Report and the Health Report, one at a time — each post rolling by from top to bottom, then the next blog' },
   { name: 'day', title: 'Today', fit: 'scale', minWidth: 640, about: 'Today’s Schedule, Today’s Meal and the Crew Moods' },
-  { name: 'trends', title: 'Trends', fit: 'scale', minWidth: 520, about: 'The run’s trends on one graph' },
+  { name: 'trends', title: 'Trends', fit: 'scale', fitLandscape: 'fill', minWidth: 520, about: 'The run’s trends on one graph' },
   { name: 'media', title: 'Media', fit: 'clip', about: 'The newest pictures out of the habitat in one grid, as many as fit, live' },
+  { name: 'station', title: 'Ground station', fit: 'clip', about: 'The writing screen and the message board side by side, for the ground station’s own PC on the square — write to the crew as BODENSTATION, and every message sent stands on the board at once; no cookie question, ever' },
 ];
 const BY_NAME = Object.fromEntries(SCREENS.map((s) => [s.name, s]));
 
 /** The page around a screen: the stylesheets and the dictionary the site uses, the stage, the scripts — nothing else. */
 function shell(ctx, { name, title, body, scripts = [], fit = 'scale', ticker = '', head = true, inner = true }) {
-  const T = ctx.T, m = ctx.mission, lang = ctx.lang || 'en', minWidth = (BY_NAME[name] && BY_NAME[name].minWidth) || 0;
+  const T = ctx.T, m = ctx.mission, lang = ctx.lang || 'en', minWidth = (BY_NAME[name] && BY_NAME[name].minWidth) || 0,
+    fitLandscape = (BY_NAME[name] && BY_NAME[name].fitLandscape) || '';
   const stamp = m.phase === 'ACTIVE' ? `SOL ${String(m.clampedDay).padStart(2, '0')}/${m.totalDays}`
     : m.phase === 'PRE_LAUNCH' ? `T−${m.countdown.days}d` : T('Mission complete');
   return `<!doctype html>
@@ -60,7 +65,7 @@ function shell(ctx, { name, title, body, scripts = [], fit = 'scale', ticker = '
 <link rel="stylesheet" href="/sheet.css?v=${V}">
 <link rel="stylesheet" href="/screen.css?v=${V}">
 ${L.clientTable(lang)}
-</head><body class="landing${inner ? ' inner' : ''} screen screen-${name}" data-screen="${name}" data-fit="${fit}"${minWidth ? ` data-min-width="${minWidth}"` : ''} data-tz="${esc(m.timezone)}">
+</head><body class="landing${inner ? ' inner' : ''} screen screen-${name}" data-screen="${name}" data-fit="${fit}"${fitLandscape ? ` data-fit-landscape="${fitLandscape}"` : ''}${minWidth ? ` data-min-width="${minWidth}"` : ''} data-tz="${esc(m.timezone)}">
 ${ticker}
 <main class="stage">${head ? `
   <header class="stage-head">
@@ -93,7 +98,10 @@ function habitat(ctx, d) {
   return shell(ctx, { name: 'habitat', title: 'Habitat', body: p.habitat, fit: 'scale', scripts: ['/habitat.js', '/hardware.js'] });
 }
 
-/** The trends on one graph — drawn by habitat.js, which needs the Habitat panel on the page: it stands here unshown. */
+/** The trends on one graph — drawn by habitat.js, which needs the Habitat panel on the page: it stands here unshown.
+    Landscape, the graph is drawn to the stage's height (screen.css, data-fit-landscape="fill"): the wide graph, every
+    line named at its right-hand end, as tall as the stage allows and no wider than it; upright, the piece is scaled like
+    the others, and the graph is the narrow one with its legend under it. */
 function trends(ctx, d) {
   const p = P.dashboardPanels(ctx, d);
   return shell(ctx, { name: 'trends', title: 'Trends', body: `${p.trends}<div class="screen-hidden">${p.habitat}</div>`, fit: 'scale', scripts: ['/habitat.js', '/hardware.js'] });
@@ -150,18 +158,35 @@ function media(ctx, d) {
   return shell(ctx, { name: 'media', title: 'Media', body, fit: 'clip', scripts: d.cloud ? ['/cloud.js'] : [] });
 }
 
-const BUILD = { landing, habitat, board, write, mission, blogs, day, trends, media };
+/** The ground station's own screen (October: "a URL that never asks for cookies and always opens the writing screen
+    and the message board with the operator as Bodenstation"): the writing screen at the left and the station's board
+    at the right (one over the other upright), on one page — /screen/station. The composer is the writing screen's,
+    operator BODENSTATION, every message a new visitor's with no cookie (server.js, POST /screen/write — the form posts
+    there, the fragment comes back from /screen/write/composer); the board the board screen's, the station's own messages
+    on it at once, as many cards as fit, cut clean at the foot (screen.js, clip). No cookie question: no screen has one. */
+function station(ctx, d) {
+  const body = `<div class="screen-station">
+    <div class="screen-write station-write">${P.composerDevice(ctx, { inFlight: d.inFlight || null, error: d.error || null, draft: d.draft || '', kiosk: ctx.lang || 'de' })}</div>
+    <div class="station-board">${P.boardScreen(ctx, { recent: d.recent, poll: `/api/board?lang=${ctx.lang || 'de'}&limit=400&station=1` })}</div>
+  </div>`;
+  return shell(ctx, { name: 'station', title: 'Ground station', body, fit: 'clip', scripts: ['/composer.js', '/screen-write.js', '/board.js'] });
+}
+
+const BUILD = { landing, habitat, board, write, mission, blogs, day, trends, media, station };
 
 /** The screen by its name, or null for a name that is not one. */
 function render(name, ctx, d) {
   return BUILD[name] ? BUILD[name](ctx, d) : null;
 }
 
-/** The list of the screens, for setting up: each with its address and what it shows, and the two switches in the address. */
-function index(ctx) {
+/** The list of the screens, for setting up: each with its address and what it shows, and the two switches in the address.
+    With `missing`, the list answers an address that is no screen's (server.js: a word at its head; the site's 404 page,
+    with its cookie question, is never shown under /screen). */
+function index(ctx, { missing = null } = {}) {
   const T = ctx.T;
   const body = `
     <div class="screen-index">
+      ${missing ? `<p class="screen-index-missing" role="alert">${T('There is no screen called')} <code>${esc(String(missing).slice(0, 40))}</code>. ${T('These are the screens:')}</p>` : ''}
       <p class="screen-index-lead">${T('One piece of the station a screen, full screen, the whole of it in one glance — nothing to scroll. Open one on a screen and put the browser into full-screen mode (F11).')}</p>
       <ul class="screen-list">${SCREENS.map((s) => `
         <li><a href="/screen/${s.name}"><b>${esc(T(s.title))}</b><span>/screen/${s.name}</span></a><p>${esc(T(s.about))}</p></li>`).join('')}

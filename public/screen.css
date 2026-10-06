@@ -113,8 +113,26 @@ body.screen.screen-habitat #habitat .cell-days { font-size: 15px; }
 body.screen.screen-habitat #habitat .cell-days.is-ph { font-size: 10px; letter-spacing: .08em; }
 body.screen.screen-habitat #habitat .gauge.round svg { width: 60px; height: 60px; }
 body.screen.screen-habitat #habitat .hbt .empty, body.screen.screen-habitat #habitat .hbt .note, body.screen.screen-habitat #habitat #hbt-notes .note { font-size: 18px; line-height: 1.4; }
+/* the hardware's charts under the instruments in one row of four (two rows of two upright) — two across, as the site has
+   them, the panel stood twice the screen's height and no scaling could fit it: a chart is drawn to its width, and the
+   narrower the scale makes the screen the wider the chart; four across keeps the panel to the screen */
+body.screen.screen-habitat #habitat .hw-charts { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+body.screen.screen-habitat #habitat .hw-chart { padding: 10px 12px; }
+body.screen.screen-habitat #habitat .hw-in-habitat { margin-top: 16px; padding-top: 14px; }
+@media (orientation: portrait) {
+  body.screen.screen-habitat #habitat .hw-charts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 body.screen.screen-trends .tchart-svg { max-height: calc(100vh - 220px); width: 100%; }
 body.screen.screen-trends #trends .dpanel-body { min-height: 0; }
+/* the trends landscape (data-fit="fill", screens.js / screen.js): not scaled — the wide graph is as wide as its panel at
+   any scale, so scaling cannot make it fill the height — but drawn to the height: the panel fills the stage, and the
+   graph is as tall as the panel's body allows and no wider than it, in the middle (its type grows with it) */
+body.screen.screen-trends[data-fit="fill"] .stage-fit { height: 100%; flex: 1 1 auto; min-height: 0; }
+body.screen.screen-trends[data-fit="fill"] #trends.dpanel { height: 100%; max-height: none; display: flex; flex-direction: column; }
+body.screen.screen-trends[data-fit="fill"] #trends .dpanel-head { flex: none; }
+body.screen.screen-trends[data-fit="fill"] #trends .dpanel-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+body.screen.screen-trends[data-fit="fill"] #hbt-trends, body.screen.screen-trends[data-fit="fill"] #hbt-tcharts, body.screen.screen-trends[data-fit="fill"] .tchart { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; max-height: none; }
+body.screen.screen-trends[data-fit="fill"] .tchart-svg { flex: 1 1 auto; min-height: 0; width: auto; height: 100%; max-width: 100%; max-height: none; margin: 0 auto; }
 /* today's mission: the three parts fill the width, one under the other upright */
 body.screen.screen-mission .mission-today { padding: 26px 34px 28px; }
 body.screen .mission-blog { display: none; }                                                        /* the key to the Science Blog is the site's: nothing to press on a screen */
@@ -153,24 +171,71 @@ body.screen .card.xc:has(.card-space[data-launched]) { cursor: default; }
 @media (max-width: 700px) {
   body.screen.screen-board .cards { grid-template-columns: minmax(0, 1fr); }
 }
+/* the ground station's screen (screens.js, station): the writing screen at the left, the station's board at the right —
+   as the two screens have them — one over the other upright; the board's cards two across (one upright), cut clean at
+   the foot like the board screen's */
+body.screen.screen-station .screen-station { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 22px; height: 100%; min-height: 0; }
+body.screen.screen-station .station-write { padding: 0; min-height: 0; overflow: hidden; align-items: flex-start; }
+body.screen.screen-station .station-write .composer-device { max-width: none; }
+body.screen.screen-station .station-board { min-height: 0; height: 100%; }
+body.screen.screen-station .feed-wrap { min-height: 0; height: 100%; position: relative; }
+body.screen.screen-station .feed-scroll { position: absolute; inset: 0; }
+body.screen.screen-station .screen.board { height: 100%; box-sizing: border-box; display: flex; flex-direction: column; min-height: 0; padding: 22px 24px 18px; }
+body.screen.screen-station .board .scroller { flex: 1 1 auto; min-height: 0; max-height: none; overflow: hidden; margin: 0; }
+body.screen.screen-station .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-content: start; }
+body.screen.screen-station .feed-filter, body.screen.screen-station .feed-more { display: none !important; }
+body.screen.screen-station .board-head h2 { font-size: 22px; }
+@media (orientation: portrait) {
+  body.screen.screen-station .screen-station { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  body.screen.screen-station .station-write { justify-content: center; }
+  body.screen.screen-station .station-write .composer-device { max-width: 640px; }
+  body.screen.screen-station .cards { grid-template-columns: minmax(0, 1fr); }
+}
+@media (orientation: landscape) and (min-width: 1700px) {
+  body.screen.screen-station .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }               /* a wide screen: three across, so more of the board is in view */
+}
+@media (orientation: landscape) and (max-width: 1300px) {
+  body.screen.screen-station .cards { grid-template-columns: minmax(0, 1fr); }                          /* a smaller screen: one column of cards beside the composer */
+}
+/* a short screen: the composer, which is not scaled with the rest (the page is cut, not scaled), a step smaller so that
+   it stands whole — its natural height is some 720 px */
+@media (orientation: landscape) and (max-height: 860px) { body.screen.screen-station .station-write { zoom: .9; } }
+@media (orientation: landscape) and (max-height: 760px) { body.screen.screen-station .station-write { zoom: .8; } }
+@media (orientation: landscape) and (max-height: 660px) { body.screen.screen-station .station-write { zoom: .7; } }
 /* the gallery: every picture in one grid, the newest first, five across (three upright), each with its day and time
    under it, as many as fit — the rest cut clean */
 body.screen.screen-media #gallery { height: 100%; box-sizing: border-box; overflow: hidden; margin: 0; padding: 22px 26px; border-radius: var(--r-lg); background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); }
 body.screen.screen-media .log-day-head { margin-bottom: 18px; }
 body.screen.screen-media .mgrid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; align-content: start; }
+/* fewer pictures, fewer across — so the screen is full from the first day: two across up to four pictures, three up to
+   eight, four up to fifteen, five from sixteen (upright: one, two, three) */
+body.screen.screen-media .mgrid:not(:has(> :nth-child(5))) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+body.screen.screen-media .mgrid:has(> :nth-child(5)):not(:has(> :nth-child(9))) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+body.screen.screen-media .mgrid:has(> :nth-child(9)):not(:has(> :nth-child(16))) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (orientation: landscape) and (max-height: 800px) {
+  /* a short screen: one more across at each step, so that two rows fit — two up to two pictures, four up to eight, five
+     up to fifteen, six from sixteen */
+  body.screen.screen-media .mgrid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+  body.screen.screen-media .mgrid:not(:has(> :nth-child(3))) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body.screen.screen-media .mgrid:has(> :nth-child(3)):not(:has(> :nth-child(9))) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  body.screen.screen-media .mgrid:has(> :nth-child(9)):not(:has(> :nth-child(16))) { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
 body.screen.screen-media .mtile { border-radius: 14px; }
 body.screen.screen-media .mtile-visual { aspect-ratio: 16 / 10; }
 body.screen.screen-media .mtile-stamp { padding: 8px 12px 10px; }
 body.screen.screen-media .mtile-stamp .mtile-when { font-size: var(--fs-label); letter-spacing: .08em; color: var(--dim); }
 @media (orientation: portrait) {
   body.screen.screen-media .mgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  body.screen.screen-media .mgrid:not(:has(> :nth-child(3))) { grid-template-columns: minmax(0, 1fr); }
+  body.screen.screen-media .mgrid:has(> :nth-child(3)):not(:has(> :nth-child(9))) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 /* what is cut at the foot is hidden, so the last row is whole */
 body.screen .is-cut { visibility: hidden; }
 /* the landing screen: the ticker, then the name in its band and the habitat with its sky, as the site's first screen —
    the nudge to scroll is not drawn */
-body.screen.screen-landing .stage { padding: 0 var(--gutter) 10px; }
-body.screen.screen-landing .sheet-p1 { display: flex; flex-direction: column; }
+body.screen.screen-landing .stage { padding: 0 var(--gutter) 0; }
+body.screen.screen-landing .sheet-p1 { display: flex; flex-direction: column; padding-bottom: 0; }   /* the Earth reaches the foot of the screen: no room kept under the ground line */
+body.screen.screen-landing .space { padding-bottom: 0; }
 body.screen.screen-landing .dome-nudge, body.screen.screen-landing .dome-foot { display: none; }
 body.screen.screen-landing .tk-right, body.screen.screen-landing .tk-nav { display: none !important; }   /* the switches and the links are for a visitor with a hand on the page */
 body.screen.screen-landing .dome-panel.has-line { --foot-h: 0px; }
@@ -178,6 +243,7 @@ body.screen.screen-landing .dome-panel.has-line { --foot-h: 0px; }
 body.screen.screen-index .stage-body { overflow: auto; justify-content: flex-start; }
 body.screen .screen-index { max-width: 900px; margin: 0 auto; padding: 10px 0 40px; font-family: var(--display); color: var(--ink); }
 body.screen .screen-index-lead, body.screen .screen-index-note { font-size: 17px; line-height: 1.55; color: var(--dim); }
+body.screen .screen-index-missing { margin: 0 0 14px; padding: 10px 14px; border-radius: 12px; background: rgba(232,83,26,.12); border: 1px solid rgba(232,83,26,.4); font-size: 15px; color: var(--ink); }
 body.screen .screen-index code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 14px; color: var(--ink); background: var(--tile); padding: 2px 6px; border-radius: 6px; }
 body.screen .screen-list { list-style: none; margin: 24px 0; padding: 0; display: grid; gap: 12px; }
 body.screen .screen-list li { padding: 16px 20px; border-radius: 18px; background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); }

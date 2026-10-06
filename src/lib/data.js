@@ -372,6 +372,51 @@ function counts() {
   };
 }
 
+/**
+ * The tally mission control keeps for itself (October: "a counter of the
+ * messages sent on the website and of the visitors — only on the control
+ * page, not publicly"): every message ever sent from Earth, whatever became
+ * of it, and how many of them in the last twenty-four hours; the visitors,
+ * as the station can count them — a visitor is counted once they accept the
+ * cookie or send a message, since a page view before that names nobody
+ * (server.js, callsign.identify); a message from the writing screen counts a
+ * visitor each (callsign.mint) — and how many of them wrote. Nothing here reaches a public page or API (routes/control.js
+ * serves it, behind the sign-in).
+ */
+function tally() {
+  const g = (sql, ...a) => db.prepare(sql).get(...a).n;
+  return {
+    messages: g('SELECT COUNT(*) n FROM message'),
+    messagesDay: g('SELECT COUNT(*) n FROM message WHERE submitted_at >= ?', new Date(Date.now() - 86400000).toISOString()),
+    visitors: g('SELECT COUNT(*) n FROM visitor'),
+    writers: g('SELECT COUNT(DISTINCT visitor_id) n FROM message'),
+  };
+}
+
+/**
+ * The tally day by day, for the archive (October: "messages sent, total and
+ * per day, and visitors per day and total"): for every day at the venue on
+ * which a message was sent or a visitor first counted, the messages sent
+ * that day and the visitors first counted that day (a visitor is counted
+ * when they accept the cookie or send a message — see tally), newest day
+ * first, each with its mission day where the date is one of the run's. The
+ * totals are the whole table's.
+ */
+function tallyByDay(mission) {
+  const missionLib = require('./mission');
+  const tz = (mission && mission.timezone) || missionLib.config().timezone || 'Europe/Berlin';
+  const day = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? null : missionLib.localDate(d, tz); };
+  const rows = new Map();
+  const at = (date) => { if (!rows.has(date)) rows.set(date, { date, messages: 0, visitors: 0 }); return rows.get(date); };
+  for (const r of db.prepare('SELECT submitted_at FROM message').all()) { const d = day(r.submitted_at); if (d) at(d).messages++; }
+  for (const r of db.prepare('SELECT created_at FROM visitor').all()) { const d = day(r.created_at); if (d) at(d).visitors++; }
+  const byDate = new Map();
+  if (mission && mission.totalDays) for (let n = 1; n <= mission.totalDays; n++) byDate.set(missionLib.dateForDay(n), n);
+  const days = [...rows.values()].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+    .map((r) => ({ ...r, missionDay: byDate.has(r.date) ? byDate.get(r.date) : null }));
+  return { days, messages: days.reduce((s, r) => s + r.messages, 0), visitors: days.reduce((s, r) => s + r.visitors, 0) };
+}
+
 /* ---------------------------------------------------------------- logbook */
 
 /** Published entries for one mission day, in crew order. */
@@ -509,6 +554,6 @@ module.exports = {
   metrics, latest, history, evaluate, sensorPanels, dailyAverages,
   day, mealRow, mealsFor, FIXED_SLOTS, isExtraSlot, extraIndex, slotOrder, slotParts, slotLabel, crewWithMood, moodHistory, moodRecord, moodRecordAll, moodSeries,
   entriesForDay, entriesByCrew, entry, logbook, logSlotsPublic, logSlotsFor, BLOGS, entryCounts,
-  settleTransits, published, board, inFlightFor, messagesFor, counts, dailyActivity,
+  settleTransits, published, board, inFlightFor, messagesFor, counts, tally, tallyByDay, dailyActivity,
   TAGS, STALE_SECONDS,
 };

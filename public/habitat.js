@@ -654,6 +654,13 @@
     var padL = slim ? 38 : 50, padR = slim ? 10 : 250, padT = slim ? 14 : 18, padB = slim ? 34 : 50;
     var rowH = 17;
     var H = slim ? Math.round(Math.min(320, Math.max(220, W * 0.72))) : Math.max(380, visible * rowH + padT + padB + 8);
+    // on one of the installation's screens, held landscape, the wide graph is drawn to the shape of the room it has
+    // (screen.css fills the stage with the panel; data-fit="fill"), so that it fills the screen's height and not only
+    // its width — never squatter than the desk's graph
+    if (!slim && document.documentElement.classList.contains('screen') && document.body.getAttribute('data-fit') === 'fill') {
+      var room = host.getBoundingClientRect();
+      if (room.width > 0 && room.height > 0) H = Math.max(H, Math.round(W * room.height / room.width));
+    }
     var labelFont = '13px ui-monospace, Menlo, Consolas, monospace';
     var axisPx = slim ? readPx() : 13, datePx = 12, tagPx = slim ? readPx() - 1 : 11.5;
     var n = win.total;
@@ -824,8 +831,9 @@
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(function () {
       var h = $('hbt-tcharts'), w = h ? h.clientWidth : 0;
-      // a phone's graph is drawn at its width: again when that changes (the phone turned, the folder opened)
-      if (narrow() !== wasNarrow || (narrow() && Math.abs(w - wasWide) > 4)) { wasNarrow = narrow(); wasWide = w; renderTrends(); }
+      // a phone's graph is drawn at its width: again when that changes (the phone turned, the folder opened); a screen's
+      // to the shape of its room: again whenever the screen is laid out anew (screen.js says so with a resize)
+      if (narrow() !== wasNarrow || (narrow() && Math.abs(w - wasWide) > 4) || document.documentElement.classList.contains('screen')) { wasNarrow = narrow(); wasWide = w; renderTrends(); }
       fitAll();
     }, 150);
   });

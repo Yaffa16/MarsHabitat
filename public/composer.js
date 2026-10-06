@@ -177,10 +177,15 @@
       // Hold on ARRIVED for a moment (longer on the writing screen, where the
       // read-out names the callsign to take away: data-hold), then bring the
       // composer back with the real server-side state — in place, without a reload.
+      // The page is told first (mcs:arrived, with the hold): the pop-up closes and
+      // the visitor is taken to the board before the empty box could show again
+      // (write.js, tabbar.js — October: "do not show the write box again").
+      var hold = Number(block.dataset.hold) || 2600;
+      try { document.dispatchEvent(new CustomEvent('mcs:arrived', { detail: { hold: hold, kiosk: !!(stage && stage.getAttribute('data-kiosk')) } })); } catch (e) { /* an old browser: the swap alone */ }
       setTimeout(function () {
         if (!block.isConnected) return;
         if (stage && window.fetch) refresh(); else window.location.reload();
-      }, Number(block.dataset.hold) || 2600);
+      }, hold);
     }
 
     function tick() {

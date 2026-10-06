@@ -278,12 +278,17 @@ function screenCtx(req) {
   return { ...base, lang, T: i18n.of(lang), theme: req.query.theme === 'light' ? 'light' : 'dark', offer: '', visitor: null, callsign: '' };
 }
 app.get('/screens', requireScreens, (req, res) => res.set('Cache-Control', 'no-store').send(require('./views/pages/screens').index(screenCtx(req))));
-app.get('/screen/:name', requireScreens, (req, res, next) => {
-  const ctx = req.params.name === 'write' ? writeCtx(req) : screenCtx(req);
+app.get(['/screen', '/screen/'], (req, res) => res.redirect('/screens'));                 // the list, for an address without a name
+app.get('/screens/:name', (req, res) => res.redirect(`/screen/${encodeURIComponent(req.params.name)}${req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''}`));   // /screens/write, a slip of the hand, is /screen/write
+app.get('/screen/:name', requireScreens, (req, res) => {
+  const ctx = req.params.name === 'write' || req.params.name === 'station' ? writeCtx(req) : screenCtx(req);   // the composer's head names the operator
   // the board screen is the ground station's board: its own messages — everything sent from the writing screen, under
   // the station's name — stand on it whatever their state, before everyone's answered exchanges (data.board, callsign)
-  const html = require('./views/pages/screens').render(req.params.name, ctx, { ...stationData(ctx), recent: data.board(400, null, { callsign: callsign.STATION }) });
-  if (!html) return next();
+  const S = require('./views/pages/screens');
+  const html = S.render(req.params.name, ctx, { ...stationData(ctx), recent: data.board(400, null, { callsign: callsign.STATION }) });
+  // a name that is no screen's: the list, with a word, in the screens' own dress — never the site's 404 page, which
+  // carries the cookie question (October: no screen address is ever to ask about cookies)
+  if (!html) return res.status(404).set('Cache-Control', 'no-store').send(S.index(ctx, { missing: req.params.name }));
   res.set('Cache-Control', 'no-store').send(html);
 });
 
@@ -388,7 +393,7 @@ app.get('/about', (req, res) => {
   };
   res.send(require('./views/pages/info').aboutPage(ctx, { crew: data.crewWithMood(), habitat }));
 });
-app.get('/what', (req, res) => res.redirect(301, '/about#what'));
+app.get('/what', (req, res) => res.redirect(301, '/about'));                 // What this is left the page (October): the address lands on About
 app.get('/who-we-are', (req, res) => res.redirect(301, '/about#who-we-are'));
 app.get('/day/:n', (req, res) => res.redirect(301, '/dashboard#mission'));
 
@@ -480,6 +485,7 @@ app.get('/archive', requireControl, (req, res) => {
   res.send(AR.contents(ctx, {
     days: archive.index(),
     counts: data.counts(),
+    tally: data.tallyByDay(ctx.mission),                                   // messages sent and visitors, total and day by day — mission control's figures (October)
     entryCounts: data.entryCounts(),
     // before the run: today's rehearsal page, so the shape can be seen
     rehearsal: archive.rehearsalRecord(ctx.mission),
@@ -873,9 +879,11 @@ app.get('/api/orbital', (req, res) => {
   });
 });
 
+/* The mission's state, for anyone: the day, the phase, the time elapsed — and no counts: how many messages were sent
+   and how many visitors there were is mission control's alone (October), at /control/counts behind the sign-in. */
 app.get('/api/status', (req, res) => {
   const m = missionLib.state();
-  res.json({ missionDay: m.missionDay, phase: m.phase, elapsed: m.elapsed, counts: data.counts() });
+  res.json({ missionDay: m.missionDay, phase: m.phase, elapsed: m.elapsed });
 });
 
 /* The theme and language switches keep their choice in a cookie — for a year
@@ -941,14 +949,17 @@ app.get('/api/hardware', (req, res) => {
   const snap = homeAssistant.snapshot(24);
   // `w`: the width the page shows a chart at, in CSS pixels (hardware.js measures its tiles) — the charts are drawn
   // for it, so their type keeps its size on a desk and on a phone alike
-  const asked = Math.round(Number(req.query.w));
+  // `h`: the height, where the page wants a lower one than the usual 240 — the installation's screens on a short screen
+  const asked = Math.round(Number(req.query.w)), askedH = Math.round(Number(req.query.h));
   const width = Number.isFinite(asked) && asked >= 240 ? Math.min(1400, asked) : 720;
+  const height = Number.isFinite(askedH) && askedH >= 120 ? Math.min(400, askedH) : 240;
   res.set('Cache-Control', 'no-store').json({
     version: homeAssistant.version(snap),
     frozen: snap.frozen,
     pollMs: snap.pollMs,
     w: width,
-    html: snap.configured && snap.sensors.length ? P.hardwareInner(snap, req.ctx().T, { width }) : '',
+    h: height,
+    html: snap.configured && snap.sensors.length ? P.hardwareInner(snap, req.ctx().T, { width, height }) : '',
     // the power tile, whose metered category moves with the readings
     power: P.powerTileInner(req.ctx(), content.powerLive()),
   });

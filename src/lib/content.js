@@ -800,6 +800,31 @@ function missionsFile() {
       chosen: obj.chosen && typeof obj.chosen === 'object' ? obj.chosen : {} };
   } catch { return { days: {}, missions: [], chosen: {} }; }
 }
+/**
+ * The shift plan — content/shifts.json (October: "the portrait of the person
+ * playing that role on that day"): for each mission day, the person in each
+ * role, by the surname that names their portrait in public/crew/crew.json.
+ * The day's crew are shown from 08:00 at the venue, the morning the day crew
+ * come on, until 08:00 the next morning — so before 08:00 it is still the day
+ * before's crew; the nights, when people are rotated out, are never shown.
+ * Read fresh, like the missions; a missing or broken file, a day without an
+ * entry or a run that has not begun is nobody on shift: the About page then
+ * shows the roles without portraits (views/pages/info.js, whoFold).
+ */
+function crewOnShift(mission) {
+  let days;
+  try { const obj = JSON.parse(fs.readFileSync(path.join(DIR, 'shifts.json'), 'utf8')) || {}; days = obj.days && typeof obj.days === 'object' ? obj.days : {}; }
+  catch { return {}; }
+  if (!mission || mission.phase !== 'ACTIVE') return {};
+  const hour = Number(String(mission.venueTime || '').slice(0, 2));
+  const day = Number(mission.clampedDay) - (Number.isFinite(hour) && hour < 8 ? 1 : 0);
+  const d = days[String(day)];
+  if (!d || typeof d !== 'object') return {};
+  const out = {};
+  for (const [role, who] of Object.entries(d)) if (typeof who === 'string' && who.trim()) out[String(role).toUpperCase()] = who.trim().toLowerCase();
+  return out;
+}
+
 /** A day's mission as planned and as chosen: `days` in the file is the plan (the default for each day); `chosen`
  *  (day → mission number) is what the science officer set on the desk in its place (routes/control.js, /mission) —
  *  null where the day keeps its default. The missions as a list (number and title) for the desk's choice. */
@@ -971,4 +996,4 @@ module.exports = { load, watch, status, edit, templates, crewFigures, power, pow
                    resourceLogRows, resourceLogCsv, LOG_FILE,
                    planStatus, savePlan, ensurePlan, reset, resetLocked, resetEpoch, inventoryStart, PLAN_DIR, PLAN_FILES,
                    PLACEHOLDER, BLOG_OFFICER, isPlaceholder, placeholderCue, placeholderPublic, placeholderFor,
-                   NUTRIENTS, mealNutrients, recipesFile, recipeBook, slugify, missionsFile, missionForDay, missionChoice };
+                   NUTRIENTS, mealNutrients, recipesFile, recipeBook, slugify, missionsFile, missionForDay, crewOnShift, missionChoice };

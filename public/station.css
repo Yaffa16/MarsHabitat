@@ -1926,6 +1926,14 @@ body.control .poles, body.control .axis-read, body.control .ed-caption-state, bo
   font-family: var(--sans); font-size: 12.5px; letter-spacing: 0; text-transform: none; color: var(--c-muted); font-weight: 500;
 }
 body.control .eyebrow { margin-bottom: 12px; }
+/* the tally — messages sent and visitors, mission control's own figures, on the archive (The tally): the two totals in
+   a row, the days under them in the contents' table dress */
+.tally { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 40px; margin: 0 0 14px; }
+.tally-item { display: flex; align-items: baseline; gap: 10px; }
+.tally-k { font-family: var(--display); font-size: 13px; font-weight: 500; color: var(--dim); }
+.tally-n { font-family: var(--display); font-size: 26px; font-weight: 600; letter-spacing: -0.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.tally-sub { font-family: var(--display); font-size: 12.5px; color: var(--faint); }
+.tally-days th.n { text-align: right; }
 body.control .eyebrow::after { background: var(--c-line-soft); }
 body.control h1 { font-size: 28px; letter-spacing: -0.02em; }
 body.control .bigsec { font-size: 22px; }

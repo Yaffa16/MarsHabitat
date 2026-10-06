@@ -16,7 +16,7 @@ const asIs = (v) => (v == null || v === '' ? '—' : esc(String(v)));
 
 /* ============================================================== CONTENTS */
 
-function contents(ctx, { days, counts, entryCounts, rehearsal = null }) {
+function contents(ctx, { days, counts, entryCounts, rehearsal = null, tally = { days: [], messages: 0, visitors: 0 } }) {
   const recorded = days.filter((d) => d.isPast || d.isToday);
   const mediaTotal = days.reduce((s, d) => s + (d.media || 0), 0);
 
@@ -109,7 +109,25 @@ function contents(ctx, { days, counts, entryCounts, rehearsal = null }) {
           : '<span style="color:var(--faint)">not yet</span>'}</td>
       </tr>`).join('')}</tbody>
     </table></div>
-    ${rehearsal ? `<p class="note" style="margin-top:10px"><b>NOW</b> is today${ctx.mission.phase === 'PRE_LAUNCH' ? ', before the run' : ' — this station rehearses against made-up dates'} — the rehearsal day, mission day 0. Its record is built the way a run day's is: today's readings from every source and the states filed today, the messages that came in before the run, and everything mission control files under <b>NOW</b> — the day picker's first stop on every tab — its schedule and meals, the Commander Blog and the two reports, the counts, figures, power and media. Nothing of it touches the run's days. It is marked as a rehearsal wherever it appears — in the full record, the readable copy, the data copy, the readings log, the media archive and the messages — is not part of the record, and ${ctx.mission.phase === 'PRE_LAUNCH' ? 'disappears on the first day of the run' : 'is there only while the station rehearses against made-up dates'}.</p>` : ''}`)}`;
+    ${rehearsal ? `<p class="note" style="margin-top:10px"><b>NOW</b> is today${ctx.mission.phase === 'PRE_LAUNCH' ? ', before the run' : ' — this station rehearses against made-up dates'} — the rehearsal day, mission day 0. Its record is built the way a run day's is: today's readings from every source and the states filed today, the messages that came in before the run, and everything mission control files under <b>NOW</b> — the day picker's first stop on every tab — its schedule and meals, the Commander Blog and the two reports, the counts, figures, power and media. Nothing of it touches the run's days. It is marked as a rehearsal wherever it appears — in the full record, the readable copy, the data copy, the readings log, the media archive and the messages — is not part of the record, and ${ctx.mission.phase === 'PRE_LAUNCH' ? 'disappears on the first day of the run' : 'is there only while the station rehearses against made-up dates'}.</p>` : ''}`)}
+
+  ${panel('THE TALLY', `
+    ${eyebrow('Messages sent and visitors — mission control’s figures')}
+    <div class="tally" id="tally">
+      <div class="tally-item"><span class="tally-k">Messages sent</span><b class="tally-n">${tally.messages}</b><span class="tally-sub">total</span></div>
+      <div class="tally-item"><span class="tally-k">Visitors</span><b class="tally-n">${tally.visitors}</b><span class="tally-sub">total</span></div>
+    </div>
+    ${tally.days.length ? `<div class="tw"><table class="daylist tally-days">
+      <thead><tr><th>Day</th><th>Date</th><th class="n">Messages sent</th><th class="n">Visitors</th></tr></thead>
+      <tbody>${tally.days.map((r) => `<tr>
+        <td class="n">${r.missionDay != null ? dd(r.missionDay) : '—'}</td>
+        <td>${esc(r.date)}</td>
+        <td class="n">${r.messages || '—'}</td>
+        <td class="n">${r.visitors || '—'}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>` : '<p class="note">Nothing counted yet.</p>'}
+`, 'earth-side')}
+`;
   return L.page({ title: 'Archive', ctx, body, current: '/archive' });
 }
 

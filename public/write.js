@@ -7,7 +7,9 @@
  *  - its cross, Escape, and a click on the page beside it close it — the words written stay, the box only folds away;
  *  - a message sent from it crosses in it (composer.js swaps the dial in), with a Message Board key: on the Write page
  *    the key closes the box and brings the wall into view, where the note just sent stands at the head; elsewhere it
- *    leads to the Write page. On the Write page the box also closes by itself once the message has arrived.
+ *    leads to the Write page. Once the message has arrived the box closes by itself and the wall is brought into view
+ *    on the Write page, and any other page goes to the Write page's wall (October: the board, as soon as the message
+ *    is through).
  *  A page opened while a message is still crossing keeps the box closed (the note stands on the wall, in transit);
  *  #write opens it on the crossing — and the floating key shows the crossing in small meanwhile, on every page.
  */
@@ -87,13 +89,30 @@
       raf = requestAnimationFrame(tick);
     })();
   }
+  // once the message has arrived — the dial says ARRIVED and holds a moment (composer.js, mcs:arrived) — the visitor is
+  // taken to the board (October: "as soon as the message is transmitted fully, close the pop-up and go to the message
+  // board; do not show the write box again"): before the empty composer could come back, on the Write page the window
+  // closes by itself and the wall comes into view, the note just sent at its head; on any other page the Write page
+  // opens on the wall
+  var leaving = false;
+  function leave() {
+    if (leaving) return; leaving = true;
+    if (!onWrite) { window.location.href = '/write#exchanges'; return; }
+    if (isOpen()) setOpen(false, false);
+    if (location.hash === '#write') history.replaceState(null, '', '#exchanges');   // a reload would open the window again otherwise
+    var wall = document.getElementById('exchanges'); if (wall) wall.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(function () { leaving = false; }, 1500);
+  }
+  document.addEventListener('mcs:arrived', function (e) {
+    if (phone()) return;
+    var hold = Math.max(300, (e.detail && e.detail.hold) || 2600);
+    setTimeout(leave, hold - 250);                                             // a breath before the swap: the box is never seen again
+  });
   if (stage && window.MutationObserver) {
     var crossing = !!stage.querySelector('.transit-block');
     new MutationObserver(function () {
       var now = !!stage.querySelector('.transit-block');
-      // the Write page: the window closes by itself once the message has crossed — the transit display goes, the fresh
-      // composer comes (composer.js) — so the note just sent is in view at the head of the wall
-      if (onWrite && crossing && !now && !phone() && isOpen()) setTimeout(function () { if (!stage.querySelector('.transit-block')) setOpen(false, false); }, 900);
+      if (crossing && !now && !phone() && isOpen()) leave();                   // the swap came first (an old browser): leave now
       crossing = now;
       cross();
     }).observe(stage, { childList: true });

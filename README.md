@@ -94,7 +94,7 @@ sits behind the same login.
 |---|---|---|
 | The mission page | `/` | **The header** across the top — the wordmark, the run's badge, the three keys (Write to the crew → `/write#write`, Live Mission Dashboard → `/dashboard`, About) and a running line of the current activity, the next one, the habitat sensor's reading and the daily communication window · **three pages**: the way to the habitat with its sky; the note with the two calls under it (Send a message to the crew — approved messages are beamed into space; Follow what the crew is doing — live); the world's slowest chat (see *The landing page: three pages in the glass dress*) · **the composer's window and the floating Write key**, as on every public page (see *The composer's window*): the note's door and the slowest chat's door open the window here (`#write`); a phone's doors lead to the Write page's dock. Nothing of the board or the dashboard is on this page. The crew log, the media, the whole mission day by day and the reading matter live on their own pages (`/logbook`, `/media`, `/at-a-glance`, `/about`) |
 | Write to the crew | `/write` | **The message board, nothing else — under the header alone, no masthead.** The board is **a wall of notes** — the exchanges as flat cards on the page's ground, after the reference handed over: three across on a wide screen, two on a narrower one, one on a phone, every row starting level; the newest first; **never in a box: the wall flows with the page, and as the reader nears its end the page of exchanges before it is fetched and laid on** (`/api/board?before=`), until *The beginning of the correspondence*. A bar over the wall stays under the header all the way down: the board's name with its LIVE mark and the count, and the chips that narrow the wall (ALL, MY MESSAGES, a tag). The composer is **the window every page carries** (see *The composer's window*), opened by the floating **Write to the crew** key; `/write#write` opens the page with it open, and on this page the window folds away by itself once a message has arrived, so the note just sent is in view at the head of the wall. Each note: a disc with the writer's initials in a colour of the callsign's own, the callsign and *Earth*, the reference number; the message as the note's title with its tags right after it (*#question #humour*, keys that narrow the wall, in the message's own colour); the crew's answer as a quoted card of its own (the officer, *Crew answer · Mars habitat*, when), or the message's state; a foot with the distance the message has travelled (ticking) and the moment it was sent. See *The board*. Drawn for a phone first: the notes one under the other, the composer a dock at the foot of the screen, which lowers itself once a message has crossed; the phone's bar of keys leads here with **Write**, and so do the header's key and the sky's notes. `/messages`, `/board` and `/communicate` redirect here (`writePage`, `boardWall`, `noteCard` in `src/views/pages/public.js`; `public/board.js`) |
-| About | `/about` | The reading matter, one page: **About** (the project as the ZKM announces it — zkm.de/de/2026/10/marsplatz-red-dust-city: the run, the dome on the Marktplatz, the crew's brief, the daily EVAs, the ways to reach the crew, the opening and the funders — then the distance, the archive, the readings and *Messages sent to space* — two paragraphs on how a replied message goes out by radio through SpaceSpeak, after spacespeak.com/Learn/Science: the transmitters, the 2.4–5 GHz band, the directional antenna, the speed of light, then where the signal gets to and that it never stops), **What this is** (how the station behaves, in plain terms, with *The path of a message* beside it in six steps — Write, Transmit, Reached MARS!platz, Pending approval, Transmitted to space, Replied back), **What's inside the habitat** (the cutaway picture of the habitat handed over as two SVG files, its thirteen modules lighting up in colour under the hand or a finger, each with its card of what is in it — see *The habitat in section*; the line *AI generated image* under the picture) and **Who we are** (the three officers; the crew's eleven portraits, each with its name as the photograph's file gives it — *Firstname_Lastname.jpg* — in the order of the surnames; and the producer with the partners' logos — *In cooperation with* the Badisches Staatstheater and the Naturkundemuseum Karlsruhe, *Supporters* E.ON Foundation, LBBW Stiftung and the Innovationsfonds Kunst — small, each on a white tile), one after another under a row of four pills that jump to them (`src/views/pages/info.js`; the pictures and `public/crew/crew.json` by `tools/crew-pictures.py`). The reading matter runs the whole width of its section; the mission's facts and the path of a message stand under it in rows. A phone's **About** key opens it; on a desk the header's *About* link does |
+| About | `/about` | The reading matter, one page: **About** (headed by the project's name, *MARS! – Mobilizing Awareness for Resilient Societies!*, in the words of October's text sheet `ABOUT_WEBSITE_TEXTS_FOR_YASHA`: what MARS! is and how it came to the Marktplatz in four paragraphs — the five prototype workshops and the concept exhibition linked to their pages at zkm.de — then *Why are we doing this?* with its line *Playacting Mars in the middle of the city*, *The Habitat – Red Dust City* and *The Insight*; the distance to Mars in the first of these is the station's own figure for the day the crew go in — `lib/orbital`, some 233 million km — not the sheet's 26 million, which is a close approach's; then the station's own *Messages sent to space* — two paragraphs on how a replied message goes out by radio through SpaceSpeak, after spacespeak.com/Learn/Science: the transmitters, the 2.4–5 GHz band, the directional antenna, the speed of light, then where the signal gets to and that it never stops (*More than Human* and *The readings* stood here until October asked for them to go). Beside the prose the mission's facts: the run, start and end at 17:00, the duration, the crew, eleven scientific missions — the sheet's figures — and no timezone), **What's inside the habitat** (the cutaway picture of the habitat handed over as two SVG files, its thirteen modules lighting up in colour under the hand or a finger, each with its card of what is in it — see *The habitat in section*; the line *AI generated image* under the picture) and **Who we are** (the three officers of the day in the sheet's order — Commanding, Health, Science — each under its brief, *Order & Communications*, *Health & Life Support*, *Research & Systems* (the role lines in `content/crew-and-inventory.json`, on the dashboard's Crew Moods too), with **the portrait of the person on shift that day** over the role once the shift plan names them — `content/shifts.json`: for each mission day, the surname in each role as `crew.json` spells the picture's file, the day's crew shown from 08:00 at the venue until 08:00 the next morning, never the nights; the file ships naming nobody, with `_example` for the shape — then the role and their state as mission control filed it; the crew's eleven portraits, each with its name as the photograph's file gives it — *Firstname_Lastname.jpg* — in the order of the surnames; and the producer — ZKM | Center for Art and Media Karlsruhe, *Department for Artistic Research & Development, ZKM | Hertzlab* (linked to zkm.de/en/hertzlab) — with the partners' logos — *In cooperation with* the Badisches Staatstheater and the Naturkundemuseum Karlsruhe, *Supporters* E.ON Foundation, LBBW Stiftung and the Innovationsfonds Kunst — small, each on a white tile), one after another under a row of three pills that jump to them (*What this is* — how the station behaves, with the path of a message in six steps — was the second section until October asked for it to go; `/what` and `/#what` land on the page) (`src/views/pages/info.js`; the pictures and `public/crew/crew.json` by `tools/crew-pictures.py`). The reading matter runs the whole width of its section; the mission's facts and the path of a message stand under it in rows. A phone's **About** key opens it; on a desk the header's *About* link does |
 | Dashboard | `/dashboard` | **The mission dashboard, nothing else — under the header alone, no masthead**: the head, the live images, the two doors, the strip of sols and the panels behind their index — the keys stacked vertically, on a desk as a rail at the left of the folder, on a phone over it: *Sensors*; *Daily Life* — **Today's Mission** first, then Today's Schedule, Today's Meal, Crew Moods; *Blogs* — the three daily blogs (see *The mission page*). The header's *Live Mission Dashboard* link, the phone's **Dashboard** key, the mission page's *Mission dashboard* door and every door of the habitat's modules lead here; `/crew`, `/day`, `/day/:n`, `/schedule` and `/habitat` redirect to their section of it. A phone leaves the strip of live images out (the newest pictures rise over the habitat on the mission page instead, and fill the Media page) |
 | Mission control | `/control` | Five tabs: **Messages** (the reply queue) first, then one per officer, and the habitat — which ends with the plan and the reset. The Science officer's tab opens with the day's **science mission**: the plan's mission for the day as *Default*, every sheet to choose instead (see *The mission is a folder of files*) |
 | At a Glance | `/at-a-glance` | **A booklet: one day per page, turned by scrolling or swiping sideways** — arrows either side, ← → on a keyboard, a day strip to jump, a `#day-n` link opens on that day. Each page: each day's crew log with its photographs, the schedule as run, the meals and their cost, the resources (every store at the close of the day), the power, the habitat's sensors as they last read that day (one tile per channel, the last reading large — no charts, no means or ranges), the crew's condition as sentences and the mission notes. No exchanges with Earth and no Also sent out block. Days ahead show the plan, and each page scrolls on its own like a page being read. Opened from the button under the mission dashboard, and from the navigation |
@@ -106,9 +106,9 @@ sits behind the same login.
 Every address the public subpages used to have redirects to where the thing is now: `/messages`,
 `/board` and `/communicate` to the Write page, `/crew`, `/day`, `/day/:n`, `/schedule` and
 `/habitat` to their section of the Dashboard page (the static files are served without a folder's
-trailing-slash redirect, so `/crew` — also the portraits' folder — gets there too), and `/what` and
-`/who-we-are` to their section of the About page, so old links and printed material still land
-somewhere; the mission page's own old `#about`, `#what` and `#who-we-are` (when the reading
+trailing-slash redirect, so `/crew` — also the portraits' folder — gets there too), `/who-we-are`
+to its section of the About page and `/what` to the page itself (its section is gone), so old
+links and printed material still land somewhere; the mission page's own old `#about`, `#what` and `#who-we-are` (when the reading
 matter was three pop-ups over it) lead to the About page too, its `#inside` to the habitat's
 section there, its `#exchanges` to the Write page, and its `#mission` and the dashboard's panels
 (`#habitat`, `#crew`, …) to the Dashboard page. The footer of the mission page is the navigation.
@@ -128,7 +128,10 @@ address in ten minutes are throttled; with the door on, the list carries a *Sign
 screens* key. (The archive, `/archive`, needs mission control's session as it always did.)
 
 **The screens.** `/screens` lists them; each is a page of its own that you open full screen
-(F11) on the player behind a display:
+(F11) on the player behind a display. **No screen address ever asks about cookies** (October):
+the screens carry no cookie card and set no cookie, a slip of the hand — `/screens/write`,
+`/screen` — is sent on to the right address, and a name that is no screen's (`/screen/nope`)
+answers with the list and a word, never with the site's 404 page and its cookie question:
 
 - `/screen/landing` — the landing page's first screen — the way to the habitat, with the
   latest exchanges and pictures around the line — with the ticker (its light/language
@@ -158,13 +161,35 @@ screens* key. (The archive, `/archive`, needs mission control's session as it al
 - `/screen/media` — every picture in one grid, newest first, stamped with day and time, as
   many as fit (the site's day-grouped gallery would leave the screen mostly empty, so the
   screen uses a flat grid; a new picture slides in live, without a reload)
+- `/screen/station` — **the ground station's own screen** (October: "a URL that never asks
+  for cookies and always opens the writing screen and the message board with the operator as
+  Bodenstation"): the writing screen's composer at the left, operator **BODENSTATION**, and the
+  station's message board at the right (one over the other upright) — the two screens above on
+  one page, for the PC on the square. Every message is a new visitor's with no cookie, as on
+  the writing screen; the board shows it at once; no cookie question, as on every screen
 
 Dark and German by default; `?theme=light`, `?lang=en`, `?lang=fr` switch it (for example
 `/screen/board?lang=en&theme=light`). Nothing scrolls: a piece that is too tall is scaled
-down, a small piece is scaled up (never narrower than its layout stands), and on the board
-and media screens the row that would be cut at the foot is hidden so the last row is whole.
-Every screen reloads itself every five minutes and at midnight, when the sol turns (the
-writing screen waits while someone is writing).
+down (to a third of its size, if a short screen needs that), a small piece is scaled up (never
+narrower than its layout stands), and on the board and media screens the row that would be cut
+at the foot is hidden so the last row is whole. **Every screen fits a full screen on a monitor
+of any size** (October: 1920×1080, 1366×768, 1280×720, 1024×768, 2560×1440, 4K and upright
+1080×1920 are all looked at by `scratchpad/scr-audit.js`-style runs; `public/screen.js` fits
+the piece once, again after anything under it changes — a card arriving, a graph drawn again —
+and looks at the fit every other second, so a drawing that grows after the last fitting is
+caught). Two pieces needed more than scaling: the **trends**, whose wide graph is as wide as
+its panel at any scale and so could never be scaled to fill the height, are **drawn to the
+stage's height** when the screen is landscape (`data-fit-landscape="fill"` in `screens.js`;
+`habitat.js` draws the graph to the shape of the room it has) and scaled, with the legend
+under the narrow graph, when it is upright; and the **habitat**'s hardware charts stand
+**four across** under the instruments on a screen (two upright) and are drawn as short as the
+screen needs (`/api/hardware?h=`, a fifth of the screen's height, 130 px at the least), where
+two across at the site's height stood the panel twice the screen's height. The gallery sets
+its columns by how many pictures there are — two across up to four, three up to eight, four
+up to fifteen, five from sixteen (one more at each step on a short screen; one, two and three
+upright) — so the screen is full from the first day. The landing screen's Earth reaches the
+foot of the screen. Every screen reloads itself every five minutes and at midnight, when the
+sol turns (the writing screen waits while someone is writing).
 
 In more detail: nine pages made to be shown on screens in the installation — a laptop or a
 player behind each screen, the browser in full-screen mode (F11), nothing to touch but on
@@ -184,6 +209,7 @@ address.
 | Today | `/screen/day` | Today's Schedule, Today's Meal and the Crew Moods, three in a row (one under the other upright) |
 | Trends | `/screen/trends` | The run's trends on one graph — on an upright screen drawn the way a phone draws it, the names of the lines in a legend under it |
 | Media | `/screen/media` | Every picture out of the habitat in **one grid, the newest first**, five across (three upright), each stamped with its day and time, as many as fit — live, a new picture slides in as it arrives. (The site's gallery groups them by day; a screen that must be full does not) |
+| Ground station | `/screen/station` | **The writing screen and the message board on one page**, for the ground station's own PC on the square (October): the composer at the left as `/screen/write` has it — operator BODENSTATION, every message a new visitor's with no cookie, posting to the writing screen's address, the crossing's read-out naming the callsign — and the station's board at the right as `/screen/board` has it, the station's own messages on it at once, three cards across on a wide screen, two on a 1080p screen, one beside the composer on a small one, cut clean at the foot (one over the other upright). The composer steps down a size on a short screen so it stands whole. No cookie question, as on every screen (`station()` in `screens.js`; `screen.css` under *the ground station's screen*) |
 
 **Dark and German by default.** A screen is drawn in the dark theme and in German unless its
 address says otherwise: `?theme=light`, `?lang=en`, `?lang=fr` — for example
@@ -198,8 +224,14 @@ the width its layout stands at: `data-min-width` on the body, per screen in
 `src/views/pages/screens.js`), or down, so a long mission or three long blogs are shown whole.
 The board and the gallery are not scaled — their cards and tiles are read a little larger on
 a large screen, and **the rows that would be cut at the foot are hidden**, so the last row is
-whole (`data-fit="clip"`). The fitting runs again whenever the content changes (a card or a
-tile arrives, the instruments draw themselves) and whenever the screen turns.
+whole (`data-fit="clip"`). The trends, landscape, are a third way (`data-fit="fill"`,
+chosen from `data-fit-landscape` while the screen is wider than tall): not scaled, but laid out
+to the stage's height by the stylesheet, the graph drawn to the shape of its room. The fitting
+runs again whenever the content changes (a card or a tile arrives, the instruments draw
+themselves, a graph is drawn again — any change under the stage, an attribute as much as a new
+child), whenever the screen turns, and every other second if the last fitting was overtaken by
+a drawing that grew after it; a fitting that changes nothing touches nothing, so it never sets
+itself off again.
 
 **Live, and reloaded.** What the site keeps live stays live on the screen — the board polls,
 the pictures poll, the habitat's readings poll, the sky over the dome runs. Everything else
@@ -215,6 +247,20 @@ from `cloudScreen()` in `media.js`, polled through `/api/cloud?flat=1`) — so a
 site is a change to the screens.
 
 ### Mission control
+
+**The tally — in the archive.** Under the archive's contents, after *The mission, day by day*,
+stands *The tally*, the figures mission control keeps for itself (October: "a counter of the messages sent on the website and
+of the visitors — not publicly; messages sent, total and per day, visitors per day and total;
+it should be in the archive"): **Messages sent** and **Visitors**, each a total, and under them
+a table of the days at the venue, newest first — the messages sent that day and the visitors
+first counted that day, with the mission day where the date is one of the run's — the figures
+alone, no note under them. A visitor is counted on the day they accept the cookie or first send
+a message, since a page view before that names nobody; a message from the writing screen counts
+a visitor each (`data.tallyByDay()` and `data.tally()` in `src/lib/data.js`; the panel in
+`src/views/pages/archive.js`, `.tally`). The queue's counts and the tally are at
+`/control/counts` as well, behind the sign-in; nothing public carries them — `/api/status` says
+the day and the phase and counts nothing, the control page carries no figures, and the
+mission-complete page names the exchanges published and no more.
 
 Messages come first: the queue is the first tab, because answering Earth is the job that
 cannot wait. Each message is a card: who wrote and what they wrote, large, with the state and
@@ -870,7 +916,9 @@ rather than freezing on its last value. Interruptions will happen during the run
 shown as a condition of the habitat, not hidden.
 
 Other endpoints: `/api/sensors/latest`, `/api/sensors/history?metric=temperature&hours=24`,
-`/api/orbital`, `/api/status`, `/healthz`.
+`/api/orbital`, `/api/status` (the day, the phase and the time elapsed — no counts: how many
+messages were sent and how many visitors there were is mission control's alone, at
+`/control/counts` behind the sign-in), `/healthz`.
 
 ## The habitat's own hardware (Home Assistant)
 
@@ -974,10 +1022,13 @@ and pictures coming and going around it; **the second page** — the note (what 
 of October's text sheet, with no keys under them any more) and under it **the two calls**
 (October; `calls()` in `src/views/pages/landing.js`, drawn into `note()`; `sheet.css` under *the
 two calls* and *the second page on a desk*) — **on a desk the note stands at the left and the two
-calls one over the other at its right** (`page2`: the note across the page's left, as tall as the two calls, its words in the
-middle of its height; the calls a narrow column at the page's right edge, 460 px at most, compact, their words at the
-left and the drawing small over them; the three cards one rectangle — October's picture, "the layout as I showed" —
-and the whole fits a window of 900 px), on a phone the note first and
+calls one over the other at its right** (`page2`, October's picture: the note a card at the page's left, as tall as the two calls,
+its words in the middle of its height; the two calls one over the other right beside it, across the rest of the page's
+width — "the 2 buttons on the right of the box" — their words at the left and the drawing small over them; the three
+cards one rectangle, and the whole fits a window of 900 px. **The widths are two variables on `.page2` in `sheet.css`**,
+to be changed in that one place: `--note-w`, how wide the note's card grows where the page allows — 1000 px, October:
+"double the width" — and `--calls-w`, the least the calls' column is — 460 px; the calls take what is left of the
+page, and on a narrower page the note gives way first), on a phone the note first and
 the two calls under it; each call a card of glass, the whole card the door, in the colours of the
 theme chosen: **Send a message to the crew**, with the thing to know set large under its title —
 **APPROVED MESSAGES ARE BEAMED INTO SPACE**, in capitals, in a gradient of Mars and light
@@ -1031,16 +1082,12 @@ window tall with its cards in the middle and air around them, a margin at both s
 
 - **The way to the habitat — the first page** (`landing.js`, `space`; laid out in `sheet.css`
   under *P00*), after the mock-up. A room of night on the page by night — the room is space —
-  with a field of still stars, **and a room of daylight by day** (the light theme, October;
-  `sheet.css` under *the first page's room by day*): a pale sky, white at the top turning to the
-  haze of the picture at its foot, no stars, the Earth in daylight — `public/space/earth-day.jpg`,
-  a strip cut from the `Earth_Day.png` handed over (rows 1230 to 1484 of it, 1055 × 254) with the
-  night strip's proportions and its limb's apex the same 24 % down, so the line, the mesh and the
-  globe the sky keeps clear of serve both; the habitat's drawing turns dark on it (inverted), the
-  line and the way dashed in ink, the signal cobalt, the answer Mars, the sky's frames cobalt and
-  their words ink. The page carries both strips and shows one; the one it did not open with has
-  `data-src` instead of `src` and is fetched only if the theme is turned (`switches.js`). By
-  night, **the Earth at its foot**: a photograph of its
+  with a field of still stars — **by day as by night**: the light theme leaves the room as it is
+  (October: "the same image for day and night — the default night image"), the same Earth strip
+  at its foot, the same stars and drawing; only the page around the room turns light. (A room of
+  daylight — a pale sky, the Earth in daylight, the drawing dark — was drawn for the light theme
+  for a while and is gone; the day strip it used, `public/space/earth-day.jpg`, stays on disk,
+  unused.) **The Earth at its foot**: a photograph of its
   limb from orbit (`public/space/earth.jpg`, 1414 × 340 — the picture handed over, cut to the
   arc, its haze let fade in where the picture cut it off), the horizon curving away below the
   page, its bright limb the arc's height above the room's foot, and over it **a mesh of dots**
@@ -1237,7 +1284,7 @@ window tall with its cards in the middle and air around them, a margin at both s
   exchange, and the snapshots follow the Habitat panel's strip of pictures that
   `public/cloud.js` keeps current (`sky.js`, `public/sky.js`).
 - **The nudge, on the Earth.** At the foot of the first page, on the Earth, stands **an arrow
-  pointing down**, on its own, bobbing gently, that nudges the visitor on to the pages beneath;
+  pointing down, in Mars** (October), on its own, bobbing gently, that nudges the visitor on to the pages beneath;
   it is a link to the next page as well, and it is gone once the page has been scrolled and
   back once the page is at the top again (`scrollNudge()` in `landing.js`, `public/sky.js`).
   The habitat's sheet ends at the ground line the dome stands on — its columns, tracks and the
@@ -1447,7 +1494,7 @@ the public pages, drawn from the same markup — nothing is served twice (the ph
 - a **bar of five keys fixed at the foot** — Home, Dashboard, Write, Media, About — with
   Write raised as an orange disc with a paper plane (`tabbar()` in `src/views/layout.js`,
   `public/tabbar.js`). Each key is a page and the lit key, in blue, names the page you are on.
-  **About** opens the About page — About, What this is and Who we are, one after another.
+  **About** opens the About page — About, the habitat in section and Who we are, one after another.
 - the station page is its three pages, **a swipe from one to the next** — the habitat alone on
   the first screen, with its sky and the nudge under the dome; the station's name and the note
   with its three pills (Write to the crew, Mission dashboard, Know more); the world's slowest chat, ending in the orange key **Write to the
@@ -1878,8 +1925,8 @@ written anywhere on the pages.
 
 The landing page opens on the **MARS!platz** wordmark on the grey ground, one line beneath it,
 and the station's readings as a row of pills on the right; there is no photograph and no black
-rail. (`public/hero.jpg` is no longer referenced and can be deleted.) About · What this is ·
-Who we are are a page of their own, `/about`, which the header's *About* link leads to. The landing page
+rail. (`public/hero.jpg` is no longer referenced and can be deleted.) About · What's inside the
+habitat · Who we are are a page of their own, `/about`, which the header's *About* link leads to. The landing page
 carries no top bar; its navigation lives in the dark footer slab. Subpages keep the status rail
 and **Mission · Messages · Crew log · About**.
 
@@ -1902,10 +1949,14 @@ station, so a phone running fast cannot reload in a loop.)
 
 **The header's three keys** — **Write to the crew**, **Live Mission Dashboard**, **About** — are
 plain buttons in the middle of the header's row, each with its sign in the line-icon hand of the
-dome's keys (the pen, the four panels, the i) and its name in sentence case, 40px tall: **black
-tiles with white words, in both themes, and the page's own key filled in cobalt** (October:
-"selected blue, not selected black"; `ticker()` in `src/views/pages/public.js`, `sheet.css`
-under *the three keys*). They lead to the Write page with the composer's window
+dome's keys (the pen, the four panels, the i) and its name in sentence case, 48px tall in 16px
+type, **each in a colour of its own, in both themes — Write to the crew in Mars, the dashboard in
+cobalt, About in ink — and the page's own key ringed inside its edge** (October: "bigger, more
+prominent, colour-coded to catch the eye"; before that "selected blue, not selected black"); the
+row is 76px tall, the name 26px and the sol badge a solid Mars pill (`ticker()` in
+`src/views/pages/public.js`, `sheet.css` under *the header: two rows* — the offsets that hang
+from the header's height, 113px with the running line, follow it: the pages' heights, the
+scroll padding, the board's bar and the dashboard's rail). They lead to the Write page with the composer's window
 open (`/write#write`), the Dashboard page (`/dashboard`) and the About page; the door at the foot
 of the slowest chat and the *Send a message to the crew* card open the window here (`#write`; a
 phone's lead to the Write page's dock), the sky's notes lead to the wall, the *Follow what the
@@ -1934,8 +1985,17 @@ the Write page with it open; its cross, Escape or a click on the blur fold it aw
 written stays), and the floating key is gone while it is open. A message sent from it crosses in
 it — the dial, the read-out — **with a Message Board key under them** (`transit-board` in
 `communicate.js`): on the Write page it folds the window away and brings the wall into view,
-where the note just sent stands at the head; elsewhere it leads to the Write page. On the Write
-page the window also closes by itself once the message has arrived. A page opened while a
+where the note just sent stands at the head; elsewhere it leads to the Write page. **Once the
+message has arrived the visitor is taken to the board without a press** (October: "as soon as
+the message is transmitted fully, close the pop-up and go to the message board — do not show
+the write box again"): the dial holds a moment on ARRIVED (`composer.js` says so to the page,
+`mcs:arrived`, with the length of the hold), and a breath before the empty composer would come
+back, on the Write page the window closes by itself and the wall comes into view, on any other
+page the Write page opens on the wall, and a phone's dock lowers itself — the box is never seen
+again (`public/write.js`, `public/tabbar.js`). The window's
+head names no operator and no callsign (October: "remove the operator name"); it says the one-way
+signal and the distance alone — the callsign a visitor writes under is on the cookie card and on
+their notes on the board (the writing screen's composer keeps *OPERATOR · BODENSTATION*). A page opened while a
 message is still crossing keeps the window closed (the note stands on the wall, in transit) —
 **and the floating key is the crossing itself meanwhile, on whatever page the visitor goes to**:
 a ring filling as the message goes, the countdown (*T−00:06*) and the state (*Sending · 51%*,
@@ -2388,7 +2448,7 @@ src/
   views/pages/sky.js     the sky over the dome (the newest exchanges and pictures) and the sequencer sheet under it
                          (public/sky.js places them on the grid and fades them in and out, moves the day's line,
                          hides the nudge under the dome once scrolled, moves the signal in transit and pages a phone's scroll)
-  views/pages/info.js    the About page: About, What this is, What's inside the habitat, Who we are
+  views/pages/info.js    the About page: About, What's inside the habitat, Who we are
 public/                  the stylesheets (station.css, aura.css, sheet.css over them), the page scripts (board,
                          composer, habitat, media, sky, entry editor), the habitat's pictures (habitat/: inside.svg, the
                          habitat in section, ground.jpg, the Mars plain it stands on, and rooms/, five of the rooms in

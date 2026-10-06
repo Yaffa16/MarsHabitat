@@ -73,15 +73,34 @@ curl -s -b $V -c $V -X POST --data-urlencode \
 curl -s -b $V $B/write | grep -qi "message in transit" && ok "message in transit, shown in the Write page's pop-up" || bad "no transit view"
 
 curl -s -b $V -X POST --data-urlencode "body=Should be blocked" -o /dev/null $B/communicate
-N=$(curl -s $B/api/status | grep -oE '"total":[0-9]+' | cut -d: -f2)
+# the counts are mission control's alone (October): /api/status carries the day and the phase and nothing counted,
+# /control/counts the queue's counts and the tally, behind the sign-in
+curl -s -c $A -X POST -d "username=${CONTROL_USER}" -d "password=${CONTROL_PASSWORD}" -o /dev/null $B/control/login
+ST=$(curl -s $B/api/status)
+echo "$ST" | grep -q '"missionDay":' && echo "$ST" | grep -q '"phase":"' && ! echo "$ST" | grep -q '"counts"\|"total"\|"visitors"' \
+  && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/control/counts)" = "302" ] && curl -s -b $A $B/control/counts | grep -q '"tally":{"messages":1,"messagesDay":1,"visitors":' \
+  && ok "/api/status says the day and the phase and counts nothing; the counts are at /control/counts, behind the sign-in" || bad "the counts are public, or /control/counts is not as it should be"
+N=$(curl -s -b $A $B/control/counts | grep -oE '"total":[0-9]+' | cut -d: -f2)
 [ "$N" = "1" ] && ok "transit lock holds server-side" || bad "transit lock failed (total=$N)"
 
 sleep 4
-curl -s $B/api/status | grep -q '"pending":1' && ok "arrived and queued for review" || bad "did not settle to pending"
+curl -s -b $A $B/control/counts | grep -q '"pending":1' && ok "arrived and queued for review" || bad "did not settle to pending"
 
 echo "── one login"
 curl -s -c $A -X POST -d "username=${CONTROL_USER}" -d "password=${CONTROL_PASSWORD}" -o /dev/null $B/control/login
 curl -s -b $A $B/control | grep -q "Awaiting reply" && ok "control signed in" || bad "sign-in failed"
+# the tally (October: messages sent, total and per day, and visitors per day and total — in the archive, mission
+# control's alone): the two totals and a table of the days at the venue, newest first, with the mission day where the
+# date is the run's; not on the control page, not anywhere public
+ARCH0=$(curl -s -b $A $B/archive); TALLY_DATE=$(TZ=Europe/Berlin date +%F)
+echo "$ARCH0" | grep -q '<div class="tally" id="tally">' && echo "$ARCH0" | grep -q '<span class="tally-k">Messages sent</span><b class="tally-n">1</b><span class="tally-sub">total</span>' \
+  && echo "$ARCH0" | grep -q '<span class="tally-k">Visitors</span><b class="tally-n">[1-9][0-9]*</b><span class="tally-sub">total</span>' \
+  && echo "$ARCH0" | tr -d '\n' | grep -q '<table class="daylist tally-days">.*<th class="n">Messages sent</th><th class="n">Visitors</th>' \
+  && echo "$ARCH0" | tr -d '\n' | sed 's/  */ /g' | grep -qE "<td class=\"n\">0[0-9]{2}</td> <td>$TALLY_DATE</td> <td class=\"n\">1</td> <td class=\"n\">[1-9][0-9]*</td>" \
+  && ! echo "$ARCH0" | grep -q 'A visitor counts on the day' && [ "$(echo "$ARCH0" | tr -d '\n' | grep -o 'The mission, day by day.*Messages sent and visitors' | wc -l)" = "1" ] \
+  && ! curl -s -b $A $B/control | grep -q 'class="tally"' && ! curl -s $B/ | grep -q 'class="tally"' && ! curl -s $B/write | grep -q 'class="tally"' && ! curl -s $B/dashboard | grep -q 'class="tally"' && ! curl -s $B/about | grep -q 'class="tally"' \
+  && ! grep -q "MESSAGES SENT')}</dt>\|CALLSIGNS ISSUED')}</dt>" src/views/pages/public.js \
+  && ok "the tally — messages sent and visitors, total and day by day — stands in the archive, under the downloads, and nowhere else (not on the control page, nowhere public)" || bad "the tally is not in the archive as it should be, or is shown elsewhere"
 [ "$(curl -s -X POST -d 'username=captain' -d 'password=cap-pass' -o /dev/null -w '%{http_code}' $B/control/login)" = "401" ] \
   && ok "no second account exists" || bad "another login still works"
 [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/log)" = "404" ] \
@@ -450,8 +469,8 @@ done
 [ "$(curl -s -o /dev/null -w '%{redirect_url}' $B/messages)" = "$B/write" ] && [ "$(curl -s -o /dev/null -w '%{redirect_url}' $B/communicate)" = "$B/write#write" ] && [ "$(curl -s -o /dev/null -w '%{redirect_url}' $B/day/3)" = "$B/dashboard#mission" ] && [ "$(curl -s -o /dev/null -w '%{redirect_url}' $B/crew)" = "$B/dashboard#crew" ] && [ "$(curl -s -o /dev/null -w '%{redirect_url}' $B/habitat)" = "$B/dashboard#habitat" ] \
   && ok "the old addresses land where the thing is — /messages and /communicate on the Write page, /day/3, /crew and /habitat on their section of the dashboard page" || bad "an old address does not land on the Write page"
 ok "every old public address redirects into the landing page"
-[ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' $B/what)" = "301 $B/about#what" ] && [ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' $B/who-we-are)" = "301 $B/about#who-we-are" ] \
-  && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/about)" = "200" ] && ok "/about is a page of its own; /what and /who-we-are land on their section of it" || bad "the About page's addresses are wrong"
+[ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' $B/what)" = "301 $B/about" ] && [ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' $B/who-we-are)" = "301 $B/about#who-we-are" ] \
+  && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/about)" = "200" ] && ok "/about is a page of its own; /who-we-are lands on its section of it, /what on the page (its section is gone)" || bad "the About page's addresses are wrong"
 LOGPAGE=$(curl -s $B/logbook)
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/logbook)" = "200" ] || bad "/logbook is not a page"
 echo "$LOGPAGE" | grep -q "id=\"day-$TODAY\"" || bad "/logbook has no section for today (day $TODAY)"
@@ -473,28 +492,68 @@ done
 ! echo "$WRITE" | grep -q 'id="mission"\|id="habitat"\|id="crew"' || bad "the dashboard is still on the Write page"
 ok "the mission page carries the pop-up alone; the Write page the pop-up and the board; the dashboard page the mission, the habitat and the crew"
 ABOUT=$(curl -s $B/about)
-for sec in about-project what who-we-are; do
+for sec in about-project who-we-are; do
   echo "$ABOUT" | grep -q "<section class=\"about-sec\" id=\"$sec\"" || bad "the About page has no #$sec section"
 done
-echo "$ABOUT" | grep -q 'Distance as the material' && echo "$ABOUT" | grep -q 'What happens when you send something' && echo "$ABOUT" | grep -q 'Produced by' \
-  && ok "the About page carries all three texts — About, What this is, Who we are" || bad "the About page is missing a text"
+echo "$ABOUT" | grep -q 'Why are we doing this?' && echo "$ABOUT" | grep -q 'Produced by' && ! echo "$ABOUT" | grep -q 'id="what"\|What happens when you send something\|What this is\|The path of a message\|You already have a callsign\|You will get a callsign' \
+  && ! grep -q 'function whatFold' src/views/pages/info.js \
+  && ok "the About page carries About and Who we are (and the habitat between them) — What this is is gone (October)" || bad "the About page is missing a text, or What this is is still on it"
+# About in the words of October's text sheet (ABOUT_WEBSITE_TEXTS_FOR_YASHA): the section's line is the project's name;
+# MARS! in four paragraphs, the five workshops and the exhibition linked to zkm.de; Why are we doing this? with its line,
+# The Habitat – Red Dust City, The Insight; the announcement's and the message-writing paragraphs gone; the station's own
+# (More than Human, the readings, messages sent to space) kept; the distance to Mars the station's own figure for the day
+# the crew go in; the mission's facts with 17:00 at each end, eleven scientific missions and no timezone; in three languages
+echo "$ABOUT" | grep -q '<p class="dash-sub">MARS! – Mobilizing Awareness for Resilient Societies!</p>' && ! echo "$ABOUT" | grep -q 'The project, the distance, the archive' \
+  && echo "$ABOUT" | grep -q '<p>In the project MARS! – Mobilizing Awareness for Resilient Societies!, we want to challenge the signifier' && echo "$ABOUT" | grep -q 'What would we do if we could start over?' \
+  && echo "$ABOUT" | grep -q '<p>To this end, we invited scientists and citizen scientists' && echo "$ABOUT" | grep -q '<p>During the project that began in January 2026' \
+  && echo "$ABOUT" | grep -q 'The five prototype workshops <a href="https://zkm.de/en/2026/01/open-hertzlab-mars-habitat" target="_blank" rel="noopener">Habitat</a>, <a href="https://zkm.de/en/2026/02/open-hertzlab-mars-mental-health" target="_blank" rel="noopener">Mental Health</a>, <a href="https://zkm.de/en/2026/03/open-hertzlab-mars-food" target="_blank" rel="noopener">Food</a>, <a href="https://zkm.de/en/2026/04/open-hertzlab-mars-governance" target="_blank" rel="noopener">Governance</a>, and <a href="https://zkm.de/en/2026/05/open-hertzlab-mars-resource-management" target="_blank" rel="noopener">Resource Management</a> turned into a <a href="https://zkm.de/en/2026/06/mars" target="_blank" rel="noopener">concept exhibition</a> that ran at ZKM from June to September 2026.' \
+  && echo "$ABOUT" | grep -q '<h3>Why are we doing this?</h3>' && echo "$ABOUT" | grep -q '<p class="kicker">Playacting Mars in the middle of the city</p>' \
+  && echo "$ABOUT" | grep -qE 'the actual planet Mars will be 2[0-9]{2} million kilometres away from Earth' && ! echo "$ABOUT" | grep -q '26 million' \
+  && echo "$ABOUT" | grep -q '<p>Because ZKM is so much more than a museum' && echo "$ABOUT" | grep -q '<h3>The Habitat – Red Dust City</h3>' && echo "$ABOUT" | grep -q 'The dome (lent to us by Staatstheater Karlsruhe) has a diameter of just under 10 m' \
+  && echo "$ABOUT" | grep -q '<h3>The Insight</h3>' && echo "$ABOUT" | grep -q 'a spaceship called Earth' \
+  && ! echo "$ABOUT" | grep -q 'A durational performance on Karlsruhe\|Large space agencies\|Distance as the material\|The archive as the work\|Networked communication is built\|MARS!platz: Red Dust City</h3>' \
+  && ! echo "$ABOUT" | grep -q 'id="more-than-human"\|<h3>More than Human</h3>\|<h3>The readings</h3>\|Three live crickets share it with them\|The sensors that produce the readings on this page' \
+  && echo "$ABOUT" | grep -qE '<dt>START</dt><dd>[A-Z][a-z]{2} [0-9]{1,2} [A-Z][a-z]{2} 20[0-9]{2} · 17:00</dd>' && echo "$ABOUT" | grep -qE '<dt>END</dt><dd>[A-Z][a-z]{2} [0-9]{1,2} [A-Z][a-z]{2} 20[0-9]{2} · 17:00</dd>' && echo "$ABOUT" | grep -q '<dt>CREW</dt><dd>3</dd>' \
+  && echo "$ABOUT" | grep -q '<dt>SCIENTIFIC MISSIONS</dt><dd>11</dd>' && ! echo "$ABOUT" | grep -q '<dt>TIMEZONE</dt>' \
+  && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<h3>Warum tun wir das?</h3>' && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<dt>WISSENSCHAFTLICHE MISSIONEN</dt><dd>11</dd>' && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q 'Millionen Kilometer von der Erde entfernt' \
+  && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q '<h3>L’habitat – Red Dust City</h3>' && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q 'target="_blank" rel="noopener">Santé mentale</a>' \
+  && ok "About is in the words of October's text sheet — the project's name as the section's line, MARS! in four paragraphs with the workshops and the exhibition linked, Why are we doing this? with its line, The Habitat – Red Dust City, The Insight — the old paragraphs gone, More than Human and The readings gone too, Messages sent to space kept, the distance to Mars the station's own figure, the facts with 17:00 at each end, eleven scientific missions and no timezone, in three languages" || bad "the About page's texts are not the sheet's"
 # the About page, pared down: no "At this moment" panel, no "What is kept", no row of message states; the path of a message
 # in six steps — Write, Transmit, Reached MARS!platz, Pending approval, Transmitted to space, Replied back; under Who we are
 # the crew without a heading or a note over them, the credits without a heading, and no "Reach the production"
 ! echo "$ABOUT" | grep -q 'At this moment</div>' && ! echo "$ABOUT" | grep -q 'What is kept' && ! echo "$ABOUT" | grep -q 'Message states as shown in the interface' && ! echo "$ABOUT" | grep -q 'class="pipe' \
   && ! echo "$ABOUT" | grep -q 'Inside the habitat' && ! echo "$ABOUT" | grep -q 'addressed by designation' && ! echo "$ABOUT" | grep -q 'Outside the habitat' && ! echo "$ABOUT" | grep -q 'Reach the production' && ! echo "$ABOUT" | grep -q 'Replace these entries' \
   && ok "the About page no longer carries At this moment, What is kept, the row of states, Inside/Outside the habitat, the crew's note or Reach the production" || bad "a removed About panel is still on the page"
-node -e '
-const h = process.argv[1]; const steps = ["Write", "Transmit", "Reached MARS!platz", "Pending approval", "Transmitted to space", "Replied back"];
-const rows = [...h.matchAll(/<div class="row"><div class="t">(\d\d)<\/div>\s*<div class="m"><b>([^<]*)<\/b>/g)].map((m) => m[2]);
-process.exit(JSON.stringify(rows) === JSON.stringify(steps) ? 0 : 1);
-' "$ABOUT" && ok "the path of a message is six steps: Write, Transmit, Reached MARS!platz, Pending approval, Transmitted to space, Replied back" || bad "the path of a message is not the six steps"
-curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<b>MARS!platz erreicht</b>' && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q '<b>Transmis dans l’espace</b>' && ok "and in German and French" || bad "the six steps are not translated"
 # Who we are: no credits any more; the crew's eleven portraits (public/crew, from public/Astronaut_Pictures) and, under
 # Produced by, the partners' logos (public/partners, from public/PartnerLogo) — 1 and 2 in cooperation with, 3 to 5 supporters
 ! echo "$ABOUT" | grep -q 'To be credited' && ! echo "$ABOUT" | grep -q 'Technical direction' && ! echo "$ABOUT" | grep -q 'Supported by the Innovationsfonds' \
   && [ "$(echo "$ABOUT" | grep -o '<figure class="crew-pic"><img src="/crew/[a-z-]*\.jpg" alt="" width="800" height="1200" loading="lazy" decoding="async"><figcaption>[^<]*</figcaption></figure>' | wc -l)" = "11" ] \
   && ok "Who we are carries no credits, and the crew's eleven portraits, each with a name" || bad "the credits are still there, or the portraits are not, or they carry no names"
+# the three officers of the day (the sheet): Commanding, Health, Science in that order, each with its brief over the role
+# — Order & Communications, Health & Life Support, Research & Systems (the role lines in content/crew-and-inventory.json,
+# on the dashboard too) — the portrait of the person on shift that day when the shift plan names one (content/shifts.json,
+# from 08:00 at the venue), the role's name, their state; and the producer's line names the department and links Hertzlab
+node -e '
+const h = process.argv[1]; const i = h.indexOf("<div class=\"grid g3 officers-today\">"); const j = h.indexOf("</div></section>", i); const part = h.slice(i, j);
+const briefs = [...part.matchAll(/<div class="eyebrow">([^<]*)<\/div>/g)].map((m) => m[1]); const names = [...part.matchAll(/<h3 class="officer-title">([^<]*)<\/h3>/g)].map((m) => m[1]);
+process.exit(JSON.stringify(briefs) === JSON.stringify(["Order &amp; Communications", "Health &amp; Life Support", "Research &amp; Systems"]) && JSON.stringify(names) === JSON.stringify(["COMMANDING OFFICER", "HEALTH OFFICER", "SCIENCE OFFICER"]) && !/officer-pic/.test(part) ? 0 : 1);
+' "$ABOUT" && echo "$ABOUT" | grep -q 'Department for Artistic Research &amp; Development, <a href="https://zkm.de/en/hertzlab" target="_blank" rel="noopener">ZKM | Hertzlab</a><br>' \
+  && curl -s $B/dashboard | grep -q '<span class="officer-role">Order &amp; Communications</span>' && curl -s -H "Cookie: mcs_lang=de" $B/dashboard | grep -q '<span class="officer-role">Ordnung &amp; Kommunikation</span>' \
+  && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q 'Abteilung für künstlerische Forschung &amp; Entwicklung, <a href="https://zkm.de/en/hertzlab"' \
+  && ok "the three officers stand Commanding, Health, Science, each under its brief — Order & Communications, Health & Life Support, Research & Systems, the dashboard's role lines too — with no portrait while the shift plan names nobody; the producer is the Department for Artistic Research & Development, ZKM | Hertzlab, linked" || bad "the officers' cards or the producer's line are not the sheet's"
+# the shift plan: with today's crew named in content/shifts.json the About page carries their portraits over the roles —
+# from 08:00 at the venue; before 08:00 the day before's (the suite's station is on its fifth day; the file is read fresh)
+SHIFT_DAY=$(curl -s $B/api/status | grep -oE '"missionDay":[0-9]+' | cut -d: -f2); SHIFT_HOUR=$(TZ=Europe/Berlin date +%H); [ "$SHIFT_HOUR" -lt 8 ] && SHIFT_DAY=$((SHIFT_DAY - 1))
+node -e 'require("fs").writeFileSync(process.argv[1], JSON.stringify({ days: { [process.argv[2]]: { "COMMUNICATION OFFICER": "jain", "HEALTH OFFICER": "Lorenz", "SCIENCE OFFICER": "dipper" }, [String(Number(process.argv[2]) + 1)]: { "COMMUNICATION OFFICER": "wilcox", "HEALTH OFFICER": "schmidt", "SCIENCE OFFICER": "kautz" } } }))' "$CONTENT_DIR/shifts.json" "$SHIFT_DAY"
+ABOUT_S=$(curl -s $B/about)
+node -e '
+const h = process.argv[1]; const i = h.indexOf("<div class=\"grid g3 officers-today\">"); const j = h.indexOf("</div></section>", i); const part = h.slice(i, j);
+const pics = [...part.matchAll(/<figure class="officer-pic"><img src="\/crew\/([a-z-]+)\.jpg" alt="([^"]*)" width="800" height="1200" loading="lazy" decoding="async"><figcaption>([^<]*)<\/figcaption><\/figure>/g)].map((m) => [m[1], m[3]]);
+process.exit(JSON.stringify(pics) === JSON.stringify([["jain", "Yasha Jain"], ["lorenz", "Tina Lorenz"], ["dipper", "Götz Dipper"]]) ? 0 : 1);
+' "$ABOUT_S" && grep -q "const day = Number(mission.clampedDay) - (Number.isFinite(hour) && hour < 8 ? 1 : 0);" src/lib/content.js && grep -q 'if (!mission || mission.phase !== '"'"'ACTIVE'"'"') return {};' src/lib/content.js \
+  && grep -q '"_example": {' content/shifts.json && [ "$(node -e 'console.log(Object.keys(JSON.parse(require("fs").readFileSync("content/shifts.json","utf8")).days).length)')" = "0" ] \
+  && ok "with the day's crew named in content/shifts.json (surnames as crew.json spells the files, in any case) their portraits stand over the roles — Jain, Lorenz, Dipper — the day's from 08:00 at the venue, the day before's until then, none before the run; the shipped file names nobody and shows the shape" || bad "the shift plan's portraits are not on the About page as they should be"
+cp content/shifts.json "$CONTENT_DIR/shifts.json"
 node -e '
 const h = process.argv[1]; const names = [...h.matchAll(/<figure class="crew-pic">.*?<figcaption>([^<]*)<\/figcaption>/g)].map((m) => m[1]);
 const want = ["Till Bechtloff", "Götz Dipper", "Jan Gerigk", "Yasha Jain", "Dominik Kautz", "Bernd Lintermann", "Tina Lorenz", "Laura Schmidt", "Morgan Stricot", "Matthieu Vlaminck-Maurer", "Dan Wilcox"];
@@ -524,10 +583,18 @@ echo "$FOOT" | grep -q '<nav class="tk-nav" aria-label="The station, page by pag
   && echo "$ABOUT" | grep -q '<a class="tk-about" href="/about" aria-current="page">' && echo "$WRITE" | grep -q '<a class="tk-write" href="/write#write" aria-current="page">' && echo "$DASH" | grep -q '<a class="tk-dash" href="/dashboard" aria-current="page">' && ! echo "$FOOT" | grep -q 'tk-menu\|tk-dropdown\|tk-row' \
   && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '<span>Schreib der Crew</span></a>' && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '<span>Missions-Dashboard live</span></a>' && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '<span>Über</span></a></nav>' \
   && grep -q 'body.landing .tk-nav { flex: 1 1 auto; min-width: 0; display: flex; justify-content: center;' public/sheet.css && grep -q '  body.landing .tk-nav { display: none; }' public/sheet.css \
-  && grep -q 'body.landing .tk-nav a, :root\[data-theme="dark"\] body.landing .tk-nav a { display: inline-flex; align-items: center; gap: 9px; min-height: 40px; padding: 0 18px 0 14px; border-radius: 12px; border: 1px solid #0f1116; background: #0f1116;' public/sheet.css && ! grep -q 'a.tk-write { background: var(--mars)' public/sheet.css \
-  && grep -q 'body.landing .tk-nav a\[aria-current="page"\], :root\[data-theme="dark"\] body.landing .tk-nav a\[aria-current="page"\], body.landing .tk-nav a\[aria-current="page"\]:hover, :root\[data-theme="dark"\] body.landing .tk-nav a\[aria-current="page"\]:hover { background: var(--cobalt-fill);' public/sheet.css \
-  && ok "the header carries the three keys in the middle of its row — Write to the crew (with the pen; it opens the Write page's pop-up), Live Mission Dashboard, About — black tiles with their signs, 40px tall, the page's own in cobalt, in the three languages; no three-lines menu; a phone held upright keeps them off its row" || bad "the header's links are not there, or the menu is"
+  && grep -q 'body.landing .tk-nav a, :root\[data-theme="dark"\] body.landing .tk-nav a { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 22px 0 18px; border-radius: 14px; border: 1px solid transparent; background: #0f1116;' public/sheet.css \
+  && grep -q 'body.landing .tk-nav a.tk-write, :root\[data-theme="dark"\] body.landing .tk-nav a.tk-write { background: linear-gradient(180deg, #ff8a3d, #ff5a1f); color: #1a0a02;' public/sheet.css && grep -q 'body.landing .tk-nav a.tk-dash, :root\[data-theme="dark"\] body.landing .tk-nav a.tk-dash { background: linear-gradient(180deg, #4f63ff, #2f45e8); color: #fff;' public/sheet.css && grep -q 'body.landing .tk-nav a.tk-about, :root\[data-theme="dark"\] body.landing .tk-nav a.tk-about { background: linear-gradient(180deg, #2a2c36, #0f1116); color: #fff;' public/sheet.css \
+  && grep -q 'body.landing .tk-nav a\[aria-current="page"\], :root\[data-theme="dark"\] body.landing .tk-nav a\[aria-current="page"\] { outline: 3px solid var(--paper); outline-offset: -5px; }' public/sheet.css \
+  && grep -q 'body.landing .tk-bar { display: flex; align-items: center; gap: 12px; height: 76px;' public/sheet.css && grep -q 'body.landing .tk-brand { display: inline-block; flex: none; font-family: var(--display); font-size: 26px; font-weight: 700;' public/sheet.css && grep -q 'border: 1px solid var(--mars); background: var(--mars); color: #fff;' public/sheet.css \
+  && grep -q 'html { scroll-padding-top: 124px; }' public/sheet.css && [ "$(grep -c 'calc(100vh - 113px)' public/sheet.css)" = "3" ] && ! grep -q 'calc(100vh - 101px)' public/sheet.css \
+  && grep -q 'body.landing .space .dome-nudge { position: absolute; z-index: 3; left: 50%; bottom: 12px; margin-left: -29px; color: var(--mars);' public/sheet.css \
+  && ok "the header carries the three keys in the middle of its row — Write to the crew (with the pen; it opens the Write page's pop-up), Live Mission Dashboard, About — 48px tall in 16px type, each in a colour of its own (Mars, cobalt, ink), the page's own ringed, the name 26px and the sol a solid Mars pill in a 76px row (October: bigger, colour-coded), in the three languages; the arrow down in Mars; no three-lines menu; a phone held upright keeps them off its row" || bad "the header's links are not there, or the menu is"
 echo "$FOOT" | grep -q "location.replace('/about?from=home'" && ok "the landing page's old #about, #what and #who-we-are lead there too" || bad "old About addresses lost"
+grep -q "if (!onWrite) { window.location.href = '/write#exchanges'; return; }" public/write.js && grep -q "var wall = document.getElementById('exchanges'); if (wall) wall.scrollIntoView({ behavior: 'smooth', block: 'start' });" public/write.js \
+  && grep -q "document.addEventListener('mcs:arrived', function (e) {" public/write.js && grep -q "setTimeout(leave, hold - 250);" public/write.js && grep -q "document.dispatchEvent(new CustomEvent('mcs:arrived', { detail: { hold: hold, kiosk:" public/composer.js \
+  && grep -q "document.addEventListener('mcs:arrived', function (e) {" public/tabbar.js && grep -q "if (location.hash === '#write') history.replaceState(null, '', '#exchanges');" public/write.js \
+  && ok "once a message has arrived — the dial holding on ARRIVED — the visitor is taken to the board before the empty box could come back: the pop-up closes and the wall comes into view on the Write page, any other page goes to the Write page's wall, a phone's dock lowers itself (October)" || bad "the pop-up does not take the visitor to the board once the message has arrived, or the box shows again"
 V6=/tmp/visitor6.jar; rm -f $V6; curl -s -c $V6 -b $V6 -o /dev/null $B/
 curl -s -b $V6 -c $V6 -X POST --data-urlencode "body=Sent from the window: the crossing carries a key to the board." -o /dev/null $B/communicate
 # the Write page (public.js, writePage): the board as a wall of notes (boardWall) under the header alone — no masthead —
@@ -541,7 +608,7 @@ echo "$WRITE" | grep -q '<body class="landing inner messages write">' && echo "$
   && echo "$WRITE" | grep -q '<div class="feed-scroll" id="feed" data-poll="/api/board?limit=20&amp;wall=1" data-open="1"' && echo "$WRITE" | grep -q 'data-more="[01]" data-wall="1">' && echo "$WRITE" | grep -q '<div class="board wall">' \
   && echo "$WRITE" | grep -q '<div class="wall-bar" id="feed-bar">' \
   && echo "$WRITE" | grep -q '<div class="feed-end\( is-done\)\?" id="feed-end" data-loading="Loading older exchanges…" data-done="The beginning of the correspondence"' \
-  && echo "$WRITE" | grep -q '<h2 class="dev-title" id="dev-title">Write to the crew</h2>' && echo "$WRITE" | grep -q '<span>Your callsign</span>' && echo "$WRITE" | grep -q '<span class="dev-signal" title="One-way signal">One-way signal <b>[0-9]* min</b> · [0-9.]* au</span>' \
+  && echo "$WRITE" | grep -q '<h2 class="dev-title" id="dev-title">Write to the crew</h2>' && echo "$WRITE" | grep -q '<div class="dev-head is-bare">' && ! echo "$WRITE" | grep -q '<span>Your callsign</span>\|<span>Operator</span>\|class="dev-chip' && ! curl -s $B/ | grep -q '<span>Operator</span>\|class="dev-chip' && echo "$WRITE" | grep -q '<span class="dev-signal" title="One-way signal">One-way signal <b>[0-9]* min</b> · [0-9.]* au</span>' \
   && echo "$WRITE" | grep -q 'maxlength="1000"' && echo "$WRITE" | grep -q '>0 / 1000</span>' && echo "$WRITE" | grep -q '<span class="lbl">Tags · choose up to 3</span>' \
   && echo "$WRITE" | grep -q '<title>Write to the crew — MARS!platz – Ground Station</title>' && curl -s $B/ | grep -q '<title>MARS!platz – Ground Station</title>' \
   && echo "$WRITE" | grep -q 'src="/composer.js' && echo "$WRITE" | grep -q 'src="/board.js' && echo "$WRITE" | grep -q 'src="/write.js' && ! echo "$WRITE" | grep -q 'src="/habitat.js\|src="/folder.js\|src="/hardware.js' \
@@ -557,8 +624,8 @@ echo "$WRITE" | grep -q '<body class="landing inner messages write">' && echo "$
   && grep -q 'body.landing .portal-pop .dev-led, body.landing .portal-pop .dev-grip, body.landing .portal-pop .dev-knob, body.landing .portal-pop .dev-vents { display: none; }' public/sheet.css \
   && grep -q "if (!phone() && location.hash === '#write') setOpen(true, true);" public/write.js && grep -q "var a = e.target.closest('a\[href=\"#write\"\], a\[href=\"/#write\"\]' + (onWrite ? ', a\[href=\"/write#write\"\]' : ''));" public/write.js \
   && grep -q "var board = e.target.closest('.transit-board');" public/write.js && grep -q "if (e.key === 'Escape' && !phone() && isOpen()) setOpen(false, false);" public/write.js \
-  && grep -q "if (onWrite && crossing && !now && !phone() && isOpen()) setTimeout(function () { if (!stage.querySelector('.transit-block')) setOpen(false, false); }, 900);" public/write.js \
-  && grep -q 'body.landing .wall-bar { position: sticky; top: 101px; z-index: 6;' public/aura.css && grep -q '  body.landing.messages .wall-bar { top: 83px; flex-wrap: wrap; margin: 0 -16px; padding: 8px 16px 10px; gap: 8px 12px; }' public/aura.css && grep -q '  body.landing.messages .wall-bar .feed-filter .chip { flex: none; }' public/aura.css \
+  && grep -q "if (crossed && !document.body.classList.contains('crossing') && phone() && isOpen()) setOpen(false, false);" public/tabbar.js && grep -q "if (isOpen()) setOpen(false, false);" public/write.js \
+  && grep -q 'body.landing .wall-bar { position: sticky; top: 113px; z-index: 6;' public/aura.css && grep -q '  body.landing.messages .wall-bar { top: 83px; flex-wrap: wrap; margin: 0 -16px; padding: 8px 16px 10px; gap: 8px 12px; }' public/aura.css && grep -q '  body.landing.messages .wall-bar .feed-filter .chip { flex: none; }' public/aura.css \
   && grep -q 'body.landing .wall-wrap .feed-scroll { position: static; display: block; }' public/aura.css \
   && grep -qF "if (/^\\/?#write$/.test(href)) a.setAttribute('href', '/write#write');" public/tabbar.js && grep -qF "else if (/^\\/?#exchanges$/.test(href)) a.setAttribute('href', '/write#exchanges');" public/tabbar.js \
   && grep -q "tab('write', '/write#write', 'Write', current === '/write' ? ' is-on' : '')" src/views/layout.js \
@@ -567,8 +634,8 @@ echo "$WRITE" | grep -q '<body class="landing inner messages write">' && echo "$
   && echo "$WRITE" | grep -q '<a class="write-float" href="#write" id="write-fab" aria-controls="write" aria-expanded="false"><span class="wf-idle">' && echo "$WRITE" | grep -q '<span class="wf-cross" aria-live="polite"><svg class="wf-ring" viewBox="0 0 36 36" aria-hidden="true">' \
   && curl -s -b $V6 $B/about | grep -q '<a class="write-float is-crossing" href="#write" id="write-fab"' \
   && grep -q "body.landing .write-float.is-crossing .wf-cross { display: flex; }" public/aura.css && grep -q "if (ring) ring.setAttribute('stroke-dasharray', (p \* 100).toFixed(1) + ' 100');" public/write.js \
-  && grep -q "  body.landing.dashboard .dash-links { position: sticky; top: 101px; z-index: 8;" public/aura.css && grep -q "  body.landing.dashboard .frail { top: 178px; }" public/aura.css \
-  && grep -q "  body.landing.dashboard .folder-body .dpanel:not(.blogp) > .dpanel-head { position: sticky; top: 166px; z-index: 4;" public/aura.css && grep -q "  body.landing.dashboard .folder-body .dpanel.blogp > .dpanel-head { position: sticky; top: 178px; z-index: 4; }" public/aura.css \
+  && grep -q "  body.landing.dashboard .dash-links { position: sticky; top: 113px; z-index: 8;" public/aura.css && grep -q "  body.landing.dashboard .frail { top: 190px; }" public/aura.css \
+  && grep -q "  body.landing.dashboard .folder-body .dpanel:not(.blogp) > .dpanel-head { position: sticky; top: 178px; z-index: 4;" public/aura.css && grep -q "  body.landing.dashboard .folder-body .dpanel.blogp > .dpanel-head { position: sticky; top: 190px; z-index: 4; }" public/aura.css \
   && ok "the composer is a window in the middle of the screen over the blurred page, on every public page — opened by the floating Write key at the foot of the window, a #write door or /write#write, closed by its cross, Escape or a click on the blur; your callsign and the one-way signal in its head, a thousand characters, up to three tags, a Message Board key once the message is crossing; the floating key is the crossing itself while a message is on its way, on every page; the Write page and the dashboard page carry no masthead; the dashboard's doors and sols and the open folder's head stay put while its content scrolls" || bad "the Write page or the mission page's composer is not as it should be"
 # the crossing's Message Board key: in the transit display of the page's composer, not on the installation's writing screen
 curl -s -b $V6 $B/about | grep -q '<a class="btn primary transit-board" href="/write#exchanges">Message Board <span aria-hidden="true">→</span></a>' \
@@ -1574,10 +1641,46 @@ curl -s -b $SK "$B/screen/board?lang=en&theme=light" | grep -q '<html lang="en" 
   && ok "?lang=en|fr and ?theme=light switch it" || bad "the switches in the address do not work"
 echo "$SCR" | grep -q 'class="landing inner screen screen-board" data-screen="board" data-fit="clip"' && curl -s -b $SK $B/screen/habitat | grep -q 'data-fit="scale" data-min-width="960"' \
   && ok "the board is cut clean at the foot (data-fit=clip), the habitat scaled to fit, never narrower than its layout (data-min-width)" || bad "the fit attributes are wrong"
+# every screen fits a full screen, whatever the monitor (October): the trends drawn to the stage's height landscape (a
+# graph as wide as its panel at any scale cannot be scaled to fit the height), scaled upright; the habitat's hardware
+# charts four across under the instruments, drawn as short as a short screen needs; the fitting looked at every other
+# second and after any change under the stage, down to a third of the size; the gallery's columns by the number of
+# pictures; the landing screen's Earth at the foot of the screen
+curl -s -b $SK $B/screen/trends | grep -q 'data-screen="trends" data-fit="scale" data-fit-landscape="fill" data-min-width="520"' \
+  && grep -q "var f = (fitLand && window.innerWidth > window.innerHeight) ? fitLand : fitBase;" public/screen.js && grep -q "if (document.body.getAttribute('data-fit') !== fit) {" public/screen.js \
+  && grep -q 'body.screen.screen-trends\[data-fit="fill"\] .tchart-svg { flex: 1 1 auto; min-height: 0; width: auto; height: 100%; max-width: 100%; max-height: none; margin: 0 auto; }' public/screen.css \
+  && grep -q "if (room.width > 0 && room.height > 0) H = Math.max(H, Math.round(W \* room.height / room.width));" public/habitat.js \
+  && grep -q 'body.screen.screen-habitat #habitat .hw-charts { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }' public/screen.css \
+  && grep -q "want = Math.max(0.3, Math.min(top, want));" public/screen.js && grep -q "}).observe(fitEl, { childList: true, subtree: true, attributes: true });" public/screen.js && ! grep -q "attributeFilter" public/screen.js \
+  && grep -q "if (e.need > e.have + 1 || e.needW > e.haveW + 1 || (e.need < e.have \* 0.92 && curZ < top - 0.02 && !wideBound)) fitNow();" public/screen.js && grep -q "}, 2000);" public/screen.js \
+  && grep -q "if (el.classList.contains('is-cut') !== cut) el.classList.toggle('is-cut', cut);" public/screen.js \
+  && grep -q 'body.screen.screen-media .mgrid:not(:has(> :nth-child(5))) { grid-template-columns: repeat(2, minmax(0, 1fr)); }' public/screen.css && grep -q 'body.screen.screen-media .mgrid:has(> :nth-child(9)):not(:has(> :nth-child(16))) { grid-template-columns: repeat(4, minmax(0, 1fr)); }' public/screen.css \
+  && grep -q 'body.screen.screen-landing .stage { padding: 0 var(--gutter) 0; }' public/screen.css && grep -q 'body.screen.screen-landing .space { padding-bottom: 0; }' public/screen.css \
+  && ok "every screen fits a full screen on any monitor: the trends drawn to the height landscape and scaled upright, the habitat's charts four across and as short as the screen needs, the fitting watched and repeated, the gallery's columns by its count, the Earth at the landing screen's foot" || bad "the screens' fitting is not as it should be"
 ! echo "$SCR" | grep -q 'class="tabbar\|class="foot\|id="consent"' && ok "no bar of keys, no foot, no cookie card on a screen" || bad "the station's chrome is on a screen"
 echo "$SCR" | grep -q '/screen.css?v=' && echo "$SCR" | grep -q '/screen.js?v=' && echo "$SCR" | grep -q '/board.js?v=' && ok "each screen loads the screens' stylesheet and script over the site's, and the script that keeps its piece live" || bad "a screen's assets are missing"
 for n in landing habitat board write mission blogs day trends media; do curl -s -b $SK $B/screen/$n; done | grep -q 'id="stage-clock"' && ok "the venue's clock in the head" || bad "no clock on the screens"
 curl -s -b $SK $B/screen/day | grep -q 'class="screen-three"' && ok "the day is three panels in a row (one under the other upright)" || bad "the day screen is not three panels"
+# the ground station's screen (October: "a URL that never asks for cookies and always opens the writing screen and the
+# message board with the operator as Bodenstation"): /screen/station — the writing screen's composer, operator
+# BODENSTATION, posting to /screen/write, and the station's board beside it, cut clean at the foot; listed at /screens
+STN=$(curl -s -b $SK "$B/screen/station?lang=en")
+echo "$STN" | grep -q 'class="landing inner screen screen-station" data-screen="station" data-fit="clip"' && echo "$STN" | grep -q '<div class="screen-station">' \
+  && echo "$STN" | grep -q '<div class="screen-write station-write"><section class="device composer-device"' && echo "$STN" | grep -q 'class="dev-chip"[^>]*>BODENSTATION</span>' \
+  && echo "$STN" | grep -q 'action="/screen/write?lang=en"' && echo "$STN" | grep -q 'data-refresh="/screen/write/composer?lang=en"' \
+  && echo "$STN" | grep -q '<div class="station-board"><div class="feed-wrap"><div class="feed-scroll" id="feed" data-poll="/api/board?lang=en&amp;limit=400&amp;station=1"' \
+  && ! echo "$STN" | grep -q 'id="consent"\|consent-veil' && echo "$STN" | grep -q '/composer.js?v=' && echo "$STN" | grep -q '/screen-write.js?v=' && echo "$STN" | grep -q '/board.js?v=' \
+  && curl -s -b $SK "$B/screens?lang=en" | grep -q '<a href="/screen/station"><b>Ground station</b><span>/screen/station</span></a>' && curl -s -b $SK $B/screens | grep -q '<a href="/screen/station"><b>Bodenstation</b>' \
+  && grep -q 'body.screen.screen-station .screen-station { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 22px; height: 100%; min-height: 0; }' public/screen.css \
+  && grep -q "req.params.name === 'write' || req.params.name === 'station' ? writeCtx(req) : screenCtx(req)" src/server.js \
+  && ok "the ground station's screen, /screen/station: the writing screen's composer with BODENSTATION as its operator, posting to the writing screen's address, and the station's board beside it, cut at the foot — no cookie question, listed among the screens" || bad "the ground station's screen is not as it should be"
+# no screen address ever asks about cookies (October): /screen and /screens/<name> are sent on, a name that is no screen's
+# answers with the list and a word — never the site's 404 page, which carries the cookie question
+[ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' $B/screen)" = "302 $B/screens" ] && [ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' "$B/screens/station?lang=en")" = "302 $B/screen/station?lang=en" ] \
+  && [ "$(curl -s -b $SK -o /dev/null -w '%{http_code}' "$B/screen/nope?lang=en")" = "404" ] && curl -s -b $SK "$B/screen/nope?lang=en" | grep -q '<p class="screen-index-missing" role="alert">There is no screen called <code>nope</code>. These are the screens:</p>' \
+  && ! curl -s -b $SK "$B/screen/nope" | grep -q 'consent-veil\|id="consent"' && ! curl -s -b $SK $B/screens | grep -q 'consent-veil\|id="consent"' && [ "$(curl -s -b $SK -D - -o /dev/null $B/screens | grep -ci 'set-cookie')" = "0" ] \
+  && ok "no screen address asks about cookies: /screen and /screens/<name> are sent on, a name that is no screen's answers with the list and a word (404), never the site's 404 page with its cookie question; the list sets no cookie" || bad "a screen address reaches the cookie question"
+
 BL=$(curl -s -b $SK $B/screen/blogs)
 echo "$BL" | grep -q 'class="screen-blogs" id="screen-blogs"' && echo "$BL" | grep -q 'data-fit="none"' && echo "$BL" | grep -q '/screen-blogs.js?v=' \
   && node -e 'const h = process.argv[1]; const a = h.indexOf("id=\"blog-commander\""), b = h.indexOf("id=\"blog-science\""), c = h.indexOf("id=\"blog-health\""); process.exit(a > -1 && a < b && b < c ? 0 : 1);' "$BL" \
@@ -1863,8 +1966,8 @@ MODS="hydroponics comms science airlock kitchen storage lounge quarters health l
 [ -n "$HAB" ] && echo "$HAB" | grep -q '<section class="about-sec habitat-sec" id="inside" aria-labelledby="inside-title">' && echo "$HAB" | grep -q '<div class="hab-card">' \
   && echo "$HAB" | grep -q '<h2 class="bigsec" id="inside-title">What’s inside the habitat?</h2>' \
   && echo "$HAB" | grep -q '<p class="dash-sub"><span class="dome-meta dome-hint"><span class="dome-hint-click">Point at a room to know what is inside.</span><span class="dome-hint-tap">Tap a room to know what is inside.</span></span></p>' \
-  && echo "$ABOUTP" | grep -q '<nav class="about-jump" aria-label="About, What this is, Who we are">' && echo "$ABOUTP" | grep -q '<a href="#about-project">About</a><a href="#what">What this is</a><a href="#inside">What’s inside the habitat?</a><a href="#who-we-are">Who we are</a>' \
-  && [ "$(echo "$ABOUTP" | node -e 'let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const a = s.indexOf("id=\"what\""), b = s.indexOf("id=\"inside\""), c = s.indexOf("id=\"who-we-are\""); process.stdout.write(a > -1 && b > a && c > b ? "ordered" : "out of order"); });')" = "ordered" ] \
+  && echo "$ABOUTP" | grep -q '<nav class="about-jump" aria-label="On this page">' && echo "$ABOUTP" | grep -q '<a href="#about-project">About</a><a href="#inside">What’s inside the habitat?</a><a href="#who-we-are">Who we are</a>' \
+  && [ "$(echo "$ABOUTP" | node -e 'let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const a = s.indexOf("id=\"about-project\""), b = s.indexOf("id=\"inside\""), c = s.indexOf("id=\"who-we-are\""); process.stdout.write(a > -1 && b > a && c > b ? "ordered" : "out of order"); });')" = "ordered" ] \
   && ! echo "$LAND" | grep -q 'id="habitat-dome"\|class="hab-card"\|sheet-p3' \
   && echo "$HAB" | grep -q '<p class="in-credit">AI generated image</p>' && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<p class="in-credit">KI-generiertes Bild</p>' && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q '<p class="in-credit">Image générée par IA</p>' \
   && echo "$HAB" | grep -q '<section class="dome-panel is-inside" id="habitat-dome" aria-label="What’s inside the habitat?">' \
@@ -1984,7 +2087,7 @@ grep -q 'body.landing .folder { display: grid; grid-template-columns: 236px minm
   && echo "$PHONESHEETA" | grep -q 'body.landing .folder-tabs { position: sticky; top: 83px; z-index: 5; display: block; padding: 8px 8px 0;' && echo "$PHONESHEETA" | grep -q 'body.landing .fgroups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));' \
   && echo "$PHONESHEETA" | grep -q 'body.landing .frows { display: block; }' && echo "$PHONESHEETA" | grep -q 'body.landing .frow { display: none; }' && echo "$PHONESHEETA" | grep -q 'body.landing .frow.is-cur { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));' \
   && echo "$PHONESHEETA" | grep -q 'body.landing .folder-head { display: none; }' \
-  && grep -q '  body.landing .frail { position: sticky; top: 112px; display: grid; gap: 12px; }' public/aura.css && grep -q '  body.landing .folder-title { margin: 0; font-family: var(--display); font-size: 19px;' public/aura.css \
+  && grep -q '  body.landing .frail { position: sticky; top: 124px; display: grid; gap: 12px; }' public/aura.css && grep -q '  body.landing .folder-title { margin: 0; font-family: var(--display); font-size: 19px;' public/aura.css \
   && grep -q '  body.landing .folder > .folder-body { min-height: calc(100vh - 150px); }' public/aura.css \
   && grep -q "if (e.key === 'ArrowRight' || e.key === 'ArrowDown') n = (i + 1) % tabs.length;" public/folder.js && ! grep -q "function show()" public/folder.js \
   && ok "the index is a rail of keys at the left of the folder on a wider screen — Mission dashboard over it, the tracks one under the other, sticky under the header, the panel beside it, the box a page tall at the least; the schedule's two columns over 1100px; a phone keeps its segmented control of the three tracks and the row of tabs under it, stuck under the top bar" || bad "the index is not a rail as it should be"
@@ -2019,7 +2122,7 @@ echo "$LAND" | grep -q '<svg class="space-arc" id="space-arc" aria-hidden="true"
 echo "$LAND" | grep -q '<section class="sheet sheet-p0 space" id="top" aria-label="From Earth to the habitat" data-page>' \
   && echo "$LAND" | grep -q '<div class="space-dome" data-sky-solid aria-hidden="true">' && echo "$LAND" | grep -q '<img class="space-dome-img" src="/space/habitat.png" alt="" width="1004" height="699" decoding="async">' \
   && echo "$LAND" | grep -q '<i class="space-line" data-sky-solid aria-hidden="true"></i>' && echo "$LAND" | grep -q '<div class="space-earth" aria-hidden="true">' \
-  && echo "$LAND" | grep -q '<img class="space-earth-img is-night" src="/space/earth.jpg" alt="" width="1414" height="340" decoding="async">' \
+  && echo "$LAND" | grep -q '<img class="space-earth-img" src="/space/earth.jpg" alt="" width="1414" height="340" decoding="async">' \
   && echo "$LAND" | grep -q '<svg class="space-halo is-desk" viewBox="0 0 1414 340" aria-hidden="true"><g fill="none" stroke="#fff" stroke-linecap="round" stroke-dasharray="0 1.2">' \
   && echo "$LAND" | grep -q '<svg class="space-halo is-phone" viewBox="0 0 1414 340" aria-hidden="true"><g fill="none" stroke="#fff" stroke-linecap="round" stroke-dasharray="0 4.4">' \
   && [ "$(echo "$LAND" | grep -o '<circle cx="674" cy="1079" r="[0-9]*" pathLength="720" opacity="0\.[0-9]*"/>' | wc -l)" = "20" ] && echo "$LAND" | grep -q '<circle cx="674" cy="1079" r="1005" pathLength="720"' \
@@ -2085,14 +2188,14 @@ echo "$LAND" | grep -q 'Also, at <b>19:00 CET</b>, the daily communication windo
   && grep -q "const ZONE = 'CET';" src/views/pages/landing.js && grep -q "function zoneName() { return ZONE; }" src/views/pages/landing.js && grep -q "second: '2-digit' }) + ' CET'; }" src/views/control/index.js \
   && ok "the crew answer from 19:00, the venue's zone always named CET — never CEST — on every page and the desk" || bad "the communication window is not 19:00 CET, or CEST is still written somewhere"
 echo "$LAND" | grep -q 'Communication window daily <b>19:00 CET</b>' && ok "and the running line says so" || bad "the running line does not name the window"
-# the room by day: the Earth in daylight (the strip cut from Earth_Day.png), the night strip not fetched by day, nor the day strip by night
-echo "$LAND" | grep -q '<img class="space-earth-img is-night" src="/space/earth.jpg" alt="" width="1414" height="340" decoding="async">' && echo "$LAND" | grep -q '<img class="space-earth-img is-day" data-src="/space/earth-day.jpg" alt="" width="1055" height="254" decoding="async">' \
-  && curl -s -H "Cookie: mcs_theme=light" $B/ | grep -q '<img class="space-earth-img is-night" data-src="/space/earth.jpg" alt=""' && curl -s -H "Cookie: mcs_theme=light" $B/ | grep -q '<img class="space-earth-img is-day" src="/space/earth-day.jpg" alt=""' \
-  && curl -s -o /dev/null -w '%{http_code} %{content_type}' $B/space/earth-day.jpg | grep -q '200 image/jpeg' \
-  && grep -q 'body.landing .space-earth-img.is-day { display: none; }' public/sheet.css && grep -q ':root\[data-theme="light"\] body.landing .space-earth-img.is-night { display: none; }' public/sheet.css && grep -q ':root\[data-theme="light"\] body.landing .space-earth-img.is-day { display: block; }' public/sheet.css \
-  && grep -q ':root\[data-theme="light"\] body.landing .space-stars { display: none; }' public/sheet.css && grep -q ':root\[data-theme="light"\] body.landing .space-dome-img { filter: invert(1) opacity(.84); }' public/sheet.css \
-  && grep -qF "document.querySelectorAll('img.space-earth-img[data-src]').forEach(function (im) { im.src = im.getAttribute('data-src'); im.removeAttribute('data-src'); });" public/switches.js \
-  && ok "the room is daylight by day — the Earth in daylight at its foot (earth-day.jpg, the night strip's proportions), a pale sky, no stars, the habitat's drawing dark on it — and night by night; the other strip is fetched only when the theme is turned" || bad "the room by day is not as it should be"
+# the room by day: the night's (October: "the same image for day and night — the default night image"): the same Earth
+# strip, the same stars and drawing, no day room in the stylesheet, nothing swapped when the theme turns
+echo "$LAND" | grep -q '<img class="space-earth-img" src="/space/earth.jpg" alt="" width="1414" height="340" decoding="async">' && ! echo "$LAND" | grep -q 'earth-day.jpg\|is-night\|is-day\|data-src="/space' \
+  && curl -s -H "Cookie: mcs_theme=light" $B/ | grep -q '<img class="space-earth-img" src="/space/earth.jpg" alt=""' && ! curl -s -H "Cookie: mcs_theme=light" $B/ | grep -q 'earth-day.jpg' \
+  && ! grep -q 'data-theme="light"\] body.landing .space' public/sheet.css && ! grep -q 'space-earth-img.is-day\|space-earth-img.is-night\|space-earth-img { -webkit-mask-image' public/sheet.css \
+  && ! grep -q 'space-earth-img\[data-src\]' public/switches.js && ! grep -q 'EARTH_DAY\|earth-day.jpg"' src/views/pages/landing.js \
+  && grep -q "the first page's room, by day as by night" public/sheet.css \
+  && ok "the first page's room is the night's by day too — the same Earth strip at its foot, the same stars and drawing, no day room, nothing swapped when the theme turns" || bad "the room by day is not the night's"
 # the two calls, right after the room: Send a message to the crew (approved messages are sent into space) and Follow what the crew is doing — live
 echo "$LAND" | grep -q '<div class="calls" id="calls">' && ! echo "$LAND" | grep -q 'sheet-calls' \
   && echo "$LAND" | grep -q '<a class="call call-write" href="#write">' && echo "$LAND" | grep -q '<a class="call call-live" href="/dashboard">' \
@@ -2111,13 +2214,13 @@ echo "$LAND" | grep -q '<div class="calls" id="calls">' && ! echo "$LAND" | grep
   && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '<h2 class="call-title">Schick der Crew eine Nachricht</h2>' && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '<strong class="call-beam">Freigegebene Nachrichten werden ins All gefunkt</strong>' && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '>GESCHRIEBEN</text>' \
   && curl -s -H "Cookie: mcs_lang=fr" $B/ | grep -q '<strong class="call-beam">Les messages approuvés sont émis dans l’espace</strong>' && curl -s -H "Cookie: mcs_lang=fr" $B/ | grep -q '<h2 class="call-title">Suivez ce que fait l’équipage — en direct</h2>' \
   && grep -q "sentToSpace: g(\"SELECT COUNT(DISTINCT message_id) n FROM space_relay WHERE state = 'SENT'\")," src/lib/data.js && ! grep -q 'call-fig\|call-now' src/views/pages/landing.js \
-  && grep -q 'body.landing .calls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: stretch; margin: 14px 0 0; }' public/sheet.css && grep -q '  body.landing .page2 { display: grid; grid-template-columns: minmax(0, 1fr) min(460px, 42%); gap: 20px; align-items: stretch; }' public/sheet.css && grep -q '  body.landing .note-lead { margin-top: 0; font-size: 21px; line-height: 1.38; }' public/sheet.css && ! grep -q '@media (max-width: 1100px) and (min-width: 761px)' public/sheet.css && grep -q '  body.landing .call-beam { font-size: 25px; }' public/sheet.css \
+  && grep -q 'body.landing .calls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: stretch; margin: 14px 0 0; }' public/sheet.css && grep -q '  body.landing .page2 { --note-w: 1000px; --calls-w: 460px; display: grid; grid-template-columns: minmax(0, var(--note-w)) minmax(min(var(--calls-w), 42%), 1fr); gap: 22px; align-items: stretch; }' public/sheet.css && grep -q '  body.landing .note-lead { margin-top: 0; font-size: 21px; line-height: 1.38; }' public/sheet.css && ! grep -q '@media (max-width: 1100px) and (min-width: 761px)' public/sheet.css && grep -q '  body.landing .call-beam { font-size: 25px; }' public/sheet.css \
   && echo "$LAND" | tr -d '\n' | grep -q '<div class="page2"> *<div class="note-card">' \
   && grep -q '  body.landing .call-sig { display: none; }' public/sheet.css && grep -q '  body.landing .call-beam { animation: none; }' public/sheet.css && ! grep -q 'call-write { --ink: #f5f5f7\|galaxy.jpg' public/sheet.css \
   && grep -q 'body.landing .call-text { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1 1 auto; }' public/sheet.css \
   && grep -q '  background: linear-gradient(100deg, #ffb27f 0%, #ff6a2e 32%, #ffd9c2 50%, #ff6a2e 68%, #ffb27f 100%); background-size: 240% 100%; background-position: 100% 0;' public/sheet.css && grep -q '@keyframes call-shimmer { 0%, 55% { background-position: 100% 0; } 85%, 100% { background-position: 0% 0; } }' public/sheet.css \
   && grep -q "var PART = 'body.landing:not(.inner) \[data-page\] :is(.call, .note-card, .steps, .step)';" public/sky.js && grep -q '  body.landing:not(.inner) \[data-page\].is-tall .call { scroll-snap-align: start; }' public/sheet.css \
-  && ok "the two calls stand on the second page — under the note on a phone, one over the other at the page's right edge on a desk (the note across the left, as tall as the two calls, its words in the middle of its height — the three cards one rectangle) — in the theme's own colours — Send a message to the crew (APPROVED MESSAGES ARE BEAMED INTO SPACE in the gradient of Mars and light with its shimmer; the dish, its waves, the way with WRITTEN and APPROVED on it and INTO SPACE under its open end — no disc, no ping, nothing drawn there — the signal along it; the Write key) and Follow what the crew is doing — live (no drawing, a LIVE pill on its line; its sentence; no Thirteen sols line, no chips, no line of what the crew are doing, no count of messages sent into space; the dashboard's key) — each card the door, in the visitor's language, the station's name at their head on a phone where each door is a stop of the scroll, still where less motion is asked for" || bad "the two calls are not on the landing page as they should be"
+  && ok "the two calls stand on the second page — under the note on a phone, one over the other right beside the note on a desk, across the rest of the page's width (the note a card of up to 1000 px at the left — --note-w — as tall as the two calls, its words in the middle of its height; the calls never narrower than 460 px — --calls-w; the three cards one rectangle) — in the theme's own colours — Send a message to the crew (APPROVED MESSAGES ARE BEAMED INTO SPACE in the gradient of Mars and light with its shimmer; the dish, its waves, the way with WRITTEN and APPROVED on it and INTO SPACE under its open end — no disc, no ping, nothing drawn there — the signal along it; the Write key) and Follow what the crew is doing — live (no drawing, a LIVE pill on its line; its sentence; no Thirteen sols line, no chips, no line of what the crew are doing, no count of messages sent into space; the dashboard's key) — each card the door, in the visitor's language, the station's name at their head on a phone where each door is a stop of the scroll, still where less motion is asked for" || bad "the two calls are not on the landing page as they should be"
 curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q 'Willkommen im langsamsten Chat der Welt' && curl -s -H "Cookie: mcs_lang=fr" $B/ | grep -q 'Bienvenue dans le chat le plus lent du monde' \
   && ok "in German and French as well" || bad "the slowest chat is not translated"
 echo "$LAND" | grep -q '<span class="step-space">At the same time, your message will also travel into space. Click on the Message Board to see how far your message has gone. Keep it family friendly.</span>' \
@@ -2523,11 +2626,11 @@ curl -s -b $A $B/control | grep -q 'id="reset-open"' && curl -s -b $A $B/control
   && ok "the reset button opens a dialog that asks for the word" || bad "no reset dialog"
 curl -s -b $A $B/control | grep -q 'name="confirm"' && ! curl -s -b $A $B/control | grep -q 'name="confirm" value="RESET"' \
   && ok "the word is typed, never prefilled" || bad "RESET is prefilled"
-BEFORE=$(curl -s $B/api/status | grep -o '"total":[0-9]*' | head -1)
+BEFORE=$(curl -s -b $A $B/control/counts | grep -o '"total":[0-9]*' | head -1)
 curl -s -b $A -d "confirm=nope" -o /dev/null $B/control/reset
-[ "$(curl -s $B/api/status | grep -o '"total":[0-9]*' | head -1)" = "$BEFORE" ] && ok "reset without the word RESET does nothing" || bad "reset ran without confirmation"
+[ "$(curl -s -b $A $B/control/counts | grep -o '"total":[0-9]*' | head -1)" = "$BEFORE" ] && ok "reset without the word RESET does nothing" || bad "reset ran without confirmation"
 curl -s -b $A -d "confirm=RESET" -o /dev/null $B/control/reset
-curl -s $B/api/status | grep -q '"total":0' && ok "reset clears every message from Earth" || bad "messages survived the reset"
+curl -s -b $A $B/control/counts | grep -q '"total":0' && ok "reset clears every message from Earth" || bad "messages survived the reset"
 curl -s $B/logbook | grep -q "Rehearsal words" && bad "the rehearsal entry survived the reset" || ok "the rehearsal entry is gone from the crew log"
 grep -q "Rehearsal words" "$CONTENT_DIR/logbook.json" && bad "the rehearsal entry survived in logbook.json" || ok "logbook.json holds no entry"
 node -e '
@@ -2647,6 +2750,7 @@ grep -q "Last edit" "$CONT5/schedule.json" && ! curl -s -b $A5 $B5/control | gre
   && ok "and the desk still takes edits that day" || bad "the desk refused an edit the day after the run"
 kill $SRV5 2>/dev/null; wait $SRV5 2>/dev/null
 rm -rf "$DATA5" "$CONT5"
+
 # the real run's close, from the dates fixed in src/lib/run.js: the end of 28 October 2026 at the venue
 UD=$(mktemp -d)
 DATA_DIR="$UD" MISSION_OVERRIDE=false node -e '
@@ -2740,15 +2844,17 @@ echo "$LAND3H" | grep -q '<li><i style="background:[^"]*"></i><span class="hw-na
 # the folder the whole width of the dashboard at every desk width
 HW340=$(curl -s "$B3/api/hardware?w=340")
 echo "$HW340" | grep -q '"w":340' && echo "$HW340" | grep -q 'viewBox=\\"0 0 340 240\\"' && curl -s "$B3/api/hardware?w=9000" | grep -q '"w":1400' && curl -s "$B3/api/hardware?w=12" | grep -q '"w":720' && curl -s "$B3/api/hardware" | grep -q '"w":720' \
-  && echo "$LAND3H" | grep -q '<div id="hw-live" data-poll="[0-9]*" data-version="[^"]*" data-w="720">' && echo "$LAND3H" | grep -q '<svg viewBox="0 0 720 240"' \
-  && grep -q "fetch('/api/hardware' + (w ? '?w=' + w : ''), { cache: 'no-store' })" public/hardware.js && grep -q "if (j.html && j.version && (j.version !== version || w2 !== drawnW)) {" public/hardware.js && grep -q "setTimeout(fitNow, 50);" public/hardware.js \
+  && echo "$LAND3H" | grep -q '<div id="hw-live" data-poll="[0-9]*" data-version="[^"]*" data-w="720" data-h="240">' && echo "$LAND3H" | grep -q '<svg viewBox="0 0 720 240"' \
+  && curl -s "$B3/api/hardware?w=400&h=150" | grep -q '"h":150' && curl -s "$B3/api/hardware?w=400&h=150" | grep -q 'viewBox=\\"0 0 400 150\\"' && curl -s "$B3/api/hardware?h=20" | grep -q '"h":240' && curl -s "$B3/api/hardware?h=9000" | grep -q '"h":400' \
+  && grep -q "fetch('/api/hardware?' + (w ? 'w=' + w + '&' : '') + 'h=' + h, { cache: 'no-store' })" public/hardware.js && grep -q "if (j.html && j.version && (j.version !== version || w2 !== drawnW || h2 !== drawnH)) {" public/hardware.js && grep -q "setTimeout(fitNow, 50);" public/hardware.js \
+  && grep -q "function wantH() { return onScreen ? Math.max(130, Math.min(240, Math.round(window.innerHeight \* 0.2))) : 240; }" public/hardware.js \
   && grep -q "return w > 0 ? Math.max(240, Math.min(1400, Math.round(w))) : 0;" public/hardware.js \
   && grep -q 'body.landing .hw-chart svg { max-height: none; }' public/aura.css && ! grep -q 'hw-chart svg { max-height: [0-9]' public/aura.css \
   && grep -q 'body.landing .hw-legend { flex-direction: row; flex-wrap: wrap; gap: 6px 26px; margin-top: 10px; }' public/aura.css && grep -q 'body.landing .hw-legend li { flex: 0 1 auto; display: grid; grid-template-columns: 8px auto;' public/aura.css \
   && grep -q 'body.landing .hw-charts { grid-template-columns: repeat(auto-fit, minmax(max(300px, calc(50% - 8px)), 1fr)); gap: 16px; }' public/aura.css \
   && grep -q 'body.landing .dash-grid > .span-12 { grid-column: 1 / -1; }' public/aura.css \
   && grep -q "tagY = lead.ey - 38 >= padT + 2 ? lead.ey - 38 : lead.ey + 12;" src/views/pages/public.js \
-  && ok "a chart is drawn for the width its tile has — /api/hardware?w=340 draws it 340 wide, between 240 and 1400, 720 unasked — fills the tile (no height cap), names its lines side by side beneath, two across where the panel is wide enough; the pill moves under the line's end where the line runs near the top; the dashboard's folder keeps the whole width on a narrow desk" || bad "the charts are not drawn for their tiles' width"
+  && ok "a chart is drawn for the width its tile has — /api/hardware?w=340 draws it 340 wide, between 240 and 1400, 720 unasked — and the height the page asks (?h=, 120 to 400, 240 unasked: the screens ask for a fifth of a short screen) — fills the tile (no height cap), names its lines side by side beneath, two across where the panel is wide enough; the pill moves under the line's end where the line runs near the top; the dashboard's folder keeps the whole width on a narrow desk" || bad "the charts are not drawn for their tiles' width and the asked height"
 echo "$LAND3H" | node -e '
 let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
   const i = s.indexOf("data-spec=\""); if (i < 0) process.exit(2);

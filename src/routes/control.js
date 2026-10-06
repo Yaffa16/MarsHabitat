@@ -211,6 +211,13 @@ const VIEWS = {
 
 /* =================================================================== THE PAGE */
 
+/* The station's figures, for mission control alone (behind the sign-in above): the queue's counts and the tally of
+   messages sent and visitors (data.tally) — what /api/status used to hand to anyone. */
+router.get('/counts', (req, res) => {
+  data.settleTransits();
+  res.set('Cache-Control', 'no-store').json({ counts: data.counts(), tally: data.tally() });
+});
+
 router.get('/', (req, res) => {
   const ctx = req.ctx();
   data.settleTransits();

@@ -3,15 +3,15 @@
   "crew": [
     {
       "designation": "COMMUNICATION OFFICER",
-      "role": "Relay · messages from Earth"
+      "role": "Order & Communications"
     },
     {
       "designation": "SCIENCE OFFICER",
-      "role": "Research · habitat systems"
+      "role": "Research & Systems"
     },
     {
       "designation": "HEALTH OFFICER",
-      "role": "Crew health · life support"
+      "role": "Health & Life Support"
     }
   ],
   "inventory": [
