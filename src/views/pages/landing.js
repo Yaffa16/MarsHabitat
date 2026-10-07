@@ -5,9 +5,9 @@
  * line between them and the latest exchanges and pictures coming and going
  * around it (sky.js, public/sky.js), with the station's name, the eyebrow,
  * the paragraph on what the site is for and the run at its left on a wider
- * screen and over it on a phone (intro); a note on what MARS is, with
- * the doors to the composer and the dashboard and a key to the About page
- * (Know more) for the rest; the habitat itself (dome.js) — the dome on its
+ * screen and over it on a phone (intro); the two calls — the doors to the
+ * composer and the dashboard (the note on what MARS is that stood beside
+ * them is gone; the About page tells it); the habitat itself (dome.js) — the dome on its
  * sheet, its keys floating about it; and the world's slowest chat — its
  * welcome, then what becomes of a message written here, in three steps:
  * uplink, transit, downlink. (The mission's two chapters that stood between
@@ -182,30 +182,16 @@ function trajectory() {
       </svg>`;
 }
 
-/* ---------------------------------------------------------------- the note */
-/** The second page: what MARS! is and what this website is for (the words of October's text sheet), and under the
-    note the two calls (calls, below) — the page's doors to the composer and to the dashboard. The project's name at the
-    head of the lead is a link to the project's page at ZKM. */
-const ZKM_MARS = 'https://zkm.de/en/projects/mars';
+/* ---------------------------------------------------------------- the second page */
+/** The second page: the two calls (calls, below) — the page's doors to the composer and to the dashboard — side by side
+    on a desk, one under the other on a phone. The note that stood beside them (MARS! – Mobilizing Awareness for
+    Resilient Societies! – is a three-part project…) is gone: October asked for the box to go; the About page tells the
+    project. The section keeps its id, `note`: the nudge on the Earth and the phone's scroll lead to it. */
 function note(ctx) {
   const T = ctx.T;
-  // the first word is the project's name, set bold and linked, in every language
-  const lead = esc(T('MARS! – Mobilizing Awareness for Resilient Societies! – is a three-part project of ZKM | Karlsruhe, the current part being a 13-day field test of prototypes and experiments in the heart of Karlsruhe.'))
-    .replace(/^MARS!/, `<a class="note-project" href="${ZKM_MARS}" target="_blank" rel="noopener"><b>MARS!</b></a>`);
-  // the second page: the note — its lead alone, since its paragraph on what the site is for stands on the first page
-  // now (intro), and without the DURATIONAL PERFORMANCE line over it (October: the first page's eyebrow says it) — and
-  // beside it (under it on a phone) the two calls — the doors of the page (no keys under the note's words any more:
-  // the two cards are the doors; the About page is the header's)
-  // on a desk the note stands at the left and the two calls one over the other at its right (page2, sheet.css); a phone
-  // stacks them, the note first
   return `
-  <section class="sheet sheet-p2" id="note" aria-label="${esc(T('Durational performance'))}" data-page>
-    <div class="page2">
-      <div class="note-card">
-        <div class="note-body">
-          <p class="note-lead">${lead}</p>
-        </div>
-      </div>
+  <section class="sheet sheet-p2" id="note" aria-label="${esc(T('Write to the crew, or follow them'))}" data-page>
+    <div class="page2 is-calls">
       ${calls(ctx)}
     </div>
   </section>`;

@@ -363,16 +363,12 @@ body.landing .sky-note-k { color: #fff; }
 body.landing .sky-note-k i { background: var(--hud-hot); box-shadow: 0 0 8px 2px rgba(var(--hud-hot-rgb),.6); }
 body.landing .sky-note-x, :root[data-theme="dark"] body.landing .sky-note-x { background: rgba(255,255,255,.12); color: #fff; }
 
-/* ---- the note, a card of glass (on a phone, under the station's name), and under its words the key to the About page */
-body.landing .note-card, body.landing .steps {
+/* ---- the chat's card of glass (the note that shared the dress is gone: October asked for the box to go) */
+body.landing .steps {
   background: var(--glass); -webkit-backdrop-filter: blur(26px) saturate(1.35); backdrop-filter: blur(26px) saturate(1.35);
   border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); border-radius: var(--r-lg); color: var(--ink);
 }
 body.landing .sheet-p2 { margin: 64px 0 0; }
-body.landing .note-card { padding: 26px 22px 30px; }
-body.landing .note-lead { margin: 0; font-size: 22px; line-height: 1.42; letter-spacing: -.012em; color: var(--ink); text-wrap: pretty; }   /* the lead alone on the card: no line over it (October) */
-body.landing .note-lead b { font-weight: 600; }
-body.landing .note-more { margin: 18px 0 0; font-size: var(--fs-read); line-height: 1.62; color: var(--dim); text-wrap: pretty; }
 /* Know more: a cobalt pill, as the page's pressed pills are — the way to the About page, where the mission is told */
 body.landing .note-cta { margin: 22px 0 0; }
 body.landing .know-more { display: inline-flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 22px 0 24px; box-sizing: border-box; border: 0; border-radius: 999px; text-decoration: none;
@@ -511,8 +507,6 @@ body.landing .part-lead { margin: 6px 0 0; max-width: 64ch; font-size: var(--fs-
 body.landing .steps-how { margin: 22px 0 -4px; font-family: var(--display); font-size: var(--fs-label); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--mars-ink); }
 body.landing .step-link { color: var(--cobalt); font-weight: 600; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 body.landing .step-link:hover { color: var(--ink); }
-body.landing .note-project { color: inherit; text-decoration: none; border-bottom: 2px solid rgba(255,90,31,.6); }
-body.landing .note-project:hover { color: var(--mars-ink); border-bottom-color: var(--mars); }
 /* a line across the page sets the chat apart from the note */
 body.landing .sheet-p4::before { content: ""; display: block; height: 1px; margin: 0 0 40px; background: linear-gradient(90deg, transparent, var(--hair) 12%, var(--hair) 88%, transparent); }
 
@@ -699,7 +693,7 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
 /* by day the page is near-white: the only grey on it is the habitat's sheet (the reference's grey); the grid and the
    lights stay on it, and the cards of glass keep a hairline so they still stand off the page */
 :root[data-theme="light"] { --paper: #f6f7f8; --ground-2: #eceef1; }
-:root[data-theme="light"] body.landing :is(.note-card, .steps) { border-color: rgba(15,21,64,.07); }
+:root[data-theme="light"] body.landing .steps { border-color: rgba(15,21,64,.07); }
 
 /* ====================================================================== a wider screen */
 @media (min-width: 761px) and (min-height: 521px) {
@@ -732,12 +726,6 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
   /* the pages after it are each about a window tall, their cards in the middle, with air around them */
   body.landing .sheet-p2, body.landing .sheet-p4 { min-height: calc(100vh - 113px); box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; margin: 0; padding: clamp(40px, 6vh, 88px) 0; }
   body.landing .sheet-p4::before { position: absolute; left: 0; right: 0; top: 0; margin: 0; }
-  /* the note: the lead alone, standing in the middle of the card's height beside the two calls */
-  body.landing .note-card { display: flex; flex-direction: column; justify-content: center; padding: 44px 52px 48px; }
-  body.landing .note-body { display: block; }
-  body.landing .note-lead { margin-top: 0; max-width: 24em; font-size: clamp(26px, 2.4vw, 38px); line-height: 1.3; }
-  body.landing .note-more { margin-top: 38px; font-size: clamp(17px, 1.3vw, 20px); }
-  body.landing .note-cta { margin-top: 28px; }
   /* the chat's heading, larger */
   body.landing .part-head { gap: 14px; padding: 0 4px 28px; }
   body.landing .part-title { font-size: clamp(38px, 3.6vw, 58px); }
@@ -841,26 +829,20 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
   /* a screen too short for a page as it is drawn above (public/sky.js marks it snug): the same page set a little closer,
      so that it still fits — the gaps and the photographs smaller, the type a step down */
   body.landing .sheet-p2.is-snug { padding: 16px 0 12px; }
-  body.landing .sheet-p2.is-snug .note-card { padding: 20px 18px 22px; }
   body.landing .sheet-p2.is-snug .sheet-meta.is-ruled { padding-bottom: 12px; }
-  body.landing .sheet-p2.is-snug .note-lead { margin-top: 0; font-size: 20px; line-height: 1.38; }
-  body.landing .sheet-p2.is-snug .note-more { margin-top: 12px; font-size: 16px; line-height: 1.55; }
-  body.landing .sheet-p2.is-snug .note-cta { margin-top: 16px; }
   /* the pages of the scroll: a swipe goes to the next; a page taller than the screen (public/sky.js marks it) stops at
      each of its parts too — the note, the card of steps and each step after the first — so nothing on it is passed
      over; the foot ends the scroll. While a pop-up is open the page stays where it is. */
   html:has(body.landing:not(.inner)) { scroll-snap-type: y mandatory; scroll-padding-top: 83px; scroll-padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
   html:has(body.landing:not(.inner) dialog[open]) { scroll-snap-type: none; }
   body.landing:not(.inner) [data-page] { scroll-snap-align: start; scroll-snap-stop: always; }
-  body.landing:not(.inner) [data-page].is-tall :is(.note-card, .steps, .step + .step) { scroll-snap-align: start; }
-  body.landing:not(.inner) [data-page].is-tall :is(.note-card, .steps, .step).no-stop { scroll-snap-align: none; }   /* too near the next stop (sky.js) */
+  body.landing:not(.inner) [data-page].is-tall :is(.call, .steps, .step + .step) { scroll-snap-align: start; }
+  body.landing:not(.inner) [data-page].is-tall :is(.call, .steps, .step).no-stop { scroll-snap-align: none; }   /* too near the next stop (sky.js) */
   body.landing:not(.inner) .foot { scroll-snap-align: end; content-visibility: visible; }   /* laid out from the start (aura.css
      leaves it for later on a phone): the end of the scroll stays where it is */
   body.landing.messages .composer-device { padding-top: 52px; }
 }
 @media (max-width: 360px) {
-  body.landing .note-card { padding: 24px 18px 26px; }
-  body.landing .note-lead { font-size: 20px; }
   body.landing .steps { padding: 24px 16px 4px; }
   body.landing .step { column-gap: 14px; }
   body.landing .part-title { font-size: 28px; }
@@ -938,21 +920,15 @@ body.landing .call-key.is-write { background: linear-gradient(180deg, #ff8a3d, #
 :root[data-theme="dark"] body.landing .call-key.is-write { color: #1a0a02; }
 body.landing .call:hover .call-key { filter: brightness(1.08); transform: translateX(2px); }
 @media (min-width: 761px) and (min-height: 521px) {
-  /* the second page on a desk (October: "the description at the left, the two buttons at the right"): the note at the
-     left — its label, its lead, its paragraph, one under the other — and the two calls one over the other at its right,
-     the three cards one rectangle; the calls compact, their words at the left, the drawing small over them, so the whole
-     stands in one window where the window allows */
+  /* the second page on a desk: the two calls side by side in the middle of the page (the note that stood at their left
+     is gone — October asked for the box to go); the calls compact, their words at the left, the drawing small over them,
+     so the whole stands in one window where the window allows */
   body.landing .sheet-p2 { padding: 28px 0 32px; }
-  body.landing .page2 { --note-w: 1000px; --calls-w: 460px; display: grid; grid-template-columns: minmax(0, var(--note-w)) minmax(min(var(--calls-w), 42%), 1fr); gap: 22px; align-items: stretch; }   /* October's picture: the note at the page's left, standing as tall as the two calls; the two calls one over the other right beside it, across the rest of the page's width — the three cards one rectangle ("the 2 buttons on the right of the box"). The widths are the two variables: the note's card grows to --note-w where the page is wide enough (1000 px — October: "double the width"), the calls are never narrower than --calls-w (460 px) and take what is left; on a narrower page the note gives way first */
-  body.landing .note-card { display: flex; flex-direction: column; padding: 24px 32px 26px; }
-  body.landing .note-body { display: flex; flex-direction: column; justify-content: center; gap: 0; flex: 1 1 auto; padding: 6px 0 12px; }   /* the words in the middle of the card's height, the label at its top */
-  body.landing .note-lead { margin-top: 0; font-size: 21px; line-height: 1.38; }
-  body.landing .note-more { margin-top: 16px; font-size: 15.5px; line-height: 1.58; }
-  body.landing .calls { grid-template-columns: minmax(0, 1fr); gap: 22px; max-width: none; margin: 0; }
+  body.landing .page2 { max-width: 1120px; margin: 0 auto; }   /* the two calls, centred */
+  body.landing .calls { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; max-width: none; margin: 0; }
   body.landing .call { padding: 22px 26px 24px; }                                                    /* the cards as the picture has them: low, their words at the left */
   body.landing .call-text { align-items: flex-start; text-align: left; }
   body.landing .call-art { width: 280px; height: 75px; max-width: 100%; margin: 0 0 2px; }   /* 560 : 150, at the left of the card */
-  body.landing .note-aside { margin: 0; padding: 0; }
   body.landing .call-k { font-size: 10.5px; }
   body.landing .call-title { margin-top: 8px; font-size: 22px; }
   body.landing .call-punch { margin-top: 10px; font-size: 16px; }

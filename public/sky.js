@@ -163,7 +163,7 @@
 
   /* ------------------------------------------------------------ the pages of the scroll, on a phone (sheet.css)
      A phone held upright goes from one page of the landing to the next with a swipe — the words and the room under them,
-     the room whole, the note, the chat, the foot. The room a page has is the screen between the header and the bar of keys with the
+     the room whole, the two calls, the chat, the foot. The room a page has is the screen between the header and the bar of keys with the
      browser's own bars folded away, as they are once the page is scrolled (100lvh) — so that nothing changes while they
      fold and unfold. A page that does not fit that room as it is drawn is set a little closer (is-snug); one that still
      does not (a small phone, a long language, the chat's three steps) is marked tall, and then its parts are stops of the
@@ -192,8 +192,8 @@
     // The stops of the scroll are wherever the stylesheet has the scroll stop, read off it, and the end. Two closer than a
     // flick of the thumb (the last step of the chat and the end, often) would make a swipe that hardly moves: the part's
     // stop gives way (no-stop).
-    var CAND = 'body.landing:not(.inner) :is([data-page], .space-room, .call, .note-card, .steps, .step, .foot)';   // the room is a stop under the first page's words (sheet.css)
-    var PART = 'body.landing:not(.inner) [data-page] :is(.call, .note-card, .steps, .step)';
+    var CAND = 'body.landing:not(.inner) :is([data-page], .space-room, .call, .steps, .step, .foot)';   // the room is a stop under the first page's words (sheet.css)
+    var PART = 'body.landing:not(.inner) [data-page] :is(.call, .steps, .step)';
     function marks() {
       var cs = getComputedStyle(document.documentElement), h = window.innerHeight;
       var pt = parseFloat(cs.scrollPaddingTop) || 0, pb = parseFloat(cs.scrollPaddingBottom) || 0;

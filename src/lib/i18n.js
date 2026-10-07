@@ -1107,12 +1107,28 @@ const D = {
   // the header's running line (public.js) and the theme key (layout.js). {date} and {time} are put in by the page.
   'Durational performance': ['Langzeitperformance', 'Performance de longue durée'],
   'Know more': ['Mehr erfahren', 'En savoir plus'],                        // the note's key to the About page
-  'MARS! – Mobilizing Awareness for Resilient Societies! – is a three-part project of ZKM | Karlsruhe, the current part being a 13-day field test of prototypes and experiments in the heart of Karlsruhe.':
-    ['MARS! – Mobilizing Awareness for Resilient Societies! – ist ein dreiteiliges Projekt des ZKM | Karlsruhe; der aktuelle Teil ist ein 13-tägiger Feldtest von Prototypen und Experimenten im Herzen von Karlsruhe.',
-     'MARS! – Mobilizing Awareness for Resilient Societies! – est un projet en trois parties du ZKM | Karlsruhe, dont la partie actuelle est un test de terrain de 13 jours de prototypes et d’expériences au cœur de Karlsruhe.'],
   'MARS! turns the Karlsruhe Marktplatz into MARS!platz. Can we go to Mars to save the Earth? Three astronauts are finding out, and you can help! Write them a message, have a look on the mission dashboard to find out if their food supply is running low or see what they’re currently researching.':
     ['MARS! macht den Karlsruher Marktplatz zum MARS!platz. Können wir zum Mars fliegen, um die Erde zu retten? Drei Astronautinnen und Astronauten finden es heraus – und du kannst helfen! Schreib ihnen eine Nachricht, wirf einen Blick auf das Missions-Dashboard, um zu sehen, ob ihre Lebensmittelvorräte knapp werden, oder schau, was sie gerade erforschen.',
      'MARS! transforme la Marktplatz de Karlsruhe en MARS!platz. Peut-on aller sur Mars pour sauver la Terre ? Trois astronautes cherchent la réponse, et vous pouvez les aider ! Écrivez-leur un message, jetez un œil au tableau de bord de la mission pour savoir si leurs réserves de nourriture s’épuisent ou voyez ce qu’ils étudient en ce moment.'],
+  'Write to the crew, or follow them': ['Schreib der Crew oder folge ihr', 'Écrivez à l’équipage, ou suivez-le'],
+  // ---- A sol on MARS!platz (src/views/pages/sol.js): the About page's day on a rail
+  'A sol on MARS!platz': ['Ein Sol auf dem MARS!platz', 'Un sol sur la MARS!platz'],
+  'The day in the habitat, activity by activity — from breakfast to lights out': ['Der Tag im Habitat, Aktivität für Aktivität — vom Frühstück bis Lights-out', 'La journée dans l’habitat, activité par activité — du petit-déjeuner à l’extinction des feux'],
+  'The typical sol, as every day of the run is planned': ['Der typische Sol, wie jeder Tag des Laufs geplant ist', 'Le sol type, tel que chaque journée de la mission est prévue'],
+  'The last sol, as it was planned': ['Der letzte Sol, wie er geplant war', 'Le dernier sol, tel qu’il était prévu'],
+  'Today’s crew': ['Die Crew heute', 'L’équipage aujourd’hui'],
+  'The three roles': ['Die drei Rollen', 'Les trois rôles'],
+  'to be named': ['noch offen', 'à désigner'],
+  'Science': ['Wissenschaft', 'Science'],
+  'EVA': ['EVA', 'EVA'],
+  'Health': ['Gesundheit', 'Santé'],
+  'Social': ['Soziales', 'Temps social'],
+  'Key': ['Legende', 'Légende'],
+  'Fixed hours': ['Feste Zeiten', 'Heures fixes'],
+  'Communication hour': ['Kommunikationsstunde', 'Heure de communication'],
+  'Lights out': ['Lights-out', 'Extinction des feux'],
+  'Times are habitat-local. Every sol follows the typical schedule; mission control changes a day on the Habitat tab.':
+    ['Zeiten in Habitat-Ortszeit. Jeder Sol folgt dem typischen Tagesplan; die Missionskontrolle ändert einen Tag auf dem Habitat-Tab.', 'Heures locales de l’habitat. Chaque sol suit le programme type ; le centre de contrôle modifie une journée dans l’onglet Habitat.'],
   'Latest message:': ['Neueste Nachricht:', 'Dernier message :'],
   'Latest image': ['Neuestes Bild', 'Dernière image'],
   'MARS is a durational performance in which three crew members are always in the habitat for the thirteen days of the run.':

@@ -6,6 +6,7 @@ const officer = require('../../lib/officer');
 const moodLib = require('../../lib/mood');
 const content = require('../../lib/content');
 const { habitatInside } = require('./inside');
+const { solFold } = require('./sol');
 
 /**
  * The project, the habitat in section and the credits — About, What's inside
@@ -159,13 +160,16 @@ function whoFold(crew, T, ctx) {
  * #about-project, #what and #who-we-are (public.js, mission()). Beside the
  * prose, the panels that remain: the mission's facts (About), the habitat's
  * picture with every module a key (What's inside the habitat — inside.js,
- * habitatInside, which was the landing page's third page), the crew — the
+ * habitatInside, which was the landing page's third page), a sol on
+ * MARS!platz — the day's schedule on a rail, hour by hour, with the three on
+ * shift beside it (sol.js, solFold; October, 7 October) — the crew — the
  * three officers and the portraits — and the producer with the partners
  * (Who we are).
  */
 const PARTS = [
   ['about-project', 'About', 'MARS! – Mobilizing Awareness for Resilient Societies!'],
   ['inside', 'What’s inside the habitat?', null],
+  ['sol', 'A sol on MARS!platz', 'The day in the habitat, activity by activity — from breakfast to lights out'],
   ['who-we-are', 'Who we are', 'The crew, the producer, the partners'],
 ];
 
@@ -174,7 +178,8 @@ function aboutPage(ctx, { crew = [], habitat = null } = {}) {
   // the habitat's section: its head's line is the drawing's hint (Point at a room… on a desk, Tap a room… on a touch
   // screen — sheet.css shows the one that applies), and the drawing itself stands under it on the section's sheet
   const hint = `<span class="dome-meta dome-hint"><span class="dome-hint-click">${T('Point at a room to know what is inside.')}</span><span class="dome-hint-tap">${T('Tap a room to know what is inside.')}</span></span>`;
-  const inner = { 'about-project': () => aboutFold(ctx), inside: () => `<div class="hab-card">${habitatInside(ctx, habitat || {})}</div>`, 'who-we-are': () => whoFold(crew, T, ctx) };
+  const inner = { 'about-project': () => aboutFold(ctx), inside: () => `<div class="hab-card">${habitatInside(ctx, habitat || {})}</div>`,
+    sol: () => solFold(ctx, { today: (habitat || {}).today || null, crew: CREW }), 'who-we-are': () => whoFold(crew, T, ctx) };
   const body = `
   <nav class="about-jump" aria-label="${esc(T('On this page'))}">
     ${PARTS.map(([id, title]) => `<a href="#${id}">${esc(T(title))}</a>`).join('')}

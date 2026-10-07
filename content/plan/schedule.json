@@ -1,11 +1,6 @@
 {
-  "_note": "One block per mission day, thirteen days: Thursday 15 to Tuesday 27 October 2026. Times are habitat-local, 24 hour. Every day carries the typical daily schedule; edit a day on mission control's Habitat tab (or here) to make it differ. Deleting a day removes its schedule from the site.",
+  "_note": "One block per mission day, thirteen days: Thursday 15 to Tuesday 27 October 2026. Times are habitat-local, 24 hour. Every day carries the typical daily schedule — sixteen entries, 08:30 Breakfast to 22:00 Lights Out (no shift change: October asked for it to go); edit a day on mission control's Habitat tab (or here) to make it differ. Deleting a day removes its schedule from the site.",
   "1": [
-    {
-      "time": "08:00",
-      "label": "Shift Change",
-      "detail": ""
-    },
     {
       "time": "08:30",
       "label": "Breakfast / Communal Mission Planning",
@@ -83,17 +78,12 @@
     },
     {
       "time": "22:00",
-      "label": "Shift Change / Lights Out",
+      "label": "Lights Out",
       "detail": ""
     }
   ],
   "2": [
     {
-      "time": "08:00",
-      "label": "Shift Change",
-      "detail": ""
-    },
-    {
       "time": "08:30",
       "label": "Breakfast / Communal Mission Planning",
       "detail": ""
@@ -170,17 +160,12 @@
     },
     {
       "time": "22:00",
-      "label": "Shift Change / Lights Out",
+      "label": "Lights Out",
       "detail": ""
     }
   ],
   "3": [
     {
-      "time": "08:00",
-      "label": "Shift Change",
-      "detail": ""
-    },
-    {
       "time": "08:30",
       "label": "Breakfast / Communal Mission Planning",
       "detail": ""
@@ -257,17 +242,12 @@
     },
     {
       "time": "22:00",
-      "label": "Shift Change / Lights Out",
+      "label": "Lights Out",
       "detail": ""
     }
   ],
   "4": [
     {
-      "time": "08:00",
-      "label": "Shift Change",
-      "detail": ""
-    },
-    {
       "time": "08:30",
       "label": "Breakfast / Communal Mission Planning",
       "detail": ""
@@ -344,17 +324,12 @@
     },
     {
       "time": "22:00",
-      "label": "Shift Change / Lights Out",
+      "label": "Lights Out",
       "detail": ""
     }
   ],
   "5": [
     {
-      "time": "08:00",
-      "label": "Shift Change",
-      "detail": ""
-    },
-    {
       "time": "08:30",
       "label": "Breakfast / Communal Mission Planning",
       "detail": ""
@@ -431,17 +406,12 @@
     },
     {
       "time": "22:00",
-      "label": "Shift Change / Lights Out",
+      "label": "Lights Out",
       "detail": ""
     }
   ],
   "6": [
     {
-      "time": "08:00",
-      "label": "Shift Change",
-      "detail": ""
-    },
-    {
       "time": "08:30",
       "label": "Breakfast / Communal Mission Planning",
       "detail": ""
@@ -518,17 +488,12 @@
     },
     {
       "time": "22:00",
-      "label": "Shift Change / Lights Out",
+      "label": "Lights Out",
       "detail": ""
     }
   ],
   "7": [
     {
-      "time": "08:00",
-      "label": "Shift Change",
-      "detail": ""
-    },
-    {
       "time": "08:30",
       "label": "Breakfast / Communal Mission Planning",
       "detail": ""
@@ -605,17 +570,12 @@
     },
     {
       "time": "22:00",
-      "label": "Shift Change / Lights Out",
+      "label": "Lights Out",
       "detail": ""
     }
   ],
   "8": [
     {
-      "time": "08:00",
-      "label": "Shift Change",
-      "detail": ""
-    },
-    {
       "time": "08:30",
       "label": "Breakfast / Communal Mission Planning",
       "detail": ""
@@ -692,17 +652,12 @@
     },
     {
       "time": "22:00",
-      "label": "Shift Change / Lights Out",
+      "label": "Lights Out",
       "detail": ""
     }
   ],
   "9": [
     {
-      "time": "08:00",
-      "label": "Shift Change",
-      "detail": ""
-    },
-    {
       "time": "08:30",
       "label": "Breakfast / Communal Mission Planning",
       "detail": ""
@@ -779,17 +734,12 @@
     },
     {
       "time": "22:00",
-      "label": "Shift Change / Lights Out",
+      "label": "Lights Out",
       "detail": ""
     }
   ],
   "10": [
     {
-      "time": "08:00",
-      "label": "Shift Change",
-      "detail": ""
-    },
-    {
       "time": "08:30",
       "label": "Breakfast / Communal Mission Planning",
       "detail": ""
@@ -866,17 +816,12 @@
     },
     {
       "time": "22:00",
-      "label": "Shift Change / Lights Out",
+      "label": "Lights Out",
       "detail": ""
     }
   ],
   "11": [
     {
-      "time": "08:00",
-      "label": "Shift Change",
-      "detail": ""
-    },
-    {
       "time": "08:30",
       "label": "Breakfast / Communal Mission Planning",
       "detail": ""
@@ -953,17 +898,12 @@
     },
     {
       "time": "22:00",
-      "label": "Shift Change / Lights Out",
+      "label": "Lights Out",
       "detail": ""
     }
   ],
   "12": [
     {
-      "time": "08:00",
-      "label": "Shift Change",
-      "detail": ""
-    },
-    {
       "time": "08:30",
       "label": "Breakfast / Communal Mission Planning",
       "detail": ""
@@ -1040,17 +980,12 @@
     },
     {
       "time": "22:00",
-      "label": "Shift Change / Lights Out",
+      "label": "Lights Out",
       "detail": ""
     }
   ],
   "13": [
     {
-      "time": "08:00",
-      "label": "Shift Change",
-      "detail": ""
-    },
-    {
       "time": "08:30",
       "label": "Breakfast / Communal Mission Planning",
       "detail": ""
@@ -1127,7 +1062,7 @@
     },
     {
       "time": "22:00",
-      "label": "Shift Change / Lights Out",
+      "label": "Lights Out",
       "detail": ""
     }
   ]

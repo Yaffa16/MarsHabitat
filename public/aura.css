@@ -776,8 +776,10 @@ body.landing .portal-pop { display: none; }
   body.landing .portal-pop .transit.closed { margin: 0; }
 }
 /* the Write key that floats at the foot of the window, at the right, on every public page (layout.js, writeKit): the
-   station's primary key with the pen; gone while the window is open, and on a phone, whose bar has its own */
-body.landing .write-float { position: fixed; right: 24px; bottom: 24px; z-index: 40; display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 22px 0 18px; border-radius: 999px;
+   station's primary key with the pen; its right edge on the page's content edge — the margin's width in from the
+   window's, where every card and sheet ends (October: aligned, not half over the box) — gone while the window is
+   open, and on a phone, whose bar has its own */
+body.landing .write-float { position: fixed; right: var(--gutter); bottom: 24px; z-index: 40; display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 22px 0 18px; border-radius: 999px;
   background: var(--mars); color: #1a0a02; font-family: var(--display); font-size: 14px; font-weight: 700; letter-spacing: .02em; text-transform: none; text-decoration: none; white-space: nowrap;
   box-shadow: 0 16px 34px -14px rgba(255,70,0,.85), 0 2px 6px rgba(15,21,64,.15); transition: transform .15s, box-shadow .15s, background .15s; }
 body.landing .write-float .wf-ic { flex: none; width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
@@ -1438,6 +1440,71 @@ body.landing.about .officer-mood { margin: 0; }
 body.landing.about .about-sec .prose h3:first-child { margin-top: 0; }
 body.landing.about .about-sec .prose p { font-size: var(--fs-read); line-height: 1.6; }
 body.landing.about .about-sec .panel { background: var(--tile); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; border: 1px solid rgba(var(--cobalt-rgb),.12); border-radius: 18px; }
+
+/* A sol on MARS!platz (sol.js): the day's schedule on a rail at the left — one row an activity, whatever its length
+   (October: by activity, not by hour), in the colour of its kind; the day's crew, the key and the fixed hours at the
+   right; one column on a phone, the crew first. The kinds' colours hold in both themes. */
+body.landing.about .sol { --k-science: var(--cobalt); --k-eva: var(--mars); --k-comms: var(--mars); --k-health: #22915a; --k-meal: #c98a00; --k-social: #8a8fa8; --k-other: var(--faint);
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 320px); gap: 24px 44px; align-items: start; }
+:root[data-theme="dark"] body.landing.about .sol { --k-health: #4cc47f; --k-meal: #f0b429; --k-social: #8d8d98; }
+body.landing.about .sol-when { margin: 0 0 14px; font-family: var(--mono); font-size: var(--fs-label); letter-spacing: .1em; text-transform: uppercase; color: var(--mars-ink); }
+body.landing.about .sol-list { list-style: none; margin: 0; padding: 0; position: relative; }
+body.landing.about .sol-list::before { content: ""; position: absolute; left: 76px; top: 6px; bottom: 6px; width: 2px; background: var(--hair); }   /* the rail */
+body.landing.about .sol-item { position: relative; display: grid; grid-template-columns: 64px 12px minmax(0, 1fr) auto; column-gap: 12px; align-items: start; box-sizing: border-box;
+  padding: 8px 0 9px; border-top: 1px solid transparent; --k: var(--k-other); }
+body.landing.about .sol-item.kind-science { --k: var(--k-science); }
+body.landing.about .sol-item.kind-eva { --k: var(--k-eva); }
+body.landing.about .sol-item.kind-comms { --k: var(--k-comms); }
+body.landing.about .sol-item.kind-health { --k: var(--k-health); }
+body.landing.about .sol-item.kind-meal { --k: var(--k-meal); }
+body.landing.about .sol-item.kind-social { --k: var(--k-social); }
+body.landing.about .sol-time { font-family: var(--mono); font-size: 13px; line-height: 20px; letter-spacing: .04em; color: var(--ink); white-space: nowrap; text-align: right; }
+body.landing.about .sol-time i { display: block; font-style: normal; font-size: 11px; line-height: 14px; color: var(--faint); }
+body.landing.about .sol-bar { position: relative; z-index: 1; align-self: stretch; width: 12px; margin-top: 3px; margin-bottom: 1px; border-radius: 6px; background: var(--k); opacity: .9; }   /* the activity's mark on the rail, in its colour */
+body.landing.about .sol-item.is-end .sol-bar { align-self: start; height: 12px; border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 3px var(--paper); }   /* lights out: a mark on the rail */
+body.landing.about .sol-what { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding-top: 1px; }
+body.landing.about .sol-label { font-family: var(--display); font-size: 15px; font-weight: 600; line-height: 1.25; color: var(--ink); }
+body.landing.about .sol-detail { font-size: 13.5px; line-height: 1.4; color: var(--dim); }
+body.landing.about .sol-role { font-family: var(--mono); font-size: 11px; line-height: 1.3; letter-spacing: .06em; text-transform: uppercase; color: var(--k); }
+body.landing.about .sol-kind { align-self: start; margin-top: 2px; padding: 2px 8px; border-radius: 999px; font-family: var(--mono); font-size: 10px; line-height: 14px; letter-spacing: .08em; text-transform: uppercase; color: var(--k); border: 1px solid color-mix(in srgb, var(--k) 45%, transparent); white-space: nowrap; }
+body.landing.about .sol-item.kind-other .sol-kind { display: none; }
+body.landing.about .sol-now { position: absolute; right: 0; top: -9px; padding: 2px 8px; border-radius: 999px; background: var(--mars); color: #fff; font-family: var(--mono); font-size: 10px; line-height: 14px; letter-spacing: .1em; }
+body.landing.about .sol-item.is-now { border-top-color: color-mix(in srgb, var(--mars) 35%, transparent); background: linear-gradient(90deg, color-mix(in srgb, var(--mars) 9%, transparent), transparent 70%); border-radius: 8px; }
+body.landing.about .sol-item.is-done { opacity: .5; }
+body.landing.about .sol-item.is-end { padding-bottom: 0; }
+/* the side: the three on shift, the key, the fixed hours */
+body.landing.about .sol-side { display: flex; flex-direction: column; gap: 20px; padding: 18px 20px 16px; border-radius: 18px; background: var(--tile); border: 1px solid var(--hair); }
+body.landing.about .sol-block .eyebrow { margin: 0 0 10px; }
+body.landing.about .sol-shift { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+body.landing.about .sol-officer { display: flex; align-items: center; gap: 12px; min-width: 0; }
+body.landing.about .sol-officer img { flex: none; width: 44px; height: 44px; border-radius: 50%; object-fit: cover; object-position: 50% 20%; background: #101012; }
+body.landing.about .sol-officer-disc { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: rgba(var(--cobalt-rgb), .12); color: var(--cobalt); font-family: var(--display); font-size: 16px; font-weight: 700; }
+body.landing.about .sol-officer-who { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+body.landing.about .sol-officer-who b { font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); font-weight: 600; }
+body.landing.about .sol-officer-who span { font-family: var(--display); font-size: 15px; font-weight: 600; color: var(--ink); }
+body.landing.about .sol-officer.is-open .sol-officer-who span { color: var(--faint); font-weight: 500; }
+body.landing.about .sol-key { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px; }
+body.landing.about .sol-key li { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); --k: var(--k-other); }
+body.landing.about .sol-key li i { width: 12px; height: 12px; border-radius: 4px; background: var(--k); }
+body.landing.about .sol-key li.kind-science { --k: var(--k-science); }
+body.landing.about .sol-key li.kind-eva { --k: var(--k-eva); }
+body.landing.about .sol-key li.kind-comms { --k: var(--k-comms); }
+body.landing.about .sol-key li.kind-health { --k: var(--k-health); }
+body.landing.about .sol-key li.kind-meal { --k: var(--k-meal); }
+body.landing.about .sol-key li.kind-social { --k: var(--k-social); }
+body.landing.about .sol-fixed { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+body.landing.about .sol-fixed div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+body.landing.about .sol-fixed dt { font-size: 14px; color: var(--dim); }
+body.landing.about .sol-fixed dd { margin: 0; font-family: var(--mono); font-size: 14px; font-weight: 600; letter-spacing: .04em; color: var(--ink); }
+body.landing.about .sol-note { margin: 0; font-size: 13px; line-height: 1.5; color: var(--faint); }
+@media (max-width: 860px) {
+  body.landing.about .sol { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  body.landing.about .sol-side { order: -1; }   /* the crew first on a phone */
+  body.landing.about .sol-list::before { left: 64px; }
+  body.landing.about .sol-item { grid-template-columns: 52px 12px minmax(0, 1fr); column-gap: 10px; }
+  body.landing.about .sol-kind { grid-column: 3; grid-row: 2; justify-self: start; margin-top: 4px; }
+  body.landing.about .sol-time { font-size: 12px; }
+}
 
 
 /* ------------------------------------------------------------ panel heads */
