@@ -200,7 +200,7 @@ address.
 
 | Screen | Address | Shows |
 |---|---|---|
-| Landing page | `/screen/landing` | The station's first screen — the ticker across the top, the name in its band, then the way to the habitat: the Earth, the line, the habitat far above, the latest exchanges and pictures either side of the line (*The landing page: four pages*). The one screen that keeps the ticker; the ticker's switches (light, language) and its links are not drawn |
+| Landing page | `/screen/landing` | The station's first screen — the ticker across the top, then the page's words at the left and the way to the habitat at the right: the Earth, the line, the habitat far above, the latest exchanges and pictures either side of the line (*The landing page: four pages*). The one screen that keeps the ticker; the ticker's switches (light, language) and its links are not drawn |
 | Habitat | `/screen/habitat` | The Habitat panel of the dashboard: the readings, the crew's figures, the stores and the power — live. Set to be read from across a room: what each tile measures in 32px type, its scale under it in 18px, the figures 46–54px, and the drawings (the dial, the ruler, the radar, the orbit) smaller for it (`screen.css`, `#habitat`) |
 | Message Board | `/screen/board` | The ground station's board: every message sent from the writing screen as it stands — in transit, awaiting a reply, answered — under BODENSTATION, then the latest exchanges, newest first, two across (one upright), as many as fit — live, a new exchange slides in as the board publishes it. Read-only: no composer, nothing to tap — a card's line into space stands on one line (*Diese Nachricht ist jetzt 20,02 Milliarden km von der Erde entfernt! · Gestartet vor 19 Stunden*) and opens no panel. The screen polls `/api/board?lang=<its language>&limit=400&station=1`, so the cards come back in the language the screen is in, all of them, the station's own among them |
 | Write to the crew | `/screen/write` | **The message-sending box, full screen** — the composer as the site has it (the crew's question of the day over it, the message box, the tags, the Transmit key), alone in the middle of the screen, for a touch screen in the square. **Every message sent from it is a new visitor's**: a callsign is minted for it alone (`src/lib/callsign.js`, `mint`; `POST /screen/write` in `server.js`), no cookie is set, so the next person at the screen starts afresh — no callsign carried over, no transit lock between them. Once a message is sent the crossing plays as on the site, then holds nine seconds on ARRIVED with the callsign named — *Your message went under the callsign DUST-465 — look for it on the Message Board once the crew have answered* — before the empty box comes back (`public/composer.js`, `data-hold`, `data-refresh`). The checks are the composer's (the channel open, the words within bounds); the hourly limit is the screen's own, per address, since all its messages come from one: `KIOSK_HOURLY_LIMIT`, sixty an hour. What is left half-written is cleared after three minutes with nobody touching the screen, and the page's own reloads wait while someone is writing or a message is crossing (`public/screen-write.js`) |
@@ -535,11 +535,12 @@ the running station.
 
 It ships with the plan and nothing invented: 13 Commander Blog slots (one a day, commanding officer only)
 with a cue each for the crew to write into, the typical daily schedule on every day (17 tasks ×
-13 days), an empty food plan (`meals.json` — each day's meals are chosen from the recipe book on the Habitat tab), **four tracked resources** — potable water, food rations, medical kits and fire extinguishers — (the potable water is carried in at
-**180 L** — `"start": 180` in `crew-and-inventory.json` — and every gauge of it is drawn against that; the other three stores'
-carried-in amounts, and every warning level, ship as 0 — placeholders to be written into `crew-and-inventory.json` before
-the run, or the day-1 count filed on the Habitat tab, which every gauge is then drawn against; until then such a store is
-shown dimmed with a dash, not as an empty store), and the sensor channels.
+13 days), an empty food plan (`meals.json` — each day's meals are chosen from the recipe book on the Habitat tab), **four tracked resources** — drinking water (October: *Drinking water*, not *Potable water*), food rations, medical kits and fire extinguishers — (the drinking water is carried in at
+**180 L** — `"start": 180` in `crew-and-inventory.json` — and the food rations at **35 days** — `"start": 35` — and every
+gauge of them is drawn against that; the other two stores' carried-in amounts, and every warning level, ship as 0 —
+placeholders to be written into `crew-and-inventory.json` before the run, or the day-1 count filed on the Habitat tab,
+which every gauge is then drawn against; until then such a store is shown dimmed with a dash, not as an empty store), and
+the sensor channels.
 The dailies — the stores' counts (`inventory-levels.json`), the steps and calories
 (`crew-figures.json`), the power (`power.json`) and the mission notes, findings and activities
 (`notes.json`) — ship empty and are filed on the tabs of mission control as the run goes, so
@@ -1126,13 +1127,18 @@ window tall with its cards in the middle and air around them, a margin at both s
   lines 300, their type a size down (`SIZE` in `public/sky.js`, `sheet.css`) — the sky, below,
   which keeps to the band between the habitat and the Earth and off the line — and on the Earth
   stands the nudge to scroll on, which the sky keeps clear of too. The picture of the Earth is a
-  little wider than the room on a desk and the width of the screen on a phone. On a desk the name and
-  the run stand in the band over it, one under the other — **MARS!platz** large, *Ground
-  Station* under it, *ZKM | Hertzlab*, then the run on one line (the dates in Mars orange, the
-  thirteen sols, and *opens in N days* before the run, *SOL 05 of 13* during it); **on a phone
-  the page has the whole first screen to itself**, the width of the screen and
-  its height between the header and the bar of keys — the note on the next page carries the
-  name. The drawing is decorative and hidden from assistive technology; the exchanges in the
+  little wider than the room on a desk and the width of the screen on a phone. **The page's words
+  stand at the left of the room on a desk, the room at the right** — two columns, 2 : 3, the words in
+  the middle of the room's height (October: "shift the Earth–habitat visual to the right and have
+  this on the left") — and **over the room on a phone**, the room under them a screen of its own,
+  the width of the screen and its height between the header and the bar of keys, and a stop of
+  the scroll (the next swipe brings it whole). The words (`intro` in `landing.js`, drawn once):
+  the eyebrow *ZKM | Hertzlab • Durational performance* in Mars, **MARS!platz** large with *Ground
+  Station* under it (the page's one heading), the paragraph on what the site is for — *MARS!
+  turns the Karlsruhe Marktplatz into MARS!platz. Can we go to Mars to save the Earth? …* — which
+  the note below used to carry (the note keeps its lead alone now), then the run (the dates in
+  Mars orange, the thirteen sols, and *opens in N days* before the run, *SOL 05 of 13* during
+  it). The drawing is decorative and hidden from assistive technology; the exchanges in the
   sky are the board's own. (To change either picture, replace the file under `public/space/`:
   the Earth's must keep its 1414 × 340 box and its limb where it is, or the mesh and the
   line's foot move with `EARTH` in `landing.js` and the `24.1%` in `sheet.css`; the habitat's
@@ -1259,13 +1265,16 @@ window tall with its cards in the middle and air around them, a margin at both s
   **Each is framed as a head-up display
   frames a readout**: a hairline edge with a faint glow, a bracket at each corner, and a data
   plate with a slanted end — cobalt for the pictures and for what comes from Earth, Mars orange
-  for the crew's answer. An exchange is a dark translucent panel: the plate *QUESTION · callsign
-  · time* at its top left corner, the question in white beneath, and the crew's answer in a box
-  of its own inside it, framed in orange with a bar at its left and its plate *ANSWER · ✧
-  officer · time*. A snapshot has its plate over it — a live dot and the moment it was taken as
-  its file name writes it (`greenhouse_trays_2026_09_25-16-41.jpg` → *25.09.2026 · 16:41*, the
-  year left off where the snapshot is narrow; the file's own date when the name has none) — and
-  the picture in a hairline frame with faint scan lines over it. As one comes in, a bright line
+  for the crew's answer. **Each is headed** (October: "the top say Latest Message: and Latest
+  Image"): an exchange is a dark translucent panel headed *LATEST MESSAGE:* with a live dot, then
+  the plate *QUESTION · callsign · time* under it, the question in white beneath, and the crew's
+  answer in a box of its own inside it, framed in orange with a bar at its left and its plate
+  *ANSWER · ✧ officer · time*. A snapshot has the plate *LATEST IMAGE* over it, with the live
+  dot, and the moment it was taken, as its file name writes it, at the foot of its frame over the
+  picture (`greenhouse_trays_2026_09_25-16-41.jpg` → *25.09.2026 · 16:41*, the year left off where
+  the snapshot is narrow; the file's own date when the name has none) — the picture in a hairline
+  frame with faint scan lines over it (the words come with the page in the visitor's language,
+  `data-latest-msg`, `data-latest-pic`; `public/sky.js` puts them on). As one comes in, a bright line
   sweeps down it once (not where a phone asks for less motion). The note a touch brings wears
   the same dress. **A touch on a snapshot or
   on an exchange brings a note beside it saying what it is** — a name and one key, no more
@@ -1311,8 +1320,10 @@ window tall with its cards in the middle and air around them, a margin at both s
   leads the first two to the Write page and the dashboard page. (Nothing on the station says or implies that the crew cannot leave
   the habitat: they go out on EVAs every day — the EVA key on the dome says so. The wording
   everywhere is that three crew members are always in it.)
-  On a phone the page opens with the station's name — the wordmark, *ZKM | Hertzlab* and the run (*Thu 15 – Tue 27 Oct 2026 · 13 sols in the habitat · opens in N
-  days*) — with room around it.
+  The note's lead stands alone on its card now: the paragraph on what the site is for — *MARS!
+  turns the Karlsruhe Marktplatz into MARS!platz…* — moved to the first page, beside the room,
+  with the station's name, the eyebrow and the run (October; `intro`), on a phone too, so the
+  note no longer opens with the name.
 - **The world's slowest chat.** Its heading with the welcome under it — *Every
   day at 19:00 CET, the Habitat opens its communication window…* — and no photograph; then what
   becomes of a message in three steps on one card of glass, each step's sign in a small tinted
@@ -2159,11 +2170,23 @@ October it did, and the chips seemed to do nothing) and the wall fetches the old
 tag's notes are on it, or says *No messages match this filter* when the correspondence has none. On a phone the bar sticks under the top bar with the chips in one
 sideways row; the Write key is the bar's.
 
-**A note** — white on the drafting paper by day, a graphite (`#303036`) a good step lighter than the night's near-black ground, so every message box stands apart from the page (October asked for the difference): a head with a disc carrying the writer's initials in a colour of the callsign's own
+**A note** — warm paper (`#fbf6ee`, the sand at the end of the brand's gradient thinned to a sheet) on the
+cool drafting paper by day, a warm graphite (`#2f2b29`) a good step lighter than the night's near-black ground,
+so every message box stands apart from the page (October asked for the difference), the crew's answer a white
+card on it (`#1a1716` by night). In the top-right corner, where a folded corner was, **the message's round trip**
+(October asked for something visual that shows whether a message has been answered or not — and not a tick): a
+small orbit between Earth, a cobalt disc at the lower left, and Mars at the upper right. Answered — the loop is
+closed in Mars orange and Mars is lit: the signal went out and came back (titled *Answered by the crew*, in German
+and French too). Not yet — only the way out is drawn, dashed, with the message as a dot flying along it, over and
+over, six seconds a crossing, the way back a ghost and Mars a hollow ring; once the message has arrived the dot
+rests inside Mars, which pulses until the crew answer (titled with the state's own words, `IN TRANSIT`, `AWAITING
+REPLY`). The waiting mark turns Mars under the pointer; where the reader asks for reduced motion the dot stands
+halfway and nothing pulses (`noteCard`; `aura.css`, `.note-mark` — the dot flies on CSS `offset-path`, and is
+left out where a browser has none). Your own notes carry a Mars edge at the left instead of the fold. Then a head
+with a disc carrying the writer's initials in a colour of the callsign's own
 (a hue from its letters, so one writer's notes share it), the callsign (no *Earth* or *Earth · you*
-beside it — October asked for the label to go; your own notes are known by their fold), a `NEW`
-pill while the answer is under six hours old, and the `Ref` number; a folded corner at the top
-right (in Mars on your own); the message as the note's title; **CREW ANSWER**
+beside it — October asked for the label to go; your own notes are known by their Mars edge), a `NEW`
+pill while the answer is under six hours old, and the `Ref` number; the message as the note's title; **CREW ANSWER**
 and the crew's reply, or the message's state (`IN TRANSIT` while it crosses, then `AWAITING
 REPLY`) where the answer will stand; a foot with the distance the message has travelled — the
 orbit sign, *7.06 billion km · 7 hours ago ›*, ticking (`spaceLine` compact; a tap on the note

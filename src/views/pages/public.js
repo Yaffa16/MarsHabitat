@@ -1881,7 +1881,8 @@ function messageCard(m, tz, T = same, { replyMeta = true, wall = false } = {}) {
 }
 
 /* A note on the wall (the Write page's board, boardWall; messageCard with `wall`): the card after the handed-over
-   reference — a flat card with a folded corner, its head a disc with the writer's initials and the callsign (no
+   reference — a flat card with, in its corner, the message's signal (answered or still out; the folded corner stood
+   there until October), its head a disc with the writer's initials and the callsign (no
    Earth · you beside it — October asked for the label to go; the viewer's own notes are known by their fold in
    Mars), the reference number at the right; the message as the note's title, and right after it its tags, each a
    key that narrows the wall to that tag (board.js), in the message's own colour; under them the crew's answer as a
@@ -1889,16 +1890,27 @@ function messageCard(m, tz, T = same, { replyMeta = true, wall = false } = {}) {
    answer at its right, the answer under them — or the message's state where the answer will stand; a foot with the
    message's distance into space (spaceLine, compact — board.js moves it on and a tap on the card opens its journey)
    and the day and time it was sent. The disc's colour comes from the callsign, so one writer's notes share it; the
-   viewer's own carry a fold in Mars. */
+   viewer's own carry a Mars edge at the left. */
 function noteCard(m, { fresh, tags, st, sent, replied, T }) {
   const cs = String(m.callsign || '');
   let h = 0; for (const ch of cs) h = (h * 31 + ch.charCodeAt(0)) % 360;             // a hue of the callsign's own
   const initials = (cs.match(/[A-Za-z0-9]/g) || []).slice(0, 2).join('').toUpperCase() || '·';
   const title = (d) => { const x = officer.shown(d); return T(x.charAt(0) + x.slice(1).toLowerCase()); };   // "Commanding officer", as the crew panel writes it
   const who = m.responder ? title(m.responder) : T('Crew');
+  // The mark in the corner, where the folded corner was (October): the message's round trip, Earth (cobalt, lower left)
+  // to Mars (upper right) and back. Answered — the loop closed in Mars orange, Mars lit: the signal went and came back.
+  // Not yet — the way out alone, dashed, with the message as a dot flying along it (the way back a ghost); once it has
+  // arrived the dot rests inside Mars, hollow until the crew answer, and pulses (aura.css, .note-mark). Its words are
+  // the state's own, as a title.
+  const planets = '<circle class="nm-earth" cx="7" cy="25" r="3.6"/><circle class="nm-mars" cx="25" cy="7" r="4.2"/>';
+  const flying = m.state === 'TRANSMITTED' || m.state === 'IN_TRANSIT';
+  const mark = m.response_body
+    ? `<span class="note-mark is-answered" title="${esc(T('Answered by the crew'))}"><svg viewBox="0 0 32 32" aria-hidden="true"><ellipse class="nm-loop" cx="16" cy="16" rx="12.7" ry="7" transform="rotate(-45 16 16)"/>${planets}</svg></span>`
+    : `<span class="note-mark is-waiting${flying ? '' : ' is-arrived'}" title="${esc(T(st.label))}"><svg viewBox="0 0 32 32" aria-hidden="true"><path class="nm-back" d="M25 7A12.7 7 -45 0 1 7 25"/><path class="nm-out" d="M7 25A12.7 7 -45 0 1 25 7"/>${planets}<circle class="nm-ship" r="2.2"/></svg></span>`;
   return `<article class="card xc note${fresh ? ' fresh' : ''}${m.response_body ? ' has-reply' : ''}" id="m${m.id}"
       data-tags="${esc(tags.join(','))}"${m.mine ? ' data-mine="1"' : ''}${
       m.mine && m.pending ? ' data-pending="1"' : ''}>
+    ${mark}
     <header class="note-head">
       <span class="note-av" aria-hidden="true" style="--av:${h}">${esc(initials)}</span>
       <span class="note-who"><span class="cs">${esc(cs)}</span></span>

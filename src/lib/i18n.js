@@ -32,7 +32,7 @@ const D = {
   // ---- navigation, rail, footer
   'Mission': ['Mission', 'Mission'],
   'Messages': ['Nachrichten', 'Messages'],
-  'At a Glance': ['Auf einen Blick', 'En un coup d’œil'],
+  'At a Glance': ['Auf einen Blick', 'Vue d’ensemble'],
   'Crew log': ['Logbuch der Crew', 'Journal de bord'],
   'About': ['Über', 'À propos'],
   'Write': ['Schreiben', 'Écrire'],
@@ -45,7 +45,7 @@ const D = {
   'ONE WAY': ['EINFACH', 'ALLER SIMPLE'],
   'YOU': ['DU', 'VOUS'],
   'DAY': ['TAG', 'JOUR'],
-  'Light': ['Licht', 'Lumière'],
+  'Light': ['Hell', 'Lumière'],
   'Switch to light mode': ['Zum hellen Modus wechseln', 'Passer en mode clair'],
   'Switch to dark mode': ['Zum dunklen Modus wechseln', 'Passer en mode sombre'],
   'Back to the station': ['Zurück zur Station', 'Retour à la station'],
@@ -157,7 +157,7 @@ const D = {
   'replied': ['beantwortet', 'répondu'],
 
   // ---- dashboard
-  'Mission dashboard': ['Missions-Dashboard', 'Tableau de bord de mission'],
+  'Mission dashboard': ['Missions-Dashboard', 'Suivi de mission'],
   'Trends': ['Trends', 'Tendances'],
   'Every channel, store and count over the run': ['Jeder Kanal, jeder Vorrat und jede Zählung über den Lauf', 'Chaque canal, chaque réserve et chaque compte sur toute la période'],
   'Meal': ['Mahlzeit', 'Repas'],
@@ -209,6 +209,7 @@ const D = {
   'The crew’s question today': ['Die Frage der Crew heute', 'La question de l’équipage aujourd’hui'],
   'Answer it below — or ask the crew something of your own.': ['Antworte unten — oder frag die Crew etwas Eigenes.', 'Répondez ci-dessous — ou posez votre propre question à l’équipage.'],
   'No mission filed for': ['Keine Mission eingetragen für', 'Aucune mission inscrite pour'],
+  'Answered by the crew': ['Von der Crew beantwortet', 'Répondu par l’équipage'],
   'Click to see how far it has travelled': ['Klicken und sehen, wie weit sie schon gereist ist', 'Cliquez pour voir jusqu’où il a voyagé'],
   'The sheet for this mission is still to come.': ['Das Blatt zu dieser Mission kommt noch.', 'La fiche de cette mission est encore à venir.'],
   'No schedule filed for today': ['Für heute kein Plan erfasst', 'Aucun programme saisi pour aujourd’hui'],
@@ -502,7 +503,7 @@ const D = {
 
   // ---- the landing page's aura layout: the composer's heading, the blogs' heading, the menu, the lead
   'Write to the crew': ['Schreib der Crew', 'Écrivez à l’équipage'],
-  'Live Mission Dashboard': ['Missions-Dashboard live', 'Tableau de bord de mission en direct'],
+  'Live Mission Dashboard': ['Missions-Dashboard live', 'Suivi de mission en temps réel'],
   'Dashboard': ['Dashboard', 'Tableau de bord'],
   'More': ['Mehr', 'Plus'],
   'Everything else on the station': ['Alles Weitere auf der Station', 'Tout le reste de la station'],
@@ -553,7 +554,7 @@ const D = {
   'Your message went under the callsign': ['Deine Nachricht ging unter dem Rufzeichen', 'Votre message est parti sous l’indicatif'],
   'look for it on the Message Board once the crew have answered.': ['such es auf dem Nachrichtenboard, sobald die Crew geantwortet hat.', 'cherchez-le sur le tableau des messages une fois que l’équipage aura répondu.'],
   'Latest from the crew': ['Das Neueste von der Crew', 'Le dernier mot de l’équipage'],
-  'At a glance': ['Auf einen Blick', 'En un coup d’œil'],
+  'At a glance': ['Auf einen Blick', 'Vue d’ensemble'],
   'The station, page by page': ['Die Station, Seite für Seite', 'La station, page par page'],
   'Send a message to the Crew': ['Schick der Crew eine Nachricht', 'Envoyez un message à l’équipage'],
   'Daily Blog': ['Tagesblog', 'Blog du jour'],
@@ -608,7 +609,7 @@ const D = {
   'The Habitat – Red Dust City': ['Das Habitat – Red Dust City', 'L’habitat – Red Dust City'],
   'The dome (lent to us by Staatstheater Karlsruhe) has a diameter of just under 10 m, making it a 75 square metre habitat for three astronauts from ZKM | Hertzlab, the artistic research department at ZKM. In three roles – Commander, Health Officer, Science Officer – we will simulate a Martian settlement, cooking, working and sleeping in the Habitat. The city society is invited to act as our ground station, to write us messages, to look into our daily activities, to meet us while we’re out on walks in our space suits or to communicate with us directly each day. Every day, 11 days in total, we tackle one big question that was raised during the project: How do people collaborate, if communication is disrupted by distance? Does human survival on Mars depend on art and beauty being present? How much is the cost (in terms of energy expenditure) of keeping a human alive? And how do we, from our anthropocentric perspective, perceive the more-than-human spacefaring existences of our “Spaceship Earth”?':
     ['Die Kuppel (eine Leihgabe des Staatstheaters Karlsruhe) hat einen Durchmesser von knapp 10 m und bietet damit ein 75 Quadratmeter großes Habitat für drei Astronautinnen und Astronauten des ZKM | Hertzlab, der Abteilung für künstlerische Forschung am ZKM. In drei Rollen – Commander, Health Officer, Science Officer – simulieren wir eine Marssiedlung: Wir kochen, arbeiten und schlafen im Habitat. Die Stadtgesellschaft ist eingeladen, unsere Bodenstation zu sein – uns Nachrichten zu schreiben, in unseren Alltag hineinzuschauen, uns zu treffen, wenn wir in unseren Raumanzügen unterwegs sind, oder jeden Tag direkt mit uns zu sprechen. Jeden Tag, elf Tage lang, nehmen wir uns eine große Frage vor, die im Projekt aufgekommen ist: Wie arbeiten Menschen zusammen, wenn die Entfernung die Kommunikation stört? Hängt das Überleben der Menschen auf dem Mars davon ab, dass Kunst und Schönheit da sind? Was kostet es (an Energie), einen Menschen am Leben zu halten? Und wie nehmen wir, aus unserer anthropozentrischen Sicht, die mehr-als-menschlichen Raumfahrenden unseres „Raumschiffs Erde“ wahr?',
-     'Le dôme (prêté par le Staatstheater Karlsruhe) a un diamètre d’un peu moins de 10 m, ce qui en fait un habitat de 75 mètres carrés pour trois astronautes du ZKM | Hertzlab, le département de recherche artistique du ZKM. Dans trois rôles – Commander, Health Officer, Science Officer – nous simulons une colonie martienne : nous cuisinons, travaillons et dormons dans l’habitat. La société de la ville est invitée à être notre station au sol : nous écrire des messages, suivre nos activités quotidiennes, nous rencontrer lors de nos sorties en combinaison spatiale ou nous parler directement chaque jour. Chaque jour, onze jours au total, nous nous attaquons à une grande question soulevée pendant le projet : comment les gens collaborent-ils quand la distance perturbe la communication ? La survie humaine sur Mars dépend-elle de la présence de l’art et de la beauté ? Que coûte (en énergie) le maintien en vie d’un être humain ? Et comment percevons-nous, depuis notre point de vue anthropocentrique, les existences spatiales plus-qu’humaines de notre « vaisseau spatial Terre » ?'],
+     'Le dôme (prêté par le Staatstheater Karlsruhe) a un diamètre d’un peu moins de 10 m, ce qui en fait un habitat de 75 mètres carrés pour trois astronautes du ZKM | Hertzlab, le département de recherche artistique du ZKM. Dans trois rôles – Commander, Health Officer, Science Officer – nous simulons une colonie martienne : nous cuisinons, travaillons et dormons dans l’habitat. La société de la ville est invitée à être notre centre de contrôle terrestre : nous écrire des messages, suivre nos activités quotidiennes, nous rencontrer lors de nos sorties en combinaison spatiale ou nous parler directement chaque jour. Chaque jour, onze jours au total, nous nous attaquons à une grande question soulevée pendant le projet : comment les gens collaborent-ils quand la distance perturbe la communication ? La survie humaine sur Mars dépend-elle de la présence de l’art et de la beauté ? Que coûte (en énergie) le maintien en vie d’un être humain ? Et comment percevons-nous, depuis notre point de vue anthropocentrique, les existences spatiales plus-qu’humaines de notre « vaisseau spatial Terre » ?'],
   'The Insight': ['Die Einsicht', 'L’enseignement'],
   'What we are offering through this project is an invitation that we’re extending to the city society of Karlsruhe, to engage not only with the real possibility of space flight, but also to imagine themselves as beings in space already, on a spaceship called Earth. In order to remain viable for a broad range of living things, Earth needs care and stewardship as much as a space station would. Through the interaction with us – discussing, writing, receiving messages – we hope to encourage a change of perspective that leads us in turn closer to home.':
     ['Was wir mit diesem Projekt anbieten, ist eine Einladung an die Stadtgesellschaft von Karlsruhe: sich nicht nur mit der realen Möglichkeit der Raumfahrt zu befassen, sondern sich auch vorzustellen, schon jetzt Wesen im Weltraum zu sein – auf einem Raumschiff namens Erde. Um für eine große Vielfalt von Lebewesen bewohnbar zu bleiben, braucht die Erde Fürsorge und Verantwortung, so sehr wie eine Raumstation. Durch den Austausch mit uns – im Gespräch, im Schreiben, im Empfangen von Nachrichten – hoffen wir, einen Perspektivwechsel anzustoßen, der uns wiederum näher nach Hause führt.',
@@ -796,7 +797,7 @@ const D = {
   'Hydroponics': ['Hydroponik', 'Hydroponie'],
   'Read More than Human on the About page': ['Mehr als menschlich auf der Über-Seite lesen', 'Lire Plus qu’humain sur la page À propos'],
   'Open the Daily Schedule': ['Den Tagesplan öffnen', 'Ouvrir le programme du jour'],
-  'Ground Station': ['Bodenstation', 'Station au sol'],
+  'Ground Station': ['Bodenstation', 'Centre de contrôle terrestre'],
   'Communication': ['Kommunikation', 'Communication'],
   'Power generator': ['Stromgenerator', 'Générateur électrique'],
   'press a part of the habitat to see what is happening in it': ['einen Teil des Habitats drücken, um zu sehen, was darin geschieht', 'appuyer sur une partie de l’habitat pour voir ce qui s’y passe'],
@@ -838,7 +839,7 @@ const D = {
      'Les autres astronautes de l’habitat : des grillons vivants, notre source de protéines alternative, un chien robot, meilleur ami de l’astronaute et aide pour les sorties, et un robot de soutien émotionnel pour notre santé mentale — ainsi que les jardins et les étagères hydroponiques, où la nourriture fraîche pousse sans terre.'],
   'The crew is reachable by online message through this ground station website, by postcard and by direct communication each day at 19:00. All messages written here are also literally sent into space!':
     ['Die Crew ist per Online-Nachricht über diese Bodenstations-Website, per Postkarte und täglich um 19:00 im direkten Gespräch erreichbar. Alle hier geschriebenen Nachrichten werden außerdem buchstäblich ins All gesendet!',
-     'L’équipage est joignable par message en ligne via ce site de la station au sol, par carte postale et en communication directe chaque jour à 19:00. Tous les messages écrits ici sont aussi, littéralement, envoyés dans l’espace !'],
+     'L’équipage est joignable par message en ligne via ce site du centre de contrôle terrestre, par carte postale et en communication directe chaque jour à 19:00. Tous les messages écrits ici sont aussi, littéralement, envoyés dans l’espace !'],
   'Each of our days has a specific research mission, centered around one of the five topics MARS! is composed of: Habitat, Mental Health, Food, Governance or Resource Management. We take a hard look at our society from the red planet looking down on Earth.':
     ['Jeder unserer Tage hat eine eigene Forschungsmission, rund um eines der fünf Themen, aus denen MARS! besteht: Habitat, psychische Gesundheit, Ernährung, Governance oder Ressourcenmanagement. Wir werfen vom roten Planeten aus einen genauen Blick auf unsere Gesellschaft auf der Erde.',
      'Chacune de nos journées a une mission de recherche précise, autour de l’un des cinq thèmes qui composent MARS! : habitat, santé mentale, alimentation, gouvernance ou gestion des ressources. Depuis la planète rouge, nous portons un regard sans concession sur notre société, là-bas sur Terre.'],
@@ -853,7 +854,7 @@ const D = {
      'Trois astronautes du ZKM — Commander/Comms, Health Officer et Science Officer — se sont portés volontaires pour mener cette expérience et sont maintenant en poste dans l’habitat Red Dust City, chacun avec son rôle et ses responsabilités. Vous pouvez voir ce qu’ils font dans la galerie en direct, suivre leurs humeurs et en savoir plus sur leurs tâches quotidiennes.'],
   'Each day has a strict schedule the astronauts adhere to and the Habitat is divided into specific zones for working, cooking, playing and sleeping — because going out for a stroll requires serious effort. Have a look in the media gallery or look inside our windows on the MARS!platz to see how we are using the space.':
     ['Jeder Tag folgt einem strengen Zeitplan, an den sich die Astronauten halten, und das Habitat ist in Zonen zum Arbeiten, Kochen, Spielen und Schlafen eingeteilt — denn ein Spaziergang nach draußen ist ein ernsthafter Aufwand. Schau in die Mediengalerie oder durch unsere Fenster auf dem MARS!platz, um zu sehen, wie wir den Raum nutzen.',
-     'Chaque jour suit un programme strict que les astronautes respectent, et l’habitat est divisé en zones pour travailler, cuisiner, jouer et dormir — car sortir faire un tour demande un sérieux effort. Jetez un œil à la galerie médias ou regardez par nos fenêtres sur le MARS!platz pour voir comment nous utilisons l’espace.'],
+     'Chaque jour suit un programme strict que les astronautes respectent, et l’habitat est divisé en zones pour travailler, cuisiner, jouer et dormir — car sortir faire un tour demande un sérieux effort. Jetez un œil à la galerie médias ou regardez par nos fenêtres sur la MARS!platz pour voir comment nous utilisons l’espace.'],
   'When every liter of water has to be carried up by space rocket, we become more mindful of our usage. Our water recycling system is one of the things we brought to reflect on resources and how we are currently treating them on Earth.':
     ['Wenn jeder Liter Wasser mit der Rakete hochgebracht werden muss, gehen wir bewusster damit um. Unser Wasserrecycling-System ist eines der Dinge, die wir mitgebracht haben, um über Ressourcen nachzudenken — und darüber, wie wir derzeit auf der Erde mit ihnen umgehen.',
      'Quand chaque litre d’eau doit être monté par fusée, on devient plus attentif à sa consommation. Notre système de recyclage de l’eau est l’une des choses que nous avons apportées pour réfléchir aux ressources et à la manière dont nous les traitons aujourd’hui sur Terre.'],
@@ -1067,17 +1068,17 @@ const D = {
   'Welcome to the World’s Slowest Chat (that also zips into space!)': ['Willkommen im langsamsten Chat der Welt (der auch ins All saust!)', 'Bienvenue dans le chat le plus lent du monde (qui file aussi dans l’espace !)'],
   'As our ground station personnel, you can discuss the question of the day with us, send us messages about things we should know or find out for you or send a message to space via our habitat. The Comms Officer will answer your messages personally. You can also drop us a postcard on MARS!platz or come to our daily Communication Hour at {time} to speak to us directly.':
     ['Als unser Bodenstationspersonal kannst du die Frage des Tages mit uns diskutieren, uns Nachrichten über Dinge schicken, die wir wissen oder für dich herausfinden sollten, oder über unser Habitat eine Nachricht ins All senden. Der Comms Officer beantwortet deine Nachrichten persönlich. Du kannst uns auch eine Postkarte auf dem MARS!platz hinterlassen oder täglich um {time} zu unserer Kommunikationsstunde kommen, um direkt mit uns zu sprechen.',
-     'En tant que personnel de notre station au sol, vous pouvez discuter avec nous de la question du jour, nous envoyer des messages sur ce que nous devrions savoir ou chercher pour vous, ou envoyer un message dans l’espace via notre habitat. L’officier de communication répond personnellement à vos messages. Vous pouvez aussi nous laisser une carte postale sur le MARS!platz ou venir à notre heure de communication quotidienne à {time} pour nous parler directement.'],
+     'En tant que membre du personnel de notre centre de contrôle terrestre, vous pouvez discuter avec nous de la question du jour, nous envoyer des messages sur ce que nous devrions savoir ou chercher pour vous, ou envoyer un message dans l’espace via notre habitat. L’officier de communication répondra personnellement à vos messages. Vous pouvez aussi nous laisser une carte postale sur la MARS!platz ou venir lors de notre heure de communication quotidienne à {time} pour nous parler directement.'],
   'How it works:': ['So funktioniert es:', 'Comment ça marche :'],
   'Have you checked your CO₂ sensors lately? They seem to be running dangerously high': ['Habt ihr eure CO₂-Sensoren in letzter Zeit geprüft? Sie scheinen gefährlich hoch zu stehen', 'Avez-vous vérifié vos capteurs de CO₂ récemment ? Ils semblent dangereusement élevés'],
   'Your message from Earth will travel to Mars to reach the crew on MARS!platz, where it will be seen and answered accordingly.':
-    ['Deine Nachricht von der Erde reist zum Mars und erreicht die Crew auf dem MARS!platz, wo sie gelesen und entsprechend beantwortet wird.', 'Votre message de la Terre voyagera vers Mars pour atteindre l’équipage sur le MARS!platz, où il sera lu et recevra une réponse.'],
+    ['Deine Nachricht von der Erde reist zum Mars und erreicht die Crew auf dem MARS!platz, wo sie gelesen und entsprechend beantwortet wird.', 'Votre message de la Terre voyagera vers Mars pour atteindre l’équipage sur la MARS!platz, où il sera lu et recevra une réponse.'],
   'At the same time, your message will also travel into space. Click on the Message Board to see how far your message has gone. Keep it family friendly.':
     ['Gleichzeitig reist deine Nachricht auch ins All. Klick auf das Nachrichtenboard, um zu sehen, wie weit deine Nachricht schon gekommen ist. Bitte familienfreundlich bleiben.', 'En même temps, votre message voyagera aussi dans l’espace. Cliquez sur le tableau des messages pour voir jusqu’où il est allé. Restez bon enfant.'],
   'Yes, CO₂ levels were elevated. We took countermeasures and sensors indicate we are back at normal parameters. Thanks for the heads up!':
     ['Ja, die CO₂-Werte waren erhöht. Wir haben Gegenmaßnahmen ergriffen, und die Sensoren zeigen, dass wir wieder im Normalbereich sind. Danke für den Hinweis!', 'Oui, les niveaux de CO₂ étaient élevés. Nous avons pris des contre-mesures et les capteurs indiquent que nous sommes revenus aux paramètres normaux. Merci de nous avoir prévenus !'],
   'Messages will be answered during the day and can be viewed on the {board}. Also, at {time}, the daily communication window opens where people on MARS!platz can communicate directly with the crew.':
-    ['Nachrichten werden im Laufe des Tages beantwortet und sind auf dem {board} zu sehen. Außerdem öffnet sich um {time} das tägliche Kommunikationsfenster, in dem die Menschen auf dem MARS!platz direkt mit der Crew sprechen können.', 'Les messages reçoivent une réponse dans la journée et peuvent être consultés sur le {board}. De plus, à {time}, la fenêtre de communication quotidienne s’ouvre : les gens sur le MARS!platz peuvent alors parler directement avec l’équipage.'],
+    ['Nachrichten werden im Laufe des Tages beantwortet und sind auf dem {board} zu sehen. Außerdem öffnet sich um {time} das tägliche Kommunikationsfenster, in dem die Menschen auf dem MARS!platz direkt mit der Crew sprechen können.', 'Les messages reçoivent une réponse dans la journée et peuvent être consultés sur le {board}. De plus, à {time}, la fenêtre de communication quotidienne s’ouvre : les gens sur la MARS!platz peuvent alors parler directement avec l’équipage.'],
   'message board': ['Nachrichtenboard', 'tableau des messages'],
   'A message from Earth enters the communications queue. It will take time to reach the crew.':
     ['Eine Nachricht von der Erde reiht sich in die Warteschlange ein. Es dauert, bis sie die Crew erreicht.', 'Un message de la Terre entre dans la file d’attente des communications. Il lui faudra du temps pour atteindre l’équipage.'],
@@ -1109,9 +1110,11 @@ const D = {
   'MARS! – Mobilizing Awareness for Resilient Societies! – is a three-part project of ZKM | Karlsruhe, the current part being a 13-day field test of prototypes and experiments in the heart of Karlsruhe.':
     ['MARS! – Mobilizing Awareness for Resilient Societies! – ist ein dreiteiliges Projekt des ZKM | Karlsruhe; der aktuelle Teil ist ein 13-tägiger Feldtest von Prototypen und Experimenten im Herzen von Karlsruhe.',
      'MARS! – Mobilizing Awareness for Resilient Societies! – est un projet en trois parties du ZKM | Karlsruhe, dont la partie actuelle est un test de terrain de 13 jours de prototypes et d’expériences au cœur de Karlsruhe.'],
-  'MARS! turns the Marktplatz into MARS!platz. Can we go to Mars to save the Earth? Three astronauts are finding out, and you can help! Write them a message, have a look on the mission dashboard to find out if their food supply is running low or see what they’re currently researching.':
-    ['MARS! macht den Marktplatz zum MARS!platz. Können wir zum Mars fliegen, um die Erde zu retten? Drei Astronautinnen und Astronauten finden es heraus – und du kannst helfen! Schreib ihnen eine Nachricht, wirf einen Blick auf das Missions-Dashboard, um zu sehen, ob ihre Lebensmittelvorräte knapp werden, oder schau, was sie gerade erforschen.',
-     'MARS! transforme la Marktplatz en MARS!platz. Peut-on aller sur Mars pour sauver la Terre ? Trois astronautes cherchent la réponse, et vous pouvez les aider ! Écrivez-leur un message, jetez un œil au tableau de bord de la mission pour savoir si leurs réserves de nourriture s’épuisent ou voyez ce qu’ils étudient en ce moment.'],
+  'MARS! turns the Karlsruhe Marktplatz into MARS!platz. Can we go to Mars to save the Earth? Three astronauts are finding out, and you can help! Write them a message, have a look on the mission dashboard to find out if their food supply is running low or see what they’re currently researching.':
+    ['MARS! macht den Karlsruher Marktplatz zum MARS!platz. Können wir zum Mars fliegen, um die Erde zu retten? Drei Astronautinnen und Astronauten finden es heraus – und du kannst helfen! Schreib ihnen eine Nachricht, wirf einen Blick auf das Missions-Dashboard, um zu sehen, ob ihre Lebensmittelvorräte knapp werden, oder schau, was sie gerade erforschen.',
+     'MARS! transforme la Marktplatz de Karlsruhe en MARS!platz. Peut-on aller sur Mars pour sauver la Terre ? Trois astronautes cherchent la réponse, et vous pouvez les aider ! Écrivez-leur un message, jetez un œil au tableau de bord de la mission pour savoir si leurs réserves de nourriture s’épuisent ou voyez ce qu’ils étudient en ce moment.'],
+  'Latest message:': ['Neueste Nachricht:', 'Dernier message :'],
+  'Latest image': ['Neuestes Bild', 'Dernière image'],
   'MARS is a durational performance in which three crew members are always in the habitat for the thirteen days of the run.':
     ['MARS ist eine Langzeitperformance, bei der während der dreizehn Tage des Laufs immer drei Crewmitglieder im Habitat sind.',
       'MARS est une performance de longue durée : pendant les treize jours de la mission, trois membres d’équipage sont toujours dans l’habitat.'],
@@ -1129,7 +1132,7 @@ const D = {
   'Communicate': ['Kommunizieren', 'Communiquer'],
   'Every day at {time}, the Habitat opens its communication window. Come to MARS!platz at Karlsruhe’s Marktplatz or connect through the online portal to speak with the astronauts and discover what is happening inside the Habitat.':
     ['Jeden Tag um {time} öffnet das Habitat sein Kommunikationsfenster. Komm auf den MARS!platz am Karlsruher Marktplatz oder verbinde dich über das Online-Portal, um mit den Astronauten zu sprechen und zu erfahren, was im Habitat geschieht.',
-      'Chaque jour à {time}, l’habitat ouvre sa fenêtre de communication. Venez au MARS!platz sur la Marktplatz de Karlsruhe ou connectez-vous au portail en ligne pour parler avec les astronautes et découvrir ce qui se passe dans l’habitat.'],
+      'Chaque jour à {time}, l’habitat ouvre sa fenêtre de communication. Venez à la MARS!platz sur la Marktplatz de Karlsruhe ou connectez-vous au portail en ligne pour parler avec les astronautes et découvrir ce qui se passe dans l’habitat.'],
   'Transit': ['Transit', 'Transit'],
   'Downlink': ['Downlink', 'Liaison descendante'],
   'Send a message': ['Eine Nachricht senden', 'Envoyer un message'],

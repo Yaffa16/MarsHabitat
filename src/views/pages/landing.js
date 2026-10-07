@@ -3,17 +3,17 @@
  * The landing page: four pages — the way to the habitat (space, below):
  * the Earth at the foot of the screen, the habitat far above it, a dashed
  * line between them and the latest exchanges and pictures coming and going
- * around it (sky.js, public/sky.js), with the station's name over it on a
- * wider screen; a note on what MARS is and what this website is for, with
+ * around it (sky.js, public/sky.js), with the station's name, the eyebrow,
+ * the paragraph on what the site is for and the run at its left on a wider
+ * screen and over it on a phone (intro); a note on what MARS is, with
  * the doors to the composer and the dashboard and a key to the About page
  * (Know more) for the rest; the habitat itself (dome.js) — the dome on its
  * sheet, its keys floating about it; and the world's slowest chat — its
  * welcome, then what becomes of a message written here, in three steps:
  * uplink, transit, downlink. (The mission's two chapters that stood between
  * the note and the chat are gone: the About page tells the mission.)
- * A phone opens on the first page alone, the whole screen, and has the name
- * at the head of the note (the next page); a wider screen has the name in a
- * band over the first page. On a phone the chat ends in the door to the
+ * A phone opens on the words and the room under them, the room a screen of
+ * its own on the next swipe. On a phone the chat ends in the door to the
  * composer; on a wider screen the portal and the dashboard follow on the
  * same page (public.js).
  *
@@ -63,23 +63,26 @@ const fill = (T, key, vals) => Object.entries(vals).reduce((s, [k, v]) => s.spli
 const meta = (left, right = '', cls = '') => `<div class="sheet-meta${cls ? ' ' + cls : ''}"><span>${left}</span>${right ? `<span>${right}</span>` : ''}</div>`;
 
 /* ---------------------------------------------------------------- P01 */
-/** The station's name — MARS!platz : Ground Station — the line under it and the run — in the band over the first page on
-    a wider screen (`desk`: the name large in the top left corner, the line and the run beside it on its baseline), at
-    the head of the note on a phone, where the first page has the screen to itself (`phone`); each is drawn where it is
-    shown, and the other is not drawn at all (sheet.css). */
-function intro(ctx, where = 'desk') {
+/** The first page's words, at the left of the room on a wider screen and over it on a phone (October: "shift the
+    Earth–habitat visual to the right and have this on the left"): the eyebrow — ZKM | Hertzlab • Durational
+    performance — the station's name, MARS!platz, with Ground Station under it (the page's one heading), the paragraph
+    on what MARS! is for (the note's, moved up here), and the run — its dates, the sols, and how far off or along it is.
+    Drawn once; sheet.css lays it beside the room or over it. */
+function intro(ctx) {
   const T = ctx.T, m = ctx.mission;
   const pre = m.phase === 'PRE_LAUNCH', n = m.daysUntilStart;
   const now = pre ? `${T('opens in')} ${n} ${T(n === 1 ? 'day' : 'days')}`
     : m.phase === 'ACTIVE' ? `SOL ${String(m.clampedDay).padStart(2, '0')} ${T('of')} ${m.totalDays}` : T('Mission complete');
-  const H = where === 'desk' ? 'h1' : 'p';                            // one heading for the page: the name over the habitat
   return `
-    <div class="sheet-intro is-${where}">
-      <${H} class="wordmark">MARS<span class="bang">!</span>platz<span class="wm-sep"> : </span><span class="wm-ground">${T('Ground Station')}</span></${H}>
-      <p class="tagline"><b>ZKM | Hertzlab</b></p>
+    <div class="sheet-intro">
+      <p class="intro-eyebrow">ZKM | Hertzlab <span class="intro-dot" aria-hidden="true">•</span> ${T('Durational performance')}</p>
+      <h1 class="wordmark">MARS<span class="bang">!</span>platz<span class="wm-sep"> : </span><span class="wm-ground">${T('Ground Station')}</span></h1>
+      <p class="intro-text">${T(INTRO_TEXT)}</p>
       <p class="run-dates"><b>${esc(m.runLabel)}</b> · ${m.totalDays} ${T('sols in the habitat')} · <span class="run-now">${now}</span></p>
     </div>`;
 }
+/** What MARS! is for, in October's words: on the first page beside the room (intro), where the note had it. */
+const INTRO_TEXT = 'MARS! turns the Karlsruhe Marktplatz into MARS!platz. Can we go to Mars to save the Earth? Three astronauts are finding out, and you can help! Write them a message, have a look on the mission dashboard to find out if their food supply is running low or see what they’re currently researching.';
 
 /* ---------------------------------------------------------------- the first page: Earth to the habitat */
 /**
@@ -99,9 +102,9 @@ function intro(ctx, where = 'desk') {
  * exchanges with Earth and the newest pictures out of the habitat come and
  * go (sky.js draws them into the page; public/sky.js places them clear of
  * the Earth, the habitat and the line or the arc — data-sky-solid,
- * data-sky-round — and keeps them current). A field of stars behind it all. The name and the run
- * stand in the band over it on a wider screen (intro); a phone has the page
- * to itself. On the Earth, the nudge to scroll on (scrollNudge). Decorative
+ * data-sky-round — and keeps them current). A field of stars behind it all. The words — the name, the
+ * eyebrow, the paragraph, the run — stand at the room's left on a wider screen and over it on a phone (intro;
+ * sheet.css). On the Earth, the nudge to scroll on (scrollNudge). Decorative
  * but for the sky's items: the drawing is hidden from assistive technology,
  * and the exchanges are the board's own.
  *
@@ -137,7 +140,7 @@ function space(ctx, { sky = null } = {}) {
   const globe = `left:${(100 * (EARTH.cx - EARTH.r) / EARTH.w).toFixed(2)}%;top:${(100 * (EARTH.cy - EARTH.r) / EARTH.h).toFixed(2)}%;width:${(200 * EARTH.r / EARTH.w).toFixed(2)}%`;
   return `
   <section class="sheet sheet-p0 space" id="top" aria-label="${esc(T('From Earth to the habitat'))}" data-page>
-    ${intro(ctx, 'desk')}
+    ${intro(ctx)}
     <div class="space-room" id="space-room">
       <div class="space-stars" aria-hidden="true"></div>
       <div class="space-dome" data-sky-solid aria-hidden="true">
@@ -192,22 +195,18 @@ function note(ctx) {
   // the first word is the project's name, set bold and linked, in every language
   const lead = esc(T('MARS! – Mobilizing Awareness for Resilient Societies! – is a three-part project of ZKM | Karlsruhe, the current part being a 13-day field test of prototypes and experiments in the heart of Karlsruhe.'))
     .replace(/^MARS!/, `<a class="note-project" href="${ZKM_MARS}" target="_blank" rel="noopener"><b>MARS!</b></a>`);
-  // the second page: the station's name at its head on a phone, the note, and beside it (under it on a phone) the two
-  // calls — the doors of the page (no keys under the note's words any more: the two cards are the doors; the About
-  // page is the header's)
+  // the second page: the note — its lead alone, since its paragraph on what the site is for stands on the first page
+  // now (intro) — and beside it (under it on a phone) the two calls — the doors of the page (no keys under the note's
+  // words any more: the two cards are the doors; the About page is the header's)
   // on a desk the note stands at the left and the two calls one over the other at its right (page2, sheet.css); a phone
   // stacks them, the note first
   return `
   <section class="sheet sheet-p2" id="note" aria-label="${esc(T('Durational performance'))}" data-page>
-    ${intro(ctx, 'phone')}
     <div class="page2">
       <div class="note-card">
         ${meta(T('Durational performance'), '', 'is-ruled')}
         <div class="note-body">
           <p class="note-lead">${lead}</p>
-          <div class="note-aside">
-            <p class="note-more">${T('MARS! turns the Marktplatz into MARS!platz. Can we go to Mars to save the Earth? Three astronauts are finding out, and you can help! Write them a message, have a look on the mission dashboard to find out if their food supply is running low or see what they’re currently researching.')}</p>
-          </div>
         </div>
       </div>
       ${calls(ctx)}

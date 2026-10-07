@@ -162,8 +162,8 @@
   })();
 
   /* ------------------------------------------------------------ the pages of the scroll, on a phone (sheet.css)
-     A phone held upright goes from one page of the landing to the next with a swipe — the habitat, the name and the note,
-     the chat, the foot. The room a page has is the screen between the header and the bar of keys with the
+     A phone held upright goes from one page of the landing to the next with a swipe — the words and the room under them,
+     the room whole, the note, the chat, the foot. The room a page has is the screen between the header and the bar of keys with the
      browser's own bars folded away, as they are once the page is scrolled (100lvh) — so that nothing changes while they
      fold and unfold. A page that does not fit that room as it is drawn is set a little closer (is-snug); one that still
      does not (a small phone, a long language, the chat's three steps) is marked tall, and then its parts are stops of the
@@ -192,7 +192,7 @@
     // The stops of the scroll are wherever the stylesheet has the scroll stop, read off it, and the end. Two closer than a
     // flick of the thumb (the last step of the chat and the end, often) would make a swipe that hardly moves: the part's
     // stop gives way (no-stop).
-    var CAND = 'body.landing:not(.inner) :is([data-page], .call, .note-card, .steps, .step, .foot)';
+    var CAND = 'body.landing:not(.inner) :is([data-page], .space-room, .call, .note-card, .steps, .step, .foot)';   // the room is a stop under the first page's words (sheet.css)
     var PART = 'body.landing:not(.inner) [data-page] :is(.call, .note-card, .steps, .step)';
     function marks() {
       var cs = getComputedStyle(document.documentElement), h = window.innerHeight;
@@ -264,6 +264,7 @@
   var tz = sky.getAttribute('data-tz') || 'Europe/Berlin', start = sky.getAttribute('data-start') || '', days = num('data-days', 13);
   var EXCHANGES = num('data-exchanges', 6), PICTURES = num('data-pictures', 5), AT_ONCE = num('data-at-once', 3), CLIP = num('data-clip', 90);
   var WORD = { q: sky.getAttribute('data-q') || 'Question', a: sky.getAttribute('data-a') || 'Answer' };   // in the page's language
+  var HEAD = { msg: sky.getAttribute('data-latest-msg') || 'Latest message:', pic: sky.getAttribute('data-latest-pic') || 'Latest image' };   // the items' heads (October)
   var upright = window.matchMedia ? window.matchMedia('(max-width: 760px) and (min-height: 521px)') : null;
   var desk = window.matchMedia ? window.matchMedia('(min-width: 761px) and (min-height: 521px)') : null;
   var shown = function () { return getComputedStyle(sky).display !== 'none'; };   // aura.css decides where there is a sky
@@ -511,6 +512,7 @@
     }
     if (!m) return;
     var el = document.createElement('div'); el.className = 'sky-msg ' + (m.reply ? 'is-crew' : 'is-earth'); el.setAttribute('data-id', String(m.id));
+    var hd = document.createElement('span'); hd.className = 'sky-head'; hd.textContent = HEAD.msg; el.appendChild(hd);   // LATEST MESSAGE: over the exchange
     el.appendChild(part('q', m.who, m.at, m.text));
     if (m.reply) el.appendChild(part('a', m.rwho, m.rat, m.reply));
     el.style.maxWidth = size().line + 'px'; el.style.left = '0px'; el.style.top = '0px';
@@ -527,16 +529,18 @@
     for (i = 0; i < ok.length; i++) { var c = ok[(n.pic + i) % ok.length]; if (there.indexOf(String(c.id)) < 0) { p = c; n.pic = (n.pic + i + 1) % ok.length; break; } }
     if (!p) return;
     var w = size().pic;
-    // its frame: the brackets' padding around the picture, and its plate (the time) with the gap under it (sheet.css)
+    // its frame: the brackets' padding around the picture, and its plate — LATEST IMAGE — with the gap under it
+    // (sheet.css); the moment the picture was taken stands at the foot of the frame, over the picture
     var PAD = 6, PLATE = 21, st = picStamp(p.when, w);
-    var ph = Math.round((w - 2 * PAD) / PIC_RATIO), h = ph + 2 * PAD + (st ? PLATE : 0);
+    var ph = Math.round((w - 2 * PAD) / PIC_RATIO), h = ph + 2 * PAD + PLATE;
     var at = spot(w, h);
     if (!at) return;
     var a = document.createElement('a'); a.className = 'sky-pic'; a.href = p.url; a.target = '_blank'; a.rel = 'noopener'; a.tabIndex = -1; a.setAttribute('data-id', String(p.id));
     a.style.width = w + 'px'; a.style.height = h + 'px';
     var fr = document.createElement('span'); fr.className = 'sky-frame';
     var im = loaded[p.id].cloneNode(); im.alt = ''; fr.appendChild(im);
-    if (st) { var s = document.createElement('span'); s.className = 'sky-when'; s.textContent = st; a.appendChild(s); }
+    if (st) { var sp = document.createElement('span'); sp.className = 'sky-stamp'; sp.textContent = st; fr.appendChild(sp); }
+    var s = document.createElement('span'); s.className = 'sky-when'; s.textContent = HEAD.pic; a.appendChild(s);
     a.appendChild(fr);
     sky.appendChild(a); show(a, at, vary(LIFE_PIC));
   }

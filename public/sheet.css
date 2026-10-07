@@ -135,10 +135,18 @@ body.landing .sheet-meta > span:first-child { color: var(--mars-ink); }
 body.landing .sheet-meta.is-ruled { padding-bottom: 16px; border-bottom: 1px solid var(--hair); }
 
 /* ---- the name, the line under it and the run: over the habitat on a wider screen, at the head of the note on a phone */
+/* the first page's words (landing.js, intro): the eyebrow — ZKM | Hertzlab • Durational performance — the name with Ground
+   Station under it, the paragraph on what the site is for, the run; at the left of the room on a wider screen, over it on
+   a phone (October: "shift the Earth–habitat visual to the right and have this on the left") */
 body.landing .sheet-intro { position: relative; z-index: 1; }
-body.landing .sheet-intro.is-phone { display: none; }
+body.landing .sheet-intro .intro-eyebrow { margin: 0 0 16px; font-family: var(--display); font-size: var(--fs-label); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--mars-ink); }
+body.landing .sheet-intro .intro-eyebrow .intro-dot { margin: 0 4px; color: var(--mars); }
 body.landing .sheet-intro .run-now { color: var(--ink); }
-body.landing .sheet-intro .wordmark .wm-ground { font-size: .58em; font-weight: 500; letter-spacing: -.02em; color: var(--ink); white-space: nowrap; }   /* Ground Station, smaller and lighter: after the name on a phone, under it on a desk */
+body.landing .sheet-intro .wordmark { margin: 0; line-height: .95; letter-spacing: -.035em; font-weight: 600; color: var(--ink); }
+body.landing .sheet-intro .wordmark .wm-sep { display: none; }
+body.landing .sheet-intro .wordmark .wm-ground { display: block; margin-top: 8px; font-size: .5em; line-height: 1.1; font-weight: 500; letter-spacing: -.02em; color: var(--ink); white-space: nowrap; }   /* Ground Station, smaller and lighter, under the name */
+body.landing .sheet-intro .intro-text { margin: 22px 0 0; max-width: 46ch; font-size: 17px; line-height: 1.55; color: var(--ink); text-wrap: pretty; }
+body.landing .sheet-intro .run-dates { margin: 22px 0 0; line-height: 1.6; }
 
 /* ---- P01: the habitat */
 body.landing .sheet-p1 { display: flex; flex-direction: column; }
@@ -313,8 +321,12 @@ body.landing .sky-who, body.landing .sky-when {
   display: inline-flex; align-items: center; gap: 6px; box-sizing: border-box; max-width: 100%; height: 16px; margin: 0; padding: 0 11px 0 7px;
   background: var(--hud); color: #fff; text-shadow: none; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 10px; line-height: 16px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 100%, 0 100%); }
-body.landing .sky-when::before { content: ""; flex: none; width: 5px; height: 5px; border-radius: 50%; background: #fff; box-shadow: 0 0 6px #fff; animation: live 2.4s ease-in-out infinite; }   /* live */
-@media (prefers-reduced-motion: reduce) { body.landing .sky-when::before { animation: none; } }
+body.landing .sky-when::before, body.landing .sky-head::before { content: ""; flex: none; width: 5px; height: 5px; border-radius: 50%; background: #fff; box-shadow: 0 0 6px #fff; animation: live 2.4s ease-in-out infinite; }   /* live */
+@media (prefers-reduced-motion: reduce) { body.landing .sky-when::before, body.landing .sky-head::before { animation: none; } }
+/* the heads (October): LATEST MESSAGE: over an exchange, inside its panel over the question's plate; LATEST IMAGE is the
+   snapshot's plate (sky-when), and the moment the picture was taken stands at the foot of its frame, over the picture */
+body.landing .sky-head { display: flex; align-items: center; gap: 6px; margin: 0 0 7px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 10px; line-height: 16px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: rgba(255,255,255,.86); white-space: nowrap; }
+body.landing .sky-stamp { position: absolute; right: 5px; bottom: 4px; z-index: 1; margin: 0; padding: 1px 5px; border-radius: 3px; background: rgba(0,0,0,.55); font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 9px; line-height: 12px; letter-spacing: .1em; text-transform: uppercase; color: #fff; pointer-events: none; }
 /* ---- an exchange: one panel — the question's plate at its top left corner, its words beneath; the crew's answer in a box
    of its own inside it, framed in Mars with a bar at its left */
 body.landing .sky-msg { box-sizing: border-box; max-width: none; gap: 0; padding: 0 0 9px; background-color: var(--hud-ground);
@@ -695,21 +707,22 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
      the run beside it on its baseline — then the room — the Earth, the line, the habitat far above, the sky's pictures
      and exchanges around them — down to the window's foot; P01, the habitat, is a window tall too, its dome kept to a
      moderate size so the sheet around and above it has room */
-  body.landing .space { height: max(660px, calc(100vh - 113px)); padding: 0 0 12px; box-sizing: border-box; }
+  /* the first page in two columns: the words at the left, the room at the right (October) — the room the window's
+     height under the ticker, the words standing in the middle of its height */
+  body.landing .space { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); grid-template-rows: minmax(0, 1fr); column-gap: clamp(32px, 4vw, 72px); align-items: stretch;
+    height: max(660px, calc(100vh - 113px)); padding: 0 0 12px; box-sizing: border-box; }
   /* the room as a phone has it, only wider: the Earth in the middle of the foot, its horizon curving away either side;
      the habitat above it at the top, kept small — a quarter of the window's height at most — so the room between the
      two is deep; the dashed line straight down from the habitat's foot onto the limb, the signal up it and the answer
      down (the trajectory, the desk's arc of an earlier layout, stays off: public/sky.js keeps the sky's items either
      side of the line, as on a phone) */
-  body.landing .space-room { margin-top: 12px; --dome-w: clamp(170px, 22vh, 250px); --dome-top: 10px; --earth-w: 118%; --earth-arc: clamp(100px, 14vh, 150px); }
+  body.landing .space-room { margin-top: 12px; min-height: 0; --dome-w: clamp(170px, 22vh, 250px); --dome-top: 10px; --earth-w: 118%; --earth-arc: clamp(100px, 14vh, 150px); }
   body.landing .sheet-p1 { height: max(660px, calc(100vh - 113px)); padding: 0 20px 48px; box-sizing: border-box; }   /* the ground line clear of the window's foot */
-  /* the name's band: MARS!platz large, and under it, one under the other — Ground Station, ZKM | Hertzlab, the run */
-  body.landing .sheet-intro { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding-top: 12px; }
-  body.landing .sheet-intro .wordmark { margin: 0; font-size: clamp(36px, 3.4vw, 50px); line-height: .95; letter-spacing: -.035em; font-weight: 600; color: var(--ink); }   /* MARS!platz, the page's one heading */
-  body.landing .sheet-intro .wordmark .wm-sep { display: none; }
-  body.landing .sheet-intro .wordmark .wm-ground { display: block; margin-top: 6px; font-size: .5em; line-height: 1.1; }
-  body.landing .sheet-intro .tagline { margin: 8px 0 0; text-align: left; }
-  body.landing .sheet-intro .run-dates { margin: 6px 0 0; max-width: none; text-align: left; white-space: nowrap; text-wrap: nowrap; }   /* one line (a narrower desk lets it wrap, below) */
+  /* the words: the eyebrow, MARS!platz large with Ground Station under it, the paragraph, the run */
+  body.landing .sheet-intro { align-self: center; display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 12px 0 24px; }
+  body.landing .sheet-intro .wordmark { font-size: clamp(44px, 4.4vw, 68px); }   /* MARS!platz, the page's one heading */
+  body.landing .sheet-intro .intro-text { font-size: clamp(16px, 1.25vw, 19px); }
+  body.landing .sheet-intro .run-dates { max-width: none; text-align: left; white-space: normal; text-wrap: balance; }
   body.landing:not(.inner) .dome-panel { flex: 1 1 auto; margin-top: 10px; }
   body.landing:not(.inner) .dome-stage { flex: 0 0 auto; height: clamp(220px, 36vh, 400px); max-height: 50cqw; min-height: 0; }
   body.landing .dome-panel.has-line { --foot-h: 64px; padding-bottom: 0; }
@@ -747,7 +760,9 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
 /* a narrower desk: the name's band in one column, the note in one column, the steps as a column on their card as a
    phone has them */
 @media (min-width: 761px) and (max-width: 1100px) and (min-height: 521px) {
-  body.landing .sheet-intro .run-dates { white-space: normal; text-wrap: balance; }
+  body.landing .space { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); column-gap: 28px; }   /* a narrower desk: the words a little wider against the room */
+  body.landing .sheet-intro .wordmark { font-size: clamp(38px, 4.6vw, 48px); }
+  body.landing .sheet-intro .intro-text { font-size: 15.5px; }
   body.landing .note-body { grid-template-columns: minmax(0, 1fr); gap: 0; }
   body.landing .steps { grid-template-columns: minmax(0, 1fr); row-gap: 0; padding: 36px 36px 10px; }
   body.landing .step { display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: 20px; padding: 0 0 34px; }
@@ -776,10 +791,17 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
   /* the habitat's page has a screen to itself, the width of the screen and its height between the header and the bar of
      keys: the sheet with its ruler, the name and LIVE at its head, the dome standing on its ground line at its foot (the
      first page — the way to the habitat — is laid out below, under P00). The name stands at the head of the note. */
-  body.landing .sheet-intro.is-desk { display: none; }
-  /* the first page: the room alone, the width of the screen and its height between the header and the bar of keys */
-  body.landing .space { margin: 0 calc(-1 * var(--gutter)); height: max(440px, calc(100vh - 149px)); height: max(440px, calc(100svh - 149px - env(safe-area-inset-bottom, 0px))); }
-  body.landing .space-room { --dome-w: 150px; --dome-top: 12px; --earth-w: 108%; --earth-arc: 74px; border-radius: 0; }   /* the picture a little wider than the screen: its foot reaches the room's, the limb 74 px up */
+  /* the first page: the words, then the room under them — the width of the screen and its height between the header and
+     the bar of keys, a stop of the scroll of its own (the next swipe brings it whole) */
+  body.landing .space { margin: 0 calc(-1 * var(--gutter)); height: auto; }
+  body.landing .sheet-intro { padding: 22px var(--gutter) 24px; }
+  body.landing .sheet-intro .intro-eyebrow { margin-bottom: 12px; font-size: 11px; }
+  body.landing .sheet-intro .wordmark { font-size: 44px; }
+  body.landing .sheet-intro .intro-text { margin-top: 16px; font-size: 16px; line-height: 1.5; }
+  body.landing .sheet-intro .run-dates { margin-top: 16px; line-height: 1.6; }
+  body.landing .space-room { flex: none; height: max(440px, calc(100vh - 149px)); height: max(440px, calc(100svh - 149px - env(safe-area-inset-bottom, 0px)));
+    --dome-w: 150px; --dome-top: 12px; --earth-w: 108%; --earth-arc: 74px; border-radius: 0; }   /* the picture a little wider than the screen: its foot reaches the room's, the limb 74 px up */
+  body.landing:not(.inner) .space-room { scroll-snap-align: start; scroll-snap-stop: always; }
   body.landing .space-halo.is-desk { display: none; }
   body.landing .space-halo.is-phone { display: block; }
   body.landing .space-halo circle { stroke-width: 2px; }
@@ -810,12 +832,8 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
      in under them */
   body.landing .sheet-p2 { box-sizing: border-box; display: flex; flex-direction: column; justify-content: center;
     min-height: calc(100vh - 149px); min-height: calc(100lvh - 149px - env(safe-area-inset-bottom, 0px)); }
-  /* the second page: the station's name, the line under it and the run, then the note — with room around them */
+  /* the second page: the note, then the two calls — with room around them (the station's name stands on the first page) */
   body.landing .sheet-p2 { margin: 0; padding: 28px 0 24px; }
-  body.landing .sheet-intro.is-phone { display: block; padding: 0 4px 30px; }
-  body.landing .sheet-intro.is-phone .wordmark { margin: 0; font-size: 52px; line-height: .95; letter-spacing: -.035em; font-weight: 600; color: var(--ink); }
-  body.landing .sheet-intro.is-phone .tagline { margin: 14px 0 0; }
-  body.landing .sheet-intro.is-phone .run-dates { margin: 12px 0 0; line-height: 1.6; }
   /* the chat: a page of its own */
   body.landing .sheet-p4 { margin: 0; padding: 30px 0 12px; }
   body.landing .part-head { gap: 8px; padding: 0 4px 14px; }
@@ -824,10 +842,6 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
   /* a screen too short for a page as it is drawn above (public/sky.js marks it snug): the same page set a little closer,
      so that it still fits — the gaps and the photographs smaller, the type a step down */
   body.landing .sheet-p2.is-snug { padding: 16px 0 12px; }
-  body.landing .sheet-p2.is-snug .sheet-intro.is-phone { padding-bottom: 20px; }
-  body.landing .sheet-p2.is-snug .sheet-intro.is-phone .wordmark { font-size: 44px; }
-  body.landing .sheet-p2.is-snug .sheet-intro.is-phone .tagline { margin-top: 10px; }
-  body.landing .sheet-p2.is-snug .sheet-intro.is-phone .run-dates { margin-top: 8px; line-height: 1.5; }
   body.landing .sheet-p2.is-snug .note-card { padding: 20px 18px 22px; }
   body.landing .sheet-p2.is-snug .sheet-meta.is-ruled { padding-bottom: 12px; }
   body.landing .sheet-p2.is-snug .note-lead { margin-top: 16px; font-size: 20px; line-height: 1.38; }

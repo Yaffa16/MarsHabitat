@@ -3,11 +3,14 @@
  * The sky of the first page, as the v6 mock-up of the app draws its first
  * screen — on a desk and on a phone alike: in the room between the Earth and
  * the habitat (landing.js, space), either side of the line between them, the latest
- * exchanges with Earth come and go — each as one block, the visitor's QUESTION
- * under its callsign and the time and the crew's ANSWER under ✧ and the
- * officer, so that what they are is plain — one or two of them at a time;
- * and the newest pictures out of the cloud folder appear as small snapshots,
- * one or two at a time, and fade away again.
+ * exchanges with Earth come and go — each as one block headed LATEST
+ * MESSAGE:, the visitor's QUESTION under its callsign and the time and the
+ * crew's ANSWER under ✧ and the officer, so that what they are is plain — one
+ * or two of them at a time; and the newest pictures out of the cloud folder
+ * appear as small snapshots headed LATEST IMAGE, the moment each was taken
+ * at its foot, one or two at a time, and fade away again (October asked for
+ * the two heads; the words come with the page, data-latest-msg and
+ * data-latest-pic, in the visitor's language).
  *
  * Nothing in it is new: the exchanges are the board's published ones — the
  * rows the board itself shows, never a message still waiting for mission
@@ -88,7 +91,7 @@ function habitatSky(ctx, { recent = [], cloud = null } = {}) {
   const html = `
       <div class="dome-sky" id="dome-sky" aria-hidden="true" data-tz="${esc(m.timezone)}" data-start="${esc(m.start_date)}" data-days="${m.totalDays}"
            data-exchanges="${EXCHANGES}" data-pictures="${PICTURES}" data-at-once="${AT_ONCE}" data-clip="${CLIP}"
-           data-q="${esc(T('Question'))}" data-a="${esc(T('Answer'))}">
+           data-q="${esc(T('Question'))}" data-a="${esc(T('Answer'))}" data-latest-msg="${esc(T('Latest message:'))}" data-latest-pic="${esc(T('Latest image'))}">
         <script type="application/json" id="dome-sky-data">${json}</script>
         ${skyNotes(T)}
       </div>`;

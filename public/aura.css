@@ -568,10 +568,12 @@ body.landing .board .empty, body.landing .dpanel .empty, body.landing .empty { f
    shadow of black would vanish on the black ground */
 /* a note's ground is a grey — a cool light grey by day on the white page, a grey of the dark by night — so the words
    stand on a card and the crew's answer, on the page's own paper inside it, stands off the card */
-/* a note's own colour, set apart from the ground (October: the notes were a shade too close to the page) — white on the
-   drafting paper by day, a graphite a good step lighter than the night's ground */
-:root { --note-bg: #ffffff; --note-edge: #d6dae6; --note-fold: #dfe2ea; --note-shadow: 0 1px 2px rgba(15,21,64,.08), 0 8px 20px -8px rgba(15,21,64,.18), 0 26px 50px -22px rgba(15,21,64,.34); }
-:root[data-theme="dark"] { --note-bg: #303036; --note-edge: #47474f; --note-fold: #50505a; --note-shadow: 0 0 0 1px rgba(255,255,255,.05), 0 0 36px rgba(255,255,255,.06), 0 24px 48px -18px rgba(0,0,0,.95); }
+/* a note's own colour, set apart from the ground (October: the notes were a shade too close to the page): a note is
+   paper — warm, the sand of the brand's gradient thinned to a sheet — on the cool drafting paper by day, and by night a
+   warm graphite, a good step lighter than the near-black ground, so the cobalt chips and the Mars discs sit on something
+   that is not the page */
+:root { --note-bg: #fbf6ee; --note-edge: #e4dac8; --note-shadow: 0 1px 2px rgba(15,21,64,.08), 0 8px 20px -8px rgba(15,21,64,.18), 0 26px 50px -22px rgba(15,21,64,.34); }
+:root[data-theme="dark"] { --note-bg: #2f2b29; --note-edge: #4a4440; --note-shadow: 0 0 0 1px rgba(255,255,255,.05), 0 0 36px rgba(255,200,160,.06), 0 24px 48px -18px rgba(0,0,0,.95); }
 body.landing .wall-sec { position: relative; margin: 0; padding: 8px 0 72px; scroll-margin-top: 124px; }
 body.landing .wall-wrap { min-height: 0; }                                            /* no box: the wall is as tall as its notes */
 body.landing .wall-wrap .feed-scroll { position: static; display: block; }
@@ -591,17 +593,41 @@ body.landing .wall .cards { display: grid; grid-template-columns: repeat(3, minm
 body.landing .wall .cards > .empty { grid-column: 1 / -1; }
 body.landing .card.xc.note, :root[data-theme="dark"] body.landing .card.xc.note { position: relative; display: flex; flex-direction: column; gap: 0; margin: 0; padding: 0; border-radius: 4px;
   background: var(--note-bg); border: 1px solid var(--note-edge); box-shadow: var(--note-shadow); color: var(--ink); overflow: hidden; }
-body.landing .board .card.note[data-mine] { padding-left: 0; box-shadow: var(--note-shadow); }
+body.landing .board .card.note[data-mine] { padding-left: 0; box-shadow: inset 3px 0 0 var(--mars), var(--note-shadow); }   /* the viewer's own: a Mars edge at the left */
 /* a note the filter has put aside is gone from the wall — whatever the theme: the dark theme's rule for the note
    (above, :root[data-theme="dark"] …) outweighs a plain .is-hidden, which left every note standing under a chosen
    tag (October: "it's not filtering messages by tag on the /write page") */
 body.landing .card.note.is-hidden, :root[data-theme="dark"] body.landing .card.xc.note.is-hidden, body.landing .card.is-hidden { display: none !important; }
-/* the folded corner */
-body.landing .card.note::before { content: ""; position: absolute; top: -1px; right: -1px; width: 0; height: 0; border-style: solid; border-width: 0 26px 26px 0; border-color: var(--ground) var(--ground) var(--note-fold) var(--note-fold); z-index: 1; }
-body.landing .card.note[data-mine]::before { border-color: var(--ground) var(--ground) var(--mars) var(--mars); }
-body.landing .card.note::after { content: ""; position: absolute; top: 0; right: 0; width: 26px; height: 26px; background: linear-gradient(225deg, transparent 50%, rgba(0,0,0,.06) 50%, transparent 100%); pointer-events: none; z-index: 1; }
+/* the message's round trip, in the corner where the folded corner was (October): Earth (cobalt, lower left) to Mars
+   (upper right) and back. Answered — the loop closed in Mars orange and Mars lit: the signal went and came back. Still
+   out — the way out alone, dashed, the message a dot flying along it (the way back a ghost), Mars hollow; arrived, the
+   dot rests inside Mars and Mars pulses until the crew answer. The viewer's own notes keep a Mars edge at the left. */
+body.landing .card.note .note-mark { position: absolute; top: 6px; right: 6px; width: 32px; height: 32px; z-index: 2; color: var(--mars); pointer-events: none; }
+body.landing .card.note .note-mark svg { width: 100%; height: 100%; display: block; overflow: visible; }
+body.landing .card.note .note-mark .nm-loop, body.landing .card.note .note-mark .nm-out, body.landing .card.note .note-mark .nm-back { fill: none; stroke-linecap: round; }
+body.landing .card.note .note-mark .nm-earth { fill: var(--cobalt); }
+body.landing .card.note .note-mark .nm-loop { stroke: var(--mars); stroke-width: 1.8; }
+body.landing .card.note .note-mark .nm-mars { fill: var(--mars); }
+body.landing .card.note .note-mark.is-waiting { color: var(--faint); }
+body.landing .card.note .note-mark.is-waiting .nm-out { stroke: currentColor; stroke-width: 1.8; stroke-dasharray: 2.8 2.6; }
+body.landing .card.note .note-mark.is-waiting .nm-back { stroke: currentColor; stroke-width: 1.2; stroke-dasharray: 1 3.2; opacity: .4; }
+body.landing .card.note .note-mark.is-waiting .nm-mars { fill: none; stroke: var(--mars); stroke-width: 1.6; }
+body.landing .card.note .note-mark.is-waiting .nm-ship { display: none; }
+@supports (offset-path: path('M0 0L1 1')) {
+  body.landing .card.note .note-mark.is-waiting .nm-ship { display: block; fill: currentColor; offset-path: path('M7 25A12.7 7 -45 0 1 25 7'); animation: nm-fly 6s linear infinite; }
+  body.landing .card.note .note-mark.is-arrived .nm-ship { animation: none; offset-distance: 100%; fill: var(--mars); }
+}
+body.landing .card.note .note-mark.is-arrived .nm-mars { transform-origin: 25px 7px; animation: nm-pulse 2.8s ease-in-out infinite; }
+@keyframes nm-fly { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+@keyframes nm-pulse { 0%, 100% { transform: scale(1); opacity: .7; } 50% { transform: scale(1.22); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  body.landing .card.note .note-mark.is-waiting .nm-ship { animation: none; offset-distance: 50%; }
+  body.landing .card.note .note-mark.is-arrived .nm-ship { offset-distance: 100%; }
+  body.landing .card.note .note-mark.is-arrived .nm-mars { animation: none; }
+}
+body.landing .card.note[data-mine] { box-shadow: inset 3px 0 0 var(--mars), var(--note-shadow); }
 /* the head */
-body.landing .card.note .note-head { display: flex; align-items: center; gap: 10px; padding: 12px 36px 12px 16px; border-bottom: 1px solid var(--note-edge); }
+body.landing .card.note .note-head { display: flex; align-items: center; gap: 10px; padding: 12px 44px 12px 16px; border-bottom: 1px solid var(--note-edge); }   /* room at the right for the signal mark */
 body.landing .card.note .note-av { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; font-family: var(--display); font-size: 11.5px; font-weight: 700; letter-spacing: .04em;
   background: hsl(var(--av) 70% 88%); color: hsl(var(--av) 55% 30%); }
 :root[data-theme="dark"] body.landing .card.note .note-av { background: hsl(var(--av) 38% 26%); color: hsl(var(--av) 80% 84%); }
@@ -619,7 +645,7 @@ body.landing .card.note .card-body.note-title { margin: 0; padding: 0; font-fami
 body.landing .card.note .note-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: -2px 0 0; }
 body.landing .card.note .note-tag { margin: 0; padding: 4px 9px; border: 0; min-height: 0; border-radius: 7px; background: rgba(var(--cobalt-rgb),.09); font-family: var(--display); font-size: 12.5px; font-weight: 500; line-height: 1.2; letter-spacing: 0; text-transform: lowercase; cursor: pointer; color: var(--ink); box-shadow: none; }
 body.landing .card.note .note-tag:hover { background: rgba(var(--cobalt-rgb),.14); color: var(--ink); text-decoration: none; transform: none; box-shadow: none; }
-body.landing .card.note .card-reply.note-answer { margin: 2px 0 0; padding: 10px 12px 11px; background: var(--paper); border: 1px solid var(--note-edge); border-radius: 12px; }
+body.landing .card.note .card-reply.note-answer { margin: 2px 0 0; padding: 10px 12px 11px; background: #fff; border: 1px solid var(--note-edge); border-radius: 12px; }   /* the answer, a white card on the paper */
 body.landing .card.note .note-ahead { display: flex; align-items: center; gap: 8px; margin: 0 0 7px; line-height: 1.2; }
 body.landing .card.note .note-aav { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--mars); color: #fff; font-family: var(--display); font-size: 9.5px; font-weight: 700; letter-spacing: .04em; }
 body.landing .card.note .note-awho { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }   /* the officer over the line, always */
@@ -654,7 +680,7 @@ body.landing .card.note:has(.card-space[data-launched]):hover { transform: trans
 body.landing .card.note:has(.card-space[data-launched]):hover .note-hint { transform: none; opacity: 1; }
 body.landing .card.note:has(.card-space[data-launched]):hover .card-space-compact { color: var(--mars-ink); }
 body.landing .card.note:has(.card-space[data-launched]):hover .card-space-compact .card-space-go { color: var(--mars); }
-body.landing .card.note:has(.card-space[data-launched]):hover::before { border-color: var(--ground) var(--ground) var(--mars) var(--mars); }
+body.landing .card.note:has(.card-space[data-launched]):hover .note-mark.is-waiting { color: var(--mars); }
 @media (hover: none) { body.landing .card.note .note-hint { display: none; } body.landing .card.note:has(.card-space[data-launched]):hover { transform: none; } }
 body.screen .card.note .note-hint { display: none; }
 body.landing .card.note.is-sought { border-color: var(--mars); outline: 2px solid var(--mars); outline-offset: 2px; }   /* the note a link led to (board.js) */
@@ -674,9 +700,9 @@ body.landing .feed-end:not(.is-done) span::after { content: ""; display: inline-
 :root[data-theme="dark"] body.landing .card.note .note-head, :root[data-theme="dark"] body.landing .card.note .note-foot { border-color: #30303a; }
 :root[data-theme="dark"] body.landing .card.note .note-tag { background: rgba(255,255,255,.08); color: #f6f6f3; }
 :root[data-theme="dark"] body.landing .card.note .note-tag:hover { background: rgba(255,255,255,.14); color: #fff; }
-:root[data-theme="dark"] body.landing .card.note .card-reply.note-answer { background: #141418; border-color: #3a3a44; }
+:root[data-theme="dark"] body.landing .card.note .card-reply.note-answer { background: #1a1716; border-color: #46403b; }
 :root[data-theme="dark"] body.landing .card.note .card-reply p, :root[data-theme="dark"] body.landing .card.note .note-awho .cs { color: #f6f6f3; }
-:root[data-theme="dark"] body.landing .card.note .note-head { background: #27272e; }
+:root[data-theme="dark"] body.landing .card.note .note-head { background: #282321; }   /* the warm note's head, a shade deeper */
 :root[data-theme="dark"] body.landing .card.note:has(.card-space[data-launched]):hover { border-color: var(--mars); }
 :root[data-theme="dark"] body.landing .wall-bar { background: #141418; border-bottom-color: #2c2c35; -webkit-backdrop-filter: none; backdrop-filter: none; }
 :root[data-theme="dark"] body.landing .wall-bar .board-head h2 { color: #f6f6f3; }
