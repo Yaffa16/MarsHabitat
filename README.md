@@ -2229,9 +2229,12 @@ in there now — replace it with the real one.
 
 The public station reads in **German, English and French**, switched by the small
 **DE · EN · FR** control beside the theme switch — in the masthead on the landing page,
-the crew log and the media page, and in the rail on At a Glance. The choice is kept in a
-cookie (`mcs_lang`, a year once the cookie question is accepted, otherwise for the visit — like
-the theme), resolved on the server, and applied to the
+the crew log and the media page, and in the rail on At a Glance. **It opens in German** —
+every visitor who has not chosen yet reads it in German, whatever their browser is set to
+(October: the site opens in German, and dark; `DEFAULT_LANG=en` or `fr` in the environment
+names another default for a run — the test suite reads the station in English so). The
+choice is kept in a cookie (`mcs_lang`, a year once the cookie question is accepted,
+otherwise for the visit — like the theme), resolved on the server, and applied to the
 whole page before it is sent: `<html lang="…">`, every label, every sentence of the
 reading matter. Nothing is fetched and no third-party script is involved — the
 translation is the station's own, so it works with the network unplugged like everything
@@ -2280,9 +2283,12 @@ kept as written.
 
 **The station is dark.** Every visitor first sees it by night — the near-black paper with its
 few stars, the glass smoked, the ink light, the habitat's sheet a dark grey under the dome's
-colour — whatever their phone or computer is set to. The theme key in the header (*Light*)
+colour — whatever their phone or computer is set to (and in German: *Three languages*). The
+theme key in the header names the mode the page is in — *Dark* by night, *Light* by day
+(*Dunkel* / *Hell*, *Sombre* / *Clair*; October: "the light mode should read Dark and vice
+versa" — the key's title names the way out, *Switch to light mode*) — and a press
 turns it to day, and the choice is remembered in a cookie (`mcs_theme`) and resolved on the
-server, so there is no flash of the wrong ground; the key (*Dark*) turns it back. A visitor
+server, so there is no flash of the wrong ground; the key (*Light* now) turns it back. A visitor
 who declines cookies keeps the dark. Mission control's switch follows the same rule.
 
 ## Three phases

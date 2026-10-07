@@ -70,11 +70,11 @@ app.use((req, res, next) => {
     const visitor = internal ? null : callsign.identify(req, res, { create: consent === 'yes', persist: consent === 'yes' });
     const newest = db.prepare('SELECT MAX(recorded_at) m FROM sensor_reading').get().m;
     const commsUp = newest ? (Date.now() - Date.parse(newest)) / 1000 < data.STALE_SECONDS : false;
-    // The visitor's language, from the cookie — and T, which puts any
+    // The visitor's language, from the cookie — German until they choose (i18n.pick) — and T, which puts any
     // interface string into it. Mission control and the archive ignore both.
     const lang = i18n.pick(req);
     cached = {
-      // dark unless the visitor has chosen light with the switch
+      // dark unless the visitor has chosen light with the switch (October: the site opens dark, and in German)
       theme: req.cookies.mcs_theme === 'light' ? 'light' : 'dark',
       lang,
       T: i18n.of(lang),
@@ -917,9 +917,9 @@ app.post('/theme', (req, res) => {
 });
 
 /* The language switch: the same shape as the theme — a cookie, a redirect
-   back to where the visitor was. Anything but de/en/fr falls back to English. */
+   back to where the visitor was. Anything but de/en/fr falls back to the site's default (i18n.DEFAULT_LANG — German). */
 app.post('/lang', (req, res) => {
-  const to = i18n.LANGS.includes(req.body.to) ? req.body.to : 'en';
+  const to = i18n.LANGS.includes(req.body.to) ? req.body.to : i18n.DEFAULT_LANG;
   res.cookie('mcs_lang', to, { httpOnly: false, sameSite: 'lax', maxAge: keep(req),
     secure: process.env.SECURE_COOKIES === 'true' });
   res.redirect(wayBack(req));

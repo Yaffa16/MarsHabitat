@@ -33,10 +33,14 @@ const logos = (list) => `<div class="logos">${list.map(([f, name]) => `<span cla
 
 /* The prose is written in English and carried, paragraph by paragraph, in
    src/lib/i18n.js — one key per paragraph, so a paragraph can be reworded
-   in one language without touching the other two. `fill` puts links (or a
-   figure) into a translated paragraph at its {marks}. */
-const p = (T, text) => `<p>${T(text)}</p>`;
+   in one language without touching the other two; a translation that breaks
+   its paragraph into several (a blank line between them — the French does,
+   October's text) is set as several. `fill` puts links (or a figure) into a
+   translated paragraph at its {marks}; `pf` sets the result as paragraphs. */
+const paras = (text) => String(text).split(/\n\s*\n/).map((x) => `<p>${x.trim()}</p>`).join('\n      ');
+const p = (T, text) => paras(T(text));
 const fill = (T, key, vals) => Object.entries(vals).reduce((s, [k, v]) => s.split(`{${k}}`).join(v), esc(T(key)));
+const pf = (T, key, vals) => paras(fill(T, key, vals));
 const out = (href, text) => `<a href="${href}" target="_blank" rel="noopener">${text}</a>`;
 
 /* The run's two moments and the count of its scientific missions, as the About page states them (October's text
@@ -63,18 +67,18 @@ function aboutFold(ctx) {
       ${p(T, 'In the project MARS! – Mobilizing Awareness for Resilient Societies!, we want to challenge the signifier the planet Mars has become as a refuge planet for the richest of us, and to use it instead to address very pressing Earth matters. We will imagine for a moment that we, the global society, have decided to make Mars settlements a democratic Commons project. Rather than being left behind on a burning planet and looking on as the wealthy leave towards redder pastures, we will make Mars a democratic project for the rest of us, designing practical and utopian aspects of the question “What would we do if we could start over?”')}
       ${p(T, 'To this end, we invited scientists and citizen scientists to come together at ZKM | Karlsruhe to design and prototype key features of what a Mars settlement would look like: a habitat able to withstand adverse weather conditions; a recycling system that makes the best use of valuable resources; a social order that is able to work under crisis and duress; a care system for a planet that did not ask for human presence.')}
       ${p(T, 'During the project that began in January 2026, we noticed that all the skills needed for a democratic Mars settlement were also needed to adjust to a climate-changed Earth, giving us the necessary competence to start building a better society today. Going to Mars slowly became MARS!, and we became aware of what we need to do in order to become a resilient society right here, where we are.')}
-      <p>${fill(T, 'The five prototype workshops {habitat}, {mental}, {food}, {governance}, and {resources} turned into a {exhibition} that ran at ZKM from June to September 2026. This, the MARS!platz performance, is the third part of the project: a field test where ideas, concepts and prototypes gathered in the workshop and exhibition phase are now tested under analogue conditions, by us, directly in the heart of the city, the Karlsruhe Marktplatz. Turned into MARS!platz for two weeks, we live, eat and sleep under the stars of Karlsruhe, testing out how we, as ordinary citizens and artistic researchers, would cope with a new beginning that is never quite remote from what we’re bringing with us.', {
+      ${pf(T, 'The five prototype workshops {habitat}, {mental}, {food}, {governance}, and {resources} turned into a {exhibition} that ran at ZKM from June to September 2026. This, the MARS!platz performance, is the third part of the project: a field test where ideas, concepts and prototypes gathered in the workshop and exhibition phase are now tested under analogue conditions, by us, directly in the heart of the city, the Karlsruhe Marktplatz. Turned into MARS!platz for two weeks, we live, eat and sleep under the stars of Karlsruhe, testing out how we, as ordinary citizens and artistic researchers, would cope with a new beginning that is never quite remote from what we’re bringing with us.', {
         habitat: out('https://zkm.de/en/2026/01/open-hertzlab-mars-habitat', T('Habitat')),
         mental: out('https://zkm.de/en/2026/02/open-hertzlab-mars-mental-health', T('Mental Health')),
         food: out('https://zkm.de/en/2026/03/open-hertzlab-mars-food', T('Food')),
         governance: out('https://zkm.de/en/2026/04/open-hertzlab-mars-governance', T('Governance')),
         resources: out('https://zkm.de/en/2026/05/open-hertzlab-mars-resource-management', T('Resource Management')),
         exhibition: out('https://zkm.de/en/2026/06/mars', T('concept exhibition')),
-      })}</p>
+      })}
 
       <h3>${T('Why are we doing this?')}</h3>
       <p class="kicker">${T('Playacting Mars in the middle of the city')}</p>
-      <p>${fill(T, 'When the three artistic research astronauts of ZKM move into their habitat on Marktplatz in October 2026, the actual planet Mars will be {million} million kilometres away from Earth. It is, as yet, unsure if we would ever be able to get there, or if this is a desirable goal. What we do know is that space travel is a catalyst, a motor of dreams and imaginations and problem solving. Since January 2026, we have seen again and again that the imagination of being a spacefaring society is sparking innovation and solutions that could also be applied here on Earth, to aid in the transformation and change needed to cope with Earth’s changing climate and social parameters.', { million: String(million) })}</p>
+      ${pf(T, 'When the three artistic research astronauts of ZKM move into their habitat on Marktplatz in October 2026, the actual planet Mars will be {million} million kilometres away from Earth. It is, as yet, unsure if we would ever be able to get there, or if this is a desirable goal. What we do know is that space travel is a catalyst, a motor of dreams and imaginations and problem solving. Since January 2026, we have seen again and again that the imagination of being a spacefaring society is sparking innovation and solutions that could also be applied here on Earth, to aid in the transformation and change needed to cope with Earth’s changing climate and social parameters.', { million: String(million) })}
       ${p(T, 'Because ZKM is so much more than a museum, ideas born in it cannot be contained by its walls. We needed to go out, to seek new interactions and come into contact with new ideas and new people. Instead of imitating space agencies who host “analogue missions” in remote areas, we decided that the middle of a densely populated city is just the right environment to simulate life on the loneliest planet in our solar system.')}
 
       <h3>${T('The Habitat – Red Dust City')}</h3>

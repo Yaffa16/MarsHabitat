@@ -59,9 +59,6 @@ function windowWhen(ctx) {
 /** A sentence of the dictionary with its live figures put in ({date}, {time}, …), the figures already escaped. */
 const fill = (T, key, vals) => Object.entries(vals).reduce((s, [k, v]) => s.split(`{${k}}`).join(v), esc(T(key)));
 
-/** A sheet's label row: its subject, in small capitals (a page's number and name used to stand at its left; none now). */
-const meta = (left, right = '', cls = '') => `<div class="sheet-meta${cls ? ' ' + cls : ''}"><span>${left}</span>${right ? `<span>${right}</span>` : ''}</div>`;
-
 /* ---------------------------------------------------------------- P01 */
 /** The first page's words, at the left of the room on a wider screen and over it on a phone (October: "shift the
     Earth–habitat visual to the right and have this on the left"): the eyebrow — ZKM | Hertzlab • Durational
@@ -196,15 +193,15 @@ function note(ctx) {
   const lead = esc(T('MARS! – Mobilizing Awareness for Resilient Societies! – is a three-part project of ZKM | Karlsruhe, the current part being a 13-day field test of prototypes and experiments in the heart of Karlsruhe.'))
     .replace(/^MARS!/, `<a class="note-project" href="${ZKM_MARS}" target="_blank" rel="noopener"><b>MARS!</b></a>`);
   // the second page: the note — its lead alone, since its paragraph on what the site is for stands on the first page
-  // now (intro) — and beside it (under it on a phone) the two calls — the doors of the page (no keys under the note's
-  // words any more: the two cards are the doors; the About page is the header's)
+  // now (intro), and without the DURATIONAL PERFORMANCE line over it (October: the first page's eyebrow says it) — and
+  // beside it (under it on a phone) the two calls — the doors of the page (no keys under the note's words any more:
+  // the two cards are the doors; the About page is the header's)
   // on a desk the note stands at the left and the two calls one over the other at its right (page2, sheet.css); a phone
   // stacks them, the note first
   return `
   <section class="sheet sheet-p2" id="note" aria-label="${esc(T('Durational performance'))}" data-page>
     <div class="page2">
       <div class="note-card">
-        ${meta(T('Durational performance'), '', 'is-ruled')}
         <div class="note-body">
           <p class="note-lead">${lead}</p>
         </div>

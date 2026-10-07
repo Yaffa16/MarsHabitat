@@ -1,5 +1,6 @@
 /* The theme and language switches (layout.js, themeSwitch and langSwitch) without losing the place.
-   The theme: a press turns the page at once — data-theme on <html>, the switch's own words with it — and tells the
+   The theme: a press turns the page at once — data-theme on <html>, the switch's own word with it (the mode the page
+   is in now: Dark by night, Light by day; the title the way out of it) — and tells the
    station in the background (POST /theme, answered 204 to a fetch), so the page never reloads and never moves: the
    dashboard's folder, the About page's section, the scroll stay where they are. Without JavaScript the form still
    posts and the station sends the browser back where it was.
@@ -11,15 +12,15 @@
   var root = document.documentElement;
   var here = function () { return location.pathname + location.search + location.hash; };
   var words = { en: { light: 'Light', dark: 'Dark', toLight: 'Switch to light mode', toDark: 'Switch to dark mode' },
-                de: { light: 'Licht', dark: 'Dunkel', toLight: 'Zum hellen Modus wechseln', toDark: 'Zum dunklen Modus wechseln' },
-                fr: { light: 'Lumière', dark: 'Sombre', toLight: 'Passer en mode clair', toDark: 'Passer en mode sombre' } };
+                de: { light: 'Hell', dark: 'Dunkel', toLight: 'Zum hellen Modus wechseln', toDark: 'Zum dunklen Modus wechseln' },
+                fr: { light: 'Clair', dark: 'Sombre', toLight: 'Passer en mode clair', toDark: 'Passer en mode sombre' } };
   function wordsOf() { var t = window.MCS_T || {}; var lang = root.getAttribute('lang') || 'en'; var w = words[lang] || words.en;
     // the page's own dictionary, where it carries one (clientTable), says the words in its language
     return { light: t['Light'] || w.light, dark: t['Dark'] || w.dark, toLight: t['Switch to light mode'] || w.toLight, toDark: t['Switch to dark mode'] || w.toDark }; }
   function relabel(form, to) {
     var w = wordsOf(), dark = to === 'dark', btn = form.querySelector('button'), word = form.querySelector('.theme-word'), input = form.querySelector('input[name=to]');
     if (input) input.value = dark ? 'light' : 'dark';
-    if (word) word.textContent = dark ? w.light : w.dark;
+    if (word) word.textContent = dark ? w.dark : w.light;             // the word is the mode the page is in (layout.js, themeSwitch)
     if (btn) { btn.title = dark ? w.toLight : w.toDark; btn.setAttribute('aria-label', dark ? w.toLight : w.toDark); }
   }
   // a press must not move the page either: the switches stand in the sticky header, and a browser that gives a pressed

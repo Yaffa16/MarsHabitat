@@ -43,12 +43,14 @@ const NAV = [
  *  header of the public pages. The station is dark until a visitor chooses
  *  light with it. */
 function themeSwitch(ctx, cls, T = ctx.T || same) {
+  // the key names the mode the page is in — Dark by night, Light by day (October: "the light mode should read Dark and
+  // vice versa" — the word is the state, the title the action); a press turns it (public/switches.js relabels)
   const dark = ctx.theme !== 'light';
   return `
     <form method="post" action="/theme" class="${cls}">
       <input type="hidden" name="to" value="${dark ? 'light' : 'dark'}">
       <button type="submit" title="${esc(T(dark ? 'Switch to light mode' : 'Switch to dark mode'))}" aria-label="${esc(T(dark ? 'Switch to light mode' : 'Switch to dark mode'))}">
-        <span class="theme-mark" aria-hidden="true"></span><span class="theme-word">${T(dark ? 'Light' : 'Dark')}</span>
+        <span class="theme-mark" aria-hidden="true"></span><span class="theme-word">${T(dark ? 'Dark' : 'Light')}</span>
       </button>
     </form>`;
 }

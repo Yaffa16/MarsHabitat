@@ -370,7 +370,7 @@ body.landing .note-card, body.landing .steps {
 }
 body.landing .sheet-p2 { margin: 64px 0 0; }
 body.landing .note-card { padding: 26px 22px 30px; }
-body.landing .note-lead { margin: 24px 0 0; font-size: 22px; line-height: 1.42; letter-spacing: -.012em; color: var(--ink); text-wrap: pretty; }
+body.landing .note-lead { margin: 0; font-size: 22px; line-height: 1.42; letter-spacing: -.012em; color: var(--ink); text-wrap: pretty; }   /* the lead alone on the card: no line over it (October) */
 body.landing .note-lead b { font-weight: 600; }
 body.landing .note-more { margin: 18px 0 0; font-size: var(--fs-read); line-height: 1.62; color: var(--dim); text-wrap: pretty; }
 /* Know more: a cobalt pill, as the page's pressed pills are — the way to the About page, where the mission is told */
@@ -732,10 +732,10 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
   /* the pages after it are each about a window tall, their cards in the middle, with air around them */
   body.landing .sheet-p2, body.landing .sheet-p4 { min-height: calc(100vh - 113px); box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; margin: 0; padding: clamp(40px, 6vh, 88px) 0; }
   body.landing .sheet-p4::before { position: absolute; left: 0; right: 0; top: 0; margin: 0; }
-  /* the note: the lead at the left, the rest beside it with the Know more key under it */
-  body.landing .note-card { padding: 44px 52px 52px; }
-  body.landing .note-body { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 64px; align-items: start; }
-  body.landing .note-lead { margin-top: 34px; font-size: clamp(26px, 2.4vw, 38px); line-height: 1.3; }
+  /* the note: the lead alone, standing in the middle of the card's height beside the two calls */
+  body.landing .note-card { display: flex; flex-direction: column; justify-content: center; padding: 44px 52px 48px; }
+  body.landing .note-body { display: block; }
+  body.landing .note-lead { margin-top: 0; max-width: 24em; font-size: clamp(26px, 2.4vw, 38px); line-height: 1.3; }
   body.landing .note-more { margin-top: 38px; font-size: clamp(17px, 1.3vw, 20px); }
   body.landing .note-cta { margin-top: 28px; }
   /* the chat's heading, larger */
@@ -763,7 +763,6 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
   body.landing .space { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); column-gap: 28px; }   /* a narrower desk: the words a little wider against the room */
   body.landing .sheet-intro .wordmark { font-size: clamp(38px, 4.6vw, 48px); }
   body.landing .sheet-intro .intro-text { font-size: 15.5px; }
-  body.landing .note-body { grid-template-columns: minmax(0, 1fr); gap: 0; }
   body.landing .steps { grid-template-columns: minmax(0, 1fr); row-gap: 0; padding: 36px 36px 10px; }
   body.landing .step { display: grid; grid-template-columns: 56px minmax(0, 1fr); column-gap: 20px; padding: 0 0 34px; }
   body.landing .step-k { display: contents; }
@@ -844,7 +843,7 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
   body.landing .sheet-p2.is-snug { padding: 16px 0 12px; }
   body.landing .sheet-p2.is-snug .note-card { padding: 20px 18px 22px; }
   body.landing .sheet-p2.is-snug .sheet-meta.is-ruled { padding-bottom: 12px; }
-  body.landing .sheet-p2.is-snug .note-lead { margin-top: 16px; font-size: 20px; line-height: 1.38; }
+  body.landing .sheet-p2.is-snug .note-lead { margin-top: 0; font-size: 20px; line-height: 1.38; }
   body.landing .sheet-p2.is-snug .note-more { margin-top: 12px; font-size: 16px; line-height: 1.55; }
   body.landing .sheet-p2.is-snug .note-cta { margin-top: 16px; }
   /* the pages of the scroll: a swipe goes to the next; a page taller than the screen (public/sky.js marks it) stops at
