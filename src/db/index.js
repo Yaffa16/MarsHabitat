@@ -30,7 +30,7 @@ if (!columns('crew_entry').includes('source')) {
   if (!have.includes('nutrients')) db.exec("ALTER TABLE meal ADD COLUMN nutrients TEXT NOT NULL DEFAULT ''");
   if (!have.includes('co2e_kg')) db.exec('ALTER TABLE meal ADD COLUMN co2e_kg REAL');
   if (!have.includes('water_footprint_l')) db.exec('ALTER TABLE meal ADD COLUMN water_footprint_l REAL');
-  // An added meal (slot EXTRA1, EXTRA2, …) may carry its own hours, between which the kitchen meter is read for it.
+  // An added meal (slot EXTRA1, EXTRA2, …) may carry its own hours, between which the food meter is read for it.
   if (!have.includes('served')) db.exec("ALTER TABLE meal ADD COLUMN served TEXT NOT NULL DEFAULT ''");
 }
 

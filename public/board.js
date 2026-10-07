@@ -357,7 +357,7 @@
    screen, a single exchange.
 
    A tap on a card says, in two lines, what the message is closest to: the
-   last of some 590 things in the sky it has passed — the meteors overhead,
+   last of some 600 things in the sky it has passed — the meteors overhead,
    the satellites and space stations, the asteroids that flew by, the Moon,
    the planets and their moons, the probes on their way out, the light-time
    marks a message reaches over the run's two weeks, the stars, nebulae,

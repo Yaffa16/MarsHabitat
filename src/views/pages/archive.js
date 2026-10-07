@@ -62,6 +62,10 @@ function contents(ctx, { days, counts, entryCounts, rehearsal = null, tally = { 
           + 'not — one JSON file per pull, written the moment it arrived and never changed, '
           + 'with the same log as CSV tables inside. It survives the reset.',
         href: '/archive/readings.zip', label: 'Download ZIP' })}
+      ${card({ fmt: 'CSV · one row per state', title: 'The crew’s moods',
+        blurb: 'Every state filed for every officer — the day and time, the sol, the mood and its '
+          + 'words, who filed it — oldest first, as mission control shows it under each officer.',
+        href: '/archive/moods.csv', label: 'Download CSV' })}
       ${card({ fmt: 'ZIP · originals', title: 'The media archive',
         blurb: `Every photograph, video and sound file the crew sent out${mediaTotal
           ? ` — ${mediaTotal} so far` : ''}, byte for byte as uploaded, with the manifest
@@ -222,7 +226,7 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
         <div class="eyebrow">${esc(slot(m.slot))}${m.served_at ? ` · ${esc(m.served_at)}` : ''}</div>
         <h3>${esc(m.name)}</h3>
         ${m.components ? `<div class="note" style="white-space:pre-line;margin-bottom:6px">${esc(m.components)}</div>` : ''}
-        <div class="note">${asIs(m.kcal)} kcal · ${asIs(m.water_litres)} L water · ${asIs(m.prep_minutes)} min · ${m.energy_source === 'with' ? `power with ${esc(slot(m.power_with))}${m.window ? ` (${m.window[0]}–${m.window[1]}${m.power_wh != null ? `, ${m.power_wh} Wh` : ''})` : ''}` : `${asIs(m.energy_wh)} Wh${m.energy_source === 'meter' ? ` (the kitchen meter${m.window ? `, ${m.window[0]}–${m.window[1]}` : ''}${m.power_running ? ', so far' : ''})` : ''}`}</div>
+        <div class="note">${asIs(m.kcal)} kcal · ${asIs(m.water_litres)} L water · ${asIs(m.prep_minutes)} min · ${m.energy_source === 'with' ? `power with ${esc(slot(m.power_with))}${m.window ? ` (${m.window[0]}–${m.window[1]}${m.power_wh != null ? `, ${m.power_wh} Wh` : ''})` : ''}` : `${asIs(m.energy_wh)} Wh${m.energy_source === 'meter' ? ` (the food meter${m.window ? `, ${m.window[0]}–${m.window[1]}` : ''}${m.power_running ? ', so far' : ''})` : ''}`}</div>
         ${m.notes ? `<p class="note">${esc(m.notes)}</p>` : ''}
       </div>`).join('') : '<p class="note">No meals entered for this day.</p>'}`, 'mars-side')}
 

@@ -2088,6 +2088,11 @@ body.control .meal-add { font-weight: 600; }
 body.control .pw-meter { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
 body.control .pw-meter input[type=number] { flex: 1 1 110px; min-width: 0; }
 body.control .pw-meter input[readonly] { color: var(--c-muted); background: var(--c-panel); }
+/* the day's science mission: the day and its date on one line, the dropdown of the sheets under them */
+body.control .mission-day { display: block; }
+body.control .mission-day .mp-day { display: inline; font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--mars); margin-right: 10px; }
+body.control .mission-day .mp-date { display: inline; font-family: var(--display); font-size: 13.5px; font-weight: 600; color: var(--c-text); }
+body.control .mission-day select { display: block; width: 100%; margin-top: 8px; }
 /* the recipe book: a dropdown over each of Breakfast, Lunch and Dinner, the per-serving figures folded beneath */
 body.control .recipe-pick { width: 100%; }
 body.control .meal-slot-edit { min-width: 0; }

@@ -226,7 +226,7 @@ router.get('/', (req, res) => {
     `SELECT m.*, r.body AS response_body, r.crew_id
      FROM message m LEFT JOIN response r ON r.message_id = m.id
      WHERE ${VIEWS[show]}
-     ORDER BY m.submitted_at ${show === 'pending' ? 'ASC' : 'DESC'} LIMIT 200`
+     ORDER BY m.submitted_at DESC, m.id DESC LIMIT 200`                      // the latest at the top, in every view (October)
   ).all();
   // the relay to space: how each message stands with SpaceSpeak (src/lib/spacespeak.js)
   const relay = spacespeak.statesOf(list.map((m) => m.id));
@@ -260,7 +260,7 @@ router.get('/', (req, res) => {
     space: spacespeak.status(),
     officers,
     tasks: db.prepare('SELECT * FROM task WHERE mission_day = ? ORDER BY sort_order, time').all(day),
-    // the day's meals in their order, each with the power the kitchen meter read for it (data.mealsFor)
+    // the day's meals in their order, each with the power the food meter read for it (data.mealsFor)
     meals: data.mealsFor(day),
     mealHours: require('../lib/home-assistant').mealsConfig(),
     recipes: content.recipeBook(),
@@ -268,8 +268,8 @@ router.get('/', (req, res) => {
     figures: content.crewFigures(),
     power: content.power(),
     items: inventoryFor(day),
-    // the day's scientific mission: the plan's default and the desk's choice, and the missions to choose from
-    missionPlan: content.missionChoice(day),
+    // the day's science mission — the plan's map (day → mission) and the missions to choose from
+    missionPlan: content.missionPlan(ctx.mission.totalDays || 13),
     edits: editsFor(day),
     drafts: draftsFor(day),
     // Every slot of the crew log, for the Crew log tab: each day, each officer.
@@ -352,16 +352,9 @@ router.get('/messages/export.pdf', (req, res, next) => {
     res.type('application/pdf').attachment(`mars-station-messages-${stampNow()}.pdf`).send(require('../lib/record-pdf').messagesPdf());
   } catch (e) { next(e); }
 });
-/* The record of the crew's states: every state filed for every officer — who, the day and time (the venue's clock and
-   the sol), the mood and its words, who filed it — oldest first. What mission control shows under each officer's state,
-   for all three at once. */
-router.get('/moods.csv', (req, res) => {
-  const cell = (v) => { const t = v == null ? '' : String(v); return /[",\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
-  const head = ['officer', 'date', 'time', 'sol', 'mood', 'value', 'reads', 'filed_by', 'filed_at_utc'];
-  const rows = data.moodRecordAll().map((m) => [officer.shown(m.designation), m.date, m.time, m.sol, m.condition, m.calm_tense, m.text, m.set_by, m.effective_at]);
-  res.type('text/csv; charset=utf-8').attachment(`mars-station-crew-states-${stampNow()}.csv`)
-    .send('\ufeff' + [head, ...rows].map((r) => r.map(cell).join(',')).join('\r\n') + '\r\n');
-});
+/* The record of the crew's states as CSV went out from here until October asked for it in the Archive: /archive/moods.csv
+   (src/server.js, behind the same sign-in); the old address leads there. */
+router.get('/moods.csv', (req, res) => res.redirect(301, '/archive/moods.csv'));
 
 router.get('/messages/export.csv', (req, res) => {
   res.type('text/csv; charset=utf-8').attachment(`mars-station-messages-${stampNow()}.csv`).send('\ufeff' + require('../lib/record-pdf').messagesCsv());
@@ -763,26 +756,26 @@ router.post('/crew-figures', (req, res) => {
 
 /* ========================================================== SCIENCE MISSION */
 
-/* The day's scientific mission, chosen on the Science officer's tab: the plan in content/missions.json (`days`) is
-   the default for each day; a choice is written beside it (`chosen`, day → mission number) and stands in its place
-   wherever the day's mission is shown (content.missionForDay) — Today's Mission on the dashboard, the habitat's
-   Science Station, the mission screen; an empty choice puts the default back. */
+/* The day's science mission, set on the Science officer's tab: the plan in content/missions.json (`days`, day → mission
+   number) names the mission the crew are on each day of the run — as shipped the sheets in sequence, 00 on 15 October
+   to 12 on 27 October — and the desk carries one dropdown, for the day open on the desk. Saving writes that day's entry
+   of the map (none takes it out), which stands wherever the day's mission is shown (content.missionForDay) — Today's
+   Mission on the dashboard, the habitat's Science Station, the mission screen, the record. */
 router.post('/mission', (req, res) => {
   const ctx = req.ctx();
   const day = dayParam(req, ctx);
+  if (!day) { setFlash(req, 'NOW has no mission of its own — pick a day of the run.', true); return toTab(res, 'science', day); }
+  const missions = content.missionsFile().missions.filter((m) => m && m.no != null).map((m) => Number(m.no));
   const raw = String(req.body.mission ?? '').trim();
   const no = raw === '' ? null : Number(raw);
-  if (no != null && !content.missionsFile().missions.some((m) => m && Number(m.no) === no)) {
-    setFlash(req, 'No such mission.', true);
-    return toTab(res, 'science', day);
-  }
-  const before = content.missionChoice(day).chosen;
+  if (no != null && !missions.includes(no)) { setFlash(req, 'No such mission.', true); return toTab(res, 'science', day); }
+  const before = content.missionPlan(ctx.mission.totalDays || 13).days[String(day)] ?? null;
   const r = content.edit('missions.json', (obj) => {
-    const chosen = obj.chosen && typeof obj.chosen === 'object' ? obj.chosen : {};
-    if (no == null) delete chosen[String(day)]; else chosen[String(day)] = no;
-    if (Object.keys(chosen).length) obj.chosen = chosen; else delete obj.chosen;
+    obj.days = obj.days && typeof obj.days === 'object' ? obj.days : {};
+    if (no == null) delete obj.days[String(day)]; else obj.days[String(day)] = no;
+    delete obj.chosen;                                           // the choice over the plan, from before the plan was edited here
   });
-  audit(req.user.username, 'Mission', day, no == null ? 'default' : `mission ${no}`);
+  audit(req.user.username, 'Mission', day, no == null ? 'none' : `mission ${content.missionNo(no)}`);
   noteEdits('mission', day, before === no ? [] : ['mission'], req.user.username);
   setFlash(req, r.ok ? `${DayWord(day)} science mission saved.` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, 'science', day);
@@ -803,7 +796,7 @@ router.post('/meals', (req, res) => {
   const num = (v) => (v === '' || v == null ? 0 : Number(v) || 0);
 
   // Water and power are not edited here, so they are carried through from the
-  // existing meal rather than quietly zeroed. (The power shown is the kitchen
+  // existing meal rather than quietly zeroed. (The power shown is the food
   // meter's, read live between the meal's hours — data.mealsFor — not this figure.)
   const current = db.prepare('SELECT * FROM meal WHERE mission_day = ?').all(day).map(data.mealRow);
   const book = content.recipeBook();

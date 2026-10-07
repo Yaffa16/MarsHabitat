@@ -1,409 +1,41 @@
 {
-  "_note": "The scientific missions of MARS! / Red Dust City, one a day, as the sheets in the missions/ folder give them (MARS_Mission_NN_….pdf, one page each). `days` says which mission the crew are on each day of the run (day → mission number); `missions` carries each sheet's words: its number and title, the central question, the Morning, Afternoon and EVA parts as lines (a line in capitals is a heading, one starting with • a bullet, one starting with → a pointer), the question for the community hour in English and German as the sheet has them, the material it needs, and the sheet's file. The Today's Mission panel at the head of the mission dashboard shows the day's mission from here and links to its sheet at /missions/<file>. Twelve sheets for thirteen days: numbers 03 and 05 are not in the folder, so the twelve are on days 1–12 in the folder's order and day 13 has none — move them here as the production decides (a sheet edited later needs its words edited here too).",
+  "_note": "The scientific missions of MARS! / Red Dust City, one a day, as the sheets in the missions/ folder give them (MARS_Mission_NN_….pdf, one page each) — written by tools/missions-json.py, which reads every sheet in the folder; run it again when a sheet changes. `days` says which mission the crew are on each day of the run (day → mission number): as shipped the sheets follow the days in sequence — 00 on day 1, 15 October, to 12 on day 13, 27 October — and the Science officer changes a day's mission from the desk's Science tab, which writes this map. `missions` carries each sheet's words: its number and title (the file's — the number printed on the sheet is kept as sheetNo where it is another), the central question, the Morning, Afternoon and EVA parts as lines (a line in capitals is a heading, one starting with • a bullet, one starting with → a pointer), the question for the community hour in English and German as the sheet has them, the material it needs, and the sheet's file. A sheet that is a copy of another's PDF (standing in until it is written) keeps its title and carries no words — `placeholder` names the file it copies. The Today's Mission panel at the head of the mission dashboard shows the day's mission from here and links to its sheet at /missions/<file>.",
   "days": {
-    "1": 1,
-    "2": 2,
-    "3": 4,
-    "4": 6,
-    "5": 7,
-    "6": 8,
-    "7": 9,
-    "8": 10,
-    "9": 11,
-    "10": 12,
-    "11": 13,
-    "12": 14
+    "1": 0,
+    "2": 1,
+    "3": 2,
+    "4": 3,
+    "5": 4,
+    "6": 5,
+    "7": 6,
+    "8": 7,
+    "9": 8,
+    "10": 9,
+    "11": 10,
+    "12": 11,
+    "13": 12
   },
   "missions": [
     {
-      "no": 1,
-      "title": "Care as a Finite Resource",
-      "file": "MARS_Mission_01_Care_as_a_Finite_Resource.pdf",
-      "question": "The world needs care. But what if care was a finite resource – how would we distribute who and what gets cared for, what gets neglected?",
-      "morning": [
-        "Classify the following situations:",
-        "• Robot dog needs charging",
-        "• Insects need feeding",
-        "• Booboo makes unusual noises",
-        "• A plant is dying",
-        "• Robot dog refuses to enter the EVA",
-        "• Booboo appears depressed",
-        "For each situation, discuss:",
-        "1. Is this a problem?",
-        "2. Does it deserve our attention?",
-        "3. Who is responsible?",
-        "4. Who gets priority handling?"
-      ],
-      "afternoon": [
-        "Throughout the day, document acts of care:",
-        "• toward a human",
-        "• toward a living being",
-        "• toward a machine / object",
-        "Log the time and what happened."
-      ],
-      "eva": [
-        "CARE MAP",
-        "Who cares for a place that belongs to all of us / belongs to none of us?",
-        "• Document disrepair, waste, graffiti, things that are broken or missing",
-        "• Humans that need care (e.g. difficult terrain, a person sitting alone)",
-        "• Dead insects / plants, etc."
-      ],
-      "community": {
-        "en": "What did you care for today?",
-        "de": "Um was hast du dich heute gekümmert?"
-      },
-      "materials": "Stopwatch; paper & pen or laptop; possibly a voice recorder; photo paper; printed pictures"
-    },
-    {
-      "no": 2,
-      "title": "How Humans Collaborate",
-      "file": "MARS_Mission_02_How_Humans_Collaborate.pdf",
-      "question": "How do we still work together, if we are on different planets or if we see the world differently?",
-      "morning": [
-        "Build something in 20 minutes. One person sees a picture and explains it; the others build.",
-        "Communication conditions to test:",
-        "• speak normally",
-        "• only write",
-        "• send a message every two minutes",
-        "Measure:",
-        "• time until the thing is built properly",
-        "• how many errors occur during the day",
-        "• how many acts of communication are needed"
-      ],
-      "afternoon": [
-        "Building a whole from the pieces:",
-        "Fictitious scenario: large water-recycling station arrives tomorrow. All astronauts get a separate letter of instructions that doesn’t have the whole picture, but only parts. They need to come to a common solution through verbal communication."
-      ],
-      "eva": [
-        "COMMUNICATION EFFICIENCY",
-        "• Find 5 specific things and document them (astronaut inside the habitat has the list of things).",
-        "• Communication is only possible every 5 minutes.",
-        "• Maximum of 20 words per message.",
-        "• Astronaut inside keeps the clock"
-      ],
-      "community": {
-        "en": "What information would you send to astronauts who cannot see the outside? What is one thing happening back home / in Karlsruhe that we should know about?",
-        "de": "Was ist eine Sache die zu Hause / in Karlsruhe grade passiert, über die wir auf dem Mars Bescheid wissen sollten? Was sollten Astronauten, die die Erde grade nicht sehen können, über sie wissen?"
-      },
-      "materials": "Building blocks with laminated photos of results; stopwatches; paper & pen or laptop, photo camera"
-    },
-    {
-      "no": 4,
-      "title": "Human Resource Audit",
-      "file": "MARS_Mission_04_Human_Resource_Audit.pdf",
-      "question": "How high is the cost to keep a human alive?",
-      "morning": [
-        "One-day self-audit:",
-        "• steps",
-        "• water",
-        "• power (for one person, calculate 1/3)",
-        "• calories in",
-        "• body activity, pulse, etc.",
-        "What activity “costs” what?"
-      ],
-      "afternoon": [
-        "Do one activity (washing dishes?) in two ways:",
-        "• manually",
-        "• resource-efficiently",
-        "Compare what each way costs in human and material resources."
-      ],
-      "eva": [
-        "What resources are available outside the Habitat?",
-        "• toilet",
-        "• sitting spaces",
-        "• potable water",
-        "• shade",
-        "• infrastructure",
-        "What does a city provide?"
-      ],
+      "no": 0,
+      "title": "Setup Habitat After Touchdown",
+      "file": "MARS_Mission_00_Setup_Habitat_After_Touchdown.pdf",
+      "placeholder": "MARS_Mission_01_Energy_Budget.pdf",
+      "question": "",
+      "morning": [],
+      "afternoon": [],
+      "eva": [],
       "community": {
         "en": "",
-        "de": "Was würdest du aufgeben, um dein Leben ressourcensparender zu gestalten?"
-      },
-      "materials": "Camera; clipboard, pedometer, pulse measurement"
-    },
-    {
-      "no": 6,
-      "title": "Waterways",
-      "file": "MARS_Mission_06_Waterways.pdf",
-      "question": "Humans cannot survive without water. How do we take care and notice water?",
-      "morning": [
-        "Map where water enters and leaves the Habitat: Where is water used in the Habitat? Where is water lost? Where does it flow? Where does it stand still?",
-        "Track water consumption by plants, crickets and human consumption.",
-        "Ask ground control for average rainfall on Marktplatz a day/a year"
-      ],
-      "afternoon": [
-        "THE JOURNEY OF A DROP",
-        "Draw a visual map of the journey of a single drop of water as it travels through the habitat, informed by the learning of the morning – make more than one drawing for more than one journey"
-      ],
-      "eva": [
-        "WATERWAYS MAPPING",
-        "• visible places",
-        "• rain gutters",
-        "• drains",
-        "• fountains",
-        "• places where water can be collected or is lost",
-        "Ask: “How would our water consumption change if we could only use the water of our immediate surroundings?”"
-      ],
-      "community": {
-        "en": "How are you saving water? What is your favorite spot with water in the city?",
-        "de": "Wie sparst du Wasser in deinem täglichen Leben? Was ist dein Lieblingsort mit Wasser in der oder um die Stadt herum?"
-      },
-      "materials": "Camera; maybe photo printer; paper for mapping or laptop."
-    },
-    {
-      "no": 7,
-      "title": "Know Thy Neighbours",
-      "file": "MARS_Mission_07_Know_Thy_Neighbors.pdf",
-      "question": "We don’t live on this world alone. What do we actually know about the more-than-human (and human) neighbors?",
-      "morning": [
-        "Short questionnaire about the crickets without looking at them first:",
-        "• sympathy",
-        "• interest",
-        "• connectedness",
-        "• individuality?",
-        "• Do they show responsibility towards each other?",
-        "• Do we feel responsible for them?",
-        "20-minute pure watching: no feeding, no touching, no interaction. Note concrete actions, behaviors and interactions, differences and reactions to each other.",
-        "Do the questionnaire again – did anything change?"
-      ],
-      "afternoon": [
-        "Choose one thing in the Habitat — a plant, cricket, sensor, piece of furniture, water tank, robot, etc.",
-        "Describe the Habitat for 20 minutes entirely from that entity’s perspective:",
-        "• What can it perceive?",
-        "• What does it depend on?",
-        "• What changes around it?",
-        "• What might it “know” about the astronauts?",
-        "• What would be important to it that humans overlook?",
-        "Then compare the different perspectives: What becomes visible when we stop taking the human perspective as the default?"
-      ],
-      "eva": [
-        "Observe and document people on the MARS!platz:",
-        "• How do the people who pass through the marketplace differ from the people who work there / live nearby?",
-        "• Which relationships between people can we identify?",
-        "• Which forms of use of the place are there?",
-        "• Groups vs. individuals",
-        "• Optional interview: brief information about their perspective?"
-      ],
-      "community": {
-        "en": "When does a stranger become a neighbor? What makes a good neighborhood?",
-        "de": "Wann wird aus einem Fremden ein Nachbar? Was macht gute Nachbarschaft aus?"
-      },
-      "materials": "Pen/Paper or laptop, voice recorder, the crickets, photo camera, maybe photo printer"
-    },
-    {
-      "no": 8,
-      "title": "School of McGyver",
-      "file": "MARS_Mission_08_School_of_McGyver.pdf",
-      "question": "If we can’t buy what we need, can we invent, make, repair or reuse?",
-      "morning": [
-        "Make something that improves life in the Habitat.",
-        "Document:",
-        "• what material was chosen",
-        "• what was disregarded",
-        "• what resources were used",
-        "• how long it took",
-        "• what was made",
-        "• did it work?"
-      ],
-      "afternoon": [
-        "“Make something that tells the story of life for someone who has never been here.”",
-        "Document the process:",
-        "• research",
-        "• materials used",
-        "• concept",
-        "• production",
-        "• documentation",
-        "• presentation",
-        "→ “artwork”"
-      ],
-      "eva": [
-        "Fictitious scenario: THE MARKETPLACE AS RESOURCE",
-        "“Name 5 objects from the marketplace that could be used as a resource. Which ones and why?”",
-        "• material",
-        "• size, weight, value (e.g. place – waste? in Habitat?)",
-        "Make something that tells the story of life for someone who has never been here."
-      ],
-      "community": {
-        "en": "Which object from Earth would you take with you because you cannot live without it? If you could only take 1 thing, what would it be?",
         "de": ""
       },
-      "materials": "Craft materials (scissors, glue, gaffa tape; toolbox); photo paper; photo printer; voice recorder."
+      "materials": ""
     },
     {
-      "no": 9,
-      "title": "The Power of Words",
-      "file": "MARS_Mission_09_The_Power_of_Words.pdf",
-      "question": "",
-      "morning": [
-        "MARS DICTIONARY",
-        "Create a dictionary for life on Mars (how we talk about change).",
-        "What does, for example, the following mean?",
-        "• neighbour",
-        "• home",
-        "• nature",
-        "• freedom",
-        "• property",
-        "• community",
-        "• privacy / being private",
-        "• outside",
-        "• food",
-        "• night"
-      ],
-      "afternoon": [
-        "THE OTHER POINT OF VIEW – creative writing exercise for empathy.",
-        "Choose 1 event that happened in the Habitat during the day (doesn’t necessarily have happened to the describing officer). Describe it from:",
-        "• a neutral perspective",
-        "• the perspective of the astronaut experiencing it",
-        "• the perspective of an object involved",
-        "• the perspective of a person on Earth who only heard about it"
-      ],
-      "eva": [
-        "Rename places and objects on the marketplace:",
-        "• Who gets to name places and objects?",
-        "• Which stories disappear through renaming?",
-        "• Is naming a form of ownership?"
-      ],
-      "community": {
-        "en": "Are we allowed to simply rename the MARS!platz?",
-        "de": ""
-      },
-      "materials": "Pen/Paper, laptop, voice recorder, cardboard and marker to rename things on marktplatz?"
-    },
-    {
-      "no": 10,
-      "title": "Mars Myths",
-      "file": "MARS_Mission_10_Mars_Myths.pdf",
-      "question": "What are the stories we tell each other to create sense out of chaos?",
-      "morning": [
-        "THE FIRST LAW",
-        "Investigate historical / religious rule systems (with help of ground control) and extract different kinds of rules:",
-        "• What not to do",
-        "• What to do",
-        "• What will happen",
-        "• Who gets to decide (when?)",
-        "• What happens when a rule is broken?",
-        "• Who legitimizes the rule?"
-      ],
-      "afternoon": [
-        "A RELIGION FOR MARS",
-        "• What function does religion have in a society?",
-        "• What rituals are central to religious meaning-making?",
-        "• Which rituals, actions and objects are central for the survival of the community in the Habitat, and what could they become in a Mars religion?",
-        "• Invent rituals and myths (mythological justification for things & actions).",
-        "How could we ritualize everyday actions and mythologize them into an order in the Habitat?",
-        "Example: garbage receives a small ceremony / becomes a symbol as the guardian of waste; think about a translation from outside to inside making a small ritual action when you come inside from EVA"
-      ],
-      "eva": [
-        "DOING RITUALS",
-        "Observe the marketplace and identify actions that may be important for the survival of the community:",
-        "• bakery / market: exchange, including human exchange",
-        "• town hall: community rules",
-        "• bench: place / meeting point",
-        "• church: existing rules, routines"
-      ],
-      "community": {
-        "en": "What rituals do you follow in your everyday life?",
-        "de": "Welche Rituale hast du in deinem täglichen Leben?"
-      },
-      "materials": "paper / pen or laptop; photo paper; possibly craft materials, voice recorder"
-    },
-    {
-      "no": 11,
-      "title": "Art & Beauty",
-      "file": "MARS_Mission_11_Art_and_Beauty.pdf",
-      "question": "Does MARS! need beauty? What makes life a good life?",
-      "morning": [
-        "SURVIVAL VS. LIVING",
-        "Collect a list with others:",
-        "• What is needed for survival?",
-        "• What is needed for a good life?"
-      ],
-      "afternoon": [
-        "BEAUTY & THE VISIBLE IN THE HABITAT",
-        "What can make the Habitat more beautiful?",
-        "• light",
-        "• music?",
-        "• art",
-        "• symmetry of objects",
-        "• color",
-        "• plants? nature?",
-        "→ no additional function, just beautification!",
-        "QUALITATIVE SELF-OBSERVATION:",
-        "• Is the place more pleasant now?",
-        "• Do I want to stay longer?",
-        "• Does the place feel more “at home”?",
-        "• Can I concentrate better?",
-        "GOOD LIFE MANIFESTO:",
-        "“Habitat is not home until …”",
-        "“Beauty is a resource because …”"
-      ],
-      "eva": [
-        "SURVIVAL VS. LIVING",
-        "• What helps people survive here?",
-        "• What makes people want to live here?",
-        "→ Find a spot that is “beautiful” and describe what makes it beautiful to you and why.",
-        "Consider the contrasting properties of the place and the feeling of beauty."
-      ],
-      "community": {
-        "en": "What would you not throw out of your apartment, even if it is actually not necessary for survival?",
-        "de": "Welchen Gegenstand würdest du nie aus deiner Wohnung entfernen, selbst wenn er nicht für dein unmittelbares Überleben wichtig ist?"
-      },
-      "materials": "Pen/paper, laptop, materials around the habitat (craft material, toolbox), voice recorder, camera"
-    },
-    {
-      "no": 12,
-      "title": "Trust the System (?)",
-      "file": "MARS_Mission_12_Trust_the_System.pdf",
-      "question": "Do you trust machines over your own senses?",
-      "morning": [
-        "SITUATION SCENARIOS – check measured values / presentation:",
-        "“Die Luft ist schlecht” (“The air is bad”).",
-        "“Die Heuschrecken frösteln” / “The grasshoppers are freezing.”",
-        "“Der CO₂-Wert ist gestiegen” (“The CO₂ level has risen”).",
-        "Ask:",
-        "• Is it true / false?",
-        "• Where do I get that from?",
-        "• How sure am I?",
-        "→ Compare with measured values."
-      ],
-      "afternoon": [
-        "TWO INFORMATION SOURCES: own perception vs. sensors",
-        "Science Officer deliberately seeks discrepancies between measurement and perception, describes and reflects which information source they trust more and why.",
-        "Example: The air feels really stale, although O2 and CO2 sensors say everything is in order",
-        "→ technical systems / objects: more objective, precise, competent?",
-        "TRUST PROTOCOL",
-        "Formulate common rules:",
-        "• “We trust the system when …”",
-        "• “We question the system if …”",
-        "• “We override …”",
-        "• “We verify …”",
-        "• “We never rely on …”"
-      ],
-      "eva": [
-        "SYSTEMATICALLY LOOK FOR SIGNS / RULES",
-        "• traffic signs",
-        "• stop signs",
-        "• house numbers",
-        "• warning signs",
-        "• opening hours",
-        "• signs / markings",
-        "Ask:",
-        "• What does the sign mean?",
-        "• Why do we obey / follow the sign?",
-        "• What happens if we ignore it?",
-        "• Who decides what this sign means?"
-      ],
-      "community": {
-        "en": "Would you trust a machine when it tells you that everything is in order?",
-        "de": "Würdest du einer Maschine vertrauen wenn sie dir sagt dass alles in Ordnung ist?"
-      },
-      "materials": "Paper / pen or laptop; voice recorder; photo paper; photo printer; sensors (Habitat)."
-    },
-    {
-      "no": 13,
+      "no": 1,
       "title": "Energy Budget",
-      "file": "MARS_Mission_13_Energy_Budget.pdf",
+      "file": "MARS_Mission_01_Energy_Budget.pdf",
+      "sheetNo": "13",
       "question": "How much of our lives runs on electricity, and what is indispensable for us?",
       "morning": [
         "ENERGY – FOOTPRINT – ENERGY BALANCE",
@@ -445,9 +77,285 @@
       "materials": "Pen/Paper, laptop, electricity meters, power bike, pedometer (?)"
     },
     {
-      "no": 14,
-      "title": "Space & Spaces",
-      "file": "MARS_Mission_14_Space_and_Spaces.pdf",
+      "no": 2,
+      "title": "Trust the System",
+      "file": "MARS_Mission_02_Trust_the_System.pdf",
+      "sheetNo": "12",
+      "question": "Do you trust machines over your own senses?",
+      "morning": [
+        "SITUATION SCENARIOS – check measured values / presentation:",
+        "“Die Luft ist schlecht” (“The air is bad”).",
+        "“Die Heuschrecken frösteln” / “The grasshoppers are freezing.”",
+        "“Der CO₂-Wert ist gestiegen” (“The CO₂ level has risen”).",
+        "Ask:",
+        "• Is it true / false?",
+        "• Where do I get that from?",
+        "• How sure am I?",
+        "→ Compare with measured values."
+      ],
+      "afternoon": [
+        "TWO INFORMATION SOURCES: own perception vs. sensors",
+        "Science Officer deliberately seeks discrepancies between measurement and perception, describes and reflects which information source they trust more and why.",
+        "Example: The air feels really stale, although O2 and CO2 sensors say everything is in order",
+        "→ technical systems / objects: more objective, precise, competent?",
+        "3. TRUST PROTOCOL",
+        "Formulate common rules:",
+        "• “We trust the system when …”",
+        "• “We question the system if …”",
+        "• “We override …”",
+        "• “We verify …”",
+        "• “We never rely on …”"
+      ],
+      "eva": [
+        "SYSTEMATICALLY LOOK FOR SIGNS / RULES",
+        "• traffic signs",
+        "• stop signs",
+        "• house numbers",
+        "• warning signs",
+        "• opening hours",
+        "• signs / markings",
+        "Ask:",
+        "• What does the sign mean?",
+        "• Why do we obey / follow the sign?",
+        "• What happens if we ignore it?",
+        "• Who decides what this sign means?"
+      ],
+      "community": {
+        "en": "Would you trust a machine when it tells you that everything is in order?",
+        "de": "Würdest du einer Maschine vertrauen wenn sie dir sagt dass alles in Ordnung ist?"
+      },
+      "materials": "Paper / pen or laptop; voice recorder; photo paper; photo printer; sensors (Habitat)."
+    },
+    {
+      "no": 3,
+      "title": "Care as a Finite Resource",
+      "file": "MARS_Mission_03_Care_as_a_Finite_Resource.pdf",
+      "sheetNo": "1",
+      "question": "The world needs care. But what if care was a finite resource – how would we distribute who and what gets cared for, what gets neglected?",
+      "morning": [
+        "Classify the following situations:",
+        "• Robot dog needs charging",
+        "• Insects need feeding",
+        "• Booboo makes unusual noises",
+        "• A plant is dying",
+        "• Robot dog refuses to enter the EVA",
+        "• Booboo appears depressed",
+        "For each situation, discuss:",
+        "1. Is this a problem?",
+        "2. Does it deserve our attention?",
+        "3. Who is responsible?",
+        "4. Who gets priority handling?"
+      ],
+      "afternoon": [
+        "Throughout the day, document acts of care:",
+        "• toward a human",
+        "• toward a living being",
+        "• toward a machine / object",
+        "Log the time and what happened."
+      ],
+      "eva": [
+        "CARE MAP",
+        "Who cares for a place that belongs to all of us / belongs to none of us?",
+        "• Document disrepair, waste, graffiti, things that are broken or missing",
+        "• Humans that need care (e.g. difficult terrain, a person sitting alone)",
+        "• Dead insects / plants, etc."
+      ],
+      "community": {
+        "en": "What did you care for today?",
+        "de": "Um was hast du dich heute gekümmert?"
+      },
+      "materials": "Stopwatch; paper & pen or laptop; possibly a voice recorder; photo paper; printed pictures"
+    },
+    {
+      "no": 4,
+      "title": "How Humans Collaborate",
+      "file": "MARS_Mission_04_How_Humans_Collaborate.pdf",
+      "sheetNo": "2",
+      "question": "How do we still work together, if we are on different planets or if we see the world differently?",
+      "morning": [
+        "Build something in 20 minutes. One person sees a picture and explains it; the others build.",
+        "Communication conditions to test:",
+        "• speak normally",
+        "• only write",
+        "• send a message every two minutes",
+        "Measure:",
+        "• time until the thing is built properly",
+        "• how many errors occur during the day",
+        "• how many acts of communication are needed"
+      ],
+      "afternoon": [
+        "Building a whole from the pieces:",
+        "Fictitious scenario: large water-recycling station arrives tomorrow. All astronauts get a separate letter of instructions that doesn’t have the whole picture, but only parts. They need to come to a common solution through verbal communication."
+      ],
+      "eva": [
+        "COMMUNICATION EFFICIENCY",
+        "• Find 5 specific things and document them (astronaut inside the habitat has the list of things).",
+        "• Communication is only possible every 5 minutes.",
+        "• Maximum of 20 words per message.",
+        "• Astronaut inside keeps the clock"
+      ],
+      "community": {
+        "en": "What information would you send to astronauts who cannot see the outside? What is one thing happening back home / in Karlsruhe that we should know about?",
+        "de": "Was ist eine Sache die zu Hause / in Karlsruhe grade passiert, über die wir auf dem Mars Bescheid wissen sollten? Was sollten Astronauten, die die Erde grade nicht sehen können, über sie wissen?"
+      },
+      "materials": "Building blocks with laminated photos of results; stopwatches; paper & pen or laptop, photo camera"
+    },
+    {
+      "no": 5,
+      "title": "Waterways",
+      "file": "MARS_Mission_05_Waterways.pdf",
+      "sheetNo": "6",
+      "question": "Humans cannot survive without water. How do we take care and notice water?",
+      "morning": [
+        "Map where water enters and leaves the Habitat:",
+        "Where is water used in the Habitat? Where is water lost? Where does it flow? Where does it stand still?",
+        "Track water consumption by plants, crickets and human consumption.",
+        "Ask ground control for average rainfall on Marktplatz a day/a year"
+      ],
+      "afternoon": [
+        "The Journey of a Drop",
+        "Draw a visual map of the journey of a single drop of water as it travels through the habitat, informed by the learning of the morning – make more than one drawing for more than one journey"
+      ],
+      "eva": [
+        "WATERWAYS MAPPING",
+        "• visible places",
+        "• rain gutters",
+        "• drains",
+        "• fountains",
+        "• places where water can be collected or is lost",
+        "Ask: “How would our water consumption change if we could only use the water of our immediate surroundings?”"
+      ],
+      "community": {
+        "en": "How are you saving water? What is your favorite spot with water in the city?",
+        "de": "Wie sparst du Wasser in deinem täglichen Leben? Was ist dein Lieblingsort mit Wasser in der oder um die Stadt herum?"
+      },
+      "materials": "Camera; maybe photo printer; paper for mapping or laptop."
+    },
+    {
+      "no": 6,
+      "title": "School of McGyver",
+      "file": "MARS_Mission_06_School_of_McGyver.pdf",
+      "sheetNo": "8",
+      "question": "If we can’t buy what we need, can we invent, make, repair or reuse?",
+      "morning": [
+        "Make something that improves life in the Habitat.",
+        "Document:",
+        "• what material was chosen",
+        "• what was disregarded",
+        "• what resources were used",
+        "• how long it took",
+        "• what was made",
+        "• did it work?"
+      ],
+      "afternoon": [
+        "“Make something that tells the story of life for someone who has never been here.”",
+        "Document the process:",
+        "• research",
+        "• materials used",
+        "• concept",
+        "• production",
+        "• documentation",
+        "• presentation",
+        "→ “artwork”"
+      ],
+      "eva": [
+        "Fictitious scenario: THE MARKETPLACE AS RESOURCE",
+        "“Name 5 objects from the marketplace that could be used as a resource. Which ones and why?”",
+        "• material",
+        "• size, weight, value (e.g. place – waste? in Habitat?)",
+        "Make something that tells the story of life for someone who has never been here."
+      ],
+      "community": {
+        "en": "Which object from Earth would you take with you because you cannot live without it? If you could only take 1 thing, what would it be?",
+        "de": ""
+      },
+      "materials": "Craft materials (scissors, glue, gaffa tape; toolbox); photo paper; photo printer; voice recorder."
+    },
+    {
+      "no": 7,
+      "title": "Mars Myths",
+      "file": "MARS_Mission_07_Mars_Myths.pdf",
+      "sheetNo": "10",
+      "question": "What are the stories we tell each other to create sense out of chaos?",
+      "morning": [
+        "THE FIRST LAW",
+        "Investigate historical / religious rule systems (with help of ground control) and extract different kinds of rules:",
+        "• What not to do",
+        "• What to do",
+        "• What will happen",
+        "• Who gets to decide (when?)",
+        "• What happens when a rule is broken?",
+        "• Who legitimizes the rule?"
+      ],
+      "afternoon": [
+        "A RELIGION FOR MARS",
+        "• What function does religion have in a society?",
+        "• What rituals are central to religious meaning-making?",
+        "• Which rituals, actions and objects are central for the survival of the community in the Habitat, and what could they become in a Mars religion?",
+        "• Invent rituals and myths (mythological justification for things & actions).",
+        "How could we ritualize everyday actions and mythologize them into an order in the Habitat?",
+        "Example: garbage receives a small ceremony / becomes a symbol as the guardian of waste; think about a translation from outside to inside making a small ritual action when you come inside from EVA"
+      ],
+      "eva": [
+        "DOING RITUALS",
+        "Observe the marketplace and identify actions that may be important for the survival of the community:",
+        "• bakery / market: exchange, including human exchange",
+        "• town hall: community rules",
+        "• bench: place / meeting point",
+        "• church: existing rules, routines"
+      ],
+      "community": {
+        "en": "What rituals do you follow in your everyday life?",
+        "de": "Welche Rituale hast du in deinem täglichen Leben?"
+      },
+      "materials": "paper / pen or laptop; photo paper; possibly craft materials, voice recorder"
+    },
+    {
+      "no": 8,
+      "title": "Know Thy Neighbors",
+      "file": "MARS_Mission_08_Know_Thy_Neighbors.pdf",
+      "sheetNo": "7",
+      "question": "We don’t live on this world alone. What do we actually know about the more-than-human (and human) neighbors?",
+      "morning": [
+        "Short questionnaire about the crickets without looking at them first:",
+        "• sympathy",
+        "• interest",
+        "• connectedness",
+        "• individuality?",
+        "• Do they show responsibility towards each other?",
+        "• Do we feel responsible for them?",
+        "20-minute pure watching: no feeding, no touching, no interaction. Note concrete actions, behaviors and interactions, differences and reactions to each other.",
+        "Do the questionnaire again – did anything change?"
+      ],
+      "afternoon": [
+        "Choose one thing in the Habitat — a plant, cricket, sensor, piece of furniture, water tank, robot, etc.",
+        "Describe the Habitat for 20 minutes entirely from that entity’s perspective:",
+        "• What can it perceive?",
+        "• What does it depend on?",
+        "• What changes around it?",
+        "• What might it “know” about the astronauts?",
+        "• What would be important to it that humans overlook?",
+        "Then compare the different perspectives: What becomes visible when we stop taking the human perspective as the default?"
+      ],
+      "eva": [
+        "Observe and document people on the MARS!platz:",
+        "• How do the people who pass through the marketplace differ from the people who work there / live nearby?",
+        "• Which relationships between people can we identify?",
+        "• Which forms of use of the place are there?",
+        "• Groups vs. individuals",
+        "• Optional interview: brief information about their perspective?"
+      ],
+      "community": {
+        "en": "When does a stranger become a neighbor? What makes a good neighborhood?",
+        "de": "Wann wird aus einem Fremden ein Nachbar? Was macht gute Nachbarschaft aus?"
+      },
+      "materials": "Pen/Paper or laptop, voice recorder, the crickets, photo camera, maybe photo printer"
+    },
+    {
+      "no": 9,
+      "title": "Space and Spaces",
+      "file": "MARS_Mission_09_Space_and_Spaces.pdf",
+      "sheetNo": "14",
       "question": "Placemaking is an intentional activity – how do we use the spaces we are given, how do we create a space that feels a certain way?",
       "morning": [
         "HABITAT MAPPING",
@@ -476,6 +384,106 @@
         "de": "Wo im öffentlichen Raum fühlst du dich zu Hause, wo gehörst du hin?"
       },
       "materials": "Chalk, Voice Recorder, Pen/Paper, laptop"
+    },
+    {
+      "no": 10,
+      "title": "Art and Beauty",
+      "file": "MARS_Mission_10_Art_and_Beauty.pdf",
+      "sheetNo": "11",
+      "question": "Does MARS! need beauty? What makes life a good life?",
+      "morning": [
+        "SURVIVAL VS. LIVING",
+        "Collect a list with others:",
+        "• What is needed for survival?",
+        "• What is needed for a good life?"
+      ],
+      "afternoon": [
+        "BEAUTY & THE VISIBLE IN THE HABITAT",
+        "What can make the Habitat more beautiful?",
+        "• light",
+        "• music?",
+        "• art",
+        "• symmetry of objects",
+        "• color",
+        "• plants? nature?",
+        "→ no additional function, just beautification!",
+        "QUALITATIVE SELF-OBSERVATION:",
+        "• Is the place more pleasant now?",
+        "• Do I want to stay longer?",
+        "• Does the place feel more “at home”?",
+        "• Can I concentrate better?",
+        "GOOD LIFE MANIFESTO:",
+        "“Habitat is not home until …”",
+        "“Beauty is a resource because …”"
+      ],
+      "eva": [
+        "SURVIVAL VS. LIVING",
+        "• What helps people survive here?",
+        "• What makes people want to live here?",
+        "→ Find a spot that is “beautiful” and describe what makes it beautiful to you and why.",
+        "Consider the contrasting properties of the place and the feeling of beauty."
+      ],
+      "community": {
+        "en": "What would you not throw out of your apartment, even if it is actually not necessary for survival?",
+        "de": "Welchen Gegenstand würdest du nie aus deiner Wohnung entfernen, selbst wenn er nicht für dein unmittelbares Überleben wichtig ist?"
+      },
+      "materials": "Pen/paper, laptop, materials around the habitat (craft material, toolbox), voice recorder, camera"
+    },
+    {
+      "no": 11,
+      "title": "The Power of Words",
+      "file": "MARS_Mission_11_The_Power_of_Words.pdf",
+      "sheetNo": "9",
+      "question": "",
+      "morning": [
+        "MARS DICTIONARY",
+        "Create a dictionary for life on Mars (how we talk about change).",
+        "What does, for example, the following mean?",
+        "• neighbour",
+        "• home",
+        "• nature",
+        "• freedom",
+        "• property",
+        "• community",
+        "• privacy / being private",
+        "• outside",
+        "• food",
+        "• night"
+      ],
+      "afternoon": [
+        "THE OTHER POINT OF VIEW – creative writing exercise for empathy.",
+        "Choose 1 event that happened in the Habitat during the day (doesn’t necessarily have happened to the describing officer). Describe it from:",
+        "• a neutral perspective",
+        "• the perspective of the astronaut experiencing it",
+        "• the perspective of an object involved",
+        "• the perspective of a person on Earth who only heard about it"
+      ],
+      "eva": [
+        "Rename places and objects on the marketplace:",
+        "• Who gets to name places and objects?",
+        "• Which stories disappear through renaming?",
+        "• Is naming a form of ownership?"
+      ],
+      "community": {
+        "en": "Are we allowed to simply rename the MARS!platz?",
+        "de": ""
+      },
+      "materials": "Pen/Paper, laptop, voice recorder, cardboard and marker to rename things on marktplatz?"
+    },
+    {
+      "no": 12,
+      "title": "Habitat Teardown",
+      "file": "MARS_Mission_12_Habitat_Teardown.pdf",
+      "placeholder": "MARS_Mission_01_Energy_Budget.pdf",
+      "question": "",
+      "morning": [],
+      "afternoon": [],
+      "eva": [],
+      "community": {
+        "en": "",
+        "de": ""
+      },
+      "materials": ""
     }
   ]
 }

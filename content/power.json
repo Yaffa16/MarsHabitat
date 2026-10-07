@@ -1,35 +1,46 @@
 {
-  "_note": "Power consumed inside the habitat, in kWh per day, split by category. The categories are yours to shape: rename a label, add one, remove one — the key is the stable name in the record, the label is what the station shows. Days are filed as \"1\": { \"heating\": 1.1, \"food\": 0.5, ... } — on the Habitat tab of mission control or here; a save is live within a couple of seconds. Emptied of its days by the reset; the categories stay. A category may name a Home Assistant energy meter as \"sensor\" (the entity id without \"sensor.\"): its day then reads that meter — the day's last reading less the day before's last, since the meter only grows — unless a figure is filed by hand for that day, which wins.",
+  "_note": "Power consumed inside the habitat, in kWh per day, by channel. The eight categories are the habitat's metered power channels — crickets, science 1 and 2, living, table, food, water, hydroponics — each naming its Home Assistant energy meter as \"sensor\" (the entity id without \"sensor.\", habitat_power_<channel>_energie, content/home-assistant.json): a category's day reads that meter — the day's last reading less the day before's last, since the meter only grows — unless a figure is filed by hand for that day, which wins. The categories are yours to shape: rename a label (on the Habitat tab of mission control or here), add one without a meter to count by hand, remove one — the key is the stable name in the record, the label is what the station shows. Days filed by hand are \"1\": { \"food\": 1.1, \"living\": 0.5, ... }; a save is live within a couple of seconds. Emptied of its days by the reset; the categories stay.",
   "categories": [
     {
-      "key": "heating",
-      "label": "habitat_power_kitchen_energie",
-      "sensor": "habitat_power_kitchen_energie"
+      "key": "crickets",
+      "label": "Crickets",
+      "sensor": "habitat_power_crickets_energie"
+    },
+    {
+      "key": "science_1",
+      "label": "Science 1",
+      "sensor": "habitat_power_science_1_energie"
+    },
+    {
+      "key": "science_2",
+      "label": "Science 2",
+      "sensor": "habitat_power_science_2_energie"
+    },
+    {
+      "key": "living",
+      "label": "Living",
+      "sensor": "habitat_power_living_energie"
+    },
+    {
+      "key": "table",
+      "label": "Table",
+      "sensor": "habitat_power_table_energie"
     },
     {
       "key": "food",
-      "label": "Food"
+      "label": "Food",
+      "sensor": "habitat_power_food_energie"
     },
     {
-      "key": "lighting",
-      "label": "Lighting"
+      "key": "water",
+      "label": "Water",
+      "sensor": "habitat_power_water_energie"
     },
     {
-      "key": "electronics",
-      "label": "Electronics"
-    },
-    {
-      "key": "other",
-      "label": "Other"
+      "key": "hydroponics",
+      "label": "Hydroponics",
+      "sensor": "habitat_power_hydroponics_energie"
     }
   ],
-  "days": {
-    "0": {
-      "heating": 15
-    },
-    "1": {
-      "heating": 653,
-      "food": 22000
-    }
-  }
+  "days": {}
 }

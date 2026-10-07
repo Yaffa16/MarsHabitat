@@ -568,8 +568,10 @@ body.landing .board .empty, body.landing .dpanel .empty, body.landing .empty { f
    shadow of black would vanish on the black ground */
 /* a note's ground is a grey — a cool light grey by day on the white page, a grey of the dark by night — so the words
    stand on a card and the crew's answer, on the page's own paper inside it, stands off the card */
-:root { --note-bg: #f0f1f5; --note-edge: #dcdfe8; --note-fold: #dfe2ea; --note-shadow: 0 1px 2px rgba(15,21,64,.07), 0 8px 20px -8px rgba(15,21,64,.16), 0 26px 50px -22px rgba(15,21,64,.32); }
-:root[data-theme="dark"] { --note-bg: #212127; --note-edge: #34343c; --note-fold: #3a3a42; --note-shadow: 0 0 0 1px rgba(255,255,255,.04), 0 0 36px rgba(255,255,255,.055), 0 24px 48px -18px rgba(0,0,0,.95); }
+/* a note's own colour, set apart from the ground (October: the notes were a shade too close to the page) — white on the
+   drafting paper by day, a graphite a good step lighter than the night's ground */
+:root { --note-bg: #ffffff; --note-edge: #d6dae6; --note-fold: #dfe2ea; --note-shadow: 0 1px 2px rgba(15,21,64,.08), 0 8px 20px -8px rgba(15,21,64,.18), 0 26px 50px -22px rgba(15,21,64,.34); }
+:root[data-theme="dark"] { --note-bg: #303036; --note-edge: #47474f; --note-fold: #50505a; --note-shadow: 0 0 0 1px rgba(255,255,255,.05), 0 0 36px rgba(255,255,255,.06), 0 24px 48px -18px rgba(0,0,0,.95); }
 body.landing .wall-sec { position: relative; margin: 0; padding: 8px 0 72px; scroll-margin-top: 124px; }
 body.landing .wall-wrap { min-height: 0; }                                            /* no box: the wall is as tall as its notes */
 body.landing .wall-wrap .feed-scroll { position: static; display: block; }
@@ -590,7 +592,10 @@ body.landing .wall .cards > .empty { grid-column: 1 / -1; }
 body.landing .card.xc.note, :root[data-theme="dark"] body.landing .card.xc.note { position: relative; display: flex; flex-direction: column; gap: 0; margin: 0; padding: 0; border-radius: 4px;
   background: var(--note-bg); border: 1px solid var(--note-edge); box-shadow: var(--note-shadow); color: var(--ink); overflow: hidden; }
 body.landing .board .card.note[data-mine] { padding-left: 0; box-shadow: var(--note-shadow); }
-body.landing .card.note.is-hidden { display: none; }
+/* a note the filter has put aside is gone from the wall — whatever the theme: the dark theme's rule for the note
+   (above, :root[data-theme="dark"] …) outweighs a plain .is-hidden, which left every note standing under a chosen
+   tag (October: "it's not filtering messages by tag on the /write page") */
+body.landing .card.note.is-hidden, :root[data-theme="dark"] body.landing .card.xc.note.is-hidden, body.landing .card.is-hidden { display: none !important; }
 /* the folded corner */
 body.landing .card.note::before { content: ""; position: absolute; top: -1px; right: -1px; width: 0; height: 0; border-style: solid; border-width: 0 26px 26px 0; border-color: var(--ground) var(--ground) var(--note-fold) var(--note-fold); z-index: 1; }
 body.landing .card.note[data-mine]::before { border-color: var(--ground) var(--ground) var(--mars) var(--mars); }
@@ -637,7 +642,21 @@ body.landing .card.note .card-space-compact .card-space-go { color: var(--cobalt
 body.landing .card.note .note-when { flex: none; font-variant-numeric: tabular-nums; white-space: nowrap; }
 body.landing .card.note .card-foot, body.landing .card.note .card-tags, body.landing .card.note .card-top { display: none; }
 body.landing .card.note:has(.card-space[data-launched]) { cursor: pointer; }
-body.landing .card.note:hover { border-color: rgba(var(--cobalt-rgb),.45); }
+/* under the pointer a note that can be opened lifts and lights up — an orange edge and glow, the key brightening,
+   and a band sliding up over its foot that says what a click does — so nobody wonders whether a note is for
+   clicking (board.js opens its journey). Hover only: a finger gets the band's words from the key's title */
+body.landing .card.note { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+body.landing .card.note .note-hint { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 9px 16px; background: var(--mars); color: #fff;
+  font-family: var(--display); font-size: 12.5px; font-weight: 600; letter-spacing: .04em; text-align: center; transform: translateY(100%); opacity: 0;
+  transition: transform .2s ease, opacity .2s ease; pointer-events: none; }
+body.landing .card.note:has(.card-space[data-launched]):hover { transform: translateY(-3px); border-color: var(--mars);
+  box-shadow: 0 0 0 2px rgba(255,90,31,.28), 0 18px 36px -16px rgba(255,90,31,.55), var(--note-shadow); }
+body.landing .card.note:has(.card-space[data-launched]):hover .note-hint { transform: none; opacity: 1; }
+body.landing .card.note:has(.card-space[data-launched]):hover .card-space-compact { color: var(--mars-ink); }
+body.landing .card.note:has(.card-space[data-launched]):hover .card-space-compact .card-space-go { color: var(--mars); }
+body.landing .card.note:has(.card-space[data-launched]):hover::before { border-color: var(--ground) var(--ground) var(--mars) var(--mars); }
+@media (hover: none) { body.landing .card.note .note-hint { display: none; } body.landing .card.note:has(.card-space[data-launched]):hover { transform: none; } }
+body.screen .card.note .note-hint { display: none; }
 body.landing .card.note.is-sought { border-color: var(--mars); outline: 2px solid var(--mars); outline-offset: 2px; }   /* the note a link led to (board.js) */
 /* the end of the wall: loading the page before, then the beginning of the correspondence */
 body.landing .feed-end { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 28px 0 8px; font-family: var(--display); font-size: var(--fs-label); letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
@@ -658,7 +677,7 @@ body.landing .feed-end:not(.is-done) span::after { content: ""; display: inline-
 :root[data-theme="dark"] body.landing .card.note .card-reply.note-answer { background: #141418; border-color: #3a3a44; }
 :root[data-theme="dark"] body.landing .card.note .card-reply p, :root[data-theme="dark"] body.landing .card.note .note-awho .cs { color: #f6f6f3; }
 :root[data-theme="dark"] body.landing .card.note .note-head { background: #27272e; }
-:root[data-theme="dark"] body.landing .card.note:hover { border-color: #5a5f8a; }
+:root[data-theme="dark"] body.landing .card.note:has(.card-space[data-launched]):hover { border-color: var(--mars); }
 :root[data-theme="dark"] body.landing .wall-bar { background: #141418; border-bottom-color: #2c2c35; -webkit-backdrop-filter: none; backdrop-filter: none; }
 :root[data-theme="dark"] body.landing .wall-bar .board-head h2 { color: #f6f6f3; }
 :root[data-theme="dark"] body.landing .wall-bar .wall-count { color: #a0a0aa; }
@@ -831,11 +850,13 @@ body.landing .officer { display: grid; grid-template-columns: 46px minmax(0, 1fr
 body.landing .officer-face { grid-area: orb; width: 46px; height: 46px; border-radius: 50%; background: rgba(255,255,255,.7); border: 1px solid rgba(var(--cobalt-rgb),.25); box-shadow: 0 8px 18px -10px rgba(15,21,64,.35); color: var(--cobalt); display: inline-flex; align-items: center; justify-content: center; }
 body.landing .officer-face svg { width: 34px; height: 34px; display: block; }
 body.landing .officer-face.band-0 { color: #12a370; }
+body.landing .officer-face.band-1 { color: #2f9e6b; }
 body.landing .officer-face.band-3 { color: #d9900b; }
 body.landing .officer-face.band-4 { color: var(--mars-ink); }
 body.landing .officer-face.band-none { color: var(--faint); }
 :root[data-theme="dark"] body.landing .officer-face { background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.22); color: #dfe3ff; }
 :root[data-theme="dark"] body.landing .officer-face.band-0 { color: #4fd6a5; }
+:root[data-theme="dark"] body.landing .officer-face.band-1 { color: #7fd6b0; }
 :root[data-theme="dark"] body.landing .officer-face.band-3 { color: #ffb84d; }
 body.landing .officer-id { grid-area: id; display: flex; flex-direction: column; gap: 2px; }
 body.landing .officer-id b { font-family: var(--display); font-size: var(--fs-name); font-weight: 600; letter-spacing: .02em; color: var(--ink); }

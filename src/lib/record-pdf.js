@@ -417,7 +417,7 @@ function daySection(L, G, r, { asChapter = true } = {}) {
   if (day && day.meals.length) {
     L.table([{ label: 'Slot', w: 0.7, font: 'bold' }, { label: 'Meal', w: 2.4 }, { label: 'kcal', w: 0.5, align: 'right' }, { label: 'Water L', w: 0.6, align: 'right' }, { label: 'Prep min', w: 0.6, align: 'right' }, { label: 'Wh', w: 0.5, align: 'right' }],
       day.meals.map((m) => { const eco = archive.mealEcoLine(m); return [require('./data').slotLabel(m.slot) + (m.served_at ? `\n${m.served_at}` : ''), [m.name, m.components ? m.components.split('\n').join(' · ') : '', m.notes || '', eco].filter(Boolean).join('\n'), asIs(m.kcal), asIs(m.water_litres), asIs(m.prep_minutes), m.energy_source === 'with' ? `with ${require('./data').slotLabel(m.power_with).toLowerCase()}` : asIs(m.energy_wh) + (m.energy_source === 'meter' && m.power_running ? '*' : '')]; }));
-    if (day.meals.some((m) => m.energy_source === 'meter')) L.para(`Wh: the kitchen's energy meter, read ${Object.entries(require('./home-assistant').mealsConfig().windows).map(([k, v]) => `${require('./data').slotLabel(k).toLowerCase()} ${v.replace('-', '–')}`).join(', ')}${day.meals.some((m) => m.power_with) ? ', an added meal with the meal whose hours cover the time it is served at' : ''}${day.meals.some((m) => m.power_running) ? ' · * so far, the hours still running' : ''}.`, { font: 'italic', color: GREY, size: 8 });
+    if (day.meals.some((m) => m.energy_source === 'meter')) L.para(`Wh: the food meter (the Food channel's energy meter), read ${Object.entries(require('./home-assistant').mealsConfig().windows).map(([k, v]) => `${require('./data').slotLabel(k).toLowerCase()} ${v.replace('-', '–')}`).join(', ')}${day.meals.some((m) => m.power_with) ? ', an added meal with the meal whose hours cover the time it is served at' : ''}${day.meals.some((m) => m.power_running) ? ' · * so far, the hours still running' : ''}.`, { font: 'italic', color: GREY, size: 8 });
   } else L.para('No meals entered for this day.', { font: 'italic', color: GREY, size: 9 });
   L.h3('Steps taken and calories consumed', { keep: 70 });
   if (r.figures && r.figures.crew && Object.keys(r.figures.crew).length) {
@@ -701,6 +701,16 @@ function messagesPdf() {
   return pdf.build();
 }
 
+/** The record of the crew's states, one row per state filed — who, the day and time (the venue's clock and the sol), the
+ *  mood and its words, who filed it — oldest first; what mission control shows under each officer's state, for all three
+ *  at once. Downloaded from the Archive (/archive/moods.csv). */
+function moodsCsv() {
+  const cell = (v) => { const t = v == null ? '' : String(v); return /[",\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+  const head = ['officer', 'date', 'time', 'sol', 'mood', 'value', 'reads', 'filed_by', 'filed_at_utc'];
+  const rows = data.moodRecordAll().map((m) => [shown(m.designation), m.date, m.time, m.sol, m.condition, m.calm_tense, m.text, m.set_by, m.effective_at]);
+  return '\ufeff' + [head, ...rows].map((r) => r.map(cell).join(',')).join('\r\n') + '\r\n';
+}
+
 /** The same, as one row per message for a spreadsheet. */
 function messagesCsv() {
   const cell = (v) => { const t = v == null ? '' : String(v); return /[",\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
@@ -726,4 +736,4 @@ function messagesJson() {
   };
 }
 
-module.exports = { fullRecord, dayRecord, todayRecord, gather, messagesPdf, messagesCsv, messagesJson };
+module.exports = { fullRecord, dayRecord, todayRecord, gather, messagesPdf, messagesCsv, messagesJson, moodsCsv };

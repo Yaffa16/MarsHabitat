@@ -108,7 +108,7 @@ function slotLabel(slot) { const p = slotParts(slot); return p.n ? `${p.label} $
 
 /**
  * A day's meals, in the day's order, each with the power it drew — the
- * kitchen's energy meter read between the meal's hours (src/lib/home-assistant.js,
+ * food meter — the Food channel's energy meter — read between the meal's hours (src/lib/home-assistant.js,
  * mealPower): breakfast 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00. A
  * meal added on the desk (EXTRA1, EXTRA2, …) has no hours of its own: it
  * COUNTS WITH the named meal whose hours cover the time it is served at
@@ -126,7 +126,7 @@ function slotLabel(slot) { const p = slotParts(slot); return p.n ? `${p.label} $
  * meal that counts with another (`energy_source` 'meter', 'filed', 'none' or
  * 'with'). `powerDay` reads the meter for another mission day than the meals'
  * — the dashboard before the run shows the first day's plan with today's
- * kitchen (day 0, NOW, is today).
+ * meter readings (day 0, NOW, is today).
  */
 function mealsFor(missionDay, { powerDay = null } = {}) {
   const rows = db.prepare('SELECT * FROM meal WHERE mission_day = ?').all(missionDay).map(mealRow)

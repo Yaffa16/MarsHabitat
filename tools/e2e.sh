@@ -155,6 +155,14 @@ ok "every officer's findings, blog and state are editable from control"
 
 ID=$(curl -s -b $A $B/control | grep -oE '/control/[0-9]+/reply' | head -1 | grep -oE '[0-9]+')
 [ -n "$ID" ] && ok "message waiting in the queue" || bad "no message in the queue"
+# the queue's latest at the top (October): the first card is the newest message waiting, the last the oldest
+curl -s -b $A "$B/control?show=pending" | grep -oE '/control/[0-9]+/reply' | grep -oE '[0-9]+' | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const ids = s.trim().split(/\s+/).map(Number); const { db } = require("./src/db");
+  const at = (id) => db.prepare("SELECT submitted_at FROM message WHERE id = ?").get(id).submitted_at;
+  const sorted = ids.slice().sort((a, b) => at(b).localeCompare(at(a)) || b - a);
+  process.exit(ids.length >= 1 && ids.join() === sorted.join() ? 0 : 1); });
+' && grep -q "ORDER BY m.submitted_at DESC, m.id DESC LIMIT 200" src/routes/control.js \
+  && ok "the queue lists the latest message at the top — newest first by the moment sent, in the Awaiting reply view as in the others" || bad "the queue is not newest first"
 
 curl -s -b $A -X POST -d "body=" -d "action=publish" -o /dev/null $B/control/$ID/reply
 curl -s $B/write | grep -q 'card-reply' && bad "empty reply accepted" || ok "empty reply refused"
@@ -300,7 +308,7 @@ curl -s $B/logbook | grep -q "Blog written from mission control" && ok "and is l
 
 MOODID=$(curl -s -b $A $B/control | grep -oE 'action="/control/moods/[0-9]+"' | head -1 | grep -oE '[0-9]+')
 curl -s -b $A -X POST -d "calm_tense=75" -d "activity=Sample analysis" -o /dev/null $B/control/moods/$MOODID
-curl -s $B/dashboard | grep -q "tense, short with the others" && ok "control can file a crew mood" || bad "mood not filed"
+curl -s $B/dashboard | grep -q "upset, not having a good day" && ok "control can file a crew mood" || bad "mood not filed"
 
 echo "── the record is readable"
 # a second exchange that is not deleted, so the record has one to hold
@@ -310,7 +318,7 @@ curl -s -b $V2 -X POST --data-urlencode "body=Do you still dream in colour?" -d 
 sleep 4
 ID2=$(curl -s -b $A $B/control | grep -oE '/control/[0-9]+/reply' | head -1 | grep -oE '[0-9]+')
 curl -s -b $A -X POST --data-urlencode "body=In colour, and always outdoors." -d "action=publish" -o /dev/null $B/control/$ID2/reply
-# the wall: a note's tags in the band at its foot, each a key; the head the writer's disc, the callsign and Earth; the
+# the wall: a note's tags in the band at its foot, each a key; the head the writer's disc and the callsign (no Earth · you); the
 # crew's answer alone, without a line of who answered, the habitat and when; no group of the viewer's own at the top
 # (the sequence is checked on the station's board, below); the screens' cards keep the tags under the text
 BRD=$(curl -s -b $V2 $B/write)
@@ -319,9 +327,9 @@ echo "$BRD" | grep -q '<div class="note-tags"><button type="button" class="note-
   && echo "$BRD" | grep -q '<div class="card-reply note-answer">' && echo "$BRD" | grep -q '<span class="note-aav" aria-hidden="true">[A-Z·]*</span>' && echo "$BRD" | grep -q '<span class="note-awho"><span class="cs">[A-Za-z ]*</span><span class="note-role">Crew answer · Mars habitat</span></span>' && echo "$BRD" | grep -q '<time class="note-awhen" datetime="' \
   && grep -q 'body.landing .card.note .note-tag { margin: 0; padding: 4px 9px; border: 0; min-height: 0; border-radius: 7px; background: rgba(var(--cobalt-rgb),.09); font-family: var(--display); font-size: 12.5px; font-weight: 500; line-height: 1.2; letter-spacing: 0; text-transform: lowercase; cursor: pointer; color: var(--ink); box-shadow: none; }' public/aura.css \
   && grep -q 'body.landing .card.note .card-reply.note-answer { margin: 2px 0 0; padding: 10px 12px 11px; background: var(--paper); border: 1px solid var(--note-edge); border-radius: 12px; }' public/aura.css && ! grep -q 'note-band\|tag-humour\|tag-science' public/aura.css \
-  && echo "$BRD" | grep -q '<span class="note-who"><span class="cs">' && echo "$BRD" | grep -q '<span class="note-av" aria-hidden="true" style="--av:[0-9]*">[A-Z0-9·]*</span>' && ! echo "$BRD" | grep -q 'board-group' \
+  && echo "$BRD" | grep -q '<span class="note-who"><span class="cs">[A-Z]*-[0-9]*</span></span>' && ! echo "$BRD" | grep -q '<span class="note-role">Earth' && echo "$BRD" | grep -q '<span class="note-av" aria-hidden="true" style="--av:[0-9]*">[A-Z0-9·]*</span>' && ! echo "$BRD" | grep -q 'board-group' \
   && curl -s "$B/api/board?lang=en&limit=400" | grep -q '<div class=\\"card-tags\\">#PERSONAL</div>' && curl -s "$B/api/board?lang=en&limit=400" | grep -q '<span class=\\"card-meta\\"><span class=\\"cs\\">' \
-  && ok "a note's tags stand right after its message, each a key, in the message's own colour on a faint tint — no band, no In, no No tag; the crew's answer is a quoted card of its own after the reference (the crew's disc, the officer, Crew answer · Mars habitat, the day and time of the answer); the head is the writer's disc, the callsign and Earth; no MY MESSAGES group, no heading — the screens' cards keep their tags under the text" || bad "the tags are not right after the message, or the answer is not a quoted card, or the board still groups"
+  && ok "a note's tags stand right after its message, each a key, in the message's own colour on a faint tint — no band, no In, no No tag; the crew's answer is a quoted card of its own after the reference (the crew's disc, the officer, Crew answer · Mars habitat, the day and time of the answer); the head is the writer's disc and the callsign — no Earth, no Earth · you; no MY MESSAGES group, no heading — the screens' cards keep their tags under the text" || bad "the tags are not right after the message, or the answer is not a quoted card, or the board still groups"
 echo "$BRD" | grep -q 'card-reply-meta' && bad "the crew's answer on the board still carries its line of who, where and when" || ok "the crew's answer on the board stands alone — no line of who answered, the habitat and when under it"
 curl -s -H "Cookie: mcs_lang=de" $B/write | grep -q 'data-filter="tag:PERSONAL">#PERSÖNLICH</button>' && curl -s -H "Cookie: mcs_lang=de" $B/write | grep -q '<span class="note-role">Antwort der Crew · Mars-Habitat</span>' && curl -s -H "Cookie: mcs_lang=fr" $B/write | grep -q '<span class="note-role">Réponse de l’équipage · Habitat martien</span>' \
   && ok "and the tags and the answer's line are in the visitor's language" || bad "the tags after the text or the answer's line are not translated"
@@ -393,7 +401,7 @@ done
 echo "$PDFTXT" | grep -q "Day 013" && bad "the PDF carries a chapter for a day that has not happened"
 ok "no chart, no projection, no total and no day ahead in the PDF"
 echo "$PDFTXT" | grep -q "In colour, and always outdoors.\|Do you still dream in colour\|The complete correspondence\|Exchanges published\|Messages from Earth" && bad "the PDF still carries messages" || ok "no message from Earth, no reply and no correspondence in the PDF"
-echo "$PDFTXT" | grep -q "tense, short with the others" && ok "a filed state appears as its sentence" || bad "state missing from the PDF"
+echo "$PDFTXT" | grep -q "upset, not having a good day" && ok "a filed state appears as its sentence" || bad "state missing from the PDF"
 [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/archive/day/2/export.pdf)" = "200" ] \
   && ok "a single day downloads as a PDF too" || bad "no per-day PDF"
 [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/archive/day/99/export.pdf)" = "404" ] \
@@ -524,11 +532,14 @@ echo "$ABOUT" | grep -q '<p class="dash-sub">MARS! – Mobilizing Awareness for 
 ! echo "$ABOUT" | grep -q 'At this moment</div>' && ! echo "$ABOUT" | grep -q 'What is kept' && ! echo "$ABOUT" | grep -q 'Message states as shown in the interface' && ! echo "$ABOUT" | grep -q 'class="pipe' \
   && ! echo "$ABOUT" | grep -q 'Inside the habitat' && ! echo "$ABOUT" | grep -q 'addressed by designation' && ! echo "$ABOUT" | grep -q 'Outside the habitat' && ! echo "$ABOUT" | grep -q 'Reach the production' && ! echo "$ABOUT" | grep -q 'Replace these entries' \
   && ok "the About page no longer carries At this moment, What is kept, the row of states, Inside/Outside the habitat, the crew's note or Reach the production" || bad "a removed About panel is still on the page"
-# Who we are: no credits any more; the crew's eleven portraits (public/crew, from public/Astronaut_Pictures) and, under
+# Who we are: no credits any more; the crew's thirteen portraits (public/crew, from public/Astronaut_Pictures — October added
+# Franziska Klöck and Finn Milbrandt to the eleven) and, under
 # Produced by, the partners' logos (public/partners, from public/PartnerLogo) — 1 and 2 in cooperation with, 3 to 5 supporters
 ! echo "$ABOUT" | grep -q 'To be credited' && ! echo "$ABOUT" | grep -q 'Technical direction' && ! echo "$ABOUT" | grep -q 'Supported by the Innovationsfonds' \
-  && [ "$(echo "$ABOUT" | grep -o '<figure class="crew-pic"><img src="/crew/[a-z-]*\.jpg" alt="" width="800" height="1200" loading="lazy" decoding="async"><figcaption>[^<]*</figcaption></figure>' | wc -l)" = "11" ] \
-  && ok "Who we are carries no credits, and the crew's eleven portraits, each with a name" || bad "the credits are still there, or the portraits are not, or they carry no names"
+  && [ "$(echo "$ABOUT" | grep -o '<figure class="crew-pic"><img src="/crew/[a-z-]*\.jpg" alt="" width="800" height="1200" loading="lazy" decoding="async"><figcaption>[^<]*</figcaption></figure>' | wc -l)" = "13" ] \
+  && echo "$ABOUT" | grep -q '<img src="/crew/kloeck.jpg"' && echo "$ABOUT" | grep -q '<figcaption>Franziska Klöck</figcaption>' && echo "$ABOUT" | grep -q '<img src="/crew/milbrandt.jpg"' && echo "$ABOUT" | grep -q '<figcaption>Finn Milbrandt</figcaption>' \
+  && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/kloeck.jpg)" = "200" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/milbrandt.jpg)" = "200" ] \
+  && ok "Who we are carries no credits, and the crew's thirteen portraits, each with a name — Franziska Klöck (kloeck.jpg) and Finn Milbrandt among them" || bad "the credits are still there, or the portraits are not, or they carry no names"
 # the three officers of the day (the sheet): Commanding, Health, Science in that order, each with its brief over the role
 # — Order & Communications, Health & Life Support, Research & Systems (the role lines in content/crew-and-inventory.json,
 # on the dashboard too) — the portrait of the person on shift that day when the shift plan names one (content/shifts.json,
@@ -652,6 +663,16 @@ OLDEST=$(curl -s "$B/api/board?limit=1&wall=1" | node -e 'let s = ""; process.st
   && grep -q "var key = e.target.closest ? e.target.closest('.note-tag\[data-filter\]') : null;" public/board.js \
   && grep -qF "function sentAt(c) { var t = c.querySelector('time.note-when[datetime]') || c.querySelector('time[datetime]'); return t ? t.getAttribute('datetime') : ''; }" public/board.js \
   && ok "the wall fetches the page of exchanges before its oldest as the reader nears the end (never the reader's own, never the one asked after), says 400 to a bad id, lays a live refresh in by id and keeps what was scrolled on to; a tag in a note's band narrows the wall" || bad "the wall does not load or refresh as it should"
+# a note has a colour of its own against the ground (October: "a background of a colour to each message, to show the
+# difference") — white on the drafting paper by day, a graphite a good step lighter than the night's ground
+grep -q ':root { --note-bg: #ffffff; --note-edge: #d6dae6;' public/aura.css && grep -q ':root\[data-theme="dark"\] { --note-bg: #303036; --note-edge: #47474f; --note-fold: #50505a;' public/aura.css \
+  && ! grep -q -- '--note-bg: #212127\|--note-bg: #f0f1f5' public/aura.css \
+  && ok "a note is white on the paper by day and graphite (#303036) on the night's near-black ground — set apart from the page in both themes" || bad "the notes' colour is not set apart from the ground"
+# a note the filter puts aside is gone from the wall in every theme: the rule outweighs the dark theme's rule for the note,
+# which had left every note standing under a chosen tag (October: "it's not filtering messages by tag on the /write page")
+grep -q 'body.landing .card.note.is-hidden, :root\[data-theme="dark"\] body.landing .card.xc.note.is-hidden, body.landing .card.is-hidden { display: none !important; }' public/aura.css \
+  && ! grep -q '^body.landing .card.note.is-hidden { display: none; }' public/aura.css \
+  && ok "a note the filter has put aside is display: none whatever the theme — the chips and the notes' tags narrow the wall in the dark theme too, and the wall fetches the older pages until the tag's notes are on it" || bad "a hidden note can still stand on the wall in the dark theme"
 V5=/tmp/visitor5.jar; rm -f $V5
 curl -s -c $V5 -b $V5 -o /dev/null $B/
 [ "$(curl -s -b $V5 -c $V5 -X POST --data-urlencode "body=Sent from the mission page, followed on the Write page." -d "tags=QUESTION" -o /dev/null -w '%{http_code} %{redirect_url}' $B/communicate)" = "302 $B/write#write" ] \
@@ -669,11 +690,16 @@ TK=$(curl -s $B/api/ticker)
 echo "$TK" | grep -q '"tasks":\[' && echo "$TK" | grep -q '"label"' && echo "$TK" | grep -q '"detail"' && ok "/api/ticker hands the day's activities with their detail" || bad "/api/ticker broken"
 echo "$FOOT" | grep -q 'id="tk-hab"' && ok "and the node's current reading, refreshed on its cycle" || bad "ticker has no habitat reading"
 
-echo "── one mood scale, calm to angry"
+echo "── one mood scale, thrilled to angry"
 [ "$(curl -s -b $A $B/control | grep -c 'class="mood-face"')" = "15" ] \
-  && ok "one scale of five faces per officer, calm to angry" || bad "wrong number of mood faces"
-curl -s -b $A $B/control | grep -q ">CALM<" && curl -s -b $A $B/control | grep -q ">ANGRY<" \
-  && ok "the scale is labelled calm to angry" || bad "scale not labelled"
+  && ok "one scale of five faces per officer, thrilled to angry" || bad "wrong number of mood faces"
+curl -s -b $A $B/control | grep -q ">THRILLED<" && curl -s -b $A $B/control | grep -q ">ANGRY<" && ! curl -s -b $A $B/control | grep -q ">CALM<\|>SETTLED<\|>LEVEL<\|>TENSE<" \
+  && curl -s -b $A $B/control | grep -q 'title="Thrilled — thrilled — on top of the world"' && curl -s -b $A $B/control | grep -q 'title="Happy — happy, in good spirits"' && curl -s -b $A $B/control | grep -q 'title="Neutral — neutral — neither up nor down"' \
+  && curl -s -b $A $B/control | grep -q 'title="Upset — upset, not having a good day"' && curl -s -b $A $B/control | grep -q 'title="Angry — angry, needing distance"' \
+  && node -e 'const m = require("./src/lib/mood"); const c = (v) => m.condition({ calm_tense: v }); process.exit(c(0) === "THRILLED" && c(25) === "HAPPY" && c(50) === "NEUTRAL" && c(75) === "UPSET" && c(100) === "ANGRY" && m.FACES.map((f) => f.name).join() === "Thrilled,Happy,Neutral,Upset,Angry" && m.translate({ calm_tense: 10 }).lines[0] === "thrilled — on top of the world" ? 0 : 1);' \
+  && node -e 'const i = require("./src/lib/i18n"); const T = i.of("de"), F = i.of("fr"); process.exit(T("THRILLED") === "BEGEISTERT" && T("UPSET") === "BEDRÜCKT" && F("HAPPY") === "HEUREUX" && T("happy, in good spirits") === "glücklich, gut gelaunt" && F("neutral — neither up nor down") === "neutre — ni haut ni bas" && !i.D["CALM"] && !i.D["TENSE"] ? 0 : 1);' \
+  && grep -q "var BANDS = \['thrilled \\\\u2014 on top of the world', 'happy, in good spirits'," public/control.js \
+  && ok "the scale is thrilled · happy · neutral · upset · angry (October's five words) — the faces named so, the words and sentences in German and French too, the desk's script in step; calm, settled, level and tense are gone" || bad "the moods are not the five words"
 curl -s -b $A $B/control | grep -q "What they are doing" && bad "the activity field is still on the state form" || ok "the state is the scale alone — no activity field"
 
 echo "── habitat on the mission page"
@@ -976,8 +1002,8 @@ echo "$HB" | grep -q '<button type="button" class="ghost meal-add">+ Add a meal<
   && ok "+ Add a meal: a template card with the same recipe dropdown, the time it is served at and a × to take it off" || bad "no + Add a meal template, or it lacks the dropdown, the time or the ×"
 echo "$HB" | grep -q 'The recipes are in' && bad "the recipes-are-in sentence is still on the desk" || ok "the food plan's hint no longer names content/recipes.json or says everything is public"
 echo "$HB" | grep -q 'Not saved from this desk yet' && bad "Not saved from this desk yet is still on the desk" || ok "a block never saved from the desk says nothing about it — no Not saved from this desk yet anywhere"
-echo "$HB" | grep -q 'the kitchen meter, 06:00–09:00' && echo "$HB" | grep -q '(breakfast 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00)' \
-  && ok "each named card says its hours and that its power is the kitchen meter's between them" || bad "the cards do not name the kitchen meter and the hours"
+echo "$HB" | grep -q 'the food meter, 06:00–09:00' && echo "$HB" | grep -q '(breakfast 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00)' && ! echo "$HB" | grep -q 'kitchen meter' \
+  && ok "each named card says its hours and that its power is the food meter's between them (the Food channel's energy meter — no kitchen meter anywhere)" || bad "the cards do not name the food meter and the hours"
 echo "$HB" | grep -q 'value="__edit"' && bad "the dropdown still offers to edit the book" || ok "no edit entry in the dropdown"
 echo "$HB" | grep -q 'chan">RECIPE BOOK<' && bad "the recipe book editor is still on the desk" || ok "no recipe book editor on the desk"
 echo "$HB" | grep -q '<option value="" hidden selected>Choose meal</option>' && ok "the dropdown opens on Choose meal" || bad "no Choose meal default in the dropdown"
@@ -1011,7 +1037,7 @@ curl -s -b $A -X POST -d "day=6" -d "DINNER_recipe=__empty" -d "DINNER_name=Impr
   && node -e 'const d = require(process.env.CONTENT_DIR + "/meals.json")["6"].find((m) => m.slot === "DINNER"); process.exit(d.name === "Improvised stew" && d.nutrients.protein_g === 20 && !d.recipe ? 0 : 1);' \
   && ok "a slot filled by hand is saved for its day and adds no recipe" || bad "hand-filled slot wrong, or it touched the book"
 
-echo "── added meals, and the power each meal drew from the kitchen meter"
+echo "── added meals, and the power each meal drew from the food meter"
 # + Add a meal: the cards post as EXTRA<n>, in their order, and are saved as EXTRA1, EXTRA2, … (renumbered, so taking
 # one away leaves no gap); an added meal carries the time it is served at (served — the card's, else the habitat's clock
 # as it is saved); Other (RATION) from an older file is read as one.
@@ -1042,7 +1068,7 @@ curl -s -b $A "$B/archive/day/2" | grep -q '<div class="eyebrow">Other</div>' &&
 curl -s -b $A -X POST -d "day=2" -d "EXTRA1_name=Night snack" -d "EXTRA1_kcal=120" -d "EXTRA1_at=23:00" -o /dev/null $B/control/meals
 node -e 'const d = require(process.env.CONTENT_DIR + "/meals.json")["2"]; process.exit(d.length === 1 && d[0].slot === "EXTRA1" && d[0].served === "23:00" ? 0 : 1);' \
   && ok "a card taken off the desk (not posted) is gone with the save; the one kept keeps its time" || bad "removing an added meal did not take it off the day"
-# the power a meal drew: the kitchen meter (sensor.habitat_power_kitchen_energie, content/home-assistant.json `meals`)
+# the power a meal drew: the food meter (sensor.habitat_power_food_energie, the Food channel's, content/home-assistant.json `meals`)
 # read between the meal's hours on its day — breakfast 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00 — the meter
 # only grows, so the hours' consumption is its rise inside them from where it stood before; an added meal counts with the
 # named meal whose hours cover the time it is served at (tea at 16:00: dinner's)
@@ -1051,7 +1077,7 @@ node -e '
 const { db } = require("./src/db"); const mission = require("./src/lib/mission"); const m = mission.config(), date = mission.dateForDay(1);
 const at = (hhmm) => mission.venueTimeUtc(date, hhmm, m.timezone);
 const ins = db.prepare("INSERT OR IGNORE INTO ha_reading (entity, t, value, state, unit) VALUES (?, ?, ?, ?, ?)");
-for (const [h, v] of [["05:00", 100.0], ["06:30", 100.1], ["08:59", 100.3], ["12:00", 100.3], ["16:20", 100.35], ["16:50", 100.4], ["21:00", 100.9]]) ins.run("habitat_power_kitchen_energie", at(h), v, String(v), "kWh");
+for (const [h, v] of [["05:00", 100.0], ["06:30", 100.1], ["08:59", 100.3], ["12:00", 100.3], ["16:20", 100.35], ["16:50", 100.4], ["21:00", 100.9]]) ins.run("habitat_power_food_energie", at(h), v, String(v), "kWh");
 const ha = require("./src/lib/home-assistant");
 const b = ha.mealPower(1, "BREAKFAST"), l = ha.mealPower(1, "LUNCH"), d = ha.mealPower(1, "DINNER"), n = ha.mealPower(1, "EXTRA1");
 // breakfast: 100.0 before the hours, 100.3 at their end → 300 Wh; lunch: one reading, no rise → 0; dinner: from 100.3 (last before 15:00) to 100.9 → 600; an added slot has no hours of its own
@@ -1063,10 +1089,10 @@ process.exit(ok ? 0 : 1);
 ' && ok "mealPower reads the meter's rise inside each named meal's hours — breakfast 300 Wh, lunch 0, dinner 600 — and a time of day counts with the meal whose hours begin last before it (05:30 breakfast, 14:30 lunch, 23:30 dinner)" || bad "mealPower or slotForTime does not read the hours as expected"
 sleep 1
 HB1=$(curl -s -b $A "$B/control?tab=habitat&day=1")
-echo "$HB1" | grep -q '<b>300 Wh</b> · the kitchen meter, 06:00–09:00' && echo "$HB1" | grep -q '<b>600 Wh</b> · the kitchen meter, 15:00–22:00 — counts with Dinner' && echo "$HB1" | grep -q '<b>0 Wh</b> · the kitchen meter, 09:00–14:00' \
+echo "$HB1" | grep -q '<b>300 Wh</b> · the food meter, 06:00–09:00' && echo "$HB1" | grep -q '<b>600 Wh</b> · the food meter, 15:00–22:00 — counts with Dinner' && echo "$HB1" | grep -q '<b>0 Wh</b> · the food meter, 09:00–14:00' \
   && ok "each card on the desk shows what the meter read for its hours — 300 Wh for breakfast, 0 for lunch — and the tea at 16:00 counts with Dinner, 600 Wh" || bad "the desk's cards do not show the meter's figures"
-echo "$HB1" | grep -q 'from the kitchen meter\|Day total' && bad "the desk still adds a day total under the meals" || ok "no day total under the desk's meals — each card carries its own figure and nothing is summed there"
-curl -s -b $A "$B/archive/day/1" | grep -q '400 kcal · 0 L water · 0 min · 300 Wh (the kitchen meter, 06:00–09:00)' && curl -s -b $A "$B/archive/day/1/export.md" | grep -q '50 kcal · 0 L water · 0 min · 600 Wh (the kitchen meter, 15:00–22:00)' \
+echo "$HB1" | grep -q 'from the food meter\|Day total' && bad "the desk still adds a day total under the meals" || ok "no day total under the desk's meals — each card carries its own figure and nothing is summed there"
+curl -s -b $A "$B/archive/day/1" | grep -q '400 kcal · 0 L water · 0 min · 300 Wh (the food meter, 06:00–09:00)' && curl -s -b $A "$B/archive/day/1/export.md" | grep -q '50 kcal · 0 L water · 0 min · 600 Wh (the food meter, 15:00–22:00)' \
   && ok "the record carries the metered figure with each meal and says where it came from — the tea, alone in dinner's hours, carries them" || bad "the record lacks the meter's figures"
 curl -s -b $A "$B/archive/export.json" | node -e '
 let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const j = JSON.parse(s); const day = (j.days || []).find((d) => d.missionDay === 1); const ms = day ? day.meals : [];
@@ -1077,11 +1103,11 @@ let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const j = 
 curl -s -b $A -X POST -d "day=1" -d "BREAKFAST_name=Porridge" -d "BREAKFAST_kcal=400" -d "DINNER_name=Stew" -d "DINNER_kcal=500" -d "EXTRA1_name=Tea" -d "EXTRA1_kcal=50" -d "EXTRA1_at=16:00" -o /dev/null $B/control/meals
 sleep 1
 HB1B=$(curl -s -b $A "$B/control?tab=habitat&day=1")
-[ "$(echo "$HB1B" | grep -o '<b>600 Wh</b> · the kitchen meter, 15:00–22:00' | wc -l)" = "2" ] && echo "$HB1B" | grep -q '<b>600 Wh</b> · the kitchen meter, 15:00–22:00 — counts with Dinner' \
+[ "$(echo "$HB1B" | grep -o '<b>600 Wh</b> · the food meter, 15:00–22:00' | wc -l)" = "2" ] && echo "$HB1B" | grep -q '<b>600 Wh</b> · the food meter, 15:00–22:00 — counts with Dinner' \
   && curl -s -b $A "$B/archive/day/1/export.md" | grep -q '50 kcal · 0 L water · 0 min · power with Dinner (15:00–22:00, 600 Wh)' \
   && ok "with a dinner planned, the tea shows dinner's 600 Wh as counting with it, and the record says so" || bad "an added meal beside a named one is not counted with it"
-curl -s -b $A -o /tmp/day1.pdf $B/archive/day/1/export.pdf && pdftext /tmp/day1.pdf | grep -q "Wh: the kitchen's energy meter, read breakfast 06:00" && ok "the PDF's meals table says the watt hours are the kitchen meter's, and the hours" || bad "the PDF does not explain the watt hours"
-# today's meals on the dashboard: each meal's line is its kcal, then its water when the file has it, then the kitchen
+curl -s -b $A -o /tmp/day1.pdf $B/archive/day/1/export.pdf && pdftext /tmp/day1.pdf | grep -q "Wh: the food meter (the Food channel's energy meter), read breakfast 06:00" && ok "the PDF's meals table says the watt hours are the food meter's, and the hours" || bad "the PDF does not explain the watt hours"
+# today's meals on the dashboard: each meal's line is its kcal, then its water when the file has it, then the food
 # meter's watt hours — the figure with its unit, 0 Wh when the meter has nothing for the hours — and no hours named
 # anywhere; an added meal beside the named one of its hours says which meal its figure counts with. No line under the
 # meals about the meter. (today has none filed yet in this suite: a lunch, a dinner and a tea at 16:00 are filed for
@@ -1095,12 +1121,13 @@ node -e '
 const L = require("./src/views/layout"); const E = (x) => x;
 process.exit(L.mealFigs({ kcal: 420, water_litres: 0.4, power_wh: null }, E) === "420 kcal · 0.4 L · 0 Wh" && L.mealFigs({ kcal: 420, energy_source: "filed", energy_wh: 250 }, E) === "420 kcal · 250 Wh" && L.mealFigs({ kcal: 400, power_wh: 300, power_running: true }, E) === "400 kcal · 300 Wh" ? 0 : 1);
 ' && ok "a meal with water in the file reads kcal · L · Wh; a figure filed as a total before the meter stands in for a reading; the figure so far carries no mark" || bad "layout.mealFigs is not as it should be"
-echo "$LANDM" | grep -q 'class="meal-hours"\|Power: the kitchen' && bad "Today's Meal still carries the line about the meter and its hours" || ok "no line under Today's Meal about the meter or the hours it is read between — the figure stands with the meal"
+echo "$LANDM" | grep -q 'class="meal-hours"\|Power: the food meter\|Power: the kitchen' && bad "Today's Meal still carries the line about the meter and its hours" || ok "no line under Today's Meal about the meter or the hours it is read between — the figure stands with the meal"
 curl -s -H "Cookie: mcs_lang=de" $B/dashboard | grep -q '50 kcal · 0 Wh (mit Abendessen)' && ! curl -s -H "Cookie: mcs_lang=de" $B/dashboard | grep -q 'class="meal-hours"' && curl -s -H "Cookie: mcs_lang=fr" $B/dashboard | grep -q '50 kcal · 0 Wh (avec Dîner)' \
   && ok "and in German and French — mit Abendessen, avec Dîner — without the meter line" || bad "the meal lines are not translated, or the meter line is back"
 # the booklet keeps the line: there the hours matter to a reader of the record
-curl -s $B/at-a-glance | grep -q '<p class="note meal-hours">Power: the kitchen’s energy meter, read Breakfast' && curl -s $B/at-a-glance | grep -q "$(printf 'Dinner\xc2\xa015:00–22:00')" \
-  && ok "At a Glance still says under each day's meals that the watt hours are the kitchen meter's, and the hours read for each meal" || bad "the booklet lost its line about the meter"
+curl -s $B/at-a-glance | grep -q '<p class="note meal-hours">Power: the food meter, read Breakfast' && curl -s $B/at-a-glance | grep -q "$(printf 'Dinner\xc2\xa015:00–22:00')" \
+  && curl -s -H "Cookie: mcs_lang=de" $B/at-a-glance | grep -q 'Strom: der Energiezähler Food, gelesen Frühstück' && curl -s -H "Cookie: mcs_lang=fr" $B/at-a-glance | grep -q 'Électricité : le compteur d’énergie Food, lu Petit-déjeuner' \
+  && ok "At a Glance still says under each day's meals that the watt hours are the food meter's, and the hours read for each meal — in German and French too" || bad "the booklet lost its line about the meter"
 grep -q "const wh = m.power_wh != null ? m.power_wh : m.energy_source === 'filed' && m.energy_wh ? m.energy_wh : 0;" src/views/layout.js && grep -q 'parts.push(`${wh} Wh${m.power_with' src/views/layout.js \
   && ok "layout.mealFigs: the meter's figure, else a figure filed as a total before the meter, else 0 — always with its unit" || bad "layout.mealFigs does not put the watt hours beside the kcal"
 node -e '
@@ -1115,16 +1142,16 @@ process.exit(u("2026-10-24", "06:00") === "2026-10-24T04:00:00.000Z" && u("2026-
 node -e '
 const ha = require("./src/lib/home-assistant");
 process.exit(JSON.stringify(ha.parseWindow("6:00-9:00")) === JSON.stringify(["06:00", "09:00"]) && JSON.stringify(ha.parseWindow("15:00 – 22:00")) === JSON.stringify(["15:00", "22:00"]) && ha.parseWindow("14:00-09:00") === null && ha.parseWindow("") === null && ha.parseWindow("25:00-26:00") === null
-  && ha.MEALS_DEFAULT.meter === "habitat_power_kitchen_energie" && ha.MEALS_DEFAULT.windows.BREAKFAST === "06:00-09:00" && ha.MEALS_DEFAULT.windows.LUNCH === "09:00-14:00" && ha.MEALS_DEFAULT.windows.DINNER === "15:00-22:00" ? 0 : 1);
-' && ok "the meter is sensor.habitat_power_kitchen_energie and the hours 06–09, 09–14, 15–22 unless content/home-assistant.json says otherwise; hours parse as HH:MM-HH:MM, end after start" || bad "the meals defaults or the hours parser are wrong"
+  && ha.MEALS_DEFAULT.meter === "habitat_power_food_energie" && ha.MEALS_DEFAULT.windows.BREAKFAST === "06:00-09:00" && ha.MEALS_DEFAULT.windows.LUNCH === "09:00-14:00" && ha.MEALS_DEFAULT.windows.DINNER === "15:00-22:00" && ha.mealsConfig().meter === "habitat_power_food_energie" ? 0 : 1);
+' && ok "the meter is sensor.habitat_power_food_energie — the Food channel's — and the hours 06–09, 09–14, 15–22 unless content/home-assistant.json says otherwise (it names the same); hours parse as HH:MM-HH:MM, end after start" || bad "the meals defaults or the hours parser are wrong"
 node -e '
 const fs = require("fs"), p = process.env.CONTENT_DIR + "/home-assistant.json";
 const d = JSON.parse(fs.readFileSync(p, "utf8")); d.meals = { meter: "sensor.other_meter", windows: { BREAKFAST: "07:00-10:00", LUNCH: null } }; fs.writeFileSync(p, JSON.stringify(d, null, 2));
 setTimeout(() => { const ha = require("./src/lib/home-assistant"); const c = ha.mealsConfig(); const ok = c.meter === "other_meter" && c.windows.BREAKFAST === "07:00-10:00" && !("LUNCH" in c.windows) && c.windows.DINNER === "15:00-22:00";
-  d.meals = { meter: "habitat_power_kitchen_energie", windows: { BREAKFAST: "06:00-09:00", LUNCH: "09:00-14:00", DINNER: "15:00-22:00" } }; fs.writeFileSync(p, JSON.stringify(d, null, 2)); process.exit(ok ? 0 : 1); }, 50);
+  d.meals = { meter: "habitat_power_food_energie", windows: { BREAKFAST: "06:00-09:00", LUNCH: "09:00-14:00", DINNER: "15:00-22:00" } }; fs.writeFileSync(p, JSON.stringify(d, null, 2)); process.exit(ok ? 0 : 1); }, 50);
 ' && ok "the file may name another meter or other hours (and null for a meal without any); the rest keep the defaults — the meter is named by its entity id, never by its label" || bad "the meals block of content/home-assistant.json is not read"
 # the power block: every figure locked behind Edit, which asks "These values are automated, are you sure you would like to edit?"
-echo "$HB1" | grep -q "These values are automated, are you sure you would like to edit?" && [ "$(echo "$HB1" | grep -o 'class="[^"]*pw-locked[^"]*"' | wc -l)" -ge 5 ] && ! echo "$HB1" | grep -q 'the meter has nothing yet' \
+echo "$HB1" | grep -q "These values are automated, are you sure you would like to edit?" && [ "$(echo "$HB1" | grep -o 'class="[^"]*pw-locked[^"]*"' | wc -l)" -ge 8 ] && ! echo "$HB1" | grep -q 'the meter has nothing yet' \
   && ok "every value in Power consumed is locked behind an Edit key, which asks: These values are automated, are you sure you would like to edit?" || bad "the power block's values are not all locked, or the prompt is wrong"
 # the Resources tile: a store with no figure yet carries no word for it
 echo "$LANDM" | grep -q '>Placeholder<' && bad "the Resources tile still says Placeholder" || ok "the Resources tile says no Placeholder — a store with no figure yet is an empty ring and a dash"
@@ -1143,27 +1170,36 @@ HBN=$(curl -s -b $A "$B/control?tab=habitat&day=0")
 echo "$HBN" | grep -q '<div class="eyebrow">Power consumed</div>' && echo "$HBN" | grep -q '<div class="eyebrow">Calories consumed</div>' && echo "$HBN" | grep -q '<div class="eyebrow">Steps taken</div>' && echo "$HBN" | grep -q '<div class="eyebrow">Meals · NOW</div>' \
   && ok "and on NOW the three say no NOW either — the meals do" || bad "NOW is back in a figure block's head"
 
-echo "── the science mission, chosen on the desk"
-# the Science officer's tab: the day's mission as content/missions.json plans it (the default), or another from the list
-# in its place — written as `chosen` (day → mission number) beside the plan, read wherever the day's mission is shown
+echo "── the day's science mission, set on the desk"
+# the Science officer's tab: one dropdown, for the day open on the desk — the sheets in missions/ (content/missions.json),
+# the plan's mission for that day selected: as shipped in sequence, 00 on the first day; Save writes that day's entry of
+# the map (`days`), which stands wherever the day's mission is shown; no words over it (October)
 SC=$(curl -s -b $A "$B/control?tab=science&day=3")
-echo "$SC" | grep -q '<div class="eyebrow">Science mission · day 003</div>' && echo "$SC" | grep -q '<form method="post" action="/control/mission">' && echo "$SC" | grep -q '<select name="mission">' \
-  && echo "$SC" | grep -q '<option value="" selected>Default — Mission No. 4 · Human Resource Audit</option>' && [ "$(echo "$SC" | grep -o '<option value="[0-9]*">Mission No\. [0-9]* · ' | wc -l)" = "12" ] && echo "$SC" | grep -q '<option value="7">Mission No. 7 · Know Thy Neighbours</option>' \
+echo "$SC" | grep -q '<div class="eyebrow">Science mission · day 003</div>' && echo "$SC" | grep -q '<form method="post" action="/control/mission" class="mission-plan' \
+  && [ "$(echo "$SC" | grep -o '<select name="mission" aria-label="Mission on day 003">' | wc -l)" = "1" ] && ! echo "$SC" | grep -q 'name="m_1"\|class="mission-days"' \
+  && echo "$SC" | grep -q '<label class="f mission-day"><span class="mp-day">Day 003</span><span class="mp-date">[A-Z][a-z]* [0-9]* [A-Z][a-z]*</span>' \
+  && [ "$(echo "$SC" | grep -o '<option value="[0-9]*"[^>]*>Mission No\. [0-9][0-9] · ' | wc -l)" = "13" ] && echo "$SC" | grep -q '<option value="2" selected>Mission No. 02 · Trust the System</option>' \
+  && echo "$SC" | grep -q '<option value="0"[^>]*>Mission No. 00 · Setup Habitat After Touchdown (sheet to come)</option>' && echo "$SC" | grep -q '<option value="12"[^>]*>Mission No. 12 · Habitat Teardown (sheet to come)</option>' \
+  && echo "$SC" | grep -q '<option value=""[^>]*>— none —</option>' && ! echo "$SC" | grep -q 'as shipped in sequence\|A sheet marked <i>to come</i>\|block-hint">The sheet' \
   && [ "$(echo "$SC" | node -e 'let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const a = s.indexOf("id=\"tab-science\""), m = s.indexOf("action=\"/control/mission\"", a), r = s.indexOf("Daily Mission Report", a); process.stdout.write(m > -1 && r > m ? "first" : "not first"); });')" = "first" ] \
   && ! curl -s -b $A "$B/control?tab=science&day=0" | grep -q 'action="/control/mission"' \
-  && ok "the Science officer's tab opens with the day's science mission: a list with the plan's mission as Default and every sheet to choose from, a Save key — on the run's days, not on NOW" || bad "the science mission's block is not on the desk as it should be"
-curl -s -b $A -X POST -d "day=$TODAY" -d "mission=2" -o /dev/null $B/control/mission
-node -e 'const d = require(process.env.CONTENT_DIR + "/missions.json"); process.exit(d.chosen && d.chosen[String(process.argv[1])] === 2 && d.days[String(process.argv[1])] === 7 ? 0 : 1);' "$TODAY" \
-  && curl -s -b $A "$B/control?tab=science&day=$TODAY" | grep -q '<option value="2" selected>Mission No. 2 · How Humans Collaborate</option>' \
-  && curl -s $B/dashboard | grep -q '<span class="mission-no">Mission No. 2</span>' && curl -s $B/dashboard | grep -q 'How Humans Collaborate' \
-  && curl -s $B/api/dome | grep -q 'mission: How Humans Collaborate.' && ! curl -s $B/api/dome | grep -q 'Mission No. 2 · How Humans Collaborate' \
-  && ok "another mission chosen for today is written beside the plan (chosen, not days) and stands on the dashboard's Today's Mission and in the habitat's sentences" || bad "the chosen mission is not written or not shown"
+  && ok "the Science officer's tab opens with the day's science mission: one dropdown for the open day — the thirteen sheets with two-figure numbers, the plan's selected, a sheet still to come marked, none to choose — the day and its date over it, no words, a Save key; on the run's days, not on NOW" || bad "the science mission's block is not on the desk as it should be"
+# today's set to 07 Mars Myths: that day's entry of the plan changes, the others stand
+curl -s -b $A -X POST -d "day=$TODAY" -d "mission=7" -o /dev/null $B/control/mission
+node -e 'const d = require(process.env.CONTENT_DIR + "/missions.json"); process.exit(!d.chosen && d.days[String(process.argv[1])] === 7 && d.days["1"] === 0 && d.days["3"] === 2 && Object.keys(d.days).length === 13 ? 0 : 1);' "$TODAY" \
+  && curl -s -b $A "$B/control?tab=science&day=$TODAY" | grep -q '<option value="7" selected>Mission No. 07 · Mars Myths</option>' \
+  && curl -s $B/dashboard | grep -q '<span class="mission-no">Mission No. 07</span>' && curl -s $B/dashboard | grep -q 'id="mission-today-title">Mars Myths<' \
+  && curl -s $B/api/dome | grep -q 'mission: Mars Myths.' && ! curl -s $B/api/dome | grep -q 'Mission No. 07 · Mars Myths' \
+  && ok "another mission set for today is written to the plan (days — no chosen beside it; the other days stand) and shows on the dashboard's Today's Mission, with its two-figure number, and in the habitat's sentences" || bad "the mission set for today is not written or not shown"
+# none for today: the day has no mission
 curl -s -b $A -X POST -d "day=$TODAY" -d "mission=" -o /dev/null $B/control/mission
-node -e 'const d = require(process.env.CONTENT_DIR + "/missions.json"); process.exit(!d.chosen && d.days[String(process.argv[1])] === 7 ? 0 : 1);' "$TODAY" \
-  && curl -s $B/dashboard | grep -q '<span class="mission-no">Mission No. 7</span>' \
-  && ok "Default puts the plan's mission back, and the choice is gone from the file" || bad "the default is not restored"
-curl -s -b $A -X POST -d "day=3" -d "mission=99" -o /dev/null -w '%{redirect_url}' $B/control/mission | grep -q 'tab=science&day=3' && node -e 'const d = require(process.env.CONTENT_DIR + "/missions.json"); process.exit(d.chosen ? 1 : 0);' \
-  && ok "a mission the file does not have is refused" || bad "an unknown mission was written"
+node -e 'const d = require(process.env.CONTENT_DIR + "/missions.json"); process.exit(d.days[String(process.argv[1])] === undefined && d.days["2"] === 1 && Object.keys(d.days).length === 12 ? 0 : 1);' "$TODAY" \
+  && curl -s $B/dashboard | grep -q 'No mission filed for' \
+  && ok "— none — takes the day's mission away: the day is not in the map, and the dashboard says no mission is filed" || bad "a day set to none still has a mission"
+# the sequence back, and a mission the file does not have is refused
+curl -s -b $A -X POST -d "day=$TODAY" -d "mission=$((TODAY - 1))" -o /dev/null $B/control/mission
+curl -s -b $A -X POST -d "day=3" -d "mission=99" -o /dev/null -w '%{redirect_url}' $B/control/mission | grep -q 'tab=science&day=3' && node -e 'const d = require(process.env.CONTENT_DIR + "/missions.json"); process.exit(d.days["3"] === 2 && d.days[String(process.argv[1])] === Number(process.argv[1]) - 1 && Object.keys(d.days).length === 13 ? 0 : 1);' "$TODAY" \
+  && ok "the sequence is back, and a mission the file does not have is refused — nothing written" || bad "an unknown mission was written, or the sequence is not back"
 
 echo "── crew figures"
 curl -s -b $A -X POST -d "day=3" -d "calories=4999" -d "steps=8123" -o /dev/null $B/control/crew-figures
@@ -1572,9 +1608,9 @@ curl -s $B/dashboard | grep -q 'class="glance-link media-link" href="/media"' &&
 # today's scientific mission, from content/missions.json and the sheets in missions/, over the index of folders
 echo "── today's mission"
 MT=$(panel mission-today)
-MNO=$(node -e 'const d=require(process.env.CONTENT_DIR+"/missions.json"); const no=d.days[String(process.argv[1])]; const m=d.missions.find((x)=>x.no===no); process.stdout.write(m ? no+"|"+m.title+"|"+m.file : "")' "$TODAY")
-echo "$MT" | grep -q "Mission No. ${MNO%%|*}<" && echo "$MT" | grep -q "id=\"mission-today-title\">$(echo "$MNO" | cut -d'|' -f2)<" \
-  && ok "the Today's Mission panel shows the day's mission — number and title — as missions.json maps it (day $TODAY → mission ${MNO%%|*})" || bad "the Today's Mission panel does not show the day's mission"
+MNO=$(node -e 'const d=require(process.env.CONTENT_DIR+"/missions.json"); const no=d.days[String(process.argv[1])]; const m=d.missions.find((x)=>x.no===no); process.stdout.write(m ? String(no).padStart(2, "0")+"|"+m.title+"|"+m.file : "")' "$TODAY")
+echo "$MT" | grep -q "Mission No. ${MNO%%|*}<" && echo "$MT" | grep -q "id=\"mission-today-title\">$(echo "$MNO" | cut -d'|' -f2)<" && [ "${MNO%%|*}" = "$(printf '%02d' $((TODAY - 1)))" ] \
+  && ok "the Today's Mission panel shows the day's mission — its two-figure number and title — as missions.json maps it (day $TODAY → mission ${MNO%%|*}, the sheets in sequence from 00)" || bad "the Today's Mission panel does not show the day's mission"
 echo "$MT" | grep -q 'class="mission-part is-morning"' && echo "$MT" | grep -q 'class="mission-part is-afternoon"' && echo "$MT" | grep -q 'class="mission-part is-eva"' && echo "$MT" | grep -q 'class="mission-community"' \
   && ok "with its central question, Morning, Afternoon and EVA, and the question for the community hour" || bad "the mission's parts are missing"
 curl -s $B/dashboard | node -e 'let s=""; process.stdin.on("data",(c)=>s+=c).on("end",()=>{ const a=s.indexOf("<section class=\"dpanel span-12 mission-today\" id=\"mission-today\""), b=s.indexOf("class=\"folder span-12\""), f=s.indexOf("<div class=\"fpage\" role=\"tabpanel\" id=\"fpage-mission-today\" aria-labelledby=\"ftab-mission-today\" data-folder=\"mission-today\" hidden>"), k=s.indexOf("<button type=\"button\" class=\"ftab\" role=\"tab\" id=\"ftab-mission-today\""), sch=s.indexOf("id=\"ftab-schedule\""), sens=s.indexOf("id=\"ftab-habitat\""); process.exit(a>-1 && b>-1 && b<a && f>-1 && f<a && k>-1 && sens<k && k<sch ? 0 : 1); });' \
@@ -1584,11 +1620,25 @@ curl -s $B/dashboard | node -e 'let s=""; process.stdin.on("data",(c)=>s+=c).on(
   && ok "the sheet itself is served from the missions folder, though the panel carries no key to it" || bad "the mission sheet is not served, or a key to it is back on the panel"
 MQ=$(node -e 'const d=require(process.env.CONTENT_DIR+"/missions.json"); const m=d.missions.find((x)=>x.no===d.days[String(process.argv[1])]); process.stdout.write(m ? m.community.en : "")' "$TODAY")
 curl -s $B/write | grep -q "<p class=\"dev-prompt-q\">$MQ</p>" && curl -s $B/ | grep -q "<p class=\"dev-prompt-q\">$MQ</p>" \
-  && curl -s -H "Cookie: mcs_lang=de" $B/write | grep -q 'Die Frage der Crew heute' && curl -s -H "Cookie: mcs_lang=de" $B/write | grep -q 'Wann wird aus einem Fremden ein Nachbar' \
+  && curl -s -H "Cookie: mcs_lang=de" $B/write | grep -q 'Die Frage der Crew heute' && curl -s -H "Cookie: mcs_lang=de" $B/write | grep -q 'Was ist eine Sache die zu Hause / in Karlsruhe grade passiert' \
   && ok "the day's question for the community hour stands over the writing box as a prompt — in the window, on every page, in German where the sheet has it" || bad "the composer carries no prompt, or the wrong one"
 [ "$(curl -s -o /dev/null -w '%{http_code}' "$B/missions/")" = "404" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' "$B/missions/nothing.txt")" = "404" ] && ok "and nothing but PDFs is served from it" || bad "the missions folder serves more than its PDFs"
-node -e 'const d=require(process.env.CONTENT_DIR+"/missions.json"); const nos=d.missions.map((m)=>m.no); process.exit(nos.length===12 && Object.keys(d.days).length===12 && Object.values(d.days).every((n)=>nos.includes(n)) ? 0 : 1);' \
-  && ok "twelve sheets, twelve days mapped to them in missions.json (day 13 open until a sheet is assigned)" || bad "missions.json is inconsistent"
+node -e 'const d=require(process.env.CONTENT_DIR+"/missions.json"); const nos=d.missions.map((m)=>m.no); process.exit(nos.length===13 && nos.every((n, i) => n === i) && Object.keys(d.days).length===13 && Object.entries(d.days).every(([k, n]) => n === Number(k) - 1) && d.missions.filter((m) => m.placeholder).map((m) => m.no).join() === "0,12" && d.missions.every((m) => m.placeholder ? !m.question && !m.morning.length : m.morning.length && m.afternoon.length && m.eva.length) && /tools\/missions-json\.py/.test(d._note) ? 0 : 1);' \
+  && ok "thirteen sheets, 00 to 12, thirteen days mapped to them in sequence in missions.json — written by tools/missions-json.py from the PDFs; 00 and 12, copies of another sheet for now, carry their titles and no words" || bad "missions.json is inconsistent"
+# the words are the sheets' own: tools/missions-json.py reads every PDF in missions/ by position — the three columns as
+# lines (a heading alone, a bullet with its wrapped words), the community hour's question parted into English and German
+if python3 -c "import pdfplumber" 2>/dev/null; then
+python3 tools/missions-json.py --check 2>/dev/null | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
+  const d = JSON.parse(s), by = Object.fromEntries(d.missions.map((m) => [m.no, m]));
+  const ok = by[5].title === "Waterways" && by[5].question === "Humans cannot survive without water. How do we take care and notice water?"
+    && by[5].eva[0] === "WATERWAYS MAPPING" && by[5].eva[5] === "• places where water can be collected or is lost" && by[5].community.de.startsWith("Wie sparst du Wasser")
+    && by[1].afternoon[0] === "THE VALUE OF A KILOWATT-HOUR – decision experiment" && by[1].morning[5] === "→ a pot of coffee, one day of hydroponics, 1× feeding the grasshoppers, 1× eating."
+    && by[8].afternoon[2] === "• What can it perceive?" && by[7].afternoon[2] === "• What rituals are central to religious meaning-making?" && by[7].community.en === "What rituals do you follow in your everyday life?" && by[7].community.de === "Welche Rituale hast du in deinem täglichen Leben?"
+    && by[6].eva[0] === "Fictitious scenario: THE MARKETPLACE AS RESOURCE" && by[2].sheetNo === "12" && by[0].placeholder === "MARS_Mission_01_Energy_Budget.pdf" && by[11].question === "";
+  process.exit(ok ? 0 : 1); });
+' && ok "tools/missions-json.py reads the sheets as laid out — the number and title from the file, the question, the columns line by line, bullets and headings kept, a broken word made whole, English and German parted, the printed number kept as sheetNo where it is another, a copied sheet marked" || bad "tools/missions-json.py does not read the sheets as it should"
+else ok "(pdfplumber is not installed here — tools/missions-json.py not run; content/missions.json as shipped is checked above)"; fi
 curl -s -H "Cookie: mcs_lang=de" $B/dashboard | grep -q 'Heutige Mission' && curl -s -H "Cookie: mcs_lang=fr" $B/dashboard | grep -q 'Mission du jour' && ok "its labels are in German and French too; the sheet's words as written" || bad "the mission panel's labels are not translated"
 node -e '
 const h = require("child_process").execSync("curl -s http://localhost:8080/dashboard").toString();
@@ -1757,17 +1807,21 @@ CREW1=$(curl -s -b $A $B/control | grep -oE '/control/moods/[0-9]+' | head -1 | 
 curl -s -b $A -X POST -d "calm_tense=25" -d "day=$TODAY" -o /dev/null $B/control/moods/$CREW1
 curl -s -b $A -X POST -d "calm_tense=75" -d "day=$TODAY" -o /dev/null $B/control/moods/$CREW1
 MR=$(curl -s -b $A "$B/control?tab=comms")
-echo "$MR" | grep -q 'class="mood-table"' && echo "$MR" | grep -q '<td class="mr-mood"><b>TENSE</b><span>tense, short with the others</span></td>' && echo "$MR" | grep -q '<td class="mr-mood"><b>SETTLED</b>' \
+echo "$MR" | grep -q 'class="mood-table"' && echo "$MR" | grep -q '<td class="mr-mood"><b>UPSET</b><span>upset, not having a good day</span></td>' && echo "$MR" | grep -q '<td class="mr-mood"><b>HAPPY</b>' \
   && ok "every state filed is a row of the record under the officer's state — the newest first, with the day and time, the sol, the mood and who filed it" || bad "the record under the state is missing a filing"
 echo "$MR" | grep -q '<td class="mr-by">control</td>' && echo "$MR" | grep -q "SOL $(printf '%03d' $TODAY)<" && ok "the row names the desk that filed it and the sol" || bad "the row lacks the desk or the sol"
-curl -s -b $A $B/control/moods.csv | python3 -c '
+curl -s -b $A $B/archive/moods.csv | python3 -c '
 import csv, sys
 rows = list(csv.reader(sys.stdin))
 rows[0][0] = rows[0][0].lstrip("\ufeff")
-ok = rows and rows[0] == ["officer", "date", "time", "sol", "mood", "value", "reads", "filed_by", "filed_at_utc"] and len(rows) >= 3 and rows[-1][4] == "TENSE" and rows[-2][4] == "SETTLED" and rows[-1][7] == "control" and all(r[7] != "content" for r in rows[1:])
+ok = rows and rows[0] == ["officer", "date", "time", "sol", "mood", "value", "reads", "filed_by", "filed_at_utc"] and len(rows) >= 3 and rows[-1][4] == "UPSET" and rows[-2][4] == "HAPPY" and rows[-1][7] == "control" and all(r[7] != "content" for r in rows[1:])
 sys.exit(0 if ok else 1)
-' && ok "and /control/moods.csv hands the whole record over — every officer, oldest first, the content loader's placeholder state left out" || bad "the CSV of the record is wrong"
-[ "$(curl -s -o /dev/null -w '%{http_code}' $B/control/moods.csv)" = "302" ] && ok "the CSV is behind the sign-in" || bad "the CSV is public"
+' && ok "and /archive/moods.csv hands the whole record over — every officer, oldest first, the content loader's placeholder state left out" || bad "the CSV of the record is wrong"
+[ "$(curl -s -o /dev/null -w '%{http_code}' $B/archive/moods.csv)" = "302" ] && [ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' -b $A $B/control/moods.csv)" = "301 $B/archive/moods.csv" ] \
+  && ok "the CSV is behind the sign-in, and the old address under the officer's state leads to the archive's" || bad "the CSV is public, or the old address is dead"
+# the CSV is the Archive's, not the desk's (October): a card under Take a copy, no key under the officer's state
+curl -s -b $A $B/archive | grep -q "The crew’s moods" && curl -s -b $A $B/archive | grep -q 'href="/archive/moods.csv"' && ! echo "$MR" | grep -q 'mood-record-csv\|CSV · all officers' \
+  && ok "the crew's moods are a card of the Archive's Take a copy — CSV, one row per state — and the officer's state on the desk carries no CSV key" || bad "the moods CSV is not in the archive, or still under the officer's state"
 
 echo "── the board: the viewer's own messages, and the last nine the crew have answered"
 grep -q "BOARD_RECENT" src/server.js && grep -q "LIMIT 100" src/lib/data.js && grep -q "m.state = 'PUBLISHED' AND m.visitor_id != ?" src/lib/data.js \
@@ -1789,6 +1843,19 @@ echo "$WALLN" | grep -q 'class="card-space card-space-compact" data-launched="' 
   && echo "$WALLN" | grep -q '<span class="card-space-launched"><span class="sp-ago">' && echo "$WALLN" | grep -q '<span class="card-space-go" title="Follow its journey">›</span>' \
   && echo "$WALLN" | grep -q 'data-au="[0-9.]*" data-ls="[0-9]*" data-callsign="[A-Z]*-[0-9]*"' \
   && ok "a note's foot carries the line into space compact — the orbit sign, the figure and km, how long ago it left, › to its journey — with the journey's data" || bad "the notes' line into space is not as it should be"
+# under the pointer a note lifts and lights up — an orange edge and glow, the folded corner orange, the key brightening — and a
+# band slides up over its foot: Click to see how far it has travelled › (German and French too); nothing of it on a screen
+echo "$WALLN" | grep -q '<span class="note-hint" aria-hidden="true">Click to see how far it has travelled ›</span>' \
+  && curl -s -H "Cookie: mcs_lang=de" $B/write | grep -q '<span class="note-hint" aria-hidden="true">Klicken und sehen, wie weit sie schon gereist ist ›</span>' \
+  && curl -s -H "Cookie: mcs_lang=fr" $B/write | grep -q 'Cliquez pour voir jusqu’où il a voyagé ›</span>' \
+  && grep -q 'body.landing .card.note:has(.card-space\[data-launched\]):hover { transform: translateY(-3px); border-color: var(--mars);' public/aura.css \
+  && grep -q 'body.landing .card.note .note-hint { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 9px 16px; background: var(--mars); color: #fff;' public/aura.css \
+  && grep -q 'body.landing .card.note:has(.card-space\[data-launched\]):hover .note-hint { transform: none; opacity: 1; }' public/aura.css \
+  && grep -q 'body.landing .card.note:has(.card-space\[data-launched\]):hover::before { border-color: var(--ground) var(--ground) var(--mars) var(--mars); }' public/aura.css \
+  && grep -q 'body.landing .card.note:has(.card-space\[data-launched\]):hover .card-space-compact .card-space-go { color: var(--mars); }' public/aura.css \
+  && grep -q '@media (hover: none) { body.landing .card.note .note-hint { display: none; }' public/aura.css && grep -q 'body.screen .card.note .note-hint { display: none; }' public/aura.css \
+  && grep -q ':root\[data-theme="dark"\] body.landing .card.note:has(.card-space\[data-launched\]):hover { border-color: var(--mars); }' public/aura.css && ! grep -q 'body.landing .card.note:hover { border-color: rgba(var(--cobalt-rgb),.45); }' public/aura.css \
+  && ok "under the pointer a note lifts with an orange edge and glow, its corner and key orange, and a band slides up over its foot — Click to see how far it has travelled › — in German and French too; not where there is no pointer, not on a screen" || bad "the notes do not light up under the pointer as they should"
 MSGD=$(curl -s -H "Cookie: mcs_lang=de" "$B/api/board?lang=de&limit=400")
 echo "$MSGD" | grep -qE 'Diese Nachricht ist jetzt <b class=\\"sp-km\\">[0-9.,]+ (Millionen|Milliarden)</b> km von der Erde entfernt!' \
   && echo "$MSGD" | grep -q 'Gestartet <span class=\\"sp-ago\\">' && echo "$MSGD" | grep -q '>Seine Reise verfolgen ›<' && curl -s -H "Cookie: mcs_lang=de" $B/write | grep -q 'title="Seine Reise verfolgen">›</span>' \
@@ -1827,6 +1894,20 @@ const ok = all.length >= 500 && all.every((o) => ["en", "de", "fr"].every((l) =>
   && all.find((o) => o.id === "io").km < all.find((o) => o.id === "jupiter").km;
 process.exit(ok ? 0 : 1);' && ok "content/celestial.json carries every object in the three languages, with the accepted distances — the ISS 400 km, the Moon 384,400 km, Saturn 1.43 billion km, one light-day 25.9 billion km, two light-weeks 362.6 billion km, Sirius 8.6 light-years; a moon a hair inside its planet, so the planet is named first" || bad "celestial.json is wrong"
 curl -s "$B/api/celestial?lang=fr" | grep -q '"name":"Saturne"' && curl -s "$B/api/celestial" | grep -q '"name":"Saturn"' && ok "the list comes in French and in English too" || bad "the list is not translated"
+# the first fifteen light-days — where a message is all through the run — carry the interstellar comets on their way out, the
+# Pale Blue Dot, the Kuiper cliff and the far ends of the long orbits, so the line names a thing and not only a light-day mark
+curl -s "$B/api/celestial" | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
+  const o = JSON.parse(s).objects, LD = 299792.458 * 86400, AU = 149597870.7, by = Object.fromEntries(o.map((x) => [x.id, x]));
+  const closest = (km) => { let p = o[0]; for (const x of o) { if (x.km <= km) p = x; else break; } return p; };
+  const want = [["atlas3i", 12, "now"], ["palebluedot", 40.5, "mark"], ["borisov", 48, "now"], ["kuipercliff", 50, "avg"], ["erisfar", 97.6, "farthest"], ["ikeyasekifar", 183, "farthest"],
+    ["vp113far", 446, "farthest"], ["neowisefar", 715, "farthest"], ["sy99far", 1400, "farthest"], ["of201far", 1600, "farthest"]];
+  const ok = o.length >= 596 && want.every(([id, au, how]) => by[id] && Math.abs(by[id].km - au * AU) < 2 && by[id].how === how && by[id].name && by[id].about)
+    && closest(13 * AU).id === "atlas3i" && closest(49 * AU).id === "borisov" && closest(2.6 * LD).id === "vp113far" && closest(4.2 * LD).id === "neowisefar" && closest(8.2 * LD).id === "sy99far" && closest(9.3 * LD).id === "of201far"
+    && by.atlas3i.name === "comet 3I/ATLAS" && by.palebluedot.name === "the Pale Blue Dot" && /Voyager 1 turned its camera round in 1990/.test(by.palebluedot.about) && by.of201far.name === "2017 OF201 at its farthest";
+  process.exit(ok ? 0 : 1); });
+' && curl -s "$B/api/celestial?lang=de" | grep -q '"name":"die Kuiper-Klippe"' && curl -s "$B/api/celestial?lang=fr" | grep -q '"name":"la comète NEOWISE au plus loin"' \
+  && ok "ten more things within the first fifteen light-days — comet 3I/ATLAS and 2I/Borisov on their way out, the Pale Blue Dot, the Kuiper cliff, Eris, Ikeya–Seki, 2012 VP113, comet NEOWISE, 2013 SY99 and 2017 OF201 at their farthest — each in the three languages; a message two and a half light-days out is past 2012 VP113's far end, nine days out past 2017 OF201's" || bad "the objects within the first fifteen light-days are missing"
 node -e '
 const D = require("./src/lib/i18n").D;
 const keys = ["Your message is {r} times farther away than {name}.", "Your message is just about as far as {name}.", "{name} is on average about {km} km from Earth", "{name} is {ly} light-years from Earth",
@@ -1869,7 +1950,7 @@ if DATA_DIR="$DATA4" SPACESPEAK_URL=http://localhost:$MOCKP SPACESPEAK_USER=stat
   A4=/tmp/admin4.jar; rm -f $A4
   curl -s -c $A4 -X POST -d "username=${CONTROL_USER}" -d "password=${CONTROL_PASSWORD}" -o /dev/null $B4/control/login
   curl -s -b $A4 "$B4/control?show=pending" | grep -q 'Beam again\|Not beamed' && bad "control offers Beam again, or marks an unreplied message" || ok "an unreplied message carries no mark on the control page, and no Beam again key exists"
-  newest() { curl -s -b $A4 "$B4/control?show=pending" | grep -oE '/control/[0-9]+/reply' | tail -1 | grep -oE '[0-9]+'; }
+  newest() { curl -s -b $A4 "$B4/control?show=pending" | grep -oE '/control/[0-9]+/reply' | head -1 | grep -oE '[0-9]+'; }   # the queue's latest at the top
   M1=$(newest)
   # rejected: never sent
   curl -s -c $V4 -b $V4 -X POST -d "body=One to reject" -o /dev/null $B4/communicate
@@ -2363,23 +2444,46 @@ LAND=$(curl -s $B/dashboard)
 echo "$LAND" | grep -q "Power consumed" && echo "$LAND" | grep -q 'class="pwr-row' \
   && ok "the Habitat panel carries the day's power, a bar per category" || bad "no power tile on the landing page"
 echo "$LAND" | grep -q 'pwr-total' && ok "the trend spec carries a Power group — each category and the total, daily" || bad "power not in the trends"
-for c in $(node -e 'for (const c of JSON.parse(require("fs").readFileSync(process.env.CONTENT_DIR + "/power.json", "utf8")).categories) console.log(c.label)'); do echo "$LAND" | grep -q "$c" || bad "power category missing from the dashboard page: $c"; done
-ok "all five categories are drawn as power.json labels them (the heating category is named after its meter in the content handed over)"
+# this station has no meters (no Home Assistant) and nothing filed, so the tile says so and draws no rows; the desk's
+# form carries every category as power.json labels it (the rows are drawn on the dashboard once a figure is in — below)
+curl -s -b $A "$B/control?tab=habitat" | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
+  const p = JSON.parse(require("fs").readFileSync(process.env.CONTENT_DIR + "/power.json", "utf8"));
+  const missing = p.categories.filter((c) => !s.includes(`name="name_${c.key}" value="${c.label}"`)).map((c) => c.label);
+  if (missing.length) console.error("missing: " + missing.join(", "));
+  process.exit(missing.length ? 1 : 0); });
+' && echo "$LAND" | grep -q 'No reading from the meters yet today, and nothing filed by the crew' \
+  && ok "every category stands on the desk as power.json labels it, a row each; the dashboard's tile, with no meter answering and nothing filed, says so instead of drawing zeros" || bad "a power category is missing from the desk, or the tile does not say the meters have nothing"
+node -e '
+const p = JSON.parse(require("fs").readFileSync(process.env.CONTENT_DIR + "/power.json", "utf8"));
+const want = [["crickets", "Crickets"], ["science_1", "Science 1"], ["science_2", "Science 2"], ["living", "Living"], ["table", "Table"], ["food", "Food"], ["water", "Water"], ["hydroponics", "Hydroponics"]];
+process.exit(p.categories.length === 8 && want.every(([k, l], i) => p.categories[i].key === k && p.categories[i].label === l && p.categories[i].sensor === `habitat_power_${k}_energie`) ? 0 : 1);
+' && ok "the eight categories are the habitat's metered power channels as power.json ships them — Crickets, Science 1, Science 2, Living, Table, Food, Water, Hydroponics — each reading its energy meter, sensor.habitat_power_<channel>_energie (the energy used, under Power consumed)" || bad "power.json does not ship the eight metered channels"
+node -e '
+const c = require("./src/lib/content"); const d = c.power().categories;
+process.exit(d.length === 8 && d[0].key === "crickets" && d[0].sensor === "habitat_power_crickets_energie" && d[7].label === "Hydroponics" ? 0 : 1);
+' && ok "content.power reads them (and the code's own defaults are the same eight, for a missing file)" || bad "content.power does not read the eight channels"
+echo "$LAND" | grep -q 'energy used, from the meters · kWh</span>' && ! echo "$LAND" | grep -q 'from the meter and the crew' \
+  && ok "the tile's line says the figures are the energy used, from the meters — every category is on one" || bad "the tile's line does not say the figures are the meters' energy"
+curl -s -H "Cookie: mcs_lang=de" $B/dashboard | grep -q 'verbrauchte Energie, von den Zählern · kWh</span>' && curl -s -H "Cookie: mcs_lang=fr" $B/dashboard | grep -q 'énergie consommée, relevée aux compteurs · kWh</span>' \
+  && ok "and in German and French" || bad "the tile's line is not translated"
 GLANCE=$(curl -s $B/at-a-glance)
 echo "$GLANCE" | grep -q "Power consumed" && ok "each day of the booklet carries its power figures" || bad "no power block in At a Glance"
 echo "$GLANCE" | grep -q 'gauges rounds' && echo "$GLANCE" | grep -q 'round-arc' \
   && ok "and the stores as rings — the arc is what is left of what was carried in" || bad "no resource rings in At a Glance"
-curl -s -b $A "$B/control?tab=habitat" | grep -q 'name="name_heating"' && curl -s -b $A "$B/control?tab=habitat" | grep -q 'name="kwh_heating"' \
-  && ok "the Habitat tab has the power form: a name and an amount per category" || bad "no power form in mission control"
-# file a day and rename a category from mission control; both land in power.json and on the site
-curl -s -b $A -d "day=2" -d "name_heating=Heating" -d "kwh_heating=1.4" -d "name_food=Food" -d "kwh_food=0.6" \
-  -d "name_lighting=Lighting" -d "kwh_lighting=0.3" -d "name_electronics=Electronics" -d "kwh_electronics=0.5" \
-  -d "name_other=Greenhouse" -d "kwh_other=0.2" -o /dev/null $B/control/power
+curl -s -b $A "$B/control?tab=habitat" | grep -q 'name="name_crickets"' && curl -s -b $A "$B/control?tab=habitat" | grep -q 'name="kwh_crickets"' && curl -s -b $A "$B/control?tab=habitat" | grep -q 'name="kwh_hydroponics"' \
+  && [ "$(curl -s -b $A "$B/control?tab=habitat" | grep -o 'From the meter <code>sensor.habitat_power_[a-z_0-9]*_energie</code>' | wc -l)" = "8" ] \
+  && ok "the Habitat tab has the power form: a name and an amount per channel, each row saying which meter it reads" || bad "no power form in mission control, or its rows do not name their meters"
+# file a day and rename a category from mission control; both land in power.json and on the site (a metered row is
+# opened with Edit, edited_<key>=1, before a figure typed by hand is kept)
+curl -s -b $A -d "day=2" -d "name_crickets=Crickets" -d "kwh_crickets=1.4" -d "edited_crickets=1" -d "name_food=Food" -d "kwh_food=0.6" -d "edited_food=1" \
+  -d "name_living=Living" -d "kwh_living=0.3" -d "edited_living=1" -d "name_water=Water" -d "kwh_water=0.5" -d "edited_water=1" \
+  -d "name_hydroponics=Greenhouse" -d "kwh_hydroponics=0.2" -d "edited_hydroponics=1" -o /dev/null $B/control/power
 node -e '
 const o = JSON.parse(require("fs").readFileSync(process.env.CONTENT_DIR + "/power.json", "utf8"));
 const d = o.days["2"] || {};
-process.exit(d.heating === 1.4 && d.other === 0.2 && o.categories.some((c) => c.key === "other" && c.label === "Greenhouse") ? 0 : 1);
-' && ok "saving writes content/power.json — the day's kWh and the renamed category" || bad "the power save did not reach the file"
+process.exit(d.crickets === 1.4 && d.hydroponics === 0.2 && d.table === undefined && o.categories.some((c) => c.key === "hydroponics" && c.label === "Greenhouse" && c.sensor === "habitat_power_hydroponics_energie") ? 0 : 1);
+' && ok "saving writes content/power.json — the day's kWh and the renamed category, which keeps its meter; a row not opened keeps the meter's figure" || bad "the power save did not reach the file"
 curl -s $B/at-a-glance | grep -q "Greenhouse" && ok "the rename reaches At a Glance" || bad "renamed category not shown"
 curl -s $B/dashboard | grep -q "Greenhouse" && ok "and the landing page" || bad "renamed category not on the landing page"
 curl -s -b $A $B/archive/export.pdf -o /tmp/record-pwr.pdf
@@ -2473,7 +2577,7 @@ curl -s -b $A -d day=0 -d "BREAKFAST_name=NOW porridge" -d BREAKFAST_kcal=400 -o
 curl -s -b $A -d day=0 -d "designation=COMMUNICATION OFFICER" -d "body=NOW words for the rehearsal" -d back=comms -o /dev/null $B/control/logbook
 curl -s -b $A -d day=0 -d kind=science -d "body=NOW findings for the rehearsal" -d back=science -o /dev/null $B/control/report
 curl -s -b $A -d day=0 -d q_water=480 -d c_water=22 -d "why=NOW count" -o /dev/null $B/control/inventory
-curl -s -b $A -d day=0 -d kwh_food=1.4 -o /dev/null $B/control/power
+curl -s -b $A -d day=0 -d kwh_food=1.4 -d edited_food=1 -o /dev/null $B/control/power
 curl -s -b $A -d day=0 -d steps_1=4200 -o /dev/null $B/control/crew-figures
 sleep 1
 node -e '
@@ -2662,8 +2766,8 @@ process.exit(Object.keys(o).some((k) => /^\d+$/.test(k)) ? 1 : 0);
 node -e '
 const o = JSON.parse(require("fs").readFileSync(process.env.CONTENT_DIR + "/power.json", "utf8"));
 process.exit(Object.keys(o.days || {}).length === 0
-  && o.categories.some((c) => c.key === "other" && c.label === "Greenhouse") ? 0 : 1);
-' && ok "the power days are emptied and the categories kept — each day's kWh is filed from the run on" || bad "power.json not reset as it should be"
+  && o.categories.some((c) => c.key === "hydroponics" && c.label === "Greenhouse" && c.sensor === "habitat_power_hydroponics_energie") ? 0 : 1);
+' && ok "the power days are emptied and the categories kept, with their meters — each day's kWh is filed from the run on" || bad "power.json not reset as it should be"
 LAND=$(curl -s $B/dashboard)
 echo "$LAND" | grep -q 'planned&quot;:{&quot;' && bad "the trend graph still carries plan points after the reset" || ok "the trend graph carries no plan after the reset — every day ahead is null until it is filed"
 echo "$LAND" | grep -q "nothing recorded" && ok "the calories and steps tiles read nothing recorded until the first figures are filed" || bad "figure tiles not empty after reset"
@@ -2819,26 +2923,33 @@ grep -q "\$('tempVerdict').textContent = '';" public/habitat.js && ! grep -q "in
   && ok "the temperature tile carries no x–y in view line under its figure" || bad "habitat.js still writes the in-view range under the temperature"
 echo "$LAND3" | grep -q '<div class="hbt-sec"><h3>Trends</h3></div>' && ! echo "$LAND3" | grep -q 'Every channel, store and count over the run' \
   && ok "the trends are headed Trends alone — no line under the heading" || bad "the trends' heading still carries its line"
-# the hardware's day charts, with readings stored for today — the cricket's temperature and the kitchen socket's draw:
-# the newest reading of a chart's first line sits in a pill above the line's end, large enough to hold the figure and
-# its unit (26 high, rounded, the text centred in it); the legend names each line with its low and high, no reading
-# beside it; the socket's draw (a gauge in watts) is not a trend — its day is on the meter's line, as energy
+# the hardware's day charts, with readings stored for today — the cricket's temperature and two of the eight power
+# channels' draws (crickets and food): the newest reading of a chart's first line sits in a pill above the line's end,
+# large enough to hold the figure and its unit (26 high, rounded, the text centred in it) — named after its line where
+# the chart has more than one (Crickets 12 W); the legend names each line with its low and high, no reading beside it,
+# the names without the " · power draw" every line shares (the chart's title says it); a draw (a gauge in watts) is not
+# a trend — its day is on its meter's line, as energy — and a meter a Power category reads is not among the Hardware
+# trends either (it is that category's line in the Power group)
 DATA_DIR="$DATA3" CONTENT_DIR="$CONT3" node -e '
 const { db } = require("./src/db"); const mission = require("./src/lib/mission"); const m = mission.config();
 const today = mission.localDate(new Date(), m.timezone);
 const at = (hhmm) => mission.venueTimeUtc(today, hhmm, m.timezone);
 const ins = db.prepare("INSERT OR IGNORE INTO ha_reading (entity, t, value, state, unit) VALUES (?, ?, ?, ?, ?)");
 for (const [h, v] of [["00:05", 21.5], ["00:20", 21.9], ["00:40", 22.4]]) ins.run("m5_temperatur_cricket_temperature", at(h), v, String(v), "°C");
-for (const [h, v] of [["00:05", 9], ["00:20", 11], ["00:40", 12]]) ins.run("habitat_power_kitchen_leistung", at(h), v, String(v), "W");
+for (const [h, v] of [["00:05", 9], ["00:20", 11], ["00:40", 12]]) ins.run("habitat_power_crickets_leistung", at(h), v, String(v), "W");
+for (const [h, v] of [["00:05", 80], ["00:20", 86], ["00:40", 91]]) ins.run("habitat_power_food_leistung", at(h), v, String(v), "W");
+for (const [h, v] of [["00:05", 100.0], ["00:40", 100.3]]) ins.run("habitat_power_food_energie", at(h), v, String(v), "kWh");
 '
 LAND3H=$(curl -s $B3/dashboard)
 echo "$LAND3H" | grep -q '<figure class="hw-chart hw-power">' && echo "$LAND3H" | grep -q '<g class="hw-tag"><rect x="[0-9.]*" y="[0-9.]*" width="[0-9.]*" height="26" rx="13" fill="[^"]*"/>' \
-  && echo "$LAND3H" | grep -q 'text-anchor="middle" dominant-baseline="central">12 W</text></g>' && echo "$LAND3H" | grep -q 'dominant-baseline="central">22.4 °C</text></g>' \
-  && ok "each chart's newest reading stands in a pill above its line's end — 12 W, 22.4 °C — 26 high, the text centred in it" || bad "the chart's pill is not drawn as it should be"
+  && echo "$LAND3H" | grep -q 'text-anchor="middle" dominant-baseline="central">Crickets 12 W</text></g>' && echo "$LAND3H" | grep -q 'dominant-baseline="central">22.4 °C</text></g>' \
+  && [ "$(echo "$LAND3H" | grep -o '<figure class="hw-chart hw-power">' | wc -l)" = "1" ] && ! echo "$LAND3H" | grep -q '<figure class="hw-chart hw-energy' \
+  && ok "each chart's newest reading stands in a pill above its line's end — Crickets 12 W on the one Power chart (named, the chart having several lines), 22.4 °C on the temperature's — 26 high, the text centred in it; no energy chart" || bad "the chart's pill is not drawn as it should be, or the power is not one chart"
 grep -q 'const tagW = 20 + tagText.length \* 8.4, tagH = 26' src/views/pages/public.js && grep -q 'body.landing .hw-tag text { font-family: var(--display); font-size: 13px; font-weight: 600;' public/aura.css \
   && ok "the pill is sized from its text — 8.4 per character and 20 beside, at 13px — so it holds the figure whole" || bad "the pill's size is not set from its text"
-echo "$LAND3H" | grep -q '<li><i style="background:[^"]*"></i><span class="hw-name">Kitchen · power draw</span><span class="hw-range">low [0-9.]* · high [0-9.]*</span></li>' && ! echo "$LAND3H" | grep -q 'hw-val' \
-  && ok "the legend names each line with its low and high for the day, and no reading beside it — the reading is on the chart" || bad "the legend still carries the reading, or lost its range"
+echo "$LAND3H" | grep -q '<li><i style="background:[^"]*"></i><span class="hw-name">Crickets</span><span class="hw-range">low [0-9.]* · high [0-9.]*</span></li>' && echo "$LAND3H" | grep -q '<span class="hw-name">Food</span><span class="hw-range">low [0-9.]* · high [0-9.]*</span></li>' \
+  && ! echo "$LAND3H" | grep -q 'hw-name">Crickets · power draw' && echo "$LAND3H" | grep -q '<title>Crickets · power draw</title>' && ! echo "$LAND3H" | grep -q 'hw-val' \
+  && ok "the legend names each line with its low and high for the day, and no reading beside it — Crickets, Food, the shared · power draw dropped (the line's tooltip keeps it)" || bad "the legend still carries the reading, lost its range, or keeps the shared suffix"
 # the charts fill their tiles: drawn for the width the page asks for (?w=, hardware.js measures its tiles — the type
 # keeps its size on a desk and on a phone alike), 720 wide until it does; the legend's lines side by side under the plot;
 # the folder the whole width of the dashboard at every desk width
@@ -2860,8 +2971,21 @@ let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
   const i = s.indexOf("data-spec=\""); if (i < 0) process.exit(2);
   const raw = s.slice(i + 11, s.indexOf("\"", i + 11)).replace(/&quot;/g, "\"").replace(/&#39;/g, "\x27").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
   const names = JSON.parse(raw).series.map((x) => x.name);
-  process.exit(names.includes("Cricket Temperature") && !names.includes("Kitchen · power draw") ? 0 : 1);
-});' && ok "the trends carry the cricket's temperature from the hardware but not the kitchen's power draw — a draw is not a trend" || bad "the kitchen's power draw is still among the trends, or the hardware is missing from them"
+  process.exit(names.includes("Cricket Temperature") && !names.some((n) => /power draw/.test(n)) && !names.includes("Food · energy used") && names.includes("Power · Food") ? 0 : 1);
+});' && ok "the trends carry the cricket's temperature from the hardware but no power draw — a draw is not a trend — and the food meter once, as Power · Food, not again as hardware" || bad "a power draw or a metered counter is among the hardware trends, or the hardware is missing from them"
+# the sixteen power entities in the sensor list, and the mock that stands in for Home Assistant answering for them
+node -e '
+const d = JSON.parse(require("fs").readFileSync("content/home-assistant.json", "utf8"));
+const ch = ["crickets", "science_1", "science_2", "living", "table", "food", "water", "hydroponics"], names = ["Crickets", "Science 1", "Science 2", "Living", "Table", "Food", "Water", "Hydroponics"];
+const by = Object.fromEntries(d.sensors.map((s) => [s.id, s]));
+const ok = ch.every((c, i) => { const w = by[`habitat_power_${c}_leistung`], e = by[`habitat_power_${c}_energie`];
+  return w && w.label === `${names[i]} · power draw` && w.unit === "W" && w.kind === "gauge" && e && e.label === `${names[i]} · energy used` && e.unit === "kWh" && e.kind === "counter"; })
+  && !d.sensors.some((s) => /kitchen/.test(s.id)) && d.meals.meter === "habitat_power_food_energie" && d.sensors.length === 20 && /THE POWER CHANNELS/.test(d._note);
+process.exit(ok ? 0 : 1);
+' && ok "content/home-assistant.json names the eight power channels twice over — habitat_power_<channel>_leistung (W, a gauge: Crickets · power draw, …) and _energie (kWh, a counter: … · energy used) — twenty sensors with the cricket's temperature, NO₂, O₂ and CO; the meals read the food meter; no kitchen entity; the note says how the pairs are shown" || bad "the sensor list does not carry the sixteen power entities as it should"
+curl -s -H "Authorization: Bearer x" localhost:8125/api/states/sensor.habitat_power_hydroponics_leistung | grep -q '"unit_of_measurement":"W"' && curl -s -H "Authorization: Bearer x" localhost:8125/api/states/sensor.habitat_power_crickets_energie | grep -q '"unit_of_measurement":"kWh"' \
+  && [ "$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer x" localhost:8125/api/states/sensor.habitat_power_kitchen_energie)" = "404" ] \
+  && ok "the mock Home Assistant answers for all sixteen (a draw in W, a meter in kWh each) and no longer for the kitchen" || bad "tools/mock-home-assistant.js does not serve the sixteen power entities"
 kill $SRV3 2>/dev/null; wait $SRV3 2>/dev/null
 kill $MOCK 2>/dev/null; wait $MOCK 2>/dev/null
 rm -rf "$DATA3" "$CONT3"

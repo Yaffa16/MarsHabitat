@@ -93,14 +93,14 @@ sits behind the same login.
 | Page | Route | Holds |
 |---|---|---|
 | The mission page | `/` | **The header** across the top — the wordmark, the run's badge, the three keys (Write to the crew → `/write#write`, Live Mission Dashboard → `/dashboard`, About) and a running line of the current activity, the next one, the habitat sensor's reading and the daily communication window · **three pages**: the way to the habitat with its sky; the note with the two calls under it (Send a message to the crew — approved messages are beamed into space; Follow what the crew is doing — live); the world's slowest chat (see *The landing page: three pages in the glass dress*) · **the composer's window and the floating Write key**, as on every public page (see *The composer's window*): the note's door and the slowest chat's door open the window here (`#write`); a phone's doors lead to the Write page's dock. Nothing of the board or the dashboard is on this page. The crew log, the media, the whole mission day by day and the reading matter live on their own pages (`/logbook`, `/media`, `/at-a-glance`, `/about`) |
-| Write to the crew | `/write` | **The message board, nothing else — under the header alone, no masthead.** The board is **a wall of notes** — the exchanges as flat cards on the page's ground, after the reference handed over: three across on a wide screen, two on a narrower one, one on a phone, every row starting level; the newest first; **never in a box: the wall flows with the page, and as the reader nears its end the page of exchanges before it is fetched and laid on** (`/api/board?before=`), until *The beginning of the correspondence*. A bar over the wall stays under the header all the way down: the board's name with its LIVE mark and the count, and the chips that narrow the wall (ALL, MY MESSAGES, a tag). The composer is **the window every page carries** (see *The composer's window*), opened by the floating **Write to the crew** key; `/write#write` opens the page with it open, and on this page the window folds away by itself once a message has arrived, so the note just sent is in view at the head of the wall. Each note: a disc with the writer's initials in a colour of the callsign's own, the callsign and *Earth*, the reference number; the message as the note's title with its tags right after it (*#question #humour*, keys that narrow the wall, in the message's own colour); the crew's answer as a quoted card of its own (the officer, *Crew answer · Mars habitat*, when), or the message's state; a foot with the distance the message has travelled (ticking) and the moment it was sent. See *The board*. Drawn for a phone first: the notes one under the other, the composer a dock at the foot of the screen, which lowers itself once a message has crossed; the phone's bar of keys leads here with **Write**, and so do the header's key and the sky's notes. `/messages`, `/board` and `/communicate` redirect here (`writePage`, `boardWall`, `noteCard` in `src/views/pages/public.js`; `public/board.js`) |
-| About | `/about` | The reading matter, one page: **About** (headed by the project's name, *MARS! – Mobilizing Awareness for Resilient Societies!*, in the words of October's text sheet `ABOUT_WEBSITE_TEXTS_FOR_YASHA`: what MARS! is and how it came to the Marktplatz in four paragraphs — the five prototype workshops and the concept exhibition linked to their pages at zkm.de — then *Why are we doing this?* with its line *Playacting Mars in the middle of the city*, *The Habitat – Red Dust City* and *The Insight*; the distance to Mars in the first of these is the station's own figure for the day the crew go in — `lib/orbital`, some 233 million km — not the sheet's 26 million, which is a close approach's; then the station's own *Messages sent to space* — two paragraphs on how a replied message goes out by radio through SpaceSpeak, after spacespeak.com/Learn/Science: the transmitters, the 2.4–5 GHz band, the directional antenna, the speed of light, then where the signal gets to and that it never stops (*More than Human* and *The readings* stood here until October asked for them to go). Beside the prose the mission's facts: the run, start and end at 17:00, the duration, the crew, eleven scientific missions — the sheet's figures — and no timezone), **What's inside the habitat** (the cutaway picture of the habitat handed over as two SVG files, its thirteen modules lighting up in colour under the hand or a finger, each with its card of what is in it — see *The habitat in section*; the line *AI generated image* under the picture) and **Who we are** (the three officers of the day in the sheet's order — Commanding, Health, Science — each under its brief, *Order & Communications*, *Health & Life Support*, *Research & Systems* (the role lines in `content/crew-and-inventory.json`, on the dashboard's Crew Moods too), with **the portrait of the person on shift that day** over the role once the shift plan names them — `content/shifts.json`: for each mission day, the surname in each role as `crew.json` spells the picture's file, the day's crew shown from 08:00 at the venue until 08:00 the next morning, never the nights; the file ships naming nobody, with `_example` for the shape — then the role and their state as mission control filed it; the crew's eleven portraits, each with its name as the photograph's file gives it — *Firstname_Lastname.jpg* — in the order of the surnames; and the producer — ZKM | Center for Art and Media Karlsruhe, *Department for Artistic Research & Development, ZKM | Hertzlab* (linked to zkm.de/en/hertzlab) — with the partners' logos — *In cooperation with* the Badisches Staatstheater and the Naturkundemuseum Karlsruhe, *Supporters* E.ON Foundation, LBBW Stiftung and the Innovationsfonds Kunst — small, each on a white tile), one after another under a row of three pills that jump to them (*What this is* — how the station behaves, with the path of a message in six steps — was the second section until October asked for it to go; `/what` and `/#what` land on the page) (`src/views/pages/info.js`; the pictures and `public/crew/crew.json` by `tools/crew-pictures.py`). The reading matter runs the whole width of its section; the mission's facts and the path of a message stand under it in rows. A phone's **About** key opens it; on a desk the header's *About* link does |
+| Write to the crew | `/write` | **The message board, nothing else — under the header alone, no masthead.** The board is **a wall of notes** — the exchanges as flat cards on the page's ground, after the reference handed over: three across on a wide screen, two on a narrower one, one on a phone, every row starting level; the newest first; **never in a box: the wall flows with the page, and as the reader nears its end the page of exchanges before it is fetched and laid on** (`/api/board?before=`), until *The beginning of the correspondence*. A bar over the wall stays under the header all the way down: the board's name with its LIVE mark and the count, and the chips that narrow the wall (ALL, MY MESSAGES, a tag). The composer is **the window every page carries** (see *The composer's window*), opened by the floating **Write to the crew** key; `/write#write` opens the page with it open, and on this page the window folds away by itself once a message has arrived, so the note just sent is in view at the head of the wall. Each note: a disc with the writer's initials in a colour of the callsign's own, the callsign, the reference number; the message as the note's title with its tags right after it (*#question #humour*, keys that narrow the wall, in the message's own colour); the crew's answer as a quoted card of its own (the officer, *Crew answer · Mars habitat*, when), or the message's state; a foot with the distance the message has travelled (ticking) and the moment it was sent. See *The board*. Drawn for a phone first: the notes one under the other, the composer a dock at the foot of the screen, which lowers itself once a message has crossed; the phone's bar of keys leads here with **Write**, and so do the header's key and the sky's notes. `/messages`, `/board` and `/communicate` redirect here (`writePage`, `boardWall`, `noteCard` in `src/views/pages/public.js`; `public/board.js`) |
+| About | `/about` | The reading matter, one page: **About** (headed by the project's name, *MARS! – Mobilizing Awareness for Resilient Societies!*, in the words of October's text sheet `ABOUT_WEBSITE_TEXTS_FOR_YASHA`: what MARS! is and how it came to the Marktplatz in four paragraphs — the five prototype workshops and the concept exhibition linked to their pages at zkm.de — then *Why are we doing this?* with its line *Playacting Mars in the middle of the city*, *The Habitat – Red Dust City* and *The Insight*; the distance to Mars in the first of these is the station's own figure for the day the crew go in — `lib/orbital`, some 233 million km — not the sheet's 26 million, which is a close approach's; then the station's own *Messages sent to space* — two paragraphs on how a replied message goes out by radio through SpaceSpeak, after spacespeak.com/Learn/Science: the transmitters, the 2.4–5 GHz band, the directional antenna, the speed of light, then where the signal gets to and that it never stops (*More than Human* and *The readings* stood here until October asked for them to go). Beside the prose the mission's facts: the run, start and end at 17:00, the duration, the crew, eleven scientific missions — the sheet's figures — and no timezone), **What's inside the habitat** (the cutaway picture of the habitat handed over as two SVG files, its thirteen modules lighting up in colour under the hand or a finger, each with its card of what is in it — see *The habitat in section*; the line *AI generated image* under the picture) and **Who we are** (the three officers of the day in the sheet's order — Commanding, Health, Science — each under its brief, *Order & Communications*, *Health & Life Support*, *Research & Systems* (the role lines in `content/crew-and-inventory.json`, on the dashboard's Crew Moods too), with **the portrait of the person on shift that day** over the role once the shift plan names them — `content/shifts.json`: for each mission day, the surname in each role as `crew.json` spells the picture's file, the day's crew shown from 08:00 at the venue until 08:00 the next morning, never the nights; the file ships naming nobody, with `_example` for the shape — then the role and their state as mission control filed it; the crew's thirteen portraits, each with its name as the photograph's file gives it — *Firstname_Lastname.jpg* (an umlaut in a surname is spelled out in the picture's file: Klöck → kloeck.jpg) — in the order of the surnames; and the producer — ZKM | Center for Art and Media Karlsruhe, *Department for Artistic Research & Development, ZKM | Hertzlab* (linked to zkm.de/en/hertzlab) — with the partners' logos — *In cooperation with* the Badisches Staatstheater and the Naturkundemuseum Karlsruhe, *Supporters* E.ON Foundation, LBBW Stiftung and the Innovationsfonds Kunst — small, each on a white tile), one after another under a row of three pills that jump to them (*What this is* — how the station behaves, with the path of a message in six steps — was the second section until October asked for it to go; `/what` and `/#what` land on the page) (`src/views/pages/info.js`; the pictures and `public/crew/crew.json` by `tools/crew-pictures.py`). The reading matter runs the whole width of its section; the mission's facts and the path of a message stand under it in rows. A phone's **About** key opens it; on a desk the header's *About* link does |
 | Dashboard | `/dashboard` | **The mission dashboard, nothing else — under the header alone, no masthead**: the head, the live images, the two doors, the strip of sols and the panels behind their index — the keys stacked vertically, on a desk as a rail at the left of the folder, on a phone over it: *Sensors*; *Daily Life* — **Today's Mission** first, then Today's Schedule, Today's Meal, Crew Moods; *Blogs* — the three daily blogs (see *The mission page*). The header's *Live Mission Dashboard* link, the phone's **Dashboard** key, the mission page's *Mission dashboard* door and every door of the habitat's modules lead here; `/crew`, `/day`, `/day/:n`, `/schedule` and `/habitat` redirect to their section of it. A phone leaves the strip of live images out (the newest pictures rise over the habitat on the mission page instead, and fill the Media page) |
-| Mission control | `/control` | Five tabs: **Messages** (the reply queue) first, then one per officer, and the habitat — which ends with the plan and the reset. The Science officer's tab opens with the day's **science mission**: the plan's mission for the day as *Default*, every sheet to choose instead (see *The mission is a folder of files*) |
+| Mission control | `/control` | Five tabs: **Messages** (the reply queue) first, then one per officer, and the habitat — which ends with the plan and the reset. The Science officer's tab opens with the day's **science mission**: one dropdown for the open day with the thirteen sheets, the plan's selected — as shipped in sequence, 00 on 15 October — and Save writes that day's entry of the plan (see *The mission is a folder of files*) |
 | At a Glance | `/at-a-glance` | **A booklet: one day per page, turned by scrolling or swiping sideways** — arrows either side, ← → on a keyboard, a day strip to jump, a `#day-n` link opens on that day. Each page: each day's crew log with its photographs, the schedule as run, the meals and their cost, the resources (every store at the close of the day), the power, the habitat's sensors as they last read that day (one tile per channel, the last reading large — no charts, no means or ranges), the crew's condition as sentences and the mission notes. No exchanges with Earth and no Also sent out block. Days ahead show the plan, and each page scrolls on its own like a page being read. Opened from the button under the mission dashboard, and from the navigation |
 | Crew log | `/logbook` | All thirteen days in order, each officer's entry where written and its placeholder where not — a day strip to jump by, a chip per voice. Opened from the Crew log panel on the dashboard, and from the nav |
 | Media | `/media` | Everything the crew send out — photographs and video — by day, with filters; `/media/:id` one item; `/media/export.zip` everything as one ZIP; `/media/manifest.json` every file with its SHA-256 |
-| Archive | `/archive` | **Mission control only.** Day-by-day permanent record — no messages, every reading; `/archive/day/:n`, **`/archive/export.pdf`** (the whole mission as one document), `/archive/export.md`, `/archive/export.json`, **`/archive/readings.zip`** (every reading ever pulled). `/archive/messages` is a separate, unlinked search over the message queue and is not part of the record |
+| Archive | `/archive` | **Mission control only.** Day-by-day permanent record — no messages, every reading; `/archive/day/:n`, **`/archive/export.pdf`** (the whole mission as one document), `/archive/export.md`, `/archive/export.json`, **`/archive/readings.zip`** (every reading ever pulled), `/archive/moods.csv` (every state filed for every officer). `/archive/messages` is a separate, unlinked search over the message queue and is not part of the record |
 | Screens | `/screens` | **The installation's screens** — open to anyone, unless `.env` sets `SCREENS_USER` and `SCREENS_PASSWORD`, which puts a sign-in of their own on them (`/screens/login`; mission control's session does not open them) — one piece of the station a page, full screen, the whole of it in one glance, nothing to scroll: `/screen/landing`, `/screen/habitat`, `/screen/board`, `/screen/mission`, `/screen/blogs`, `/screen/day`, `/screen/trends`, `/screen/media` (see *The installation's screens*). `/screens` lists them |
 
 Every address the public subpages used to have redirects to where the thing is now: `/messages`,
@@ -276,11 +276,11 @@ page load. Everything editable lives here.
 
 | Tab | Holds |
 |---|---|
-| **Messages** | The reply queue: awaiting reply · published · rejected · everything |
+| **Messages** | The reply queue: awaiting reply · published · rejected · everything — the latest message at the top in every view (October) |
 | **Commanding officer** | The **Commander Blog** at the top, then the officer's state |
 | **Science officer** | The **Daily Mission Report** at the top, then the state |
 | **Health officer** | The **Health Report** at the top, then the state |
-| **Habitat** | The daily schedule (a task with its name emptied is removed on save), the meals — Breakfast, Lunch, Dinner and **+ Add a meal** — **Steps taken** and **Calories consumed** (one line per officer each, both written to `crew-figures.json`; the crew's total is worked out on save and read on the station, not shown on the desk), the inventory levels, and the day's power figures (with the category names, editable in place). Every block's key reads **Save** and nothing more; Steps taken, Calories consumed and Power consumed head their blocks without naming the day (the day picker above says which day is open) |
+| **Habitat** | The daily schedule (a task with its name emptied is removed on save), the meals — Breakfast, Lunch, Dinner and **+ Add a meal** — **Steps taken** and **Calories consumed** (one line per officer each, both written to `crew-figures.json`; the crew's total is worked out on save and read on the station, not shown on the desk), the inventory levels, and the day's power figures — the eight metered channels, each row reading its energy meter (with the channel names, editable in place). Every block's key reads **Save** and nothing more; Steps taken, Calories consumed and Power consumed head their blocks without naming the day (the day picker above says which day is open) |
 
 Every composer is the same: paragraphs and pictures in a column, a ＋ between every two, no
 template buttons, and two buttons under it — **Publish**, which makes the text live, and
@@ -469,9 +469,9 @@ whichever suits the moment and it is live on the station within seconds:
 |---|---|---|
 | Resources — what is left of each store | `content/inventory-levels.json`: per day, per store, `{ "quantity": 618, "consumption": 46 }`. Only write the stores that changed; on the site the rest carry forward at their daily draw, while the record prints only what was counted | **Habitat** → Inventory levels, with the day picker on the day |
 | Calories and steps | `content/crew-figures.json`: per day, one entry per officer under `crew`, keyed by designation, and the crew's totals as the sums — `"5": { "crew": { "COMMUNICATION OFFICER": { "calories": 1720, "steps": 2200 }, "SCIENCE OFFICER": { … }, "HEALTH OFFICER": { … } }, "calories": 5010, "steps": 6420 }`. A day written with the totals alone still shows, as a total. The Habitat panel shows each officer's figure with the crew's total beneath; At a Glance carries the totals and the record each officer's figure with the totals as filed | **Habitat** → Steps taken and Calories consumed, day picker on the day |
-| Power consumed, by category | `content/power.json`: `"5": { "heating": 1.1, "food": 0.5, "lighting": 0.35, "electronics": 0.45, "other": 0.1 }` — kWh per day. The `categories` list above the days is editable too: rename a label, add or remove one; the key is the stable name in the record | **Habitat** → Power, day picker on the day; the name fields rename the categories everywhere. Every figure is locked behind an **Edit** key, which asks first — *These values are automated, are you sure you would like to edit?* |
+| Power consumed, by channel | `content/power.json`: eight categories as shipped — **Crickets, Science 1, Science 2, Living, Table, Food, Water, Hydroponics** — each naming its Home Assistant energy meter as `sensor` (`habitat_power_<channel>_energie`), so a day's figure is the meter's (the day's last reading less the day before's) unless one is filed by hand: `"5": { "food": 1.1, "living": 0.5 }` — kWh per day. The `categories` list above the days is editable too: rename a label, add one without a meter to count by hand, remove one; the key is the stable name in the record | **Habitat** → Power, day picker on the day; the name fields rename the categories everywhere. Every figure is locked behind an **Edit** key, which asks first — *These values are automated, are you sure you would like to edit?* |
 | Today's schedule | `content/schedule.json`: per day, `{ "time": "06:45", "label": "…", "detail": "…" }`; task status (done, active, skipped) is marked on the tab as the day runs | **Habitat** → Schedule |
-| Meals | `content/meals.json`: per day, slots BREAKFAST / LUNCH / DINNER and the meals added on the desk, EXTRA1, EXTRA2, … (each with the time it is served at, `"served": "16:30"`), with `kcal`, `water`, `prep`, `energy`. The power a meal drew is not this file's: it is the kitchen's energy meter read between the meal's hours, an added meal counting with the named meal of its hour (see *The meals' power*) | **Habitat** → Food plan — Breakfast, Lunch, Dinner and **+ Add a meal** |
+| Meals | `content/meals.json`: per day, slots BREAKFAST / LUNCH / DINNER and the meals added on the desk, EXTRA1, EXTRA2, … (each with the time it is served at, `"served": "16:30"`), with `kcal`, `water`, `prep`, `energy`. The power a meal drew is not this file's: it is the food meter (the Food channel's energy meter) read between the meal's hours, an added meal counting with the named meal of its hour (see *The meals' power*) | **Habitat** → Food plan — Breakfast, Lunch, Dinner and **+ Add a meal** |
 | Mission notes | `content/notes.json`: per day, `{ "kind": "LOG" \| "ANOMALY", "body": "…" }` | `POST /control/updates` (the notes composer) |
 | Blogs, findings, activities | written over the placeholders in `content/logbook.json` / `notes.json` | each officer's tab |
 
@@ -525,13 +525,13 @@ the running station.
 | `schedule.json` | The daily task schedule — as shipped, the crew's typical day (08:00 Shift Change … 22:00 Shift Change / Lights Out, seventeen tasks) written into every one of the thirteen days; change a day in mission control's **Habitat** → Schedule, or here |
 | `meals.json` | Meals per day, with energy, water and power cost — ships empty; filled from the Habitat tab, from the recipe book or by hand |
 | `inventory-levels.json` | What is left of each resource at the end of each day |
-| `power.json` | Power consumed per day in kWh, split by editable categories (heating, food, lighting, electronics, other as shipped) — drawn on the Habitat panel, in At a Glance, in the Trends and throughout the record |
+| `power.json` | Power consumed per day in kWh, by editable category — as shipped the eight metered channels, crickets, science 1 and 2, living, table, food, water, hydroponics, each reading its energy meter (`sensor`) — drawn on the Habitat panel, in At a Glance, in the Trends and throughout the record |
 | `logbook.json` | The crew's diary entries, by day and crew member |
 | `notes.json` | Mission notes, science findings, health activities and anomalies |
 | `sensors.json` | The monitored channels, with units, channel codes and thresholds |
 | `templates.json` | The prefilled text of the daily health activities (the `Default` entry under `HEALTH`) |
 | `recipes.json` | The recipe book: twelve recipes (two measured, ten samples) with prep time and per-serving kcal, nutrients, CO₂e and water footprint — what the food plan's dropdowns offer (see *The recipe book*) |
-| `missions.json` | The scientific missions, one a day — each sheet's words (number, title, central question, Morning / Afternoon / EVA, the question for the community hour in English and German, the material, the sheet's file), the day → mission map of the plan (`days`) and the Science officer's choices over it (`chosen`, written from the desk's Science tab, day → mission number — the plan is never touched); the sheets themselves are the PDFs in the `missions/` folder beside `content/`, served at `/missions/<file>` (see *Today's Mission* under *The mission page*) |
+| `missions.json` | The scientific missions, one a day, **written by `tools/missions-json.py` from the PDFs in `missions/`** — each sheet's words (number and title from the file name, 00 to 12; central question, Morning / Afternoon / EVA, the question for the community hour in English and German, the material, the sheet's file; `sheetNo` where the sheet prints another number, `placeholder` on a sheet that is a copy of another's PDF for now) and the day → mission map (`days`, as shipped in sequence — 00 on day 1, 15 October — and written from the desk's Science tab, day by day); the sheets themselves are the PDFs in the `missions/` folder beside `content/`, served at `/missions/<file>` (see *Today's Mission* under *The mission page*) |
 
 It ships with the plan and nothing invented: 13 Commander Blog slots (one a day, commanding officer only)
 with a cue each for the crew to write into, the typical daily schedule on every day (17 tasks ×
@@ -600,8 +600,8 @@ older file still loads, shown as *Other* and on the desk as an added meal.
 
 ### The meals' power
 
-No meal has its power typed in. Each meal's watt hours are the **kitchen's energy meter**,
-`sensor.habitat_power_kitchen_energie`, read through Home Assistant and stored like every other hardware reading
+No meal has its power typed in. Each meal's watt hours are the **food meter** — the Food channel's energy meter,
+`sensor.habitat_power_food_energie`, the kitchen's appliances — read through Home Assistant and stored like every other hardware reading
 (`src/lib/home-assistant.js`, `ha_reading`): the meter's rise between the meal's hours on its day — **breakfast
 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00** on the habitat's clock (on both sides of 25 October, when the
 clocks go back). **An added meal counts with one of the three** — the one whose hours begin last before the time it
@@ -609,14 +609,14 @@ is served at (a tea at 16:30 is dinner's; a snack at 14:30 lunch's; one at 05:30
 shows that meal's hours and figure, marked *with Dinner*; the record's totals count each window once (the named meal
 carries it, or the first added meal in a window with no named meal) — the desk sums nothing: each card carries its
 own figure and there is no day total under the meals. The figure stands with every meal wherever it is shown — on
-the desk's card (*216 Wh · the kitchen meter, 06:00–09:00*), on the dashboard's **Today's Meal** beside the kcal on
+the desk's card (*216 Wh · the food meter, 06:00–09:00*), on the dashboard's **Today's Meal** beside the kcal on
 the meal's own line, always with its unit and **0 Wh** when the meter has nothing for the hours (*436 kcal · 216 Wh*;
 *120 kcal · 373 Wh (with Dinner)* for an added meal; `layout.mealFigs`) — the hours themselves are not named on the
 dashboard and there is no line under the meals about the meter; the hours are in At a Glance (a line under each
 day's meals) and in the record (Markdown, JSON with `energySource`, `hours`, `servedAt` and `countsWith`, PDF) —
 *so far* on the desk and in the booklet while the hours are still running. Where the meter has a figure it replaces
 the file's `energy`, which stands in only where it has none. **Before the
-run**, Today's Meal shows the first day's plan with **today's** kitchen readings (NOW, the rehearsal day), so the
+run**, Today's Meal shows the first day's plan with **today's** meter readings (NOW, the rehearsal day), so the
 figures are there to be looked at during the rehearsals; from the first sol on, each day's meals read their own day.
 The meter and the hours live in the `meals` block of `content/home-assistant.json` (`meter`, the entity id without
 `sensor.`; `windows`, slot → `"HH:MM-HH:MM"`, `null` for a named meal that should carry no figure), hot-read like the
@@ -851,8 +851,9 @@ external node otherwise; `node` forces the node; `home-assistant` forces the sen
 poll of the sensor is a file in the readings log (`habitat/`), and the log's ZIP carries it
 flattened as `habitat.csv` (one row per stored reading) and `habitat-polls.csv` (each
 entity's state as fetched, every poll). `tools/mock-home-assistant.js` stands in for Home
-Assistant on a machine without the venue network, so the whole path can be rehearsed —
-the test suite does.
+Assistant on a machine without the venue network — the ENV Pro's entities, the light sensor and
+the sixteen power entities, a draw and a meter per channel — so the whole path can be
+rehearsed; the test suite does.
 
 ## Where the readings start
 
@@ -930,13 +931,22 @@ keeps the station on the server's localhost:8080 for the reverse proxy, exactly 
 port mapping put it. Neither the tunnel nor Home Assistant changes.
 
 The real devices inside the habitat — as configured now: the cricket terrarium's temperature
-(`m5_temperatur_cricket_temperature`), NO₂, O₂ and CO from the environment sensor, and the
-Shelly plug's power draw and energy meter — hang off a Home Assistant instance on the venue
-network. The station server polls its REST API and draws them **inside the Sensors tab**,
-below the node's tiles, the stores and the power, with no heading of their own (there is no
-separate Habitat hardware tab): **one day chart per kind of quantity** — temperature, power,
-air quality, … — midnight to midnight on the habitat's clock, the devices of a kind as lines
-on one axis in one unit (`hwChart` in `src/views/pages/public.js`). **Each chart fills its tile**:
+(`m5_temperatur_cricket_temperature`), NO₂, O₂ and CO from the environment sensor, and **the
+habitat's power on eight channels** — crickets, science 1, science 2, living, table, food, water,
+hydroponics — each a pair of entities, `habitat_power_<channel>_leistung` (the **draw in watts**, a
+gauge) and `habitat_power_<channel>_energie` (the **energy used in kWh**, a counter that only
+rises) — hang off a Home Assistant instance on the venue network. The station server polls its
+REST API and draws them **inside the Sensors tab**, below the node's tiles, the stores and the
+power, with no heading of their own (there is no separate Habitat hardware tab): **one day chart
+per kind of quantity** — temperature, power, air quality, … — midnight to midnight on the
+habitat's clock, the devices of a kind as lines on one axis in one unit (`hwChart` in
+`src/views/pages/public.js`). So **the eight draws are one Power chart** (W, the hourly average),
+all eight lines over the 24 hours of the day, named *Crickets, Science 1, Science 2, Living, Table,
+Food, Water, Hydroponics* in the legend — the shared *· power draw* of their labels is dropped
+there, the chart's title saying it (each line's tooltip keeps the whole label) — and **the eight
+energy meters are the Power consumed tile**: a row per channel with the energy it has used today
+in kWh (*energy used, from the meters*), through `content/power.json`, whose eight categories
+name the meters as `sensor`. **Each chart fills its tile**:
 it is drawn for the width the tile has — the page measures its tiles and asks `/api/hardware?w=`
 for that width (`public/hardware.js`, at once and again when the window is resized; the server
 draws for 240 to 1400 px, 720 until asked), so the plot spans the tile and its type keeps its size
@@ -945,13 +955,15 @@ other where it is not, the lines named side by side beneath the plot. **The curr
 on the chart itself**: the newest reading of the chart's first line stands in a pill above the
 line's end (under it where the line runs near the top of the plot, where the clock of the moment
 stands), the pill sized from its text so it holds the figure and its unit whole (*12 W*,
-*22.4 °C*); the legend beneath names each line in its colour with the day's low and high and
-carries no reading. The energy meter's day is on the Power panel (as kWh) rather than drawn
+*22.4 °C*) and named after its line where the chart has several (*Crickets 31 W*); the legend
+beneath names each line in its colour with the day's low and high and carries no reading. The
+energy meters' day is on the Power consumed tile (as kWh, a row per channel) rather than drawn
 here. The panel refreshes itself on the poll cycle without a reload; without JavaScript the
 server-rendered panel stands. In the **Trends** under the charts the hardware appears as one
 value per day — a gauge's daily mean, a meter's daily added amount — except a **power draw**
-(a gauge in watts, the kitchen socket's): a draw is not a trend, its day is on the meter's line
-as energy.
+(a gauge in watts, a channel's socket): a draw is not a trend, its day is on its meter's line
+as energy; and a meter a Power category reads is that category's line in the Power group
+(*Power · Food*), not a second line under Hardware.
 
 Three things will change, and none of them is code:
 
@@ -1782,10 +1794,12 @@ broadcast follows once the crew answer — the relay below — but the visitor's
 the send.)
 
 **What it is closest to.** A tap on a card (*Follow its journey ›* at the card's foot says
-so; `board.js`) opens two lines: *Your message is 6.1 times farther away than Saturn.* and under
+so, and **under the pointer the note lifts** — an orange edge, a glow, the key brightening, and a
+band sliding up over its foot, *Click to see how far it has travelled ›* — so nobody wonders
+whether a note is for clicking; `board.js`, `aura.css`) opens two lines: *Your message is 6.1 times farther away than Saturn.* and under
 it *Saturn is on average about 1.43 billion km from Earth — the ringed planet; its rings are
 mostly water ice…* Nothing on the panel is a link — no Wikipedia key, nothing to tap but ✕. The
-object is the last one the message has passed on its way out, from a list of **586 things in
+object is the last one the message has passed on its way out, from a list of **596 things in
 the sky** in `content/celestial.json`. A hundred and twenty of them lie within the first five
 light-minutes, so a message just sent passes something new every few seconds: the meteors
 burning up overhead, the Kármán line, Gagarin's orbit, the space stations, Hubble and the
@@ -1795,9 +1809,12 @@ sites, Apollo 13's and Artemis I's far points, the Lagrange points and the James
 the comets that came closest, the planets at their nearest. From there the list reaches through
 the two light-weeks a message travels during the run — the planets and their moons and the
 probes at them, the asteroids and comets, the dwarf planets of the Kuiper belt, Pioneer,
-Voyager and New Horizons at their 2026 distances, the heliopause, the light-hour and light-day
-marks (the two-light-week mark is 362.6 billion km), the far worlds Sedna, Farfarout and the
-Goblin, the hypothetical Planet Nine, the inner Oort cloud — and on past the stars, the nebulae,
+Voyager and New Horizons at their 2026 distances, the two interstellar comets 2I/Borisov and
+3I/ATLAS on their way out, the Pale Blue Dot, the Kuiper cliff, the heliopause, the light-hour and
+light-day marks (the two-light-week mark is 362.6 billion km), the far worlds Sedna, Farfarout and
+the Goblin, the far ends of the long orbits — Eris, comet Ikeya–Seki, 2012 VP113, comet NEOWISE,
+Sedna, 2013 SY99, 2017 OF201, the Goblin — the hypothetical Planet Nine, the Sun's gravitational
+lens focus, the inner Oort cloud — and on past the stars, the nebulae,
 clusters and galaxies to the oldest light there is, with thirty constellations (a constellation
 counts as its brightest star). Each row has its distance from Earth in kilometres (`ly` in
 light-years, `au` in astronomical units), its name and one line about it in English, German and
@@ -1879,20 +1896,27 @@ to, and a way to watch the relay work without an account.
 
 ## Crew states
 
-One scale: **Mood, calm ↔ angry**, filed in mission control as a row of five faces — calm,
-settled, level, tense, angry — like a waiting-room rating card. Picking a face shows the exact
-sentence the public will get; the number itself (0–100 behind the faces) is never published.
-The database columns are unchanged (`calm_tense` carries the value), so states filed under the
-older two- and four-axis schemes still read correctly.
+One scale: **Mood, thrilled ↔ angry**, filed in mission control as a row of five faces —
+**thrilled, happy, neutral, upset, angry** (October's five words; the scale read calm, settled,
+level, tense, angry until then) — like a waiting-room rating card, each face drawn for its word
+(thrilled beams with its eyes closed and an open grin, angry frowns under lowered brows).
+Picking a face shows the exact sentence the public will get — *thrilled — on top of the world*,
+*happy, in good spirits*, *neutral — neither up nor down*, *upset, not having a good day*,
+*angry, needing distance*, in German and French too (`src/lib/mood.js`, `src/lib/i18n.js`,
+mirrored in `public/control.js`); the number itself (0–100 behind the faces) is never published.
+The database columns are unchanged (`calm_tense` carries the value, 0 thrilled to 100 angry), so
+states filed under the older schemes still read correctly.
 
 **Every filing is recorded.** A state is never overwritten: each **Publish** adds a row to
 `crew_mood` — the officer, the moment (`effective_at`), the value and who filed it — and the
 public sees the newest. Under each officer's **Crew state** block mission control shows the
 **Record**: every state filed for that officer, the newest first, with the day and time it was
 filed (the venue's clock), the sol, the mood and its sentence, and the desk that filed it (the
-twelve latest on the page; the count says how many there are). **CSV · all officers** —
-`/control/moods.csv`, behind the sign-in — hands the whole record over, every officer, oldest
-first: `officer, date, time, sol, mood, value, reads, filed_by, filed_at_utc`. The mid-scale
+twelve latest on the page; the count says how many there are). The whole record goes out as
+**CSV from the Archive** (October: there, not under the officer's state) — **The crew's moods**
+under *Take a copy*, `/archive/moods.csv`, behind the sign-in like the rest of the record;
+`/control/moods.csv` leads there — every officer, oldest first: `officer, date, time, sol, mood,
+value, reads, filed_by, filed_at_utc` (`moodsCsv` in `src/lib/record-pdf.js`). The mid-scale
 state the content loader gives a new officer (filed by `content`, so the public crew card has
 something to show) was filed by nobody and is not part of the record. The same rows are in
 the archive's day pages and the PDF record.
@@ -2053,7 +2077,7 @@ tracks as rows over the folder.
 
 **Today's Mission** is the first folder of the *Daily Life* track (its key carries a flag;
 `/dashboard#mission-today` and the habitat's science station open it), set a size larger than the other panels:
-the day's scientific mission from `content/missions.json` — *MISSION No. 7 · Know Thy Neighbours*, its central question as the
+the day's scientific mission from `content/missions.json` — *MISSION No. 05 · Waterways* (two-figure numbers, 00 to 12), its central question as the
 lead, then the three parts of the day side by side (one under the other on a phone) — **Morning**,
 **Afternoon**, **EVA**, each under its name with a dot in its colour (cobalt, violet, Mars) — as
 the sheet gives them: a line in capitals is a heading, bullets and numbered lines are lists, a
@@ -2065,26 +2089,38 @@ writing box as a prompt** — *The crew's question today*, the question in the v
 where the sheet has it (German in the German interface, English otherwise), and *Answer it
 below — or ask the crew something of your own* — in the Write page's pop-up, hidden while a
 message crosses (`composerPrompt()` in `public.js`). The sheets are the
-twelve one-page PDFs in the **`missions/`** folder beside `content/`
-(`MARS_Mission_NN_….pdf`), served at `/missions/<file>` (not linked from the panel) — PDFs only, no listing; under Docker the
-folder is mounted like `content/` (`docker-compose.yml`) and copied into the image (`Dockerfile`),
-so the venue's baked image carries it. `missions.json` says which sheet is which day's (`days`:
-day → mission number, **the plan's default**) and carries each sheet's words (`missions`): **twelve
-sheets for thirteen days** — numbers 03 and 05 are not in the folder — so the twelve stand on days
-1–12 in the folder's order and day 13 reads *No mission filed for SOL 013* until one is assigned;
-move them in `days` as the production decides. **The Science officer can choose another sheet for
-a day on the desk**: the Science tab opens with the day's **Science mission** block — a list with
-*Default — Mission No. 4 · Human Resource Audit* (the plan's) first and every sheet to choose
-instead, and a Save key (`/control/mission`; `missionBlock` in `src/views/control/index.js`). A
-choice is written to `missions.json` as `chosen` (day → mission number) beside `days`, which is
-never touched; choosing *Default* again removes the day's entry. Wherever the day's mission is
-shown — the dashboard, the composer's prompt, the mission screen, the archive, the dome's science
-station — `chosen` wins over `days` for that day (`content.missionForDay`, `content.missionChoice`).
-The change is noted in the audit log and in the station's edit notices like the schedule's. A sheet edited later needs its words edited in
-`missions.json` too (the PDF is linked, not read). The words are shown as written, like the
-schedule's; the labels are in the visitor's language. Before the run the panel shows day 1's
-mission, after it the last day's (`missionPanel` in `src/views/pages/public.js`,
-`content.missionForDay`).
+**thirteen one-page PDFs in the `missions/` folder** beside `content/`, `MARS_Mission_NN_Title.pdf`,
+**numbered 00 to 12 as the production counts them — 00 is the first day's, 15 October, and they
+follow the days in sequence to 12 on 27 October** — served at `/missions/<file>` (not linked from
+the panel) — PDFs only, no listing; under Docker the folder is mounted like `content/`
+(`docker-compose.yml`) and copied into the image (`Dockerfile`), so the venue's baked image carries
+it. **`content/missions.json` is written from the sheets by `tools/missions-json.py`**
+(`python3 tools/missions-json.py`; needs `pdfplumber`): the tool reads every sheet in the folder by
+position — the number and title from the file name, the central question, the three columns line
+by line (a heading alone, a bullet or a → pointer with its wrapped words joined back, a sentence
+that ends on a line as a line of its own, a word broken at a line's end made whole), the question
+for the community hour parted into English and German, the material — and writes each sheet's
+words (`missions`) and the day → mission map (`days`, the sequence). Where a sheet prints another
+number than its file carries (the sheets were exported under an older numbering — *Waterways*
+prints 6, its file is 05) the printed one is kept as `sheetNo`, so the mismatch is plain until the
+sheet is re-exported; a sheet that is byte for byte another's PDF (as 00 *Setup Habitat After
+Touchdown* and 12 *Habitat Teardown* are, copies of 01 *Energy Budget* until they are written)
+keeps its title from the file name, carries no words, and names the file it copies as
+`placeholder` — the panel then shows the title and *The sheet for this mission is still to come*.
+Run the tool again whenever a sheet changes or is added. **The Science officer sets a day's
+mission on the desk**: the Science tab opens with the **Science mission** block for the day open
+on the desk (the day picker chooses the day) — the day and its date on one line, **one dropdown**
+of the thirteen sheets (*Mission No. 05 · Waterways*; a sheet to come marked so; *— none —* for a
+day without one), the plan's mission selected, and a Save key, no words over it (`/control/mission`;
+`missionBlock` in `src/views/control/index.js`). Save writes that day's entry of `days` in
+`missions.json` (none takes it out), which stands wherever the day's mission is shown — the
+dashboard, the composer's prompt, the mission screen, the archive, the dome's science station
+(`content.missionForDay`, `content.missionPlan`);
+the older `chosen` entry beside the plan is gone — the plan itself is what the officer edits. The
+change is noted in the audit log and in the station's edit notices like the schedule's. The words
+are shown as written, like the schedule's; the labels are in the visitor's language. Before the
+run the panel shows day 1's mission, after it the last day's (`missionPanel` in
+`src/views/pages/public.js`, `content.missionForDay`).
 
 During pre-launch the readings show the countdown in place of the mission day and the day rail
 and strip carry no marker.
@@ -2117,13 +2153,17 @@ top of the window stays where it was. Over the wall **a bar stays under the head
 down: *Message Board* with its LIVE mark and the count (*67 exchanges · 72 sent*), the chips that
 narrow the wall — **ALL**, **MY MESSAGES** (with the count of your own still waiting), one per tag
 — and at the right the orange **Write to the crew** key, which brings the composer back into view
-and the hand into its box. On a phone the bar sticks under the top bar with the chips in one
+and the hand into its box. A chosen tag puts every other note aside (`display: none !important`
+on a hidden note, so the dark theme's own rule for the note cannot keep it standing — until
+October it did, and the chips seemed to do nothing) and the wall fetches the older pages until the
+tag's notes are on it, or says *No messages match this filter* when the correspondence has none. On a phone the bar sticks under the top bar with the chips in one
 sideways row; the Write key is the bar's.
 
-**A note**: a head with a disc carrying the writer's initials in a colour of the callsign's own
-(a hue from its letters, so one writer's notes share it), the callsign and *Earth* (*Earth · you*
-on your own), a `NEW` pill while the answer is under six hours old, and the `Ref` number; a folded
-corner at the top right (in Mars on your own); the message as the note's title; **CREW ANSWER**
+**A note** — white on the drafting paper by day, a graphite (`#303036`) a good step lighter than the night's near-black ground, so every message box stands apart from the page (October asked for the difference): a head with a disc carrying the writer's initials in a colour of the callsign's own
+(a hue from its letters, so one writer's notes share it), the callsign (no *Earth* or *Earth · you*
+beside it — October asked for the label to go; your own notes are known by their fold), a `NEW`
+pill while the answer is under six hours old, and the `Ref` number; a folded corner at the top
+right (in Mars on your own); the message as the note's title; **CREW ANSWER**
 and the crew's reply, or the message's state (`IN TRANSIT` while it crosses, then `AWAITING
 REPLY`) where the answer will stand; a foot with the distance the message has travelled — the
 orbit sign, *7.06 billion km · 7 hours ago ›*, ticking (`spaceLine` compact; a tap on the note
@@ -2456,8 +2496,11 @@ public/                  the stylesheets (station.css, aura.css, sheet.css over 
                          (mission/, unused now)
 tools/                   sensor simulator, mock Home Assistant, backup script, media verifier, end-to-end test,
                          habitat-modules.py (the habitat's scene and the modules' cut-outs from the two SVG files handed
-                         over; run it again when either file is replaced), trace-inside.py (the earlier linework, unused)
-missions/                the scientific missions' sheets, one PDF a mission (served at /missions/<file>; which sheet
-                         is which day's by the plan (days), which the Science officer chose instead (chosen), and
-                         each sheet's words, are in content/missions.json)
+                         over; run it again when either file is replaced), missions-json.py (content/missions.json
+                         from the sheets in missions/; run it again when a sheet changes), trace-inside.py (the
+                         earlier linework, unused)
+missions/                the scientific missions' sheets, one PDF a mission, MARS_Mission_NN_Title.pdf, 00 to 12
+                         (served at /missions/<file>; each sheet's words and which sheet is which day's — the plan
+                         (days), set by the Science officer on the desk — are in content/missions.json, written
+                         from the sheets by tools/missions-json.py)
 ```

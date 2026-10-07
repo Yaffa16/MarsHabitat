@@ -129,17 +129,20 @@ function inventoryGauges(inventory, { compact = false, strip = false, cells = fa
 }
 
 /**
- * Power consumed inside the habitat, one day, split by category — heating,
- * food, lighting, electronics, other, as content/power.json shapes them. A
- * bar per category against the day's biggest draw, the figure at its end,
- * the day's total underneath. A day nothing has been filed for says so
- * rather than showing zeros: an uncounted day and a day of no draw are not
- * the same thing.
+ * Power consumed inside the habitat, one day, by channel — the eight metered
+ * channels, crickets, science 1 and 2, living, table, food, water and
+ * hydroponics, as content/power.json shapes them (each category reads its
+ * energy meter, habitat_power_<channel>_energie, in kWh). A bar per category
+ * against the day's biggest draw, the figure at its end, the day's total
+ * underneath. A day nothing has been read or filed for says so rather than
+ * showing zeros: an uncounted day and a day of no draw are not the same
+ * thing.
  */
 function powerBars(categories, T = same) {
   const filed = categories.filter((c) => c.kwh != null);
   if (!filed.length) {
-    return `<div class="empty" style="margin-top:10px">${T(categories.some((c) => c.sensor) ? 'No reading from the meter yet today, and nothing filed by the crew' : 'Nothing filed for this day — the crew count the day’s power as it ends')}</div>`;
+    const metered = categories.filter((c) => c.sensor).length;
+    return `<div class="empty" style="margin-top:10px">${T(metered > 1 ? 'No reading from the meters yet today, and nothing filed by the crew' : metered ? 'No reading from the meter yet today, and nothing filed by the crew' : 'Nothing filed for this day — the crew count the day’s power as it ends')}</div>`;
   }
   const max = Math.max(...filed.map((c) => c.kwh), 0.001);
   const total = filed.reduce((s, c) => s + c.kwh, 0);
@@ -971,9 +974,21 @@ function hwChart(hw, group, members, tz, T = same, W = HW_W, H = HW_H) {
   // The night, 22:00 to 06:00 at the venue, a darker band either side of the day.
   const band = (h0, h1) => `<rect x="${sx(hw.since + h0 * 3600000).toFixed(1)}" y="${padT}" width="${(sx(hw.since + h1 * 3600000) - sx(hw.since + h0 * 3600000)).toFixed(1)}" height="${ih}" class="hw-night"/>`;
   const now = hw.liveNow && hw.liveNow > hw.since && hw.liveNow < hw.now ? sx(hw.liveNow) : null;
-  // The newest reading of the first line, in a tag above its end.
+  // The legend names each line. Where every line's label ends in the same
+  // " · quantity" (the eight power channels, "Crickets · power draw",
+  // "Science 1 · power draw", …), the legend drops it: the chart's title
+  // already says what is drawn, and the names read as names — Crickets,
+  // Science 1, Science 2, … The line's own tooltip keeps the whole label.
+  const suffix = (l) => { const i = String(l).lastIndexOf(' · '); return i > 0 ? String(l).slice(i) : null; };
+  const shared = series.length > 1 && suffix(series[0].s.label) && series.every((r) => suffix(r.s.label) === suffix(series[0].s.label)) ? suffix(series[0].s.label) : null;
+  const legendName = (l) => (shared ? String(l).slice(0, -shared.length) : l);
+  // The newest reading of the first line, in a tag above its end — named
+  // after the line where the chart has more than one (Crickets 44 W; the
+  // name is the label's first part, before any " · "), so the figure is
+  // not taken for the chart's.
   const lead = series[0];
-  const tagText = `${hwNum(lead.s.kind === 'counter' && lead.s.today != null ? lead.s.today : lead.s.value, lead.s.decimals)}${lead.s.unit ? ' ' + lead.s.unit : ''}`;
+  const pillName = (l) => String(l).split(' · ')[0];
+  const tagText = `${series.length > 1 ? pillName(lead.s.label) + ' ' : ''}${hwNum(lead.s.kind === 'counter' && lead.s.today != null ? lead.s.today : lead.s.value, lead.s.decimals)}${lead.s.unit ? ' ' + lead.s.unit : ''}`;
   // the tag: a pill wide and tall enough to hold the figure (the type is larger than the plot's own: aura.css, .hw-tag)
   // over the line's end, or under it where the line runs near the top of the plot (the clock of the moment stands there)
   const tagW = 20 + tagText.length * 8.4, tagH = 26, tagX = Math.min(W - padR - tagW, Math.max(padL, lead.ex - tagW / 2)), tagY = lead.ey - 38 >= padT + 2 ? lead.ey - 38 : lead.ey + 12;
@@ -1000,7 +1015,7 @@ function hwChart(hw, group, members, tz, T = same, W = HW_W, H = HW_H) {
       <text x="${(tagX + tagW / 2).toFixed(1)}" y="${(tagY + tagH / 2).toFixed(1)}" text-anchor="middle" dominant-baseline="central">${esc(tagText)}</text></g>
   </svg>
   <ul class="hw-legend">${series.map((r) => `
-    <li><i style="background:${r.colour}"></i><span class="hw-name">${esc(r.s.label)}</span>${
+    <li><i style="background:${r.colour}"></i><span class="hw-name">${esc(legendName(r.s.label))}</span>${
       r.s.kind === 'counter' ? '' : `<span class="hw-range">${T('low')} ${hwNum(r.lo, r.s.decimals)} · ${T('high')} ${hwNum(r.hi, r.s.decimals)}</span>`}</li>`).join('')}
   </ul>
 </figure>`;
@@ -1039,10 +1054,13 @@ function powerTileInner(ctx, power) {
   const meterNow = (c) => { try { return require('../../lib/home-assistant').counterToday(c.sensor); } catch { return null; } };
   const powerToday = power.categories.map((c) => ({ ...c, kwh: pre && c.sensor ? meterNow(c) : pwrOf[c.key] ?? null }));
   const pwrMetered = power.categories.some((c) => c.sensor);
+  // every category on a meter: the energy used, channel by channel — the habitat's eight meters as shipped;
+  // a category without one is counted by the crew, and the line says so
+  const pwrAllMetered = pwrMetered && power.categories.every((c) => c.sensor);
   const pwrSub = pre
     ? (pwrMetered ? T('Today · before the run') : T('Planned for day 01'))
     : `${T('Today')} · SOL ${String(m.clampedDay).padStart(2, '0')}`;
-  return `<span class="sub">${pwrSub} · ${T(pwrMetered ? 'from the meter and the crew' : 'counted by the crew')} · kWh</span>
+  return `<span class="sub">${pwrSub} · ${T(pwrAllMetered ? 'energy used, from the meters' : pwrMetered ? 'from the meter and the crew' : 'counted by the crew')} · kWh</span>
           ${powerBars(powerToday, T)}`;
 }
 
@@ -1262,9 +1280,12 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
       // The habitat's own hardware, through Home Assistant: one line per
       // device, one value per day — a gauge's daily mean, a meter's daily
       // added amount. Appears from the first day a reading was stored. A
-      // power draw (a gauge in watts — the kitchen's socket) is not a trend:
-      // its day is on the meter's line, as energy.
-      ...hardwareDaily.filter((h) => Object.keys(h.points).length && !(h.kind === 'gauge' && /^k?w$/i.test(String(h.unit || '')))).map((h) => ({
+      // power draw (a gauge in watts — a channel's socket) is not a trend:
+      // its day is on its meter's line, as energy; and a meter that a Power
+      // category reads (content/power.json, `sensor`) is that category's
+      // line in the Power group below, not a second one here.
+      ...hardwareDaily.filter((h) => Object.keys(h.points).length && !(h.kind === 'gauge' && /^k?w$/i.test(String(h.unit || '')))
+          && !power.categories.some((c) => c.sensor === h.id)).map((h) => ({
         id: 'hw-' + h.id, name: h.label, unit: h.unit, group: T('Hardware'), points: h.points })),
       ...items.map((it) => ({ id: 'store-' + it.key, name: it.label, unit: it.unit, group: T('Resources'),
         scaleMax: it.start_quantity || it.quantity || 1, ...level(it.key) })),
@@ -1470,8 +1491,8 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
   const blogCommander = blogPanel({ id: 'blog-commander', title: T('Commander Blog'),
     posts: commanderToday, empty: 'No commander blog yet for' });
 
-  /* ---- today's meals: each with its kcal and, beside it, the power it drew — the kitchen's energy meter read between
-     the meal's hours (breakfast 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00; an added meal counts with the one of
+  /* ---- today's meals: each with its kcal and, beside it, the power it drew — the food meter (the Food channel's energy
+     meter) read between the meal's hours (breakfast 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00; an added meal counts with the one of
      its hour), data.mealsFor — always with its unit, 0 Wh where the meter has nothing yet. The meta line sums the day:
      kcal, the metered watt hours ("so far" while a meal's hours still run), CO₂e from the recipe book. */
   // the day's watt hours: each window once — the meal that carries it (data.mealsFor), not an added meal counting with it
@@ -1542,10 +1563,13 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
      index of folders — the mission's number and title, its central question, the three parts of the day (Morning,
      Afternoon, EVA) as the sheet gives them, the question for the community hour in English and German as the sheet has
      it. (The sheets themselves, PDFs in missions/, are served at /missions/<file> but not linked from here.) The words
-     are the sheet's own, shown as written, like the schedule's; the labels are in the visitor's language. */
+     are the sheet's own, shown as written, like the schedule's; the labels are in the visitor's language. The number is
+     printed with two figures — 00 is the first day's. A sheet still to be written (`placeholder`, a copy of another's PDF
+     for now) shows its title and says the sheet is to come. */
   const missionPanel = (() => {
+    const missionNo = (no) => String(no).padStart(2, '0');   // the number as the production counts them: 00 on the first day
     const head = `<header class="dpanel-head"><div class="dpanel-title"><h3>${T('Today’s Mission')}</h3></div>
-        <span class="dpanel-meta">SOL ${day3} · ${esc(shortDay(blogDate))}${mission ? ` · ${T('Mission No.')} ${mission.no}` : ''}</span></header>`;
+        <span class="dpanel-meta">SOL ${day3} · ${esc(shortDay(blogDate))}${mission ? ` · ${T('Mission No.')} ${missionNo(mission.no)}` : ''}</span></header>`;
     if (!mission) return `<section class="dpanel span-12 mission-today" id="mission-today" aria-label="${esc(T('Today’s Mission'))}">${head}
       <div class="dpanel-body"><div class="empty">${T('No mission filed for')} SOL ${day3}${pre ? ` — ${T('occupied from')} ${esc(m.startLabel)}` : ''}</div></div></section>`;
     // a part's lines: a line in capitals is a heading, bullets and numbered lines are lists, → a pointer, the rest paragraphs
@@ -1576,9 +1600,10 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
     return `<section class="dpanel span-12 mission-today" id="mission-today" aria-labelledby="mission-today-title">${head}
       <div class="dpanel-body mission-body">
         <div class="mission-lead">
-          <span class="mission-no">${T('Mission No.')} ${mission.no}</span>
+          <span class="mission-no">${T('Mission No.')} ${missionNo(mission.no)}</span>
           <h4 class="mission-title" id="mission-today-title">${esc(mission.title)}</h4>
           ${mission.question ? `<p class="mission-q"><span class="mission-k">${T('Central question')}</span>${esc(mission.question)}</p>` : ''}
+          ${mission.placeholder ? `<p class="note mission-tocome">${T('The sheet for this mission is still to come.')}</p>` : ''}
         </div>
         <div class="mission-parts">${part('morning', 'Morning')}${part('afternoon', 'Afternoon')}${part('eva', 'EVA')}</div>
         <div class="mission-foot">
@@ -1856,8 +1881,9 @@ function messageCard(m, tz, T = same, { replyMeta = true, wall = false } = {}) {
 }
 
 /* A note on the wall (the Write page's board, boardWall; messageCard with `wall`): the card after the handed-over
-   reference — a flat card with a folded corner, its head a disc with the writer's initials, the callsign and Earth
-   beside it, the reference number at the right; the message as the note's title, and right after it its tags, each a
+   reference — a flat card with a folded corner, its head a disc with the writer's initials and the callsign (no
+   Earth · you beside it — October asked for the label to go; the viewer's own notes are known by their fold in
+   Mars), the reference number at the right; the message as the note's title, and right after it its tags, each a
    key that narrows the wall to that tag (board.js), in the message's own colour; under them the crew's answer as a
    quoted card of its own, after the second reference — the crew's disc, who answered and where, the day and time of the
    answer at its right, the answer under them — or the message's state where the answer will stand; a foot with the
@@ -1875,7 +1901,7 @@ function noteCard(m, { fresh, tags, st, sent, replied, T }) {
       m.mine && m.pending ? ' data-pending="1"' : ''}>
     <header class="note-head">
       <span class="note-av" aria-hidden="true" style="--av:${h}">${esc(initials)}</span>
-      <span class="note-who"><span class="cs">${esc(cs)}</span><span class="note-role">${m.mine ? T('Earth') + ' · ' + T('you') : T('Earth')}</span></span>
+      <span class="note-who"><span class="cs">${esc(cs)}</span></span>
       ${fresh ? `<span class="badge new">${T('New')}</span>` : ''}
       <span class="card-ref">Ref ${String(m.id).padStart(5, '0')}</span>
     </header>
@@ -1895,6 +1921,7 @@ function noteCard(m, { fresh, tags, st, sent, replied, T }) {
       ${spaceLine(m, T, { compact: true })}
       <time class="note-when" datetime="${esc(m.submitted_at)}">${esc(sent)}</time>
     </footer>
+    ${Number.isNaN(Date.parse(m.submitted_at || '')) ? '' : `<span class="note-hint" aria-hidden="true">${T('Click to see how far it has travelled')} ›</span>`}
   </article>`;
 }
 /** Two letters for a disc: the initials of a name's first two words (Commanding Officer → CO), or its first two letters. */

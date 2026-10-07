@@ -187,7 +187,7 @@ function stationData(ctx) {
     allDays,
     logDays,
     entryCounts: { published: logDays.reduce((n, d) => n + d.written, 0), days: logDays.filter((d) => d.written).length },
-    // Today's Meal shows the current day's meals with the power the kitchen meter read for each; before the run the panel
+    // Today's Meal shows the current day's meals with the power the food meter read for each; before the run the panel
     // shows the first day's plan, and the meter is read for today — the rehearsal day, NOW (data.mealsFor, powerDay)
     today: data.day(ctx.mission.clampedDay, { powerDay: ctx.mission.phase === 'PRE_LAUNCH' ? 0 : null }),
     // The day's scientific mission, from content/missions.json (Today's Mission, at the head of the dashboard).
@@ -616,6 +616,13 @@ app.get('/archive/export.json', requireControl, (req, res) => {
   archive.rollupPending();
   res.attachment(`mars-station-${new Date().toISOString().slice(0, 10)}.json`)
      .json(archive.fullExport());
+});
+
+/* The record of the crew's states as CSV — every state filed for every officer, oldest first — from the Archive's
+   Take a copy, behind the sign-in like the rest of the record (October: in the archive, not under the officer's state). */
+app.get('/archive/moods.csv', requireControl, (req, res) => {
+  res.type('text/csv; charset=utf-8').attachment(`mars-station-crew-states-${new Date().toISOString().slice(0, 10)}.csv`)
+    .send(require('./lib/record-pdf').moodsCsv());
 });
 
 app.get('/archive/messages', requireControl, (req, res) => {

@@ -527,7 +527,7 @@ function slotName(T, slot) {
 
 /**
  * A meal's figures on one line for the public pages: kcal, the water the plan
- * names (when it does), and the power it drew — the kitchen's energy meter
+ * names (when it does), and the power it drew — the food meter (the Food channel's)
  * read between the meal's hours (data.mealsFor), as watt hours with the unit
  * always, 0 Wh where the meter has nothing (yet) for them; an added meal
  * shows the figure of the named meal it counts with, marked so.
@@ -540,7 +540,7 @@ function mealFigs(m, T = (x) => x) {
   return parts.join(' · ');
 }
 
-/** The hours the kitchen meter is read for each named meal, as a line: "Breakfast 06:00–09:00 · Lunch 09:00–14:00 · …". */
+/** The hours the food meter is read for each named meal, as a line: "Breakfast 06:00–09:00 · Lunch 09:00–14:00 · …". */
 function mealHoursLine(T, windows = {}) {
   return Object.entries(windows || {}).map(([slot, w]) => `${slotName(T, slot)}\u00a0${String(w).replace('-', '–')}`).join(' · ');
 }

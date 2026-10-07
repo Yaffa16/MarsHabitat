@@ -1,6 +1,6 @@
 'use strict';
 /**
- * The celestial objects a message's distance is compared with — content/celestial.json: some 590 things in the sky, from
+ * The celestial objects a message's distance is compared with — content/celestial.json: some 600 things in the sky, from
  * the meteors burning up 90 km overhead to the oldest light there is, each with its distance from Earth in kilometres,
  * what kind of distance that is (how: the height a satellite orbits at, how close an asteroid passed, a planet's mean
  * distance, a probe's distance this year, a light-time mark…), its name, and one line about it, in English, German and

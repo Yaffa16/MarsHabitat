@@ -14,22 +14,23 @@
  */
 
 /**
- * One scale: how they are. Calm at one end, angry at the other, filed as a
- * row of five faces in mission control — more resolution than that was more
- * than anyone can honestly report at the end of a working day.
+ * One scale: how they are. Thrilled at one end, angry at the other — thrilled,
+ * happy, neutral, upset, angry (October's five words) — filed as a row of five
+ * faces in mission control; more resolution than that was more than anyone can
+ * honestly report at the end of a working day.
  *
  * The database columns are unchanged: `calm_tense` carries the value
- * (0 = calm, 100 = angry), and the older columns still read correctly for
- * anything filed under the earlier schemes.
+ * (0 = thrilled, 100 = angry; it was calm to angry before, and the older
+ * columns still read correctly for anything filed under the earlier schemes).
  */
 const AXES = [
   {
-    key: 'calm_tense', low: 'CALM', high: 'ANGRY', label: 'Mood',
+    key: 'calm_tense', low: 'THRILLED', high: 'ANGRY', label: 'Mood',
     bands: [
-      'calm, at ease with the day',
-      'settled, working steadily',
-      'level — neither calm nor cross',
-      'tense, short with the others',
+      'thrilled — on top of the world',
+      'happy, in good spirits',
+      'neutral — neither up nor down',
+      'upset, not having a good day',
       'angry, needing distance',
     ],
   },
@@ -41,10 +42,10 @@ const bandIndex = (v) => (v < 20 ? 0 : v < 40 ? 1 : v < 60 ? 2 : v < 80 ? 3 : 4)
 function condition(mood) {
   if (!mood) return 'NO DATA';
   const v = mood.calm_tense;
-  if (v < 20) return 'CALM';
-  if (v < 40) return 'SETTLED';
-  if (v < 60) return 'LEVEL';
-  if (v < 80) return 'TENSE';
+  if (v < 20) return 'THRILLED';
+  if (v < 40) return 'HAPPY';
+  if (v < 60) return 'NEUTRAL';
+  if (v < 80) return 'UPSET';
   return 'ANGRY';
 }
 
@@ -69,13 +70,14 @@ function translate(mood) {
   return { condition: condition(mood), axes, lines: axes.map((a) => a.text), load, summary };
 }
 
-/** The five faces, calm to angry, as inline SVG for wherever the scale is drawn. */
+/** The five faces, thrilled to angry, as inline SVG for wherever the scale is drawn: thrilled beams with its eyes
+ *  closed in delight and an open grin, happy smiles, neutral is level, upset frowns, angry frowns under lowered brows. */
 const FACES = [
-  { v: 0,   name: 'Calm',    mouth: 'M10 19 q6 5 12 0', eyes: 'arc' },
-  { v: 25,  name: 'Settled', mouth: 'M11 19 q5 3 10 0', eyes: 'dot' },
-  { v: 50,  name: 'Level',   mouth: 'M11 20 h10',       eyes: 'dot' },
-  { v: 75,  name: 'Tense',   mouth: 'M11 21 q5 -4 10 0', eyes: 'dot' },
-  { v: 100, name: 'Angry',   mouth: 'M10 22 q6 -5 12 0', eyes: 'brow' },
+  { v: 0,   name: 'Thrilled', mouth: 'M9.5 18 q6.5 8 13 0 z', eyes: 'arc', fill: true },
+  { v: 25,  name: 'Happy',    mouth: 'M11 19 q5 4 10 0',   eyes: 'dot' },
+  { v: 50,  name: 'Neutral',  mouth: 'M11 20 h10',         eyes: 'dot' },
+  { v: 75,  name: 'Upset',    mouth: 'M11 21 q5 -4 10 0',  eyes: 'dot' },
+  { v: 100, name: 'Angry',    mouth: 'M10 22 q6 -5 12 0',  eyes: 'brow' },
 ];
 function faceSvg(f) {
   const eyes = f.eyes === 'arc'
@@ -83,8 +85,8 @@ function faceSvg(f) {
     : f.eyes === 'brow'
       ? '<circle cx="12" cy="14" r="1.4" fill="currentColor" stroke="none"/><circle cx="20" cy="14" r="1.4" fill="currentColor" stroke="none"/><path d="M9.5 10.5 l5 2"/><path d="M22.5 10.5 l-5 2"/>'
       : '<circle cx="12" cy="13" r="1.4" fill="currentColor" stroke="none"/><circle cx="20" cy="13" r="1.4" fill="currentColor" stroke="none"/>';
-  return `<svg viewBox="0 0 32 32" aria-hidden="true" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none">
-    <circle cx="16" cy="16" r="13"/>${eyes}<path d="${f.mouth}"/></svg>`;
+  return `<svg viewBox="0 0 32 32" aria-hidden="true" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <circle cx="16" cy="16" r="13"/>${eyes}<path d="${f.mouth}"${f.fill ? ' fill="currentColor" fill-opacity=".35"' : ''}/></svg>`;
 }
 
 module.exports = { AXES, translate, condition, FACES, faceSvg };

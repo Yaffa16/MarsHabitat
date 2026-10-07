@@ -2,8 +2,10 @@
 /**
  * A stand-in Home Assistant for rehearsing the habitat feed without the
  * venue network: answers /api/states/sensor.<id> and /api/history/period
- * for the M5 ENV Pro's seven entities, the light sensor and the kitchen socket with
- * plausible, slowly moving values. Not part of the station; a tool.
+ * for the M5 ENV Pro's seven entities, the light sensor and the eight power
+ * channels (a draw in watts and an energy meter in kWh each — crickets,
+ * science 1 and 2, living, table, food, water, hydroponics) with plausible,
+ * slowly moving values. Not part of the station; a tool.
  *
  *   node tools/mock-home-assistant.js 8123
  *   HA_HOST=localhost HA_PORT=8123 HA_API_TOKEN=x npm start
@@ -19,9 +21,15 @@ const ENT = {
   m5_env_pro_env_pro_breath_voc_equivalent: { unit: 'ppm', base: 1.1, swing: 0.7, period: 2700, dec: 2 },
   m5_env_pro_env_pro_iaq: { unit: '', base: 85, swing: 60, period: 3000, dec: 0 },
   environment_light_illuminance: { unit: 'lx', base: 320, swing: 260, period: 7200, dec: 0 },
-  habitat_power_kitchen_energie: { unit: 'kWh', base: 0.5, swing: 0, period: 1, dec: 3, rising: 0.00002 },
-  habitat_power_kitchen_leistung: { unit: 'W', base: 9.2, swing: 4, period: 600, dec: 1 },
 };
+// The eight power channels, each a draw in watts (a gauge that wanders round
+// its base) and an energy meter in kWh that only rises — at roughly the rate
+// the draw implies (W × 3600 s → Wh, /1000 → kWh per second).
+const POWER = { crickets: 38, science_1: 64, science_2: 21, living: 112, table: 9, food: 86, water: 47, hydroponics: 73 };
+Object.entries(POWER).forEach(([k, w], i) => {
+  ENT[`habitat_power_${k}_leistung`] = { unit: 'W', base: w, swing: Math.max(2, w * 0.35), period: 540 + i * 170, dec: 1 };
+  ENT[`habitat_power_${k}_energie`] = { unit: 'kWh', base: 0.5 + i * 0.25, swing: 0, period: 1, dec: 3, rising: w / 3600 / 1000 };
+});
 const CLASSES = [[50, 'Excellent'], [100, 'Good'], [150, 'Lightly polluted'], [200, 'Moderately polluted'], [250, 'Heavily polluted'], [350, 'Severely polluted'], [Infinity, 'Extremely polluted']];
 const valueAt = (id, t) => {
   const e = ENT[id]; if (!e) return null;

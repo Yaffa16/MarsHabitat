@@ -714,20 +714,18 @@ function templates(kind) {
 }
 
 /**
- * Power consumed inside the habitat, kWh per day, split by category —
- * heating, food, lighting, electronics, other, as content/power.json ships
- * them, though the categories are editable there and on the Habitat tab:
- * the key is the stable name in the record, the label is what is shown.
- * Read fresh like the crew figures: numbers handed straight to a view, so
- * an edit to the file is live the moment it is saved.
+ * Power consumed inside the habitat, kWh per day, by channel — the eight
+ * metered power channels as content/power.json ships them (crickets, science
+ * 1 and 2, living, table, food, water, hydroponics), each category reading its
+ * Home Assistant energy meter (`sensor`: habitat_power_<channel>_energie) for
+ * the day unless a figure is filed by hand. The categories are editable there
+ * and on the Habitat tab: the key is the stable name in the record, the label
+ * is what is shown. Read fresh like the crew figures: numbers handed straight
+ * to a view, so an edit to the file is live the moment it is saved.
  */
-const POWER_DEFAULTS = [
-  { key: 'heating', label: 'habitat_power_kitchen_energie', sensor: 'habitat_power_kitchen_energie' },
-  { key: 'food', label: 'Food' },
-  { key: 'lighting', label: 'Lighting' },
-  { key: 'electronics', label: 'Electronics' },
-  { key: 'other', label: 'Other' },
-];
+const POWER_CHANNELS = [['crickets', 'Crickets'], ['science_1', 'Science 1'], ['science_2', 'Science 2'], ['living', 'Living'],
+  ['table', 'Table'], ['food', 'Food'], ['water', 'Water'], ['hydroponics', 'Hydroponics']];
+const POWER_DEFAULTS = POWER_CHANNELS.map(([key, label]) => ({ key, label, sensor: `habitat_power_${key}_energie` }));
 
 function power() {
   let obj = {};
@@ -785,21 +783,26 @@ const slugify = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/
   .replace(/ß/g, 'ss').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'recipe';
 
 /**
- * The scientific missions — one a day — from content/missions.json: each
- * sheet's words (its number, its title, the central question, the Morning,
+ * The scientific missions — one a day — from content/missions.json, written
+ * by tools/missions-json.py from the sheets in missions/: each sheet's words
+ * (its number and title — the file's: 00 is the first day's, 15 October, and
+ * they follow the days in sequence — the central question, the Morning,
  * Afternoon and EVA parts as lines, the question for the community hour in
  * English and German, the material it needs, its PDF's file name in the
- * missions/ folder, served at /missions/<file>) and the day → mission map.
- * Read fresh like the crew figures, so an edit to the file is live the moment
- * it is saved; a missing or broken file is no mission on any day.
+ * missions/ folder, served at /missions/<file>; `placeholder` names the file
+ * a sheet still to be written is a copy of) and the day → mission map
+ * (`days`), which the Science officer sets on the desk, day by day. Read
+ * fresh like the crew figures, so an edit to the file is live the moment it
+ * is saved; a missing or broken file is no mission on any day.
  */
 function missionsFile() {
   try {
     const obj = JSON.parse(fs.readFileSync(path.join(DIR, 'missions.json'), 'utf8')) || {};
-    return { days: obj.days && typeof obj.days === 'object' ? obj.days : {}, missions: Array.isArray(obj.missions) ? obj.missions : [],
-      chosen: obj.chosen && typeof obj.chosen === 'object' ? obj.chosen : {} };
-  } catch { return { days: {}, missions: [], chosen: {} }; }
+    return { days: obj.days && typeof obj.days === 'object' ? obj.days : {}, missions: Array.isArray(obj.missions) ? obj.missions : [] };
+  } catch { return { days: {}, missions: [] }; }
 }
+/** A mission's number as the station prints it: two figures, 00 to 12. */
+const missionNo = (no) => String(Number(no)).padStart(2, '0');
 /**
  * The shift plan — content/shifts.json (October: "the portrait of the person
  * playing that role on that day"): for each mission day, the person in each
@@ -825,32 +828,31 @@ function crewOnShift(mission) {
   return out;
 }
 
-/** A day's mission as planned and as chosen: `days` in the file is the plan (the default for each day); `chosen`
- *  (day → mission number) is what the science officer set on the desk in its place (routes/control.js, /mission) —
- *  null where the day keeps its default. The missions as a list (number and title) for the desk's choice. */
-function missionChoice(missionDay) {
-  const { days, missions, chosen } = missionsFile();
-  const key = String(missionDay);
-  const has = (no) => missions.some((m) => m && Number(m.no) === Number(no));
-  const def = days[key] != null && has(days[key]) ? Number(days[key]) : null;
-  const pick = Object.prototype.hasOwnProperty.call(chosen, key) && chosen[key] != null && has(chosen[key]) ? Number(chosen[key]) : null;
-  return { default: def, chosen: pick, missions: missions.filter((m) => m && m.no != null).map((m) => ({ no: Number(m.no), title: String(m.title || `Mission ${m.no}`) })) };
+/** The plan as the desk edits it: the missions as a list (number, title, and the file a placeholder sheet copies) and
+ *  the day → mission number map for every day of the run (null where a day has none). */
+function missionPlan(totalDays = 13) {
+  const { days, missions } = missionsFile();
+  const list = missions.filter((m) => m && m.no != null).map((m) => ({ no: Number(m.no), title: String(m.title || `Mission ${missionNo(m.no)}`),
+    placeholder: m.placeholder ? String(m.placeholder) : null }));
+  const has = (no) => list.some((m) => m.no === Number(no));
+  const map = {};
+  for (let n = 1; n <= totalDays; n++) map[String(n)] = days[String(n)] != null && has(days[String(n)]) ? Number(days[String(n)]) : null;
+  return { days: map, missions: list };
 }
-/** The mission the crew are on that day of the run — the one chosen on the desk, else the plan's — or null where
- *  neither names one. */
+/** The mission the crew are on that day of the run, as the plan maps it — or null where it names none. */
 function missionForDay(missionDay) {
-  const { days, missions, chosen } = missionsFile();
-  const key = String(missionDay);
-  const no = Object.prototype.hasOwnProperty.call(chosen, key) && chosen[key] != null ? chosen[key] : days[key];
+  const { days, missions } = missionsFile();
+  const no = days[String(missionDay)];
   if (no == null) return null;
   const m = missions.find((x) => x && Number(x.no) === Number(no));
   if (!m) return null;
   const lines = (v) => (Array.isArray(v) ? v.map((l) => String(l)) : typeof v === 'string' && v ? [v] : []);
   return {
-    no: Number(m.no), title: String(m.title || `Mission ${m.no}`), question: String(m.question || ''),
+    no: Number(m.no), title: String(m.title || `Mission ${missionNo(m.no)}`), question: String(m.question || ''),
     morning: lines(m.morning), afternoon: lines(m.afternoon), eva: lines(m.eva),
     community: { en: String((m.community || {}).en || ''), de: String((m.community || {}).de || '') },
     materials: String(m.materials || ''), file: m.file && /^[\w.-]+\.pdf$/i.test(String(m.file)) ? String(m.file) : null,
+    placeholder: m.placeholder ? String(m.placeholder) : null, sheetNo: m.sheetNo != null ? String(m.sheetNo) : null,
   };
 }
 
@@ -996,4 +998,4 @@ module.exports = { load, watch, status, edit, templates, crewFigures, power, pow
                    resourceLogRows, resourceLogCsv, LOG_FILE,
                    planStatus, savePlan, ensurePlan, reset, resetLocked, resetEpoch, inventoryStart, PLAN_DIR, PLAN_FILES,
                    PLACEHOLDER, BLOG_OFFICER, isPlaceholder, placeholderCue, placeholderPublic, placeholderFor,
-                   NUTRIENTS, mealNutrients, recipesFile, recipeBook, slugify, missionsFile, missionForDay, crewOnShift, missionChoice };
+                   NUTRIENTS, mealNutrients, recipesFile, recipeBook, slugify, missionsFile, missionForDay, missionPlan, missionNo, crewOnShift };

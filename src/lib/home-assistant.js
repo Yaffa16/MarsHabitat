@@ -56,15 +56,17 @@ const configured = () => !!(CFG.host && CFG.token);
 const DIR = process.env.CONTENT_DIR || path.join(__dirname, '../../content');
 const FILE = path.join(DIR, 'home-assistant.json');
 
-/* The meals' power: the kitchen's energy meter and the hours of each named
-   meal, between which it is read for that meal — breakfast 06:00–09:00, lunch
-   09:00–14:00, dinner 15:00–22:00, on the habitat's clock. These are the
-   defaults; the `meals` block of content/home-assistant.json may name another
-   meter ("meter", the entity id without "sensor.") or other hours ("windows",
-   slot → "HH:MM-HH:MM"). The meter is named by its entity id, so a change of its
-   label in Home Assistant or in the sensor list changes nothing here. */
+/* The meals' power: the food meter — the Food channel's energy meter,
+   sensor.habitat_power_food_energie, the kitchen's appliances — and the hours
+   of each named meal, between which it is read for that meal — breakfast
+   06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00, on the habitat's clock.
+   These are the defaults; the `meals` block of content/home-assistant.json may
+   name another meter ("meter", the entity id without "sensor.") or other hours
+   ("windows", slot → "HH:MM-HH:MM"). The meter is named by its entity id, so a
+   change of its label in Home Assistant or in the sensor list changes nothing
+   here. */
 const MEALS_DEFAULT = Object.freeze({
-  meter: 'habitat_power_kitchen_energie',
+  meter: 'habitat_power_food_energie',
   windows: Object.freeze({ BREAKFAST: '06:00-09:00', LUNCH: '09:00-14:00', DINNER: '15:00-22:00' }),
 });
 const noMeals = () => ({ meter: MEALS_DEFAULT.meter, windows: { ...MEALS_DEFAULT.windows } });
@@ -527,7 +529,7 @@ function counterBetween(entity, a, b, decimals = 2) {
 }
 
 /**
- * What a named meal drew from the kitchen's meter: the meter's consumption
+ * What a named meal drew from the food meter: the meter's consumption
  * between the meal's hours on its mission day — breakfast 06:00–09:00, lunch
  * 09:00–14:00, dinner 15:00–22:00 (mealsConfig) — in watt hours, whole. `window`
  * is the hours read, as ['06:00', '09:00'], null when the slot has none (then

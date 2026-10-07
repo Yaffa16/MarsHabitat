@@ -219,8 +219,8 @@
    exact words the public will get. Keep the two in step. */
 (function () {
   'use strict';
-  var BANDS = ['calm, at ease with the day', 'settled, working steadily',
-    'level \u2014 neither calm nor cross', 'tense, short with the others', 'angry, needing distance'];
+  var BANDS = ['thrilled \u2014 on top of the world', 'happy, in good spirits',
+    'neutral \u2014 neither up nor down', 'upset, not having a good day', 'angry, needing distance'];
   document.querySelectorAll('.mood-faces input[type="radio"]').forEach(function (r) {
     r.addEventListener('change', function () {
       var target = document.getElementById('read-' + r.dataset.crew + '-calm_tense');

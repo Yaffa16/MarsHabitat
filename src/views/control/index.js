@@ -186,16 +186,16 @@ function queue({ list, crew, counts, show, space = null }) {
 
 /* ============================================================= DAY CONTENT */
 
-/** The mood scale for one officer: five faces, calm to angry. */
+/** The mood scale for one officer: five faces, thrilled to angry. */
 function moodBlock(c, n = 2, e = null) {
   const t = mood.translate(c.mood);
   const current = c.mood ? mood.FACES.reduce((best, f) => (Math.abs(f.v - c.mood.calm_tense) < Math.abs(best.v - c.mood.calm_tense) ? f : best), mood.FACES[0]).v : null;
   return panel('MOOD', `
-    ${blockHead(n, 'Crew state', `${esc(officer.shown(c.designation))} · mood, calm to angry`,
+    ${blockHead(n, 'Crew state', `${esc(officer.shown(c.designation))} · mood, thrilled to angry`,
       { live: !!c.mood, liveText: `Filed: ${esc(t.condition)}`, emptyText: 'Not filed yet' })}
     <form method="post" action="/control/moods/${c.id}">
       <div class="poles mood-poles"><span>${mood.AXES[0].low}</span><span>${mood.AXES[0].label}</span><span>${mood.AXES[0].high}</span></div>
-      <div class="mood-faces" role="radiogroup" aria-label="Mood, calm to angry">
+      <div class="mood-faces" role="radiogroup" aria-label="Mood, thrilled to angry">
         ${mood.FACES.map((f, i) => `<label class="mood-face${current === f.v ? mark(e, 'calm_tense') : ''}" title="${esc(f.name)} — ${esc(mood.AXES[0].bands[i])}">
           <input type="radio" name="calm_tense" value="${f.v}" data-crew="${c.id}" data-band="${i}"${current === f.v ? ' checked' : ''} required>
           ${mood.faceSvg(f)}<span>${esc(f.name)}</span>
@@ -210,7 +210,8 @@ function moodBlock(c, n = 2, e = null) {
 
 /** The record under an officer's state: every state filed for them — the day and time it was filed (the venue's clock),
  *  the sol, the mood and its words, who filed it — the newest first. Nothing is ever taken out of it: a state filed
- *  again is one more row. The three officers' records together go out as CSV. */
+ *  again is one more row. The three officers' records together go out as CSV from the Archive (October: there, not
+ *  here), /archive/moods.csv. */
 const SHOWN_STATES = 12;
 function moodRecord(c) {
   const rows = c.record || [];
@@ -224,12 +225,11 @@ function moodRecord(c) {
     <div class="mood-record-head">
       ${eyebrow('Record')}
       <span class="note">${rows.length ? `${rows.length} ${rows.length === 1 ? 'state' : 'states'} filed for ${esc(officer.shown(c.designation))} — every filing, the newest first` : `Every state filed for ${esc(officer.shown(c.designation))} will be listed here — the day and time, the mood, who filed it.`}</span>
-      <a class="mood-record-csv" href="/control/moods.csv" title="Every state filed for every officer, oldest first">CSV · all officers</a>
     </div>
     ${rows.length ? `<table class="mood-table">
       <thead><tr><th>Date · time</th><th>Sol</th><th>Mood</th><th>Filed by</th></tr></thead>
       <tbody>${rows.slice(0, SHOWN_STATES).map(row).join('')}</tbody>
-    </table>${rows.length > SHOWN_STATES ? `<p class="note">${rows.length - SHOWN_STATES} earlier ${rows.length - SHOWN_STATES === 1 ? 'state is' : 'states are'} in the CSV.</p>` : ''}` : ''}
+    </table>${rows.length > SHOWN_STATES ? `<p class="note">${rows.length - SHOWN_STATES} earlier ${rows.length - SHOWN_STATES === 1 ? 'state is' : 'states are'} in the archive's CSV.</p>` : ''}` : ''}
   </div>`;
 }
 const fmtDay = (ymd) => {
@@ -348,23 +348,26 @@ function scheduleBlock(day, tasks, e = null) {
     </form>`, 'mars-side');
 }
 
-/** The day's scientific mission, on the Science officer's tab: the plan in content/missions.json names one for
- *  each day (the default); the officer may set another in its place from the list — Default puts the plan's back.
- *  What is chosen stands wherever the day's mission is shown (routes/control.js, /mission; content.missionForDay).
- *  NOW has no mission of its own (before the run the dashboard shows day 01's), so the block stands on the run's
- *  days alone. */
+/** The day's science mission, on the Science officer's tab: one dropdown, for the day open on the desk (the day picker
+ *  above chooses the day), with the sheets in missions/ (content/missions.json) and the plan's mission for that day
+ *  selected — as shipped the sheets follow the days in sequence, 00 on 15 October to 12 on 27 October. Save writes that
+ *  day's entry of the plan (`days`), which stands wherever the day's mission is shown (routes/control.js, /mission;
+ *  content.missionForDay). No words over it — the eyebrow, the day and its dropdown, Save (October). NOW has no mission
+ *  of its own (before the run the dashboard shows day 01's), so the block stands on the run's days alone. */
 function missionBlock(day, plan, e = null) {
   if (!day || !plan) return '';
-  const name = (m) => `Mission No. ${m.no} · ${m.title}`;
-  const def = plan.missions.find((m) => m.no === plan.default) || null;
-  const cur = plan.chosen != null ? String(plan.chosen) : '';
+  const no2 = (n) => String(n).padStart(2, '0');
+  const name = (m) => `Mission No. ${no2(m.no)} · ${m.title}${m.placeholder ? ' (sheet to come)' : ''}`;
+  const dateLabel = (n) => new Date(missionLib.dateForDay(n) + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const cur = plan.days[String(day)] != null ? String(plan.days[String(day)]) : '';
+  // no words over it (October): the eyebrow, the day and its dropdown, Save
   return panel('SCIENCE MISSION', `
     ${eyebrow(`Science mission · day ${dd(day)}`)}
-    <form method="post" action="/control/mission">
+    <form method="post" action="/control/mission" class="mission-plan${mark(e, 'mission')}">
       <input type="hidden" name="day" value="${day}">
-      <label class="f${mark(e, 'mission')}"><span>Mission</span>
-        <select name="mission">
-          <option value=""${cur === '' ? ' selected' : ''}>Default${def ? ` — ${esc(name(def))}` : ' — none'}</option>
+      <label class="f mission-day"><span class="mp-day">Day ${dd(day)}</span><span class="mp-date">${esc(dateLabel(day))}</span>
+        <select name="mission" aria-label="Mission on day ${dd(day)}">
+          <option value=""${cur === '' ? ' selected' : ''}>— none —</option>
           ${plan.missions.map((m) => `<option value="${m.no}"${cur === String(m.no) ? ' selected' : ''}>${esc(name(m))}</option>`).join('')}
         </select></label>
       <div class="actions"><button class="primary">Save</button>${savedNote(e)}</div>
@@ -410,7 +413,7 @@ const hhmm = (w) => (w ? `${w[0]}–${w[1]}` : '');
  * puts another card beside them, with the same dropdown and the same fields,
  * numbered EXTRA1, EXTRA2, … (public/control.js clones the template below;
  * each card's × takes it away again). The power each meal used is not typed:
- * it is the kitchen's energy meter read between the meal's hours — breakfast
+ * it is the food meter (the Food channel's energy meter) read between the meal's hours — breakfast
  * 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00 (content/home-assistant.json,
  * `meals`), an added meal between the hours its card names — and each card
  * shows the figure as it stands (data.mealsFor). Other, the old free-text
@@ -459,8 +462,8 @@ function mealsBlock(day, meals, e = null, recipes = [], hours = { meter: '', win
     const win = m.window || (!isExtra && hours.windows[slot] ? hours.windows[slot].split('-') : null);
     const withWhom = isExtra && m.power_with ? ` — counts with ${dataLib.slotLabel(m.power_with)}` : '';
     if (!win) return `<p class="note meal-power is-none">Power · counts with the meal whose hours cover the time it is served at (below), once saved.</p>`;
-    if (m.power_wh != null) return `<p class="note meal-power"><b>${m.power_wh} Wh</b>${m.power_running ? ' so far' : ''} · the kitchen meter, ${hhmm(win)}${withWhom}</p>`;
-    return `<p class="note meal-power is-none">Power · the kitchen meter, ${hhmm(win)}${withWhom} — no reading for these hours yet.</p>`;
+    if (m.power_wh != null) return `<p class="note meal-power"><b>${m.power_wh} Wh</b>${m.power_running ? ' so far' : ''} · the food meter, ${hhmm(win)}${withWhom}</p>`;
+    return `<p class="note meal-power is-none">Power · the food meter, ${hhmm(win)}${withWhom} — no reading for these hours yet.</p>`;
   };
 
   // One card. `slot` is its field prefix; an added meal has its hours and its × as well.
@@ -500,7 +503,7 @@ function mealsBlock(day, meals, e = null, recipes = [], hours = { meter: '', win
     <p class="note block-hint">Choose Breakfast, Lunch or Dinner from the recipe book and its name, kcal, prep time, nutrients,
     CO₂e and water footprint are filled in — every field stays editable. <b>Empty</b> clears the slot to fill in by hand, on the
     go; it is saved for that day only and never adds a recipe. <b>Add a meal</b> puts a further meal beside the three, with
-    the same choice. The power each meal used is not typed: it is the kitchen's energy meter, read between the meal's
+    the same choice. The power each meal used is not typed: it is the food meter — the Food channel's energy meter — read between the meal's
     hours${hoursLine ? ` (${hoursLine})` : ''}; an added meal counts with the one of the three whose hours cover the time it
     is served at — the time it was added, unless its card says another.</p>
     <script type="application/json" id="recipe-book">${book}</script>

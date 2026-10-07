@@ -3930,6 +3930,28 @@
    }
   },
   {
+   "id": "atlas3i",
+   "kind": "comet",
+   "km": 1795174448,
+   "au": 12,
+   "how": "now",
+   "name": {
+    "en": "comet 3I/ATLAS",
+    "de": "der Komet 3I/ATLAS",
+    "fr": "la comète 3I/ATLAS"
+   },
+   "about": {
+    "en": "the third visitor from another star system, a comet seen rushing through in 2025 — now on its way back out, never to return",
+    "de": "der dritte Besucher aus einem anderen Sternsystem, ein Komet, der 2025 durchraste — jetzt auf dem Weg hinaus, für immer",
+    "fr": "le troisième visiteur venu d’un autre système stellaire, une comète vue filer en 2025 — à présent en route vers la sortie, pour toujours"
+   },
+   "wiki": {
+    "en": "3I/ATLAS",
+    "de": "3I/ATLAS",
+    "fr": "3I/ATLAS"
+   }
+  },
+  {
    "id": "chiron",
    "kind": "other",
    "km": 2049490829,
@@ -4402,6 +4424,28 @@
    }
   },
   {
+   "id": "palebluedot",
+   "kind": "other",
+   "km": 6058713763,
+   "au": 40.5,
+   "how": "mark",
+   "name": {
+    "en": "the Pale Blue Dot",
+    "de": "der Pale Blue Dot",
+    "fr": "le Pale Blue Dot"
+   },
+   "about": {
+    "en": "where Voyager 1 turned its camera round in 1990 and photographed Earth as a single pale pixel in a sunbeam",
+    "de": "wo Voyager 1 1990 ihre Kamera umdrehte und die Erde als ein einziges blasses Pixel in einem Sonnenstrahl fotografierte",
+    "fr": "là où Voyager 1 a retourné sa caméra en 1990 et photographié la Terre comme un seul pixel pâle dans un rayon de soleil"
+   },
+   "wiki": {
+    "en": "Pale_Blue_Dot",
+    "de": "Pale_Blue_Dot",
+    "fr": "Pale_Blue_Dot"
+   }
+  },
+  {
    "id": "salacia",
    "kind": "dwarf",
    "km": 6283110569,
@@ -4546,6 +4590,28 @@
    }
   },
   {
+   "id": "borisov",
+   "kind": "comet",
+   "km": 7180697794,
+   "au": 48,
+   "how": "now",
+   "name": {
+    "en": "comet 2I/Borisov",
+    "de": "der Komet 2I/Borisov",
+    "fr": "la comète 2I/Borisov"
+   },
+   "about": {
+    "en": "the second visitor from another star — the first interstellar comet, seen in 2019, now beyond Pluto’s orbit and leaving",
+    "de": "der zweite Besucher von einem anderen Stern — der erste interstellare Komet, gesehen 2019, jetzt jenseits der Plutobahn und auf dem Weg hinaus",
+    "fr": "le deuxième visiteur venu d’une autre étoile — la première comète interstellaire, vue en 2019, aujourd’hui au-delà de l’orbite de Pluton et en route vers la sortie"
+   },
+   "wiki": {
+    "en": "2I/Borisov",
+    "de": "2I/Borisov",
+    "fr": "2I/Borisov"
+   }
+  },
+  {
    "id": "plutofarthest",
    "kind": "dwarf",
    "km": 7375175026,
@@ -4603,6 +4669,23 @@
     "en": "ʻOumuamua",
     "de": "1I/ʻOumuamua",
     "fr": "1I/ʻOumuamua"
+   }
+  },
+  {
+   "id": "kuipercliff",
+   "kind": "region",
+   "km": 7479893535,
+   "au": 50,
+   "how": "avg",
+   "name": {
+    "en": "the Kuiper cliff",
+    "de": "die Kuiper-Klippe",
+    "fr": "la falaise de Kuiper"
+   },
+   "about": {
+    "en": "where the Kuiper belt suddenly thins out, fifty times the Earth–Sun distance — nobody knows why it ends so sharply",
+    "de": "wo der Kuipergürtel plötzlich dünn wird, beim 50-Fachen des Abstands Erde–Sonne — warum er so scharf endet, weiß niemand",
+    "fr": "là où la ceinture de Kuiper s’amincit d’un coup, à cinquante fois la distance Terre-Soleil — personne ne sait pourquoi elle finit si net"
    }
   },
   {
@@ -4762,6 +4845,23 @@
     "en": "the great sungrazing comet of 1965, bright enough to be seen in daylight beside the Sun — it will be back in some 900 years",
     "de": "der große Sonnenstreifer von 1965, hell genug, um bei Tag neben der Sonne gesehen zu werden — er kommt in etwa 900 Jahren wieder",
     "fr": "la grande comète rasante de 1965, assez brillante pour être vue en plein jour à côté du Soleil — elle reviendra dans quelque 900 ans"
+   }
+  },
+  {
+   "id": "erisfar",
+   "kind": "dwarf",
+   "km": 14600752180,
+   "au": 97.6,
+   "how": "farthest",
+   "name": {
+    "en": "Eris at its farthest",
+    "de": "Eris an ihrem fernsten Punkt",
+    "fr": "Éris au plus loin"
+   },
+   "about": {
+    "en": "the far end of the orbit of the dwarf planet that knocked Pluto off the list of planets — nearly a hundred times the Earth–Sun distance",
+    "de": "das ferne Ende der Bahn des Zwergplaneten, der Pluto von der Liste der Planeten stieß — fast das 100-Fache des Abstands Erde–Sonne",
+    "fr": "le bout lointain de l’orbite de la planète naine qui a fait rayer Pluton de la liste des planètes — près de cent fois la distance Terre-Soleil"
    }
   },
   {
@@ -4930,6 +5030,23 @@
    }
   },
   {
+   "id": "ikeyasekifar",
+   "kind": "comet",
+   "km": 27376410338,
+   "au": 183,
+   "how": "farthest",
+   "name": {
+    "en": "Ikeya–Seki at its farthest",
+    "de": "Ikeya-Seki an seinem fernsten Punkt",
+    "fr": "Ikeya-Seki au plus loin"
+   },
+   "about": {
+    "en": "the far end of the orbit of the great comet of 1965, which grazed the Sun and will be back in about 900 years",
+    "de": "das ferne Ende der Bahn des großen Kometen von 1965, der die Sonne streifte und in etwa 900 Jahren wiederkommt",
+    "fr": "le bout lointain de l’orbite de la grande comète de 1965, qui a frôlé le Soleil et reviendra dans quelque 900 ans"
+   }
+  },
+  {
    "id": "vp113",
    "kind": "dwarf",
    "km": 39344239994,
@@ -4977,6 +5094,23 @@
     "en": "the far end of the great comet's orbit, which it will reach around the year 3200 before turning back",
     "de": "das ferne Ende der Bahn des großen Kometen, das er um das Jahr 3200 erreicht, bevor er umkehrt",
     "fr": "le bout lointain de l’orbite de la grande comète, qu’elle atteindra vers l’an 3200 avant de faire demi-tour"
+   }
+  },
+  {
+   "id": "vp113far",
+   "kind": "dwarf",
+   "km": 66720650332,
+   "au": 446,
+   "how": "farthest",
+   "name": {
+    "en": "2012 VP113 at its farthest",
+    "de": "2012 VP113 an seinem fernsten Punkt",
+    "fr": "2012 VP113 au plus loin"
+   },
+   "about": {
+    "en": "the far end of the 4,000-year orbit of the world nicknamed Biden, two and a half light-days out",
+    "de": "das ferne Ende der 4.000-Jahre-Bahn der Welt mit dem Spitznamen Biden, zweieinhalb Lichttage draußen",
+    "fr": "le bout lointain de l’orbite de 4 000 ans du monde surnommé Biden, à deux jours-lumière et demi"
    }
   },
   {
@@ -5043,6 +5177,28 @@
     "en": "four days at the speed of light — a message sent on the first day of the run has come this far by the fifth",
     "de": "vier Tage mit Lichtgeschwindigkeit — eine am ersten Tag des Laufs gesendete Nachricht ist am fünften so weit gekommen",
     "fr": "quatre jours à la vitesse de la lumière — un message envoyé le premier jour de la mission est arrivé ici le cinquième"
+   }
+  },
+  {
+   "id": "neowisefar",
+   "kind": "comet",
+   "km": 106962477550,
+   "au": 715,
+   "how": "farthest",
+   "name": {
+    "en": "comet NEOWISE at its farthest",
+    "de": "der Komet NEOWISE an seinem fernsten Punkt",
+    "fr": "la comète NEOWISE au plus loin"
+   },
+   "about": {
+    "en": "the far end of the orbit of the comet that hung over the summer evenings of 2020 — it will not be back for nearly 7,000 years",
+    "de": "das ferne Ende der Bahn des Kometen, der über den Sommerabenden 2020 stand — er kommt erst in fast 7.000 Jahren wieder",
+    "fr": "le bout lointain de l’orbite de la comète qui a dominé les soirs d’été 2020 — elle ne reviendra pas avant près de 7 000 ans"
+   },
+   "wiki": {
+    "en": "C/2020_F3_(NEOWISE)",
+    "de": "C/2020_F3_(NEOWISE)",
+    "fr": "C/2020_F3_(NEOWISE)"
    }
   },
   {
@@ -5144,6 +5300,23 @@
    }
   },
   {
+   "id": "sy99far",
+   "kind": "dwarf",
+   "km": 209437018980,
+   "au": 1400,
+   "how": "farthest",
+   "name": {
+    "en": "2013 SY99 at its farthest",
+    "de": "2013 SY99 an seinem fernsten Punkt",
+    "fr": "2013 SY99 au plus loin"
+   },
+   "about": {
+    "en": "the far end of a 20,000-year orbit — a small icy world that never comes nearer than the Kuiper belt and swings out eight light-days into the dark",
+    "de": "das ferne Ende einer 20.000-Jahre-Bahn — eine kleine Eiswelt, die nie näher kommt als der Kuipergürtel und acht Lichttage weit ins Dunkel hinausschwingt",
+    "fr": "le bout lointain d’une orbite de 20 000 ans — un petit monde glacé qui ne s’approche jamais plus que la ceinture de Kuiper et s’élance à huit jours-lumière dans le noir"
+   }
+  },
+  {
    "id": "m9d",
    "kind": "mark",
    "km": 233118615341,
@@ -5157,6 +5330,23 @@
     "en": "nine days at the speed of light — a radio message here is already too faint for any dish on Earth to hear",
     "de": "neun Tage mit Lichtgeschwindigkeit — eine Funknachricht ist hier schon zu schwach für jede Antenne auf der Erde",
     "fr": "neuf jours à la vitesse de la lumière — un message radio est déjà ici trop faible pour qu’aucune antenne terrestre l’entende"
+   }
+  },
+  {
+   "id": "of201far",
+   "kind": "dwarf",
+   "km": 239356593120,
+   "au": 1600,
+   "how": "farthest",
+   "name": {
+    "en": "2017 OF201 at its farthest",
+    "de": "2017 OF201 an seinem fernsten Punkt",
+    "fr": "2017 OF201 au plus loin"
+   },
+   "about": {
+    "en": "the far end of the 25,000-year orbit of a dwarf planet found only in 2025, some 700 km across — nine light-days out",
+    "de": "das ferne Ende der 25.000-Jahre-Bahn eines erst 2025 gefundenen Zwergplaneten von etwa 700 km Durchmesser — neun Lichttage draußen",
+    "fr": "le bout lointain de l’orbite de 25 000 ans d’une planète naine découverte seulement en 2025, de quelque 700 km — à neuf jours-lumière"
    }
   },
   {
