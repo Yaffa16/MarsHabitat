@@ -69,7 +69,7 @@ body.screen .screen-blogs .blogp .dpanel-body > .empty { position: absolute; ins
 /* three panels side by side — the day's — one under the other on an upright screen */
 body.screen .screen-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
 body.screen[data-fit="clip"] .screen-three { height: 100%; }
-body.screen .screen-three > .dpanel { grid-column: auto !important; min-height: 0; box-sizing: border-box; overflow: hidden; }   /* a panel's span-4 means nothing here, nor the commander blog's whole row at a tablet's width */
+body.screen .screen-three > .dpanel { grid-column: auto !important; min-height: 0; box-sizing: border-box; overflow: hidden; }   /* a panel's span-4 means nothing here, nor the commander log's whole row at a tablet's width */
 body.screen[data-fit="clip"] .screen-three > .dpanel { height: 100%; }
 body.screen .screen-three .dpanel.h-3, body.screen .screen-three .dpanel.h-4 { max-height: none; }
 body.screen .blog-scroll { max-height: none; }
@@ -100,7 +100,7 @@ body.screen.screen-habitat #habitat .hbt .fig-v em { font-size: 16px; }
 body.screen.screen-habitat #habitat .hbt .fig-total { font-size: 19px; }
 body.screen.screen-habitat #habitat .hbt .fig-spark { height: 26px; }
 body.screen.screen-habitat #habitat .hbt .viz-k { font-size: 17px; letter-spacing: .12em; }
-body.screen.screen-habitat #habitat .hbt .tile.t-viz { min-height: 150px; padding-top: 44px; }
+body.screen.screen-habitat #habitat .hbt .tile.t-viz { min-height: 150px; padding-top: 16px; }
 body.screen.screen-habitat #habitat .hbt .tile.t-viz svg { max-height: 96px; }
 body.screen.screen-habitat #habitat .hbt .dial-wrap { min-height: 160px; }
 body.screen.screen-habitat #habitat .hbt .dial-wrap svg { max-width: 220px; }
@@ -108,10 +108,9 @@ body.screen.screen-habitat #habitat .hbt .dial-center .verdict { font-size: 17px
 body.screen.screen-habitat #habitat .hbt .ruler-row { min-height: 110px; }
 body.screen.screen-habitat #habitat .hbt .ruler-wrap svg { max-height: 110px; }
 body.screen.screen-habitat #habitat .hbt .lvl svg, body.screen.screen-habitat #habitat .hbt .spk svg { max-height: 30px; }
-body.screen.screen-habitat #habitat .cell-name { font-size: 17px; }
-body.screen.screen-habitat #habitat .cell-days { font-size: 15px; }
-body.screen.screen-habitat #habitat .cell-days.is-ph { font-size: 10px; letter-spacing: .08em; }
-body.screen.screen-habitat #habitat .gauge.round svg { width: 60px; height: 60px; }
+body.screen.screen-habitat #habitat .cell-name { font-size: 22px; }
+body.screen.screen-habitat #habitat .gauge.round svg { width: 92px; height: 92px; }
+body.screen.screen-habitat #habitat .hbt .aux .gauge.round { width: 184px; }                     /* the stores' names whole at the screen's size */
 body.screen.screen-habitat #habitat .hbt .empty, body.screen.screen-habitat #habitat .hbt .note, body.screen.screen-habitat #habitat #hbt-notes .note { font-size: 18px; line-height: 1.4; }
 /* the hardware's charts under the instruments in one row of four (two rows of two upright) — two across, as the site has
    them, the panel stood twice the screen's height and no scaling could fit it: a chart is drawn to its width, and the

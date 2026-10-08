@@ -205,7 +205,7 @@ address.
 | Message Board | `/screen/board` | The ground station's board: every message sent from the writing screen as it stands — in transit, awaiting a reply, answered — under BODENSTATION, then the latest exchanges, newest first, two across (one upright), as many as fit — live, a new exchange slides in as the board publishes it. Read-only: no composer, nothing to tap — a card's line into space stands on one line (*Diese Nachricht ist jetzt 20,02 Milliarden km von der Erde entfernt! · Gestartet vor 19 Stunden*) and opens no panel. The screen polls `/api/board?lang=<its language>&limit=400&station=1`, so the cards come back in the language the screen is in, all of them, the station's own among them |
 | Write to the crew | `/screen/write` | **The message-sending box, full screen** — the composer as the site has it (the crew's question of the day over it, the message box, the tags, the Transmit key), alone in the middle of the screen, for a touch screen in the square. **Every message sent from it is a new visitor's**: a callsign is minted for it alone (`src/lib/callsign.js`, `mint`; `POST /screen/write` in `server.js`), no cookie is set, so the next person at the screen starts afresh — no callsign carried over, no transit lock between them. Once a message is sent the crossing plays as on the site, then holds nine seconds on ARRIVED with the callsign named — *Your message went under the callsign DUST-465 — look for it on the Message Board once the crew have answered* — before the empty box comes back (`public/composer.js`, `data-hold`, `data-refresh`). The checks are the composer's (the channel open, the words within bounds); the hourly limit is the screen's own, per address, since all its messages come from one: `KIOSK_HOURLY_LIMIT`, sixty an hour. What is left half-written is cleared after three minutes with nobody touching the screen, and the page's own reloads wait while someone is writing or a message is crossing (`public/screen-write.js`) |
 | Today's Mission | `/screen/mission` | The day's mission from the sheet: its question, Morning, Afternoon, EVA, the question for the community hour — **typed out letter by letter** as if someone were writing it (`public/typed.js`: a cursor after the last letter, a halt at a full stop; typed to the end it stays three minutes, then is typed again; the site's dashboard shows the same panel still) |
-| Blogs | `/screen/blogs` | The three blogs **one at a time**, each filling the screen: its head stays, the day's post rolls by underneath from top to bottom at reading pace (`public/screen-blogs.js`, 28 px a second, five seconds' hold at the top and at the end; a post that fits is shown for fourteen), then the next blog takes the screen — the Commander Blog, the Daily Mission Report, the Health Report, round and round. The text is set at the size of the panels' own notes (about 23 px on a 1080p screen). A blog with nothing written yet shows its note and passes the turn on; the latest earlier post is carried forward, as the dashboard does |
+| Blogs | `/screen/blogs` | The three blogs **one at a time**, each filling the screen: its head stays, the day's post rolls by underneath from top to bottom at reading pace (`public/screen-blogs.js`, 28 px a second, five seconds' hold at the top and at the end; a post that fits is shown for fourteen), then the next blog takes the screen — the Commander Log, the Daily Mission Report, the Health Report, round and round. The text is set at the size of the panels' own notes (about 23 px on a 1080p screen). A blog with nothing written yet shows its note and passes the turn on; the latest earlier post is carried forward, as the dashboard does |
 | Today | `/screen/day` | Today's Schedule, Today's Meal and the Crew Moods, three in a row (one under the other upright) |
 | Trends | `/screen/trends` | The run's trends on one graph — on an upright screen drawn the way a phone draws it, the names of the lines in a legend under it |
 | Media | `/screen/media` | Every picture out of the habitat in **one grid, the newest first**, five across (three upright), each stamped with its day and time, as many as fit — live, a new picture slides in as it arrives. (The site's gallery groups them by day; a screen that must be full does not) |
@@ -277,10 +277,10 @@ page load. Everything editable lives here.
 | Tab | Holds |
 |---|---|
 | **Messages** | The reply queue: awaiting reply · published · rejected · everything — the latest message at the top in every view (October) |
-| **Commanding officer** | The **Commander Blog** at the top, then the officer's state |
+| **Commanding officer** | The **Commander Log** at the top, then the officer's state |
 | **Science officer** | The **Daily Mission Report** at the top, then the state |
 | **Health officer** | The **Health Report** at the top, then the state |
-| **Habitat** | The daily schedule (a task with its name emptied is removed on save), the meals — Breakfast, Lunch, Dinner and **+ Add a meal** — **Steps taken** and **Calories consumed** (one line per officer each, both written to `crew-figures.json`; the crew's total is worked out on save and read on the station, not shown on the desk), the inventory levels, and the day's power figures — the eight metered channels, each row reading its energy meter (with the channel names, editable in place). Every block's key reads **Save** and nothing more; Steps taken, Calories consumed and Power consumed head their blocks without naming the day (the day picker above says which day is open) |
+| **Habitat** | The daily schedule (a task with its name emptied is removed on save), the meals — Breakfast, Lunch, Dinner and **+ Add a meal** — **Steps taken** (one line per officer, written to `crew-figures.json`; the crew's total is worked out on save and read on the station, not shown on the desk — the *Calories consumed* beside it is gone, 8 October), the inventory levels, and the day's power figures — the eight metered channels, each row reading its energy meter (with the channel names, editable in place). Every block's key reads **Save** and nothing more; Steps taken and Power consumed head their blocks without naming the day (the day picker above says which day is open) |
 
 Every composer is the same: paragraphs and pictures in a column, a ＋ between every two, no
 template buttons, and two buttons under it — **Publish**, which makes the text live, and
@@ -343,10 +343,10 @@ asks *Are you sure you want to reset?* and takes the word `RESET` typed into a b
 only wakes up once it has been typed, and the word is checked again on the server, so nothing
 can trigger it by accident. Then it starts the station again for the run:
 
-- **every Commander Blog slot is emptied** — `logbook.json` becomes one placeholder per day (commanding officer only),
+- **every Commander Log slot is emptied** — `logbook.json` becomes one placeholder per day (commanding officer only),
   for the crew to fill in during the mission;
 - **the crew's figures are emptied** — `crew-figures.json` loses its days; the health officer
-  files each day's steps and calories, per officer, under Steps taken on the Habitat tab as the run goes;
+  files each day's steps, per officer, under Steps taken on the Habitat tab as the run goes;
 - **the power figures are emptied** — `power.json` loses its days and keeps its categories;
   each day's kWh by category is filed on the Habitat tab as the run goes;
 - **the stores' counts and the mission notes are emptied** — `inventory-levels.json` and
@@ -428,10 +428,12 @@ each (see *The mission page*):
 |---|---|---|
 | **Daily Mission Report** (`#blog-science`) | the day's science findings — the `SCIENCE` note in `content/notes.json` | **Science officer** → Daily science findings |
 | **Health Report** (`#blog-health`) | the day's health activities — the `HEALTH` note in `content/notes.json` | **Health officer** → Daily health activities |
-| **Commander Blog** (`#blog-commander`) | the commanding officer's **Daily Blog** — their entry in `content/logbook.json` | **Commanding officer** → Daily Blog |
+| **Commander Log** (`#blog-commander`) | the commanding officer's **Daily Blog** — their entry in `content/logbook.json` | **Commanding officer** → Daily Blog |
 
-**The Commander Blog is the commanding officer's blog**, under the name the station gives
-it; nothing else about that officer is renamed, and it is still written on their tab.
+**The Commander Log is the commanding officer's blog**, under the name the station gives
+it (the *Commander Blog* until 8 October: "rename the Commander Blog as Commander Log"); nothing
+else about that officer is renamed, it is still written on their tab, and its panel keeps its
+address, `#blog-commander`, and the record's JSON its key, `commanderBlog`.
 
 **Each panel stands under the current day** — the one the schedule and the meal folders are
 showing, today's SOL during the run, SOL 01 before it, named in the panel's head (`SOL 005 ·
@@ -457,7 +459,7 @@ photograph in it is as wide as the panel (no column narrower than the folder, no
 the left); on the blogs screen (`/screen/blogs`) the lines span the panel the same way.
 
 The panel titles and their empty lines are in `src/lib/i18n.js` like every other word (German
-*Commander-Blog*, French *Blog du commandement*); the markup is in `dashboard()` in
+*Commander-Logbuch*, French *Journal du commandement*); the markup is in `dashboard()` in
 `src/views/pages/public.js`, the styles under *The three daily blogs* in `public/station.css`.
 
 ## Editing the day's values during the run
@@ -468,7 +470,7 @@ whichever suits the moment and it is live on the station within seconds:
 | What | The file | The tab in mission control |
 |---|---|---|
 | Resources — what is left of each store | `content/inventory-levels.json`: per day, per store, `{ "quantity": 618, "consumption": 46 }`. Only write the stores that changed; on the site the rest carry forward at their daily draw, while the record prints only what was counted | **Habitat** → Inventory levels, with the day picker on the day |
-| Calories and steps | `content/crew-figures.json`: per day, one entry per officer under `crew`, keyed by designation, and the crew's totals as the sums — `"5": { "crew": { "COMMUNICATION OFFICER": { "calories": 1720, "steps": 2200 }, "SCIENCE OFFICER": { … }, "HEALTH OFFICER": { … } }, "calories": 5010, "steps": 6420 }`. A day written with the totals alone still shows, as a total. The Habitat panel shows each officer's figure with the crew's total beneath; At a Glance carries the totals and the record each officer's figure with the totals as filed | **Habitat** → Steps taken and Calories consumed, day picker on the day |
+| Steps | `content/crew-figures.json`: per day, one entry per officer under `crew`, keyed by designation, and the crew's total as the sum — `"5": { "crew": { "COMMUNICATION OFFICER": { "steps": 2200 }, "SCIENCE OFFICER": { … }, "HEALTH OFFICER": { … } }, "steps": 6420 }`. A day written with the total alone still shows, as a total. The Habitat panel shows each officer's figure with the crew's total beneath; At a Glance carries the total and the record each officer's figure with the total as filed. **The calories consumed are no longer kept** (8 October: "remove the calories consumed entirely") — not on the desk, the dashboard, the Trends, At a Glance, the dome or the record; a save of the steps drops a calories figure left in the file from before, and a `calories` sent to `/control/crew-figures` is not written | **Habitat** → Steps taken, day picker on the day |
 | Power consumed, by channel | `content/power.json`: eight categories as shipped — **Crickets, Science 1, Science 2, Living, Table, Food, Water, Hydroponics** — each naming its Home Assistant energy meter as `sensor` (`habitat_power_<channel>_energie`), so a day's figure is the meter's (the day's last reading less the day before's) unless one is filed by hand: `"5": { "food": 1.1, "living": 0.5 }` — kWh per day. The `categories` list above the days is editable too: rename a label, add one without a meter to count by hand, remove one; the key is the stable name in the record | **Habitat** → Power, day picker on the day; the name fields rename the categories everywhere. Every figure is locked behind an **Edit** key, which asks first — *These values are automated, are you sure you would like to edit?* |
 | Today's schedule | `content/schedule.json`: per day, `{ "time": "06:45", "label": "…", "detail": "…" }`; task status (done, active, skipped) is marked on the tab as the day runs | **Habitat** → Schedule |
 | Meals | `content/meals.json`: per day, slots BREAKFAST / LUNCH / DINNER and the meals added on the desk, EXTRA1, EXTRA2, … (each with the time it is served at, `"served": "16:30"`), with `kcal`, `water`, `prep`, `energy`. The power a meal drew is not this file's: it is the food meter (the Food channel's energy meter) read between the meal's hours, an added meal counting with the named meal of its hour (see *The meals' power*) | **Habitat** → Food plan — Breakfast, Lunch, Dinner and **+ Add a meal** |
@@ -478,7 +480,7 @@ whichever suits the moment and it is live on the station within seconds:
 **NOW — the rehearsal day.** Before the run, mission control opens on **NOW**: mission day 0,
 dated today, the first stop of the day picker on every tab (*NOW · 29 Sept*), ahead of 15 Oct —
 a day to try everything out on. Everything filed under it —
-the schedule, the meals, the Commander Blog and the two reports, the stores' count, the crew's
+the schedule, the meals, the Commander Log and the two reports, the stores' count, the crew's
 figures, the power, the media sent with a post — goes into the content files under the key
 `"0"` and into the database as mission day 0, and **nothing of it touches the run's days**:
 SOL 001 keeps its plan, the stores' chain from day 1 on is not counted from NOW, the resource
@@ -533,7 +535,7 @@ the running station.
 | `recipes.json` | The recipe book: twelve recipes (two measured, ten samples) with prep time and per-serving kcal, nutrients, CO₂e and water footprint — what the food plan's dropdowns offer (see *The recipe book*) |
 | `missions.json` | The scientific missions, one a day, **written by `tools/missions-json.py` from the PDFs in `missions/`** — each sheet's words (number and title from the file name, 00 to 12; central question, Morning / Afternoon / EVA, the question for the community hour in English and German, the material, the sheet's file; `sheetNo` where the sheet prints another number, `placeholder` on a sheet that is a copy of another's PDF for now) and the day → mission map (`days`, as shipped in sequence — 00 on day 1, 15 October — and written from the desk's Science tab, day by day); the sheets themselves are the PDFs in the `missions/` folder beside `content/`, served at `/missions/<file>` (see *Today's Mission* under *The mission page*) |
 
-It ships with the plan and nothing invented: 13 Commander Blog slots (one a day, commanding officer only)
+It ships with the plan and nothing invented: 13 Commander Log slots (one a day, commanding officer only)
 with a cue each for the crew to write into, the typical daily schedule on every day (16 tasks ×
 13 days), an empty food plan (`meals.json` — each day's meals are chosen from the recipe book on the Habitat tab), **four tracked resources** — drinking water (October: *Drinking water*, not *Potable water*), food rations, medical kits and fire extinguishers — (the drinking water is carried in at
 **180 L** — `"start": 180` in `crew-and-inventory.json` — and the food rations at **35 days** — `"start": 35` — and every
@@ -541,7 +543,7 @@ gauge of them is drawn against that; the other two stores' carried-in amounts, a
 placeholders to be written into `crew-and-inventory.json` before the run, or the day-1 count filed on the Habitat tab,
 which every gauge is then drawn against; until then such a store is shown dimmed with a dash, not as an empty store), and
 the sensor channels.
-The dailies — the stores' counts (`inventory-levels.json`), the steps and calories
+The dailies — the stores' counts (`inventory-levels.json`), the steps
 (`crew-figures.json`), the power (`power.json`) and the mission notes, findings and activities
 (`notes.json`) — ship empty and are filed on the tabs of mission control as the run goes, so
 the record holds only what the crew and mission control put in. Change any of the plan in the
@@ -639,7 +641,7 @@ The station carries exactly three blogs, everywhere — the dashboard's Blogs ro
 
 | Blog | Who writes it | Where it is stored |
 |---|---|---|
-| **Commander Blog** | the commanding officer, on their tab | `content/logbook.json` (filed under COMMUNICATION OFFICER) |
+| **Commander Log** | the commanding officer, on their tab | `content/logbook.json` (filed under COMMUNICATION OFFICER) |
 | **Daily Mission Report** | the science officer, on their tab | `content/notes.json`, kind `SCIENCE` |
 | **Health Report** | the health officer, on their tab | `content/notes.json`, kind `HEALTH` |
 
@@ -658,7 +660,7 @@ Two kinds of content, with a hard line between them.
 three languages, mission control, the PDF record and the archive's exports — as the
 **Commanding Officer**, the same person in the same role (they relay and answer the messages
 from Earth). The station still files them under their old title, `COMMUNICATION OFFICER`: it is
-the key their Commander Blog, their daily figures, their mood and their answers are stored
+the key their Commander Log, their daily figures, their mood and their answers are stored
 under, in `content/` and in the database, so nothing filed under it can be lost;
 `src/lib/officer.js` turns the stored title into the one on the page.
 
@@ -1379,14 +1381,14 @@ permanent record shortly after it ends, holding:
 - the meals as entered, with energy, water and preparation cost
 - the stores as they were counted that day — the figures written into
   `inventory-levels.json` (by the Habitat tab or by hand), and nothing else
-- the power and the crew's steps and calories as they were filed
+- the power and the crew's steps as they were filed
 - every crew entry the crew wrote that day, and every mission note
 - every crew state filed by mission control, with the value chosen and the sentence it is shown as
 - a summary of every habitat channel — lowest, highest and mean reading, and how many readings
 - **every reading of the day**, as stored: the station's channels as one row per instant with a
   value per channel, the external node one row per reading, the hardware one table per device
 - **the Habitat tab as it stood when the day ended**: at the seal, a few minutes after
-  midnight, the day's schedule, meals, steps and calories, inventory levels and power are
+  midnight, the day's schedule, meals, steps, inventory levels and power are
   written to the readings log with the day's summary (`daily/<date>/…json`, `habitatTab`), so
   the record as printed later — from the files as they then are — can be checked against the
   tab as it was
@@ -1425,7 +1427,7 @@ state (each blog and report with **every photograph set where it was placed**, a
 video, sound file and document listed with its poster frame, size, duration and hash; each
 state with the value chosen and the sentence it is shown as); then **the Habitat tab** of
 mission control as it stands at the time of the record — the schedule with every task's
-status, the meals, the steps taken and calories consumed, the inventory levels row for row as
+status, the meals, the steps taken, the inventory levels row for row as
 the tab shows them (available at the start, used today, left for the future, each figure
 marked *counted* when it was filed that day or *carried* when it follows from the day before)
 and the power; then **the habitat sensors, named as on the dashboard** — the sensor node (the
@@ -1764,9 +1766,12 @@ current draw**. Anything under its warning threshold turns orange. A store with 
 yet — nothing carried in written into `crew-and-inventory.json` and no count filed on the
 Habitat tab — stands dimmed, a dash in its empty ring and no figure under its name; the dome's
 pop-up says *no figure filed yet* (`inventoryGauges()` in `src/views/pages/public.js`). On the
-dashboard's Sensors tab the Resources tile is only as wide as its rings — one a store, four stores
-four rings — Karlsruhe's fan beside it at its own width and the Power tile taking the rest of the row
-(the second row is laid out by its contents on a desk, `aura.css`).
+dashboard's Sensors tab the Resources tile is drawn as rings — one a store, four stores four rings,
+each large with its figure and unit in the middle and its name beneath, **and no count of days**
+(8 October: "remove the days count and make the layout bigger to show the text clearly"; the bars
+elsewhere keep their days remaining) — only as wide as its rings, Karlsruhe's fan beside it at its
+own width and the Power tile taking the rest of the row (the second row is laid out by its contents
+on a desk, `aura.css`).
 
 Everything in the habitat was carried in and nothing is resupplied, so over thirteen days the row
 visibly empties. That is the point of putting it on the front page rather than on a subpage.
@@ -2000,8 +2005,7 @@ open (`/write#write`), the Dashboard page (`/dashboard`) and the About page; the
 of the slowest chat and the *Send a message to the crew* card open the window here (`#write`; a
 phone's lead to the Write page's dock), the sky's notes lead to the wall, the *Follow what the
 crew is doing — live* card and the habitat's modules to the Dashboard page. **The three pages end with
-the chat**: the composer is the window every page carries (see *The composer's window*), with
-its floating key at the foot of the window.
+the chat**: the composer is the window every page carries (see *The composer's window*).
 
 **The Write page** (`/write`, `writePage` in `public.js`; `body.landing.inner.messages.write`) is
 **the board as a wall of notes** (see *The board*), under the header alone — the inner pages'
@@ -2011,11 +2015,10 @@ carries.
 
 **The composer's window** (`writeKit()` in `src/views/layout.js`, which every public page gets
 after its body; `portal()` in `public.js`; `public/write.js`; the styles under *the composer's
-pop-up* in `aura.css`): **a Write to the crew key floats at the foot of the window at the right
-on every public page** — the station's primary key in Mars, with the pen, its right edge on the
-page's content edge (the margin's width in from the window's, where every card and sheet ends —
-October, 7 October: aligned, not half over the box) — and opens **the
-composer in a window in the middle of the screen, the page blurred and dimmed behind it** (640px
+pop-up* in `aura.css`): **the composer in a window in the middle of the screen, the page blurred
+and dimmed behind it**, on every public page (the Write to the crew key that floated at the foot of
+the window at the right is gone — 8 October: "remove the floating Write to the crew button"; the
+header's Write key, the `#write` doors and a phone's bar remain the ways in) (640px
 wide, on the notes' surface with a rule of Mars along its top): an eyebrow *Uplink · one-way
 signal 14 min · 1.634 au*, the title *Write to the crew* with its cross, **your callsign**, the
 crew's question for the day, the writing box — **1000 characters** (`MESSAGE_MAX_CHARS`; the
@@ -2023,7 +2026,7 @@ counter says `0 / 1000`) — the five tags (choose up to 3) and **Transmit** acr
 the device's light, grip, knob and vents are not drawn in it. Every `#write` door opens it (the
 note's, the slowest chat's; on the Write page the header's Write key too), `/write#write` opens
 the Write page with it open; its cross, Escape or a click on the blur fold it away (what was
-written stays), and the floating key is gone while it is open. A message sent from it crosses in
+written stays), and the focus goes back to the door it was opened by. A message sent from it crosses in
 it — the dial, the read-out — **with a Message Board key under them** (`transit-board` in
 `communicate.js`): on the Write page it folds the window away and brings the wall into view,
 where the note just sent stands at the head; elsewhere it leads to the Write page. **Once the
@@ -2037,13 +2040,8 @@ again (`public/write.js`, `public/tabbar.js`). The window's
 head names no operator and no callsign (October: "remove the operator name"); it says the one-way
 signal and the distance alone — the callsign a visitor writes under is on the cookie card and on
 their notes on the board (the writing screen's composer keeps *OPERATOR · BODENSTATION*). A page opened while a
-message is still crossing keeps the window closed (the note stands on the wall, in transit) —
-**and the floating key is the crossing itself meanwhile, on whatever page the visitor goes to**:
-a ring filling as the message goes, the countdown (*T−00:06*) and the state (*Sending · 51%*,
-then *ARRIVED · Delivered · awaiting review*), read off the window's transit display and kept
-going by `write.js` from the moment it was sent; a press on it opens the window with the dial.
-Once the message has arrived and the fresh composer has come, the key is the Write key again.
-What is crossing for the visitor is read by the kit itself; the Write page hands it its own
+message is still crossing keeps the window closed (the note stands on the wall, in transit);
+`#write` opens it on the crossing. What is crossing for the visitor is read by the kit itself; the Write page hands it its own
 (a refused post's word and draft with it). A phone has none of this: the composer is the Write
 page's dock at the foot of the screen (below, *Mobile and desktop*), its bar's Write key the way
 to it, and its doors on the other pages lead there (`tabbar.js`).
@@ -2297,27 +2295,17 @@ turns it to day, and the choice is remembered in a cookie (`mcs_theme`) and reso
 server, so there is no flash of the wrong ground; the key (*Light* now) turns it back. A visitor
 who declines cookies keeps the dark. Mission control's switch follows the same rule.
 
-**By day the station is blue, by night orange** (October, 7 October: "for the light theme, replace
-the orange theme with blue"). In the light theme every Mars-orange accent of the public pages turns
-to an azure blue (`#0b81ff`, its text tone `#005ec2`) — the Write keys (with dark navy type on
-them, as the orange ones had), the sol pill, the *!* of MARS!platz, the eyebrows, the run's dates,
-the LIVE marks, the notes' round-trip mark, the two calls and *Approved messages are beamed into
-space*, the foot's glow, the phone's Write disc — beside the cobalt the dashboard's key keeps, so
-the two keys stay apart; the notes' sheet turns cool. The dark theme keeps its orange. It is one
-stylesheet laid over the others, **`public/light.css`, written by `tools/light-theme.js`** from the
-station's own sheets: every rule that draws in orange on a light page gets a twin, in the light
-theme only, with each orange turned to the blue of the same strength and lightness (hue 211°, its
-transparency kept); the twin carries its original's specificity exactly (`:where()`), so it wins
-only where the orange rule won, and a later rule that beat the orange one is laid over again after
-the twin (`/* as it stood */`). **After changing an orange in a stylesheet, run `node
-tools/light-theme.js`** — the test suite fails while `public/light.css` is out of date. Left as they
-are, on purpose: the night screens — the first page's room, where **the white signal climbs from
-Earth to the habitat and the crew's answer comes back down in orange, as before** (October), and
-the composer's crossing dial — which are dark in both themes; the states that warn (a store
-running low, a reading out of range, an error, the channel shut), which turn red, not blue; the
-Commander's blog head, indigo beside the Health blog's sky blue; Earth on the notes' round trip, in
-ink beside the blue loop; the trend graphs' line colours, which name the series; mission control,
-which never loads the sheet.
+**By day and by night the station's accent is Mars orange** (8 October: "keep the orange for the
+light mode also"). For one day it was blue by day (7 October: "for the light theme, replace the
+orange theme with blue"): **`public/light.css`, written by `tools/light-theme.js`** from the
+station's own sheets, gave every rule that draws in orange on a light page a twin, in the light
+theme only, with each orange turned to the blue of the same strength and lightness (hue 211°), the
+twin carrying its original's specificity exactly (`:where()`). That sheet and its tool are kept in
+the project, but **no page loads it any more** — not the public pages, not the screens, not mission
+control — so the light theme draws in the same orange as the dark one, beside the blue the
+dashboard's key keeps. To bring the blue day back, add `'/light.css'` after `'/sheet.css'` in
+`src/views/layout.js` and link it after `screen.css` in `src/views/pages/screens.js`, then run
+`node tools/light-theme.js` so it matches the stylesheets.
 
 **The station wears soft UI** (8 October: "redesign the website in neumorphism style with orange,
 black and blue"). Over everything else on the public pages lies **`public/neu.css`**, last of all:
@@ -2327,16 +2315,49 @@ the bottom right; everything written into or chosen — the fields, the crew's a
 chip, the open folder, the page's own key, the activity under way — pressed into it. No borders, no
 glass. **By night** the ground is the station's black (`#121214`), the shade true black and the
 light a faint grey, with a one-pixel rim of light along every raised edge; the keys that act
-(*Write to the crew*, the floating Write key, *Transmit*, the composer's send) keep their Mars
+(*Write to the crew*, *Transmit*, the composer's send) keep their Mars
 orange gradient with dark type and are the only things that glow; the dashboard's key keeps its
 blue; every lamp — the sol under way, the chosen chip, a visitor's own note — burns orange. **By
-day** the ground is a soft grey (`#e3e7ef`) and the accents are the light theme's blue. The night
+day** the ground is a soft grey (`#e3e7ef`) with the same Mars orange, the keys that act casting a
+soft orange shadow instead of glowing. The night
 room on the first page stays night, set into the ground like a screen with a bevel, its white
 signal up and orange answer down. The sheet re-points the station's own tokens (paper, glass,
 raise, well, rule) to the one ground and the soft shadows, so whatever is drawn from them follows;
-its rules after that catch what is drawn directly. Keyboard focus keeps its ring. Mission control
-and the screens do not load it. The two mockups it was taken from are kept beside the project
-(*MARS!platz Soft UI* and *Soft UI Night*).
+its rules after that catch what is drawn directly. Keyboard focus keeps its ring. **The installation's
+screens wear it too** (8 October: "make sure the visualisations also change for the /screens page"):
+`src/views/pages/screens.js` links it after `screen.css`, so every screen — the habitat's instruments,
+the board, the blogs, the day, the trends, the media, the ground station — stands on the same ground
+by night and by day. Mission control does not load it. The two mockups it was taken from are kept
+beside the project (*MARS!platz Soft UI* and *Soft UI Night*).
+
+**The evening of 8 October** went over the dashboard once more:
+
+- **The Sensors panel has room to breathe.** Its tiles stand on four tracks with wide gaps between them
+  (`gap: min(22px, calc(2.4 * var(--u)))`) and more air inside each: the carbon dioxide | the
+  temperature | the humidity over the air pressure | the steps, then the air quality | the light | the
+  volatile organic compounds | the radar — every edge in line from row to row, the gaps standing between
+  the tiles only (the old grid of 24 put a gap between every column, inside the tiles too). The panel is
+  a container (`container: hbt / inline-size`): under 740 px wide it lays the tiles on two tracks, under
+  400 px on one; a phone keeps its own column. The instruments' names (*Astronauts tracked*, *Karlsruhe*)
+  stand in the flow above their drawings, on two lines where the tile is narrow, never over the drawing.
+- **The calories consumed are gone** — from the Sensors panel, the Trends, mission control's Habitat tab,
+  At a Glance, the dome and the record (see *Editing the day's values during the run*). The steps stay.
+- **The Commander Blog is the Commander Log** (German *Commander-Logbuch*, French *Journal du
+  commandement*), everywhere it is named.
+- **The journey's close key** (where a message is now, `public/board.js`) has its cross drawn rather
+  than typed, set in the very middle of its round by the flex box — the typed ✕ stood on its font's
+  baseline, off to the left of the round — and the round stays square on a phone (44 px).
+- **The blogs have margins**: each post is held off its card's edges (`clamp(18px, 2.4vw, 32px)` above
+  and below, up to 40 px at the sides) and, in the soft UI, sunk into its panel. The blog panel clips
+  with `overflow: clip` rather than `hidden`, so its sticky band stays at its head instead of standing
+  190 px down over the post; a folder brought to the front while the page stands below it now opens at
+  its own top (`public/folder.js`); and a post typed in mission control — whose line ends come from the
+  browser as `\r\n` — is parted into its paragraphs (`paragraphs()` in `src/views/pages/media.js`)
+  instead of standing as one paragraph with every line end drawn twice.
+- **The floating Write to the crew key is gone** from every page (see *The composer's window*).
+- **The Resources rings are larger** and carry the store's name under them and no count of days
+  (*35 days*, *ample*, *no draw* are gone — and from the ring's hover title too): a ring a store with
+  its figure and unit in the middle, its name large beneath.
 
 ## Three phases
 
@@ -2565,8 +2586,8 @@ src/
                          (public/sky.js places them on the grid and fades them in and out, moves the day's line,
                          hides the nudge under the dome once scrolled, moves the signal in transit and pages a phone's scroll)
   views/pages/info.js    the About page: About, What's inside the habitat, A sol on MARS!platz (sol.js), Who we are
-public/                  the stylesheets (station.css, aura.css, sheet.css over them, light.css — the light theme in
-                         blue, written by tools/light-theme.js — and neu.css, the soft UI, over all), the page scripts (board,
+public/                  the stylesheets (station.css, aura.css, sheet.css over them and neu.css, the soft UI, over all;
+                         light.css, the blue day of 7 October, kept but loaded by no page), the page scripts (board,
                          composer, habitat, media, sky, entry editor), the habitat's pictures (habitat/: inside.svg, the
                          habitat in section, ground.jpg, the Mars plain it stands on, and rooms/, five of the rooms in
                          colour, shown when lit; the earlier cutaway's two pictures, unused) and the mission's photographs
@@ -2575,8 +2596,8 @@ tools/                   sensor simulator, mock Home Assistant, backup script, m
                          habitat-modules.py (the habitat's scene and the modules' cut-outs from the two SVG files handed
                          over; run it again when either file is replaced), missions-json.py (content/missions.json
                          from the sheets in missions/; run it again when a sheet changes), light-theme.js
-                         (public/light.css, the light theme in blue, from the stylesheets; run it again when an
-                         orange in a stylesheet changes — --check says whether it is up to date), trace-inside.py
+                         (public/light.css, the blue day of 7 October, from the stylesheets — laid aside since
+                         8 October; --check says whether it is up to date), trace-inside.py
                          (the earlier linework, unused)
 missions/                the scientific missions' sheets, one PDF a mission, MARS_Mission_NN_Title.pdf, 00 to 12
                          (served at /missions/<file>; each sheet's words and which sheet is which day's — the plan

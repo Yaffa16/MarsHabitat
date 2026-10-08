@@ -269,12 +269,12 @@ function blockHead(n, title, sub, { live = null, liveText = 'Live', draft = null
   </div>`;
 }
 
-/** The Commander Blog — the commanding officer's entry — for the chosen day, as a composer in place. */
+/** The Commander Log — the commanding officer's entry — for the chosen day, as a composer in place. */
 function blogBlock(c, tab, day, entry, n = 1, e = null, draft = null) {
   const live = entry && !isPlaceholder(entry.body);
   const text = draft ? draft.body : live ? entry.body : '';
-  return panel('COMMANDER BLOG', `
-    ${blockHead(n, 'Commander Blog', `${esc(officer.shown(c.designation))} · ${dayN(day)}`, { live, liveText: 'Live', draft })}
+  return panel('COMMANDER LOG', `
+    ${blockHead(n, 'Commander Log', `${esc(officer.shown(c.designation))} · ${dayN(day)}`, { live, liveText: 'Live', draft })}
     <form method="post" action="/control/logbook" enctype="multipart/form-data" data-attach-media data-crew-id="${c.id}" class="${mark(e, 'body').trim()}"
           data-media="${editorMedia(c.media, text, c.otherBodies || [])}">
       <input type="hidden" name="day" value="${day}">
@@ -374,10 +374,10 @@ function missionBlock(day, plan, e = null) {
     </form>`, 'mars-side');
 }
 
-/** Steps taken and calories consumed, the only habitat figures counted by a
- *  person — two blocks on the Habitat tab, one line per officer each, both
- *  writing content/crew-figures.json (a save touches only its own figure);
- *  the crew's totals are the sums, worked out on save. */
+/** Steps taken, the only habitat figure counted by a person — a block on the
+ *  Habitat tab, one line per officer, writing content/crew-figures.json; the
+ *  crew's total is the sum, worked out on save. (The calories consumed had a
+ *  block of their own beside it until October: no longer kept.) */
 function figureBlock(day, figures, crew, e, { key, chan, title, label, unit }) {
   const f = figures[String(day)] || {}, per = f.crew || {};
   const fmt = (v) => (v == null ? '—' : Number(v).toLocaleString('en-GB'));
@@ -398,8 +398,6 @@ function figureBlock(day, figures, crew, e, { key, chan, title, label, unit }) {
 }
 const stepsBlock = (day, figures, crew, e) => figureBlock(day, figures, crew, e,
   { key: 'steps', chan: 'STEPS TAKEN', title: 'Steps taken', label: 'steps', unit: 'steps' });
-const caloriesBlock = (day, figures, crew, e) => figureBlock(day, figures, crew, e,
-  { key: 'calories', chan: 'CALORIES CONSUMED', title: 'Calories consumed', label: 'kcal', unit: 'kcal' });
 
 /* The recipe book's figures, per serving, as the food plan and the book show them. */
 const { NUTRIENTS } = require('../../lib/content');
@@ -663,7 +661,7 @@ function resetBlock(day, plan, locked) {
     ${eyebrow('Start again from 15 October')}
     <p class="note"><b>Reset to 15 October</b> — the button at the top of this page, on every tab — asks you to
       type <code>RESET</code>, then: empties every blog slot for every day and officer (the crew fill them
-      during the run); empties the dailies that are counted as the run goes — the crew's steps and calories,
+      during the run); empties the dailies that are counted as the run goes — the crew's steps,
       the power figures, the stores' counts and the mission notes (their files keep their notes and the
       power categories; the stores start from what was carried in); clears every message, reply and callsign from Earth; clears every crew state filed, so
       the crew begin with nothing on record; clears the media sent out from the record (the files stay on disk
@@ -777,7 +775,6 @@ function page(ctx, model) {
       ${scheduleBlock(day, tasks, edits.schedule)}
       ${mealsBlock(day, meals, edits.meals, recipes, mealHours)}
       ${stepsBlock(day, figures, crew, edits.steps)}
-      ${caloriesBlock(day, figures, crew, edits.calories)}
       ${inventoryBlock(day, items, edits.inventory)}
       ${powerBlock(day, power, edits.power)}
       ${cloudBlock()}

@@ -2,7 +2,7 @@
  *
  * The three blogs one at a time, each filling the screen: its head — the name, the sol and the date — stays; the day's
  * post rolls by underneath from top to bottom at reading pace, and when its end has been in view for a moment the next
- * blog takes the screen: the Commander Blog, then the Daily Mission Report, then the Health Report, round and
+ * blog takes the screen: the Commander Log, then the Daily Mission Report, then the Health Report, round and
  * round. A post short enough to fit is simply shown for a while; a blog with nothing written yet shows its note and
  * passes the turn on. The post is moved by transform, not scrolled, so nothing on the screen can be dragged.
  * Speed and pauses can be set on the wrapper: data-speed (pixels a second), data-hold (ms at the top and at the end). */

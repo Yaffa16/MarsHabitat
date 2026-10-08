@@ -12,7 +12,7 @@
  * Assistant (src/lib/habitat-feed.js): each entity's state as fetched and
  * the rows the poll stored; `ingest` — every POST to
  * /api/sensors/ingest; `resources` — the stores as the content files put
- * them, every time they change; `figures` — the crew's calories and steps,
+ * them, every time they change; `figures` — the crew's steps,
  * every time they change; `daily` — each day's habitat summary as it is
  * rolled up; `home-assistant` — every poll of the habitat's own hardware
  * (src/lib/home-assistant.js) that carried something new.
@@ -154,7 +154,7 @@ async function sendZip(res, { writeZip, mission }) {
     'counts of what came back), habitat/ every poll of the habitat sensor through',
     'Home Assistant (each entity\'s state as fetched, and the rows stored), ingest/ every batch',
     'posted to /api/sensors/ingest, resources/ the stores as the content files put',
-    'them each time they changed, figures/ the crew\'s calories and steps each time',
+    'them each time they changed, figures/ the crew\'s steps each time',
     'they changed, daily/ each day\'s habitat summary as it was rolled up, and',
     'home-assistant/ every poll of the habitat\'s own hardware, changed or not,',
     'exactly as Home Assistant returned it. Before the run, daily/ also carries NOW',

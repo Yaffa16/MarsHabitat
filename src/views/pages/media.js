@@ -54,7 +54,9 @@ function figure(m, { link = true, T = same } = {}) {
 }
 
 function paragraphs(text) {
-  return String(text).trim().split(/\n{2,}/).filter((t) => t.trim())
+  // a post typed in mission control comes with a browser's line ends (\r\n): made plain first, or its blank lines would
+  // not part its paragraphs and every line end would stand as two breaks on the page
+  return String(text).replace(/\r\n?/g, '\n').trim().split(/\n{2,}/).filter((t) => t.trim())
     .map((t) => `<p>${esc(t.trim()).replace(/\n/g, '<br>')}</p>`).join('');
 }
 
@@ -81,7 +83,7 @@ function entryHtml(body, attached = [], opts = {}) {
 
 /** The entry as text, for places that cannot show a picture. */
 function entryText(body) {
-  return String(body || '').replace(/\[media:\d+\]/g, '').replace(/\n{3,}/g, '\n\n').trim();
+  return String(body || '').replace(/\r\n?/g, '\n').replace(/\[media:\d+\]/g, '').replace(/\n{3,}/g, '\n\n').trim();
 }
 
 /** The entry as Markdown, for the readable record. */
@@ -89,7 +91,7 @@ function entryMarkdown(body, attached = []) {
   const byId = new Map(attached.map((m) => [m.id, m]));
   const used = new Set();
   const line = (m) => (m.kind === 'image' ? `![${m.caption || m.filename}](${media.fileUrl(m)})` : `[${m.kind}: ${m.filename}](${media.fileUrl(m)})`) + (m.caption ? `  \n_${m.caption}_` : '');
-  let out = String(body || '').replace(/\[media:(\d+)\]/g, (_, id) => {
+  let out = String(body || '').replace(/\r\n?/g, '\n').replace(/\[media:(\d+)\]/g, (_, id) => {
     const m = byId.get(Number(id)) || media.get(Number(id)); if (!m || m.hidden) return '';
     used.add(m.id); return `\n\n${line(m)}\n\n`;
   });

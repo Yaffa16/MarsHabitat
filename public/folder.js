@@ -37,16 +37,28 @@
     try { window.dispatchEvent(new Event('resize')); } catch (e) { /* old browsers */ }   // anything inside that sizes itself
     return true;
   }
+  // A folder brought to the front while the page stands below the top of the stack opens at its own top — right under
+  // the bands that stay at the top of the window (the rail's stop on a wider screen, the row of tabs on a phone) — and
+  // not part-way down the new panel (October: a blog opened that way began under its own band, its first lines hidden).
+  function toTop() {
+    var body = stack.querySelector('.folder-body'), bar = stack.querySelector('.folder-tabs'), rail = stack.querySelector('.frail');
+    if (!body || !window.getComputedStyle) return;
+    var stop = 0;
+    if (rail && getComputedStyle(rail).position === 'sticky') stop = parseFloat(getComputedStyle(rail).top) || 0;
+    else if (bar && getComputedStyle(bar).position === 'sticky') stop = bar.getBoundingClientRect().bottom;
+    var top = body.getBoundingClientRect().top;
+    if (top < stop - 1) window.scrollTo(0, Math.max(0, top + window.pageYOffset - stop));
+  }
   // a group's button: its first folder to the front (its row then shows on a phone)
   groups.forEach(function (b) {
     b.addEventListener('click', function () {
       var row = rows.filter(function (r) { return r.getAttribute('data-group') === b.getAttribute('data-group'); })[0];
       var first = row && row.querySelector('.ftab[data-folder]');
-      if (first) front(first.getAttribute('data-folder'));
+      if (first) { front(first.getAttribute('data-folder')); toTop(); }
     });
   });
   tabs.forEach(function (t, i) {
-    t.addEventListener('click', function () { front(t.getAttribute('data-folder')); });
+    t.addEventListener('click', function () { front(t.getAttribute('data-folder')); toTop(); });
     t.addEventListener('keydown', function (e) {
       var n = null;
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') n = (i + 1) % tabs.length;

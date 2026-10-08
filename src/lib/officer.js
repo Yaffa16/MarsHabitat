@@ -1,7 +1,7 @@
 'use strict';
 /**
  * The crew's names as the station shows them. The first officer is filed as
- * COMMUNICATION OFFICER — the key their Commander Blog, their daily figures,
+ * COMMUNICATION OFFICER — the key their Commander Log, their daily figures,
  * their mood and their answers are stored under, in content/ and in the
  * database — and is shown everywhere as the Commanding Officer: the same
  * person, the same role (they relay and answer the messages from Earth), a

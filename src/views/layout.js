@@ -247,21 +247,19 @@ function clientTable(lang) {
   return `<script>window.MCS_T=${json};function t(s){return (window.MCS_T||{})[s]||s}</script>`;
 }
 
-/* The composer's pop-up (src/views/pages/public.js, portal) and the Write key that floats at the foot of the window at
-   the right, on every public page: the key opens the window over the page (public/write.js), a message crosses in it,
-   and its Message Board key leads to the wall. While a message is crossing the key is the crossing itself — a ring
-   filling as the message goes, the countdown, the state — whatever page the visitor is on (write.js keeps it going).
-   A phone keeps its bar's Write key, which leads to the Write page's dock (tabbar.js); the floating key is a wider
-   screen's. What is crossing for this visitor is read here unless the page hands it over (the Write page, with a
-   refused post's word and draft). */
+/* The composer's pop-up (src/views/pages/public.js, portal), on every public page: a #write door on the page opens the
+   window over it (public/write.js) — the header's Write key opens it on the Write page —, a message crosses in it, and
+   its Message Board key leads to the wall. A phone keeps its bar's Write key, which leads to the Write page's dock
+   (tabbar.js). The Write key that floated at the foot of the window, at the right, is gone (October: "remove the
+   floating Write to the crew button"). What is crossing for this visitor is read here unless the page hands it over
+   (the Write page, with a refused post's word and draft). */
 function writeKit(ctx, { inFlight, error = null, draft = '' } = {}) {
   const T = ctx.T || same;
   if (inFlight === undefined) {
     try { inFlight = ctx.visitor ? require('../lib/data').inFlightFor(ctx.visitor.id) : null; } catch { inFlight = null; }
   }
   return `
-${require('./pages/public').portal(ctx, { inFlight, error, draft })}
-<a class="write-float${inFlight ? ' is-crossing' : ''}" href="#write" id="write-fab" aria-controls="write" aria-expanded="false"><span class="wf-idle"><svg class="wf-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M13.5 6.5l3 3"/></svg><span>${T('Write to the crew')}</span></span><span class="wf-cross" aria-live="polite"><svg class="wf-ring" viewBox="0 0 36 36" aria-hidden="true"><circle class="wf-track" cx="18" cy="18" r="15"/><circle class="wf-arc" cx="18" cy="18" r="15" pathLength="100" stroke-dasharray="0 100"/></svg><span class="wf-txt"><b class="wf-clock">--:--</b><small class="wf-state">${T('Sending')}</small></span></span></a>`;
+${require('./pages/public').portal(ctx, { inFlight, error, draft })}`;
 }
 
 /**
@@ -271,8 +269,7 @@ ${require('./pages/public').portal(ctx, { inFlight, error, draft })}
  * MARS!PLATZ layout). `masthead: false` leaves the inner pages' masthead —
  * the wordmark and ZKM | Hertzlab under the header — off a page (the Write
  * page, the dashboard page). Every public page carries the composer's
- * pop-up and the Write key that floats at the foot of the window at the
- * right (writeKit); `composer` hands the Write page's own state to it (a
+ * pop-up (writeKit); `composer` hands the Write page's own state to it (a
  * message crossing, a refused post's word and draft) — elsewhere the kit
  * reads what is crossing for this visitor itself.
  */
@@ -289,9 +286,10 @@ function page({ title, ctx, body, current, bodyClass = '', head = '', scripts = 
   const aura = !control;
   if (aura && !styles.includes('/aura.css')) styles = ['/aura.css'].concat(styles);
   // and over it the reference sheet (public/sheet.css): the design handoff's layout of the landing page, its header and its
-  // bar of keys, in this dress — and over that the light theme in blue (public/light.css, written by tools/light-theme.js;
-  // it acts only in the light theme), the last word on every public page
-  if (aura) styles = styles.filter((s) => s !== '/sheet.css' && s !== '/light.css').concat('/sheet.css', '/light.css');
+  // bar of keys, in this dress. The day keeps the Mars orange too (8 October: "keep the orange for the light mode also"):
+  // the blue light theme of 7 October (public/light.css, written by tools/light-theme.js) is laid aside — to bring it back,
+  // concat '/light.css' after '/sheet.css' here and link it after screen.css in views/pages/screens.js
+  if (aura) styles = styles.filter((s) => s !== '/sheet.css' && s !== '/light.css').concat('/sheet.css');
   // and over everything the soft UI (public/neu.css): one ground, the cards and keys raised out of it, the fields and the
   // chosen pressed into it — black, Mars orange and the dashboard's blue by night, a soft grey and blue by day
   if (aura) styles = styles.filter((s) => s !== '/neu.css').concat('/neu.css');
@@ -306,7 +304,7 @@ function page({ title, ctx, body, current, bodyClass = '', head = '', scripts = 
     // the links between the pages.
     hero = require('./pages/public').ticker({ ...ctx, current }) + (withMasthead ? masthead(ctx) : '');
   }
-  // the composer's pop-up and the floating Write key, on every public page (public/write.js opens and closes the box;
+  // the composer's pop-up, on every public page (public/write.js opens and closes the box;
   // the Write page's own message in transit, or a refused post's word, comes through `composer`)
   const kit = aura ? writeKit(ctx, composer || {}) : '';
   if (aura) scripts = scripts.filter((s) => s !== '/composer.js' && s !== '/write.js').concat(['/composer.js', '/write.js']);

@@ -43,13 +43,13 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
   const state = m.phase === 'PRE_LAUNCH' ? 'planned' : n < m.clampedDay ? 'past' : n === m.clampedDay ? 'today' : 'planned';
   const written = r.entries.filter((e) => !content.isPlaceholder(e.body));
   const day = r.day;
-  // The three blogs of the day, each a card of its own: the Commander Blog
+  // The three blogs of the day, each a card of its own: the Commander Log
   // (the commanding officer's entry, with what they sent out that day),
   // the Daily Mission Report and the Health Report (the reports).
   const findings = day ? day.notes.filter((x) => x.published_at && x.kind === 'SCIENCE') : [];
   const health = day ? day.notes.filter((x) => x.published_at && x.kind === 'HEALTH') : [];
   const posts = [
-    ...written.map((e) => ({ title: 'Commander Blog', html: MV.entryHtml(e.body, (r.media || []).filter((x) => x.crew_id === e.crew_id), { lookup: mediaLookup, T }) })),
+    ...written.map((e) => ({ title: 'Commander Log', html: MV.entryHtml(e.body, (r.media || []).filter((x) => x.crew_id === e.crew_id), { lookup: mediaLookup, T }) })),
     ...findings.map((x) => ({ title: 'Daily Mission Report', html: MV.entryHtml(x.body, [], { lookup: mediaLookup, T }) })),
     ...health.map((x) => ({ title: 'Health Report', html: MV.entryHtml(x.body, [], { lookup: mediaLookup, T }) })),
   ];
@@ -134,16 +134,16 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
   const nodeTiles = (r.node || []).map((x) => { const [label, unit, dec] = NODE_LABELS[x.key] || [x.key, '', 1]; return tile(label, unit, x.last, dec, T); });
   const ingestTiles = (r.ingest || []).map((h) => tile(h.label || h.key, h.unit || '', h.last, 1, T));
   const hardwareTiles = (r.hardware || []).filter((h) => h.last != null && !h.retired).map((h) => tile(h.label, h.unit || '', h.last, Number.isFinite(Number(h.decimals)) ? Number(h.decimals) : 1, T));
-  // The crew's counted figures for the day — calories consumed and steps
-  // taken, as the Habitat dashboard carries them — drawn as tiles of the
-  // same bank.
+  // The crew's counted figure for the day — the steps taken, as the Habitat
+  // dashboard carries them — drawn as a tile of the same bank (the calories
+  // consumed are no longer kept, October).
   const fig = content.crewFigures()[String(n)] || {};
   const figTile = (label, unit, v) => (v == null ? '' : `<div class="glance-tile">
       <span class="gt-label">${esc(T(label))}</span>
       <span class="gt-value">${Number(v).toLocaleString('en-GB')}<em>${esc(T(unit))}</em></span>
       <span class="gt-range">${T('crew total · counted that day')}</span>
     </div>`);
-  const figTiles = figTile('Calories consumed', 'kcal', fig.calories) + figTile('Steps taken', 'steps', fig.steps);
+  const figTiles = figTile('Steps taken', 'steps', fig.steps);
   const habitat = (nodeTiles.length || ingestTiles.length || hardwareTiles.length || figTiles) ? `
     <div class="glance-block">
       ${eyebrow(T('Habitat'))}

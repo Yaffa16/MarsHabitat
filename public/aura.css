@@ -529,6 +529,10 @@ body.journey-open { overflow: hidden; }
 :root[data-theme="dark"] .jr-panel { background: rgba(14, 16, 30, .92); }
 .jr-close { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; padding: 0; border-radius: 50%; border: 1px solid var(--glass-edge); background: transparent; color: var(--dim); font: inherit; font-size: 15px; line-height: 1; cursor: pointer; box-shadow: none; min-height: 0; }
 .jr-close:hover { color: var(--ink); background: rgba(var(--cobalt-rgb), .1); transform: none; box-shadow: none; }
+/* the cross in the middle of its round (October: "center the cross in the circle, it's off center"): drawn (board.js), set
+   in the middle by the flex box, the round kept square — a phone's 44 px for a finger, no button's letter-spacing */
+body .journey .jr-close { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; min-width: 40px; min-height: 40px; max-height: 40px; padding: 0; letter-spacing: 0; text-indent: 0; }
+body .journey .jr-close .jr-x { display: block; width: 14px; height: 14px; flex: none; }
 .jr-line { margin: 0 40px 0 0; font-size: 24px; line-height: 1.3; font-weight: 600; letter-spacing: -.015em; color: var(--ink); }
 .jr-line .jr-r { color: var(--mars-ink); font-variant-numeric: tabular-nums; }
 .jr-line .jr-what { color: var(--cobalt); }                                    /* the object's name — a word, not a link */
@@ -538,6 +542,7 @@ body.journey-open { overflow: hidden; }
   /* on a phone the panel floats in the middle of the screen, a card with room around it — not a sheet at the foot */
   body.landing > .journey, .journey { padding: 24px 16px; align-items: center; }
   .jr-panel { width: 100%; max-height: 84vh; max-height: 84dvh; border-radius: 22px; padding: 22px 18px 24px; }
+  body .journey .jr-close { width: 44px; height: 44px; min-width: 44px; min-height: 44px; max-height: 44px; top: 12px; right: 12px; }
   .jr-line { font-size: 21px; }
 }
 /* on the board: the cards in one sequence, the newest first, one under the other — the column scrolls — the viewer's own
@@ -775,33 +780,8 @@ body.landing .portal-pop { display: none; }
   /* the closed station's notice and the countdown, in the same window */
   body.landing .portal-pop .transit.closed { margin: 0; }
 }
-/* the Write key that floats at the foot of the window, at the right, on every public page (layout.js, writeKit): the
-   station's primary key with the pen; its right edge on the page's content edge — the margin's width in from the
-   window's, where every card and sheet ends (October: aligned, not half over the box) — gone while the window is
-   open, and on a phone, whose bar has its own */
-body.landing .write-float { position: fixed; right: var(--gutter); bottom: 24px; z-index: 40; display: inline-flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 22px 0 18px; border-radius: 999px;
-  background: var(--mars); color: #1a0a02; font-family: var(--display); font-size: 14px; font-weight: 700; letter-spacing: .02em; text-transform: none; text-decoration: none; white-space: nowrap;
-  box-shadow: 0 16px 34px -14px rgba(255,70,0,.85), 0 2px 6px rgba(15,21,64,.15); transition: transform .15s, box-shadow .15s, background .15s; }
-body.landing .write-float .wf-ic { flex: none; width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-body.landing .write-float:hover { transform: translateY(-2px); background: #ff7a45; color: #1a0a02; box-shadow: 0 20px 38px -14px rgba(255,70,0,.95), 0 2px 6px rgba(15,21,64,.15); }
-body.landing .write-float:focus-visible { outline: 3px solid var(--cobalt-fill); outline-offset: 3px; }
-body.landing.write-open .write-float { visibility: hidden; }
-/* while a message crosses the key is the crossing: the ring filling as the message goes, the countdown and the state —
-   on every page, as long as the message is on its way (write.js keeps it going from the window's transit display) */
-body.landing .write-float .wf-cross { display: none; align-items: center; gap: 12px; }
-body.landing .write-float.is-crossing { background: var(--note-bg); color: var(--ink); border: 1px solid var(--mars); padding: 0 20px 0 10px; box-shadow: 0 16px 34px -14px rgba(255,70,0,.6), 0 2px 8px rgba(15,21,64,.12); }
-body.landing .write-float.is-crossing:hover { background: var(--note-bg); color: var(--ink); }
-body.landing .write-float.is-crossing .wf-idle { display: none; }
-body.landing .write-float.is-crossing .wf-cross { display: flex; }
-body.landing .write-float .wf-ring { flex: none; width: 36px; height: 36px; transform: rotate(-90deg); }
-body.landing .write-float .wf-track { fill: none; stroke: rgba(var(--cobalt-rgb),.18); stroke-width: 3; }
-body.landing .write-float .wf-arc { fill: none; stroke: var(--mars); stroke-width: 3; stroke-linecap: round; transition: stroke-dasharray .4s linear; }
-body.landing .write-float .wf-txt { display: grid; gap: 2px; line-height: 1.1; text-align: left; }
-body.landing .write-float .wf-clock { font-family: var(--mono, monospace); font-size: 15px; font-weight: 600; letter-spacing: .04em; color: var(--ink); font-variant-numeric: tabular-nums; }
-body.landing .write-float .wf-state { font-family: var(--display); font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--mars-ink); white-space: nowrap; }
-body.landing .write-float.is-crossing.is-arrived .wf-arc { stroke: #1d8a5a; }
-:root[data-theme="dark"] body.landing .write-float.is-crossing { background: #141418; border-color: rgba(255,106,46,.7); }
-@media (max-width: 760px) and (min-height: 521px) { body.landing .write-float { display: none; } }
+/* (the Write key that floated at the foot of the window, at the right, is gone — October: "remove the floating Write to
+   the crew button"; the header's Write key and the phone's bar remain) */
 
 /* --------------------------------------------------------- the dashboard */
 body.landing .dash { margin: 0; padding: calc(8 * var(--u)) 0 0; background: none; box-shadow: none; display: grid; grid-template-columns: minmax(0, 1fr); gap: min(20px, calc(2.2 * var(--u))); scroll-margin-top: calc(28px - 8 * var(--u)); }   /* a link to #mission (the masthead's button, the foot) lands the heading where the wheel does: 28 px under the top, the section's own air above it discounted */
@@ -930,26 +910,42 @@ body.landing .mission-sheet:hover { border-color: var(--cobalt-fill); }
 
 /* the habitat: two rows of instruments, the stills at the foot */
 body.landing #habitat.dpanel { padding: 22px 28px; }
-body.landing .hbt { margin: 0; }
-body.landing .hbt .bento { grid-template-columns: repeat(24, minmax(0, 1fr)); gap: min(14px, calc(1.5 * var(--u))); }
-body.landing .hbt .bento.aux { margin-top: min(14px, calc(1.5 * var(--u))); }
+body.landing .hbt { margin: 0; container: hbt / inline-size; }
+/* the gaps wide (October: "increase the gap between boxes to have a clearer layout"), room for each tile's own shadow —
+   and the instruments on four tracks, so that the gaps stand between the tiles only and take nothing from inside them:
+   the carbon dioxide | the temperature | the humidity over the air pressure | the steps; then the air quality | the
+   light | the volatile organic compounds | the radar — every edge in line from row to row. A narrower panel (under
+   740 px: a tablet, a small window) lays them on two tracks, under 400 px on one (the container queries below); a
+   phone has its own column further down. */
+body.landing .hbt .bento, body.landing .dpanel.compact .hbt .bento { gap: min(22px, calc(2.4 * var(--u))); }
+body.landing .hbt .bento:not(.aux) { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr) minmax(0, 6fr) minmax(0, 6fr);
+  grid-template-areas: "co2 temp hum steps" "co2 temp pres steps" "iaq light voc radar"; }
+body.landing .hbt .bento.aux { grid-template-columns: repeat(24, minmax(0, 1fr)); margin-top: min(22px, calc(2.4 * var(--u))); }
+@container hbt (max-width: 739px) {
+  body.landing .hbt .bento:not(.aux) { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "co2 temp" "hum pres" "iaq iaq" "voc light" "steps radar"; }
+}
+@container hbt (max-width: 399px) {
+  body.landing .hbt .bento:not(.aux) { grid-template-columns: minmax(0, 1fr); grid-template-areas: none; }
+  body.landing .hbt .bento:not(.aux) > .tile { grid-area: auto; }
+}
 body.landing .hbt .tile { padding: min(14px, calc(1.5 * var(--u))) 16px; border-radius: 18px; background: var(--tile); border: 1px solid rgba(var(--cobalt-rgb),.12); box-shadow: none; display: flex; flex-direction: column; gap: 4px; }
+body.landing .dpanel.compact .hbt .tile { padding: min(16px, calc(1.8 * var(--u))) 16px; border-radius: 18px; }   /* the compact panel's tight dress (station.css) let out: air in each tile as between them */
 body.landing .hbt .tile h3, body.landing .dpanel.compact .hbt .tile h3 { font-family: var(--display); font-weight: 600; font-size: var(--fs-name); letter-spacing: -.005em; color: var(--ink); margin: 0; }
 body.landing .hbt .sub, body.landing .dpanel.compact .hbt .sub { font-family: var(--display); font-size: 13px; letter-spacing: 0; text-transform: none; color: var(--dim); line-height: 1.4; }   /* a sentence, not a label: plain case */
-body.landing .hbt .t-co2 { grid-column: span 7; grid-row: span 2; }
-body.landing .hbt .t-temp { grid-column: span 3; grid-row: span 2; }
-body.landing .hbt .t-hum { grid-column: 11 / span 4; grid-row: 1; padding: 12px 16px; }
-body.landing .hbt .t-pres { grid-column: 11 / span 4; grid-row: 2; padding: 12px 16px; }
-/* the third row, the habitat sensor's two new channels: the air quality
-   index with its classification, and the volatile organic compounds */
-body.landing .hbt .t-iaq { grid-column: 1 / span 8; grid-row: 3; padding: 12px 16px; }
-body.landing .hbt .t-voc { grid-column: 9 / span 6; grid-row: 3; padding: 12px 16px; }
-body.landing .hbt .t-light { grid-column: 15 / span 5; grid-row: 3; padding: 12px 16px; }                                /* the radar takes the end of the row ("the dashboard, alive") */
+body.landing .hbt .t-co2 { grid-area: co2; }
+body.landing .hbt .t-temp { grid-area: temp; }
+body.landing .hbt .t-hum { grid-area: hum; }
+body.landing .hbt .t-pres { grid-area: pres; }
+/* the third row, the habitat sensor's channels: the air quality index with its classification, the light, the volatile
+   organic compounds — the radar takes the end of the row ("the dashboard, alive") */
+body.landing .hbt .t-iaq { grid-area: iaq; }
+body.landing .hbt .t-light { grid-area: light; }
+body.landing .hbt .t-voc { grid-area: voc; }
 body.landing .hbt .t-iaq svg, body.landing .hbt .t-voc svg, body.landing .hbt .t-light svg { max-width: 460px; }
-/* the crew's counted figures: two narrow tiles side by side, each two rows tall — the day's figure for every officer, one under the other,
-   the crew's total and the run as a sparkline beneath */
-body.landing .hbt .t-fig { grid-column: span 5; grid-row: 1 / span 2; padding: 12px 14px 10px; }
-body.landing .hbt .t-calories { grid-column: 15 / span 5; } body.landing .hbt .t-steps { grid-column: 20 / span 5; }
+/* the crew's counted figure, the steps (the calories consumed beside it are no longer kept, October): a tile two rows tall
+   at the end of the first two — the day's figure for every officer, one under the other, the crew's total and the run as
+   a sparkline beneath */
+body.landing .hbt .t-steps { grid-area: steps; }
 body.landing .hbt .aux .t-res { grid-column: span 11; }
 body.landing .hbt .aux .t-pwr { grid-column: span 8; }                                                                   /* Karlsruhe's fan stands between the two (public.js, vizTile) */
 /* on a wider screen the second row is laid out by its contents: the stores' tile only as wide as its rings — one ring a
@@ -959,8 +955,8 @@ body.landing .hbt .aux .t-pwr { grid-column: span 8; }                          
   body.landing .hbt .aux .t-res { flex: 0 0 auto; width: auto; max-width: 100%; }
   body.landing .hbt .aux .t-viz-city { flex: 0 0 auto; width: clamp(200px, 23%, 270px); }
   body.landing .hbt .aux .t-pwr { flex: 1 1 260px; min-width: 0; }
-  body.landing .hbt .aux .gauges.rounds { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 6px 10px; }
-  body.landing .hbt .aux .gauge.round { flex: 0 0 auto; width: max(86px, calc(8.8 * var(--u))); }
+  body.landing .hbt .aux .gauges.rounds { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 16px 20px; }
+  body.landing .hbt .aux .gauge.round { flex: 0 0 auto; width: max(140px, calc(14.4 * var(--u))); }
 }
 body.landing .hbt .big { font-family: var(--display); font-weight: 600; letter-spacing: -.03em; line-height: 1; color: var(--ink); }
 body.landing .hbt .big em { font-size: 14px; color: var(--dim); margin-left: 4px; font-weight: 400; }
@@ -986,17 +982,18 @@ body.landing .hbt .fig-total { font-family: var(--display); font-size: 13.5px; f
 body.landing .hbt .fig-spark { display: block; width: 100%; height: min(28px, calc(3 * var(--u))); max-width: none; }
 body.landing .hbt .t-fig .verdict { margin-top: 4px; }
 body.landing .gauges.rounds { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 6px; padding-top: min(6px, calc(.6 * var(--u))); margin-top: 0; }
-body.landing .gauge.round { display: flex; flex-direction: column; align-items: center; gap: min(5px, calc(.5 * var(--u))); text-align: center; }
-body.landing .gauge.round svg { width: calc(7.4 * var(--u)); height: calc(7.4 * var(--u)); }
+/* the stores' rounds large, their names large under them — no count of days (October: "remove the days count and make
+   the layout bigger to show the text clearly") */
+body.landing .gauge.round { display: flex; flex-direction: column; align-items: center; gap: min(8px, calc(.8 * var(--u))); padding: 14px 10px 16px; border-radius: 18px; text-align: center; }
+body.landing .gauge.round svg { width: calc(10.6 * var(--u)); height: calc(10.6 * var(--u)); }
 body.landing .round-track { stroke: rgba(var(--cobalt-rgb),.14); stroke-width: 5; fill: none; }
 body.landing .round-arc { stroke: var(--cobalt-fill); stroke-width: 5; fill: none; stroke-linecap: butt; }
 body.landing .gauge.round.low .round-arc { stroke: var(--mars); }
 body.landing .round-num { font-family: var(--display); font-size: 15px; font-weight: 600; fill: var(--ink); }
 body.landing .round-unit { font-family: var(--display); font-size: 9.5px; letter-spacing: .06em; fill: var(--dim); text-transform: uppercase; }
-body.landing .cell-name { font-family: var(--display); font-size: 13.5px; font-weight: 600; line-height: 1.25; color: var(--ink); text-transform: none; letter-spacing: 0; }
-body.landing .cell-days { font-family: var(--display); font-size: 13px; color: var(--dim); line-height: 1.2; }
-/* a store with no figure yet: a dash in its ring, PLACEHOLDER as a small stamp in Mars under its name */
-body.landing .cell-days.is-ph, body.landing .gauge-val .is-ph { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; color: var(--mars-ink); }
+body.landing .cell-name { font-family: var(--display); font-size: 16px; font-weight: 600; line-height: 1.3; color: var(--ink); text-transform: none; letter-spacing: 0; -webkit-hyphens: auto; hyphens: auto; overflow-wrap: break-word; max-width: 100%; }
+/* a store with no figure yet: a dash in its ring */
+body.landing .gauge-val .is-ph { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; color: var(--mars-ink); }
 body.landing .gauge.round.is-ph .round-num { fill: var(--dim); font-weight: 400; }
 body.landing .pwr { padding-top: 6px; margin-top: 0; gap: min(4px, calc(.4 * var(--u))); display: grid; }
 body.landing .pwr-row { display: grid; grid-template-columns: minmax(0, 150px) minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 0; min-height: min(22px, calc(2.2 * var(--u))); }
@@ -1080,9 +1077,7 @@ body.landing .folder-body #habitat .hbt .fig-v { font-size: 20px; }
 body.landing .folder-body #habitat .hbt .fig-v em { font-size: 14px; }
 body.landing .folder-body #habitat .hbt .fig-total { font-size: 16px; }
 body.landing .folder-body #habitat .hbt .viz-k { font-size: 14px; letter-spacing: .12em; }
-body.landing .folder-body #habitat .cell-name { font-size: 15px; }
-body.landing .folder-body #habitat .cell-days { font-size: 13px; }
-body.landing .folder-body #habitat .cell-days.is-ph { font-size: 10px; letter-spacing: .08em; }
+body.landing .folder-body #habitat .cell-name { font-size: 17px; }
 body.landing .folder-body #habitat .hbt .empty, body.landing .folder-body #habitat .hbt .note, body.landing .folder-body #habitat #hbt-notes .note { font-size: 15px; line-height: 1.45; }
 body.landing .folder-body #habitat .dpanel-title h3 { font-size: 24px; }
 body.landing .folder-body #habitat .dpanel-meta { font-size: 13px; }
@@ -1161,6 +1156,9 @@ body.landing .blogp .card { background: transparent; box-shadow: none; border: 0
 body.landing .blogp .card .card-body { padding: 0; font-family: var(--display); font-size: 17px; line-height: 1.65; color: var(--ink); }
 body.landing .blogp .card .card-body p { margin: 0 0 14px; }
 body.landing .blogp .empty { margin: 0; }
+/* the posts with margins (October: "add margins to the blogs"): the words held off the card's edges and the card off the
+   panel's — a page of its own, outlined (body.landing.inner .card) or, in the soft UI, sunk into the panel (neu.css) */
+body.landing .dpanel.blogp .card.log-entry { padding: clamp(18px, 2.4vw, 32px) clamp(18px, 2.8vw, 40px); border-radius: 20px; }
 
 /* ------------------------------------------------------ the index of folders */
 /* The dashboard's panels behind one index, on one glass panel: the keys in three tracks — the sensors' (Sensors), the day's
@@ -1255,9 +1253,9 @@ body.landing .folder-body .blogp .entry-figure { width: fit-content; max-width: 
 body.landing .folder-body .blogp .entry-figure img, body.landing .folder-body .blogp .entry-figure video { width: auto; max-width: 100%; max-height: 380px; object-fit: contain; }
 body.landing .folder-body #trends .dpanel-body { min-height: 0; }
 body.landing .folder-body .tchart-svg { max-height: calc(100vh - 300px); }                                            /* the whole chart in the folder, under the panel's head */
-body.landing .folder-body .dpanel.blogp { overflow: hidden; }
+body.landing .folder-body .dpanel.blogp { overflow: clip; }   /* clip, not hidden: hidden made the panel the band's scroller, and the sticky band stood 190 px down inside it, over the post (October) */
 body.landing .folder-body .dpanel.blogp .dpanel-head { border-radius: 16px; min-height: 110px; padding: 18px 22px; }
-body.landing .folder-body .dpanel.blogp .dpanel-body { padding: 18px 4px 0; }
+body.landing .folder-body .dpanel.blogp .dpanel-body { padding: 22px 6px 8px; }
 /* Today's Mission, the first key of the Daily Life track (public.js, dashboard): inside its folder the panel wears the
    folder's head like the others — its mission number, title, question, the three parts and the community question at
    their own sizes (sheet.css) — on the folder's ground, no glass of its own */
@@ -1589,7 +1587,7 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
   /* the habitat's readings on a phone: one plain column of compact readouts — each tile its name and its scale at the
      left, its figure at the right, the dial or the band under them where there is one; the thermometer's ruler, the
      radar and the fan left to a wider screen; the figures, the stores and the power one under the other */
-  body.landing .hbt .bento { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  body.landing .hbt .bento, body.landing .hbt .bento:not(.aux), body.landing .dpanel.compact .hbt .bento { grid-template-columns: minmax(0, 1fr); grid-template-areas: none; gap: 14px; } body.landing .hbt .bento.aux { margin-top: 14px; }
   body.landing .hbt .bento > .tile { grid-column: 1 / -1; grid-row: auto; }
   body.landing .hbt .tile:not(.t-fig):not(.t-viz):not(.t-res):not(.t-pwr) { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "h big" "sub big"; column-gap: 14px; row-gap: 2px; align-items: center; padding: 11px 14px 12px; }
   body.landing .hbt .tile:not(.t-fig):not(.t-viz):not(.t-res):not(.t-pwr) > h3 { grid-area: h; margin: 0; }
@@ -1603,12 +1601,12 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
   body.landing .hbt .dial-wrap svg { display: block; width: min(100%, 220px); height: auto; max-width: 100%; margin: 0 auto; } body.landing .hbt .dial-center .big { font-size: 26px; }
   body.landing .hbt .t-fig .verdict { display: none; }                                           /* "nothing recorded" stands in its foot already */
   body.landing .hbt .t-viz-radar { display: none; }
-  body.landing .hbt .tile.t-viz-city { min-height: 0; padding: 36px 12px 12px; } body.landing .dl-city { max-width: 190px; }
+  body.landing .hbt .tile.t-viz-city { min-height: 0; padding: 14px 12px 12px; } body.landing .dl-city { max-width: 190px; }
   body.landing .pwr-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name val" "bar bar"; row-gap: 6px; padding: 4px 0; }
   body.landing .pwr-name { grid-area: name; } body.landing .pwr-track { grid-area: bar; } body.landing .pwr-val { grid-area: val; }
   body.landing .hbt .ruler-wrap, body.landing .hbt .ruler-wrap svg { height: 120px; }
-  body.landing .gauges.rounds { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 6px; }
-  body.landing .gauge.round svg { width: 88px; height: 88px; }
+  body.landing .gauges.rounds { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 12px; }
+  body.landing .gauge.round svg { width: 104px; height: 104px; }
   body.landing .cloud-latest { flex-direction: column; gap: 12px; }
   body.landing .cloud-latest-head { width: auto; }
   body.landing .cloud-strip { overflow-x: auto; }
@@ -2293,10 +2291,16 @@ body.landing .run-strip .now i { animation: dl-breathe 2.4s ease-in-out infinite
 /* the two instruments, each a tile with its name small in the corner and the drawing in the middle: the radar at the
    end of the sensors' third row, the fan at the end of the stores' row — never side by side */
 body.landing .hbt .tile.t-viz { position: relative; align-items: center; justify-content: center; min-height: 168px; padding: 36px 16px 14px; overflow: hidden; }   /* the name above, the drawing under it */
-body.landing .hbt .t-viz-radar { grid-column: 20 / span 5; grid-row: 3; }
+body.landing .hbt .t-viz-radar { grid-area: radar; }
 body.landing .hbt .aux .t-viz-city { grid-column: span 5; }
 body.landing .hbt .viz-k { position: absolute; left: 16px; top: 12px; font-family: var(--display); font-size: var(--fs-tag); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
 body.landing .hbt .viz-k::before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 8px 1px 0; border-radius: 50%; background: var(--cobalt); box-shadow: 0 0 8px 2px rgba(var(--cobalt-rgb),.45); animation: live 2s ease-in-out infinite; vertical-align: middle; }
+/* the instrument's name in the flow, over its drawing, and on two lines where the tile is narrow — never over the
+   drawing (October: the wider gaps left the radar's tile too narrow for its name on one line); the drawing in the middle
+   of what is left */
+body.landing .hbt .tile.t-viz { padding-top: 14px; }
+body.landing .hbt .viz-k { position: static; align-self: stretch; line-height: 1.35; }
+body.landing .hbt .tile.t-viz > :not(.viz-k) { margin: auto; }
 /* the radar: the ticks, the rings, the cross, the sweep going round in four seconds, the astronauts (live.js moves them
    and lights each as the sweep passes; asked for less motion, they stand, lit) */
 body.landing .dl-radar { width: 132px; height: 132px; overflow: visible; display: block; }
@@ -2366,7 +2370,7 @@ body.landing .mission-body.is-typing li.tw-seen::marker { color: inherit; }
 /* a phone: each instrument the width of the panel, under the row it belongs to */
 @media (max-width: 760px), (max-height: 520px) {
   body.landing .dash-live { padding-top: 2px; }
-  body.landing .hbt .tile.t-viz, body.landing .hbt .aux .t-viz-city { grid-column: 1 / -1; grid-row: auto; min-height: 150px; padding: 40px 12px 14px; }   /* the name above, the drawing under it */
+  body.landing .hbt .tile.t-viz, body.landing .hbt .aux .t-viz-city { grid-column: 1 / -1; grid-row: auto; min-height: 150px; padding: 14px 12px 14px; }   /* the name above, the drawing under it */
   body.landing .hbt .viz-k { left: 14px; }
   body.landing .dl-radar { width: 108px; height: 108px; }
   body.landing .dl-city { max-width: 220px; }

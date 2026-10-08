@@ -13,7 +13,7 @@ const dayLabel = (n) => String(n).padStart(3, '0');
 
 /**
  * The crew log as a page of its own: every day of the run in order, each
- * with its three blogs — Commander Blog, Daily Mission Report, Health
+ * with its three blogs — Commander Log, Daily Mission Report, Health
  * Report. A slot that has been written carries the
  * entry; one that has not carries its placeholder, greyed — a cue for what
  * will go there — so the whole shape of the log is on the page from the
@@ -28,7 +28,7 @@ function logPage(ctx, { days, crew, counts, blogs = [], mediaLookup = () => null
   <div class="logpage-top">
     <div class="eyebrow">${T('Channel group')} 50 · ${T('Crew log')} <span class="brk">${T('Written from inside')}</span></div>
     <h1>${T('Crew log')}</h1>
-    <p class="lede">${T('Three blogs come out of the habitat each day: the Commander Blog, the Daily Mission Report and the Health Report. Nobody edits them on the way out.')} ${counts.published} ${T('of')} ${slots} ${T('entries written')}${
+    <p class="lede">${T('Three blogs come out of the habitat each day: the Commander Log, the Daily Mission Report and the Health Report. Nobody edits them on the way out.')} ${counts.published} ${T('of')} ${slots} ${T('entries written')}${
       pre ? ` — ${T('the habitat is occupied from')} ${esc(m.startLabel)}; ${T('the grey slots show where each day’s entries will go')}` : ''}.</p>
     <div class="actions"><a class="btn" href="/#crewlog">${T('Back to the mission')}</a></div>
   </div>

@@ -472,9 +472,11 @@
   }
 
   var journey = null, box = null, shownId = null;
+  // the close key's cross drawn, not typed: a glyph sits on its font's baseline, off the middle of the round (October)
+  var CROSS = '<svg class="jr-x" viewBox="0 0 14 14" width="14" height="14" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
   function render() {
     var secs = secsOf(box, Date.now()) || 0, km = secs * KM, o = closest(km);
-    if (!o) return '<div class="jr-panel jr-one" role="dialog" aria-modal="true"><button type="button" class="jr-close" aria-label="' + esc(t('Close')) + '">✕</button><p class="jr-line">…</p></div>';
+    if (!o) return '<div class="jr-panel jr-one" role="dialog" aria-modal="true"><button type="button" class="jr-close" aria-label="' + esc(t('Close')) + '">' + CROSS + '</button><p class="jr-line">…</p></div>';
     shownId = o.id;
     var r = km / o.km;
     var what = '<span class="jr-what">' + esc(o.name) + '</span>';
@@ -483,7 +485,7 @@
       : esc(t('Your message is {r} times farther away than {name}.')).replace('{r}', '<b class="jr-r">' + esc(ratio(km, o)) + '</b>').replace('{name}', what);
     if (lang === 'fr' && /^[aeiouyâéèêîôûAEIOUÉ]/.test(o.name)) line = line.replace(/\bque <span/, 'qu’<span');   // "qu’un jour-lumière"
     return '<div class="jr-panel jr-one" role="dialog" aria-modal="true" aria-labelledby="jr-title">' +
-      '<button type="button" class="jr-close" aria-label="' + esc(t('Close')) + '">✕</button>' +
+      '<button type="button" class="jr-close" aria-label="' + esc(t('Close')) + '">' + CROSS + '</button>' +
       '<p class="jr-line" id="jr-title">' + line + '</p>' +
       '<p class="jr-fact">' + esc(aboutLine(o)) + '</p>' +
       '</div>';

@@ -78,7 +78,9 @@ function inventoryGauges(inventory, { compact = false, strip = false, cells = fa
     ? (daysLeft < 99 ? `${daysLeft.toFixed(dec)} ${T('days left')}` : T('ample')) : T('no draw');
   const shown = compact ? inventory.filter((i) => i.critical).slice(0, 5) : inventory;
   // As rounds: a ring per resource, its arc filled to what is left of what was
-  // carried in, the figure in the centre, the name and days remaining beneath.
+  // carried in, the figure in the centre, the name beneath — large, and no
+  // count of days under it (October: "remove the days count and make the
+  // layout bigger to show the text clearly").
   // A store with no figure at all yet — nothing carried in written into
   // content/crew-and-inventory.json and no count filed on the Habitat tab —
   // stands dimmed, its ring empty and a dash for its figure, rather than as an
@@ -92,9 +94,8 @@ function inventoryGauges(inventory, { compact = false, strip = false, cells = fa
       const startLabel = (i.start_quantity || i.quantity) ? start : '—';   // a 0 placeholder reads "of —", not "of 1"
       const pct = ph ? 0 : Math.max(0, Math.min(100, (i.quantity / start) * 100));
       const low = !ph && i.warn_below > 0 && i.quantity <= i.warn_below;
-      const daysLeft = i.consumption > 0 ? i.quantity / i.consumption : null;
       const num = Number.isInteger(i.quantity) ? String(i.quantity) : i.quantity.toFixed(1);
-      return `<div class="gauge round ${low ? 'low' : ''}${ph ? ' is-ph' : ''}" title="${esc(i.label)}${ph ? '' : `: ${i.quantity} ${esc(i.unit)} ${T('of')} ${startLabel} · ${esc(left(daysLeft, 1))}`}">
+      return `<div class="gauge round ${low ? 'low' : ''}${ph ? ' is-ph' : ''}" title="${esc(i.label)}${ph ? '' : `: ${i.quantity} ${esc(i.unit)} ${T('of')} ${startLabel}`}">
         <svg viewBox="0 0 60 60" aria-hidden="true">
           <circle cx="30" cy="30" r="${R}" class="round-track"/>
           <circle cx="30" cy="30" r="${R}" class="round-arc" stroke-dasharray="${C.toFixed(1)}"
@@ -103,7 +104,6 @@ function inventoryGauges(inventory, { compact = false, strip = false, cells = fa
           <text x="30" y="44" class="round-unit">${ph ? '' : esc(i.unit)}</text>
         </svg>
         <span class="cell-name">${esc(i.label)}</span>
-        <span class="cell-days${ph ? ' is-ph' : ''}">${ph ? '' : daysLeft != null ? (daysLeft < 99 ? `${daysLeft.toFixed(0)} ${T('days')}` : T('ample')) : T('no draw')}</span>
       </div>`;
     }).join('')}</div>`;
   }
@@ -157,9 +157,9 @@ function powerBars(categories, T = same) {
 }
 
 /**
- * Calories consumed and steps taken, plotted across the whole mission. Drawn
+ * A crew figure — the steps taken — plotted across the whole mission. Drawn
  * as a real graph — gridlines, a value axis, a day axis and a plotted line
- * with a point per day — because the question these two figures answer is what
+ * with a point per day — because the question the figure answers is what
  * the shape did over thirteen days, and a shape needs a graph.
  *
  * A day with nothing recorded breaks the line rather than dropping it to zero:
@@ -734,13 +734,14 @@ function writePage(ctx, d) {
 
 
 /**
- * A crew figure as a small tile — calories consumed, steps taken: the day's
+ * A crew figure as a small tile — the steps taken (October: the calories
+ * consumed are no longer kept, by the station or by mission control): the day's
  * figure for every officer, one under the other, the crew's total beneath it
  * with the thirteen days as a sparkline, and the average. Lives inside the
  * habitat bento beside the sensor tiles rather than as a chart of its own.
  * The figures are filed per officer on mission control's Habitat tab, under
  * Steps taken (content/crew-figures.json, a day as
- *   "5": { "crew": { "SCIENCE OFFICER": { "calories": 1480, "steps": 2010 }, … }, "calories": 4420, "steps": 5960 }
+ *   "5": { "crew": { "SCIENCE OFFICER": { "steps": 2010 }, … }, "steps": 5960 }
  * — the totals are the sums); a day filed only as a total shows the total
  * and a dash for each officer.
  */
@@ -1299,7 +1300,6 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
       { id: 'meal-kcal', name: T('Meals energy'), unit: 'kcal', group: T('Meals'), ...mealSum('kcal') },
       { id: 'meal-water', name: T('Meals water'), unit: 'L', group: T('Meals'), ...mealSum('water_litres') },
       { id: 'meal-power', name: T('Meals power'), unit: 'Wh', group: T('Meals'), ...mealSum('energy_wh') },
-      { id: 'calories', name: T('Calories consumed'), unit: 'kcal', group: T('Crew'), ...figure('calories') },
       { id: 'steps', name: T('Steps taken'), unit: T('steps'), group: T('Crew'), ...figure('steps') },
       { id: 'act-tasks', name: T('Tasks done'), unit: '', group: T('Activity'), ...tasksDone },
       { id: 'act-messages', name: T('Messages from Earth'), unit: '', group: T('Activity'), ...count('messages') },
@@ -1391,7 +1391,6 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
           <div class="big" id="presVal" style="margin-top:12px">—<em>hPa</em></div>
           <div id="hbt-pres"></div>
         </section>
-        ${figureTile(crewFigures, m, { key: 'calories', label: 'Calories consumed', unit: 'kcal', colour: 'var(--orange)', fmt: (v) => v.toLocaleString('en-GB'), T, crew })}
         ${figureTile(crewFigures, m, { key: 'steps', label: 'Steps taken', unit: T('steps'), colour: 'var(--ink)', fmt: (v) => v.toLocaleString('en-GB'), T, crew })}
         <section class="tile t-iaq lvl">
           <h3>${T('Air quality')}</h3>
@@ -1436,7 +1435,7 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
 
   /* ---- the three daily blogs, the front row of the stack of folders: the science
      officer's Daily Mission Report, the health officer's Health Report
-     (the day's health activities) and the Commander Blog — which is the
+     (the day's health activities) and the Commander Log — which is the
      commanding officer's Daily Blog, under the name the station gives it.
      All three are written in mission control (the Science, Health and
      Commanding officer tabs) and are public the moment they are saved, as
@@ -1488,8 +1487,8 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
     posts: reportToday('SCIENCE'), empty: 'No mission report yet for' });
   const blogHealth = blogPanel({ id: 'blog-health', title: T('Health Report'),
     posts: reportToday('HEALTH'), empty: 'No health report yet for' });
-  const blogCommander = blogPanel({ id: 'blog-commander', title: T('Commander Blog'),
-    posts: commanderToday, empty: 'No commander blog yet for' });
+  const blogCommander = blogPanel({ id: 'blog-commander', title: T('Commander Log'),
+    posts: commanderToday, empty: 'No commander log yet for' });
 
   /* ---- today's meals: each with its kcal and, beside it, the power it drew — the food meter (the Food channel's energy
      meter) read between the meal's hours (breakfast 06:00–09:00, lunch 09:00–14:00, dinner 15:00–22:00; an added meal counts with the one of
@@ -1739,7 +1738,7 @@ function dashboard(ctx, args) {
           { id: 'galley', label: T('Today’s Meal'), html: galley },
           { id: 'crew', label: T('Crew Moods'), html: crewPanel } ] },
         { label: T('Blogs'), tabs: [
-          { id: 'blog-commander', label: T('Commander Blog'), html: blogCommander },
+          { id: 'blog-commander', label: T('Commander Log'), html: blogCommander },
           { id: 'blog-health', label: T('Health Report'), html: blogHealth },
           { id: 'blog-science', label: T('Daily Mission Report'), html: blogScience } ] },
       ], { label: `${T('Mission dashboard')} · SOL ${day3} · ${shortDay(blogDate)}`, title: T('Mission dashboard') })}

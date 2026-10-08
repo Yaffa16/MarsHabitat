@@ -98,8 +98,8 @@ function rollup(missionDay) {
   // The day's summary in the readings log carries the hardware beside the
   // channels, so the log's daily record holds the whole habitat — and, once
   // the day is over, the Habitat tab as it stood at the end of the day: the
-  // schedule, the meals, the steps and calories, the inventory levels and the
-  // power, saved automatically (the rollup runs every fifteen minutes).
+  // schedule, the meals, the steps, the inventory levels and the power,
+  // saved automatically (the rollup runs every fifteen minutes).
   const hardware = require('./home-assistant').daySummary({ start, end });
   if (rows.length || hardware.length || over) {
     require('./readings-log').record('daily', { missionDay, window: { start, end }, sealed: over,
@@ -193,11 +193,13 @@ function dayRecord(missionDay) {
   // inventory-levels.json (by the Habitat tab or by hand), and nothing else:
   // a store not counted that day has no figure here.
   const filed = content.inventoryFiled(missionDay);
-  // Steps and calories as the health officer filed them, per officer, with
-  // the totals as they stand in crew-figures.json.
-  const figures = (content.crewFigures() || {})[String(missionDay)] || null;
+  // The steps as the health officer filed them, per officer, with the total
+  // as it stands in crew-figures.json — the steps alone: the calories
+  // consumed are no longer kept (October), and a calories figure left in the
+  // file from before is not part of the record.
+  const figures = stepsOnly((content.crewFigures() || {})[String(missionDay)] || null);
   // Power consumed that day, by category — from content/power.json, counted
-  // daily by the crew like the calories and steps.
+  // daily by the crew like the steps.
   const power = content.powerDay(missionDay);
 
   // Every reading of the day, as it was stored.
@@ -214,7 +216,7 @@ function dayRecord(missionDay) {
  * The record's shape, by officer and by tab. Added to every day object:
  *
  *   officers  one block per crew member, in the crew's order: the
- *             commanding officer's Commander Blog for the day (the
+ *             commanding officer's Commander Log for the day (the
  *             published entry, placeholders left out), the other officers'
  *             blog — the science officer's Daily Mission Report, the
  *             health officer's Health Report, as the
@@ -241,7 +243,7 @@ function dress(r) {
     const kind = REPORT_OF.find(([, re]) => re.test(c.designation));
     let reports = [];
     if (kind) { reports = notes.filter((x) => x.kind === kind[0]); reports.forEach((x) => used.add(x.id)); }
-    // Only the commanding officer has a blog of their own — the Commander Blog.
+    // Only the commanding officer has a blog of their own — the Commander Log.
     const hasBlog = c.designation === content.BLOG_OFFICER;
     return { id: c.id, designation: c.designation, role: c.role, entry: hasBlog ? entry : null, hasBlog,
       reportKind: kind ? kind[0] : null, reportLabel: kind ? kind[2] : null, reports,
@@ -268,9 +270,20 @@ function storesTable(missionDay, day, filed) {
   });
 }
 
+/** A day's crew figures cut down to the steps — per officer and the total — or null when no step was filed. */
+function stepsOnly(f) {
+  if (!f) return null;
+  const crew = {};
+  for (const [who, line] of Object.entries(f.crew || {})) if (line && line.steps != null) crew[who] = { steps: line.steps };
+  const out = {};
+  if (Object.keys(crew).length) out.crew = crew;
+  if (f.steps != null) out.steps = f.steps;
+  return Object.keys(out).length ? out : null;
+}
+
 /**
  * The Habitat tab of mission control for one day, as it stands: the
- * schedule, the meals, the steps and calories, the inventory levels and the
+ * schedule, the meals, the steps, the inventory levels and the
  * power. The record prints it as it is at the time of the record; at the end
  * of each day it is written to the readings log with the day's seal, so the
  * day's tab as it was when the day ended is kept too.
@@ -284,7 +297,7 @@ function habitatTab(missionDay) {
     meals: day ? day.meals.map((m) => ({ slot: m.slot, name: m.name, components: m.components, kcal: m.kcal,
       waterLitres: m.water_litres, prepMinutes: m.prep_minutes, energyWh: m.energy_wh, energySource: m.energy_source, hours: m.window ? m.window.join('-') : null, servedAt: m.served_at || null, countsWith: m.power_with || null, notes: m.notes || '',
       recipe: m.recipe || '', nutrients: m.nutrients || null, co2eKg: m.co2e_kg ?? null, waterFootprintL: m.water_footprint_l ?? null })) : [],
-    figures: (content.crewFigures() || {})[String(missionDay)] || null,
+    figures: stepsOnly((content.crewFigures() || {})[String(missionDay)] || null),
     stores: storesTable(missionDay, day, filed),
     storesNote: filed.why || '',
     power: content.powerDay(missionDay).categories.map((c) => ({ key: c.key, label: c.label, kwh: c.kwh })),
@@ -301,7 +314,7 @@ function habitatTab(missionDay) {
  * sealed or written to sensor_daily), the states filed today, the messages
  * that came in before the run — and everything mission control has filed
  * under NOW, mission day 0 (src/lib/mission.js): its schedule and meals,
- * the Commander Blog and the two reports, the counts, figures and power,
+ * the Commander Log and the two reports, the counts, figures and power,
  * the media. Nothing of it touches the run's days. Null once the run has
  * begun.
  */
@@ -513,7 +526,7 @@ function shapeDay(r) {
     storesCounted: r.filed.items.map((v) => ({
       item: v.label, key: v.key, unit: v.unit, quantity: v.quantity, consumption: v.consumption })),
     storesNote: r.filed.why || null,
-    // by officer: the Commander Blog (commanding officer), the Daily Science
+    // by officer: the Commander Log (commanding officer), the Daily Science
     // Findings / Health Report (science, health officer) and the states filed
     officers: r.officers.map((o) => ({ crew: o.designation, role: o.role,
       ...(o.hasBlog ? { commanderBlog: o.entry ? { body: o.entry.body, writtenAt: o.entry.written_at, updatedAt: o.entry.updated_at } : null } : {}),
@@ -523,8 +536,8 @@ function shapeDay(r) {
       categories: r.power.categories.map((c) => ({ key: c.key, label: c.label, kwh: c.kwh })) } : null,
     crewFigures: r.figures ? {
       perOfficer: Object.entries(r.figures.crew || {}).map(([designation, f]) => ({
-        crew: designation, calories: f.calories ?? null, steps: f.steps ?? null })),
-      calories: r.figures.calories ?? null, steps: r.figures.steps ?? null } : null,
+        crew: designation, steps: f.steps ?? null })),
+      steps: r.figures.steps ?? null } : null,
     notes: r.day ? r.day.notes.filter((x) => x.published_at)
       .map((x) => ({ kind: x.kind, body: x.body, postedAt: x.posted_at })) : [],
     crewEntries: r.entries.map((e) => ({
@@ -638,9 +651,9 @@ function recordMarkdown(r, heading, note = null) {
   for (const o of r.officers) {
     out.push(`### ${shown(o.designation)}${o.role ? ` — ${o.role}` : ''}`, '');
     if (o.hasBlog) {
-      out.push('#### Commander Blog', '');
+      out.push('#### Commander Log', '');
       if (o.entry) out.push(MV.entryMarkdown(o.entry.body, o.media), '');
-      else out.push('_No Commander Blog written for this day._', '');
+      else out.push('_No Commander Log written for this day._', '');
     }
     if (o.reportKind) {
       out.push(`#### ${o.reportLabel}`, '');
@@ -682,11 +695,11 @@ function recordMarkdown(r, heading, note = null) {
       out.push('');
     }
   } else out.push('_No meals entered for this day._', '');
-  out.push('#### Steps taken and calories consumed', '');
+  out.push('#### Steps taken', '');
   if (r.figures && r.figures.crew && Object.keys(r.figures.crew).length) {
-    out.push('| Officer | Steps taken | Calories consumed (kcal) |', '| --- | --- | --- |');
-    for (const [who, f] of Object.entries(r.figures.crew)) out.push(`| ${who} | ${fmtV(f.steps)} | ${fmtV(f.calories)} |`);
-    if (r.figures.calories != null || r.figures.steps != null) out.push(`| **Crew (as filed)** | **${fmtV(r.figures.steps)}** | **${fmtV(r.figures.calories)}** |`);
+    out.push('| Officer | Steps taken |', '| --- | --- |');
+    for (const [who, f] of Object.entries(r.figures.crew)) out.push(`| ${who} | ${fmtV(f.steps)} |`);
+    if (r.figures.steps != null) out.push(`| **Crew (as filed)** | **${fmtV(r.figures.steps)}** |`);
   } else out.push('_Not filed for this day._');
   out.push('');
   out.push('#### Inventory levels', '');

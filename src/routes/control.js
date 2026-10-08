@@ -490,11 +490,11 @@ router.post('/logbook', (req, res, next) => upload.array('file', 50)(req, res, (
   const tab = tabOf(req.body.back);
   const dropFiles = () => { for (const f of req.files || []) { try { require('fs').unlinkSync(f.path); } catch (e) { /* gone */ } } };
   if (!member) { dropFiles(); setFlash(req, 'No such crew member.', true); return toTab(res, tab, day); }
-  // The Commander Blog is the only blog kept in the log: the science and
+  // The Commander Log is the only blog kept in the log: the science and
   // health officers write the Daily Mission Report and the Daily Health
   // Blog, which are their reports (POST /control/report).
   if (member.designation !== content.BLOG_OFFICER) {
-    dropFiles(); setFlash(req, 'Only the commanding officer has a blog here — the Commander Blog. The science and health officers write the Daily Mission Report and the Health Report on their tabs.', true);
+    dropFiles(); setFlash(req, 'Only the commanding officer has a blog here — the Commander Log. The science and health officers write the Daily Mission Report and the Health Report on their tabs.', true);
     return toTab(res, tab, day);
   }
   const draft = req.body.action === 'draft';
@@ -710,47 +710,40 @@ router.post('/crew-figures', (req, res) => {
     const n = Number(v);
     return Number.isFinite(n) && n >= 0 ? Math.round(n) : null;
   };
-  // Two forms on the Habitat tab write here, Steps taken (steps_<id>) and
-  // Calories consumed (calories_<id>), one line per officer: each save
-  // touches only the figure it carries and keeps the other as it was; the
-  // crew's totals are the sums. The older form's two totals (calories,
-  // steps) are still accepted when no officer's field came with the request.
+  // Steps taken (steps_<id>), one line per officer, from the Habitat tab; the
+  // crew's total is the sum. The older form's total (steps) is still
+  // accepted when no officer's field came with the request. The calories
+  // consumed are no longer kept (October): a save writes the steps alone, and
+  // a calories figure left in the file from before is dropped with it.
   const crew = db.prepare('SELECT id, designation FROM crew ORDER BY sort_order, id').all();
   const hasSteps = crew.some((c) => `steps_${c.id}` in req.body);
-  const hasCal = crew.some((c) => `calories_${c.id}` in req.body);
   const changed = [];
   const r = content.edit('crew-figures.json', (obj) => {
     const cur = obj[String(day)] || {};
     const per = {};
-    for (const [d, line] of Object.entries(cur.crew || {})) per[d] = { ...line };
-    if (hasSteps || hasCal) {
+    for (const [d, line] of Object.entries(cur.crew || {})) if (line && line.steps != null) per[d] = { steps: line.steps };
+    if (hasSteps) {
       for (const c of crew) {
         const line = per[c.designation] || {};
-        if (hasSteps) { const st = val(`steps_${c.id}`); if (!same(line.steps, st ?? undefined)) changed.push(`steps_${c.id}`); if (st == null) delete line.steps; else line.steps = st; }
-        if (hasCal) { const cal = val(`calories_${c.id}`); if (!same(line.calories, cal ?? undefined)) changed.push(`calories_${c.id}`); if (cal == null) delete line.calories; else line.calories = cal; }
+        const st = val(`steps_${c.id}`); if (!same(line.steps, st ?? undefined)) changed.push(`steps_${c.id}`); if (st == null) delete line.steps; else line.steps = st;
         if (Object.keys(line).length) per[c.designation] = line; else delete per[c.designation];
       }
     }
     const entry = {};
     if (Object.keys(per).length) entry.crew = per;
-    const sum = (k) => Object.values(per).reduce((t, line) => (line[k] == null ? t : (t || 0) + line[k]), null);
-    if (hasSteps || hasCal) {
-      const steps = sum('steps'), calories = sum('calories');
-      // a total filed before the officers were counted separately stays until that figure is filed per officer
-      if (steps != null) entry.steps = steps; else if (!hasSteps && cur.steps != null) entry.steps = cur.steps;
-      if (calories != null) entry.calories = calories; else if (!hasCal && cur.calories != null) entry.calories = cur.calories;
+    if (hasSteps) {
+      const steps = Object.values(per).reduce((t, line) => (line.steps == null ? t : (t || 0) + line.steps), null);
+      if (steps != null) entry.steps = steps;
     } else {
-      const calories = val('calories'), steps = val('steps');
-      if (calories != null) entry.calories = calories;
+      const steps = val('steps');
       if (steps != null) entry.steps = steps;
     }
     if (!Object.keys(entry).length) delete obj[String(day)];
     else obj[String(day)] = entry;
   });
   audit(req.user.username, 'CrewFigures', day, 'edit');
-  const form = hasCal && !hasSteps ? 'calories' : 'steps';
-  noteEdits(form, day, changed, req.user.username);
-  setFlash(req, r.ok ? `${DayWord(day)} ${form === 'calories' ? 'calories consumed' : 'steps taken'} saved.` : `Saved, but: ${r.error}`, !r.ok);
+  noteEdits('steps', day, changed, req.user.username);
+  setFlash(req, r.ok ? `${DayWord(day)} steps taken saved.` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, 'habitat', day);
 });
 

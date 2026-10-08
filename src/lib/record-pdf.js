@@ -354,7 +354,7 @@ function missionSection(L, G) {
   L.table([{ label: 'Channel', w: 0.6, font: 'mono' }, { label: 'Metric', w: 1.6 }, { label: 'Unit', w: 0.6 }, { label: 'Expected band', w: 1, align: 'right' }, { label: 'Hard limits', w: 1, align: 'right' }, { label: 'Shown', w: 0.5 }],
     channels.map((c) => [c.channel || '—', c.label, c.unit, c.warn_min != null ? `${fmtNum(c.warn_min)} – ${fmtNum(c.warn_max)}` : '—', c.ok_min != null ? `${fmtNum(c.ok_min)} – ${fmtNum(c.ok_max)}` : '—', c.visible ? 'yes' : 'no']));
   L.h2('How to read this record');
-  L.para('Days run in order, and only the days that have happened are here. Each holds the schedule with every task\'s status as it stands, the meals as entered, the stores counted that day with the figures as they were written, the power and the steps and calories as they were filed, the mission notes, the crew log with its photographs in place, the states filed for the crew with the value chosen and the sentence the station shows for it, what was sent out, the day\'s sensor summary — each channel\'s lowest, highest and mean reading and how many readings that is — and then every reading of the day: the station\'s channels as one row per instant with a column per channel, the habitat sensor (or the external node) one row per reading, the hardware one table per device, every value as it was stored, times in habitat time to the second. No figure is totalled, projected or carried from one day to the next, and the messages from Earth and the crew\'s replies are not part of this record. "The crew log" gathers every blog entry in full, in order; "Media" lists every file with its SHA-256, which can be checked against the ZIP at /media/export.zip with sha256sum. The same readings, as the station received them — one JSON file per pull, with the stores and figures as they changed and each day\'s summary — are in the readings log, downloadable whole at /archive/readings.zip.', { size: 9 });
+  L.para('Days run in order, and only the days that have happened are here. Each holds the schedule with every task\'s status as it stands, the meals as entered, the stores counted that day with the figures as they were written, the power and the steps as they were filed, the mission notes, the crew log with its photographs in place, the states filed for the crew with the value chosen and the sentence the station shows for it, what was sent out, the day\'s sensor summary — each channel\'s lowest, highest and mean reading and how many readings that is — and then every reading of the day: the station\'s channels as one row per instant with a column per channel, the habitat sensor (or the external node) one row per reading, the hardware one table per device, every value as it was stored, times in habitat time to the second. No figure is totalled, projected or carried from one day to the next, and the messages from Earth and the crew\'s replies are not part of this record. "The crew log" gathers every blog entry in full, in order; "Media" lists every file with its SHA-256, which can be checked against the ZIP at /media/export.zip with sha256sum. The same readings, as the station received them — one JSON file per pull, with the stores and figures as they changed and each day\'s summary — are in the readings log, downloadable whole at /archive/readings.zip.', { size: 9 });
 }
 
 /** One mission day, whole. */
@@ -377,11 +377,11 @@ function daySection(L, G, r, { asChapter = true } = {}) {
   for (const o of r.officers) {
     L.h2(`${cap(shown(o.designation))}${o.role ? ` · ${o.role}` : ''}`, { keep: 120 });
     if (o.hasBlog) {
-      L.h3('Commander Blog', { keep: 80 });
+      L.h3('Commander Log', { keep: 80 });
       if (o.entry) {
         L.para(`Written ${when(o.entry.written_at)}${o.entry.updated_at && o.entry.updated_at !== o.entry.written_at ? ` · last edited ${when(o.entry.updated_at)}` : ''} habitat time`, { color: GREY, size: 7.5, after: 4 });
         entryBlock(L, G, o.entry.body, o.media, { used: placed });
-      } else L.para('No Commander Blog written for this day.', { font: 'italic', color: GREY, size: 9 });
+      } else L.para('No Commander Log written for this day.', { font: 'italic', color: GREY, size: 9 });
     }
     if (o.reportKind) {
       L.h3(o.reportLabel, { keep: 80 });
@@ -407,7 +407,7 @@ function daySection(L, G, r, { asChapter = true } = {}) {
 
   /* ---- the Habitat tab, as it stands --------------------------------- */
   L.h2('Habitat', { keep: 100 });
-  L.para('The Habitat tab of mission control for this day, as it stands at the time of this record: the schedule, the meals, the steps and calories, the inventory levels and the power. The same tab is written to the readings log automatically at the end of each day (the daily record, /archive/readings.zip).', { color: GREY, size: 8.5 });
+  L.para('The Habitat tab of mission control for this day, as it stands at the time of this record: the schedule, the meals, the steps, the inventory levels and the power. The same tab is written to the readings log automatically at the end of each day (the daily record, /archive/readings.zip).', { color: GREY, size: 8.5 });
   L.h3('Schedule', { keep: 70 });
   if (day && day.tasks.length) {
     L.table([{ label: 'Time', w: 0.5, font: 'mono' }, { label: 'Task', w: 3.5 }, { label: 'Status', w: 0.7 }],
@@ -419,11 +419,11 @@ function daySection(L, G, r, { asChapter = true } = {}) {
       day.meals.map((m) => { const eco = archive.mealEcoLine(m); return [require('./data').slotLabel(m.slot) + (m.served_at ? `\n${m.served_at}` : ''), [m.name, m.components ? m.components.split('\n').join(' · ') : '', m.notes || '', eco].filter(Boolean).join('\n'), asIs(m.kcal), asIs(m.water_litres), asIs(m.prep_minutes), m.energy_source === 'with' ? `with ${require('./data').slotLabel(m.power_with).toLowerCase()}` : asIs(m.energy_wh) + (m.energy_source === 'meter' && m.power_running ? '*' : '')]; }));
     if (day.meals.some((m) => m.energy_source === 'meter')) L.para(`Wh: the food meter (the Food channel's energy meter), read ${Object.entries(require('./home-assistant').mealsConfig().windows).map(([k, v]) => `${require('./data').slotLabel(k).toLowerCase()} ${v.replace('-', '–')}`).join(', ')}${day.meals.some((m) => m.power_with) ? ', an added meal with the meal whose hours cover the time it is served at' : ''}${day.meals.some((m) => m.power_running) ? ' · * so far, the hours still running' : ''}.`, { font: 'italic', color: GREY, size: 8 });
   } else L.para('No meals entered for this day.', { font: 'italic', color: GREY, size: 9 });
-  L.h3('Steps taken and calories consumed', { keep: 70 });
+  L.h3('Steps taken', { keep: 70 });
   if (r.figures && r.figures.crew && Object.keys(r.figures.crew).length) {
-    const rows = Object.entries(r.figures.crew).map(([who, f]) => [who, asIs(f.steps), asIs(f.calories)]);
-    if (r.figures.calories != null || r.figures.steps != null) rows.push(['Crew (as filed)', asIs(r.figures.steps), asIs(r.figures.calories)]);
-    L.table([{ label: 'Officer', w: 1.6, font: 'bold' }, { label: 'Steps taken', w: 1, align: 'right' }, { label: 'Calories consumed (kcal)', w: 1.2, align: 'right' }], rows);
+    const rows = Object.entries(r.figures.crew).map(([who, f]) => [who, asIs(f.steps)]);
+    if (r.figures.steps != null) rows.push(['Crew (as filed)', asIs(r.figures.steps)]);
+    L.table([{ label: 'Officer', w: 1.6, font: 'bold' }, { label: 'Steps taken', w: 1, align: 'right' }], rows);
   } else L.para('Not filed for this day.', { font: 'italic', color: GREY, size: 9 });
   L.h3('Inventory levels', { keep: 90 });
   if (r.stores.length) {

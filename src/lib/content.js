@@ -264,7 +264,7 @@ function load({ quiet = false } = {}) {
     }
 
     /* ---------------------------------------------------------- logbook */
-    // The station keeps three blogs: the Commander Blog (the communication
+    // The station keeps three blogs: the Commander Log (the communication
     // officer's entry here) and the science and health officers' daily
     // reports (notes.json). No other officer has a blog of their own, so any
     // entry of theirs — in the file or left in the database — is dropped.
@@ -275,7 +275,7 @@ function load({ quiet = false } = {}) {
         if (n > total) { skipped.push(`logbook.json day ${n}`); continue; }
         for (const [designation, body] of Object.entries(logbook[String(n)] || {})) {
           if (designation.startsWith('_')) continue;
-          if (designation !== BLOG_OFFICER) continue;   // only the Commander Blog lives in logbook.json
+          if (designation !== BLOG_OFFICER) continue;   // only the Commander Log lives in logbook.json
           const member = db.prepare('SELECT id FROM crew WHERE designation = ?').get(designation);
           if (!member) { errors.push(`logbook.json day ${n}: no crew member "${designation}"`); continue; }
           const existing = db.prepare('SELECT * FROM crew_entry WHERE crew_id = ? AND mission_day = ?')
@@ -509,7 +509,7 @@ function resetLocked(state) {
  *   - every blog slot is emptied — logbook.json becomes a placeholder for
  *     every day and officer, for the crew to fill in during the run
  *   - the crew's figures are emptied — crew-figures.json loses its days;
- *     calories and steps are filed daily on the Habitat tab from 15 October
+ *     the steps are filed daily on the Habitat tab from 15 October
  *   - the power figures, the stores' counts and the mission notes are
  *     emptied the same way — power.json, inventory-levels.json and
  *     notes.json lose their days and keep their notes and categories; each
@@ -537,7 +537,7 @@ function reset(actor = 'control') {
 
   // 1. the blog slots, emptied
   const crewFile = readJson('crew-and-inventory.json', []) || {};
-  // Only the Commander Blog has slots in logbook.json: the science and health
+  // Only the Commander Log has slots in logbook.json: the science and health
   // blogs are the officers' daily reports, written into notes.json.
   const crew = (crewFile.crew || []).map((c) => c.designation).filter((d) => d === BLOG_OFFICER);
   const slots = {};
@@ -549,7 +549,7 @@ function reset(actor = 'control') {
   // of each day — like the blog they start empty and fill in as the run goes.
   const cf = path.join(DIR, 'crew-figures.json');
   fs.writeFileSync(cf, JSON.stringify({
-    _note: 'Calories consumed and steps taken, per officer and per day. Emptied by the reset: the health officer files each day\'s figures on the Health tab of mission control (or write them here as "1": { "crew": { "COMMUNICATION OFFICER": { "calories": 1720, "steps": 2200 }, "SCIENCE OFFICER": { … }, "HEALTH OFFICER": { … } }, "calories": 5010, "steps": 6420 } — the two totals being the sums), and each day appears on the station the moment it is saved.',
+    _note: 'Steps taken, per officer and per day. Emptied by the reset: the health officer files each day\'s figures on the Habitat tab of mission control (or write them here as "1": { "crew": { "COMMUNICATION OFFICER": { "steps": 2200 }, "SCIENCE OFFICER": { … }, "HEALTH OFFICER": { … } }, "steps": 6420 } — the total being the sum), and each day appears on the station the moment it is saved.',
   }, null, 2) + '\n');
 
   // Power is a daily count too: the categories stay as they are shaped, the
@@ -672,7 +672,7 @@ const status = () => lastLoad;
  * the file is saved.
  */
 /**
- * Crew figures — calories consumed and steps taken, per day. Read fresh like
+ * Crew figures — the steps taken, per day. Read fresh like
  * the templates: they are numbers handed straight to a view rather than
  * something to sync into the database, so an edit to the file is live the
  * moment it is saved.
@@ -695,7 +695,7 @@ function templates(kind) {
  * enter the database: they are prompts for whoever is typing, not records.
  */
 /**
- * Crew figures — calories consumed and steps taken, per day. Read fresh like
+ * Crew figures — the steps taken, per day. Read fresh like
  * the templates: they are numbers handed straight to a view rather than
  * something to sync into the database, so an edit to the file is live the
  * moment it is saved.
@@ -967,15 +967,16 @@ function powerDay(missionDay, p = power()) {
  * control to be written over, and never reaches the public station.
  */
 const PLACEHOLDER = '[PLACEHOLDER]';
-/** The one officer whose entries are a blog: theirs is the Commander Blog. */
+/** The one officer whose entries are a blog: theirs is the Commander Log. */
 const BLOG_OFFICER = 'COMMUNICATION OFFICER';   // the commanding officer, filed under their old title: the key stays (lib/officer.js shows the new one)
 const isPlaceholder = (body) => String(body || '').trimStart().startsWith(PLACEHOLDER);
-/** The cue shown in an empty box in mission control: the placeholder text without its marker. */
-const placeholderCue = (body) => String(body || '').trimStart().slice(PLACEHOLDER.length).trim();
+/** The cue shown in an empty box in mission control: the placeholder text without its marker (a slot written before
+ *  8 October names the blog by its old name, the Commander Blog — it is read as the Commander Log). */
+const placeholderCue = (body) => String(body || '').trimStart().slice(PLACEHOLDER.length).trim().replace(/\bCommander Blog\b/g, 'Commander Log');
 /** What the public sees in the slot: the first line only — the writer's cue stays inside. */
 const placeholderPublic = (body) => placeholderCue(body).split('\n')[0].trim();
 const placeholderFor = (day, designation) =>
-  `${PLACEHOLDER} ${Number(day) === 0 ? 'NOW' : `Day ${String(day).padStart(3, '0')}`} · ${designation === BLOG_OFFICER ? 'Commander Blog' : designation.charAt(0) + designation.slice(1).toLowerCase()} — to be written at the end of this day.`;
+  `${PLACEHOLDER} ${Number(day) === 0 ? 'NOW' : `Day ${String(day).padStart(3, '0')}`} · ${designation === BLOG_OFFICER ? 'Commander Log' : designation.charAt(0) + designation.slice(1).toLowerCase()} — to be written at the end of this day.`;
 
 function edit(name, mutate) {
   const file = path.join(DIR, name);

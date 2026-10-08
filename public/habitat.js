@@ -41,8 +41,9 @@
   function frozen() { return Date.now() > CFG.freezeMs; }
   CFG.url = '/api/habitat/data?days=30';
 
-  // the drawing's colours, read off the page: the accent from the body, where the light theme's blue is set (public/light.css),
-  // ink and hairline from the root; read again when the theme turns (switches.js) and the tiles drawn afresh
+  // the drawing's colours, read off the page: the accent from the body (where a theme laid over the page, like the blue day of
+  // public/light.css, now laid aside, sets it), ink and hairline from the root; read again when the theme turns (switches.js)
+  // and the tiles drawn afresh
   var ACCENT, INK, HAIR;
   function colours() {
     var root = getComputedStyle(document.documentElement), body = document.body ? getComputedStyle(document.body) : root;

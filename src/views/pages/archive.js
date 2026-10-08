@@ -113,7 +113,7 @@ function contents(ctx, { days, counts, entryCounts, rehearsal = null, tally = { 
           : '<span style="color:var(--faint)">not yet</span>'}</td>
       </tr>`).join('')}</tbody>
     </table></div>
-    ${rehearsal ? `<p class="note" style="margin-top:10px"><b>NOW</b> is today${ctx.mission.phase === 'PRE_LAUNCH' ? ', before the run' : ' — this station rehearses against made-up dates'} — the rehearsal day, mission day 0. Its record is built the way a run day's is: today's readings from every source and the states filed today, the messages that came in before the run, and everything mission control files under <b>NOW</b> — the day picker's first stop on every tab — its schedule and meals, the Commander Blog and the two reports, the counts, figures, power and media. Nothing of it touches the run's days. It is marked as a rehearsal wherever it appears — in the full record, the readable copy, the data copy, the readings log, the media archive and the messages — is not part of the record, and ${ctx.mission.phase === 'PRE_LAUNCH' ? 'disappears on the first day of the run' : 'is there only while the station rehearses against made-up dates'}.</p>` : ''}`)}
+    ${rehearsal ? `<p class="note" style="margin-top:10px"><b>NOW</b> is today${ctx.mission.phase === 'PRE_LAUNCH' ? ', before the run' : ' — this station rehearses against made-up dates'} — the rehearsal day, mission day 0. Its record is built the way a run day's is: today's readings from every source and the states filed today, the messages that came in before the run, and everything mission control files under <b>NOW</b> — the day picker's first stop on every tab — its schedule and meals, the Commander Log and the two reports, the counts, figures, power and media. Nothing of it touches the run's days. It is marked as a rehearsal wherever it appears — in the full record, the readable copy, the data copy, the readings log, the media archive and the messages — is not part of the record, and ${ctx.mission.phase === 'PRE_LAUNCH' ? 'disappears on the first day of the run' : 'is there only while the station rehearses against made-up dates'}.</p>` : ''}`)}
 
   ${panel('THE TALLY', `
     ${eyebrow('Messages sent and visitors — mission control’s figures')}
@@ -168,9 +168,9 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
 
   ${r.officers.map((o, k) => panel(`${esc(officer.shown(o.designation))}`, `
     ${eyebrow(`${esc(officer.shown(o.designation))}${o.role ? ` · ${esc(o.role)}` : ''}`)}
-    ${o.hasBlog ? `<h3>Commander Blog</h3>
+    ${o.hasBlog ? `<h3>Commander Log</h3>
     ${o.entry ? `<div class="entry-post">${MV.entryHtml(o.entry.body, o.media, { lookup: mediaLookup })}</div>`
-      : '<p class="note">No Commander Blog written for this day.</p>'}` : ''}
+      : '<p class="note">No Commander Log written for this day.</p>'}` : ''}
     ${o.reportKind ? `<h3${o.hasBlog ? ' style="margin-top:18px"' : ''}>${esc(o.reportLabel)}</h3>
     ${o.reports.length ? o.reports.map((x) => `<div class="entry-post">${MV.entryHtml(x.body, [], { lookup: mediaLookup })}</div>`).join('')
       : `<p class="note">No ${esc(o.reportLabel)} written for this day.</p>`}` : ''}
@@ -230,18 +230,16 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
         ${m.notes ? `<p class="note">${esc(m.notes)}</p>` : ''}
       </div>`).join('') : '<p class="note">No meals entered for this day.</p>'}`, 'mars-side')}
 
-    ${panel('STEPS TAKEN · CALORIES CONSUMED', `
+    ${panel('STEPS TAKEN', `
       ${eyebrow('As filed')}
       ${r.figures && r.figures.crew && Object.keys(r.figures.crew).length ? `<div class="tw"><table style="min-width:0">
-        <thead><tr><th>Officer</th><th>Steps taken</th><th>Calories consumed</th></tr></thead>
+        <thead><tr><th>Officer</th><th>Steps taken</th></tr></thead>
         <tbody>${Object.entries(r.figures.crew).map(([who, f]) => `<tr>
           <th>${esc(who)}</th>
           <td class="n">${asIs(f.steps)}</td>
-          <td class="n">${asIs(f.calories)}${f.calories == null ? '' : ' kcal'}</td>
-        </tr>`).join('')}${(r.figures.calories != null || r.figures.steps != null) ? `<tr>
+        </tr>`).join('')}${r.figures.steps != null ? `<tr>
           <th>Crew (as filed)</th>
           <td class="n"><b>${asIs(r.figures.steps)}</b></td>
-          <td class="n"><b>${asIs(r.figures.calories)}${r.figures.calories == null ? '' : ' kcal'}</b></td>
         </tr>` : ''}</tbody></table></div>` : '<p class="note">Not filed for this day.</p>'}`, 'mars-side')}
 
     ${panel('POWER', `

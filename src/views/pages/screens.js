@@ -15,6 +15,8 @@
  * live — the board, the habitat's readings, the pictures, the sky — and every
  * screen reloads itself every five minutes and at the venue's midnight, when
  * the sol turns (the writing screen waits while someone is writing).
+ * They wear the site's soft UI (public/neu.css, over screen.css — October: "make sure the visualisations also change
+ * for the /screens page"), by night and by day, as the public pages do.
  */
 const L = require('../layout');
 const { esc } = L;
@@ -39,7 +41,7 @@ const SCREENS = [
   { name: 'board', title: 'Message Board', fit: 'clip', about: 'The ground station’s board, live: every message sent from the writing screen as it stands — in transit, awaiting a reply, answered — among the latest exchanges with the crew, the newest first, as many as fit' },
   { name: 'write', title: 'Write to the crew', fit: 'scale', minWidth: 640, about: 'The composer, full screen, for writing to the crew at the venue — every message from it as the ground station’s, under its one operator name' },
   { name: 'mission', title: 'Today’s Mission', fit: 'scale', minWidth: 760, about: 'The day’s scientific mission: its question, Morning, Afternoon and EVA' },
-  { name: 'blogs', title: 'Blogs', fit: 'none', about: 'The Commander Blog, the Daily Mission Report and the Health Report, one at a time — each post rolling by from top to bottom, then the next blog' },
+  { name: 'blogs', title: 'Blogs', fit: 'none', about: 'The Commander Log, the Daily Mission Report and the Health Report, one at a time — each post rolling by from top to bottom, then the next blog' },
   { name: 'day', title: 'Today', fit: 'scale', minWidth: 640, about: 'Today’s Schedule, Today’s Meal and the Crew Moods' },
   { name: 'trends', title: 'Trends', fit: 'scale', fitLandscape: 'fill', minWidth: 520, about: 'The run’s trends on one graph' },
   { name: 'media', title: 'Media', fit: 'clip', about: 'The newest pictures out of the habitat in one grid, as many as fit, live' },
@@ -64,7 +66,7 @@ function shell(ctx, { name, title, body, scripts = [], fit = 'scale', ticker = '
 <link rel="stylesheet" href="/aura.css?v=${V}">
 <link rel="stylesheet" href="/sheet.css?v=${V}">
 <link rel="stylesheet" href="/screen.css?v=${V}">
-<link rel="stylesheet" href="/light.css?v=${V}">
+<link rel="stylesheet" href="/neu.css?v=${V}">
 ${L.clientTable(lang)}
 </head><body class="landing${inner ? ' inner' : ''} screen screen-${name}" data-screen="${name}" data-fit="${fit}"${fitLandscape ? ` data-fit-landscape="${fitLandscape}"` : ''}${minWidth ? ` data-min-width="${minWidth}"` : ''} data-tz="${esc(m.timezone)}">
 ${ticker}
@@ -116,7 +118,7 @@ function mission(ctx, d) {
 }
 
 /** The three blogs one at a time, each filling the screen: its head, then the day's post rolling by from top to bottom
-    at reading pace (public/screen-blogs.js) — the Commander Blog, then the Daily Mission Report, then the Daily Health
+    at reading pace (public/screen-blogs.js) — the Commander Log, then the Daily Mission Report, then the Daily Health
     Blog, round and round. A blog with nothing written yet shows its note for a moment and passes the turn on. */
 function blogs(ctx, d) {
   const p = P.dashboardPanels(ctx, d);

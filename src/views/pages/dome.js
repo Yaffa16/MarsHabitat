@@ -272,7 +272,6 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
   // The crew's figures.
   const fig = crewFigures[String(pwrDay)] || {};
   const steps = fig.steps != null ? `${Number(fig.steps).toLocaleString('en-GB')} ${T('steps today')}` : T('steps not yet counted');
-  const kcal = fig.calories != null ? `${Number(fig.calories).toLocaleString('en-GB')} kcal` : null;
 
   // Today's EVA — the crew's walk outside — from the schedule: on now, still to come, or already made.
   const evas = tasks.filter((t) => /\bEVA\b/i.test(t.label));
@@ -357,13 +356,13 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
     crew:       { text: `${name(comm)} — ${cond(comm)} · ${name(sci)} — ${cond(sci)} · ${name(health)} — ${cond(health)}.`, more: `${doing}${next}` },
     kitchen:    { text: mealLine, more: storeLine('food', '') },
     nap:        { text: restLine, more: '' },
-    health:     { text: `${name(health)}: ${cond(health)}.`, more: `${steps}${kcal ? ` · ${kcal}` : ''}.` },
+    health:     { text: `${name(health)}: ${cond(health)}.`, more: `${steps}.` },
     comms:      { text: `${hourLine}${questionLine ? ' ' + questionLine : ''}`, more: exLine },
     science:    { text: `${name(sci)}: ${cond(sci)}.`, more: `${doing}${next}` },
     recycling:  { text: storeLine('water', T('No inventory filed for today.')), more: mealHours || T('The loop runs whenever there is grey water to pass; the crew count the tank at the end of the day.') },
     aeroponics: { text: cricketLine || storeLine('food', T('No inventory filed for today.')), more: cricketLine ? storeLine('food', '') : `${T('First harvest planned for SOL 10.')}` },
     power:      { text: powerLine, more: '' },
-    generator:  { text: `${steps}${kcal ? ` · ${kcal}` : ''}.`, more: powerLine },
+    generator:  { text: `${steps}.`, more: powerLine },
     eva:        { text: evaLine, more: evaNext && evaOn ? `${T('Up next')} ${evaNext.time}: ${evaNext.label}.` : '' },
     dashboard:  { text: pre ? T('The run has not begun yet.') : `${T('Sol')} ${m.clampedDay} ${T('of')} ${m.totalDays} · ${tasks.filter((t) => t.status === 'DONE').length}/${tasks.length} ${T('tasks done today')} · ${counts.published} ${T('exchanges published')}.`, more: '' },
   };
@@ -457,7 +456,7 @@ function labelSvg(h, T) {
 /* What each part of the habitat is — the still text of each pop-up. The
    live sentences come from figures(). */
 const ABOUT = {
-  crew: 'Three crew members are always in the habitat for the thirteen days of the run: a commanding officer who relays every message from Earth, a science officer who runs the experiments and watches the habitat’s systems, and a health officer who keeps the crew fit and the life support in order. Between them they write three blogs a day — the Commander Blog, the Daily Mission Report and the Health Report — and file their condition from inside.',
+  crew: 'Three crew members are always in the habitat for the thirteen days of the run: a commanding officer who relays every message from Earth, a science officer who runs the experiments and watches the habitat’s systems, and a health officer who keeps the crew fit and the life support in order. Between them they write three blogs a day — the Commander Log, the Daily Mission Report and the Health Report — and file their condition from inside.',
   science: 'The science bench: the habitat’s own experiments — samples, cultures, readings — and the daily science findings the science officer writes up. The sensor node beside it measures temperature, humidity, carbon dioxide and more every twenty minutes.',
   recycling: 'Nothing is thrown away. Used water passes through a planted filter bed, a screw press and a settling funnel and comes back as water for the plants and the crew. This loop decides how long the stores last.',
   aeroponics: 'Three shelves of plants grown without soil, their roots in nutrient-rich water — the habitat’s fresh food and part of its air. What grows here is counted with the food rations.',

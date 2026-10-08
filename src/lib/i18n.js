@@ -177,7 +177,6 @@ const D = {
   'Carbon dioxide': ['Kohlendioxid', 'Dioxyde de carbone'],
   'Temperature': ['Temperatur', 'Température'],
   'Humidity': ['Luftfeuchte', 'Humidité'],
-  'Calories consumed': ['Verbrauchte Kalorien', 'Calories consommées'],
   'Steps taken': ['Gegangene Schritte', 'Pas effectués'],
   'No meals filed for today': ['Heute keine Mahlzeiten erfasst', 'Aucun repas saisi pour aujourd’hui'],
   // ---- the recipe book's figures on a meal
@@ -490,15 +489,15 @@ const D = {
   // the three daily blogs under the trend graph (src/views/pages/public.js)
   'Daily Mission Report': ['Täglicher Missionsbericht', 'Rapport de mission quotidien'],
   'Health Report': ['Gesundheitsbericht', 'Rapport de santé'],
-  'Commander Blog': ['Commander-Blog', 'Blog du commandement'],
+  'Commander Log': ['Commander-Logbuch', 'Journal du commandement'],   // the Commander Blog until October
   'ALL BLOGS': ['ALLE BLOGS', 'TOUS LES BLOGS'],
   'blog posts': ['Blogbeiträge', 'billets de blog'],
   'Nothing written in this blog yet': ['In diesem Blog steht noch nichts', 'Rien d’écrit dans ce blog pour l’instant'],
-  'Three blogs come out of the habitat each day: the Commander Blog, the Daily Mission Report and the Health Report. Nobody edits them on the way out.': ['Jeden Tag kommen drei Blogs aus dem Habitat: der Commander-Blog, der tägliche Missionsbericht und der Gesundheitsbericht. Niemand bearbeitet sie auf dem Weg nach draußen.', 'Chaque jour, trois blogs sortent de l’habitat : le blog du commandement, le rapport de mission quotidien et le rapport de santé. Personne ne les retouche en chemin.'],
+  'Three blogs come out of the habitat each day: the Commander Log, the Daily Mission Report and the Health Report. Nobody edits them on the way out.': ['Jeden Tag kommen drei Blogs aus dem Habitat: das Commander-Logbuch, der tägliche Missionsbericht und der Gesundheitsbericht. Niemand bearbeitet sie auf dem Weg nach draußen.', 'Chaque jour, trois blogs sortent de l’habitat : le journal du commandement, le rapport de mission quotidien et le rapport de santé. Personne ne les retouche en chemin.'],
   // each is followed by the day it speaks of: "… for SOL 005"
   'No mission report yet for': ['Noch kein Missionsbericht für', 'Pas encore de rapport de mission pour'],
   'No health report yet for': ['Noch kein Gesundheitsbericht für', 'Pas encore de rapport de santé pour'],
-  'No commander blog yet for': ['Noch kein Commander-Blog für', 'Pas encore de blog du commandement pour'],
+  'No commander log yet for': ['Noch kein Eintrag im Commander-Logbuch für', 'Pas encore de journal du commandement pour'],
   'No schedule filed yet': ['Noch kein Plan erfasst', 'Aucun programme saisi pour l’instant'],
 
   // ---- the landing page's aura layout: the composer's heading, the blogs' heading, the menu, the lead
@@ -972,9 +971,9 @@ const D = {
   'Latest exchange': ['Letzter Austausch', 'Dernier échange'],
   'The loop runs whenever there is grey water to pass; the crew count the tank at the end of the day.': ['Der Kreislauf läuft, sobald Grauwasser anfällt; die Crew zählt den Tank am Ende des Tages.', 'La boucle tourne dès qu’il y a des eaux grises à traiter ; l’équipage compte le réservoir en fin de journée.'],
   'First harvest planned for SOL 10.': ['Erste Ernte geplant für SOL 10.', 'Première récolte prévue pour SOL 10.'],
-  'Three crew members are always in the habitat for the thirteen days of the run: a commanding officer who relays every message from Earth, a science officer who runs the experiments and watches the habitat’s systems, and a health officer who keeps the crew fit and the life support in order. Between them they write three blogs a day — the Commander Blog, the Daily Science Findings and the Daily Health Blog — and file their condition from inside.': [
-    'Drei Crewmitglieder sind die dreizehn Tage des Laufs immer im Habitat: eine Kommandantin, die jede Nachricht von der Erde weiterleitet, ein Wissenschaftsoffizier, der die Experimente durchführt und die Systeme des Habitats beobachtet, und ein Gesundheitsoffizier, der die Crew fit und die Lebenserhaltung in Ordnung hält. Zusammen schreiben sie jeden Tag drei Blogs — den Commander-Blog, die täglichen wissenschaftlichen Befunde und den täglichen Gesundheitsblog — und melden ihren Zustand von innen.',
-    'Trois membres d’équipage sont toujours dans l’habitat pendant les treize jours de la mission : un commandant qui relaie chaque message de la Terre, un officier scientifique qui mène les expériences et surveille les systèmes de l’habitat, et un officier de santé qui garde l’équipage en forme et le support de vie en ordre. Ensemble, ils écrivent trois blogs par jour — le blog du commandement, les observations scientifiques quotidiennes et le blog santé quotidien — et déclarent leur état depuis l’intérieur.'],
+  'Three crew members are always in the habitat for the thirteen days of the run: a commanding officer who relays every message from Earth, a science officer who runs the experiments and watches the habitat’s systems, and a health officer who keeps the crew fit and the life support in order. Between them they write three blogs a day — the Commander Log, the Daily Mission Report and the Health Report — and file their condition from inside.': [
+    'Drei Crewmitglieder sind die dreizehn Tage des Laufs immer im Habitat: eine Kommandantin, die jede Nachricht von der Erde weiterleitet, ein Wissenschaftsoffizier, der die Experimente durchführt und die Systeme des Habitats beobachtet, und ein Gesundheitsoffizier, der die Crew fit und die Lebenserhaltung in Ordnung hält. Zusammen schreiben sie jeden Tag drei Blogs — das Commander-Logbuch, den täglichen Missionsbericht und den Gesundheitsbericht — und melden ihren Zustand von innen.',
+    'Trois membres d’équipage sont toujours dans l’habitat pendant les treize jours de la mission : un commandant qui relaie chaque message de la Terre, un officier scientifique qui mène les expériences et surveille les systèmes de l’habitat, et un officier de santé qui garde l’équipage en forme et le support de vie en ordre. Ensemble, ils écrivent trois blogs par jour — le journal du commandement, le rapport de mission quotidien et le rapport de santé — et déclarent leur état depuis l’intérieur.'],
   'The science bench: the habitat’s own experiments — samples, cultures, readings — and the daily science findings the science officer writes up. The sensor node beside it measures temperature, humidity, carbon dioxide and more every twenty minutes.': [
     'Der Laborplatz: die Experimente des Habitats – Proben, Kulturen, Messungen – und die täglichen wissenschaftlichen Befunde, die der Wissenschaftsoffizier festhält. Der Sensorknoten daneben misst alle zwanzig Minuten Temperatur, Luftfeuchte, Kohlendioxid und mehr.',
     'La paillasse scientifique : les expériences de l’habitat – échantillons, cultures, mesures – et les résultats scientifiques quotidiens que rédige l’officier scientifique. Le nœud de capteurs à côté mesure toutes les vingt minutes la température, l’humidité, le dioxyde de carbone et plus.'],

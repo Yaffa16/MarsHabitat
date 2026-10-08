@@ -465,7 +465,7 @@ function logbook({ includeHeld = false, crewId = null, limit = 400 } = {}) {
 
 /**
  * The three blogs, as the public sees them now: every day of the run with
- * its three slots — the Commander Blog (the commanding officer's entry),
+ * its three slots — the Commander Log (the commanding officer's entry),
  * the Daily Mission Report and the Health Report (the science and
  * health officers' reports, SCIENCE and HEALTH notes) — the written post where
  * there is one and a placeholder where there is not, so the shape of the
@@ -474,7 +474,7 @@ function logbook({ includeHeld = false, crewId = null, limit = 400 } = {}) {
  * `title`, and `placeholder` (true for a slot not yet written).
  */
 const BLOGS = [
-  { key: 'commander', title: 'Commander Blog' },
+  { key: 'commander', title: 'Commander Log' },
   { key: 'science', title: 'Daily Mission Report', kind: 'SCIENCE' },
   { key: 'health', title: 'Health Report', kind: 'HEALTH' },
 ];
