@@ -964,7 +964,12 @@ server-rendered panel stands. In the **Trends** under the charts the hardware ap
 value per day — a gauge's daily mean, a meter's daily added amount — except a **power draw**
 (a gauge in watts, a channel's socket): a draw is not a trend, its day is on its meter's line
 as energy; and a meter a Power category reads is that category's line in the Power group
-(*Power · Food*), not a second line under Hardware.
+(*Power · Food*), not a second line under Hardware. Those daily values are worked out on every
+landing and dashboard page from every stored reading — a week of the hardware is some 150 000 rows —
+so each reading's venue date comes from **one date formatter kept per zone** (`src/lib/mission.js`)
+and is worked out **once per quarter hour** (no zone's offset splits one): built afresh for every
+row, as before 8 October, the dates of 166 000 readings took a page 23 seconds and 2.8 GB of memory,
+and the station would have stalled about a week into the run; now 0.4 s and 90 MB.
 
 Three things will change, and none of them is code:
 
@@ -2292,6 +2297,47 @@ turns it to day, and the choice is remembered in a cookie (`mcs_theme`) and reso
 server, so there is no flash of the wrong ground; the key (*Light* now) turns it back. A visitor
 who declines cookies keeps the dark. Mission control's switch follows the same rule.
 
+**By day the station is blue, by night orange** (October, 7 October: "for the light theme, replace
+the orange theme with blue"). In the light theme every Mars-orange accent of the public pages turns
+to an azure blue (`#0b81ff`, its text tone `#005ec2`) — the Write keys (with dark navy type on
+them, as the orange ones had), the sol pill, the *!* of MARS!platz, the eyebrows, the run's dates,
+the LIVE marks, the notes' round-trip mark, the two calls and *Approved messages are beamed into
+space*, the foot's glow, the phone's Write disc — beside the cobalt the dashboard's key keeps, so
+the two keys stay apart; the notes' sheet turns cool. The dark theme keeps its orange. It is one
+stylesheet laid over the others, **`public/light.css`, written by `tools/light-theme.js`** from the
+station's own sheets: every rule that draws in orange on a light page gets a twin, in the light
+theme only, with each orange turned to the blue of the same strength and lightness (hue 211°, its
+transparency kept); the twin carries its original's specificity exactly (`:where()`), so it wins
+only where the orange rule won, and a later rule that beat the orange one is laid over again after
+the twin (`/* as it stood */`). **After changing an orange in a stylesheet, run `node
+tools/light-theme.js`** — the test suite fails while `public/light.css` is out of date. Left as they
+are, on purpose: the night screens — the first page's room, where **the white signal climbs from
+Earth to the habitat and the crew's answer comes back down in orange, as before** (October), and
+the composer's crossing dial — which are dark in both themes; the states that warn (a store
+running low, a reading out of range, an error, the channel shut), which turn red, not blue; the
+Commander's blog head, indigo beside the Health blog's sky blue; Earth on the notes' round trip, in
+ink beside the blue loop; the trend graphs' line colours, which name the series; mission control,
+which never loads the sheet.
+
+**The station wears soft UI** (8 October: "redesign the website in neumorphism style with orange,
+black and blue"). Over everything else on the public pages lies **`public/neu.css`**, last of all:
+one ground for the whole page, and everything that stands on it — the cards, the panels, the notes,
+the keys, the header — pressed up out of it by two shadows, light from the top left and a shade to
+the bottom right; everything written into or chosen — the fields, the crew's answers, the chosen
+chip, the open folder, the page's own key, the activity under way — pressed into it. No borders, no
+glass. **By night** the ground is the station's black (`#121214`), the shade true black and the
+light a faint grey, with a one-pixel rim of light along every raised edge; the keys that act
+(*Write to the crew*, the floating Write key, *Transmit*, the composer's send) keep their Mars
+orange gradient with dark type and are the only things that glow; the dashboard's key keeps its
+blue; every lamp — the sol under way, the chosen chip, a visitor's own note — burns orange. **By
+day** the ground is a soft grey (`#e3e7ef`) and the accents are the light theme's blue. The night
+room on the first page stays night, set into the ground like a screen with a bevel, its white
+signal up and orange answer down. The sheet re-points the station's own tokens (paper, glass,
+raise, well, rule) to the one ground and the soft shadows, so whatever is drawn from them follows;
+its rules after that catch what is drawn directly. Keyboard focus keeps its ring. Mission control
+and the screens do not load it. The two mockups it was taken from are kept beside the project
+(*MARS!platz Soft UI* and *Soft UI Night*).
+
 ## Three phases
 
 The station behaves differently depending on where it is in the run, and it switches by
@@ -2519,7 +2565,8 @@ src/
                          (public/sky.js places them on the grid and fades them in and out, moves the day's line,
                          hides the nudge under the dome once scrolled, moves the signal in transit and pages a phone's scroll)
   views/pages/info.js    the About page: About, What's inside the habitat, A sol on MARS!platz (sol.js), Who we are
-public/                  the stylesheets (station.css, aura.css, sheet.css over them), the page scripts (board,
+public/                  the stylesheets (station.css, aura.css, sheet.css over them, light.css — the light theme in
+                         blue, written by tools/light-theme.js — and neu.css, the soft UI, over all), the page scripts (board,
                          composer, habitat, media, sky, entry editor), the habitat's pictures (habitat/: inside.svg, the
                          habitat in section, ground.jpg, the Mars plain it stands on, and rooms/, five of the rooms in
                          colour, shown when lit; the earlier cutaway's two pictures, unused) and the mission's photographs
@@ -2527,8 +2574,10 @@ public/                  the stylesheets (station.css, aura.css, sheet.css over 
 tools/                   sensor simulator, mock Home Assistant, backup script, media verifier, end-to-end test,
                          habitat-modules.py (the habitat's scene and the modules' cut-outs from the two SVG files handed
                          over; run it again when either file is replaced), missions-json.py (content/missions.json
-                         from the sheets in missions/; run it again when a sheet changes), trace-inside.py (the
-                         earlier linework, unused)
+                         from the sheets in missions/; run it again when a sheet changes), light-theme.js
+                         (public/light.css, the light theme in blue, from the stylesheets; run it again when an
+                         orange in a stylesheet changes — --check says whether it is up to date), trace-inside.py
+                         (the earlier linework, unused)
 missions/                the scientific missions' sheets, one PDF a mission, MARS_Mission_NN_Title.pdf, 00 to 12
                          (served at /missions/<file>; each sheet's words and which sheet is which day's — the plan
                          (days), set by the Science officer on the desk — are in content/missions.json, written

@@ -527,6 +527,62 @@ echo "$ABOUT" | grep -q '<p class="dash-sub">MARS! – Mobilizing Awareness for 
   && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<h3>Warum tun wir das?</h3>' && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<dt>WISSENSCHAFTLICHE MISSIONEN</dt><dd>11</dd>' && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q 'Millionen Kilometer von der Erde entfernt' \
   && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q '<h3>L’Habitat – Red Dust City</h3>' && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q 'target="_blank" rel="noopener">Santé mentale</a>' \
   && ok "About is in the words of October's text sheet — the project's name as the section's line, MARS! in four paragraphs with the workshops and the exhibition linked, Why are we doing this? with its line, The Habitat – Red Dust City, The Insight — the old paragraphs gone, More than Human and The readings gone too, Messages sent to space kept, the distance to Mars the station's own figure, the facts with 17:00 at each end, eleven scientific missions and no timezone, in three languages" || bad "the About page's texts are not the sheet's"
+# by day blue, by night orange (October, 7 October: "for the light theme, replace the orange theme with blue"): public/light.css,
+# written by tools/light-theme.js from the stylesheets and up to date, loaded last on every public page and screen (never on
+# mission control); every rule in it acts in the light theme only, its twins weigh what their originals weigh (:where), a
+# later rule that beat an orange one is laid over again; the tokens turn azure on the public pages' body; the Write keys,
+# the floating one, the call's beamed line are blue; the night room keeps its orange — the white signal up from Earth to the
+# habitat and the orange answer down, as before — and so does the composer's dial; the warning states are red; the dark
+# theme's rules are untouched
+LIGHT_PAGE=$(curl -s -H "Cookie: mcs_theme=light" $B/)
+node tools/light-theme.js --check > /dev/null \
+  && echo "$LIGHT_PAGE" | tr -d '\n' | grep -q '<link rel="stylesheet" href="/sheet.css?v=[^"]*"> *<link rel="stylesheet" href="/light.css?v=[^"]*">' \
+  && curl -s $B/about | grep -q 'href="/light.css?v=' && tr -d '\n' < src/views/pages/screens.js | grep -q '<link rel="stylesheet" href="/screen.css?v=${V}"> *<link rel="stylesheet" href="/light.css?v=${V}">' \
+  && ! curl -s -b $A $B/control | grep -q '/light.css' \
+  && [ "$(grep -vE '^\s*($|/\*|\*|@|\}|:where\(:root\[data-theme="light"\]|:root\[data-theme="light"\])' public/light.css | grep -c '{')" = "0" ] \
+  && ! grep -q 'data-theme="dark"' public/light.css && ! grep -q 'space-line\|space-arc\|space-tag\|\.sky-\|xdial-\(trail\|mars\|packet\)' public/light.css \
+  && grep -q ':where(:root\[data-theme="light"\] body.landing) { --mars: #0b81ff; --mars-ink: #005ec2; --orange: #0b81ff; --orange-deep: #106dcf; --orange-soft: rgba(11,129,255,.12);' public/light.css \
+  && grep -q ':where(:root\[data-theme="light"\]) body.landing .tk-nav a.tk-write { background: linear-gradient(180deg, #2990ff, #0b81ff); color: #020e1a;' public/light.css \
+  && grep -q ':where(:root\[data-theme="light"\]) body.landing .write-float { color: #020e1a;' public/light.css \
+  && grep -q ':where(:root\[data-theme="light"\]) body.landing .call-beam { background: linear-gradient(100deg, #6bb2ff 0%, #1a88ff 32%, #c2dfff 50%, #1a88ff 68%, #6bb2ff 100%); background-size: 240% 100%; background-position: 100% 0; -webkit-background-clip: text; background-clip: text;' public/light.css \
+  && grep -q ':where(:root\[data-theme="light"\]) body.landing .tk-sol i { box-shadow: 0 0 8px 2px rgba(255,255,255,.8); } /\* as it stood \*/' public/light.css \
+  && grep -q ':root\[data-theme="light"\] body.landing .space-room, :root\[data-theme="light"\] body.landing .xdial-wrap { --mars: #ff5a1f; --mars-ink: #c23600; --orange: #ff5a1f;' public/light.css \
+  && grep -q ':root\[data-theme="light"\] body.landing :is(.sym.bad, .dot.bad, .badge.bad, .bar i.bad, .bar i.warn, .counter.over, .flash.err, .gauge.low, .gauge.round.low, .kpi.warn, .dial.alert, .dcard-note.anomaly, .hbt .hot, .hbt .note.alert, .transit.closed, .cloud-fail, button.danger) { --mars: #d92d20;' public/light.css \
+  && grep -q ':root\[data-theme="light"\] body.landing .card.note .note-mark .nm-earth { fill: var(--ink); }' public/light.css && grep -q ':where(:root\[data-theme="light"\]) body.landing #blog-commander .dpanel-head { background: radial-gradient(ellipse 200px 125px at 52% 136%, #4752eb 0' public/light.css \
+  && grep -q 'body.landing .space-line::before { bottom: 0; background: #fff; box-shadow: 0 0 10px 2px rgba(120,170,255,.9); animation: space-up 9s linear infinite; }' public/sheet.css && grep -q 'body.landing .space-line::after { top: 0; background: var(--hud-hot); box-shadow: 0 0 10px 2px rgba(var(--hud-hot-rgb),.8); animation: space-down 9s linear infinite; }' public/sheet.css \
+  && grep -q "if (aura) styles = styles.filter((s) => s !== '/sheet.css' && s !== '/light.css').concat('/sheet.css', '/light.css');" src/views/layout.js \
+  && grep -q "ACCENT = (body.getPropertyValue('--orange') || root.getPropertyValue('--orange') || '#ff6a00').trim() || '#ff6a00';" public/habitat.js && grep -q "attributeFilter: \['data-theme'\]" public/habitat.js \
+  && ok "by day blue, by night orange: public/light.css, written by tools/light-theme.js and up to date, laid over every public page and screen in the light theme only — the tokens azure, the Write keys and the beamed line blue, each twin as weighty as its original, later winners laid over again — the night room keeps its white signal up and orange answer down, the dial its orange, the warnings turn red, the dark theme untouched, mission control never loads it" || bad "the light theme is not blue as it should be"
+# soft UI (8 October: "redesign the website in neumorphism style with orange, black and blue"): public/neu.css laid over every
+# public page last, after the light theme — never on mission control or the screens; one ground (the station's black by night,
+# a soft grey by day) with the cards and keys raised out of it and the fields and the chosen pressed in; by night the keys
+# that act are Mars orange and glow, the dashboard's key blue; the page's own key keeps its focus ring
+SOFT_PAGE=$(curl -s $B/)
+echo "$SOFT_PAGE" | tr -d '\n' | grep -q '<link rel="stylesheet" href="/light.css?v=[^"]*"> *<link rel="stylesheet" href="/neu.css?v=[^"]*">' \
+  && curl -s $B/about | grep -q 'href="/neu.css?v=' && curl -s $B/write | grep -q 'href="/neu.css?v=' && curl -s $B/dashboard | grep -q 'href="/neu.css?v=' \
+  && ! curl -s -b $A $B/control | grep -q '/neu.css' && ! grep -q 'neu.css' src/views/pages/screens.js \
+  && grep -q "if (aura) styles = styles.filter((s) => s !== '/neu.css').concat('/neu.css');" src/views/layout.js \
+  && grep -q ':root\[data-theme="dark"\] {$' public/neu.css && grep -q '^  --neu: #121214;' public/neu.css && grep -q '^  --neu: #e3e7ef;' public/neu.css \
+  && grep -q '^  --neu-on: var(--mars-ink);' public/neu.css && grep -q '^  --neu-on: var(--cobalt);' public/neu.css \
+  && grep -q 'background: linear-gradient(180deg, #ff8a3d, #ff5a1f) !important; color: #1a0a02 !important;' public/neu.css \
+  && grep -q 'background: linear-gradient(180deg, #4f63ff, #2f45e8) !important; color: #fff !important;' public/neu.css \
+  && grep -q 'body.landing .tk-nav a\[aria-current="page"\]:not(:focus-visible) { outline: 0 !important; }' public/neu.css \
+  && grep -q 'body.landing .space-room { background: #000 !important;' public/neu.css \
+  && ok "soft UI: public/neu.css laid over every public page last — never on mission control or the screens — one ground, black by night and a soft grey by day, cards and keys raised, fields and the chosen pressed in, the keys that act Mars orange and glowing by night, the dashboard's key blue, the night room kept black, focus rings kept" || bad "the soft UI is not laid over the public pages as it should be"
+# the dark rules for the phone's write sheet and the composer's close key are written on the root element itself
+# (html.js[data-theme="dark"]): written ':root[data-theme="dark"] html.js' they could never match, and a phone by night drew
+# the day's pale veil behind the sheet
+! grep -q ':root\[data-theme="[a-z]*"\] html' public/*.css && [ "$(grep -c 'html\.js\[data-theme="dark"\]' public/aura.css)" = "5" ] \
+  && ok "the dark write sheet's veil and close keys are written on the root itself and match by night" || bad "a dark rule is still written root-then-html and can never match"
+# the Trends series date each reading through one kept formatter per zone (src/lib/mission.js) and once per quarter hour
+# (src/lib/home-assistant.js): a week of the hardware's readings, some 150 000 rows, took a page 23 s and 2.8 GB before
+# (8 October) — twenty thousand dates must now cost well under a second
+grep -q 'const FORMATTERS = new Map();' src/lib/mission.js && grep -q 'const q = Math.floor(r.t / 900000);' src/lib/home-assistant.js \
+  && [ "$(node -e "const m=require('./src/lib/mission.js');const t=Date.now();for(let i=0;i<20000;i++)m.localDate(new Date(1791400000000+i*60000),'Europe/Berlin');console.log(Date.now()-t<1000?'fast':'slow')" 2>/dev/null | tail -1)" = "fast" ] \
+  && ok "the Trends series date the readings fast: one kept formatter per zone, one date per quarter hour" || bad "dating the readings is slow again — the pages will crawl as the readings pile up"
+# At a Glance: the booklet's scroll timer no longer hides the page's translator (a 'var t' did, and the rehearsal page threw)
+! grep -q "var t; bk.addEventListener" src/views/pages/glance.js && grep -q "var settle; bk.addEventListener('scroll'" src/views/pages/glance.js \
+  && ok "At a Glance: the booklet's scroll timer does not hide the translator" || bad "At a Glance's scroll timer hides t() again"
 # the theme key names the mode the page is in — Dark by night, Light by day (October: "the light mode should read Dark
 # and vice versa"); its title the way out; in German and French Dunkel / Hell, Sombre / Clair; the script relabels the same way
 curl -s $B/ | grep -q '<input type="hidden" name="to" value="light">' && curl -s $B/ | grep -q 'title="Switch to light mode" aria-label="Switch to light mode">' && curl -s $B/ | grep -q '<span class="theme-word">Dark</span>' \

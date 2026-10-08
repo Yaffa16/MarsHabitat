@@ -741,8 +741,8 @@ body.landing .portal-pop { display: none; }
   html.js body.landing .portal-pop .dev-close { display: grid; place-items: center; position: absolute; top: 18px; right: 20px; z-index: 2; width: 38px; height: 38px; margin: 0; padding: 0; border: 0; border-radius: 50%; background: rgba(15,21,64,.08); color: var(--ink); cursor: pointer; box-shadow: none; transition: background .15s; }
   html.js body.landing .portal-pop .dev-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
   html.js body.landing .portal-pop .dev-close:hover { background: rgba(15,21,64,.14); transform: none; box-shadow: none; }
-  :root[data-theme="dark"] html.js body.landing .portal-pop .dev-close { background: rgba(255,255,255,.1); color: #f1f1ef; }
-  :root[data-theme="dark"] html.js body.landing .portal-pop .dev-close:hover { background: rgba(255,255,255,.18); }
+  html.js[data-theme="dark"] body.landing .portal-pop .dev-close { background: rgba(255,255,255,.1); color: #f1f1ef; }
+  html.js[data-theme="dark"] body.landing .portal-pop .dev-close:hover { background: rgba(255,255,255,.18); }
   /* the head: the eyebrow — the uplink and its one-way signal — over the title; your callsign under it */
   body.landing .portal-pop .dev-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 16px; padding: 0 0 16px; border-bottom: 1px solid var(--note-edge); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
   body.landing .portal-pop .dev-chip { font-size: 12.5px; padding: 6px 12px; }
@@ -1784,11 +1784,11 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
      the shell's): there it lies over the list and under the pop-up, the top bar and the keys — drawn on the body it would
      take the body's own glow's round shape and lie over the pop-up as well */
   html.js body.landing.messages.dock-open .shell::before { content: ""; position: fixed; inset: 0; z-index: 24; pointer-events: none; background: rgba(15,21,64,.1); }
-  :root[data-theme="dark"] html.js body.landing.messages.dock-open .shell::before { background: rgba(0,0,0,.35); }
+  html.js[data-theme="dark"] body.landing.messages.dock-open .shell::before { background: rgba(0,0,0,.35); }
   /* while a message is being written the list behind is blurred away (the one blur a phone draws, and only then); during
      the crossing it clears, so the message can be seen arriving under MY MESSAGES (tabbar.js sets body.crossing) */
   html.js body.landing.messages.dock-open:not(.crossing) .shell::before { background: rgba(247,248,252,.55); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
-  :root[data-theme="dark"] html.js body.landing.messages.dock-open:not(.crossing) .shell::before { background: rgba(24,24,28,.6); }
+  html.js[data-theme="dark"] body.landing.messages.dock-open:not(.crossing) .shell::before { background: rgba(24,24,28,.6); }
   /* the page ends with the last message: no foot here (the keys and More lead everywhere it did), so the list scrolls up to
      just above the pop-up and no further */
   body.landing.messages .foot { display: none; }
@@ -1798,7 +1798,7 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
   html.js body.landing.messages .dev-close { display: grid; place-items: center; position: absolute; top: 13px; right: 14px; z-index: 2; width: 34px; height: 34px; margin: 0; padding: 0; border: 0; border-radius: 50%; background: rgba(15,21,64,.06); color: var(--ink); cursor: pointer; -webkit-tap-highlight-color: transparent; }
   html.js body.landing.messages .dev-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
   html.js body.landing.messages .dev-close:active { transform: scale(.92); background: rgba(15,21,64,.12); }
-  :root[data-theme="dark"] html.js body.landing.messages .dev-close { background: rgba(255,255,255,.08); }
+  html.js[data-theme="dark"] body.landing.messages .dev-close { background: rgba(255,255,255,.08); }
   body.landing.messages .dev-head { margin: 0 0 12px; gap: 10px; font-size: 13px; }
   body.landing.messages .dev-chip { font-size: 14px; padding: 5px 12px; }
   /* the day's question in the pop-up: compact, so the writing box keeps its room; while the keyboard is up the

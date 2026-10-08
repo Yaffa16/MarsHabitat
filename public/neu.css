@@ -1,0 +1,193 @@
+/* ==========================================================================================================
+   Soft UI (neumorphism) — the station's dress since 8 October 2026 ("redesign the website in neumorphism style with
+   orange, black and blue"). Laid over every public page last (src/views/layout.js), after the light theme; mission
+   control and the screens never load it.
+
+   One ground for everything; what stands on it is pressed up out of it by two shadows — light from the top left, a
+   shade to the bottom right — and what is written into or chosen is sunk into it. No borders, no glass.
+   By night the ground is the station's black, the keys that act keep their Mars orange and are the only things that
+   glow, the dashboard's key keeps its blue, and every lamp (the sol under way, the chosen chip) burns orange. By day
+   the ground is a soft grey and the accents are the light theme's blue (public/light.css turns the orange tokens blue
+   inside the page, so var(--mars) here is blue by day).
+   The station's own tokens are re-pointed first, so everything drawn from them follows; the rules after catch what is
+   drawn directly. The night room on the landing page stays night: black space, its white signal up and orange answer
+   down, set into the ground like a screen.
+   ========================================================================================================== */
+
+/* ------------------------------------------------------------------------------------------ the tokens */
+:root, :root[data-theme="light"] {
+  --neu: #e3e7ef;                 /* the ground, and every surface */
+  --neu-d: #bfc6d6;               /* the shade */
+  --neu-l: #ffffff;               /* the light */
+  --neu-line: rgba(79,91,130,.14);
+  --neu-out: 10px 10px 24px var(--neu-d), -10px -10px 24px var(--neu-l);
+  --neu-out-sm: 5px 5px 12px var(--neu-d), -5px -5px 12px var(--neu-l);
+  --neu-out-xs: 3px 3px 6px var(--neu-d), -3px -3px 6px var(--neu-l);
+  --neu-in: inset 6px 6px 14px var(--neu-d), inset -6px -6px 14px var(--neu-l);
+  --neu-in-sm: inset 3px 3px 7px var(--neu-d), inset -3px -3px 7px var(--neu-l);
+  --neu-ink: #2b3152;
+  --neu-dim: #5c6487;
+  --neu-faint: #8d95b5;
+  --neu-on: var(--cobalt);        /* what is chosen */
+  --neu-glow: 0 0 0 transparent;
+  color-scheme: light;
+}
+/* night: black leaves no room below it for a shade, so the ground is the station's night paper (#121214, black to the
+   eye), the shade true black, the light a faint grey — and every raised thing has a one-pixel rim of light along its
+   top-left edge, the way a console's keys catch a lamp in the dark */
+:root[data-theme="dark"] {
+  --neu: #121214;
+  --neu-d: #000000;
+  --neu-l: #29292e;
+  --neu-rim: inset 1px 1px 0 rgba(255,255,255,.07);
+  --neu-line: rgba(255,255,255,.075);
+  --neu-out: 10px 10px 26px var(--neu-d), -7px -7px 20px var(--neu-l), var(--neu-rim);
+  --neu-out-sm: 6px 6px 14px var(--neu-d), -4px -4px 11px var(--neu-l), var(--neu-rim);
+  --neu-out-xs: 3px 3px 7px var(--neu-d), -2px -2px 6px var(--neu-l), var(--neu-rim);
+  --neu-in: inset 7px 7px 16px var(--neu-d), inset -5px -5px 13px var(--neu-l);
+  --neu-in-sm: inset 3px 3px 8px var(--neu-d), inset -3px -3px 7px var(--neu-l);
+  --neu-ink: #ececea;
+  --neu-dim: #a4a4ab;
+  --neu-faint: #6b6b73;
+  --neu-on: var(--mars-ink);      /* what is chosen glows orange */
+  --neu-glow: 0 0 22px -2px rgba(255,106,46,.55);
+  color-scheme: dark;
+}
+/* the station's tokens, re-pointed: one ground, no glass, the soft shadows */
+:root, :root[data-theme="light"], :root[data-theme="dark"] {
+  --paper: var(--neu); --ground: var(--neu); --ground-2: var(--neu);
+  --ink: var(--neu-ink); --dim: var(--neu-dim); --faint: var(--neu-faint);
+  --tile: var(--neu); --glass: var(--neu); --glass-soft: var(--neu); --glass-solid: var(--neu);
+  --glass-edge: transparent; --glass-shadow: var(--neu-out); --hair: var(--neu-line);
+  --raise: var(--neu); --raise-2: var(--neu); --well: var(--neu);
+  --rule: var(--neu-line); --rule-hard: var(--neu-line); --edge: transparent;
+  --sh-raise: var(--neu-out); --sh-raise-lg: var(--neu-out); --sh-raise-sm: var(--neu-out-sm); --sh-inset: var(--neu-in-sm);
+  --note-bg: var(--neu); --note-edge: transparent; --note-shadow: var(--neu-out);
+  --paper-2: var(--neu); --screen: var(--neu); --screen-2: var(--neu);
+  --r: 24px; --r-lg: 30px; --r-sm: 16px;
+}
+
+/* ------------------------------------------------------------------------------------------ the ground */
+html { background: var(--neu) !important; }
+body, body.landing, :root[data-theme="dark"] body.landing { background: var(--neu) !important; background-image: none !important; color: var(--neu-ink) !important; }
+
+/* ----------------------------------------------------------------------------------- the header */
+body.landing .ticker, :root[data-theme="dark"] body.landing .ticker { background: var(--neu) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; border: 0 !important; box-shadow: 0 14px 30px -18px var(--neu-d) !important; }
+body.landing .tk-window { border-top: 1px solid var(--neu-line) !important; }
+body.landing .tk-nav a, :root[data-theme="dark"] body.landing .tk-nav a { background-image: none !important; border: 0 !important; border-radius: 18px !important; box-shadow: var(--neu-out-sm), inset 1px 1px 2px rgba(255,255,255,.28) !important; }
+body.landing .tk-nav a.tk-write, :root[data-theme="dark"] body.landing .tk-nav a.tk-write { background: var(--mars) !important; color: #fff !important; }
+body.landing .tk-nav a.tk-dash, :root[data-theme="dark"] body.landing .tk-nav a.tk-dash { background: var(--cobalt-fill) !important; color: #fff !important; }
+body.landing .tk-nav a.tk-about, :root[data-theme="dark"] body.landing .tk-nav a.tk-about { background: var(--neu) !important; color: var(--neu-ink) !important; box-shadow: var(--neu-out-sm) !important; }
+/* the page's own key is pressed in (its focus ring stays, from station.css) */
+body.landing .tk-nav a[aria-current="page"], :root[data-theme="dark"] body.landing .tk-nav a[aria-current="page"] { box-shadow: var(--neu-in-sm) !important; }
+body.landing .tk-nav a[aria-current="page"]:not(:focus-visible) { outline: 0 !important; }
+body.landing .tk-nav a:hover { transform: none !important; filter: none !important; }
+body.landing .tk-sol { border: 0 !important; box-shadow: var(--neu-out-xs) !important; }
+body.landing .tk-right form button, body.landing .tk-right .lang button, body.landing .status button, body.landing .lang, body.landing .theme { border: 0 !important; background: var(--neu) !important; box-shadow: var(--neu-out-xs) !important; color: var(--neu-dim) !important; }
+body.landing .status .lang button.on { box-shadow: var(--neu-in-sm) !important; color: var(--neu-on) !important; background: var(--neu) !important; }
+body.landing .status .lang-menu > summary, :root[data-theme="dark"] body.landing .status .lang-menu > summary { background: var(--neu) !important; background-image: none !important; color: var(--neu-dim) !important; border: 0 !important; box-shadow: var(--neu-out-xs) !important; }
+body.landing .status .lang-menu > .lang { background: var(--neu) !important; border: 0 !important; box-shadow: var(--neu-out-sm) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+body.landing .status .theme button, :root[data-theme="dark"] body.landing .status .theme button { background: var(--neu) !important; border: 0 !important; box-shadow: var(--neu-out-xs) !important; color: var(--neu-dim) !important; }
+
+/* ------------------------------------------------------------------------- cards, panels, sheets */
+body.landing .about-sec, body.landing .call, body.landing .steps, body.landing .dpanel, body.landing .panel, body.landing .foot,
+body.landing .sol-side, body.landing .portal-pop .device, body.landing .device, body.landing .gauge, body.landing .tile,
+body.landing .card.xc, body.landing .card.note, body.landing .board .card.note, :root[data-theme="dark"] body.landing .card.xc.note,
+body.landing .officer-card, body.landing .hab-card, body.landing .dcard, body.landing .mission-card, body.landing .blog, body.landing .post,
+body.landing .sheet-p1, body.landing .dome-panel, body.landing .legend, body.landing .kv-card, body.landing .hw-tile, body.landing .pwr-tile, body.landing .sens-tile {
+  background: var(--neu) !important; background-image: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  border-color: transparent !important; box-shadow: var(--neu-out) !important; }
+body.landing .about-sec .panel, body.landing .dpanel .panel { box-shadow: var(--neu-out-sm) !important; }
+body.landing .call::before, body.landing .call::after, body.landing .steps::before, body.landing .about-sec::before { display: none !important; }
+body.landing .call:hover, body.landing .card.note:hover, body.landing .card.note:has(.card-space[data-launched]):hover { transform: none !important; box-shadow: var(--neu-out) !important; border-color: transparent !important; }
+/* what stands sunk into the surface: the fields, the crew's answer, the wells, the charts, a note's tags */
+body.landing textarea, body.landing input[type="text"], body.landing input[type="search"], body.landing input[type="email"], body.landing select, body.landing .msgbox textarea, body.landing .composer .msgbox textarea,
+body.landing .card-reply.note-answer, body.landing .card.note .card-reply.note-answer, :root[data-theme="dark"] body.landing .card.note .card-reply.note-answer,
+body.landing .well, body.landing .chart, body.landing .hw-chart, body.landing .trend-box, body.landing .space-room, body.landing .note-tags .note-tag {
+  background: var(--neu) !important; background-image: none !important; border: 0 !important; box-shadow: var(--neu-in-sm) !important; }
+body.landing textarea, body.landing .composer .msgbox textarea { box-shadow: var(--neu-in) !important; border-radius: 20px !important; }
+/* the night window: the room stays space — black, the stars, the Earth — set into the ground like a screen, with a bevel */
+body.landing .space-room { background: #000 !important; box-shadow: var(--neu-out) !important; border-radius: 30px !important; }
+body.landing .space-room::after { content: ""; position: absolute; inset: 0; z-index: 6; pointer-events: none; border-radius: inherit;
+  box-shadow: inset 10px 10px 24px rgba(0,0,0,.65), inset -10px -10px 24px rgba(255,255,255,.07); }
+/* the notes on the board */
+body.landing .card.note .note-head, body.landing .board .card.note .note-head, :root[data-theme="dark"] body.landing .card.note .note-head, :root[data-theme="dark"] body.landing .board .card.note .note-head { background: transparent !important; border-bottom: 1px solid var(--neu-line) !important; }
+body.landing .card.note .note-foot { border-top: 1px solid var(--neu-line) !important; }
+body.landing .card.note[data-mine], body.landing .board .card.note[data-mine] { box-shadow: var(--neu-out), inset 4px 0 0 var(--mars) !important; }
+body.landing .card.note .note-tag { color: var(--cobalt) !important; }
+body.landing .note-mark { filter: drop-shadow(2px 2px 3px var(--neu-d)); }
+/* the keys and chips: pressed up out of the ground; pressed in where chosen, and while held */
+body.landing .btn, body.landing .chip, body.landing .tags label, body.landing .status button, body.landing .know-more, body.landing .call-key, body.landing .sky-note-btn,
+body.landing .write-float, body.landing .masthead-btn, body.landing .dash-tab, body.landing .fold-tab, body.landing .seg button, body.landing .segmented button, body.landing .daypick a, body.landing .pill,
+:root[data-theme="dark"] body.landing .btn, :root[data-theme="dark"] body.landing .chip, :root[data-theme="dark"] body.landing .tags label {
+  background: var(--neu) !important; background-image: none !important; border: 0 !important; color: var(--neu-dim) !important; box-shadow: var(--neu-out-sm) !important; transform: none !important; }
+body.landing .chip:hover, body.landing .btn:hover, body.landing .tags label:hover { color: var(--neu-ink) !important; }
+body.landing .chip.active, body.landing .tags label:has(input:checked), body.landing .seg button.on, body.landing .segmented button[aria-selected="true"], body.landing .dash-tab.on, body.landing .dash-tab[aria-selected="true"], body.landing .daypick a.on,
+:root[data-theme="dark"] body.landing .chip.active, :root[data-theme="dark"] body.landing .tags label:has(input:checked) {
+  background: var(--neu) !important; color: var(--neu-on) !important; box-shadow: var(--neu-in-sm) !important; }
+body.landing :is(.btn, .chip, .tags label, .call-key, .know-more, .masthead-btn, .tk-nav a, .about-jump a, .status button):active { box-shadow: var(--neu-in-sm) !important; }
+body.landing .feed-filter .chip.mine { color: var(--mars-ink) !important; }
+body.landing .feed-filter .chip.mine.active { color: var(--mars-ink) !important; box-shadow: var(--neu-in-sm) !important; }
+body.landing .chip .chip-count { box-shadow: none !important; }
+/* the keys that act keep their colour, raised */
+body.landing .write-float, body.landing .call-key.is-write, body.landing .composer button.primary, body.landing .dev-foot .primary, body.landing .btn.primary, body.landing button.primary, body.landing .sky-note-btn,
+:root[data-theme="dark"] body.landing .write-float { background: var(--mars) !important; color: #fff !important; box-shadow: var(--neu-out-sm), inset 1px 1px 2px rgba(255,255,255,.3) !important; }
+body.landing .write-float:hover { transform: none !important; background: var(--mars) !important; }
+body.landing .write-float.is-crossing { background: var(--neu) !important; color: var(--neu-ink) !important; border: 0 !important; }
+body.landing .call-key.is-dash, body.landing .know-more, body.landing .masthead-btn.masthead-btn-dash { background: var(--cobalt-fill) !important; color: #fff !important; box-shadow: var(--neu-out-sm), inset 1px 1px 2px rgba(255,255,255,.3) !important; }
+body.landing .call-beam, body.landing .call-write .call-beam { background: none !important; -webkit-background-clip: initial !important; background-clip: initial !important; -webkit-text-fill-color: var(--mars) !important; color: var(--mars) !important; text-shadow: 1px 1px 0 var(--neu-l), 2px 2px 4px var(--neu-d) !important; animation: none !important; }
+/* the rules and the small things */
+body.landing hr, body.landing .about-sec-head, body.landing .sheet-meta.is-ruled, body.landing .eyebrow::after { border-color: var(--neu-line) !important; }
+body.landing .sol-kind { border: 0 !important; box-shadow: var(--neu-out-xs) !important; }
+body.landing .sol-officer-disc { box-shadow: var(--neu-in-sm) !important; background: var(--neu) !important; }
+body.landing .sol-item.is-now { background: var(--neu) !important; box-shadow: var(--neu-in-sm) !important; border-top: 0 !important; padding-left: 10px !important; padding-right: 10px !important; margin: 4px -10px !important; }
+body.landing .officer-pic img, body.landing .crew-pic img, body.landing .logos .logo { box-shadow: var(--neu-out-sm) !important; }
+body.landing .logos .logo { background: var(--neu) !important; border: 0 !important; }
+body.landing .round-track { stroke: var(--neu-d) !important; }
+body.landing .dpanel-title, body.landing .chan { color: var(--neu-dim) !important; }
+body.landing .seq-sheet, body.landing .sheet-p1 .seq { background: var(--neu) !important; }
+body.landing .about-jump a, :root[data-theme="dark"] body.landing .about-jump a { background: var(--neu) !important; border: 0 !important; box-shadow: var(--neu-out-xs) !important; color: var(--neu-dim) !important; }
+body.landing .about-jump a:hover { color: var(--neu-ink) !important; }
+/* the dashboard's folders and tiles: the rows of tabs sunk into the panel, the front tab raised, the tiles raised */
+body.landing .frow, :root[data-theme="dark"] body.landing .frow, body.landing .fgroups, :root[data-theme="dark"] body.landing .fgroups { background: var(--neu) !important; box-shadow: var(--neu-in-sm) !important; }
+body.landing .ftab, body.landing .fgroup { background: transparent !important; box-shadow: none !important; color: var(--neu-dim) !important; }
+body.landing .folder .frow .ftab.is-front, body.landing .folder .frow .ftab.is-front:hover, :root[data-theme="dark"] body.landing .folder .frow .ftab.is-front, body.landing .fgroup.is-cur { background: var(--neu) !important; color: var(--neu-on) !important; box-shadow: var(--neu-out-xs) !important; }
+body.landing .folder .frow .ftab.is-front .ftab-ic, :root[data-theme="dark"] body.landing .folder .frow .ftab.is-front .ftab-ic { stroke: var(--neu-on) !important; }
+body.landing .dpanel .hbt .tile, body.landing .hbt .tile, body.landing .slab, body.landing .msg, body.landing .dp-inner, body.landing .mday, body.landing .fold, body.landing .quoted, body.landing .scale, body.landing .orbit-frame {
+  background: var(--neu) !important; background-image: none !important; border: 0 !important; box-shadow: var(--neu-out-sm) !important; }
+body.landing .run-strip i { background: var(--neu-d) !important; }
+body.landing .run-strip .now i { background: var(--mars) !important; }
+body.landing .dash-rail, body.landing .dash-rail a, body.landing .folder-tabs a, body.landing .ftab { background: var(--neu) !important; border: 0 !important; }
+body.landing .dash-rail a[aria-current], body.landing .dash-rail a.on, body.landing .ftab.on { box-shadow: var(--neu-in-sm) !important; color: var(--neu-on) !important; }
+body.landing .gauge .gauge-head, body.landing .gauge-val { color: var(--neu-ink) !important; }
+body.landing .kpi, body.landing .figure, body.landing .figure-tile, body.landing .stat { background: var(--neu) !important; border: 0 !important; box-shadow: var(--neu-out-sm) !important; }
+body.landing .rows .row { border-color: var(--neu-line) !important; }
+body.landing .empty { background: var(--neu) !important; box-shadow: var(--neu-in-sm) !important; border: 0 !important; }
+/* the foot */
+body.landing .foot { box-shadow: var(--neu-out) !important; border-radius: 30px !important; }
+/* the live pictures: raised, their dark stamp band kept */
+body.landing .mtile { border: 0 !important; box-shadow: var(--neu-out-sm) !important; border-radius: 16px !important; overflow: hidden; }
+
+/* ======================================================================================= the night: black and orange
+   Only in the dark theme. The keys that act keep the station's own orange — its gradient, its dark lettering — and are
+   the only things that glow; the dashboard's key keeps its blue, unlit; every lamp burns orange. */
+:root[data-theme="dark"] body.landing .tk-nav a.tk-write, :root[data-theme="dark"] body.landing .write-float, :root[data-theme="dark"] body.landing .call-key.is-write,
+:root[data-theme="dark"] body.landing .composer button.primary, :root[data-theme="dark"] body.landing .dev-foot .primary, :root[data-theme="dark"] body.landing .btn.primary,
+:root[data-theme="dark"] body.landing button.primary, :root[data-theme="dark"] body.landing .sky-note-btn {
+  background: linear-gradient(180deg, #ff8a3d, #ff5a1f) !important; color: #1a0a02 !important;
+  box-shadow: var(--neu-out-sm), var(--neu-glow), inset 1px 1px 1px rgba(255,255,255,.38) !important; }
+:root[data-theme="dark"] body.landing .write-float:hover { background: linear-gradient(180deg, #ff8a3d, #ff5a1f) !important; }
+:root[data-theme="dark"] body.landing .write-float.is-crossing { background: var(--neu) !important; color: var(--neu-ink) !important; box-shadow: var(--neu-out-sm), inset 0 0 0 1px var(--mars) !important; }
+:root[data-theme="dark"] body.landing .tk-nav a.tk-dash, :root[data-theme="dark"] body.landing .call-key.is-dash, :root[data-theme="dark"] body.landing .know-more,
+:root[data-theme="dark"] body.landing .masthead-btn.masthead-btn-dash {
+  background: linear-gradient(180deg, #4f63ff, #2f45e8) !important; color: #fff !important; box-shadow: var(--neu-out-sm), inset 1px 1px 1px rgba(255,255,255,.28) !important; }
+/* the lamps */
+:root[data-theme="dark"] body.landing .run-strip i { background: #0a0a0b !important; box-shadow: inset 1px 1px 2px #000, inset -1px -1px 1px rgba(255,255,255,.06) !important; }
+:root[data-theme="dark"] body.landing .run-strip .now i { background: var(--mars) !important; box-shadow: 0 0 10px 2px rgba(255,106,46,.55) !important; }
+:root[data-theme="dark"] body.landing .sol-item.is-now { box-shadow: var(--neu-in-sm), inset 3px 0 0 var(--mars) !important; }
+:root[data-theme="dark"] body.landing .card.note[data-mine], :root[data-theme="dark"] body.landing .board .card.note[data-mine] { box-shadow: var(--neu-out), inset 3px 0 0 var(--mars) !important; }
+/* the night window, sunk into the black */
+:root[data-theme="dark"] body.landing .space-room { box-shadow: 8px 8px 22px #000, -6px -6px 18px var(--neu-l), 0 0 0 1px rgba(255,255,255,.035) !important; }
+:root[data-theme="dark"] body.landing .space-room::after { box-shadow: inset 10px 10px 26px rgba(0,0,0,.85), inset -6px -6px 18px rgba(255,255,255,.05); }
+/* the write sheet's veil on a phone, by night: a dark one over the black ground */
+:root[data-theme="dark"].js body.landing.messages.dock-open:not(.crossing) .shell::before { background: rgba(10,10,12,.62) !important; }

@@ -1,0 +1,124 @@
+/* The light theme in blue — WRITTEN BY tools/light-theme.js from the station's stylesheets; do not edit by hand:
+   change the stylesheets (or the hand-written part at the end of the tool) and run  node tools/light-theme.js
+   October, 7 October: "for the light theme, replace the orange theme with blue". Every rule that draws in Mars orange
+   on a light page, laid over in the light theme only with its blue twin (hue 211°, its strength, lightness and
+   transparency kept); the dark theme keeps its orange, mission control never loads this, and the night screens — the
+   first page's room with its white signal up and orange answer down, the composer's crossing dial — stay as they are. */
+
+/* ---------------------------------------------------------------- from station.css */
+:where(:root[data-theme="light"] body.landing) { --orange: #067eff; --orange-deep: #0b6cd5; --orange-soft: rgba(6,126,255,0.12); --sh-orange: 0 1px 1px rgba(0,0,0,.05), 0 8px 22px rgba(6,126,255,.35); }
+:where(:root[data-theme="light"] body.landing) .hatch { background: repeating-linear-gradient(90deg, #0f6ed4 0 2px, #1a88ff 2px 6px); }
+:where(:root[data-theme="light"] body.landing) .dot.ok { box-shadow: 0 0 0 3px var(--orange-soft), 0 0 8px rgba(6,126,255,.6); }
+:where(:root[data-theme="light"] body.landing) button.primary, :where(:root[data-theme="light"] body.landing) .btn.primary { background: linear-gradient(180deg, #3194ff, var(--orange) 55%, var(--orange-deep)); }
+:where(:root[data-theme="light"] body.landing) button.primary:hover { box-shadow: 0 2px 2px rgba(0,0,0,.05), 0 12px 28px rgba(6,126,255,.45), inset 0 1px 0 rgba(255,255,255,.35); }
+:where(:root[data-theme="light"] body.landing) input[type=range]::-webkit-slider-thumb { background: linear-gradient(180deg, #3194ff, var(--orange)); }
+:where(:root[data-theme="light"] body.landing) .dev-led { background: radial-gradient(circle at 35% 30%, #6bb2ff, var(--orange) 55%, var(--orange-deep)); box-shadow: 0 0 0 3px rgba(6,126,255,.12), 0 0 10px rgba(6,126,255,.55); }
+@keyframes led-light { 50% { box-shadow: 0 0 0 5px rgba(6,126,255,.18), 0 0 18px rgba(6,126,255,.9); } }
+:where(:root[data-theme="light"] body.landing) .device.sending .dev-led { animation-name: led-light; }
+:where(:root[data-theme="light"] body.landing) .dev-grip { background: repeating-linear-gradient(90deg, #0e6dd2 0 2px, #1a88ff 2px 6px); }
+:where(:root[data-theme="light"] body.landing) .feed-filter .chip.mine { box-shadow: inset 0 0 0 1px rgba(6,126,255,.6); }
+:where(:root[data-theme="light"] body.landing) .feed-note { border: 1px dashed rgba(6,126,255,.5); }
+:where(:root[data-theme="light"] body.landing) .transit .tbar i { box-shadow: 0 0 10px rgba(6,126,255,.5); }
+:where(:root[data-theme="light"] body.landing) .run-strip .now i { box-shadow: 0 0 0 2px var(--orange-soft), 0 2px 8px rgba(6,126,255,.45); }
+
+/* ---------------------------------------------------------------- from aura.css */
+:where(:root[data-theme="light"] body.landing) { --mars: #0b81ff; --mars-ink: #005ec2; --orange: #0b81ff; --orange-deep: #106dcf; --orange-soft: rgba(11,129,255,.12); --sh-orange: 0 14px 30px -10px rgba(0,113,235,.55); }
+:where(:root[data-theme="light"]) body.landing::before { background: radial-gradient(circle at 50% 50%, rgba(0,113,235,.26) 0%, rgba(0,113,235,.12) 34%, rgba(0,113,235,0) 66%); }
+:where(:root[data-theme="light"]) body.landing .masthead-btn, :where(:root[data-theme="light"]) body.landing button.primary, :where(:root[data-theme="light"]) body.landing .btn.primary { background: linear-gradient(180deg, #2990ff, #0b81ff); box-shadow: 0 18px 40px -14px rgba(0,113,235,.75), 0 1px 0 rgba(255,255,255,.55) inset; }
+:where(:root[data-theme="light"]) body.landing .masthead-btn:hover, :where(:root[data-theme="light"]) body.landing button.primary:hover { box-shadow: 0 22px 44px -14px rgba(0,113,235,.85), 0 1px 0 rgba(255,255,255,.55) inset; }
+:where(:root[data-theme="light"]) body.landing .masthead-btn .live-dot { box-shadow: 0 0 10px 2px rgba(11,129,255,.7); }
+:where(:root[data-theme="light"]) body.landing .dome-panel { --dome-aura: radial-gradient(ellipse 46% 62% at 50% 78%, rgba(42,145,255,.85) 0%, rgba(239,134,184,.7) 38%, rgba(171,214,241,.55) 66%, rgba(171,214,241,0) 100%); }
+:where(:root[data-theme="light"]) body.landing .dev-prompt { background: rgba(11,129,255,.08); }
+:where(:root[data-theme="light"]) body.landing .consent .consent-cs { color: var(--mars-ink, #0b81ff); }
+:where(:root[data-theme="light"]) body.landing .consent-planet { background: radial-gradient(circle at 35% 30%, #66b0ff, #0b81ff 45%, #074f9c 80%); box-shadow: 0 0 60px 10px rgba(11,129,255,.35); }
+:where(:root[data-theme="light"]) body.landing .consent-signal i { background: #0b81ff; box-shadow: 0 0 8px 2px rgba(11,129,255,.8); }
+:where(:root[data-theme="light"]) body.landing .consent .consent-cs { background: rgba(11,129,255,.12); border: 1px solid rgba(11,129,255,.35); }
+:where(:root[data-theme="light"]) body.landing .composer hr { background: linear-gradient(90deg, var(--mars), rgba(11,129,255,.15)); }
+:where(:root[data-theme="light"]) body.landing .board .live::before { box-shadow: 0 0 10px 2px rgba(11,129,255,.7); }
+:where(:root[data-theme="light"] body.landing) { --note-bg: #eef4fb; }
+:where(:root[data-theme="light"]) body.landing .card.note:has(.card-space[data-launched]):hover { box-shadow: 0 0 0 2px rgba(11,129,255,.28), 0 18px 36px -16px rgba(11,129,255,.55), var(--note-shadow); }
+:where(:root[data-theme="light"]) body.landing .write-float { color: #020e1a; box-shadow: 0 16px 34px -14px rgba(0,113,235,.85), 0 2px 6px rgba(15,21,64,.15); }
+:where(:root[data-theme="light"]) body.landing .write-float:hover { background: #3194ff; color: #020e1a; box-shadow: 0 20px 38px -14px rgba(0,113,235,.95), 0 2px 6px rgba(15,21,64,.15); }
+:where(:root[data-theme="light"]) body.landing .write-float.is-crossing { box-shadow: 0 16px 34px -14px rgba(0,113,235,.6), 0 2px 8px rgba(15,21,64,.12); }
+:where(:root[data-theme="light"]) body.landing .run-strip .now i { box-shadow: 0 0 10px 2px rgba(11,129,255,.5); }
+:where(:root[data-theme="light"]) body.landing .cloud-live i { box-shadow: 0 0 10px 2px rgba(11,129,255,.7); }
+:where(:root[data-theme="light"]) body.landing .row.active { background: rgba(11,129,255,.12); }
+:where(:root[data-theme="light"]) body.landing .pwr-track i { background: #2990ff; }
+:where(:root[data-theme="light"]) body.landing .hw-now { stroke: #067eff; }
+:where(:root[data-theme="light"]) body.landing .hw-now-t { fill: #067eff; }
+:where(:root[data-theme="light"]) body.landing .ttoday { fill: rgba(11,129,255,.14); }
+:where(:root[data-theme="light"]) body.landing #blog-commander .dpanel-head { background: radial-gradient(ellipse 200px 125px at 52% 136%, #4752eb 0, #4752eb 52%, rgba(71,82,235,0) 100%), radial-gradient(ellipse 180px 155px at 86% 44%, #1724d3 0, #1724d3 52%, rgba(23,36,211,0) 100%), radial-gradient(ellipse 200px 165px at 28% 30%, #7a2bff 0, #7a2bff 52%, rgba(122,43,255,0) 100%), #1c0a3d; }
+:where(:root[data-theme="light"]) body.landing .foot { background: radial-gradient(ellipse 460px 250px at 90px 330px, #0071eb 0, rgba(0,113,235,.92) 28%, rgba(0,113,235,.35) 68%, rgba(0,113,235,0) 100%), radial-gradient(ellipse 330px 190px at calc(100% - 110px) 150px, rgba(68,101,107,.95) 0, rgba(68,101,107,0) 100%), linear-gradient(180deg, #0d0302 0, #0d0302 130px, rgba(13,3,2,.55) 215px, rgba(13,3,2,0) 300px), #aed5ff; box-shadow: 0 50px 80px -40px rgba(10,20,30,.55); }
+:where(:root[data-theme="light"]) body.landing .foot .foot-base { color: #051f3a; }
+:where(:root[data-theme="light"]) body.landing .foot .foot-brand { color: #051f3a; }
+:where(:root[data-theme="light"]) body.landing .foot .foot-base span:last-child { color: #051f3a; }
+:where(:root[data-theme="light"]) body.landing.inner .card .card-reply { background: rgba(11,129,255,.08); }
+@media (max-width: 760px) and (min-height: 521px) {
+  :where(:root[data-theme="light"]) body.landing .tk-sol i { box-shadow: 0 0 8px 2px rgba(11,129,255,.7); }
+  :where(:root[data-theme="light"]) body.landing .foot { background: radial-gradient(ellipse 260px 130px at 40px 100%, rgba(0,113,235,.85) 0, rgba(0,113,235,.3) 55%, rgba(0,113,235,0) 100%), radial-gradient(ellipse 240px 140px at calc(100% - 60px) 70%, rgba(68,101,107,.9) 0, rgba(68,101,107,0) 100%), #0d0302; }
+  :where(:root[data-theme="light"]) body.landing .foot .foot-base { color: rgba(255,255,255,.72); } /* as it stood */
+  :where(:root[data-theme="light"]) body.landing .foot .foot-brand { color: rgba(255,255,255,.72); } /* as it stood */
+  :where(:root[data-theme="light"]) body.landing .foot .foot-base span:last-child { color: rgba(255,255,255,.72); } /* as it stood */
+  :where(:root[data-theme="light"]) body.landing.messages .composer button.primary { box-shadow: 0 0 0 4px rgba(11,129,255,.18), 0 14px 28px -12px rgba(0,113,235,.8); }
+  :where(:root[data-theme="light"]) body.landing .peek-latest .live-dot { box-shadow: 0 0 10px 2px rgba(11,129,255,.7); }
+  :where(:root[data-theme="light"]) body.landing .tab-write .tab-ic { background: linear-gradient(180deg, #2990ff, #0b81ff); box-shadow: 0 14px 28px -12px rgba(0,113,235,.8); }
+  :where(:root[data-theme="light"]) body.landing .tab-write[aria-expanded="true"] .tab-ic { box-shadow: 0 0 0 4px rgba(11,129,255,.22), 0 14px 28px -12px rgba(0,113,235,.8); }
+  :where(:root[data-theme="light"]) body.landing .masthead-btn { box-shadow: 0 8px 20px -12px rgba(0,113,235,.7); }
+  :where(:root[data-theme="light"]) body.landing .tab-write .tab-ic { box-shadow: 0 6px 14px -8px rgba(0,113,235,.8); }
+  :where(:root[data-theme="light"]) body.landing .live-dot, :where(:root[data-theme="light"]) body.landing .cloud-live i, :where(:root[data-theme="light"]) body.landing .tk-sol i, :where(:root[data-theme="light"]) body.landing .peek-latest .live-dot, :where(:root[data-theme="light"]) body.landing .board .live::before { box-shadow: 0 0 0 3px rgba(11,129,255,.18); }
+}
+:where(:root[data-theme="light"]) body.landing .seq-orb { background: radial-gradient(closest-side at 30% 56%, rgba(47,31,255,.5), rgba(47,31,255,.2) 55%, rgba(47,31,255,0)), radial-gradient(closest-side at 70% 56%, rgba(255,43,87,.5), rgba(255,43,87,.2) 55%, rgba(255,43,87,0)), radial-gradient(closest-side at 14% 52%, rgba(150,214,255,.55), rgba(150,214,255,0)), radial-gradient(closest-side at 86% 56%, rgba(50,149,255,.5), rgba(50,149,255,0)), radial-gradient(closest-side at 50% 50%, rgba(178,27,239,.35), rgba(178,27,239,0)); }
+:where(:root[data-theme="light"]) body.landing .seq-head { background: rgba(11,129,255,.8); }
+:where(:root[data-theme="light"]) body.landing .slow-step.s-downlink { --c: #0b81ff; --c-soft: rgba(11,129,255,.12); --c-edge: rgba(11,129,255,.4); --c-halo: rgba(11,129,255,.06); --c-glow: rgba(11,129,255,.62); }
+:where(:root[data-theme="light"]) body.landing .slow-bubble.is-crew { border-color: rgba(11,129,255,.32); }
+:where(:root[data-theme="light"]) body.landing .dl-live { background: rgba(11,129,255,.07); }
+:where(:root[data-theme="light"]) body.landing .dl-live i { box-shadow: 0 0 8px 2px rgba(11,129,255,.6); }
+@keyframes dl-breathe-light { 50% { box-shadow: 0 0 16px 4px rgba(11,129,255,.75); } }
+:where(:root[data-theme="light"]) body.landing .run-strip .now i { animation-name: dl-breathe-light; }
+:where(:root[data-theme="light"]) body.landing .rows .row.active .t::before { box-shadow: 0 0 8px 2px rgba(11,129,255,.6); }
+
+/* ---------------------------------------------------------------- from sheet.css */
+:where(:root[data-theme="light"]) body.landing .tk-sol { box-shadow: 0 6px 16px -8px rgba(11,129,255,.9); }
+:where(:root[data-theme="light"]) body.landing .tk-sol i { box-shadow: 0 0 8px 2px rgba(255,255,255,.8); } /* as it stood */
+:where(:root[data-theme="light"]) body.landing .tk-nav a.tk-write { background: linear-gradient(180deg, #2990ff, #0b81ff); color: #020e1a; box-shadow: 0 2px 4px rgba(0,113,235,.2), 0 12px 24px -12px rgba(0,113,235,.85), 0 1px 0 rgba(255,255,255,.5) inset; }
+:where(:root[data-theme="light"]) body.landing .seq-live i { box-shadow: 0 0 10px 2px rgba(11,129,255,.7); }
+:where(:root[data-theme="light"]) body.landing .seq-n.is-now { background: rgba(11,129,255,.16); }
+:where(:root[data-theme="light"]) body.landing .seq-head { box-shadow: 0 0 10px rgba(11,129,255,.55); }
+:where(:root[data-theme="light"]) body.landing .seq-head { background: var(--mars); } /* as it stood */
+:where(:root[data-theme="light"]) body.landing .dome-panel { --hud-hot: #0b81ff; --hud-hot-rgb: 11,129,255; }
+:where(:root[data-theme="light"]) body.landing .know-more.is-write { background: linear-gradient(180deg, #2990ff, #0b81ff); box-shadow: 0 14px 28px -14px rgba(0,113,235,.8), 0 1px 0 rgba(255,255,255,.55) inset; }
+:where(:root[data-theme="light"]) body.landing .know-more.is-write:hover { box-shadow: 0 18px 32px -14px rgba(0,113,235,.9), 0 1px 0 rgba(255,255,255,.55) inset; }
+:where(:root[data-theme="light"]) body.landing .is-inside .in-part .in-tag.lit text { fill: #061f3a; }
+:where(:root[data-theme="light"]) body.landing .part-rule { background: linear-gradient(90deg, var(--mars), rgba(11,129,255,.2)); }
+:where(:root[data-theme="light"]) body.landing .step.s-down { --c: #1872d3; --c-soft: rgba(11,129,255,.12); --c-edge: rgba(11,129,255,.42); --c-halo: rgba(11,129,255,.06); --c-glow: rgba(11,129,255,.62); }
+:where(:root[data-theme="light"]) body.landing .step-card.is-crew { border-color: rgba(11,129,255,.32); }
+:where(:root[data-theme="light"]) body.landing .sheet-cta { background: linear-gradient(180deg, #2990ff, #0b81ff); box-shadow: 0 18px 40px -14px rgba(0,113,235,.75), 0 1px 0 rgba(255,255,255,.55) inset; }
+:where(:root[data-theme="light"]) body.landing .sheet-cta:hover { box-shadow: 0 22px 44px -14px rgba(0,113,235,.85), 0 1px 0 rgba(255,255,255,.55) inset; }
+:where(:root[data-theme="light"]) body.landing .foot { background: radial-gradient(ellipse 560px 300px at 60px 100%, rgba(63,88,255,.78) 0, rgba(63,88,255,.32) 46%, rgba(63,88,255,0) 100%), radial-gradient(ellipse 460px 280px at calc(100% - 120px) 40%, rgba(150,52,224,.55) 0, rgba(150,52,224,0) 100%), radial-gradient(ellipse 380px 200px at 18% 0%, rgba(150,214,255,.16) 0, rgba(150,214,255,0) 100%), #0c0f1d; box-shadow: 0 50px 80px -40px rgba(4,6,20,.9); } /* as it stood */
+:where(:root[data-theme="light"]) body.landing .foot .foot-base { color: rgba(255,255,255,.78); } /* as it stood */
+:where(:root[data-theme="light"]) body.landing .foot .foot-brand { color: rgba(255,255,255,.78); } /* as it stood */
+:where(:root[data-theme="light"]) body.landing .foot .foot-base span:last-child { color: rgba(255,255,255,.78); } /* as it stood */
+@media (max-width: 760px) and (min-height: 521px) {
+  :where(:root[data-theme="light"]) body.landing .foot { background: radial-gradient(ellipse 300px 160px at 30px 100%, rgba(63,88,255,.8) 0, rgba(63,88,255,.3) 55%, rgba(63,88,255,0) 100%), radial-gradient(ellipse 260px 150px at calc(100% - 60px) 55%, rgba(150,52,224,.5) 0, rgba(150,52,224,0) 100%), #0c0f1d; } /* as it stood */
+}
+:where(:root[data-theme="light"]) body.landing .call { --accent-rgb: 11,129,255; }
+:where(:root[data-theme="light"]) body.landing .call-beam { background: linear-gradient(100deg, #6bb2ff 0%, #1a88ff 32%, #c2dfff 50%, #1a88ff 68%, #6bb2ff 100%); background-size: 240% 100%; background-position: 100% 0; -webkit-background-clip: text; background-clip: text; -webkit-text-stroke: .5px rgba(10,97,190,.35); filter: drop-shadow(0 0 16px rgba(26,136,255,.45)) drop-shadow(0 1px 1px rgba(15,21,64,.2)); }
+:where(:root[data-theme="light"]) body.landing .call-sig { filter: drop-shadow(0 0 6px rgba(11,129,255,.85)); }
+:where(:root[data-theme="light"]) body.landing .call-livepill { background: rgba(11,129,255,.08); }
+:where(:root[data-theme="light"]) body.landing .call-livepill i { box-shadow: 0 0 8px 2px rgba(11,129,255,.6); }
+:where(:root[data-theme="light"]) body.landing .call-key.is-write { background: linear-gradient(180deg, #2990ff, #0b81ff); box-shadow: 0 14px 28px -14px rgba(0,113,235,.8), 0 1px 0 rgba(255,255,255,.55) inset; }
+
+/* ---------------------------------------------------------------- from screen.css */
+:where(:root[data-theme="light"]) body.screen .screen-index-missing { background: rgba(22,116,216,.12); border: 1px solid rgba(22,116,216,.4); }
+:where(:root[data-theme="light"]) body.screen .screen-login-err { background: rgba(22,116,216,.12); border: 1px solid rgba(22,116,216,.4); }
+
+/* ---------------------------------------------------------------- by hand (tools/light-theme.js, HAND) */
+/* the night screens keep their orange in the light theme too: the first page's room — the white signal climbing from
+   Earth to the habitat, the crew's answer coming back down in orange, as before (October) — and the composer's dial */
+:root[data-theme="light"] body.landing .space-room, :root[data-theme="light"] body.landing .xdial-wrap { --mars: #ff5a1f; --mars-ink: #c23600; --orange: #ff5a1f; --orange-deep: #e24a12; --orange-soft: rgba(255,90,31,.12); --sh-orange: 0 14px 30px -10px rgba(255,70,0,.55); }
+/* the states that warn — a store running low, a reading out of range, an error, the channel shut — in red, not blue */
+:root[data-theme="light"] body.landing { --alarm: #d92d20; }
+:root[data-theme="light"] body.landing :is(.sym.bad, .dot.bad, .badge.bad, .bar i.bad, .bar i.warn, .counter.over, .flash.err, .gauge.low, .gauge.round.low, .kpi.warn, .dial.alert, .dcard-note.anomaly, .hbt .hot, .hbt .note.alert, .transit.closed, .cloud-fail, button.danger) { --mars: #d92d20; --mars-ink: #b42318; --orange: #d92d20; --orange-deep: #b42318; --orange-soft: rgba(217,45,32,.12); --sh-orange: 0 14px 30px -10px rgba(217,45,32,.45); }
+/* the notes: a cool sheet; on the round trip Earth in ink, beside the blue loop and Mars */
+:root[data-theme="light"] body.landing { --note-edge: #d5deeb; }
+:root[data-theme="light"] body.landing .card.note .note-mark .nm-earth { fill: var(--ink); }

@@ -41,10 +41,20 @@
   function frozen() { return Date.now() > CFG.freezeMs; }
   CFG.url = '/api/habitat/data?days=30';
 
-  var css = getComputedStyle(document.documentElement);
-  var ACCENT = (css.getPropertyValue('--orange') || '#ff6a00').trim() || '#ff6a00';
-  var INK = (css.getPropertyValue('--ink') || '#101012').trim() || '#101012';
-  var HAIR = (css.getPropertyValue('--rule') || '#c9c9c2').trim() || '#c9c9c2';
+  // the drawing's colours, read off the page: the accent from the body, where the light theme's blue is set (public/light.css),
+  // ink and hairline from the root; read again when the theme turns (switches.js) and the tiles drawn afresh
+  var ACCENT, INK, HAIR;
+  function colours() {
+    var root = getComputedStyle(document.documentElement), body = document.body ? getComputedStyle(document.body) : root;
+    ACCENT = (body.getPropertyValue('--orange') || root.getPropertyValue('--orange') || '#ff6a00').trim() || '#ff6a00';
+    INK = (root.getPropertyValue('--ink') || '#101012').trim() || '#101012';
+    HAIR = (root.getPropertyValue('--rule') || '#c9c9c2').trim() || '#c9c9c2';
+  }
+  colours();
+  if (window.MutationObserver) {
+    new MutationObserver(function () { colours(); if (typeof state !== 'undefined' && state.rows && state.rows.length) render(); })
+      .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  }
   var ALERT = '#C81E1E';
 
   var CHANNELS = [

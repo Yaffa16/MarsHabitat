@@ -460,11 +460,16 @@ function snapshot(hours = 24) {
 function daily(localDate, days = 40) {
   const list = sensors();
   const from = Math.max(Date.now() - days * 86400000, floorMs());
+  // the venue date of each quarter hour, worked out once: every zone's offset is a whole number of quarter hours, so a
+  // quarter hour never straddles the venue's midnight — and a week of readings is some 150 000 rows to date
+  const dateOf = new Map();
   return list.map((s) => {
     const rows = windowRows.all(s.id, from);
     const byDate = new Map();
     for (const r of rows) {
-      const d = localDate(new Date(r.t));
+      const q = Math.floor(r.t / 900000);
+      let d = dateOf.get(q);
+      if (d === undefined) { d = localDate(new Date(r.t)); dateOf.set(q, d); }
       let b = byDate.get(d);
       if (!b) byDate.set(d, b = { sum: 0, n: 0, first: r.value, last: r.value });
       b.sum += r.value; b.n += 1; b.last = r.value;

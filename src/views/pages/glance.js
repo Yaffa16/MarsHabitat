@@ -251,7 +251,8 @@ function page(ctx, { records, rehearsal = null }) {
       if (strip) [].forEach.call(strip.children, function (a) { a.classList.toggle('on', Number(a.getAttribute('data-day')) === d); });
       if (history.replaceState) history.replaceState(null, '', d === 0 ? '#today' : '#day-' + d);
     }
-    var t; bk.addEventListener('scroll', function () { clearTimeout(t); t = setTimeout(mark, 120); }, { passive: true });
+    // (the timer is not called t: a var t here would hide the page's translator, t(), from mark() above)
+    var settle; bk.addEventListener('scroll', function () { clearTimeout(settle); settle = setTimeout(mark, 120); }, { passive: true });
     document.getElementById('bk-prev').addEventListener('click', function () { go(current() - 1); });
     document.getElementById('bk-next').addEventListener('click', function () { go(current() + 1); });
     document.addEventListener('keydown', function (e) {

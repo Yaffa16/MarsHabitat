@@ -11,16 +11,28 @@ function config() {
   return db.prepare('SELECT * FROM mission WHERE id = 1').get();
 }
 
+/* One formatter per zone and shape, built once and kept. Building an Intl.DateTimeFormat is the costly part (a fifth of
+   a millisecond, and its memory slow to come back), and the Trends series call localDate for every stored reading — a
+   week of the habitat's hardware is some 150 000 of them, which took a page 20 seconds and gigabytes before (8 October).
+   Reused, a call costs microseconds. */
+const FORMATTERS = new Map();
+function formatter(locale, opts) {
+  const key = locale + '|' + JSON.stringify(opts);
+  let f = FORMATTERS.get(key);
+  if (!f) { f = new Intl.DateTimeFormat(locale, opts); FORMATTERS.set(key, f); }
+  return f;
+}
+
 /** YYYY-MM-DD for `date` as seen in the venue timezone. */
 function localDate(date, tz) {
-  return new Intl.DateTimeFormat('en-CA', {
+  return formatter('en-CA', {
     timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
   }).format(date);
 }
 
 /** HH:MM:SS in the venue timezone. */
 function localTime(date, tz) {
-  return new Intl.DateTimeFormat('en-GB', {
+  return formatter('en-GB', {
     timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
   }).format(date);
 }
@@ -31,7 +43,7 @@ function daysBetween(a, b) {
 
 /** Offset of `tz` from UTC, in ms, at a given instant. Handles DST. */
 function zoneOffsetMs(instant, tz) {
-  const p = new Intl.DateTimeFormat('en-US', {
+  const p = formatter('en-US', {
     timeZone: tz, hour12: false,
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit', second: '2-digit',

@@ -289,8 +289,12 @@ function page({ title, ctx, body, current, bodyClass = '', head = '', scripts = 
   const aura = !control;
   if (aura && !styles.includes('/aura.css')) styles = ['/aura.css'].concat(styles);
   // and over it the reference sheet (public/sheet.css): the design handoff's layout of the landing page, its header and its
-  // bar of keys, in this dress — the last word on every public page
-  if (aura) styles = styles.filter((s) => s !== '/sheet.css').concat('/sheet.css');
+  // bar of keys, in this dress — and over that the light theme in blue (public/light.css, written by tools/light-theme.js;
+  // it acts only in the light theme), the last word on every public page
+  if (aura) styles = styles.filter((s) => s !== '/sheet.css' && s !== '/light.css').concat('/sheet.css', '/light.css');
+  // and over everything the soft UI (public/neu.css): one ground, the cards and keys raised out of it, the fields and the
+  // chosen pressed into it — black, Mars orange and the dashboard's blue by night, a soft grey and blue by day
+  if (aura) styles = styles.filter((s) => s !== '/neu.css').concat('/neu.css');
   if (aura && !bodyClass.includes('landing')) {
     bodyClass = `${bodyClass} landing inner`.trim();
     hideRail = true; hideNav = true;
