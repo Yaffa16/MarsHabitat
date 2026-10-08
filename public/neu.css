@@ -175,8 +175,13 @@ body.landing .empty { background: var(--neu) !important; box-shadow: var(--neu-i
 body.landing .foot { box-shadow: var(--neu-out) !important; border-radius: 30px !important; }
 /* the live pictures: raised, their dark stamp band kept */
 body.landing .mtile { border: 0 !important; box-shadow: var(--neu-out-sm) !important; border-radius: 16px !important; overflow: hidden; }
-/* the blogs: each post a page sunk into its panel, its words held off the edges (aura.css: "add margins to the blogs") */
-body.landing .dpanel.blogp .card.log-entry, :root[data-theme="dark"] body.landing .dpanel.blogp .card.log-entry { background: var(--neu) !important; border: 0 !important; box-shadow: var(--neu-in-sm) !important; }
+/* the blogs: on the site the post stands on its panel under the blog's heading — no card and no shade round it (8 October:
+   "remove the card and the shading for Commander Log, Health Report, Daily Mission Report — just keep the headings"); a
+   second post of the day under a hairline. The screens' blogs keep each post a page sunk into the panel. */
+body.landing .dpanel.blogp .card.log-entry, :root[data-theme="dark"] body.landing .dpanel.blogp .card.log-entry { background: transparent !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; }
+body.landing .dpanel.blogp .card.log-entry + .card.log-entry { margin-top: 22px !important; padding-top: 22px !important; border-top: 1px solid var(--neu-line) !important; }
+body.landing .dpanel.blogp .empty, :root[data-theme="dark"] body.landing .dpanel.blogp .empty { background: transparent !important; box-shadow: none !important; border: 0 !important; padding: 0 !important; }
+body.landing.screen .dpanel.blogp .card.log-entry, :root[data-theme="dark"] body.landing.screen .dpanel.blogp .card.log-entry { background: var(--neu) !important; box-shadow: var(--neu-in-sm) !important; border-radius: 20px !important; padding: clamp(18px, 2.4vw, 32px) clamp(18px, 2.8vw, 40px) !important; }
 /* where the message is (board.js): the panel on the ground, its close key a soft round raised out of it — the cross drawn
    in its middle (aura.css), pressed in while held */
 body .journey .jr-panel, :root[data-theme="dark"] body .journey .jr-panel { background: var(--neu) !important; border-color: transparent !important; }
@@ -199,7 +204,6 @@ body .journey .jr-close:active { box-shadow: var(--neu-in-sm) !important; }
    strip that scrolls sideways keeps room round its cards for their shadows. */
 /* a panel inside the dashboard's open folder lies flat on the folder's page — the page is the raised thing */
 body.landing .folder-body .dpanel, :root[data-theme] body.landing .folder-body .dpanel { box-shadow: none !important; background: transparent !important; border-radius: 0 !important; }
-body.landing .folder-body .dpanel.blogp > .dpanel-head { box-shadow: var(--neu-out-sm) !important; }
 /* the About page's habitat: its drawing and its pop-up lie flat in the section's card */
 body.landing .about-sec .hab-card, body.landing .about-sec .hab-card .dome-panel, :root[data-theme] body.landing .about-sec .hab-card .dome-panel { box-shadow: none !important; background-color: transparent !important; border-radius: 0 !important; }
 /* the officers of the day: rounded cards */

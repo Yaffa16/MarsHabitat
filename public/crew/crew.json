@@ -63,5 +63,10 @@
     "file": "wilcox.jpg",
     "first": "Dan",
     "last": "Wilcox"
+  },
+  {
+    "file": "robodog.jpg",
+    "first": "Robodog",
+    "last": ""
   }
 ]

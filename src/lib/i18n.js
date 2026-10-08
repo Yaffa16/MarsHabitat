@@ -94,6 +94,13 @@ const D = {
   // ---- the board
   'Message Board': ['Nachrichtenboard', 'Tableau des messages'],
   'LIVE': ['LIVE', 'EN DIRECT'],
+  // the Livestream screen (8 October; screens.js, livestream; public/screen-live.js)
+  'Livestream': ['Livestream', 'Direct'],
+  'Play': ['Abspielen', 'Lecture'],
+  'Sound on': ['Ton an', 'Activer le son'],
+  'Connecting to the livestream…': ['Verbindung zum Livestream …', 'Connexion au direct…'],
+  'The livestream is not on air right now — it comes back by itself.': ['Der Livestream ist gerade nicht auf Sendung – er kommt von selbst zurück.', 'Le direct n’est pas à l’antenne pour l’instant – il revient de lui-même.'],
+  'This screen’s browser cannot play the livestream.': ['Der Browser dieses Bildschirms kann den Livestream nicht abspielen.', 'Le navigateur de cet écran ne peut pas lire le direct.'],
   // the two instruments without a reading among the habitat's tiles (public.js vizTile)
   'Karlsruhe': ['Karlsruhe', 'Karlsruhe'],
   'Schloss': ['Schloss', 'Schloss'],
@@ -168,6 +175,14 @@ const D = {
   'Schedule': ['Tagesplan', 'Programme'],
   'Resources': ['Ressourcen', 'Ressources'],
   'Power consumed': ['Verbrauchte Energie', 'Énergie consommée'],
+  // the bicycle generator's tile on the Sensors panel (8 October; public.js, bikeTile)
+  'Power generated': ['Erzeugte Energie', 'Énergie produite'],
+  'Rounds pedalled': ['Pedalumdrehungen', 'Tours de pédale'],
+  'rounds pedalled': ['Pedalumdrehungen', 'tours de pédale'],
+  'Battery charged': ['Batterie geladen', 'Batterie chargée'],
+  'battery': ['Batterie', 'batterie'],
+  'rounds': ['Umdrehungen', 'tours'],
+  '4,500 rounds charge the battery full': ['4.500 Umdrehungen laden die Batterie voll', '4 500 tours chargent la batterie à fond'],
   'Carried in · never resupplied': ['Mitgebracht · nie nachgeliefert', 'Emporté · jamais réapprovisionné'],
   'Day total': ['Tagessumme', 'Total du jour'],
   'counted by the crew': ['von der Crew gezählt', 'compté par l’équipage'],
@@ -378,6 +393,8 @@ const D = {
   'Arrives': ['Kommt an', 'Arrive'],
   'Delivered · awaiting review': ['Zugestellt · wartet auf Durchsicht', 'Livré · en attente de lecture'],
   'Write something before transmitting.': ['Schreib etwas, bevor du sendest.', 'Écrivez quelque chose avant de transmettre.'],
+  'Not sent — the station could not be reached. Try again.': ['Nicht gesendet – die Station war nicht erreichbar. Versuch es noch einmal.', 'Non envoyé – la station était injoignable. Réessayez.'],
+  'Not sent — the station could not be reached. Try again.': ['Nicht gesendet – die Station war nicht erreichbar. Versuch es noch einmal.', 'Non envoyé – la station était injoignable. Réessayez.'],
   'Messages are limited to': ['Nachrichten sind begrenzt auf', 'Les messages sont limités à'],
   'characters.': ['Zeichen.', 'caractères.'],
   'Too many transmissions from your position. Try again later.': ['Zu viele Übertragungen von deiner Position aus. Versuch es später noch einmal.', 'Trop de transmissions depuis votre position. Réessayez plus tard.'],
@@ -773,7 +790,7 @@ const D = {
   'message sent into space so far': ['Nachricht bisher ins All gesendet', 'message envoyé dans l’espace jusqu’ici'],
   'messages sent into space so far': ['Nachrichten bisher ins All gesendet', 'messages envoyés dans l’espace jusqu’ici'],
   'Live feed': ['Live-Feed', 'Flux en direct'],
-  'Follow what the crew is doing — live': ['Verfolge live, was die Crew gerade tut', 'Suivez ce que fait l’équipage — en direct'],
+  'Follow what the crew is doing live': ['Verfolge live, was die Crew gerade tut', 'Suivez en direct ce que fait l’équipage'],
   'Thirteen sols, as they happen.': ['Dreizehn Sols, während sie geschehen.', 'Treize sols, en temps réel.'],
   'The habitat’s sensors, today’s mission and schedule, the galley, the crew’s reports and moods — live from Red Dust City, every day of the run.':
     ['Die Sensoren des Habitats, Mission und Zeitplan des Tages, die Kombüse, die Berichte und Stimmungen der Crew — live aus Red Dust City, an jedem Tag des Laufs.',
@@ -833,6 +850,7 @@ const D = {
   'Open Crew Moods': ['Die Stimmung der Crew öffnen', 'Ouvrir les humeurs de l’équipage'],
   'Open the Resources': ['Die Vorräte öffnen', 'Ouvrir les ressources'],
   'Open the Power Balance': ['Die Energiebilanz öffnen', 'Ouvrir le bilan énergétique'],
+  'Open the Power generated': ['Die erzeugte Energie öffnen', 'Ouvrir l’énergie produite'],
   'The habitat’s other astronauts: live crickets performing as our alternate protein source, a robot dog as an astronaut’s best friend and helper for space walks and an emotional support robot assisting in our mental health — and the gardens and hydroponic shelves, where fresh food can grow without soil.':
     ['Die anderen Astronauten des Habitats: lebende Grillen als unsere alternative Proteinquelle, ein Roboterhund als bester Freund der Astronauten und Helfer bei Außeneinsätzen und ein Roboter zur emotionalen Unterstützung unserer psychischen Gesundheit — dazu die Gärten und Hydroponikregale, in denen frische Nahrung ohne Erde wächst.',
      'Les autres astronautes de l’habitat : des grillons vivants, notre source de protéines alternative, un chien robot, meilleur ami de l’astronaute et aide pour les sorties, et un robot de soutien émotionnel pour notre santé mentale — ainsi que les jardins et les étagères hydroponiques, où la nourriture fraîche pousse sans terre.'],

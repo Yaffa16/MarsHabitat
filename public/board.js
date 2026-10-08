@@ -351,8 +351,9 @@
    spaceLine) and moved on here, a second at a time, in the visitor's
    figures — every digit while it is small, then in words: 4.36 million,
    3.95 billion, 1.02 trillion (in German Milliarde and Billion, in French
-   milliard and billion). LAUNCHED … AGO follows. New cards — the board
-   swaps them in as it polls — are picked up as they come. Works on every
+   milliard and billion). (How long ago it was launched is not said any more —
+   8 October.) New cards — the board swaps them in as it polls — are picked
+   up as they come. Works on every
    page with cards: the board, the messages page, the installation's board
    screen, a single exchange.
 
@@ -390,16 +391,6 @@
     var w = lang === 'en' || /^1([.,]00)?$/.test(num) ? t(word) : t(word + 's');   // English has no plural for it; German and French do
     return num + ' ' + w + (lang === 'fr' ? ' de' : '');                     // French: "7,78 milliards de km"
   }
-  function ago(secs) {
-    var n = Math.max(0, Math.floor(secs));
-    if (n < 45) return t('just now');
-    var m = Math.round(n / 60);
-    if (m < 60) return m <= 1 ? t('a minute ago') : t('{n} minutes ago').replace('{n}', String(m));
-    var h = Math.round(n / 3600);
-    if (h < 24) return h <= 1 ? t('an hour ago') : t('{n} hours ago').replace('{n}', String(h));
-    var d = Math.round(n / 86400);
-    return d <= 1 ? t('a day ago') : t('{n} days ago').replace('{n}', String(d));
-  }
   function set(el, text) { if (el && el.textContent !== text) el.textContent = text; }
   function secsOf(box, now) {
     var at = Date.parse(box.getAttribute('data-launched') || '');
@@ -409,7 +400,6 @@
     var secs = secsOf(box, now);
     if (secs === null) return;
     set(box.querySelector('.sp-km'), big(secs * KM));
-    set(box.querySelector('.sp-ago'), ago(secs));
   }
   function tick() {
     var boxes = document.querySelectorAll('.card-space[data-launched]');

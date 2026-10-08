@@ -41,7 +41,7 @@ const V = L.ASSET_V;
    keeps its layout at) — the scale is capped so the screen's width, divided by the scale, stays at least this. */
 const SCREENS = [
   { name: 'landing', title: 'Landing page', fit: 'scale', minWidth: 1000, about: 'The first screen of the landing page — the name, the way to the habitat with the latest exchanges and pictures around the line — with the ticker' },
-  { name: 'habitat', title: 'Habitat', fit: 'roll', about: 'The habitat’s instruments, large, one row under the other, rolling by slowly from top to bottom: the readings, the crew’s figures, the stores, the power, Karlsruhe and the astronauts, the hardware’s charts' },
+  { name: 'habitat', title: 'Habitat', fit: 'roll', about: 'The habitat’s instruments, large, one row under the other, rolling by slowly from top to bottom: the readings and Karlsruhe, the crew’s figures, the stores, the power and the astronauts, the hardware’s charts' },
   { name: 'board', title: 'Message Board', fit: 'clip', about: 'The ground station’s board, live: every message sent from the writing screen as it stands — in transit, awaiting a reply, answered — among the latest exchanges with the crew, the newest first, as many as fit' },
   { name: 'write', title: 'Write to the crew', fit: 'scale', minWidth: 640, about: 'The composer, full screen, for writing to the crew at the venue — every message from it as the ground station’s, under its one operator name' },
   { name: 'mission', title: 'Today’s Mission', fit: 'scale', minWidth: 760, about: 'The day’s scientific mission: its question, Morning, Afternoon and EVA' },
@@ -49,12 +49,32 @@ const SCREENS = [
   { name: 'day', title: 'Today', fit: 'scale', minWidth: 640, about: 'Today’s Schedule, Today’s Meal and the Crew Moods' },
   { name: 'trends', title: 'Trends', fit: 'scale', fitLandscape: 'fill', minWidth: 520, about: 'The run’s trends on one graph' },
   { name: 'media', title: 'Media', fit: 'clip', about: 'The newest pictures out of the habitat in one grid, as many as fit, live' },
+  { name: 'livestream', title: 'Livestream', fit: 'none', about: 'The habitat’s livestream, full screen, playing by itself — with its sound where the screen allows a page to play sound unasked, else muted with a key to turn the sound on; a large play key whenever it stands still; it picks itself up again when the stream drops' },
   { name: 'station', title: 'Ground station', fit: 'clip', about: 'The writing screen and the message board side by side, for the ground station’s own PC on the square — write to the crew as BODENSTATION, and every message sent stands on the board at once; no cookie question, ever' },
 ];
 const BY_NAME = Object.fromEntries(SCREENS.map((s) => [s.name, s]));
 
+/** The screens' sky (8 October: "add stars and comets in the background for all screens — always in the background
+    only"): a field of stars, a few of them twinkling, and now and then a comet crossing — behind everything a screen
+    shows: fixed under the stage, which stands over it (screen.css, .screen-sky), so a panel is never covered and the sky
+    shows only round and between the pieces. The same scatter on every load (seeded); still where less motion is asked
+    for; by day the stars are the ink's, faint. */
+function screenSky() {
+  let seed = 20261015;
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+  const stars = Array.from({ length: 170 }, (_, i) => {
+    const x = Math.round(rnd() * 1920), y = Math.round(rnd() * 1080), r = (0.5 + rnd() * rnd() * 1.5).toFixed(2), o = (0.22 + rnd() * 0.6).toFixed(2);
+    const tw = i % 6 === 0 ? ` class="tw" style="animation-delay:-${(rnd() * 6).toFixed(1)}s"` : '';
+    return `<circle cx="${x}" cy="${y}" r="${r}" opacity="${o}"${tw}/>`;
+  }).join('');
+  return `<div class="screen-sky" aria-hidden="true"><svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">${stars}</svg><i class="comet c1"></i><i class="comet c2"></i><i class="comet c3"></i></div>`;
+}
+
 /** The page around a screen: the stylesheets and the dictionary the site uses, the stage, the scripts — nothing else. */
-function shell(ctx, { name, title, body, scripts = [], fit = 'scale', ticker = '', head = true, inner = true }) {
+/* `head`: the thin band over the piece — MARS!platz, the screen's name, the sol and the clock. No screen carries it any
+   more (8 October: "from the /screen pages remove the MARS!platz header, have nothing there"): the piece has the whole
+   screen; only the screens' sign-in page keeps it, to say where it is. */
+function shell(ctx, { name, title, body, scripts = [], fit = 'scale', ticker = '', head = false, inner = true }) {
   const T = ctx.T, m = ctx.mission, lang = ctx.lang || 'en', minWidth = (BY_NAME[name] && BY_NAME[name].minWidth) || 0,
     fitLandscape = (BY_NAME[name] && BY_NAME[name].fitLandscape) || '';
   const stamp = m.phase === 'ACTIVE' ? `SOL ${String(m.clampedDay).padStart(2, '0')}/${m.totalDays}`
@@ -73,8 +93,9 @@ function shell(ctx, { name, title, body, scripts = [], fit = 'scale', ticker = '
 <link rel="stylesheet" href="/neu.css?v=${V}">
 ${L.clientTable(lang)}
 </head><body class="landing${inner ? ' inner' : ''} screen screen-${name}" data-screen="${name}" data-fit="${fit}"${fitLandscape ? ` data-fit-landscape="${fitLandscape}"` : ''}${minWidth ? ` data-min-width="${minWidth}"` : ''} data-tz="${esc(m.timezone)}">
+${screenSky()}
 ${ticker}
-<main class="stage">${head ? `
+<main class="stage${head ? '' : ' no-head'}">${head ? `
   <header class="stage-head">
     <span class="stage-brand">MARS<b>!</b>platz</span>
     <span class="stage-title">${esc(T(title))}</span>
@@ -95,13 +116,13 @@ function landing(ctx, d) {
   const body = `
   ${LP.space(ctx, { sky: habitatSky(ctx, { recent: d.recent, cloud: d.cloud }) })}
   ${d.cloud ? `<div class="screen-hidden"><div class="cloud-latest" id="cloud-latest" data-version="${esc(d.cloud.snapshot.version || '')}" data-poll="${(Number(d.cloud.snapshot.checkSeconds) || 20) * 1000}">${M.cloudLatestInner(T, d.cloud, { tz: ctx.mission.timezone })}</div></div>` : ''}`;
-  return shell(ctx, { name: 'landing', title: 'Landing page', body, head: false, inner: false, fit: 'scale',
+  return shell(ctx, { name: 'landing', title: 'Landing page', body, inner: false, fit: 'scale',
     ticker: P.ticker(ctx, { today: d.today }), scripts: ['/sky.js'].concat(d.cloud ? ['/cloud.js'] : []) });
 }
 
 /** The habitat's instruments: the Sensors panel as the dashboard has it, live — read from across a room (8 October: "a
     vertical layout with scrolling, to show all the content clearly and slowly"): the panel fills the screen, its head
-    stands, and its rows — the eight instruments, the steps and the stores, the power with Karlsruhe and the astronauts,
+    stands, and its rows — the instruments with Karlsruhe, the steps and the stores, the power with the astronauts,
     the hardware's charts — stand at their full size and roll by under the head, slowly, then start again from the top
     (public/screen-roll.js; the layout in public/screen.css). The astronauts wander on their radar (live.js). */
 function habitat(ctx, d) {
@@ -183,7 +204,28 @@ function station(ctx, d) {
   return shell(ctx, { name: 'station', title: 'Ground station', body, fit: 'clip', scripts: ['/composer.js', '/screen-write.js', '/board.js'] });
 }
 
-const BUILD = { landing, habitat, board, write, mission, blogs, day, trends, media, station };
+/** The livestream (8 October: "in the screens add a page called Livestream — this stream embedded, playing by itself,
+    with a play button"): the habitat's HLS stream full screen, black round it, through the station (server.js,
+    /screen/livestream/stream.m3u8 — the stream's own address is in no page). It plays by itself: with its sound where
+    the screen lets a page play sound unasked (a kiosk browser set so), else muted, a key in the corner turning the sound
+    on; a large play key in the middle whenever it stands still; LIVE in the corner while it plays; a word while it
+    connects, and when the stream is off the air — it is taken up again by itself every ten seconds, and again if it
+    stalls. Played by hls.js (public/vendor/hls.min.js), or by the browser itself where it plays HLS (Safari); a stream
+    of sound alone shows the station's name with its rings instead of a black picture (public/screen-live.js). */
+function livestream(ctx) {
+  const T = ctx.T;
+  const body = `<div class="screen-live" id="screen-live" data-src="/screen/livestream/stream.m3u8">
+    <video class="live-video" id="live-video" playsinline autoplay preload="auto" aria-label="${esc(T('Livestream'))}"></video>
+    <div class="live-audio" aria-hidden="true"><span class="la-ring"></span><span class="la-ring"></span><span class="la-ring"></span><span class="la-mark">MARS<b>!</b>platz</span><span class="la-sub">${esc(T('Livestream'))}</span></div>
+    <div class="live-badge" id="live-badge" hidden><i aria-hidden="true"></i>${T('LIVE')}</div>
+    <div class="live-word" id="live-word" role="status">${T('Connecting to the livestream…')}</div>
+    <button type="button" class="live-play" id="live-play" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19.2 12z"/></svg><span>${T('Play')}</span></button>
+    <button type="button" class="live-sound" id="live-sound" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9.2a4 4 0 0 1 0 5.6M18 6.8a7.4 7.4 0 0 1 0 10.4"/></svg><span>${T('Sound on')}</span></button>
+  </div>`;
+  return shell(ctx, { name: 'livestream', title: 'Livestream', body, fit: 'none', scripts: ['/vendor/hls.min.js', '/screen-live.js'] });
+}
+
+const BUILD = { landing, habitat, board, write, mission, blogs, day, trends, media, livestream, station };
 
 /** The screen by its name, or null for a name that is not one. */
 function render(name, ctx, d) {

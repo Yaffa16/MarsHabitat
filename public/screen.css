@@ -13,11 +13,15 @@
    ========================================================================== */
 
 html.screen, html.screen body { height: 100%; margin: 0; overflow: hidden !important; }
+/* the page itself is no dark slab: station.css's .screen (the board's dark panel) names html and body too here — its
+   rounded corners and its shade would round the screen's own corners (8 October) */
+html.screen, html.screen body.screen { border-radius: 0; box-shadow: none; }
 body.screen { display: flex; flex-direction: column; padding: 0 !important; scroll-snap-type: none; }
 html.screen:has(body.landing:not(.inner)) { scroll-snap-type: none; }
 body.screen .tabbar, body.screen .foot, body.screen #consent, body.screen .masthead, body.screen .screen-hidden { display: none !important; }
 body.screen .ticker { position: static; flex: none; }                                /* the landing screen keeps the ticker, in flow */
 body.screen .stage { flex: 1 1 auto; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px; padding: 22px 28px 26px; box-sizing: border-box; }
+body.screen .stage.no-head { grid-template-rows: minmax(0, 1fr); }                /* no band over the piece (8 October): the body has the whole stage */
 body.screen .stage-head { display: flex; align-items: baseline; gap: 18px; padding: 0 4px; font-family: var(--display); color: var(--ink); }
 body.screen .stage-brand { font-size: 22px; font-weight: 600; letter-spacing: -.03em; }
 body.screen .stage-brand b { color: var(--mars); font-weight: inherit; }
@@ -39,9 +43,10 @@ body.screen .dpanel-body { min-height: 0; }
 body.screen .dpanel.scroll .dpanel-body, body.screen .blog-scroll { overflow: hidden; }
 /* the writing screen: the composer alone in the middle of the screen, as wide as a reader's column (scaled to the
    screen's height like the other pieces); nothing to close, and the crossing's read-out names the callsign */
-body.screen .screen-write { display: flex; justify-content: center; align-items: flex-start; padding: 8px 0 0; }
+body.screen .screen-write { display: flex; justify-content: center; align-items: flex-start; padding: 0; }   /* the box in the middle, as much room over it as under it (8 October) */
 body.screen .screen-write .composer-device { width: 100%; max-width: 640px; box-sizing: border-box; }
 body.screen .screen-write .dev-close { display: none !important; }
+body.screen .screen-write .dev-foot button.is-sending { opacity: .62; cursor: progress; }        /* pressed: the message is leaving (composer.js) */
 body.screen .screen-write .dev-stage .transit-block { position: static; }         /* the crossing's view has the box to itself, whatever its height (the read-out is longer here) */
 body.screen .screen-write .dev-stage .composer.ghost { display: none; }
 body.screen .screen-write .kiosk-cs { margin-top: 14px; font-family: var(--display); font-size: 15px; line-height: 1.45; color: var(--ink); }
@@ -90,8 +95,9 @@ body.screen.screen-trends #trends.dpanel { padding: 24px 30px; }
    the content clearly and slowly; no overlap of text, no glitching"). Laid out as on a screen 1920 wide, or 1080 upright,
    and zoomed to the screen (screen.js, data-fit="roll"): the same rows and the same type on any screen. The panel fills
    the stage; its head stands; its body is the window the rows roll by in — the eight instruments on four tracks (two
-   upright), the steps and the stores, the power with Karlsruhe and the astronauts (upright: Karlsruhe and the astronauts,
-   then the power), then the hardware's charts, two across (one upright) — each at the size it is read at from across a
+   upright; Karlsruhe among them, after the light), the steps and the stores, the power with the volatile organic
+   compounds and the astronauts (upright: those two, then the power), then the hardware's charts, two across (one
+   upright) — each at the size it is read at from across a
    room. The window's edge fades where the rows pass under the head and where more is still to come; it keeps room at its
    sides for the tiles' shadows. The panel is named (#habitat): the dress sizes these with .dpanel.compact, and only a
    more specific rule can say otherwise. */
@@ -125,12 +131,12 @@ body.screen .screen-roll #habitat .hbt .t-sens .t-read { gap: 16px; padding-top:
 body.screen .screen-roll #habitat .hbt .t-sens .big { font-size: 76px; }
 body.screen .screen-roll #habitat .hbt .big em { font-size: 28px; margin-left: 8px; }
 body.screen .screen-roll #habitat .hbt .verdict { font-size: 22px; margin: 0; min-height: 1.35em; }
-body.screen .screen-roll #habitat .meter { height: 34px; gap: 6px; }
-body.screen .screen-roll #habitat .meter.m-seg i { height: 15px; border-radius: 8px; }
-body.screen .screen-roll #habitat .meter.m-bars { gap: 4px; }
-body.screen .screen-roll #habitat .meter.m-bars i { height: 34px; border-radius: 3px; }
-body.screen .screen-roll #habitat .meter.m-dots { gap: 3px; }
-body.screen .screen-roll #habitat .meter.m-dots i { width: 15px; height: 15px; }
+body.screen .screen-roll #habitat .viz.is-wide { height: 118px; }                              /* the drawings large: the day's curve, the barometer, the bands, the hours */
+body.screen .screen-roll #habitat .viz.is-side { width: 156px; height: 156px; }                   /* the ring, the vessel, the sun */
+body.screen .screen-roll #habitat .viz.viz-thermo { width: 64px; height: 160px; }
+body.screen .screen-roll #habitat .hbt .t-sens .t-read.has-side { column-gap: 18px; row-gap: 14px; }
+body.screen .screen-roll #habitat .viz .vz-k { font-size: 16px; }
+body.screen .screen-roll #habitat .viz .vz-line { stroke-width: 3; }
 /* the steps: the crew's names and figures large */
 body.screen .screen-roll #habitat .hbt .fig-rows { margin-top: 14px; }
 body.screen .screen-roll #habitat .hbt .fig-r { padding: 10px 0; }
@@ -140,8 +146,21 @@ body.screen .screen-roll #habitat .hbt .fig-v em { font-size: 18px; }
 body.screen .screen-roll #habitat .hbt .fig-foot { gap: 6px; padding-top: 14px; }
 body.screen .screen-roll #habitat .hbt .fig-total { font-size: 22px; }
 body.screen .screen-roll #habitat .hbt .fig-spark { height: 40px; }
-/* the stores: large rounds, their names large under them */
-body.screen .screen-roll #hbt-bento > .t-res .gauges.rounds { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 22px 26px; padding-top: 16px; }
+/* the power generated (the bike): the odometer's drums, the battery and its per cent large, read from across a room */
+body.screen .screen-roll #habitat .hbt .t-bike .bike-viz { margin-top: 22px; gap: 22px 0; }
+body.screen .screen-roll #habitat .hbt .t-bike .bike-part { gap: 16px; padding-right: 28px; }
+body.screen .screen-roll #habitat .hbt .t-bike .bike-part + .bike-part { padding: 4px 0 4px 28px; }
+body.screen .screen-roll #habitat .hbt .t-bike .bike-k, body.screen .screen-roll #habitat .hbt .t-bike .bike-u { font-size: 18px; }
+body.screen .screen-roll #habitat .hbt .odo { gap: 7px; }
+body.screen .screen-roll #habitat .hbt .odo b { font-size: 58px; border-radius: 11px; }
+body.screen .screen-roll #habitat .hbt .batt { max-width: 380px; }
+body.screen .screen-roll #habitat .hbt .batt-body { height: 74px; gap: 5px; padding: 7px; border-width: 3px; border-radius: 14px; }
+body.screen .screen-roll #habitat .hbt .batt-body i { border-radius: 5px; }
+body.screen .screen-roll #habitat .hbt .batt-cap { width: 9px; margin-left: 3px; border-radius: 0 5px 5px 0; }
+body.screen .screen-roll #habitat .hbt .bike-pc { font-size: 76px; }
+body.screen .screen-roll #habitat .hbt .bike-pc em { font-size: 28px; margin-left: 8px; }
+/* the stores: large rounds, their names large under them — the four side by side across the panel */
+body.screen .screen-roll #hbt-bento > .t-res .gauges.rounds { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 22px 28px; padding-top: 16px; }
 body.screen .screen-roll #hbt-bento > .t-res .gauge.round { width: auto; gap: 12px; padding: 18px 12px 20px; }
 body.screen .screen-roll #hbt-bento > .t-res { padding-bottom: 36px; }                            /* the rounds' shadows fade out inside the tile */
 body.screen .screen-roll #habitat .gauge.round svg { width: 150px; height: 150px; }
@@ -176,18 +195,20 @@ body.screen .screen-roll #habitat .hw-legend li i { width: 12px; height: 12px; }
 body.screen .screen-roll #habitat .hw-name { font-size: 19px; }
 body.screen .screen-roll #habitat .hw-range { font-size: 14px; }
 body.screen .screen-roll #habitat .hw-ax { font-size: 12.5px; }                                   /* in the drawing's units, shown a third larger */
-/* upright: the instruments two to a row; the steps beside the stores; Karlsruhe beside the astronauts, then the power the
-   panel's width, right over its chart; the charts one under the other, the panel's width */
+/* upright: the instruments two to a row (Karlsruhe beside the light); the steps the panel's width, then the power
+   generated and the stores; the
+   volatile organic compounds beside the astronauts, then the power the panel's width, right over its chart; the charts one
+   under the other, the panel's width */
 @media (orientation: portrait) {
   body.screen .screen-roll > #habitat.dpanel { padding: 24px 28px 0; }
   body.screen .screen-roll #hbt-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
   body.screen .screen-roll #hbt-bento > * { grid-column: span 1; order: 0; }
   body.screen .screen-roll #hbt-bento > .hbt-notes { grid-column: 1 / -1; }
-  body.screen .screen-roll #hbt-bento > .t-res { grid-column: span 1; }
-  body.screen .screen-roll #hbt-bento > .t-viz-city { order: 30; }
+  body.screen .screen-roll #hbt-bento > .t-fig, body.screen .screen-roll #hbt-bento > .t-bike, body.screen .screen-roll #hbt-bento > .t-res { grid-column: 1 / -1; }
+  body.screen .screen-roll #hbt-bento > .t-voc { order: 30; }
   body.screen .screen-roll #hbt-bento > .t-viz-radar { order: 31; }
   body.screen .screen-roll #hbt-bento > .t-pwr { order: 32; grid-column: 1 / -1; }
-  body.screen .screen-roll #hbt-bento > .t-res .gauges.rounds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 14px; padding-right: 10px; }
+  body.screen .screen-roll #hbt-bento > .t-res .gauges.rounds { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px 14px; padding-right: 10px; }
   body.screen .screen-roll #hbt-bento > .t-res .gauge.round { width: auto; }
   body.screen .screen-roll #habitat .gauge.round svg { width: 132px; height: 132px; }
   body.screen .screen-roll #habitat .hw-in-habitat { margin-top: 24px; }
@@ -228,15 +249,12 @@ body.screen.screen-board .feed-filter, body.screen.screen-board .feed-more { dis
 body.screen.screen-board .board-head h2 { font-size: 26px; }
 body.screen.screen-board .card.xc .card-body { font-size: 19px; }
 body.screen.screen-board .card-reply p { font-size: 21px; }
-/* the card's line into space on one line — the distance, then when it was launched — nothing to tap (board.js opens
-   no panel on a screen, and the Follow its journey key is not drawn) */
+/* the card's line into space on one line — the distance alone (no longer when it was launched: 8 October) — nothing
+   to tap (board.js opens no panel on a screen, and the Follow its journey key is not drawn) */
 body.screen .card.xc .card-space { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; font-size: 15px; cursor: default; }
 body.screen .card.xc .card-space-more { display: contents; }
-body.screen .card.xc .card-space-launched { white-space: nowrap; font-size: 13px; letter-spacing: 0; text-transform: none; }
-body.screen .card.xc .card-space-launched::before { content: '·'; margin-right: 8px; color: var(--faint); }
 @media (orientation: landscape) and (max-width: 1500px) {
   body.screen .card.xc .card-space { font-size: 13px; }                                              /* a smaller screen: still one line */
-  body.screen .card.xc .card-space-launched { font-size: 12px; }
 }
 body.screen .card.xc:has(.card-space[data-launched]) { cursor: default; }
 @media (max-width: 700px) {
@@ -306,6 +324,7 @@ body.screen .is-cut { visibility: hidden; }
 /* the landing screen: the ticker, then the name in its band and the habitat with its sky, as the site's first screen —
    the nudge to scroll is not drawn */
 body.screen.screen-landing .stage { padding: 0 var(--gutter) 0; }
+body.screen.screen-landing .stage.no-head { grid-template-rows: auto minmax(0, 1fr); }   /* (as it always stood: the ticker over it, the room its own height) */
 body.screen.screen-landing .sheet-p1 { display: flex; flex-direction: column; padding-bottom: 0; }   /* the Earth reaches the foot of the screen: no room kept under the ground line */
 body.screen.screen-landing .space { padding-bottom: 0; }
 body.screen.screen-landing .dome-nudge, body.screen.screen-landing .dome-foot { display: none; }
@@ -336,3 +355,63 @@ body.screen .screen-login-form { display: grid; gap: 14px; }
 body.screen .screen-login-form label { display: grid; gap: 6px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
 body.screen .screen-login-form input { font: 16px var(--display); padding: 12px 14px; border-radius: 12px; border: 1px solid var(--glass-edge); background: var(--tile); color: var(--ink); }
 body.screen .screen-login-form button { justify-self: start; margin-top: 4px; font-family: var(--display); font-size: 14px; font-weight: 700; letter-spacing: .04em; text-transform: none; padding: 12px 22px; border-radius: 999px; }
+
+/* the livestream (screens.js, livestream; screen-live.js — 8 October): the stream the whole screen, black round it; LIVE
+   at the top left while it plays, a word at the foot while it connects or is off the air, the large play key in the
+   middle whenever it stands still, Sound on at the bottom right while it plays muted. A stream of sound alone: the
+   station's name and its rings, breathing, where the picture would be. */
+body.screen.screen-livestream .stage { padding: 0; }
+body.screen.screen-livestream .stage-fit { height: 100%; flex: 1 1 auto; min-height: 0; }
+body.screen .screen-live { position: relative; width: 100%; height: 100%; overflow: hidden; background: #000; color: #fff; }
+body.screen .screen-live [hidden] { display: none !important; }
+body.screen .live-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+body.screen .live-audio { display: none; }
+body.screen .screen-live.is-audio .live-audio { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; pointer-events: none; }
+body.screen .la-ring { position: absolute; left: 50%; top: 50%; width: 42vmin; height: 42vmin; margin: -21vmin 0 0 -21vmin; border: 1.5px solid rgba(255,122,61,.55); border-radius: 50%; animation: la-ring 4.8s ease-out infinite; }
+body.screen .la-ring:nth-child(2) { animation-delay: 1.6s; }
+body.screen .la-ring:nth-child(3) { animation-delay: 3.2s; }
+body.screen .la-mark { position: relative; font-family: var(--display); font-size: clamp(48px, 7vmin, 96px); font-weight: 600; letter-spacing: -.03em; }
+body.screen .la-mark b { color: var(--mars); font-weight: inherit; }
+body.screen .la-sub { position: relative; font-family: var(--display); font-size: clamp(16px, 2vmin, 24px); letter-spacing: .3em; text-transform: uppercase; color: rgba(255,255,255,.7); }
+@keyframes la-ring { from { transform: scale(.35); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+body.screen .live-badge { position: absolute; top: 28px; left: 32px; display: inline-flex; align-items: center; gap: 10px; padding: 9px 16px 9px 14px; border-radius: 999px;
+  background: rgba(0,0,0,.55); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); font-family: var(--display); font-size: 16px; font-weight: 600; letter-spacing: .16em; }
+body.screen .live-badge i { width: 11px; height: 11px; border-radius: 50%; background: #ff3b2f; box-shadow: 0 0 12px rgba(255,59,47,.9); animation: live 2s ease-in-out infinite; }
+body.screen .live-word { position: absolute; left: 50%; bottom: 10%; transform: translateX(-50%); max-width: min(80%, 900px); padding: 14px 26px; border-radius: 16px;
+  background: rgba(0,0,0,.62); font-family: var(--display); font-size: clamp(16px, 2.2vmin, 26px); line-height: 1.4; text-align: center; }
+body.screen .live-play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 16px;
+  margin: 0; padding: 0; border: 0; background: none; box-shadow: none; color: #fff; cursor: pointer; font-family: var(--display); font-size: clamp(16px, 2vmin, 24px); font-weight: 600; letter-spacing: .16em; text-transform: uppercase; }
+body.screen .live-play svg { width: clamp(96px, 16vmin, 168px); height: clamp(96px, 16vmin, 168px); padding: 26% 22% 26% 30%; box-sizing: border-box; border-radius: 50%;
+  background: linear-gradient(180deg, #ff8a3d, #ff5a1f); fill: #0f1540; box-shadow: 0 24px 60px -16px rgba(255,70,0,.85); transition: transform .15s ease; }
+body.screen .live-play:active svg { transform: scale(.96); }
+body.screen .live-sound { position: absolute; right: 32px; bottom: 32px; display: inline-flex; align-items: center; gap: 12px; margin: 0; padding: 14px 24px 14px 18px; border: 0; border-radius: 999px;
+  background: rgba(255,255,255,.94); color: #0f1540; box-shadow: 0 12px 30px -10px rgba(0,0,0,.6); cursor: pointer; font-family: var(--display); font-size: clamp(15px, 1.8vmin, 21px); font-weight: 600; letter-spacing: .04em; }
+body.screen .live-sound svg { width: 1.4em; height: 1.4em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+body.screen .live-sound svg path:first-child { fill: currentColor; stroke: none; }
+@media (prefers-reduced-motion: reduce) { body.screen .la-ring { animation: none; opacity: .5; } body.screen .live-badge i { animation: none; } }
+
+/* the screens' sky (screens.js, screenSky — 8 October: "stars and comets in the background for all screens, always in
+   the background only"): fixed under everything — the stage and the ticker stand over it — a field of stars, a sixth of
+   them twinkling, and three comets, each crossing now and then on a round of its own (19, 27 and 33 seconds: rarely two
+   at once), along its own axis; by day the stars and the comets are the ink's, faint; still, and the comets gone, where
+   less motion is asked for */
+body.screen .screen-sky { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+body.screen .screen-sky svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+body.screen .screen-sky circle { fill: #fff; }
+body.screen .screen-sky .tw { animation: sky-tw 5.5s ease-in-out infinite; }
+@keyframes sky-tw { 0%, 100% { opacity: .9; } 50% { opacity: .12; } }
+body.screen > .stage, body.screen > .ticker { position: relative; z-index: 1; }
+body.screen .comet { position: absolute; width: 240px; height: 2px; border-radius: 2px; opacity: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.75)); }
+body.screen .comet::after { content: ""; position: absolute; right: -3px; top: -2px; width: 6px; height: 6px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px 3px rgba(255,255,255,.65); }
+body.screen .comet.c1 { top: 14%; left: -12%; animation: comet-1 19s linear 4s infinite; }
+body.screen .comet.c2 { top: 4%; left: 38%; animation: comet-2 27s linear 12s infinite; }
+body.screen .comet.c3 { top: 72%; left: -8%; animation: comet-3 33s linear 21s infinite; }
+@keyframes comet-1 { 0% { opacity: 0; transform: rotate(14deg) translateX(0); } 1% { opacity: 1; } 8% { opacity: 0; transform: rotate(14deg) translateX(1500px); } 100% { opacity: 0; transform: rotate(14deg) translateX(1500px); } }
+@keyframes comet-2 { 0% { opacity: 0; transform: rotate(31deg) translateX(0); } 1% { opacity: .9; } 6% { opacity: 0; transform: rotate(31deg) translateX(1200px); } 100% { opacity: 0; transform: rotate(31deg) translateX(1200px); } }
+@keyframes comet-3 { 0% { opacity: 0; transform: rotate(-11deg) translateX(0); } 1% { opacity: .85; } 5.5% { opacity: 0; transform: rotate(-11deg) translateX(1400px); } 100% { opacity: 0; transform: rotate(-11deg) translateX(1400px); } }
+:root[data-theme="light"] body.screen .screen-sky circle { fill: #2b3152; }
+:root[data-theme="light"] body.screen .screen-sky svg { opacity: .45; }
+:root[data-theme="light"] body.screen .comet { background: linear-gradient(90deg, rgba(43,49,82,0), rgba(43,49,82,.5)); }
+:root[data-theme="light"] body.screen .comet::after { background: #2b3152; box-shadow: 0 0 8px 2px rgba(43,49,82,.35); }
+@media (prefers-reduced-motion: reduce) { body.screen .screen-sky .tw { animation: none; } body.screen .comet { display: none; } }

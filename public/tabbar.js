@@ -33,7 +33,7 @@
   var bar = document.querySelector('.tabbar');
 
   // the doors into the portal and the dashboard lead to their pages on a phone held upright — the composer's doors with it open
-  var DASH = /^\/?#(mission|mission-today|habitat|sensors|stores|power|hardware|trends|schedule|galley|crew|blog-commander|blog-health|blog-science)$/;
+  var DASH = /^\/?#(mission|mission-today|habitat|sensors|stores|power|bike|hardware|trends|schedule|galley|crew|blog-commander|blog-health|blog-science)$/;
   function doors() {
     if (!phone() || document.body.classList.contains('dashboard') || document.body.classList.contains('write')) return;      // on the dashboard page and the Write page a link into a panel is right as it is
     [].forEach.call(document.querySelectorAll('a[href^="#"], a[href^="/#"]'), function (a) {

@@ -69,7 +69,7 @@ const ROOMS = [
   { id: 'lockers', label: 'Equipment Lockers', href: null, fig: [], rect: [46, 666, 149, 164], about: [] },
   { id: 'recycling', label: 'Water Recycling', href: '/dashboard#stores', btn: 'Open the Resources', fig: ['recycling-text', 'recycling-more'], rect: [195, 670, 420, 165],
     about: ['When every liter of water has to be carried up by space rocket, we become more mindful of our usage. Our water recycling system is one of the things we brought to reflect on resources and how we are currently treating them on Earth.'] },
-  { id: 'cycle', label: 'Cycle (Power Generation)', href: '/dashboard#power', fig: ['generator-text', 'generator-more'], rect: [904, 680, 191, 155],
+  { id: 'cycle', label: 'Cycle (Power Generation)', href: '/dashboard#bike', btn: 'Open the Power generated', fig: ['generator-text', 'generator-more'], rect: [904, 680, 191, 155],
     about: ['A bicycle generator: pedalling charges the battery. The health officer’s workout is also the habitat’s power plant — the steps and the kilowatt-hours are the same effort.'] },
   { id: 'power', label: 'Electricity', href: '/dashboard#power', btn: 'Open the Power Balance', fig: ['generator-text', 'power-text'], rect: [1095, 680, 122, 155],
     about: ['We measure our energy expenditure: how much comes in, how much goes out: from calorie intake to taken steps, from power produced by muscle to electricity consumption. Check out our power balance in the dashboard!'] },

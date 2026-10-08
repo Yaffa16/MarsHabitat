@@ -2,8 +2,8 @@
  *
  * The Sensors panel read from across a room (8 October: "the screen/habitat should have a vertical layout with
  * scrolling, to show all the content clearly and slowly — no overlap of text, no glitching"): the panel fills the
- * screen and its head stays; everything in it — the instruments, the steps and the stores, the power, Karlsruhe and the
- * astronauts, the hardware's charts — stands at its full size, one row under the other, and rolls by under the head at
+ * screen and its head stays; everything in it — the instruments and Karlsruhe, the steps and the stores, the power and
+ * the astronauts, the hardware's charts — stands at its full size, one row under the other, and rolls by under the head at
  * a slow, even pace. At the top it rests a while; at the end it rests, fades, and comes back from the top. What fits the
  * screen is simply shown. The readings stay live underneath (habitat.js, hardware.js, live.js): a figure changes in its
  * place, and a change of height — a note arriving, a chart drawn anew — is taken into account at once. The sheet's edge
@@ -16,7 +16,7 @@
   'use strict';
   var root = document.getElementById('screen-roll'); if (!root) return;
   var view = root.querySelector('.dpanel-body'); if (!view) return;
-  var SPEED = Number(root.getAttribute('data-speed')) || 28;              // pixels a second, in the layout's own pixels: a slow read
+  var SPEED = Number(root.getAttribute('data-speed')) || 14;              // pixels a second, in the layout's own pixels: a slow read (half the first 28 — 8 October)
   var HOLD = Number(root.getAttribute('data-hold')) || 8000;               // at the top before rolling, and at the end
   var FADE = 900;                                                          // the sheet fading out at the end, and in at the top
   var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;

@@ -320,7 +320,7 @@ p { margin: 0 0 13px; max-width: 66ch; color: var(--ink); }
 /* Who we are (info.js, whoFold): the crew's portraits, six to a row, each with its name under it, in the order of their
    surnames (public/crew/crew.json) — and the partners' logos, small, each on a white tile so that it reads on the dark
    ground as on the light, under Produced by */
-.crew-wall { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px 10px; }
+.crew-wall { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 14px 10px; }   /* fourteen — the crew and the robot dog — in two rows of seven */
 .crew-pic { margin: 0; min-width: 0; }
 .crew-pic img { display: block; width: 100%; height: auto; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 10px; background: #101012; }
 .crew-pic figcaption { margin-top: 8px; font-family: var(--display); font-size: 14px; font-weight: 600; line-height: 1.25; color: var(--ink); text-align: center; overflow-wrap: anywhere; }
@@ -687,7 +687,7 @@ body.control .shell, body.habitat .shell { padding-top: var(--gutter); }
 
 @media print {
   body { background: #fff; padding: 0; }
-  .rail, .nav, .foot, form, button, .btn, .hatch, .dev-led, .dev-grip, .dev-knob, .dev-vents { display: none !important; }
+  .rail, .nav, .foot, form, button, .btn, .hatch, .dev-led, .dev-grip, .dev-vents { display: none !important; }
   .panel, .card { break-inside: avoid; box-shadow: none; border: 1px solid #999; }
 }
 
@@ -945,12 +945,6 @@ dialog.reset-dialog #reset-word { font-family: var(--mono); letter-spacing: 0.2e
   background: repeating-linear-gradient(90deg, #d24d0e 0 2px, #ff7a2e 2px 6px);
   box-shadow: 0 3px 6px rgba(0,0,0,.2), inset 0 -3px 0 rgba(0,0,0,.14);
 }
-.dev-knob {
-  position: absolute; right: 74px; top: 22px; width: 84px; height: 84px; border-radius: 50%;
-  background: radial-gradient(circle at 42% 36%, rgba(255,255,255,.9), rgba(214,214,216,.9) 62%, rgba(214,214,216,0) 72%);
-  filter: blur(2.5px); opacity: .9; pointer-events: none;
-}
-:root[data-theme="dark"] .dev-knob { background: radial-gradient(circle at 42% 36%, rgba(80,80,86,.9), rgba(28,28,32,.9) 62%, rgba(28,28,32,0) 72%); }
 .dev-vents {
   position: absolute; right: 30px; top: 16px; width: 40px; height: 28px;
   background: repeating-linear-gradient(90deg, var(--rule-hard) 0 1.5px, transparent 1.5px 7px);
@@ -1666,7 +1660,6 @@ body.landing .foot { margin-top: 44px; margin-bottom: 44px; }
   .dev-stage .transit-block { position: static; }
   .dev-stage .composer.ghost { display: none; }
   .device { padding: 48px 16px 18px; }
-  .dev-knob { display: none; }
   .dev-head { margin-top: -14px; }
   /* The composer, compact: writing and the board sit together on a phone —
      a comfortable box to type in, the tags one thumb-scrollable row, the

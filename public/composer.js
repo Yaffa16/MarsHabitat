@@ -24,6 +24,15 @@
   var chip0 = device && device.querySelector('.dev-chip') ? device.querySelector('.dev-chip').textContent : '';
 
   /* --------------------------------------------------------------- forms */
+  /* The Transmit key (8 October: "on the writing screen the send button sometimes does not work — simplify the button
+     event catching and make sure it works simply"). One way in: a click on the key — what a mouse, a finger, a pen and
+     the keyboard all end in — and the form's own submit routed to the same place, never twice at once. No check of the
+     browser's stands between the press and the sending: a box with nothing in it says so in the device, in words,
+     instead of a bubble the screen may never show. The key keeps the writing box's focus when it is pressed, so a touch
+     keyboard does not fold away and move the key from under the finger before the press lands. And the key can never
+     stay dead: a sending with no answer within fifteen seconds gives the key back, the draft kept, with a word on the
+     writing screen (the site falls back to a plain post, as before). */
+  var WAIT = 15000;
   function bindForms(root) {
     var forms = root.querySelectorAll('form.composer:not(.ghost)');
     Array.prototype.forEach.call(forms, function (form) {
@@ -43,41 +52,86 @@
         var boxes = tagBox.querySelectorAll('input[type=checkbox]');
         tagBox.addEventListener('change', function () {
           var on = 0;
-          boxes.forEach(function (b) { if (b.checked) on++; });
-          boxes.forEach(function (b) { b.disabled = !b.checked && on >= 3; });
+          Array.prototype.forEach.call(boxes, function (b) { if (b.checked) on++; });
+          Array.prototype.forEach.call(boxes, function (b) { b.disabled = !b.checked && on >= 3; });
         });
       }
-      if (stage && window.fetch && window.FormData) {
-        form.addEventListener('submit', function (e) {
-          if (form.dataset.native) return;   // falling back to a plain post
-          e.preventDefault();
-          send(form);
-        });
+      if (!stage) return;                                              // no device to swap into: a plain post
+      var key = form.querySelector('button[type=submit]');
+      if (key) {
+        var keep = function (e) { e.preventDefault(); };               // the focus stays in the box: nothing moves under the finger
+        key.addEventListener('mousedown', keep);
+        if (window.PointerEvent) key.addEventListener('pointerdown', keep);
+        key.addEventListener('click', function (e) { e.preventDefault(); send(form); });
       }
+      form.addEventListener('submit', function (e) {
+        if (form.getAttribute('data-native')) return;                 // falling back to a plain post
+        e.preventDefault();
+        send(form);
+      });
     });
   }
 
+  /* A word in the device over the form — the box left empty, the station out of reach — in place of any before it. */
+  function say(form, words) {
+    var note = stage.querySelector('.flash.err');
+    if (!note) { note = document.createElement('div'); note.className = 'flash err'; form.parentNode.insertBefore(note, form); }
+    note.setAttribute('role', 'alert');
+    note.textContent = words;
+  }
+
+  /* The form's fields as a plain post would send them (a box ticked, a field with a name; never the key itself). */
+  function encode(form) {
+    var out = [];
+    Array.prototype.forEach.call(form.elements, function (el) {
+      if (!el.name || el.disabled || el.type === 'submit' || el.type === 'button' || el.type === 'file') return;
+      if ((el.type === 'checkbox' || el.type === 'radio') && !el.checked) return;
+      out.push(encodeURIComponent(el.name) + '=' + encodeURIComponent(el.value));
+    });
+    return out.join('&').replace(/%20/g, '+');
+  }
+
   function send(form) {
-    var button = form.querySelector('button[type=submit]');
-    if (button) button.disabled = true;
-    fetch(form.getAttribute('action') || '/communicate', {
-      method: 'POST',
-      body: new URLSearchParams(new FormData(form)),   // urlencoded, as a plain post would be
-      credentials: 'same-origin',
-      headers: { 'X-Requested-With': 'fetch' },
-    })
-      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
-      .then(function (html) {
-        swap(html);
-        if (window.MCSBoard) window.MCSBoard.refresh('');
-      })
-      .catch(function () {
-        // The station could not be reached this way: let the form post
-        // normally, which the server answers with a redirect.
-        if (button) button.disabled = false;
-        form.dataset.native = '1';
-        HTMLFormElement.prototype.submit.call(form);
-      });
+    if (form.getAttribute('data-sending')) return;                    // one sending at a time
+    var key = form.querySelector('button[type=submit]');
+    var box = form.querySelector('textarea[name=body]');
+    if (box && box.value.replace(/\s+/g, '').length < 2) {             // nothing to send: said, not refused in silence
+      say(form, t('Write something before transmitting.'));
+      box.focus();
+      return;
+    }
+    form.setAttribute('data-sending', '1');
+    if (key) { key.disabled = true; key.classList.add('is-sending'); }
+    var over = false, xhr = new XMLHttpRequest();
+    function giveBack() {
+      if (over) return false;
+      over = true;
+      form.removeAttribute('data-sending');
+      if (key) { key.disabled = false; key.classList.remove('is-sending'); }
+      return true;
+    }
+    function failed() {
+      if (!giveBack()) return;
+      if (kiosk) { say(form, t('Not sent — the station could not be reached. Try again.')); return; }
+      // the site: the station could not be reached this way — the form posts normally, which the server answers with a
+      // redirect
+      form.setAttribute('data-native', '1');
+      HTMLFormElement.prototype.submit.call(form);
+    }
+    xhr.open('POST', form.getAttribute('action') || '/communicate', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+    xhr.setRequestHeader('X-Requested-With', 'fetch');                // the server answers with the device's fragment
+    xhr.timeout = WAIT;
+    xhr.onload = function () {
+      if (over) return;
+      if (xhr.status < 200 || xhr.status >= 300 || !xhr.responseText) { failed(); return; }
+      over = true;
+      swap(xhr.responseText);
+      if (window.MCSBoard) window.MCSBoard.refresh('');
+    };
+    xhr.onerror = failed; xhr.ontimeout = failed; xhr.onabort = failed;
+    setTimeout(function () { if (!over) { try { xhr.abort(); } catch (e) { /* gone */ } failed(); } }, WAIT + 2000);   // whatever the browser does
+    try { xhr.send(encode(form)); } catch (e) { failed(); }
   }
 
   /* Replace what the device shows and bind whatever arrived. A visitor who had

@@ -145,6 +145,7 @@ function space(ctx, { sky = null } = {}) {
         <span class="space-tag space-tag-dome" data-sky-solid>RED DUST CITY</span>
       </div>
       <i class="space-line" data-sky-solid aria-hidden="true"></i>
+      ${groundDish()}
       ${trajectory()}
       <div class="space-earth" aria-hidden="true">
         <img class="space-earth-img" src="/space/earth.jpg" alt="" width="${EARTH.w}" height="${EARTH.h}" decoding="async">
@@ -155,6 +156,30 @@ function space(ctx, { sky = null } = {}) {
       ${scrollNudge(ctx)}
     </div>
   </section>`;
+}
+
+/** The ground station's dish, at the line's foot on the Earth (8 October: "after the dot has come back from the habitat
+ *  to Earth, show a satellite radio beaming it into space"): a small parabolic dish standing on the limb just left of
+ *  the line, turned up and away from it, faint while the signal climbs and the answer comes down; the moment the answer
+ *  reaches the Earth it lights up — its waves going out from the feed, a dashed beam drawn up into the dark, fading as
+ *  it goes (it stops short of the sky's exchanges, which stand close to the line), and a bright dot sent along it into
+ *  the dark — then dims again until the next round. One round of the line with it: thirteen seconds (sheet.css,
+ *  space-up, space-down, dish-on, dish-shot). Drawn in its own pixels, the beam running on past the little box
+ *  (overflow); still, faint, where less motion is asked for. On a desk the first stretch of the beam's way is kept free
+ *  of the sky's exchanges and pictures (an unseen box the sky keeps clear of, space-beam-zone). */
+function groundDish() {
+  return `<i class="space-dish" data-sky-solid aria-hidden="true"><svg class="dish-svg" viewBox="-22 -30 44 30" width="44" height="30">
+        <path class="dish-feet" d="M-7 0H7"/>
+        <g transform="rotate(-35)">
+          <defs><linearGradient id="dish-fade" gradientUnits="userSpaceOnUse" x1="0" y1="-23" x2="0" y2="-320"><stop class="df-0" offset="0"/><stop class="df-1" offset="1"/></linearGradient></defs>
+          <path class="dish-beam" d="M0 -23V-320"/>
+          <g class="dish-waves"><path d="M-6 -26.5A8.5 8.5 0 0 1 6 -26.5"/><path d="M-10 -30.5A14 14 0 0 1 10 -30.5"/><path d="M-14 -35A19.5 19.5 0 0 1 14 -35"/></g>
+          <g class="dish-body"><path d="M0 0V-8"/><path class="dish-cup" d="M-11 -14Q0 -2 11 -14Z"/><path d="M0 -8V-19"/></g>
+          <circle class="dish-feed" cx="0" cy="-20" r="2"/>
+          <circle class="dish-shot" cx="0" cy="-22" r="3.2"/>
+        </g>
+      </svg></i>
+      <i class="space-beam-zone" data-sky-solid aria-hidden="true"></i>`;   // the beam's way kept free: the sky places nothing over it (a desk; sheet.css)
 }
 
 /** The trajectory, on a wider screen (sheet.css shows it there and the vertical line on a phone): the way a message
@@ -184,16 +209,15 @@ function trajectory() {
 
 /* ---------------------------------------------------------------- the second page */
 /** The second page: the two calls (calls, below) — the page's doors to the composer and to the dashboard — side by side
-    on a desk, one under the other on a phone (`reading`: the habitat's latest reading, for the live card's drawing;
-    `crew`: how many dots its radar carries). The note that stood beside them (MARS! – Mobilizing Awareness for
+    on a desk, one under the other on a phone (`crew`: how many dots the live card's radar carries). The note that stood beside them (MARS! – Mobilizing Awareness for
     Resilient Societies! – is a three-part project…) is gone: October asked for the box to go; the About page tells the
     project. The section keeps its id, `note`: the nudge on the Earth and the phone's scroll lead to it. */
-function note(ctx, { reading = null, crew = 3 } = {}) {
+function note(ctx, { crew = 3 } = {}) {
   const T = ctx.T;
   return `
   <section class="sheet sheet-p2" id="note" aria-label="${esc(T('Write to the crew, or follow them'))}" data-page>
     <div class="page2 is-calls">
-      ${calls(ctx, { reading, crew })}
+      ${calls(ctx, { crew })}
     </div>
   </section>`;
 }
@@ -211,17 +235,15 @@ function note(ctx, { reading = null, crew = 3 } = {}) {
  * (October: "have nothing there"); the two states a message passes on the way, WRITTEN and APPROVED, each a station on
  * it with its name on the drawing's foot line. The thing to know is set large, in capitals, in Mars.
  *
- * The second, in cobalt: FOLLOW WHAT THE CREW IS DOING — LIVE, with a LIVE pill on its line. Its drawing is the
- * dashboard in small, as it reads now: three of the habitat's instruments — the temperature, the humidity, the carbon
- * dioxide — each with its sign, its figure and its meter as the Sensors panel draws them (public.js, sensorTile), the
- * figures the habitat's latest reading (no reading in the last half hour: a dash and a dark meter); and the radar of
- * the astronauts tracked, its sweep going round and the crew's dots wandering (aura.css and live.js draw and move it,
- * as on the dashboard).
+ * The second, in cobalt: FOLLOW WHAT THE CREW IS DOING LIVE (no dash in it since 8 October), with a LIVE pill on its
+ * line. Its drawing is the radar of the astronauts tracked, in the middle, its sweep going round and the crew's dots
+ * wandering (aura.css and live.js draw and move it, as on the dashboard) — the three instruments beside it and the
+ * drawing's lines went on 8 October.
  *
  * The whole card is the door (a phone's Write door leads to the Write page, tabbar.js). sheet.css lays them out and
  * moves what moves; asked for less motion, the drawings stand.
  */
-function calls(ctx, { reading = null, crew = 3 } = {}) {
+function calls(ctx, { crew = 3 } = {}) {
   const T = ctx.T;
   const f1 = (v) => String(+v.toFixed(1));
   /* ---- the transmitting drawing (600 × 200): the dish at the foot, a parabola facing up and to the right, its feed at
@@ -264,37 +286,9 @@ function calls(ctx, { reading = null, crew = 3 } = {}) {
           <circle class="call-sig is-tail" r="3"><animateMotion dur="4.2s" begin="0.25s" repeatCount="indefinite" calcMode="spline" keySplines=".3 0 .4 1" keyTimes="0;1"><mpath href="#call-way-path"/></animateMotion></circle>
         </svg>`;
 
-  /* ---- the live drawing (600 × 200): three instruments on the left — the sign in its disc, the name, the figure, the
-     meter (dots for the temperature, segments for the humidity, thin bars for the carbon dioxide, lit in cobalt up to the
-     reading, the last lit one breathing) — and the radar of the astronauts on the right, as the dashboard draws it */
-  const { SENSOR_ICON } = require('./public');
-  const num = (v, d) => (v == null || !Number.isFinite(Number(v)) ? null : Number(v).toFixed(d));
-  const INSTR = [
-    { k: 'temp', name: T('Temperature').toUpperCase(), v: num(reading && reading.temp, 1), unit: '°C', lo: 0, hi: 40, kind: 'dots', n: 14 },
-    { k: 'hum', name: T('Humidity').toUpperCase(), v: num(reading && reading.hum, 0), unit: '%RH', lo: 0, hi: 100, kind: 'seg', n: 6 },
-    { k: 'co2', name: 'CO₂', v: num(reading && reading.co2, 0), unit: 'ppm', lo: 0, hi: 2000, kind: 'bars', n: 24 },
-  ];
-  const MX0 = 232, MX1 = 404;                                                               // the meters' run
-  const meter = (d, y) => {
-    const frac = d.v == null ? null : Math.max(0, Math.min(1, (Number(d.v) - d.lo) / (d.hi - d.lo)));
-    const on = frac == null ? 0 : Math.max(frac > 0 ? 1 : 0, Math.round(frac * d.n));
-    const w = MX1 - MX0, cell = (i) => `${i < on ? `class="on${i === on - 1 ? ' is-head' : ''}"` : ''}`;
-    if (d.kind === 'dots') { const step = w / (d.n - 1); return Array.from({ length: d.n }, (_, i) => `<circle ${cell(i)} cx="${f1(MX0 + i * step)}" cy="${y}" r="4.6"/>`).join(''); }
-    if (d.kind === 'seg') { const gap = 7, sw = (w - gap * (d.n - 1)) / d.n; return Array.from({ length: d.n }, (_, i) => `<rect ${cell(i)} x="${f1(MX0 + i * (sw + gap))}" y="${y - 5}" width="${f1(sw)}" height="10" rx="5"/>`).join(''); }
-    const gap = 3.2, bw = (w - gap * (d.n - 1)) / d.n;
-    return Array.from({ length: d.n }, (_, i) => `<rect ${cell(i)} x="${f1(MX0 + i * (bw + gap))}" y="${y - 12}" width="${f1(bw)}" height="24" rx="1.5"/>`).join('');
-  };
-  const rowsSvg = INSTR.map((d, i) => {
-    const y = 42 + i * 58;
-    return `
-          <g class="call-lv call-lv-${d.k}">
-            <circle class="call-lv-disc" cx="24" cy="${y}" r="19"/>
-            <g class="call-lv-ic" transform="translate(${f1(24 - 12 * 1.1)} ${f1(y - 12 * 1.1)}) scale(1.1)">${SENSOR_ICON[d.k]}</g>
-            <text class="call-lv-k" x="56" y="${y - 7}">${esc(d.name)}</text>
-            <text class="call-lv-v" x="56" y="${y + 19}">${d.v == null ? '—' : esc(d.v)}<tspan class="call-lv-u" dx="5">${esc(d.unit)}</tspan></text>
-            <g class="call-lv-m m-${d.kind}">${meter(d, y + 4)}</g>
-          </g>`;
-  }).join('');
+  /* ---- the live drawing (600 × 200): the radar of the astronauts in the middle, as the dashboard draws it — its sweep
+     going round, the crew's dots wandering (aura.css, live.js). The three instruments that stood at its left and the
+     drawing's faint lines are gone (8 October: "remove the temp, humidity etc. and the lines"). */
   const ticks = Array.from({ length: 48 }, (_, i) => {
     const a = (i / 48) * Math.PI * 2, long = i % 6 === 0, r1 = long ? 50 : 53, r2 = 57;
     return `<line x1="${(60 + r1 * Math.cos(a)).toFixed(2)}" y1="${(60 + r1 * Math.sin(a)).toFixed(2)}" x2="${(60 + r2 * Math.cos(a)).toFixed(2)}" y2="${(60 + r2 * Math.sin(a)).toFixed(2)}"${long ? ' class="dl-tick-l"' : ''}/>`;
@@ -303,8 +297,7 @@ function calls(ctx, { reading = null, crew = 3 } = {}) {
   const astros = Array.from({ length: nCrew }, (_, i) => { const a = (i / nCrew) * Math.PI * 2 + 0.6, r = 22 + (i % 2) * 10; return `<circle class="dl-astro" cx="${(60 + r * Math.cos(a)).toFixed(1)}" cy="${(60 + r * Math.sin(a)).toFixed(1)}" r="3"/>`; }).join('');
   const live = `
         <svg class="call-art call-art-live" viewBox="0 0 600 200" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-          <g class="call-grid">${[22, 56, 90, 124, 158].map((y) => `<line x1="0" y1="${y}" x2="600" y2="${y}"/>`).join('')}</g>${rowsSvg}
-          <svg class="dl-radar call-radar" x="424" y="12" width="176" height="176" viewBox="0 0 120 120">
+          <svg class="dl-radar call-radar" x="206" y="6" width="188" height="188" viewBox="0 0 120 120">
             <defs><linearGradient id="dl-sweep" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="var(--cobalt)" stop-opacity="0"/><stop offset="1" stop-color="var(--cobalt)" stop-opacity=".7"/></linearGradient></defs>
             <g class="dl-ticks">${ticks}</g>
             <circle class="dl-ring" cx="60" cy="60" r="47"/>
@@ -332,7 +325,7 @@ function calls(ctx, { reading = null, crew = 3 } = {}) {
         ${live}
         <div class="call-text">
           <span class="call-k">02 · ${T('Live feed')} <span class="call-livepill"><i aria-hidden="true"></i>${T('LIVE')}</span></span>
-          <h2 class="call-title">${T('Follow what the crew is doing — live')}</h2>
+          <h2 class="call-title">${T('Follow what the crew is doing live')}</h2>
           <p class="call-body">${T('The habitat’s sensors, today’s mission and schedule, the galley, the crew’s reports and moods — live from Red Dust City, every day of the run.')}</p>
           <span class="call-key is-dash">${T('Live Mission Dashboard')} <span aria-hidden="true">→</span></span>
         </div>

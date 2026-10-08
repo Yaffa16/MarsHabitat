@@ -4,9 +4,11 @@
 The portraits come from public/Astronaut_Pictures — the photographs as they were handed over, 3644 × 5466, one per
 person, each named Firstname_Lastname.jpg (a hyphen in a surname stays: Matthieu_Vlaminck-Maurer.jpg) — and go to
 public/crew/<lastname>.jpg at 800 × 1200 (the same 2:3, fitted, a little above the middle so a face is never cut),
-JPEG at quality 80, 70–90 kB each. With them public/crew/crew.json: the people in the order of their surnames, each with
-the picture's file and the two names as the file name gives them — the page reads that list, so a photograph added to
-the folder needs only this script run again. A file named any other way is left out and said so.
+JPEG at quality 80, 70–90 kB each. A member of the crew with one name only — the habitat's robot dog, Robodog.jpg
+(8 October: "add the robot dog in the astronaut pictures") — is named by that one name and stands after the people.
+With them public/crew/crew.json: the people in the order of their surnames, then those with one name, each with the
+picture's file and the names as the file name gives them — the page reads that list, so a photograph added to the
+folder needs only this script run again. A file named any other way is left out and said so.
 
 The logos come from public/PartnerLogo — 1.jpeg to 5.jpg, in the order the folder gives them — and go to
 public/partners/<name>.png as RGB or RGBA PNGs at their own size (none is over 100 px tall; the first is a CMYK JPEG,
@@ -27,9 +29,12 @@ LOGO_NAMES = {'1.jpeg': 'staatstheater-karlsruhe', '2.png': 'naturkundemuseum-ka
 
 
 def person(filename):
-    """'Bernd_Lintermann.jpg' -> ('Bernd', 'Lintermann'); 'Matthieu_Vlaminck-Maurer.jpg' -> ('Matthieu', 'Vlaminck-Maurer'); else None."""
+    """'Bernd_Lintermann.jpg' -> ('Bernd', 'Lintermann'); 'Matthieu_Vlaminck-Maurer.jpg' -> ('Matthieu', 'Vlaminck-Maurer');
+    one name alone — 'Robodog.jpg' — -> ('Robodog', ''); else None."""
     m = re.match(r'^([^_]+)_([^_]+)\.jpe?g$', filename, re.I)
-    return (m.group(1), m.group(2)) if m else None
+    if m: return (m.group(1), m.group(2))
+    m = re.match(r'^([^_.]+)\.jpe?g$', filename, re.I)
+    return (m.group(1), '') if m else None
 
 
 def slug(name):
@@ -48,14 +53,14 @@ def portraits():
         first, last = who
         im = ImageOps.exif_transpose(Image.open(os.path.join(PICTURES, f))).convert('RGB')
         im = ImageOps.fit(im, (800, 1200), Image.LANCZOS, centering=(0.5, 0.4))
-        name = slug(last) + '.jpg'
+        name = slug(last or first) + '.jpg'
         im.save(os.path.join(CREW, name), 'JPEG', quality=80, optimize=True, progressive=True)
         people.append({'file': name, 'first': first, 'last': last})
         print(os.path.join(CREW, name), os.path.getsize(os.path.join(CREW, name)) // 1024, 'kB')
-    people.sort(key=lambda x: (locale_key(x['last']), locale_key(x['first'])))
+    people.sort(key=lambda x: (0 if x['last'] else 1, locale_key(x['last'] or x['first']), locale_key(x['first'])))
     with open(os.path.join(CREW, 'crew.json'), 'w', encoding='utf-8') as out:
         json.dump(people, out, ensure_ascii=False, indent=2); out.write('\n')
-    print(os.path.join(CREW, 'crew.json'), len(people), 'people, by surname')
+    print(os.path.join(CREW, 'crew.json'), len(people), 'in all, by surname, those with one name after them')
 
 
 def locale_key(s):

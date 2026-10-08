@@ -19,17 +19,20 @@ const { solFold } = require('./sol');
 
 /* Who we are: the crew's portraits — public/crew, made by tools/crew-pictures.py from the photographs in
    public/Astronaut_Pictures (Firstname_Lastname.jpg): one picture per person at 800 × 1200 and crew.json, the people in
-   the order of their surnames with the two names as the file names give them, read here once at start — and the partners
+   the order of their surnames with the two names as the file names give them, then the crew with one name — the
+   habitat's robot dog, Robodog (8 October) — read here once at start — and the partners
    (public/partners — the logos from public/PartnerLogo, in the order the folder gives them: 1 and 2 in cooperation with,
    3 to 5 supporters). */
 const CREW = (() => {
-  try { return JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../../../public/crew/crew.json'), 'utf8')).filter((x) => x && x.file && x.last); }
+  try { return JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../../../public/crew/crew.json'), 'utf8')).filter((x) => x && x.file && (x.last || x.first)); }
   catch { return []; }
 })();
 const PARTNERS = {
   cooperation: [['staatstheater-karlsruhe', 'Badisches Staatstheater Karlsruhe'], ['naturkundemuseum-karlsruhe', 'Naturkundemuseum Karlsruhe']],
   supporters: [['eon-foundation', 'E.ON Foundation'], ['lbbw-stiftung', 'LBBW Stiftung'], ['innovationsfonds-kunst', 'Innovationsfonds Kunst Baden-Württemberg']],
 };
+/** A member's name as the file gives it: first and last, or the one name alone (Robodog). */
+const fullName = (c) => [c.first, c.last].filter(Boolean).join(' ');
 const logos = (list) => `<div class="logos">${list.map(([f, name]) => `<span class="logo"><img src="/partners/${f}.png" alt="${esc(name)}" title="${esc(name)}" loading="lazy" decoding="async"></span>`).join('')}</div>`;
 
 /* The prose is written in English and carried, paragraph by paragraph, in
@@ -129,14 +132,14 @@ function whoFold(crew, T, ctx) {
       return `
       <div class="officer-card">
         <div class="eyebrow">${esc(T(c.role))}</div>
-        ${pic ? `<figure class="officer-pic"><img src="/crew/${esc(pic.file)}" alt="${esc(pic.first)} ${esc(pic.last)}" width="800" height="1200" loading="lazy" decoding="async"><figcaption>${esc(pic.first)} ${esc(pic.last)}</figcaption></figure>` : ''}
+        ${pic ? `<figure class="officer-pic"><img src="/crew/${esc(pic.file)}" alt="${esc(fullName(pic))}" width="800" height="1200" loading="lazy" decoding="async"><figcaption>${esc(fullName(pic))}</figcaption></figure>` : ''}
         <h3 class="officer-title">${esc(officer.shown(c.designation))}</h3>
         <p class="note officer-mood">${c.mood ? `${esc(T(t.condition))} · ${esc(T(t.lines[0]))}` : T('No state filed yet')}</p>
       </div>`; }).join('')}
     </div>`, 'mars-side')}
   ${CREW.length ? panel('THE CREW', `
     <div class="crew-wall">
-      ${CREW.map((c) => `<figure class="crew-pic"><img src="/crew/${esc(c.file)}" alt="" width="800" height="1200" loading="lazy" decoding="async"><figcaption>${esc(c.first)} ${esc(c.last)}</figcaption></figure>`).join('')}
+      ${CREW.map((c) => `<figure class="crew-pic"><img src="/crew/${esc(c.file)}" alt="" width="800" height="1200" loading="lazy" decoding="async"><figcaption>${esc(fullName(c))}</figcaption></figure>`).join('')}
     </div>`, 'mars-side') : ''}
   ${panel('PRODUCTION', `
     ${eyebrow(T('Produced by'))}

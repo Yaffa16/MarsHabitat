@@ -194,10 +194,15 @@
   }
 
   /* ------------------------------------------------- the instruments' tiles */
-  /* Every instrument a tile of one make (8 October, after a racing car's dash): its figure large, a meter under it — a
-     row of segments, of thin bars or of dots (public.js draws the cells, data-n says how many) lit up to the reading on
-     the instrument's scale, red past its limit — and a word on the reading where there is one: the carbon dioxide's
-     limit, the air quality's band as the sensor names it, how the humidity feels. */
+  /* Every instrument a tile of one make — its figure large, a word on the reading where there is one (the carbon
+     dioxide's limit, the air quality's band as the sensor names it, how the humidity feels) — and each with a drawing of
+     its own (8 October: "for the sensors' visualisation use more than just the horizontal filling line — varied but
+     beautiful"): the carbon dioxide the day's curve under its limit; the temperature a thermometer, its comfortable
+     range marked; the humidity a round vessel of water, its surface moving; the air pressure a barometer's needle over
+     its normal range; the air quality the sensor's seven bands with a pointer on the one it reads; the light a sun whose
+     rays light up with it; the compounds the day's hours as columns, this hour's in Mars (the oxygen's ring is the
+     server's, public.js, oxygenTileInner). Each is drawn in its host's own pixels — the wide ones measure it — in the
+     theme's colours (aura.css, .viz), red past a limit, and only drawn again when what it shows has changed. */
   function iaqClass(view) {
     for (var i = view.length - 1; i >= 0; i--) {
       var c = view[i].iaqc;
@@ -206,34 +211,153 @@
     return null;
   }
   function titled(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }
-  function fillMeter(host, frac, hot) {
-    if (!host) return;
-    var n = Number(host.getAttribute('data-n')) || host.children.length || 10;
-    var on = frac === null || !isFinite(frac) ? 0 : Math.max(frac > 0 ? 1 : 0, Math.min(n, Math.round(frac * n)));
-    if (host.children.length !== n) { host.innerHTML = ''; for (var i = 0; i < n; i++) host.appendChild(document.createElement('i')); }
-    for (var k = 0; k < n; k++) { var want = k < on ? 'on' : ''; if (host.children[k].className !== want) host.children[k].className = want; }
-    host.classList.toggle('is-hot', !!hot);
-  }
   function iaqBand(v) { var b = chan('iaq').bands; for (var i = 0; i < b.length; i++) if (v <= b[i]) return i; return b.length; }
   var TILE_KEYS = ['co2', 'temp', 'hum', 'pres', 'iaq', 'light', 'voc'];
+  var r1 = function (v) { return Math.round(v * 10) / 10; };
+  var clamp01 = function (v) { return Math.max(0, Math.min(1, v)); };
+  function svg(w, h, inner, fit) {
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" width="100%" height="100%"' + (fit ? '' : ' preserveAspectRatio="none"') + ' aria-hidden="true">' + inner + '</svg>';
+  }
+  // a point on a circle: the angle in degrees, 0 at the right, clockwise (the screen's y goes down)
+  function on(cx, cy, r, deg) { var a = deg * Math.PI / 180; return [r1(cx + r * Math.cos(a)), r1(cy + r * Math.sin(a))]; }
+  function arc(cx, cy, r, d0, d1) {
+    var p = on(cx, cy, r, d0), q = on(cx, cy, r, d1);
+    return 'M' + p[0] + ' ' + p[1] + 'A' + r + ' ' + r + ' 0 ' + (Math.abs(d1 - d0) > 180 ? 1 : 0) + ' 1 ' + q[0] + ' ' + q[1];
+  }
+  // the day's readings of one channel, thinned to about one a pixel or two (a mean in each bucket), with their times
+  function series(view, key, buckets) {
+    var pts = view.filter(function (r) { return r[key] !== null && r[key] !== undefined && isFinite(r[key]); });
+    if (pts.length <= buckets) return pts.map(function (r) { return [r.t, Number(r[key])]; });
+    var t0 = pts[0].t, t1 = pts[pts.length - 1].t, span = Math.max(1, t1 - t0), out = [], b = -1, sum = 0, n = 0, ts = 0;
+    pts.forEach(function (r) {
+      var k = Math.min(buckets - 1, Math.floor((r.t - t0) / span * buckets));
+      if (k !== b && n) { out.push([ts / n, sum / n]); sum = 0; n = 0; ts = 0; }
+      b = k; sum += Number(r[key]); ts += r.t; n++;
+    });
+    if (n) out.push([ts / n, sum / n]);
+    return out;
+  }
+  // the carbon dioxide: the day's curve, midnight at the left and now at the right, under its limit (dashed), the latest
+  // reading a dot with a halo; red past the limit
+  function drawSpark(W, H, view, key, lo, hi, limit, hot) {
+    var x0 = 2, x1 = W - 6, y0 = 6, y1 = H - 3, t0 = dayStart(), t1 = Math.max(Date.now(), t0 + 3600000);
+    var pts = series(view, key, Math.max(24, Math.round(W / 2)));
+    // the height drawn: the day's readings and the limit, with a little room above and below — so the curve has its shape
+    var vs = pts.map(function (p) { return p[1]; }).concat([limit]), mn = Math.min.apply(null, vs), mx = Math.max.apply(null, vs), pad = Math.max(40, (mx - mn) * 0.18);
+    var bot = Math.max(lo, mn - pad), top = Math.min(Math.max(hi, mx + pad), mx + pad);
+    var X = function (t) { return r1(x0 + (x1 - x0) * clamp01((t - t0) / (t1 - t0))); }, Y = function (v) { return r1(y1 - (y1 - y0) * clamp01((v - bot) / ((top - bot) || 1))); };
+    var g = '<defs><linearGradient id="vz-g-' + key + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="vz-stop-a"/><stop offset="1" class="vz-stop-b"/></linearGradient></defs>';
+    var out = g + '<line class="vz-base" x1="' + x0 + '" y1="' + y1 + '" x2="' + x1 + '" y2="' + y1 + '"/>';
+    out += '<line class="vz-limit" x1="' + x0 + '" y1="' + Y(limit) + '" x2="' + x1 + '" y2="' + Y(limit) + '"/>';
+    if (pts.length) {
+      var line = pts.map(function (p, i) { return (i ? 'L' : 'M') + X(p[0]) + ' ' + Y(p[1]); }).join('');
+      var last = pts[pts.length - 1];
+      if (pts.length > 1) out += '<path class="vz-area" fill="url(#vz-g-' + key + ')" d="' + line + 'L' + X(last[0]) + ' ' + y1 + 'L' + X(pts[0][0]) + ' ' + y1 + 'Z"/><path class="vz-line" d="' + line + '"/>';
+      out += '<circle class="vz-halo" cx="' + X(last[0]) + '" cy="' + Y(last[1]) + '" r="6.5"/><circle class="vz-dot" cx="' + X(last[0]) + '" cy="' + Y(last[1]) + '" r="3.2"/>';
+    }
+    return svg(W, H, out) ;
+  }
+  // the temperature: a thermometer, its column risen to the reading, the comfortable range (18–26 °C) marked beside it
+  function drawThermo(val, lo, hi) {
+    var Y = function (v) { return r1(72 - 62 * clamp01((v - lo) / (hi - lo))); };
+    var out = '<rect class="vz-band" x="30" y="' + Y(26) + '" width="4" height="' + r1(Y(18) - Y(26)) + '" rx="2"/>';
+    for (var t = lo; t <= hi; t += 10) out += '<line class="vz-tick" x1="30" x2="' + (t % 20 === 0 ? 36 : 34) + '" y1="' + Y(t) + '" y2="' + Y(t) + '"/>';
+    out += '<rect class="vz-glass" x="13" y="5" width="14" height="74" rx="7"/><circle class="vz-glass" cx="20" cy="84" r="12"/>';
+    if (val !== null) out += '<rect class="vz-fill" x="16.5" y="' + Y(val) + '" width="7" height="' + r1(84 - Y(val)) + '" rx="3.5"/><circle class="vz-fill" cx="20" cy="84" r="8.5"/>';
+    else out += '<circle class="vz-empty" cx="20" cy="84" r="8.5"/>';
+    return svg(40, 100, out, true);
+  }
+  // the humidity: a round vessel, water to the reading, its surface two waves drifting (still where less motion is asked for)
+  function drawLiquid(val, key) {
+    var lev = val === null ? 96 : r1(92 - 84 * clamp01(val / 100));
+    var wave = function (d) { return '<path class="vz-wave' + (d ? ' is-back' : '') + '" d="M-100 ' + (d ? 1 : 0) + 'Q-87.5 ' + (d ? 5 : -4) + ' -75 ' + (d ? 1 : 0) + 'T-50 ' + (d ? 1 : 0) + 'T-25 ' + (d ? 1 : 0) + 'T0 ' + (d ? 1 : 0) + 'T25 ' + (d ? 1 : 0) + 'T50 ' + (d ? 1 : 0) + 'T75 ' + (d ? 1 : 0) + 'T100 ' + (d ? 1 : 0) + 'T125 ' + (d ? 1 : 0) + 'T150 ' + (d ? 1 : 0) + 'T175 ' + (d ? 1 : 0) + 'T200 ' + (d ? 1 : 0) + 'V120H-100Z"/>'; };
+    var out = '<defs><clipPath id="vz-c-' + key + '"><circle cx="50" cy="50" r="41"/></clipPath></defs>';
+    out += '<circle class="vz-vessel" cx="50" cy="50" r="46"/><circle class="vz-inside" cx="50" cy="50" r="41"/>';
+    if (val !== null) out += '<g clip-path="url(#vz-c-' + key + ')"><g transform="translate(0 ' + lev + ')">' + wave(1) + wave(0) + '</g></g>';
+    return svg(100, 100, out, true);
+  }
+  // the air pressure: a barometer — a half dial, its normal range (990–1030 hPa) along the rim, a tick every 10 hPa, the
+  // needle on the reading
+  function drawDial(W, H, val, lo, hi) {
+    var R = Math.max(10, Math.min(W / 2 - 18, H - 12)), cx = r1(W / 2), cy = H - 4;
+    var A = function (v) { return 180 + 180 * clamp01((v - lo) / (hi - lo)); };
+    var out = '<path class="vz-rim" d="' + arc(cx, cy, R, 180, 360) + '"/>';
+    out += '<path class="vz-normal" d="' + arc(cx, cy, R, A(990), A(1030)) + '"/>';
+    for (var v = lo; v <= hi; v += 10) { var long = (v - lo) % 50 === 0, p = on(cx, cy, R - 4, A(v)), q = on(cx, cy, R - (long ? 12 : 8), A(v)); out += '<line class="vz-tick' + (long ? ' is-long' : '') + '" x1="' + p[0] + '" y1="' + p[1] + '" x2="' + q[0] + '" y2="' + q[1] + '"/>'; }
+    out += '<text class="vz-k" x="' + r1(cx - R - 3) + '" y="' + (cy - 1) + '" text-anchor="end">' + lo + '</text><text class="vz-k" x="' + r1(cx + R + 3) + '" y="' + (cy - 1) + '" text-anchor="start">' + hi + '</text>';
+    if (val !== null) { var n = on(cx, cy, R - 10, A(val)); out += '<line class="vz-needle" x1="' + cx + '" y1="' + cy + '" x2="' + n[0] + '" y2="' + n[1] + '"/>'; }
+    out += '<circle class="vz-hub" cx="' + cx + '" cy="' + cy + '" r="4"/>';
+    return svg(W, H, out, true);
+  }
+  // the air quality: the sensor's seven bands, excellent to extreme, the one it reads lit and a pointer over it
+  function drawBand(W, H, val, hot) {
+    var bands = chan('iaq').bands, edges = [0].concat(bands, [500]), n = edges.length - 1, gap = 3, bw = (W - gap * (n - 1)) / n, y = H - 14;
+    var i = val === null ? -1 : iaqBand(val), out = '';
+    for (var k = 0; k < n; k++) out += '<rect class="vz-iaq vz-iaq-' + k + (k === i ? ' is-on' : '') + '" x="' + r1(k * (bw + gap)) + '" y="' + y + '" width="' + r1(bw) + '" height="10" rx="5"/>';
+    if (val !== null) {
+      var f = clamp01((val - edges[i]) / ((edges[i + 1] - edges[i]) || 1)), x = r1(i * (bw + gap) + bw * f);
+      out += '<path class="vz-caret' + (hot ? ' is-hot' : '') + '" d="M' + r1(x - 6) + ' ' + (y - 13) + 'L' + r1(x + 6) + ' ' + (y - 13) + 'L' + x + ' ' + (y - 3) + 'Z"/>';
+    }
+    return svg(W, H, out, true);
+  }
+  // the light: a sun, its twelve rays lit up with the reading, its heart brighter as it rises
+  function drawSun(val, lo, hi) {
+    var f = val === null ? 0 : clamp01((val - lo) / (hi - lo)), lit = val === null ? 0 : Math.max(val > 0 ? 1 : 0, Math.round(f * 12)), out = '';
+    for (var k = 0; k < 12; k++) { var d = -90 + k * 30, p = on(50, 50, 25, d), q = on(50, 50, 41, d); out += '<line class="vz-ray' + (k < lit ? ' is-on' : '') + '" x1="' + p[0] + '" y1="' + p[1] + '" x2="' + q[0] + '" y2="' + q[1] + '"/>'; }
+    out += '<circle class="vz-core' + (val === null ? '' : ' is-on') + '" cx="50" cy="50" r="15" style="opacity:' + (val === null ? 1 : r1(0.4 + 0.6 * f)) + '"/>';
+    return svg(100, 100, out, true);
+  }
+  // the compounds: the day's twenty-four hours as columns, each the hour's mean, this hour's in Mars; the hours to come a dot
+  function drawCols(W, H, view, key, hi) {
+    var t0 = dayStart(), now = Math.min(23, Math.floor((Date.now() - t0) / 3600000)), sums = [], ns = [], k;
+    for (k = 0; k < 24; k++) { sums.push(0); ns.push(0); }
+    view.forEach(function (r) { var v = r[key]; if (v === null || v === undefined || !isFinite(v)) return; var h = Math.floor((r.t - t0) / 3600000); if (h >= 0 && h < 24) { sums[h] += Number(v); ns[h]++; } });
+    var means = sums.map(function (s, h) { return ns[h] ? s / ns[h] : null; });
+    var top = Math.max(1, niceMax(Math.max.apply(null, means.map(function (m) { return m || 0; }).concat([hi * 0.2]))));
+    var gap = Math.max(1.5, W / 24 * 0.28), bw = (W - gap * 23) / 24, base = H - 2, out = '<line class="vz-base" x1="0" y1="' + base + '" x2="' + W + '" y2="' + base + '"/>';
+    for (k = 0; k < 24; k++) {
+      var x = r1(k * (bw + gap));
+      if (means[k] === null) { if (k > now) out += '<circle class="vz-later" cx="' + r1(x + bw / 2) + '" cy="' + (base - 2) + '" r="1.3"/>'; continue; }
+      var h = Math.max(2, (base - 4) * clamp01(means[k] / top));
+      out += '<rect class="vz-col' + (k === now ? ' is-now' : '') + '" x="' + x + '" y="' + r1(base - h) + '" width="' + r1(bw) + '" height="' + r1(h) + '" rx="' + r1(Math.min(2, bw / 2)) + '"/>';
+    }
+    return svg(W, H, out);
+  }
+  // the drawing in its host, drawn again only when what it shows has changed (or the host has been resized)
+  function drawViz(host, key, view, val, lo, hi, hot) {
+    if (!host) return;
+    var W = Math.round(host.clientWidth) || 160, H = Math.round(host.clientHeight) || 56, ch = chan(key), html;
+    var last = view.length ? view[view.length - 1].t : 0;
+    var stamp = [W, H, val, hot, view.length, last, key === 'co2' || key === 'voc' ? Math.floor(Date.now() / 60000) : 0].join('|');
+    if (host.__stamp === stamp) return;
+    host.__stamp = stamp;
+    if (key === 'co2') html = drawSpark(W, H, val === null ? [] : view, key, lo, hi, ch.alertAbove, hot);
+    else if (key === 'temp') html = drawThermo(val, lo, hi);
+    else if (key === 'hum') html = drawLiquid(val, key);
+    else if (key === 'pres') html = drawDial(W, H, val, lo, hi);
+    else if (key === 'iaq') html = drawBand(W, H, val, hot);
+    else if (key === 'light') html = drawSun(val, lo, hi);
+    else html = drawCols(W, H, val === null ? [] : view, key, hi);
+    host.innerHTML = html;
+    host.classList.toggle('is-hot', !!hot);
+  }
   function renderTile(view, key) {
     var ch = chan(key);
     var pts = view.filter(function (r) { return r[key] !== null && r[key] !== undefined; });
     var val = pts.length ? Number(pts[pts.length - 1][key]) : null;
     var host = $('hbt-m-' + key), valEl = $(key + 'Val'), word = $(key + 'Verdict');
     var tile = host && host.closest ? host.closest('.tile') : null;
+    var lo = ch.domain[0], hi = ch.domain[1];
     if (val === null || !isFinite(val)) {
-      fillMeter(host, null, false);
+      drawViz(host, key, [], null, lo, hi, false);
       if (valEl) { valEl.innerHTML = '—<em>' + ch.unit + '</em>'; valEl.classList.remove('hot'); }
       if (word) { word.textContent = tr('No current reading'); word.classList.remove('hot'); }
       if (tile) tile.classList.remove('is-hot');
       return;
     }
-    var lo = ch.domain[0], hi = ch.domain[1];
     if (key === 'light' || key === 'voc') hi = Math.max(hi, niceMax(val));          // the scale widens when a reading passes it
     var hot = isHot(ch, val);
-    var frac = key === 'iaq' ? (iaqBand(val) + 1) / (ch.bands.length + 1) : (Math.min(hi, Math.max(lo, val)) - lo) / ((hi - lo) || 1);
-    fillMeter(host, frac, hot);
+    drawViz(host, key, view, val, lo, hi, hot);
     if (valEl) { valEl.innerHTML = val.toFixed(ch.decimals) + '<em>' + ch.unit + '</em>'; valEl.classList.toggle('hot', hot); }
     var text = '';
     if (key === 'co2') text = hot ? tr('Over') + ' ' + ch.alertAbove + ' ppm' : tr('Within limit');
@@ -815,6 +939,11 @@
     clearTimeout(rz);
     rz = setTimeout(function () { if (state.rows.length) render(); }, 200);
   });
+  // a drawing's host taking another size — its folder opened, the layout turned — has it drawn again for that size
+  if ('ResizeObserver' in window) {
+    var ro = new ResizeObserver(function () { clearTimeout(rz); rz = setTimeout(function () { render(); }, 200); });
+    TILE_KEYS.forEach(function (k) { var h = $('hbt-m-' + k); if (h) ro.observe(h); });
+  }
 
   // Stored history first, so something shows instantly; the fetch merges on top.
   var stored = loadLocal();

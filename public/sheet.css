@@ -235,11 +235,39 @@ body.landing .space-tag-dome { top: 100%; right: calc(50% + 14px); margin-top: 0
 body.landing .space-line { position: absolute; z-index: 2; left: 50%; width: 2px; margin-left: -1px; top: calc(var(--dome-top) + var(--dome-w) * 0.676); bottom: calc(var(--earth-arc) - 6px);   /* from the habitat's front foot, over the Earth's haze, down onto the limb */
   background: repeating-linear-gradient(180deg, rgba(255,255,255,.6) 0 6px, transparent 6px 12px); }
 body.landing .space-line::before, body.landing .space-line::after { content: ""; position: absolute; left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; opacity: 0; }
-body.landing .space-line::before { bottom: 0; background: #fff; box-shadow: 0 0 10px 2px rgba(120,170,255,.9); animation: space-up 9s linear infinite; }
-body.landing .space-line::after { top: 0; background: var(--hud-hot); box-shadow: 0 0 10px 2px rgba(var(--hud-hot-rgb),.8); animation: space-down 9s linear infinite; }
-@keyframes space-up { 0% { bottom: 0; opacity: 0; } 4% { opacity: 1; } 42% { bottom: calc(100% - 8px); opacity: 1; } 46%, 100% { bottom: calc(100% - 8px); opacity: 0; } }
-@keyframes space-down { 0%, 52% { top: 0; opacity: 0; } 56% { opacity: 1; } 94% { top: calc(100% - 8px); opacity: 1; } 98%, 100% { top: calc(100% - 8px); opacity: 0; } }
+body.landing .space-line::before { bottom: 0; background: #fff; box-shadow: 0 0 10px 2px rgba(120,170,255,.9); animation: space-up 13s linear infinite; }
+body.landing .space-line::after { top: 0; background: var(--hud-hot); box-shadow: 0 0 10px 2px rgba(var(--hud-hot-rgb),.8); animation: space-down 13s linear infinite; }
+/* one round, thirteen seconds: the signal up (0–3.8 s), the answer down (4.7–8.5 s), then the ground station's dish beams
+   it into space (8.5–12 s, below) — the climb and the descent at the pace they always had */
+@keyframes space-up { 0% { bottom: 0; opacity: 0; } 2.8% { opacity: 1; } 29.1% { bottom: calc(100% - 8px); opacity: 1; } 31.8%, 100% { bottom: calc(100% - 8px); opacity: 0; } }
+@keyframes space-down { 0%, 36% { top: 0; opacity: 0; } 38.8% { opacity: 1; } 65.1% { top: calc(100% - 8px); opacity: 1; } 67.8%, 100% { top: calc(100% - 8px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { body.landing .space-line::before, body.landing .space-line::after { animation: none; } }
+/* the ground station's dish (landing.js, groundDish — 8 October): on the limb just left of the line's foot, faint; when
+   the answer reaches the Earth it lights up, its waves go out, the dashed beam runs up into the dark and a bright dot
+   flies out along it */
+body.landing .space-dish { position: absolute; z-index: 2; left: calc(50% - 34px); bottom: calc(var(--earth-arc) - 3px); width: 44px; height: 30px; pointer-events: none; opacity: .5; animation: dish-on 13s linear infinite; }
+body.landing .space-dish .dish-svg { position: absolute; left: 0; bottom: 0; width: 44px; height: 30px; overflow: visible; }
+body.landing .space-dish .dish-feet, body.landing .space-dish .dish-body path { fill: none; stroke: #fff; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+body.landing .space-dish .dish-body .dish-cup { fill: rgba(255,255,255,.14); }
+body.landing .space-dish .dish-feed { fill: var(--hud-hot); filter: drop-shadow(0 0 4px rgba(var(--hud-hot-rgb),.9)); }
+body.landing .space-dish .dish-waves path { fill: none; stroke: var(--hud-hot); stroke-width: 1.6; stroke-linecap: round; opacity: 0; animation: dish-wave 13s linear infinite; }
+body.landing .space-dish .dish-waves path:nth-child(2) { animation-name: dish-wave-2; }
+body.landing .space-dish .dish-waves path:nth-child(3) { animation-name: dish-wave-3; }
+body.landing .space-dish .dish-beam { fill: none; stroke: url(#dish-fade); stroke-width: 1.6; stroke-dasharray: 5 7; opacity: 0; animation: dish-beam 13s linear infinite; }
+body.landing .space-dish .df-0 { stop-color: var(--hud-hot); stop-opacity: .9; }
+body.landing .space-dish .df-1 { stop-color: var(--hud-hot); stop-opacity: 0; }
+body.landing .space-dish .dish-shot { fill: #fff; opacity: 0; filter: drop-shadow(0 0 7px rgba(var(--hud-hot-rgb),.95)); animation: dish-shot 13s linear infinite; }
+body.landing .space-beam-zone { display: none; }
+@media (min-width: 761px) and (min-height: 521px) {
+  body.landing .space-beam-zone { display: block; position: absolute; left: calc(50% - 162px); bottom: calc(var(--earth-arc) + 14px); width: 140px; height: 200px; visibility: hidden; pointer-events: none; }   /* the beam's first stretch, which the sky keeps clear of */
+}
+@keyframes dish-on { 0%, 62% { opacity: .5; } 65%, 91% { opacity: 1; } 95%, 100% { opacity: .5; } }
+@keyframes dish-beam { 0%, 65% { opacity: 0; stroke-dashoffset: 0; } 68% { opacity: 1; } 89% { opacity: 1; } 93%, 100% { opacity: 0; stroke-dashoffset: -96; } }
+@keyframes dish-shot { 0%, 66% { transform: translateY(0); opacity: 0; } 67.5% { opacity: 1; } 80% { opacity: 1; } 88%, 100% { transform: translateY(-300px); opacity: 0; } }
+@keyframes dish-wave { 0%, 65% { opacity: 0; } 67% { opacity: .95; } 72% { opacity: 0; } 74% { opacity: .95; } 79% { opacity: 0; } 81% { opacity: .95; } 86%, 100% { opacity: 0; } }
+@keyframes dish-wave-2 { 0%, 66.5% { opacity: 0; } 68.5% { opacity: .95; } 73.5% { opacity: 0; } 75.5% { opacity: .95; } 80.5% { opacity: 0; } 82.5% { opacity: .95; } 87.5%, 100% { opacity: 0; } }
+@keyframes dish-wave-3 { 0%, 68% { opacity: 0; } 70% { opacity: .95; } 75% { opacity: 0; } 77% { opacity: .95; } 82% { opacity: 0; } 84% { opacity: .95; } 89%, 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { body.landing .space-dish, body.landing .space-dish * { animation: none !important; } body.landing .space-dish .dish-shot, body.landing .space-dish .dish-beam { display: none; } }
 /* the trajectory (landing.js, trajectory; public/sky.js sets its paths): a desk's way for a message — a straight line
    from the Earth's horizon in the lower left corner up to the habitat in the north-east, dashed like a phone's line,
    and on past the habitat into space, thinner, fading out along a gradient; the signal, the answer and the one that
@@ -568,22 +596,22 @@ body.landing .sheet-cta span[aria-hidden] { font-size: 16px; letter-spacing: 0; 
 
 /* ====================================================================== the station's own surfaces */
 /* the composer as the device it was drawn as: the orange light at its top left (it pulses while a message crosses), the
-   ribbed grip at the middle of its top edge, the soft knob and the vents at its top right (station.css draws them) */
-body.landing .dev-led, body.landing .dev-grip, body.landing .dev-knob, body.landing .dev-vents { display: block; }
+   ribbed grip at the middle of its top edge, the vents at its top right (station.css draws them; the soft knob beside
+   them, a grey blur that read as a smudge, is gone — 8 October) */
+body.landing .dev-led, body.landing .dev-grip, body.landing .dev-vents { display: block; }
 body.landing .composer-device { padding-top: 70px; }
 @media (max-width: 760px), (max-height: 520px) {
   body.landing .composer-device { padding-top: 56px; }
   body.landing .dev-led { left: 22px; top: 20px; }
-  body.landing .dev-knob { display: none; }
   body.landing .dev-vents { right: 22px; top: 16px; width: 36px; height: 24px; }
   /* the pop-up on the messages page: the cross that closes it keeps the top right corner; the vents step in beside it */
   html.js body.landing.messages .dev-vents { right: 62px; }
   body.landing.messages .composer-device { padding-top: 52px; }
 }
-/* the composer's pop-up on every page (aura.css, the composer's pop-up) is a plain window: no light, grip, knob or vents
+/* the composer's pop-up on every page (aura.css, the composer's pop-up) is a plain window: no light, grip or vents
    — its title and its cross at the top, the rule of Mars along its top edge. On a phone the Write page's dock keeps the
    device's light and vents, as it was drawn. */
-body.landing .portal-pop .dev-led, body.landing .portal-pop .dev-grip, body.landing .portal-pop .dev-knob, body.landing .portal-pop .dev-vents { display: none; }
+body.landing .portal-pop .dev-led, body.landing .portal-pop .dev-grip, body.landing .portal-pop .dev-vents { display: none; }
 body.landing .portal-pop .composer-device { padding-top: 24px; }
 @media (max-width: 760px) and (min-height: 521px) {
   body.landing.messages .portal-pop .dev-led, body.landing.messages .portal-pop .dev-vents { display: block; }
@@ -905,19 +933,7 @@ body.landing .call-stations circle { fill: var(--paper); stroke: var(--mars); st
 body.landing .call-stations text { fill: var(--ink); fill-opacity: .78; }
 body.landing .call-drop { stroke: var(--mars); stroke-opacity: .4; stroke-width: 1.2; stroke-dasharray: 2 4; }   /* from a station down to its name on the foot line */
 body.landing .call-hab text { fill: var(--mars-ink); font-weight: 700; text-anchor: end; }  /* INTO SPACE over the way's open end — nothing drawn there (October) */
-/* the live drawing: the instruments' signs in their discs, white on the night's black and the ink by day (aura.css,
-   --ic-disc); the names small in capitals, the figures large; the meters' cells dark, lit in cobalt up to the reading */
-body.landing .call-lv-disc { fill: var(--ic-disc); }
-body.landing .call-lv-ic { color: var(--ic-glyph); fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-body.landing .call-art .call-lv-k { font-size: 14px; letter-spacing: .14em; text-anchor: start; fill: var(--dim); }
-body.landing .call-art .call-lv-v { font-size: 25px; font-weight: 700; letter-spacing: -.01em; text-anchor: start; fill: var(--ink); }
-body.landing .call-art .call-lv-u { font-size: 14px; font-weight: 500; letter-spacing: 0; fill: var(--dim); }
-body.landing .call-lv-m circle, body.landing .call-lv-m rect { fill: var(--meter-off); }
-body.landing .call-lv-m .on { fill: var(--cobalt-fill); }
-:root[data-theme="dark"] body.landing .call-lv-m .on { fill: #6f86ff; filter: drop-shadow(0 0 4px rgba(111,134,255,.6)); }
-body.landing .call-lv-m .is-head { animation: call-breathe 2.4s ease-in-out infinite; }
-@keyframes call-breathe { 50% { opacity: .35; } }
-body.landing .call-art .call-radar { width: 176px; height: 176px; overflow: visible; }   /* the dashboard's radar (aura.css, .dl-radar), larger here */
+body.landing .call-art .call-radar { width: 188px; height: 188px; max-width: none; overflow: visible; }   /* the dashboard's radar (aura.css, .dl-radar), larger here, alone in the middle of the live card's drawing (8 October) */
 body.landing .call-sig { fill: #fff; stroke: var(--mars); stroke-width: 2; filter: drop-shadow(0 0 6px rgba(255,90,31,.85)); }
 body.landing .call-sig.is-tail { fill: var(--mars); stroke: none; opacity: .55; filter: none; }
 /* the live card carries no drawing: a LIVE pill on its line, its words in the middle of the card */
@@ -983,9 +999,6 @@ body.landing .call:hover .call-key { filter: brightness(1.08); transform: transl
   body.landing .call-key { min-height: 46px; margin-top: 18px; }
   /* the drawings are small here: their words a size up, in the drawing's units */
   body.landing .call-art text { font-size: 18px; }
-  body.landing .call-art .call-lv-k { font-size: 17px; }
-  body.landing .call-art .call-lv-v { font-size: 29px; }
-  body.landing .call-art .call-lv-u { font-size: 17px; }
 
   body.landing:not(.inner) [data-page].is-tall .call { scroll-snap-align: start; }
   body.landing:not(.inner) [data-page].is-tall .call.no-stop { scroll-snap-align: none; }
@@ -998,7 +1011,6 @@ body.landing .call:hover .call-key { filter: brightness(1.08); transform: transl
   body.landing .call-sig { display: none; }
   body.landing .call-livepill i { animation: none; }
   body.landing .call-beam { animation: none; }
-  body.landing .call-lv-m .is-head { animation: none; }
   body.landing .call, body.landing .call:hover { transform: none; }
 }
 

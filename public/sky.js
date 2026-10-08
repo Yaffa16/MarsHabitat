@@ -275,7 +275,9 @@
   // it adds one exchange and one snapshot while fewer than AT_ONCE of each are standing, and the moment one begins to
   // fade (AHEAD before, and again as it fades) its successor is brought in, so there is always something in the sky:
   // between one and two of each standing, as long as there are any (a turn with no free place passes).
-  var FADE = 1200, LIFE_MSG = 10000, LIFE_PIC = 9000, TICK = 1200, VARY = 0.3, AHEAD = 700;
+  // (an exchange stands eighteen seconds, time to read its question and its answer — 8 October: "increase the duration the
+  // message is displayed", on a desk and a phone alike; it stood ten before)
+  var FADE = 1200, LIFE_MSG = 18000, LIFE_PIC = 9000, TICK = 1200, VARY = 0.3, AHEAD = 700;
   // Their sizes: a snapshot's width, and the width an exchange may take for its words — on a phone as wide as the room
   // beside the line allows (LANE, below), on a desk a fixed width.
   var SIZE = { phone: { pic: 176, line: 184 }, desk: { pic: 136, line: 300 } };   // a desk's are small, to stand beside the line
