@@ -21,7 +21,7 @@
   "sensors": [
     {
       "id": "m5_temperatur_cricket_temperature",
-      "label": "Cricket Temperature",
+      "label": "Cricket Terrarium Temperature",
       "unit": "°C",
       "kind": "gauge",
       "decimals": 1

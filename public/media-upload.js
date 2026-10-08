@@ -1,4 +1,4 @@
-/* Media uplink — the upload form on mission control's Media tab.
+/* Media upload — the upload form on mission control's Media tab.
    Without this script the form still works as a plain multipart post. With
    it, each file goes up on its own request with a progress bar, and a small
    preview is made here first: a downscaled JPEG for a photograph, a frame

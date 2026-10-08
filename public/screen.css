@@ -27,6 +27,10 @@ body.screen .stage-when { margin-left: auto; font-family: ui-monospace, "SF Mono
    shown larger, centred; on the board, in the gallery and among the blogs (data-fit="clip") the wrapper fills the body
    instead and what runs over is cut clean */
 body.screen .stage-body { position: relative; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+/* the stage clips what reaches past it, but leaves room round its edge for the soft UI's shadows (neu.css) — a panel's
+   shade is never cut square at the screen's edge (8 October) */
+@supports (overflow-clip-margin: 28px) { body.screen .stage-body { overflow: clip; overflow-clip-margin: 28px; } }
+body.screen .board .scroller { padding: 16px 22px 22px; margin: -16px -22px 0; }   /* room round the board's cards for their shadows */
 body.screen .stage-fit { flex: none; width: 100%; box-sizing: border-box; }
 body.screen[data-fit="clip"] .stage-fit { height: 100%; flex: 1 1 auto; min-height: 0; }
 body.screen .stage-fit > .dpanel { box-sizing: border-box; min-height: 0; overflow: hidden; }
@@ -80,46 +84,114 @@ body.screen .blogp .dpanel-title h3 { white-space: normal; overflow: visible; te
   body.screen .screen-three { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; gap: 16px; }
   body.screen[data-fit="clip"] .screen-three { grid-template-rows: repeat(3, minmax(0, 1fr)); }
 }
-/* the habitat's instruments and the trends fill their panel; the habitat's rows keep their proportions */
-body.screen.screen-habitat #habitat.dpanel, body.screen.screen-trends #trends.dpanel { padding: 24px 30px; }
-/* the habitat screen is read from across a room: what each tile measures in large type, its scale under it, the figure
-   large, the words beside it large — and the drawings (the dial, the ruler, the radar, the orbit, the stores' rounds)
-   smaller, so the stage keeps its height and is not scaled down to fit (screen.js). The panel is named (#habitat): the
-   dress sizes these with .dpanel.compact, and only a more specific rule can say otherwise. */
-body.screen.screen-habitat #habitat .dpanel-title h3 { font-size: 30px; }
-body.screen.screen-habitat #habitat .dpanel-meta { font-size: 17px; }
-body.screen.screen-habitat #habitat .hbt .tile h3 { font-size: 32px; line-height: 1.1; margin: 0 0 4px; }
-body.screen.screen-habitat #habitat .hbt .sub, body.screen.screen-habitat #habitat .hbt .t-pwr .sub { font-size: 18px; line-height: 1.3; }
-body.screen.screen-habitat #habitat .hbt .lvl .big, body.screen.screen-habitat #habitat .hbt .spk .big, body.screen.screen-habitat #habitat .hbt .ruler-num .big { font-size: 46px; }
-body.screen.screen-habitat #habitat .hbt .dial-center .big { font-size: 54px; }
-body.screen.screen-habitat #habitat .hbt .big em { font-size: 22px; }
-body.screen.screen-habitat #habitat .hbt .verdict { font-size: 20px; margin-top: 4px; }
-body.screen.screen-habitat #habitat .hbt .fig-who { font-size: 16px; }
-body.screen.screen-habitat #habitat .hbt .fig-v { font-size: 26px; }
-body.screen.screen-habitat #habitat .hbt .fig-v em { font-size: 16px; }
-body.screen.screen-habitat #habitat .hbt .fig-total { font-size: 19px; }
-body.screen.screen-habitat #habitat .hbt .fig-spark { height: 26px; }
-body.screen.screen-habitat #habitat .hbt .viz-k { font-size: 17px; letter-spacing: .12em; }
-body.screen.screen-habitat #habitat .hbt .tile.t-viz { min-height: 150px; padding-top: 16px; }
-body.screen.screen-habitat #habitat .hbt .tile.t-viz svg { max-height: 96px; }
-body.screen.screen-habitat #habitat .hbt .dial-wrap { min-height: 160px; }
-body.screen.screen-habitat #habitat .hbt .dial-wrap svg { max-width: 220px; }
-body.screen.screen-habitat #habitat .hbt .dial-center .verdict { font-size: 17px; margin-top: 0; }
-body.screen.screen-habitat #habitat .hbt .ruler-row { min-height: 110px; }
-body.screen.screen-habitat #habitat .hbt .ruler-wrap svg { max-height: 110px; }
-body.screen.screen-habitat #habitat .hbt .lvl svg, body.screen.screen-habitat #habitat .hbt .spk svg { max-height: 30px; }
-body.screen.screen-habitat #habitat .cell-name { font-size: 22px; }
-body.screen.screen-habitat #habitat .gauge.round svg { width: 92px; height: 92px; }
-body.screen.screen-habitat #habitat .hbt .aux .gauge.round { width: 184px; }                     /* the stores' names whole at the screen's size */
-body.screen.screen-habitat #habitat .hbt .empty, body.screen.screen-habitat #habitat .hbt .note, body.screen.screen-habitat #habitat #hbt-notes .note { font-size: 18px; line-height: 1.4; }
-/* the hardware's charts under the instruments in one row of four (two rows of two upright) — two across, as the site has
-   them, the panel stood twice the screen's height and no scaling could fit it: a chart is drawn to its width, and the
-   narrower the scale makes the screen the wider the chart; four across keeps the panel to the screen */
-body.screen.screen-habitat #habitat .hw-charts { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
-body.screen.screen-habitat #habitat .hw-chart { padding: 10px 12px; }
-body.screen.screen-habitat #habitat .hw-in-habitat { margin-top: 16px; padding-top: 14px; }
+/* the trends fill their panel */
+body.screen.screen-trends #trends.dpanel { padding: 24px 30px; }
+/* the habitat, rolled (screen-roll.js; screens.js, habitat — 8 October: "a vertical layout with scrolling, to show all
+   the content clearly and slowly; no overlap of text, no glitching"). Laid out as on a screen 1920 wide, or 1080 upright,
+   and zoomed to the screen (screen.js, data-fit="roll"): the same rows and the same type on any screen. The panel fills
+   the stage; its head stands; its body is the window the rows roll by in — the eight instruments on four tracks (two
+   upright), the steps and the stores, the power with Karlsruhe and the astronauts (upright: Karlsruhe and the astronauts,
+   then the power), then the hardware's charts, two across (one upright) — each at the size it is read at from across a
+   room. The window's edge fades where the rows pass under the head and where more is still to come; it keeps room at its
+   sides for the tiles' shadows. The panel is named (#habitat): the dress sizes these with .dpanel.compact, and only a
+   more specific rule can say otherwise. */
+@property --roll-ft { syntax: '<length>'; inherits: false; initial-value: 0px; }
+@property --roll-fb { syntax: '<length>'; inherits: false; initial-value: 0px; }
+body.screen[data-fit="roll"] .stage-fit { height: 100%; flex: 1 1 auto; min-height: 0; }
+body.screen .screen-roll { height: 100%; }
+body.screen .screen-roll > #habitat.dpanel { height: 100%; max-height: none; display: flex; flex-direction: column; box-sizing: border-box; padding: 26px 34px 0; overflow: hidden; }
+body.screen .screen-roll > #habitat > .dpanel-head { flex: none; margin: 0; padding: 0 0 8px; }
+body.screen .screen-roll #habitat .dpanel-title h3 { font-size: 34px; }
+body.screen .screen-roll #habitat .dpanel-title .cloud-live { font-size: 14px; padding: 5px 12px; }
+body.screen .screen-roll #habitat .dpanel-meta { font-size: 17px; letter-spacing: .12em; }
+body.screen .screen-roll > #habitat > .dpanel-body { flex: 1 1 auto; min-height: 0; position: relative; display: block; overflow: hidden; padding: 22px 28px 0; margin: 0 -28px;
+  --roll-ft: 0px; --roll-fb: 0px; transition: --roll-ft .7s ease, --roll-fb .7s ease;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--roll-ft), #000 calc(100% - var(--roll-fb)), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 var(--roll-ft), #000 calc(100% - var(--roll-fb)), transparent 100%); }
+body.screen .screen-roll > #habitat > .dpanel-body.is-rolled { --roll-ft: 64px; }
+body.screen .screen-roll > #habitat > .dpanel-body.has-more { --roll-fb: 110px; }
+body.screen .screen-roll .roll-in { padding-bottom: 40px; will-change: transform; transition: opacity .9s ease; }
+body.screen .screen-roll .roll-in.is-faded { opacity: 0; }
+/* the tiles: four tracks (the dashboard's), wider gaps; each tile's name, its scale and its sign large */
+body.screen .screen-roll #hbt-bento { gap: 28px; }
+body.screen .screen-roll #habitat .hbt .tile { padding: 24px 26px 26px; border-radius: 26px; gap: 6px; }
+body.screen .screen-roll #habitat .hbt .tile h3, body.screen .screen-roll #habitat .hbt .viz-k { font-size: 30px; line-height: 1.15; margin: 0; overflow-wrap: normal; -webkit-hyphens: manual; hyphens: manual; }
+body.screen .screen-roll #habitat .hbt .sub, body.screen .screen-roll #habitat .hbt .t-pwr .sub { font-size: 18px; line-height: 1.4; }
+body.screen .screen-roll #habitat .t-ic { top: 22px; right: 22px; width: 62px; height: 62px; }
+body.screen .screen-roll #habitat .t-ic svg { width: 32px; height: 32px; stroke-width: 1.7; }
+body.screen .screen-roll #habitat .hbt .tile > .t-ic ~ h3, body.screen .screen-roll #habitat .hbt .tile > .t-ic ~ .sub, body.screen .screen-roll #habitat .hbt .viz-k, body.screen .screen-roll #habitat .hbt .t-pwr #pwr-live > .sub { padding-right: 78px; }
+/* the instruments: the figure very large, its meter broad, the word on it under */
+body.screen .screen-roll #habitat .hbt .t-sens .t-read { gap: 16px; padding-top: 22px; }
+body.screen .screen-roll #habitat .hbt .t-sens .big { font-size: 76px; }
+body.screen .screen-roll #habitat .hbt .big em { font-size: 28px; margin-left: 8px; }
+body.screen .screen-roll #habitat .hbt .verdict { font-size: 22px; margin: 0; min-height: 1.35em; }
+body.screen .screen-roll #habitat .meter { height: 34px; gap: 6px; }
+body.screen .screen-roll #habitat .meter.m-seg i { height: 15px; border-radius: 8px; }
+body.screen .screen-roll #habitat .meter.m-bars { gap: 4px; }
+body.screen .screen-roll #habitat .meter.m-bars i { height: 34px; border-radius: 3px; }
+body.screen .screen-roll #habitat .meter.m-dots { gap: 3px; }
+body.screen .screen-roll #habitat .meter.m-dots i { width: 15px; height: 15px; }
+/* the steps: the crew's names and figures large */
+body.screen .screen-roll #habitat .hbt .fig-rows { margin-top: 14px; }
+body.screen .screen-roll #habitat .hbt .fig-r { padding: 10px 0; }
+body.screen .screen-roll #habitat .hbt .fig-who { font-size: 18px; }
+body.screen .screen-roll #habitat .hbt .fig-v { font-size: 30px; }
+body.screen .screen-roll #habitat .hbt .fig-v em { font-size: 18px; }
+body.screen .screen-roll #habitat .hbt .fig-foot { gap: 6px; padding-top: 14px; }
+body.screen .screen-roll #habitat .hbt .fig-total { font-size: 22px; }
+body.screen .screen-roll #habitat .hbt .fig-spark { height: 40px; }
+/* the stores: large rounds, their names large under them */
+body.screen .screen-roll #hbt-bento > .t-res .gauges.rounds { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 22px 26px; padding-top: 16px; }
+body.screen .screen-roll #hbt-bento > .t-res .gauge.round { width: auto; gap: 12px; padding: 18px 12px 20px; }
+body.screen .screen-roll #hbt-bento > .t-res { padding-bottom: 36px; }                            /* the rounds' shadows fade out inside the tile */
+body.screen .screen-roll #habitat .gauge.round svg { width: 150px; height: 150px; }
+body.screen .screen-roll #habitat .cell-name { font-size: 23px; line-height: 1.25; }
+/* the power: its channels in large type */
+body.screen .screen-roll #habitat .pwr { gap: 6px; padding-top: 14px; }
+body.screen .screen-roll #habitat .pwr-row { grid-template-columns: minmax(0, 210px) minmax(0, 1fr) auto; gap: 18px; min-height: 36px; }
+body.screen .screen-roll #habitat .pwr-name { font-size: 17px; }
+body.screen .screen-roll #habitat .pwr-track { height: 12px; border-radius: 6px; }
+body.screen .screen-roll #habitat .pwr-track i { border-radius: 6px; }
+body.screen .screen-roll #habitat .pwr-val { font-size: 22px; }
+body.screen .screen-roll #habitat .pwr-total { margin-top: 10px; padding-top: 14px; font-size: 17px; }
+body.screen .screen-roll #habitat .pwr-total span { font-size: 17px; }
+body.screen .screen-roll #habitat .pwr-total b { font-size: 36px; }
+/* Karlsruhe and the astronauts: their drawings large in the middle of their tiles */
+body.screen .screen-roll #habitat .hbt .tile.t-viz { min-height: 0; justify-content: flex-start; }
+body.screen .screen-roll #habitat .dl-radar { width: 250px; height: 250px; }
+body.screen .screen-roll #habitat .dl-city { max-width: 330px; }
+/* a word from the sensors (habitat.js), across the panel */
+body.screen .screen-roll #habitat .hbt .empty, body.screen .screen-roll #habitat .hbt .note, body.screen .screen-roll #habitat #hbt-notes .note { font-size: 20px; line-height: 1.45; padding: 16px 20px; }
+/* the hardware's charts: two across, under the power (screen.js draws them for their width, a third larger than drawn:
+   hardware.js); each one's sign and name, its legend, large */
+body.screen .screen-roll #habitat .hw-in-habitat { margin-top: 28px; padding-top: 0; border-top: 0; }
+body.screen .screen-roll #habitat .hw-charts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+body.screen .screen-roll #habitat .hw-chart { padding: 22px 24px 20px; border-radius: 26px; }
+body.screen .screen-roll #habitat .hw-title { font-size: 19px; gap: 8px 14px; margin-bottom: 10px; }
+body.screen .screen-roll #habitat .hw-ic { width: 50px; height: 50px; }
+body.screen .screen-roll #habitat .hw-ic svg { width: 26px; height: 26px; }
+body.screen .screen-roll #habitat .hw-legend { gap: 10px 32px; margin-top: 14px; }
+body.screen .screen-roll #habitat .hw-legend li { grid-template-columns: 12px auto; column-gap: 12px; }
+body.screen .screen-roll #habitat .hw-legend li i { width: 12px; height: 12px; }
+body.screen .screen-roll #habitat .hw-name { font-size: 19px; }
+body.screen .screen-roll #habitat .hw-range { font-size: 14px; }
+body.screen .screen-roll #habitat .hw-ax { font-size: 12.5px; }                                   /* in the drawing's units, shown a third larger */
+/* upright: the instruments two to a row; the steps beside the stores; Karlsruhe beside the astronauts, then the power the
+   panel's width, right over its chart; the charts one under the other, the panel's width */
 @media (orientation: portrait) {
-  body.screen.screen-habitat #habitat .hw-charts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body.screen .screen-roll > #habitat.dpanel { padding: 24px 28px 0; }
+  body.screen .screen-roll #hbt-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  body.screen .screen-roll #hbt-bento > * { grid-column: span 1; order: 0; }
+  body.screen .screen-roll #hbt-bento > .hbt-notes { grid-column: 1 / -1; }
+  body.screen .screen-roll #hbt-bento > .t-res { grid-column: span 1; }
+  body.screen .screen-roll #hbt-bento > .t-viz-city { order: 30; }
+  body.screen .screen-roll #hbt-bento > .t-viz-radar { order: 31; }
+  body.screen .screen-roll #hbt-bento > .t-pwr { order: 32; grid-column: 1 / -1; }
+  body.screen .screen-roll #hbt-bento > .t-res .gauges.rounds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 14px; padding-right: 10px; }
+  body.screen .screen-roll #hbt-bento > .t-res .gauge.round { width: auto; }
+  body.screen .screen-roll #habitat .gauge.round svg { width: 132px; height: 132px; }
+  body.screen .screen-roll #habitat .hw-in-habitat { margin-top: 24px; }
+  body.screen .screen-roll #habitat .hw-charts { grid-template-columns: minmax(0, 1fr); gap: 24px; }
 }
 body.screen.screen-trends .tchart-svg { max-height: calc(100vh - 220px); width: 100%; }
 body.screen.screen-trends #trends .dpanel-body { min-height: 0; }
@@ -175,6 +247,7 @@ body.screen .card.xc:has(.card-space[data-launched]) { cursor: default; }
    the foot like the board screen's */
 body.screen.screen-station .screen-station { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 22px; height: 100%; min-height: 0; }
 body.screen.screen-station .station-write { padding: 0; min-height: 0; overflow: hidden; align-items: flex-start; }
+@supports (overflow-clip-margin: 28px) { body.screen.screen-station .station-write { overflow: clip; overflow-clip-margin: 28px; } }   /* room for the composer's shadow */
 body.screen.screen-station .station-write .composer-device { max-width: none; }
 body.screen.screen-station .station-board { min-height: 0; height: 100%; }
 body.screen.screen-station .feed-wrap { min-height: 0; height: 100%; position: relative; }

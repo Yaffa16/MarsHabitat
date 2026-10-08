@@ -244,7 +244,8 @@ function foot(ctx, T = ctx.T || same, landing = false) {
    further down can use it too. */
 function clientTable(lang) {
   const json = JSON.stringify(i18n.table(lang)).replace(/</g, '\\u003c');
-  return `<script>window.MCS_T=${json};function t(s){return (window.MCS_T||{})[s]||s}</script>`;
+  // (a key with its sense after a double colon — 'Light::sensor' — reads as the part before it where there is no word for it)
+  return `<script>window.MCS_T=${json};function t(s){var v=(window.MCS_T||{})[s],i=String(s).indexOf('::');return v||(i>0?String(s).slice(0,i):s)}</script>`;
 }
 
 /* The composer's pop-up (src/views/pages/public.js, portal), on every public page: a #write door on the page opens the

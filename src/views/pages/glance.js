@@ -27,12 +27,12 @@ const ddd = (n) => String(n).padStart(3, '0');
 const LOCALE = { de: 'de-DE', fr: 'fr-FR', en: 'en-GB' };
 const longDate = (iso, lang = 'en') => new Date(iso + 'T12:00:00Z').toLocaleDateString(LOCALE[lang] || 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
 const f1 = (v) => (v == null ? '—' : Number(v).toFixed(1));
-const same = (s) => s;
+const same = require('../../lib/i18n').plain;
 
 /* The habitat tile bank, shared by the run's day pages and the rehearsal
    page: one tile per sensor channel — the node's channels labelled — with
    the day's last reading large, in its unit. */
-const NODE_LABELS = { co2: ['CO₂', 'ppm', 0], temp: ['Temperature', '°C', 1], hum: ['Humidity', '%', 0], light: ['Light', 'lx', 0], pres: ['Pressure', 'hPa', 0], bat: ['Node battery', 'V', 2], rssi: ['Signal', 'dBm', 0], voc: ['VOC', 'ppm', 2], iaq: ['Air quality index', '', 0] };
+const NODE_LABELS = { co2: ['CO₂', 'ppm', 0], temp: ['Temperature', '°C', 1], hum: ['Humidity', '%', 0], light: ['Light::sensor', 'lx', 0], pres: ['Pressure', 'hPa', 0], bat: ['Node battery', 'V', 2], rssi: ['Signal', 'dBm', 0], voc: ['VOC', 'ppm', 2], iaq: ['Air quality index', '', 0] };
 const tile = (label, unit, v, dec, T = same) => `<div class="glance-tile">
     <span class="gt-label">${esc(T(label))}</span>
     <span class="gt-value">${v == null ? '—' : Number(v).toFixed(dec)}<em>${esc(unit)}</em></span>

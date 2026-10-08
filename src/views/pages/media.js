@@ -252,9 +252,10 @@ function cloudGridInner(T, cloud, opts = {}) {
 /** The gallery as the installation's screen shows it (src/views/pages/screens.js): the head line, then every picture
  *  in one grid, the newest first, each stamped with its day and time — no day heads, so a screen that must show the
  *  whole thing in one glance is as full as the folder allows. Kept live by public/cloud.js through /api/cloud?flat=1
- *  (the address in data-api), which answers with cloudScreenInner. */
+ *  (the address in data-api, with the screen's language — a screen has no cookie to say it), which answers with
+ *  cloudScreenInner. */
 function cloudScreen(T, cloud, opts) {
-  return `<section class="logpage-day media-day cloud-gallery cloud-screen" id="gallery" data-api="/api/cloud?flat=1" data-version="${esc(cloud.snapshot.version || '')}" data-poll="${(Number(cloud.snapshot.checkSeconds) || 20) * 1000}">${cloudScreenInner(T, cloud, opts)}</section>`;
+  return `<section class="logpage-day media-day cloud-gallery cloud-screen" id="gallery" data-api="/api/cloud?flat=1${opts && opts.lang ? `&amp;lang=${esc(opts.lang)}` : ''}" data-version="${esc(cloud.snapshot.version || '')}" data-poll="${(Number(cloud.snapshot.checkSeconds) || 20) * 1000}">${cloudScreenInner(T, cloud, opts)}</section>`;
 }
 function cloudScreenInner(T, cloud, opts = {}) {
   const tz = opts.tz, n = cloud.items.length, s = cloud.snapshot, line = checkedLine(T, s, tz);

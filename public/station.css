@@ -1092,9 +1092,9 @@ button.primary:active { transform: translateY(2px); }
 .xdial-mars-halo { fill: none; stroke: var(--orange); stroke-width: 1; opacity: 0; transform-origin: center; animation: waiting 2.6s ease-out infinite; }
 @keyframes waiting { 0% { transform: scale(.85); opacity: .7; } 100% { transform: scale(1.7); opacity: 0; } }
 .xdial-packet { fill: #fff; stroke: var(--orange); stroke-width: 3; filter: drop-shadow(0 0 6px rgba(255,120,40,.9)); }
-.xdial-label { font-family: var(--mono); font-size: 8px; letter-spacing: 0.24em; fill: rgba(242,242,239,.75); text-transform: uppercase; }
-.xdial-label.mars { fill: var(--orange); }
-.xdial-word { font-family: var(--mono); font-size: 10px; letter-spacing: 0.42em; fill: var(--orange); text-anchor: middle; text-transform: uppercase; }
+.xdial-label { font-family: var(--mono); font-size: 15px; font-weight: 600; letter-spacing: 0.12em; fill: rgba(242,242,239,.9); text-transform: uppercase; }   /* the worlds' names large on the face (8 October) */
+.xdial-label.mars { fill: var(--orange); text-transform: none; letter-spacing: 0.04em; }   /* MARS!platz, as it is written */
+.xdial-word { font-family: var(--mono); font-size: 13px; font-weight: 600; letter-spacing: 0.3em; fill: var(--orange); text-anchor: middle; text-transform: uppercase; }
 .transit.done .xdial-word { fill: #d9ecff; }
 .transit.done .xdial-trail { filter: none; }
 .transit-read { min-width: 0; overflow: hidden; }

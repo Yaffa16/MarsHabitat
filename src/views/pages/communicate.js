@@ -23,12 +23,16 @@ function stateLabel(s, T = same) {
  * The crossing dial. A bezel, a dark glass face with a faint grid, Earth at
  * the lower left, Mars at the upper right, and the route between them as an
  * arc. Static here; composer.js runs the packet along #xroute and lengthens
- * #xtrail behind it.
+ * #xtrail behind it. The two worlds stand well apart on the face, drawn a
+ * size up, their names large — EARTH under the Earth, MARS!platz under Mars,
+ * clear of the route that comes in over it (8 October: "increase the font for
+ * Earth and MARS!platz, and the entire visualisation should be bigger and more
+ * prominent"; the dial itself is drawn larger in the box — aura.css).
  */
 function crossingDial(T = same) {
   const S = 320, C = 160;
-  const earth = [80, 232], mars = [236, 106];
-  const route = `M${earth[0]},${earth[1]} Q 96,112 ${mars[0]},${mars[1]}`;
+  const earth = [92, 222], mars = [226, 102];
+  const route = `M${earth[0]},${earth[1]} Q 100,108 ${mars[0]},${mars[1]}`;
   const grid = [];
   for (let i = -5; i <= 5; i++) {
     const o = C + i * 26;
@@ -56,14 +60,13 @@ function crossingDial(T = same) {
     <circle cx="${C}" cy="${C}" r="70" class="xdial-ring"/>
     <path id="xroute" d="${route}" class="xdial-route"/>
     <path id="xtrail" d="${route}" class="xdial-trail" stroke-dasharray="0 1000"/>
-    <line x1="${mars[0] - 44}" y1="${mars[1]}" x2="${mars[0] - 12}" y2="${mars[1]}" stroke="rgba(255,255,255,.2)" stroke-dasharray="2 3"/>
-    <circle cx="${mars[0]}" cy="${mars[1]}" r="12" class="xdial-mars-halo" style="transform-origin:${mars[0]}px ${mars[1]}px"/>
-    <circle cx="${mars[0]}" cy="${mars[1]}" r="9" class="xdial-mars"/>
-    <text x="${mars[0]}" y="${mars[1] - 20}" text-anchor="middle" class="xdial-label mars">MARS!platz</text>
-    <circle cx="${earth[0]}" cy="${earth[1]}" r="7" class="xdial-earth"/>
-    <text x="${earth[0]}" y="${earth[1] + 22}" text-anchor="middle" class="xdial-label">${T('Earth')}</text>
-    <circle id="xpacket" cx="${earth[0]}" cy="${earth[1]}" r="5" class="xdial-packet"/>
-    <text x="${C}" y="${C + 122}" class="xdial-word" id="xword">${T('Sending')}</text>
+    <circle cx="${mars[0]}" cy="${mars[1]}" r="15" class="xdial-mars-halo" style="transform-origin:${mars[0]}px ${mars[1]}px"/>
+    <circle cx="${mars[0]}" cy="${mars[1]}" r="11" class="xdial-mars"/>
+    <text x="${mars[0]}" y="${mars[1] + 33}" text-anchor="middle" class="xdial-label mars">MARS!platz</text>
+    <circle cx="${earth[0]}" cy="${earth[1]}" r="9" class="xdial-earth"/>
+    <text x="${earth[0]}" y="${earth[1] + 28}" text-anchor="middle" class="xdial-label">${T('Earth')}</text>
+    <circle id="xpacket" cx="${earth[0]}" cy="${earth[1]}" r="6" class="xdial-packet"/>
+    <text x="${C}" y="${C + 120}" class="xdial-word" id="xword">${T('Sending')}</text>
   </svg>`;
 }
 
@@ -187,7 +190,7 @@ function compose(ctx, { inFlight, mine, error, draft }) {
   const phase = ctx.mission.phase;
   const body = `
   <div style="padding:30px 0 18px">
-    <div class="eyebrow">Channel group 09 · Uplink</div>
+    <div class="eyebrow">Channel group 09 · Transmit</div>
     <h1>${phase === 'ACTIVE' ? 'Write to the habitat' : 'The channel'}</h1>
     <p class="lede">You have been assigned the callsign <b style="font-family:var(--mono);color:var(--earth)">${esc(ctx.callsign)}</b>
     for this visit. No account, no name. It is how the crew will know you.</p>

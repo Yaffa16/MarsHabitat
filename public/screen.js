@@ -2,16 +2,19 @@
  *
  * What the page does for a screen that must show the whole of one thing at a glance:
  *  - fits the stage's body to the screen: where the body's content is taller (or wider) than the room it has, it is
- *    scaled down until it fits (the browser's zoom where it has one, a transform where not) — the habitat's instruments,
- *    a long mission, the blogs; on the board and in the gallery nothing is scaled: the cards or tiles that would be cut
- *    at the foot are hidden instead, so the last row is whole (data-fit="clip"); the trends, landscape, are drawn to the
- *    height by the stylesheet alone (data-fit-landscape="fill" — screens.js says which way each screen is fitted);
+ *    scaled down until it fits (the browser's zoom where it has one, a transform where not) — a long mission, the day;
+ *    on the board and in the gallery nothing is scaled: the cards or tiles that would be cut at the foot are hidden
+ *    instead, so the last row is whole (data-fit="clip"); the trends, landscape, are drawn to the height by the
+ *    stylesheet alone (data-fit-landscape="fill"); the habitat is laid out at a screen's width of its own — 1920 wide
+ *    landscape, 1080 upright — and zoomed to the screen's actual width, its panel rolling by under its head
+ *    (data-fit="roll", screen-roll.js) — screens.js says which way each screen is fitted;
  *  - fits again whenever the content changes (the board's cards, the gallery's tiles, the habitat's readings arrive by
  *    themselves, a graph drawn again), whenever the screen changes size or turns, and every other second if the last
  *    fitting was overtaken by a drawing that grew after it;
  *  - keeps the clock in the head on the venue's time;
  *  - reloads the page every five minutes (a little apart on every screen, so the station is not asked by all at once)
- *    and at the venue's midnight, when the sol turns — not while someone is writing on the writing screen.
+ *    and at the venue's midnight, when the sol turns — not while someone is writing on the writing screen, and on the
+ *    rolled habitat at the roll's turn, while its sheet is faded out (screen-roll.js).
  * The screens are display-only but for the writing screen (screen-write.js): nothing here is ever sent anywhere. */
 (function () {
   'use strict';
@@ -71,6 +74,13 @@
     // width changed — once per change of scale, not on every fitting, so the fitting and the drawing do not chase each other
     if (Math.abs(z - lastZ) > 0.05) { lastZ = z; setTimeout(function () { window.dispatchEvent(new Event('resize')); }, 30); }
   }
+  // the rolled habitat (screen-roll.js): laid out as on a screen 1920 wide, landscape, or 1080, upright, and zoomed to
+  // the width it actually has — the same rows and the same type on any screen, larger on a larger one; its height is
+  // the roll's business
+  function rollZoom() {
+    var z = Math.max(0.5, Math.min(2, window.innerWidth / (window.innerWidth > window.innerHeight ? 1920 : 1080)));
+    if (Math.abs(z - curZ) > 0.005) { curZ = z; scale(z); }
+  }
   // the board and the gallery are not scaled to fit — their rows are cut — but read larger on a large screen
   function baseZoom() {
     if (fit !== 'clip') return;
@@ -98,7 +108,7 @@
   var pending = null;
   function fitNow() {
     chooseFit();
-    if (fit === 'clip') { baseZoom(); fitClip(); } else if (fit === 'scale') fitScale();
+    if (fit === 'clip') { baseZoom(); fitClip(); } else if (fit === 'scale') fitScale(); else if (fit === 'roll') rollZoom();
   }
   function refit() {
     clearTimeout(pending);
@@ -112,7 +122,10 @@
   // anything that changes under the wrapper — a card arriving, a reading, a graph drawn again for its width (an
   // attribute of the drawing's, as much as a new child) — has the piece fitted again; the fitting's own changes to the
   // wrapper are not a change of content
+  // (not on the rolled habitat: its zoom is the screen's width's alone, and its sheet and its astronauts move every
+  // frame — a fitting put off until they stopped would never come)
   if (window.MutationObserver) new MutationObserver(function (ms) {
+    if (fit === 'roll') return;
     for (var i = 0; i < ms.length; i++) if (ms[i].target !== fitEl) { refit(); return; }
   }).observe(fitEl, { childList: true, subtree: true, attributes: true });
   setTimeout(refit, 1500); setTimeout(refit, 4000);                    // the habitat's instruments and the trends draw themselves a moment after the page
@@ -142,7 +155,9 @@
   }
   // (the writing screen says when someone is writing — screen-write.js, MCSScreenBusy — and a reload waits for them)
   var busy = function () { return !!(window.MCSScreenBusy && window.MCSScreenBusy()); };
+  // (a rolled screen reloads at its roll's turn, while its sheet is faded out — screen-roll.js, MCSScreenRoll)
+  var reload = function () { if (window.MCSScreenRoll) window.MCSScreenRoll.reloadAtTurn(); else location.reload(); };
   var day0 = venueDate();
-  (function later(ms) { setTimeout(function () { if (busy()) return later(60000); location.reload(); }, ms); })(5 * 60 * 1000 + Math.floor(Math.random() * 20000));
-  setInterval(function () { if (venueDate() !== day0 && !busy()) location.reload(); }, 30000);
+  (function later(ms) { setTimeout(function () { if (busy()) return later(60000); reload(); }, ms); })(5 * 60 * 1000 + Math.floor(Math.random() * 20000));
+  setInterval(function () { if (venueDate() !== day0 && !busy()) reload(); }, 30000);
 })();

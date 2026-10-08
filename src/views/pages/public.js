@@ -17,7 +17,7 @@ const fmtTime = (iso) => new Date(iso).toISOString().slice(11, 16) + ' UTC';
 const missionLib = require('../../lib/mission');
 const officer = require('../../lib/officer');
 /* English through, for the places that have no visitor: the archive. */
-const same = (s) => s;
+const same = require('../../lib/i18n').plain;                 // the English, where no T is given (a key's sense after '::' left out)
 const dayWord = (T, n) => `${n} ${T(n === 1 ? 'day' : 'days')}`;
 /** A moment as the room reads it: "Sat 24 Oct · 16:02", in the venue's time. */
 function whenLabel(iso, tz) {
@@ -339,7 +339,8 @@ function composerDevice(ctx, { inFlight = null, error = null, draft = '', kiosk 
   // `meta`: the Write page's pop-up says, in its head, the one-way signal a message is about to cross and the distance.
   // The head names no operator and no callsign on the site (October: "remove the operator name") — only the writing
   // screen's keeps OPERATOR · BODENSTATION; the callsign a visitor writes under is on the cookie card and on the board
-  const signal = meta ? `<span class="dev-signal" title="${esc(T('One-way signal'))}">${T('One-way signal')} <b>${esc(orbital.formatLightTime(ctx.geo.lightSeconds))}</b> · ${ctx.geo.distanceAu.toFixed(3)} au</span>` : `<span class="dev-chan">${T('Uplink')}</span>`;
+  // (the word in the head is Transmit, 8 October — the word the station used before it is gone from every page)
+  const signal = meta ? `<span class="dev-signal" title="${esc(T('One-way signal'))}"><span class="dev-sig-k">${T('Transmit')}</span> · ${T('One-way signal')} <b>${esc(orbital.formatLightTime(ctx.geo.lightSeconds))}</b> · ${ctx.geo.distanceAu.toFixed(3)} au</span>` : `<span class="dev-chan">${T('Transmit')}</span>`;
   return `<section class="device composer-device${inFlight ? ' sending' : ''}" aria-label="${esc(T('Composer'))}">
         <h2 class="dev-title" id="dev-title">${T('Write to the crew')}</h2>
         <button type="button" class="dev-close" aria-label="${esc(T('Close'))}" title="${esc(T('Close'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
@@ -439,7 +440,11 @@ function ticker(ctx, { today } = {}) {
   let nowTask = null, nextTask = null;
   for (const t of tasks) { if (t.time <= hm) nowTask = t; else if (!nextTask) nextTask = t; }
   const cells = [];
-  if (pre) cells.push(`<b id="tk-count">T−${m.countdown.days}d ${String(m.countdown.hours).padStart(2, '0')}:${String(m.countdown.minutes).padStart(2, '0')}:${String(m.countdown.seconds).padStart(2, '0')}</b> ${T('to occupation')} · ${T('opens')} ${esc(m.startLabel)}`);
+  // the opening day in the visitor's language — Thu 15 Oct 2026, Do., 15. Okt. 2026, jeu. 15 oct. 2026
+  const opensOn = ctx.lang === 'de' || ctx.lang === 'fr'
+    ? new Date(m.start_date + 'T12:00:00Z').toLocaleDateString(ctx.lang === 'de' ? 'de-DE' : 'fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+    : m.startLabel;
+  if (pre) cells.push(`<b id="tk-count">T−${m.countdown.days}d ${String(m.countdown.hours).padStart(2, '0')}:${String(m.countdown.minutes).padStart(2, '0')}:${String(m.countdown.seconds).padStart(2, '0')}</b> ${T('to occupation')} · ${T('opens')} ${esc(opensOn)}`);
   else if (over) cells.push(`<b>${T('Mission complete')}</b> · ${T('the record stays')}`);
   else {
     cells.push(`<b>SOL ${String(m.clampedDay).padStart(2, '0')}/${String(m.totalDays).padStart(2, '0')}</b>`);
@@ -606,6 +611,15 @@ function ticker(ctx, { today } = {}) {
   </script>`;
 }
 
+/** The habitat's latest reading where it is a current one (the last half hour — the ticker's rule; the closed record's
+    last), for the landing page's live card (landing.js, calls); else null. */
+function habitatNow() {
+  try {
+    const c = require('../../lib/critical'), r = c.lastStored();
+    return r && (c.frozen() || Date.now() - r.t <= 30 * 60 * 1000) ? r : null;
+  } catch { return null; }
+}
+
 function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = [], crewFigures = {},
                         power = { categories: [], days: {} },
                         inFlight = null, error = null, draft = '',
@@ -641,7 +655,7 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
     else if (/^#(mission|mission-today|habitat|sensors|stores|power|hardware|trends|schedule|galley|crew|blog-commander|blog-health|blog-science)$/.test(h)) location.replace('/dashboard' + h); })();
   </script>
   ${LP.space(ctx, { sky: habitatSky(ctx, { recent, cloud }) })}
-  ${LP.note(ctx)}
+  ${LP.note(ctx, { reading: habitatNow(), crew: (crew || []).length || 3 })}
   ${LP.slowChat(ctx)}
   `;
   return L.page({
@@ -745,7 +759,7 @@ function writePage(ctx, d) {
  * — the totals are the sums); a day filed only as a total shows the total
  * and a dash for each officer.
  */
-function figureTile(figures, mission, { key, label, unit, colour, fmt, T = same, crew = [] }) {
+function figureTile(figures, mission, { key, label, unit, colour, fmt, T = same, crew = [], icon = '' }) {
   const days = Array.from({ length: mission.totalDays }, (_, i) => i + 1);
   const dayOf = (n) => figures[String(n)] || {};
   const perOf = (d, c) => ((d.crew || {})[c.designation] || {})[key] ?? null;
@@ -780,11 +794,11 @@ function figureTile(figures, mission, { key, label, unit, colour, fmt, T = same,
   const who = (c) => { const s = officer.shown(c.designation); return T(s.charAt(0) + s.slice(1).toLowerCase()); };
   const rows = crew.map((c) => { const v = perOf(d, c); return `<div class="fig-r"><span class="fig-who">${esc(who(c))}</span><span class="fig-v">${v != null ? fmt(v) : '—'}<em>${esc(unit)}</em></span></div>`; }).join('');
   return `<section class="tile t-fig t-${key}" role="group" aria-label="${esc(T(label))}${total != null ? `: ${fmt(total)} ${esc(unit)} ${T('crew total')}` : ''}">
-    <h3>${T(label)}</h3>
+    ${icon ? sensorIcon(icon) : ''}<h3>${T(label)}</h3>
     <span class="sub">${shownDay === n0 ? `${T('Day')} ${String(n0).padStart(3, '0')}` : shownDay ? `${T('Last recorded')} · ${T('Day')} ${String(shownDay).padStart(3, '0')}` : T('Counted by the crew')}</span>
     <div class="fig-rows">${rows}</div>
     <div class="fig-foot"><span class="fig-total">${total != null ? `${fmt(total)} ${esc(unit)} · ${T('crew total')}` : T('nothing recorded')}</span>${spark}</div>
-    <div class="verdict">${mean != null ? `${fmt(mean)} ${esc(unit)} ${T('a day on average')} · ${present.length} ${T('of')} ${dayWord(T, days.length)}` : T('Nothing recorded yet')}</div>
+    <div class="verdict">${mean != null ? `${fmt(mean)} ${esc(unit)} ${T('a day on average')} · ${present.length} ${T('of')} ${dayWord(T, days.length)}` : ''}</div>
   </section>`;
 }
 
@@ -822,6 +836,94 @@ function trendRow({ name, scale, values, lo, hi, unit, today, fmt = (v) => Strin
     </svg></div>
     <div class="tval">${latest != null ? `<b>${fmt(latest)}</b><em>${esc(unit)}</em>` : '<span class="none">—</span>'}</div>
   </div>`;
+}
+
+/* ============================================= THE SENSORS' SIGNS AND METERS */
+
+/**
+ * The Sensors panel's signs: a line drawing for each instrument in a disc at its tile's top right, after a racing car's
+ * dash (8 October: "add the corresponding logos to the sensor visualisations") — the lungs for the oxygen, a molecule
+ * (O=C=O) for the carbon dioxide, a thermometer, a drop for the humidity, a gauge for the air pressure, the wind for the
+ * air quality, the sun for the light, a flask for the volatile organic compounds, footprints for the steps, a crate for
+ * the stores, a bolt for the power, a pin for Karlsruhe, a radar for the astronauts. 24 × 24, stroked in currentColor
+ * (aura.css, .t-ic); the hardware's charts carry the same signs in their captions.
+ */
+const SENSOR_ICON = {
+  o2: '<path d="M12 3.6v7.6"/><path d="M12 8.6c-.9 1.5-2 2-3.3 2"/><path d="M12 8.6c.9 1.5 2 2 3.3 2"/><path d="M8.7 6.6c-2.6 0-4.2 3.9-4.2 8.4 0 2.5 1.4 3.8 3.1 3.8 1.9 0 2.7-1.3 2.7-3.4V8.7"/><path d="M15.3 6.6c2.6 0 4.2 3.9 4.2 8.4 0 2.5-1.4 3.8-3.1 3.8-1.9 0-2.7-1.3-2.7-3.4V8.7"/>',
+  co2: '<circle cx="4.8" cy="12" r="2.5"/><circle cx="12" cy="12" r="2.9"/><circle cx="19.2" cy="12" r="2.5"/><path d="M7.4 10.8h1.8M7.4 13.2h1.8M14.8 10.8h1.8M14.8 13.2h1.8"/>',
+  temp: '<path d="M10 14.4V5.2a2 2 0 0 1 4 0v9.2a4 4 0 1 1-4 0z"/><path d="M12 9.5v6.4"/><circle cx="12" cy="17.6" r="1.5" fill="currentColor" stroke="none"/>',
+  hum: '<path d="M12 3.4c3.3 4.2 5.6 7.3 5.6 10.4a5.6 5.6 0 0 1-11.2 0c0-3.1 2.3-6.2 5.6-10.4z"/><path d="M9.3 14.4a2.8 2.8 0 0 0 2.4 2.7"/>',
+  pres: '<path d="M4.6 16.8a8 8 0 1 1 14.8 0"/><path d="M12 14l3.4-4.4"/><circle cx="12" cy="14.3" r="1.5" fill="currentColor" stroke="none"/><path d="M6.9 11.6l1.1.6M12 6.9v1.3M17.1 11.6l-1.1.6"/>',
+  iaq: '<path d="M3.5 9h10.6a2.6 2.6 0 1 0-2.6-2.6"/><path d="M3.5 13h14.4a2.6 2.6 0 1 1-2.6 2.6"/><path d="M3.5 17h6.5"/>',
+  light: '<circle cx="12" cy="12" r="3.7"/><path d="M12 3.4v2.1M12 18.5v2.1M3.4 12h2.1M18.5 12h2.1M5.9 5.9l1.5 1.5M16.6 16.6l1.5 1.5M5.9 18.1l1.5-1.5M16.6 7.4l1.5-1.5"/>',
+  voc: '<path d="M9.4 3.6h5.2M10.5 3.6v5.3L5.7 17.2A2 2 0 0 0 7.4 20.1h9.2a2 2 0 0 0 1.7-2.9l-4.8-8.3V3.6"/><path d="M7.9 14.4h8.2"/><circle cx="10.6" cy="17.1" r=".9" fill="currentColor" stroke="none"/><circle cx="13.7" cy="16.3" r=".7" fill="currentColor" stroke="none"/>',
+  steps: '<path d="M8.3 3.4c1.7 0 2.7 2 2.7 4.5 0 2.3-1 3.9-2.7 3.9S5.6 10.2 5.6 7.9c0-2.5 1-4.5 2.7-4.5z"/><path d="M6.5 13.7h3.6v1.5a1.8 1.8 0 0 1-3.6 0z"/><path d="M15.7 8.2c1.7 0 2.7 2 2.7 4.5 0 2.3-1 3.9-2.7 3.9S13 15 13 12.7c0-2.5 1-4.5 2.7-4.5z"/><path d="M13.9 18.5h3.6V20a1.8 1.8 0 0 1-3.6 0z"/>',
+  res: '<path d="M12 3.2l7.8 4.3v9L12 20.8l-7.8-4.3v-9z"/><path d="M4.4 7.6L12 11.8l7.6-4.2"/><path d="M12 11.8v8.8"/><path d="M8.1 5.4l7.7 4.3"/>',
+  pwr: '<path d="M13.4 2.8L5.6 13.4h5.6l-1.1 7.8 7.8-10.6h-5.6z" fill="currentColor" stroke-width="1.2"/>',
+  map: '<path d="M12 20.8s6.4-6 6.4-10.9a6.4 6.4 0 0 0-12.8 0c0 4.9 6.4 10.9 6.4 10.9z"/><circle cx="12" cy="9.9" r="2.4"/>',
+  radar: '<circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="4.4"/><path d="M12 12l5.8-5.8"/><circle cx="15.2" cy="14.6" r="1.1" fill="currentColor" stroke="none"/>',
+};
+const sensorIcon = (k, cls = 't-ic') => (SENSOR_ICON[k] ? `<span class="${cls}" aria-hidden="true"><svg viewBox="0 0 24 24">${SENSOR_ICON[k]}</svg></span>` : '');
+
+/**
+ * A reading's meter, under its figure: how far along its scale the reading stands, drawn the racing dash's way — a row
+ * of rounded segments (seg), of thin bars (bars) or of dots (dots), lit up to the reading, the rest dark; past the
+ * instrument's limit the lit ones turn red (is-hot, aura.css). public/habitat.js draws the same in the browser.
+ */
+const METER_N = { seg: 8, bars: 28, dots: 14 };
+function meterCells(kind, frac, n) {
+  const count = n || METER_N[kind] || 10;
+  const on = frac == null || !Number.isFinite(frac) ? 0 : Math.max(frac > 0 ? 1 : 0, Math.min(count, Math.round(frac * count)));
+  return Array.from({ length: count }, (_, i) => `<i${i < on ? ' class="on"' : ''}></i>`).join('');
+}
+
+/** The habitat sensor's instruments, after the oxygen — in the order they stand on the panel (8 October): the carbon
+ *  dioxide, the temperature, the humidity; the air pressure, the air quality, the light, the volatile organic compounds.
+ *  Each a tile of the same make: its name and scale, the figure, its meter, a word on it (habitat.js fills them). */
+const SENSOR_TILES = [
+  { k: 'co2', title: 'Carbon dioxide', unit: 'ppm', meter: 'bars', scale: '0–2000 ppm' },
+  { k: 'temp', title: 'Temperature', unit: '°C', meter: 'dots', scale: '0–40 °C' },
+  { k: 'hum', title: 'Humidity', unit: '%RH', meter: 'seg', n: 6, scale: '0–100 %RH' },
+  { k: 'pres', title: 'Air pressure', unit: 'hPa', meter: 'bars', scale: '950–1050 hPa' },
+  { k: 'iaq', title: 'Air quality', unit: 'IAQ', meter: 'seg', n: 7, sub: 'IAQ index' },   // the index alone under its name: no scale (October), the meter its bands
+  { k: 'light', title: 'Light::sensor', unit: 'lx', meter: 'dots', scale: '0–1000 lx' },
+  { k: 'voc', title: 'Volatile organic compounds', unit: 'ppm', meter: 'bars', scale: '0–10 ppm' },
+];
+const sensorTile = (T, d) => `
+        <section class="tile t-sens t-${d.k}">
+          ${sensorIcon(d.k)}
+          <h3>${T(d.title)}</h3>
+          <span class="sub" id="${d.k}Sub">${d.sub ? T(d.sub) : `${T('Scale')} ${d.scale}`}</span>
+          <div class="t-read">
+            <div class="big" id="${d.k}Val">—<em>${esc(d.unit)}</em></div>
+            <div class="meter m-${d.meter}" id="hbt-m-${d.k}" data-n="${d.n || METER_N[d.meter]}" aria-hidden="true">${meterCells(d.meter, null, d.n)}</div>
+            <div class="verdict" id="${d.k}Verdict"></div>
+          </div>
+        </section>`;
+
+/**
+ * The oxygen: the first of the instruments, read from the habitat's own hardware (the oxygen sensor in
+ * content/home-assistant.json — an id or a name with O2 or oxygen in it) rather than the habitat sensor. Rendered here
+ * and by /api/hardware, which hardware.js polls on the hardware's cycle, so the figure moves with the readings. Normal
+ * air is 20.9 %; under 19.5 % or over 23.5 % the figure and the meter turn red. A reading older than half an hour is
+ * not a current one: the tile shows a dash, as the habitat sensor's tiles do.
+ */
+const O2 = { lo: 16, hi: 24, safeLo: 19.5, safeHi: 23.5, staleMs: 30 * 60 * 1000 };
+const oxygenSensor = (hw) => (hw && (hw.sensors || []).find((x) => /(^|[^a-z])o2([^a-z]|$)|oxygen/i.test(`${x.id} ${x.label}`))) || null;
+function oxygenTileInner(hw, T = same) {
+  const s = oxygenSensor(hw);
+  const v = s && s.value != null && s.t && (hw.frozen || Date.now() - s.t <= O2.staleMs) ? Number(s.value) : null;
+  const hot = v != null && (v < O2.safeLo || v > O2.safeHi);
+  const frac = v == null ? null : (Math.min(O2.hi, Math.max(O2.lo, v)) - O2.lo) / (O2.hi - O2.lo);
+  const verdict = v == null ? T(s ? 'No current reading' : 'No oxygen sensor connected') : hot ? T(v < O2.safeLo ? 'Low oxygen' : 'High oxygen') : T('Normal air');
+  return `${sensorIcon('o2')}
+          <h3>${T('Oxygen')}</h3>
+          <span class="sub">${T('Scale')} ${O2.lo}–${O2.hi} %</span>
+          <div class="t-read">
+            <div class="big${hot ? ' hot' : ''}" id="o2Val">${v == null ? '—' : hwNum(v, Math.min(2, Number.isFinite(Number(s.decimals)) ? Number(s.decimals) : 1))}<em>%</em></div>
+            <div class="meter m-seg${hot ? ' is-hot' : ''}" aria-hidden="true">${meterCells('seg', frac)}</div>
+            <div class="verdict${hot ? ' hot' : ''}">${verdict}</div>
+          </div>`;
 }
 
 /* ======================================================== HABITAT HARDWARE */
@@ -867,7 +969,9 @@ function hwGroupOf(s) {
   // `range: [lo, hi]` in content/home-assistant.json, which widens the
   // chart's axis to hold it; a group with no range at all fits the data.
   if (s.chart) return { key: 'chart:' + s.chart.toLowerCase() + ':' + u.toLowerCase(), title: s.chart, unit: u, zero: false, range: null };
-  if (/^(°\s*[cf]|k)$/i.test(u)) return { key: 'temperature', title: 'Temperature', unit: u, zero: false, range: [0, 30] };
+  // the habitat's thermometer on its own chart is the cricket terrarium's (8 October: the graph named "Cricket Terrarium
+  // Temperature")
+  if (/^(°\s*[cf]|k)$/i.test(u)) return { key: 'temperature', title: /cricket/i.test(`${s.id} ${s.label}`) ? 'Cricket Terrarium Temperature' : 'Temperature', unit: u, zero: false, range: [0, 30] };
   // Energy and power are drawn in one unit each whatever the meter reports —
   // Wh and W — so a Shelly reading kWh and another reading Wh share an axis
   // (a kWh meter's line is drawn ×1000; its legend keeps its own unit).
@@ -994,7 +1098,7 @@ function hwChart(hw, group, members, tz, T = same, W = HW_W, H = HW_H) {
   // over the line's end, or under it where the line runs near the top of the plot (the clock of the moment stands there)
   const tagW = 20 + tagText.length * 8.4, tagH = 26, tagX = Math.min(W - padR - tagW, Math.max(padL, lead.ex - tagW / 2)), tagY = lead.ey - 38 >= padT + 2 ? lead.ey - 38 : lead.ey + 12;
   return `<figure class="hw-chart hw-${esc(group.key.replace(/[^a-z0-9]+/gi, '-'))}">
-  <figcaption class="hw-title"><b>${esc(T(group.title))}</b>${unit ? ` <span class="hw-unit">${unit}${group.key === 'power' ? ` · ${T('hourly average')}` : ''}</span>` : ''}</figcaption>
+  <figcaption class="hw-title">${sensorIcon(group.key === 'power' || group.key.startsWith('energy') ? 'pwr' : group.key === 'temperature' ? 'temp' : /oxygen/i.test(group.title) ? 'o2' : /air quality/i.test(group.title) ? 'iaq' : 'pres', 'hw-ic')}<b>${esc(T(group.title))}</b>${unit ? ` <span class="hw-unit">${unit}${group.key === 'power' ? ` · ${T('hourly average')}` : ''}</span>` : ''}</figcaption>
   <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(T(group.title))} — ${esc(T('today, midnight to midnight venue time, one line per device, on one scale in'))} ${unit || '—'}">
     <defs>${series.map((r) => `
       <linearGradient id="${r.id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${r.colour}" stop-opacity="${series.length > 1 ? 0.16 : 0.3}"/><stop offset="1" stop-color="${r.colour}" stop-opacity="0"/></linearGradient>`).join('')}
@@ -1036,7 +1140,11 @@ function hwCharts(hw, tz, T = same, W = HW_W, H = HW_H) {
     if (!e) groups.set(g.key, e = { group: g, members: [] });
     e.members.push({ s, colour: hwColour(i) });
   });
-  const charts = [...groups.values()].map((e) => hwChart(hw, e.group, e.members, tz, T, W, H)).filter(Boolean);
+  // in the order the panel reads them (8 October): the power, the cricket terrarium's temperature; the oxygen, the air
+  // quality — two across, then anything else the file lists, in its order
+  const rank = (g) => (g.key === 'power' ? 0 : g.key === 'temperature' ? 1 : /oxygen/i.test(g.title) ? 2 : /air quality/i.test(g.title) ? 3 : 9);
+  const charts = [...groups.values()].sort((a, b) => rank(a.group) - rank(b.group))
+    .map((e) => hwChart(hw, e.group, e.members, tz, T, W, H)).filter(Boolean);
   return charts.length ? `<div class="hw-charts">${charts.join('')}</div>` : '';
 }
 
@@ -1074,7 +1182,7 @@ function hardwareInner(hw, T = same, { width = HW_W, height = HW_H } = {}) {
   const tz = hwTz();
   const list = hw.sensors || [];
   const W = Math.max(240, Math.min(1400, Math.round(Number(width) || HW_W)));
-  const H = Math.max(120, Math.min(400, Math.round(Number(height) || HW_H)));
+  const H = Math.max(120, Math.min(700, Math.round(Number(height) || HW_H)));
   // The charts are the panel: no tiles, one day chart per kind of quantity
   // (temperature, energy, …), each on a proper axis in its unit, every
   // device a line named at its end with the current reading. The
@@ -1356,74 +1464,25 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, power = { cate
          and stores every reading in its own database; /public/habitat.js draws
          these tiles from /api/habitat/data and refreshes on the station's cycle. -->
     <div class="hbt" id="sensors">
-      <div class="bento" id="hbt-bento" hidden>
-        <section class="tile t-co2">
-          <h3>${T('Carbon dioxide')}</h3>
-          <span class="sub" id="co2Sub"></span>
-          <div class="dial-wrap">
-            <div id="hbt-dial"></div>
-            <div class="dial-center">
-              <div class="big" id="co2Val">—<em>ppm</em></div>
-              <div class="verdict" id="co2Verdict"></div>
-            </div>
-          </div>
-        </section>
-        <section class="tile t-temp">
-          <h3>${T('Temperature')}</h3>
-          <span class="sub">${T('Scale')} 0–40 °C</span>
-          <div class="ruler-row">
-            <div class="ruler-num">
-              <div class="big" id="tempVal">—<em>°C</em></div>
-              <div class="verdict" id="tempVerdict"></div>
-            </div>
-            <div class="ruler-wrap" id="hbt-ruler"></div>
-          </div>
-        </section>
-        <section class="tile t-hum lvl">
-          <h3>${T('Humidity')}</h3>
-          <span class="sub">${T('Scale')} 0–100 %RH</span>
-          <div class="big" id="humVal" style="margin-top:12px">—<em>%</em></div>
-          <div id="hbt-level"></div>
-        </section>
-        <section class="tile t-pres spk">
-          <h3>${T('Air pressure')}</h3>
-          <span class="sub">${T('Scale')} 950–1050 hPa</span>
-          <div class="big" id="presVal" style="margin-top:12px">—<em>hPa</em></div>
-          <div id="hbt-pres"></div>
-        </section>
-        ${figureTile(crewFigures, m, { key: 'steps', label: 'Steps taken', unit: T('steps'), colour: 'var(--ink)', fmt: (v) => v.toLocaleString('en-GB'), T, crew })}
-        <section class="tile t-iaq lvl">
-          <h3>${T('Air quality')}</h3>
-          <span class="sub">${T('IAQ index')}</span>
-          <div class="big" id="iaqVal" style="margin-top:12px">—<em>IAQ</em></div>
-          <div class="verdict" id="iaqVerdict"></div>
-          <div id="hbt-iaq"></div>
-        </section>
-        <section class="tile t-voc spk">
-          <h3>${T('Volatile organic compounds')}</h3>
-          <span class="sub">${T('Breath-VOC equivalent')} · ${T('Scale')} 0–10 ppm</span>
-          <div class="big" id="vocVal" style="margin-top:12px">—<em>ppm</em></div>
-          <div id="hbt-voc"></div>
-        </section>
-        <section class="tile t-light spk">
-          <h3>${T('Light')}</h3>
-          <span class="sub">${T('Illuminance')} · ${T('Scale')} 0–1000 lx</span>
-          <div class="big" id="lightVal" style="margin-top:12px">—<em>lx</em></div>
-          <div id="hbt-light"></div>
-        </section>${vizTile(T, 'radar', { n: crew.length })}
-      </div>
-      <div class="bento aux">
+      <!-- 8 October: the instruments on four tracks — the oxygen, the carbon dioxide, the temperature, the humidity; the air
+           pressure, the air quality, the light, the volatile organic compounds — each with its sign; then the steps and the
+           stores; then the power, Karlsruhe and the astronauts; the hardware's charts under them (aura.css, #hbt-bento) -->
+      <div class="bento" id="hbt-bento">
+        <section class="tile t-sens t-o2" id="o2-live">${oxygenTileInner(hardware, T)}</section>${SENSOR_TILES.map((d) => sensorTile(T, d)).join('')}
+        <div class="hbt-notes" id="hbt-notes"></div>
+        ${figureTile(crewFigures, m, { key: 'steps', label: 'Steps taken', unit: T('steps'), colour: 'var(--ink)', fmt: (v) => v.toLocaleString('en-GB'), T, crew, icon: 'steps' })}
         <section class="tile t-res" id="stores">
+          ${sensorIcon('res')}
           <h3>${T('Resources')}</h3>
           <span class="sub">${T('Carried in · never resupplied')}</span>
           ${inventoryGauges(inventory, { cells: true, T })}
-        </section>${vizTile(T, 'city')}
+        </section>
         <section class="tile t-pwr" id="power">
+          ${sensorIcon('pwr')}
           <h3>${T('Power consumed')}</h3>
           <div id="pwr-live">${powerTileInner(ctx, power)}</div>
-        </section>
+        </section>${vizTile(T, 'city')}${vizTile(T, 'radar', { n: crew.length })}
       </div>
-      <div id="hbt-notes"></div>
     </div>
     ${hardwareSection}${trendsInSensors}`);
 
@@ -1635,8 +1694,9 @@ function dashLive(T) {
    slowly round. Decoration, nothing more: hidden from assistive technology, not one figure in them (the dots are as
    many as the crew, which the head's figure says in words); the readings are the other tiles'. */
 function vizTile(T, id, { n = 3 } = {}) {
+  // named as the instruments are, with its sign at the top right (a pin for Karlsruhe, a radar for the astronauts)
   const tile = (key, inner) => `
-        <section class="tile t-viz t-viz-${id}" aria-hidden="true"><span class="viz-k">${T(key)}</span>${inner}</section>`;
+        <section class="tile t-viz t-viz-${id}" aria-hidden="true"><span class="viz-k">${T(key)}</span>${sensorIcon(id === 'city' ? 'map' : 'radar')}${inner}</section>`;
   if (id === 'city') return tile('Karlsruhe', cityFan(T));
   const ticks = Array.from({ length: 48 }, (_, i) => {
     const a = (i / 48) * Math.PI * 2, long = i % 6 === 0, r1 = long ? 50 : 53, r2 = 57;
@@ -2027,5 +2087,6 @@ function single(ctx, { message }) {
 
 module.exports = {
   mission, writePage, dashboardPage, complete, inventoryGauges, boardCards, boardVersion, archive, single, messageCard,
-  hardwareInner, powerTileInner, ticker, dashboardPanels, boardScreen, habitatDome, composerDevice, portal,
+  hardwareInner, powerTileInner, oxygenTileInner, ticker, dashboardPanels, boardScreen, habitatDome, composerDevice, portal,
+  SENSOR_ICON,
 };

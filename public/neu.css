@@ -83,7 +83,10 @@ body.landing .tk-nav a[aria-current="page"], :root[data-theme="dark"] body.landi
 body.landing .tk-nav a[aria-current="page"]:not(:focus-visible) { outline: 0 !important; }
 body.landing .tk-nav a:hover { transform: none !important; filter: none !important; }
 body.landing .tk-sol { border: 0 !important; box-shadow: var(--neu-out-xs) !important; }
-body.landing .tk-right form button, body.landing .tk-right .lang button, body.landing .status button, body.landing .lang, body.landing .theme { border: 0 !important; background: var(--neu) !important; box-shadow: var(--neu-out-xs) !important; color: var(--neu-dim) !important; }
+body.landing .tk-right form button, body.landing .tk-right .lang button, body.landing .status button, body.landing .lang { border: 0 !important; background: var(--neu) !important; box-shadow: var(--neu-out-xs) !important; color: var(--neu-dim) !important; }
+/* the theme key's form is only a wrapper: no ground and no shadow of its own — a square shade stood round the round key
+   (8 October: "this artefact of a square box or shadow") */
+body.landing .status form.theme, body.landing .tk-right form.theme, :root[data-theme] body.landing .status form.theme { background: transparent !important; box-shadow: none !important; border: 0 !important; }
 body.landing .status .lang button.on { box-shadow: var(--neu-in-sm) !important; color: var(--neu-on) !important; background: var(--neu) !important; }
 body.landing .status .lang-menu > summary, :root[data-theme="dark"] body.landing .status .lang-menu > summary { background: var(--neu) !important; background-image: none !important; color: var(--neu-dim) !important; border: 0 !important; box-shadow: var(--neu-out-xs) !important; }
 body.landing .status .lang-menu > .lang { background: var(--neu) !important; border: 0 !important; box-shadow: var(--neu-out-sm) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
@@ -189,3 +192,28 @@ body .journey .jr-close:active { box-shadow: var(--neu-in-sm) !important; }
 :root[data-theme="dark"] body.landing .space-room::after { box-shadow: inset 10px 10px 26px rgba(0,0,0,.85), inset -6px -6px 18px rgba(255,255,255,.05); }
 /* the write sheet's veil on a phone, by night: a dark one over the black ground */
 :root[data-theme="dark"].js body.landing.messages.dock-open:not(.crossing) .shell::before { background: rgba(10,10,12,.62) !important; }
+
+/* ======================================================================================= the shadows, never square
+   (8 October: "this artefact of a square box or shadow that's happening everywhere — make sure it doesn't happen"). A soft
+   shadow is cast only by a rounded thing, and never cut off: whatever is drawn inside a raised card lies flat on it; a
+   strip that scrolls sideways keeps room round its cards for their shadows. */
+/* a panel inside the dashboard's open folder lies flat on the folder's page — the page is the raised thing */
+body.landing .folder-body .dpanel, :root[data-theme] body.landing .folder-body .dpanel { box-shadow: none !important; background: transparent !important; border-radius: 0 !important; }
+body.landing .folder-body .dpanel.blogp > .dpanel-head { box-shadow: var(--neu-out-sm) !important; }
+/* the About page's habitat: its drawing and its pop-up lie flat in the section's card */
+body.landing .about-sec .hab-card, body.landing .about-sec .hab-card .dome-panel, :root[data-theme] body.landing .about-sec .hab-card .dome-panel { box-shadow: none !important; background-color: transparent !important; border-radius: 0 !important; }
+/* the officers of the day: rounded cards */
+body.landing .officer-card { border-radius: 22px !important; }
+/* At a Glance's booklet scrolls sideways, page by page: room round each page for its shadow */
+body.landing .booklet { padding: 28px 30px 34px !important; margin: -28px -30px -28px !important; gap: 60px !important; scroll-padding-inline: 30px; }
+/* its keys to the day before and after stand in the page's margin, beside the page — not over its edge, where their
+   light fell over the words at the page's sides */
+body.landing .bk-arrow.prev { left: -56px; }
+body.landing .bk-arrow.next { right: -56px; }
+/* the newest pictures' strip on the dashboard: room round each picture for its shadow */
+body.landing .cloud-strip { padding: 16px 18px 20px !important; margin: -16px -18px -20px !important; }
+/* a phone's row of the board's filters, which scrolls sideways: room above and below the chips for their shadows */
+@media (max-width: 760px) {
+  body.landing .board .feed-filter, body.landing .wall-bar .feed-filter { padding-top: 16px !important; padding-bottom: 18px !important; margin-top: -4px !important; margin-bottom: -6px !important; }
+}
+

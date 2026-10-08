@@ -460,7 +460,7 @@ body.landing .composer .dev-foot { justify-content: stretch; }
 body.landing .composer button.primary { width: 100%; padding: 0 34px; border-radius: 999px; }
 body.landing .flash.err { border-radius: 14px; }
 /* while a message crosses: the dial as the station draws it, on the glass */
-body.landing .transit-block { gap: 12px; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; align-items: start; align-content: center; }   /* the dial above its readings, the pair centred in the box the form left */
+body.landing .transit-block { gap: 24px; grid-template-columns: minmax(0, 1fr) minmax(224px, .66fr); grid-template-rows: auto; align-items: center; align-content: center; }   /* the dial large at the left — the crossing is the box's picture while it lasts (8 October: "bigger and more prominent") — its readings beside it
 body.landing .transit .state { font-family: var(--display); font-size: var(--fs-label); letter-spacing: .12em; color: var(--cobalt); }
 body.landing .transit .state b { color: var(--ink); }
 body.landing .transit .clock { font-family: var(--display); color: var(--ink); margin: 6px 0 12px; }
@@ -468,7 +468,7 @@ body.landing .transit .clock { font-family: var(--display); color: var(--ink); m
 body.landing .transit .tbar { background: rgba(var(--cobalt-rgb),.14); box-shadow: none; height: 6px; margin-bottom: 12px; }
 body.landing .transit .honesty { margin-top: 12px; font-family: var(--display); font-size: var(--fs-label); letter-spacing: .08em; color: var(--dim); }
 body.landing .transit .honesty b { color: var(--ink); }
-body.landing .xdial { max-width: 260px; margin: 0 auto; }
+body.landing .xdial { max-width: 380px; width: 100%; margin: 0 auto; }
 
 /* the board */
 body.landing .feed-wrap { min-height: 520px; }                                     /* the board fills the row the composer sets; its cards scroll inside */
@@ -723,7 +723,7 @@ body.landing .feed-end:not(.is-done) span::after { content: ""; display: inline-
 /* ------------------------------------------------- the composer's pop-up */
 /* The composer in a window in the middle of the screen, the page blurred and dimmed behind it, on every public page
    (layout.js, writeKit; public.js, portal; public/write.js): 640px wide, on the notes' surface, a rule of Mars along
-   its top — an eyebrow with the uplink's one-way signal and the distance, the title with its cross, your callsign, the
+   its top — an eyebrow with Transmit, the one-way signal and the distance, the title with its cross, your callsign, the
    crew's question for the day, the writing box, the tags, Transmit across the whole width. Hidden until the floating
    Write key (or a #write door, or /write#write) opens it; its cross, Escape or a click on the blur close it. Once a
    message is sent the crossing plays in it — the dial, the read-out — with a Message Board key under it. A phone has
@@ -748,11 +748,10 @@ body.landing .portal-pop { display: none; }
   html.js body.landing .portal-pop .dev-close:hover { background: rgba(15,21,64,.14); transform: none; box-shadow: none; }
   html.js[data-theme="dark"] body.landing .portal-pop .dev-close { background: rgba(255,255,255,.1); color: #f1f1ef; }
   html.js[data-theme="dark"] body.landing .portal-pop .dev-close:hover { background: rgba(255,255,255,.18); }
-  /* the head: the eyebrow — the uplink and its one-way signal — over the title; your callsign under it */
+  /* the head: the eyebrow — Transmit and its one-way signal — over the title; your callsign under it */
   body.landing .portal-pop .dev-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 16px; padding: 0 0 16px; border-bottom: 1px solid var(--note-edge); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
   body.landing .portal-pop .dev-chip { font-size: 12.5px; padding: 6px 12px; }
   body.landing .portal-pop .dev-signal { order: -1; flex: 1 1 100%; margin: 0 0 6px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--mars-ink); font-weight: 600; white-space: nowrap; }
-  body.landing .portal-pop .dev-signal::before { content: "Uplink · "; }
   body.landing .portal-pop .dev-signal b { color: var(--ink); font-weight: 700; letter-spacing: .04em; }
   body.landing .portal-pop .dev-title { order: -2; margin: 0 56px 6px 0; font-size: 27px; line-height: 1.05; letter-spacing: -.025em; }
   body.landing .portal-pop .dev-prompt { margin: 0 0 16px; padding: 12px 16px 12px 18px; border-radius: 12px; }
@@ -776,7 +775,7 @@ body.landing .portal-pop { display: none; }
   body.landing .portal-pop .composer-device .dev-stage { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
   body.landing .portal-pop .composer-device .dev-stage .transit-block { position: static; overflow: visible; margin: 0; }   /* in the window the crossing flows: the window takes its height, the key under it shows */
   body.landing .portal-pop .composer-device .dev-stage .composer.ghost { display: none; }
-  body.landing .portal-pop .transit-board { display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; box-sizing: border-box; min-height: 50px; margin: 18px 0 0; border-radius: 999px; font-size: 13px; letter-spacing: .14em; text-decoration: none; }
+  body.landing .portal-pop .transit-board { display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; box-sizing: border-box; min-height: 50px; margin: 18px 0 0; border-radius: 999px; font-size: 13px; letter-spacing: .1em; white-space: nowrap; padding: 0 16px; text-decoration: none; }
   /* the closed station's notice and the countdown, in the same window */
   body.landing .portal-pop .transit.closed { margin: 0; }
 }
@@ -908,79 +907,80 @@ body.landing .mission-sheet { flex: none; display: inline-flex; align-items: cen
 body.landing .mission-sheet:hover { border-color: var(--cobalt-fill); }
 @media (max-width: 1100px) { body.landing .mission-parts { grid-template-columns: minmax(0, 1fr); } }
 
-/* the habitat: two rows of instruments, the stills at the foot */
+/* the habitat's Sensors panel (8 October): the eight instruments on four tracks, two rows — the oxygen, the carbon
+   dioxide, the temperature, the humidity; the air pressure, the air quality, the light, the volatile organic compounds —
+   each a tile of one make, its sign in a disc at its top right (public.js, SENSOR_ICON) and a meter under its figure;
+   then the steps (one track) and the stores (three); then the power (two), Karlsruhe and the astronauts (one each); the
+   hardware's charts after the tiles, two across. The gaps stand between the tiles only (October: "increase the gap
+   between boxes to have a clearer layout"). A narrower panel (under 740 px: a tablet, a small window) lays the tiles on
+   two tracks, under 400 px on one (the container queries below); a phone has its own column further down. */
 body.landing #habitat.dpanel { padding: 22px 28px; }
 body.landing .hbt { margin: 0; container: hbt / inline-size; }
-/* the gaps wide (October: "increase the gap between boxes to have a clearer layout"), room for each tile's own shadow —
-   and the instruments on four tracks, so that the gaps stand between the tiles only and take nothing from inside them:
-   the carbon dioxide | the temperature | the humidity over the air pressure | the steps; then the air quality | the
-   light | the volatile organic compounds | the radar — every edge in line from row to row. A narrower panel (under
-   740 px: a tablet, a small window) lays them on two tracks, under 400 px on one (the container queries below); a
-   phone has its own column further down. */
 body.landing .hbt .bento, body.landing .dpanel.compact .hbt .bento { gap: min(22px, calc(2.4 * var(--u))); }
-body.landing .hbt .bento:not(.aux) { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr) minmax(0, 6fr) minmax(0, 6fr);
-  grid-template-areas: "co2 temp hum steps" "co2 temp pres steps" "iaq light voc radar"; }
-body.landing .hbt .bento.aux { grid-template-columns: repeat(24, minmax(0, 1fr)); margin-top: min(22px, calc(2.4 * var(--u))); }
+body.landing #hbt-bento { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-areas: none; }
+body.landing #hbt-bento > * { grid-column: span 1; grid-row: auto; min-width: 0; }
+body.landing #hbt-bento > .t-res { grid-column: span 3; }
+body.landing #hbt-bento > .t-pwr { grid-column: span 2; }
+body.landing #hbt-bento > .hbt-notes { grid-column: 1 / -1; }
+body.landing #hbt-bento > .hbt-notes:empty { display: none; }
 @container hbt (max-width: 739px) {
-  body.landing .hbt .bento:not(.aux) { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "co2 temp" "hum pres" "iaq iaq" "voc light" "steps radar"; }
+  body.landing #hbt-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body.landing #hbt-bento > .t-fig { order: 20; }
+  body.landing #hbt-bento > .t-viz-radar { order: 21; }
+  body.landing #hbt-bento > .t-res { order: 22; grid-column: 1 / -1; }
+  body.landing #hbt-bento > .t-pwr { order: 23; grid-column: 1 / -1; }
+  body.landing #hbt-bento > .t-viz-city { order: 24; grid-column: 1 / -1; }
 }
 @container hbt (max-width: 399px) {
-  body.landing .hbt .bento:not(.aux) { grid-template-columns: minmax(0, 1fr); grid-template-areas: none; }
-  body.landing .hbt .bento:not(.aux) > .tile { grid-area: auto; }
+  body.landing #hbt-bento { grid-template-columns: minmax(0, 1fr); }
+  body.landing #hbt-bento > * { grid-column: 1 / -1; }
 }
-body.landing .hbt .tile { padding: min(14px, calc(1.5 * var(--u))) 16px; border-radius: 18px; background: var(--tile); border: 1px solid rgba(var(--cobalt-rgb),.12); box-shadow: none; display: flex; flex-direction: column; gap: 4px; }
-body.landing .dpanel.compact .hbt .tile { padding: min(16px, calc(1.8 * var(--u))) 16px; border-radius: 18px; }   /* the compact panel's tight dress (station.css) let out: air in each tile as between them */
+body.landing .hbt .tile { position: relative; padding: min(14px, calc(1.5 * var(--u))) 16px; border-radius: 18px; background: var(--tile); border: 1px solid rgba(var(--cobalt-rgb),.12); box-shadow: none; display: flex; flex-direction: column; gap: 4px; }
+body.landing .dpanel.compact .hbt .tile { padding: min(18px, calc(2 * var(--u))) 18px; border-radius: 18px; }   /* the compact panel's tight dress (station.css) let out: air in each tile as between them */
 body.landing .hbt .tile h3, body.landing .dpanel.compact .hbt .tile h3 { font-family: var(--display); font-weight: 600; font-size: var(--fs-name); letter-spacing: -.005em; color: var(--ink); margin: 0; }
 body.landing .hbt .sub, body.landing .dpanel.compact .hbt .sub { font-family: var(--display); font-size: 13px; letter-spacing: 0; text-transform: none; color: var(--dim); line-height: 1.4; }   /* a sentence, not a label: plain case */
-body.landing .hbt .t-co2 { grid-area: co2; }
-body.landing .hbt .t-temp { grid-area: temp; }
-body.landing .hbt .t-hum { grid-area: hum; }
-body.landing .hbt .t-pres { grid-area: pres; }
-/* the third row, the habitat sensor's channels: the air quality index with its classification, the light, the volatile
-   organic compounds — the radar takes the end of the row ("the dashboard, alive") */
-body.landing .hbt .t-iaq { grid-area: iaq; }
-body.landing .hbt .t-light { grid-area: light; }
-body.landing .hbt .t-voc { grid-area: voc; }
-body.landing .hbt .t-iaq svg, body.landing .hbt .t-voc svg, body.landing .hbt .t-light svg { max-width: 460px; }
-/* the crew's counted figure, the steps (the calories consumed beside it are no longer kept, October): a tile two rows tall
-   at the end of the first two — the day's figure for every officer, one under the other, the crew's total and the run as
-   a sparkline beneath */
-body.landing .hbt .t-steps { grid-area: steps; }
-body.landing .hbt .aux .t-res { grid-column: span 11; }
-body.landing .hbt .aux .t-pwr { grid-column: span 8; }                                                                   /* Karlsruhe's fan stands between the two (public.js, vizTile) */
-/* on a wider screen the second row is laid out by its contents: the stores' tile only as wide as its rings — one ring a
-   store, four stores four rings — the fan at its own width beside it, and the power taking what is left */
-@media (min-width: 761px) and (min-height: 521px) {
-  body.landing .hbt .bento.aux { display: flex; flex-wrap: wrap; align-items: stretch; }
-  body.landing .hbt .aux .t-res { flex: 0 0 auto; width: auto; max-width: 100%; }
-  body.landing .hbt .aux .t-viz-city { flex: 0 0 auto; width: clamp(200px, 23%, 270px); }
-  body.landing .hbt .aux .t-pwr { flex: 1 1 260px; min-width: 0; }
-  body.landing .hbt .aux .gauges.rounds { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 16px 20px; }
-  body.landing .hbt .aux .gauge.round { flex: 0 0 auto; width: max(140px, calc(14.4 * var(--u))); }
-}
+/* the sign: a disc at the tile's top right, its drawing in the tile's own ground — white on the night's black, the ink by
+   day — red while the reading is past its limit; the name and its scale keep clear of it */
+body.landing { --ic-disc: #262b48; --ic-glyph: #f4f5fa; --meter-off: rgba(38,43,72,.13); }
+:root[data-theme="dark"] body.landing { --ic-disc: #f1f1ee; --ic-glyph: #121214; --meter-off: rgba(255,255,255,.12); }
+body.landing .t-ic { position: absolute; top: min(16px, calc(1.8 * var(--u))); right: min(16px, calc(1.8 * var(--u))); z-index: 1; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: var(--ic-disc); color: var(--ic-glyph); }
+body.landing .t-ic svg { display: block; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
+body.landing .hbt .tile.is-hot .t-ic, body.landing .hbt .tile:has(.big.hot) .t-ic { background: #e0322b; color: #fff; }
+body.landing .hbt .tile > .t-ic ~ h3, body.landing .hbt .tile > .t-ic ~ .sub, body.landing .hbt .t-pwr #pwr-live > .sub { padding-right: 52px; }
+/* the reading at the foot of the tile: the figure, its meter, a word on it — level across a row whatever the names' length */
+body.landing .hbt .t-sens .t-read { margin-top: auto; display: flex; flex-direction: column; gap: 10px; padding-top: 14px; }
+body.landing .hbt .t-sens .big { font-size: 34px; }
+body.landing .hbt .t-sens .verdict { min-height: 1.4em; margin: 0; }
+/* the meter: segments, thin bars or dots, lit in Mars up to the reading on its scale, red past the instrument's limit */
+body.landing .meter { display: flex; align-items: center; gap: 4px; height: 22px; }
+body.landing .meter i { display: block; flex: 1 1 0; min-width: 0; background: var(--meter-off); transition: background-color .5s; }
+body.landing .meter.m-seg i { height: 9px; border-radius: 5px; }
+body.landing .meter.m-bars { gap: 3px; }
+body.landing .meter.m-bars i { height: 22px; border-radius: 2px; }
+body.landing .meter.m-dots { justify-content: space-between; gap: 2px; }
+body.landing .meter.m-dots i { flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%; }
+body.landing .meter i.on { background: var(--mars); }
+:root[data-theme="dark"] body.landing .meter i.on { box-shadow: 0 0 7px rgba(255,90,31,.55); }
+body.landing .meter.is-hot i.on { background: #e0322b; }
+:root[data-theme="dark"] body.landing .meter.is-hot i.on { box-shadow: 0 0 7px rgba(224,50,43,.6); }
+/* the stores beside the steps: one ring a store, as many to a line as the tile's width holds */
+body.landing #hbt-bento > .t-res .gauges.rounds { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 16px 20px; }
+body.landing #hbt-bento > .t-res { padding-bottom: 30px; }                                      /* the rounds' shadows fade out inside the tile, never cut at its foot */
+body.landing #hbt-bento > .t-res .gauge.round { flex: 0 0 auto; width: max(140px, calc(14.4 * var(--u))); }
 body.landing .hbt .big { font-family: var(--display); font-weight: 600; letter-spacing: -.03em; line-height: 1; color: var(--ink); }
 body.landing .hbt .big em { font-size: 14px; color: var(--dim); margin-left: 4px; font-weight: 400; }
 body.landing .hbt .verdict, body.landing .dpanel.compact .hbt .verdict, body.landing .dpanel.compact .hbt .t-fig .verdict { font-size: var(--fs-note); color: var(--dim); margin-top: 4px; }
 body.landing .hbt .hot { color: var(--mars-ink) !important; }
-body.landing .hbt .dial-wrap { min-height: 0; flex: 1 1 auto; }
-body.landing .hbt .dial-wrap svg { width: calc(24 * var(--u)); height: calc(24 * var(--u)); max-width: none; }
-body.landing .hbt .dial-center .big { font-size: 28px; }
-body.landing .hbt .ruler-row { flex-direction: column; align-items: center; gap: 6px; min-height: 0; padding-top: 6px; }
-body.landing .hbt .ruler-num { flex: none; text-align: center; }
-body.landing .hbt .ruler-num .big { font-size: 26px; }
-body.landing .hbt .ruler-wrap { width: 40px; height: calc(15.3 * var(--u)); flex: none; align-self: center; margin-top: auto; }
-body.landing .hbt .ruler-wrap svg { width: 40px; height: calc(15.3 * var(--u)); }
-body.landing .hbt .lvl .big, body.landing .hbt .spk .big { font-size: 24px; margin-top: 2px !important; }
-body.landing .hbt .lvl svg, body.landing .hbt .spk svg { margin-top: auto; max-height: 44px; }
 body.landing .hbt .fig-rows { display: flex; flex-direction: column; margin-top: 6px; }
 body.landing .hbt .fig-r { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: min(5px, calc(.5 * var(--u))) 0; border-bottom: 1px solid var(--hair); }
-body.landing .hbt .fig-who { font-family: var(--display); font-size: var(--fs-label); letter-spacing: .08em; text-transform: uppercase; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.landing .hbt .fig-who { min-width: 0; font-family: var(--display); font-size: var(--fs-label); line-height: 1.3; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }   /* the officer's title whole, on two lines where the tile is narrow — never cut short */
 body.landing .hbt .fig-v { flex: none; font-family: var(--display); font-size: min(18px, calc(2 * var(--u))); font-weight: 600; letter-spacing: -.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
 body.landing .hbt .fig-v em { font-style: normal; font-size: 12.5px; font-weight: 400; color: var(--dim); margin-left: 3px; letter-spacing: 0; }
 body.landing .hbt .fig-foot { display: flex; flex-direction: column; gap: 2px; margin-top: auto; padding-top: 6px; }
 body.landing .hbt .fig-total { font-family: var(--display); font-size: 13.5px; font-weight: 600; color: var(--ink); }
 body.landing .hbt .fig-spark { display: block; width: 100%; height: min(28px, calc(3 * var(--u))); max-width: none; }
 body.landing .hbt .t-fig .verdict { margin-top: 4px; }
+body.landing .hbt .t-fig .verdict:empty { display: none; }                                       /* nothing filed yet: the foot says so, once */
 body.landing .gauges.rounds { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 6px; padding-top: min(6px, calc(.6 * var(--u))); margin-top: 0; }
 /* the stores' rounds large, their names large under them — no count of days (October: "remove the days count and make
    the layout bigger to show the text clearly") */
@@ -1067,16 +1067,14 @@ body.landing .folder-body .hbt-trends-in .tchart-svg { max-height: 300px; }
 body.landing .folder-body #habitat .hw-chart svg { max-height: none; }                            /* the chart fills its tile: drawn for the tile's width (hardware.js) */
 body.landing .folder-body #habitat .hbt .tile h3 { font-size: 20px; line-height: 1.15; margin: 0 0 4px; overflow-wrap: break-word; }
 body.landing .folder-body #habitat .hbt .sub, body.landing .folder-body #habitat .hbt .t-pwr .sub { font-size: 14px; line-height: 1.35; }
-body.landing .folder-body #habitat .hbt .lvl .big, body.landing .folder-body #habitat .hbt .spk .big, body.landing .folder-body #habitat .hbt .ruler-num .big { font-size: 36px; }
-body.landing .folder-body #habitat .hbt .dial-center .big { font-size: 48px; }
+body.landing .folder-body #habitat .hbt .t-sens .big { font-size: 38px; }
 body.landing .folder-body #habitat .hbt .big em { font-size: 18px; }
 body.landing .folder-body #habitat .hbt .verdict { font-size: 16px; margin-top: 4px; }
-body.landing .folder-body #habitat .hbt .dial-center .verdict { font-size: 15px; margin-top: 0; }
 body.landing .folder-body #habitat .hbt .fig-who { font-size: 12px; }
 body.landing .folder-body #habitat .hbt .fig-v { font-size: 20px; }
 body.landing .folder-body #habitat .hbt .fig-v em { font-size: 14px; }
 body.landing .folder-body #habitat .hbt .fig-total { font-size: 16px; }
-body.landing .folder-body #habitat .hbt .viz-k { font-size: 14px; letter-spacing: .12em; }
+body.landing .folder-body #habitat .hbt .viz-k { font-size: 20px; line-height: 1.15; }
 body.landing .folder-body #habitat .cell-name { font-size: 17px; }
 body.landing .folder-body #habitat .hbt .empty, body.landing .folder-body #habitat .hbt .note, body.landing .folder-body #habitat #hbt-notes .note { font-size: 15px; line-height: 1.45; }
 body.landing .folder-body #habitat .dpanel-title h3 { font-size: 24px; }
@@ -1087,6 +1085,10 @@ body.landing .hw-in-habitat .hw-head .sub { font-family: var(--display); font-si
 body.landing .hw-chart { margin: 0; padding: 14px 16px; border-radius: 18px; background: var(--tile); border: 1px solid rgba(var(--cobalt-rgb),.12); box-shadow: none; }
 body.landing .hw-chart svg { max-height: none; }                                                   /* the width of the tile, its height from its box (public.js, hwChart: drawn for the width the page asks for) */
 body.landing .hw-title { font-family: var(--display); font-size: 13px; letter-spacing: .12em; color: var(--cobalt); }
+/* each chart's sign before its name, as on the instruments' tiles (8 October): the bolt, the thermometer, the lungs, the wind */
+body.landing .hw-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+body.landing .hw-ic { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--ic-disc); color: var(--ic-glyph); }
+body.landing .hw-ic svg { display: block; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
 body.landing .hw-unit { color: var(--dim); }
 body.landing .hw-ax { font-family: var(--display); font-size: 10px; letter-spacing: .06em; fill: var(--dim); }
 body.landing .hw-name { font-family: var(--display); font-size: 14px; letter-spacing: 0; }
@@ -1111,6 +1113,7 @@ body.landing .hw-end { stroke: #fff; stroke-width: 2; }
 body.landing .hw-pulse { opacity: .35; transform-box: fill-box; transform-origin: center; animation: hw-pulse 2.2s ease-out infinite; }
 body.landing .hw-tag text { font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: .02em; fill: #fff; }   /* the figure in its pill (public.js, hwChart, sizes the pill to it) */
 body.landing .hw-tag { animation: hw-fade .8s ease-out 1s both; }
+body.landing #hw-live.is-live .hw-line, body.landing #hw-live.is-live .hw-area, body.landing #hw-live.is-live .hw-tag { animation: none; }   /* a reading swapped in later is simply there (hardware.js) */
 body.landing .hw-legend { flex-direction: row; flex-wrap: wrap; gap: 6px 26px; margin-top: 10px; }    /* the lines named side by side under the plot */
 body.landing .hw-legend li { flex: 0 1 auto; display: grid; grid-template-columns: 8px auto; column-gap: 10px; row-gap: 2px; align-items: baseline; min-width: 0; }   /* the dot, the name; the low and high under the name */
 body.landing .hw-legend li i { grid-row: 1; align-self: center; }
@@ -1584,27 +1587,35 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
   body.landing .mission-title { font-size: 24px; }
   body.landing .dash-head .bigsec, body.landing .portal-head .bigsec, body.landing .dash-subhead .bigsec { font-size: 30px; }
   body.landing .dash-clock { align-items: flex-start; }
-  /* the habitat's readings on a phone: one plain column of compact readouts — each tile its name and its scale at the
-     left, its figure at the right, the dial or the band under them where there is one; the thermometer's ruler, the
-     radar and the fan left to a wider screen; the figures, the stores and the power one under the other */
-  body.landing .hbt .bento, body.landing .hbt .bento:not(.aux), body.landing .dpanel.compact .hbt .bento { grid-template-columns: minmax(0, 1fr); grid-template-areas: none; gap: 14px; } body.landing .hbt .bento.aux { margin-top: 14px; }
-  body.landing .hbt .bento > .tile { grid-column: 1 / -1; grid-row: auto; }
-  body.landing .hbt .tile:not(.t-fig):not(.t-viz):not(.t-res):not(.t-pwr) { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "h big" "sub big"; column-gap: 14px; row-gap: 2px; align-items: center; padding: 11px 14px 12px; }
-  body.landing .hbt .tile:not(.t-fig):not(.t-viz):not(.t-res):not(.t-pwr) > h3 { grid-area: h; margin: 0; }
-  body.landing .hbt .tile:not(.t-fig):not(.t-viz):not(.t-res):not(.t-pwr) > .sub { grid-area: sub; margin: 0; }
-  body.landing .hbt .tile:not(.t-fig):not(.t-viz):not(.t-res):not(.t-pwr) > .big, body.landing .hbt .tile .ruler-row { grid-area: big; justify-self: end; margin: 0 !important; text-align: right; }
-  body.landing .hbt .tile:not(.t-fig):not(.t-viz):not(.t-res):not(.t-pwr) > .big { font-size: 24px; }
-  body.landing .hbt .tile:not(.t-fig):not(.t-viz):not(.t-res):not(.t-pwr) > :not(h3):not(.sub):not(.big):not(.ruler-row) { grid-column: 1 / -1; }
-  body.landing .hbt .tile .ruler-row { display: block; } body.landing .hbt .tile .ruler-wrap { display: none; } body.landing .hbt .ruler-num .big { font-size: 24px; margin: 0; text-align: right; }
-  body.landing .hbt .tile:not(.t-fig):not(.t-viz):not(.t-res):not(.t-pwr) > .verdict:empty, body.landing .hbt .tile > div:empty { display: none; }
-  body.landing .hbt .t-co2 { grid-template-areas: "h h" "sub sub" "dial dial"; } body.landing .hbt .t-co2 .dial-wrap { grid-area: dial; min-height: 64px; margin-top: 4px; }
-  body.landing .hbt .dial-wrap svg { display: block; width: min(100%, 220px); height: auto; max-width: 100%; margin: 0 auto; } body.landing .hbt .dial-center .big { font-size: 26px; }
+  /* the habitat's readings on a phone: one plain column of compact readouts — each instrument its sign at the left, its
+     name and scale beside it, its figure at the right, its meter under them across the tile; the radar left to a wider
+     screen; the steps, the stores, the power and the fan one under the other */
+  body.landing .hbt .bento, body.landing #hbt-bento, body.landing .dpanel.compact .hbt .bento { grid-template-columns: minmax(0, 1fr); grid-template-areas: none; gap: 14px; }
+  body.landing #hbt-bento > * { grid-column: 1 / -1; grid-row: auto; }
+  body.landing .hbt .t-sens { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: "ic h big" "ic sub big" "m m m" "v v v"; column-gap: 12px; row-gap: 2px; align-items: center; padding: 12px 14px 14px; }
+  body.landing .hbt .t-sens > .t-ic { position: static; grid-area: ic; width: 40px; height: 40px; }
+  body.landing .hbt .t-sens > .t-ic svg { width: 20px; height: 20px; }
+  body.landing .hbt .t-sens > h3, body.landing .hbt .t-sens > .sub { margin: 0; padding-right: 0; overflow-wrap: normal; word-break: normal; -webkit-hyphens: auto; hyphens: auto; }
+  body.landing .hbt .t-sens > h3 { grid-area: h; }
+  body.landing .hbt .t-sens > .sub { grid-area: sub; }
+  body.landing .hbt .t-sens .t-read { display: contents; }
+  body.landing .hbt .t-sens .big { grid-area: big; justify-self: end; font-size: 22px; text-align: right; white-space: nowrap; }
+  body.landing .hbt .t-sens .big em { font-size: 12.5px; margin-left: 3px; }
+  body.landing .hbt .t-sens .meter { grid-area: m; margin-top: 10px; }
+  body.landing .hbt .t-sens .verdict { grid-area: v; min-height: 0; margin-top: 6px; }
+  body.landing .hbt .t-sens .verdict:empty { display: none; }
+  body.landing .folder-body #habitat .hbt .t-sens .big { font-size: 24px; }
+  body.landing .folder-body #habitat .hbt .t-sens .big em { font-size: 13px; }
+  body.landing .folder-body #habitat .hbt .t-sens > h3 { font-size: 17px; margin: 0; overflow-wrap: normal; }
+  body.landing .folder-body #habitat .hbt .t-sens > .sub { font-size: 13px; }
+  /* the stores two to a line */
+  body.landing #hbt-bento > .t-res .gauges.rounds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; padding-right: 8px; }   /* (room at the right for the rounds' shadows) */
+  body.landing #hbt-bento > .t-res .gauge.round { width: auto; }
   body.landing .hbt .t-fig .verdict { display: none; }                                           /* "nothing recorded" stands in its foot already */
   body.landing .hbt .t-viz-radar { display: none; }
   body.landing .hbt .tile.t-viz-city { min-height: 0; padding: 14px 12px 12px; } body.landing .dl-city { max-width: 190px; }
   body.landing .pwr-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name val" "bar bar"; row-gap: 6px; padding: 4px 0; }
   body.landing .pwr-name { grid-area: name; } body.landing .pwr-track { grid-area: bar; } body.landing .pwr-val { grid-area: val; }
-  body.landing .hbt .ruler-wrap, body.landing .hbt .ruler-wrap svg { height: 120px; }
   body.landing .gauges.rounds { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 12px; }
   body.landing .gauge.round svg { width: 104px; height: 104px; }
   body.landing .cloud-latest { flex-direction: column; gap: 12px; }
@@ -2182,11 +2193,11 @@ body.landing .slow-sub { margin: 5px 0 0; font-size: 17px; line-height: 1.4; col
 body.landing .slow-steps { list-style: none; margin: 0; padding: 0; }
 /* a step: its sign in a small tinted disc, its words; a dashed thread in its colour on to the next */
 body.landing .slow-step { --c: #2f45e8; --c-soft: rgba(47,69,232,.12); --c-edge: rgba(47,69,232,.4); --c-halo: rgba(47,69,232,.06); --c-glow: rgba(47,69,232,.62); position: relative; }
-body.landing .slow-step.s-uplink { --c: #6b50c8; --c-soft: rgba(107,80,200,.12); --c-edge: rgba(107,80,200,.4); --c-halo: rgba(107,80,200,.06); --c-glow: rgba(107,80,200,.62); }
+body.landing .slow-step.s-transmit { --c: #6b50c8; --c-soft: rgba(107,80,200,.12); --c-edge: rgba(107,80,200,.4); --c-halo: rgba(107,80,200,.06); --c-glow: rgba(107,80,200,.62); }
 body.landing .slow-step.s-transit { --c: #b24f8f; --c-soft: rgba(178,79,143,.12); --c-edge: rgba(178,79,143,.4); --c-halo: rgba(178,79,143,.06); --c-glow: rgba(178,79,143,.62); }
 body.landing .slow-step.s-downlink { --c: #ff5a1f; --c-soft: rgba(255,90,31,.12); --c-edge: rgba(255,90,31,.4); --c-halo: rgba(255,90,31,.06); --c-glow: rgba(255,90,31,.62); }
 :root[data-theme="dark"] body.landing .slow-step { --c: #93a0ff; --c-soft: rgba(147,160,255,.14); --c-edge: rgba(147,160,255,.42); --c-halo: rgba(147,160,255,.07); --c-glow: rgba(0,0,0,.7); }
-:root[data-theme="dark"] body.landing .slow-step.s-uplink { --c: #ab93f2; --c-soft: rgba(171,147,242,.14); --c-edge: rgba(171,147,242,.42); --c-halo: rgba(171,147,242,.07); }
+:root[data-theme="dark"] body.landing .slow-step.s-transmit { --c: #ab93f2; --c-soft: rgba(171,147,242,.14); --c-edge: rgba(171,147,242,.42); --c-halo: rgba(171,147,242,.07); }
 :root[data-theme="dark"] body.landing .slow-step.s-transit { --c: #e38bc4; --c-soft: rgba(227,139,196,.14); --c-edge: rgba(227,139,196,.42); --c-halo: rgba(227,139,196,.07); }
 :root[data-theme="dark"] body.landing .slow-step.s-downlink { --c: #ff7a45; --c-soft: rgba(255,122,69,.14); --c-edge: rgba(255,122,69,.42); --c-halo: rgba(255,122,69,.07); }
 body.landing .slow-ic { display: grid; place-items: center; width: 36px; height: 36px; box-sizing: border-box; border-radius: 50%; color: var(--c); border: 1px solid var(--c-edge);
@@ -2288,19 +2299,12 @@ body.landing .dl-live i { width: 7px; height: 7px; border-radius: 50%; backgroun
 /* the run's strip: the sol of the day breathes */
 body.landing .run-strip .now i { animation: dl-breathe 2.4s ease-in-out infinite; }
 @keyframes dl-breathe { 50% { box-shadow: 0 0 16px 4px rgba(255,90,31,.75); } }
-/* the two instruments, each a tile with its name small in the corner and the drawing in the middle: the radar at the
-   end of the sensors' third row, the fan at the end of the stores' row — never side by side */
-body.landing .hbt .tile.t-viz { position: relative; align-items: center; justify-content: center; min-height: 168px; padding: 36px 16px 14px; overflow: hidden; }   /* the name above, the drawing under it */
-body.landing .hbt .t-viz-radar { grid-area: radar; }
-body.landing .hbt .aux .t-viz-city { grid-column: span 5; }
-body.landing .hbt .viz-k { position: absolute; left: 16px; top: 12px; font-family: var(--display); font-size: var(--fs-tag); letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
-body.landing .hbt .viz-k::before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 8px 1px 0; border-radius: 50%; background: var(--cobalt); box-shadow: 0 0 8px 2px rgba(var(--cobalt-rgb),.45); animation: live 2s ease-in-out infinite; vertical-align: middle; }
-/* the instrument's name in the flow, over its drawing, and on two lines where the tile is narrow — never over the
-   drawing (October: the wider gaps left the radar's tile too narrow for its name on one line); the drawing in the middle
-   of what is left */
-body.landing .hbt .tile.t-viz { padding-top: 14px; }
-body.landing .hbt .viz-k { position: static; align-self: stretch; line-height: 1.35; }
-body.landing .hbt .tile.t-viz > :not(.viz-k) { margin: auto; }
+/* the two instruments without a reading — Karlsruhe and the astronauts, beside the power — each a tile named as the
+   instruments are, its sign in the disc at the top right (8 October: "add the corresponding logos"), the name on two
+   lines where the tile is narrow and never over the drawing, the drawing in the middle of what is left */
+body.landing .hbt .tile.t-viz { position: relative; align-items: center; justify-content: center; min-height: 168px; overflow: hidden; }
+body.landing .hbt .viz-k { position: static; align-self: stretch; padding-right: 52px; font-family: var(--display); font-weight: 600; font-size: var(--fs-name); line-height: 1.2; letter-spacing: -.005em; text-transform: none; color: var(--ink); }
+body.landing .hbt .tile.t-viz > :not(.viz-k):not(.t-ic) { margin: auto; }
 /* the radar: the ticks, the rings, the cross, the sweep going round in four seconds, the astronauts (live.js moves them
    and lights each as the sweep passes; asked for less motion, they stand, lit) */
 body.landing .dl-radar { width: 132px; height: 132px; overflow: visible; display: block; }
@@ -2357,8 +2361,6 @@ body.landing .officer-face::after { content: ""; position: absolute; inset: -1px
 body.landing .officer:nth-child(2) .officer-face::after { animation-delay: 1.2s; }
 body.landing .officer:nth-child(3) .officer-face::after { animation-delay: 2.4s; }
 @keyframes dl-ping { 0% { transform: scale(1); opacity: .8; } 60% { transform: scale(1.75); opacity: 0; } 100% { transform: scale(1.75); opacity: 0; } }
-/* the CO₂ dial: a ring pulsing out of it */
-body.landing .hbt .t-co2 .dial-wrap::after { content: ""; position: absolute; left: 50%; top: 50%; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 1.5px solid rgba(var(--cobalt-rgb),.6); opacity: 0; pointer-events: none; animation: dl-ping 4s ease-out infinite; }
 /* the schedule: the task of the hour with a dot blinking before its time */
 body.landing .rows .row.active .t::before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 7px 1px 0; border-radius: 50%; background: var(--mars); box-shadow: 0 0 8px 2px rgba(255,90,31,.6); animation: live 1.4s ease-in-out infinite; vertical-align: middle; }
 /* the day's mission, typed on the installation's mission screen (/screen/mission, public/typed.js): the words not yet
@@ -2370,15 +2372,14 @@ body.landing .mission-body.is-typing li.tw-seen::marker { color: inherit; }
 /* a phone: each instrument the width of the panel, under the row it belongs to */
 @media (max-width: 760px), (max-height: 520px) {
   body.landing .dash-live { padding-top: 2px; }
-  body.landing .hbt .tile.t-viz, body.landing .hbt .aux .t-viz-city { grid-column: 1 / -1; grid-row: auto; min-height: 150px; padding: 14px 12px 14px; }   /* the name above, the drawing under it */
-  body.landing .hbt .viz-k { left: 14px; }
+  body.landing .hbt .tile.t-viz { grid-column: 1 / -1; grid-row: auto; min-height: 150px; padding: 14px 12px 14px; }   /* the name above, the drawing under it */
   body.landing .dl-radar { width: 108px; height: 108px; }
   body.landing .dl-city { max-width: 220px; }
   body.landing .dash-head .bigsec::after { width: 9px; margin-left: 9px; }
 }
 @media (prefers-reduced-motion: reduce) {
   body.landing .dl-sweep, body.landing .dl-fan-sweep, body.landing .dl-link-sig, body.landing .dl-rdc-ping,
-  body.landing .officer-face::after, body.landing .hbt .t-co2 .dial-wrap::after, body.landing .mission-body .tw-cursor { animation: none; }
+  body.landing .officer-face::after, body.landing .mission-body .tw-cursor { animation: none; }
   body.landing .dl-fan-sweep { transform: rotate(120deg); }                                                            /* the sweep stands, to the south-east as in the mock-up */
   body.landing .dl-link-sig { opacity: 1; }
   body.landing .mission-body .tw-cursor { display: none; }

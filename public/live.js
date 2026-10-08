@@ -4,7 +4,9 @@
  * Two things the stylesheet cannot do:
  *  - the astronauts on the radar (Astronauts tracked): one dot each, wandering about the disc — each glides on a slow
  *    spring towards a place of its own inside the rings and, arriving, picks another; two never sit on each other; a
- *    dot is lit as the sweep passes over it and dims until it comes round again. As many dots as the crew (public.js);
+ *    dot is lit as the sweep passes over it and dims until it comes round again. As many dots as the crew (public.js).
+ *    They wander at a third of the pace they first had (8 October: "reduce the movement of the dots to a third"): their
+ *    clock runs at PACE, the sweep's at the page's;
  *  - the figures in the dashboard's head roll up from zero to their value when the page opens (the sol, the crew), as a
  *    readout settling — the values themselves are the page's, untouched.
  * Where the visitor asks for less motion the dots stand where they are, lit, and the figures stand as written.
@@ -17,6 +19,7 @@
   var radar = document.querySelector('.dl-radar');
   if (radar && !calm && window.requestAnimationFrame) {
     var TURN = 4000, LIM = 40, C = 60;                       // the sweep's period (aura.css); how far from the centre a dot may go; the centre
+    var PACE = 1 / 3;                                        // the dots' own clock against the page's: a third of their first pace
     var dots = [].slice.call(radar.querySelectorAll('.dl-astro')).map(function (el, i) {
       var x = Number(el.getAttribute('cx')) - C, y = Number(el.getAttribute('cy')) - C;
       return { el: el, x: x, y: y, vx: 0, vy: 0, to: null, until: 0, lit: 0.55, seen: -1 + i * 0.1 };
@@ -35,7 +38,8 @@
       dots.forEach(function (d) { d.to = somewhere(d); d.until = 6 + Math.random() * 8; });
       var last = null, t0 = null, sw = radar.querySelector('.dl-sweep');
       function frame(now) {
-        var dt = last == null ? 0.016 : Math.min(0.05, (now - last) / 1000); last = now; if (t0 == null) t0 = now;
+        var real = last == null ? 0.016 : Math.min(0.05, (now - last) / 1000); last = now; if (t0 == null) t0 = now;
+        var dt = real * PACE;                                                          // the dots move, wait and part on their own, slower clock
         // the sweep: where the stylesheet's turn is at this moment (a turn in TURN ms from twelve o'clock, clockwise),
         // read off its animation where the browser tells it, else counted from the first frame
         var anim = sw && sw.getAnimations ? sw.getAnimations()[0] : null, at = anim && typeof anim.currentTime === 'number' ? anim.currentTime : now - t0;

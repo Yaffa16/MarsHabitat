@@ -1,8 +1,9 @@
 /* Habitat dashboard — the habitat's readings as instruments, drawn from the
-   station's own /api/habitat/data: CO₂ on a 24-hour dial, temperature on a
-   ruler, humidity as a level, air pressure, the volatile organic compounds
-   and the light as sparklines, the air quality index as a banded level with
-   its readable classification. The station server does the polling and the
+   station's own /api/habitat/data: each a tile with its figure and a meter
+   under it, the racing dash's way (8 October) — the carbon dioxide and the air
+   pressure and the volatile organic compounds as thin bars, the temperature and
+   the light as dots, the humidity and the air quality index (its bands, with
+   the sensor's own word for the band) as segments. The station server does the polling and the
    saving (SQLite) — from the habitat sensor through Home Assistant, or from
    the external node; this script does not know which — and this script
    additionally merges each read into localStorage so a phone that loses the
@@ -15,7 +16,7 @@
   if (!HOST) return;
   /* The visitor's language: the page head carries the dictionary for it
      (window.MCS_T, from src/lib/i18n.js); t() reads it, English otherwise. */
-  var tr = window.t || function (s) { return s; };
+  var tr = window.t || function (s) { var i = String(s).indexOf('::'); return i > 0 ? String(s).slice(0, i) : s; };
 
   /* ------------------------------------------------------------ config */
   var CFG = {
@@ -56,7 +57,6 @@
     new MutationObserver(function () { colours(); if (typeof state !== 'undefined' && state.rows && state.rows.length) render(); })
       .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   }
-  var ALERT = '#C81E1E';
 
   var CHANNELS = [
     { key: 'co2', name: 'CO₂', unit: 'ppm', decimals: 0, domain: [0, 2000], step: 500, alertAbove: 800 },
@@ -71,7 +71,7 @@
     { key: 'iaq', name: tr('Air quality'), unit: 'IAQ', decimals: 0, domain: [0, 500], step: 100, bands: [50, 100, 150, 200, 250, 350], alertAbove: 150 },
     // The light sensor beside it: illuminance in lux — dim indoors is a few
     // dozen, a lit room a few hundred; the scale widens when a reading passes it.
-    { key: 'light', name: tr('Light'), unit: 'lx', decimals: 0, domain: [0, 1000], step: 250 }
+    { key: 'light', name: tr('Light::sensor'), unit: 'lx', decimals: 0, domain: [0, 1000], step: 250 }
   ];
   var KEYS = ['co2', 'temp', 'hum', 'light', 'pres', 'bat', 'rssi', 'voc', 'iaq', 'iaqc'];
   var DAY = 86400000;
@@ -180,18 +180,11 @@
     });
   }
   function fitAll(scope) {
-    [].forEach.call((scope || document).querySelectorAll('.hw-chart svg, .gauge.round svg'), function (svg) { fitText(svg); });
+    [].forEach.call((scope || document).querySelectorAll('.hw-chart > svg, .gauge.round svg'), function (svg) { fitText(svg); });
   }
 
   function chan(k) { return CHANNELS.find(function (c) { return c.key === k; }); }
   function isHot(ch, v) { return ch.alertAbove != null && v !== null && v > ch.alertAbove; }
-  function scaler(ch, h, padTop, padBottom) {
-    var lo = ch.domain[0], hi = ch.domain[1];
-    return function (v) {
-      var c = Math.min(hi, Math.max(lo, v));
-      return padTop + (h - padTop - padBottom) * (1 - (c - lo) / (hi - lo || 1));
-    };
-  }
   function fmtAgo(ms) {
     var s = Math.max(0, Math.round(ms / 1000));
     if (s < 60) return s + 's ' + tr('ago');
@@ -200,185 +193,11 @@
     return Math.floor(m / 60) + 'h ' + (m % 60) + 'm ' + tr('ago');
   }
 
-  /* -------------------------------------------------- tile 1: the dial */
-  /* The dial is a 24-hour cycle: the ring is the day, midnight at the top,
-     and each reading sits at its time-of-day angle — 06:00 to the right,
-     12:00 at the bottom, 18:00 to the left — with its value as the spoke's
-     length. The day fills the ring as it goes, so the daily rhythm of the
-     CO2 (sleep, work, visitors) reads directly off the clock face. */
-  function renderDial(view) {
-    var ch = chan('co2');
-    var host = $('hbt-dial'); host.innerHTML = '';
-    var S = 320, C = S / 2, R0 = 92, RMAX = 148;
-    var svg = svgRoot(S, S, { 'aria-label': 'CO2 readings over the 24-hour cycle, midnight at the top' });
-
-    // The clock face: the ring, a tick per hour, the quarters labelled.
-    svg.appendChild(el('circle', { cx: C, cy: C, r: R0 - 10, fill: 'none', stroke: HAIR, 'stroke-width': 1 }));
-    var day0 = dayStart(), DAY = 86400000;
-    var rad = function (frac) { return (-90 + 360 * frac) * Math.PI / 180; };
-    for (var h = 0; h < 24; h++) {
-      var a0 = rad(h / 24), q = h % 6 === 0;
-      svg.appendChild(el('line', {
-        x1: C + Math.cos(a0) * (R0 - 10), y1: C + Math.sin(a0) * (R0 - 10),
-        x2: C + Math.cos(a0) * (R0 - (q ? 18 : 14)), y2: C + Math.sin(a0) * (R0 - (q ? 18 : 14)),
-        stroke: HAIR, 'stroke-width': q ? 1.4 : 1
-      }));
-      if (q && h % 12 === 0) {                                                    // midnight and noon: the figure in the middle takes the width
-        var lx = C + Math.cos(a0) * (R0 - 30), ly = C + Math.sin(a0) * (R0 - 30);
-        var lbl = el('text', { x: lx, y: ly + 3, 'text-anchor': 'middle', fill: INK, opacity: '.45',
-          'font-family': '"ZKM Serendipity", ui-monospace, monospace', 'font-size': '9', 'letter-spacing': '.08em' });
-        lbl.textContent = (h < 10 ? '0' : '') + h;
-        svg.appendChild(lbl);
-      }
-    }
-
-    var pts = view.filter(function (r) { return r.co2 !== null; });
-    if (!pts.length) { host.appendChild(svg); fitText(svg); return; }
-    if (pts.length > 144) {
-      var stride = Math.ceil(pts.length / 144);
-      pts = pts.filter(function (_, i) { return i % stride === 0 || i === pts.length - 1; });
-    }
-    var vals = pts.map(function (p) { return p.co2; });
-    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
-    var norm = function (v) { return hi === lo ? 0.45 : (v - lo) / (hi - lo); };
-
-    pts.forEach(function (p, i) {
-      // The reading's place on the clock: its time of day, midnight at the top.
-      var a = rad(Math.min(1, Math.max(0, (p.t - day0) / DAY)));
-      var len = R0 + 8 + norm(p.co2) * (RMAX - R0 - 12);
-      var hot = isHot(ch, p.co2);
-      var col = hot ? ALERT : ACCENT;
-      var x1 = C + Math.cos(a) * R0, y1 = C + Math.sin(a) * R0;
-      var x2 = C + Math.cos(a) * len, y2 = C + Math.sin(a) * len;
-      var newest = i === pts.length - 1;
-      svg.appendChild(el('line', {
-        x1: x1, y1: y1, x2: x2, y2: y2,
-        stroke: newest ? INK : (hot ? ALERT : HAIR),
-        'stroke-width': newest ? 1.6 : (hot ? 1.4 : 1)
-      }));
-      if (newest) svg.appendChild(el('circle', { cx: x2, cy: y2, r: 9, fill: col, opacity: '.18' }));
-      svg.appendChild(el('circle', { cx: x2, cy: y2, r: newest ? 5.5 : 3, fill: col, opacity: newest ? 1 : 0.9 }));
-    });
-    host.appendChild(svg);
-    fitText(svg);
-
-    var last = vals[vals.length - 1];
-    var hotNow = isHot(ch, last);
-    $('co2Val').innerHTML = last.toFixed(0) + '<em>ppm</em>';
-    $('co2Val').classList.toggle('hot', hotNow);
-    $('co2Verdict').textContent = hotNow ? tr('Over') + ' ' + ch.alertAbove + ' ppm' : tr('Within limit');
-    $('co2Verdict').classList.toggle('hot', hotNow);
-    $('co2Sub').textContent = tr('Scale') + ' ' + ch.domain[0] + '\u2013' + ch.domain[1] + ' ppm';   // the scale alone, as the other tiles have it (no count of readings, no range, no limit)
-  }
-
-  /* ------------------------------------------------- tile 2: the ruler */
-  function renderRuler(view) {
-    var ch = chan('temp');
-    var host = $('hbt-ruler'); host.innerHTML = '';
-    var W = 56, H = 220, pad = 8;
-    var svg = svgRoot(W, H, { 'aria-label': 'Temperature scale', preserveAspectRatio: 'none' });
-    svg.setAttribute('height', '100%');
-    var y = scaler(ch, H, pad, pad);
-    var lo = ch.domain[0], hi = ch.domain[1];
-
-    svg.appendChild(el('rect', { x: 0, y: 0, width: W, height: H, rx: 12, fill: INK }));
-
-    var pts = view.filter(function (r) { return r.temp !== null; });
-    var val = pts.length ? pts[pts.length - 1].temp : null;
-    if (val !== null) {
-      var top = y(val);
-      svg.appendChild(el('path', {
-        d: 'M0,' + top + ' L' + W + ',' + top + ' L' + W + ',' + (H - 12) +
-           ' Q' + W + ',' + H + ' ' + (W - 12) + ',' + H + ' L12,' + H +
-           ' Q0,' + H + ' 0,' + (H - 12) + ' Z',
-        fill: ACCENT
-      }));
-    }
-    for (var v = lo; v <= hi + 0.001; v += 2) {
-      var major = Math.abs(v % ch.step) < 0.001;
-      var yy = y(v);
-      svg.appendChild(el('line', {
-        x1: W - (major ? 22 : 12), x2: W - 4, y1: yy, y2: yy,
-        stroke: '#FFFFFF', 'stroke-width': major ? 1.4 : 1, opacity: major ? 0.9 : 0.45
-      }));
-      if (major && v > lo && v < hi) {
-        var t = el('text', { x: W - 26, y: yy + 3.5, 'text-anchor': 'end',
-          fill: '#FFFFFF', 'font-family': 'var(--mono)', 'font-size': '9' });
-        t.textContent = v;
-        svg.appendChild(t);
-      }
-    }
-    host.appendChild(svg);
-    fitText(svg);
-
-    if (val !== null) {
-      $('tempVal').innerHTML = val.toFixed(ch.decimals) + '<em>°C</em>';
-      $('tempVerdict').textContent = '';                                       // the figure alone (no range of the ruler's view)
-    }
-  }
-
-  /* --------------------------------------------- tile 3: the level bar */
-  function renderLevel(view) {
-    var ch = chan('hum');
-    var host = $('hbt-level'); host.innerHTML = '';
-    var W = 300, H = 54;
-    var svg = svgRoot(W, H, { 'aria-label': 'Humidity level', preserveAspectRatio: 'none' });
-    var pts = view.filter(function (r) { return r.hum !== null; });
-    var val = pts.length ? pts[pts.length - 1].hum : null;
-    var lo = ch.domain[0], hi = ch.domain[1];
-    var by = 8, bh = 18;
-
-    svg.appendChild(el('rect', { x: 0, y: by, width: W, height: bh, rx: 9, fill: HAIR }));
-    if (val !== null) {
-      var w = Math.max(6, W * (Math.min(hi, Math.max(lo, val)) - lo) / (hi - lo));
-      svg.appendChild(el('rect', { x: 0, y: by, width: w, height: bh, rx: 9, fill: ACCENT }));
-    }
-    for (var v = lo; v <= hi; v += ch.step) {
-      var x = W * (v - lo) / (hi - lo);
-      svg.appendChild(el('line', { x1: x, x2: x, y1: by + bh + 5, y2: by + bh + 9, stroke: HAIR }));
-      var t = el('text', { x: Math.min(W - 8, Math.max(8, x)), y: by + bh + 20, 'text-anchor': 'middle',
-        fill: '#8B8B84', 'font-family': 'var(--mono)', 'font-size': '9' });
-      t.textContent = v;
-      svg.appendChild(t);
-    }
-    host.appendChild(svg);
-    fitText(svg);
-    if (val !== null) $('humVal').innerHTML = val.toFixed(ch.decimals) + '<em>%RH</em>';
-  }
-
-  /* ------------------------------------ tiles 4 and 5: the sparklines */
-  /* One channel over the day as a line with its area beneath, the newest
-     reading marked: the air pressure, the volatile organic compounds and the
-     light. The scale is the instrument's, widened when a reading passes it. */
-  function renderSpark(view, key, hostId, valId) {
-    var ch = chan(key);
-    var host = $(hostId); if (!host) return; host.innerHTML = '';
-    var W = 300, H = 76, pad = 6;
-    var svg = svgRoot(W, H, { 'aria-label': ch.name + ' over time', preserveAspectRatio: 'none' });
-    var pts = view.filter(function (r) { return r[key] !== null && r[key] !== undefined; });
-    if (!pts.length) { host.appendChild(svg); return; }
-    var t0 = pts[0].t, t1 = pts[pts.length - 1].t;
-    var x = function (t) { return t1 === t0 ? W : ((t - t0) / (t1 - t0)) * W; };
-    var top = Math.max.apply(null, pts.map(function (p) { return p[key]; }));
-    var scaled = { domain: [ch.domain[0], Math.max(ch.domain[1], niceMax(top))] };
-    var y = scaler(scaled, H, pad, pad);
-
-    var d = pts.map(function (p, i) {
-      return (i ? 'L' : 'M') + x(p.t).toFixed(1) + ',' + y(p[key]).toFixed(1);
-    }).join('');
-    svg.appendChild(el('path', { d: d + 'L' + W + ',' + (H - pad) + 'L0,' + (H - pad) + 'Z',
-      fill: HAIR, opacity: '.5', stroke: 'none' }));
-    svg.appendChild(el('path', { d: d, fill: 'none', stroke: INK, 'stroke-width': 1.4 }));
-    var last = pts[pts.length - 1];
-    svg.appendChild(el('circle', { cx: x(last.t), cy: y(last[key]), r: 4, fill: ACCENT }));
-    host.appendChild(svg);
-    var v = $(valId); if (v) v.innerHTML = last[key].toFixed(ch.decimals) + '<em>' + ch.unit + '</em>';
-  }
-
-  /* ------------------------------------ tile 6: the air quality index */
-  /* The index on a level bar from 0 to 500, the sensor's own bands ticked
-     along it, and the band's name — the sensor says it in words — as the
-     verdict. Over 150 (lightly polluted and beyond) the figure turns hot. */
+  /* ------------------------------------------------- the instruments' tiles */
+  /* Every instrument a tile of one make (8 October, after a racing car's dash): its figure large, a meter under it — a
+     row of segments, of thin bars or of dots (public.js draws the cells, data-n says how many) lit up to the reading on
+     the instrument's scale, red past its limit — and a word on the reading where there is one: the carbon dioxide's
+     limit, the air quality's band as the sensor names it, how the humidity feels. */
   function iaqClass(view) {
     for (var i = view.length - 1; i >= 0; i--) {
       var c = view[i].iaqc;
@@ -387,41 +206,45 @@
     return null;
   }
   function titled(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); }
-  function renderIaq(view) {
-    var ch = chan('iaq');
-    var host = $('hbt-iaq'); if (!host) return; host.innerHTML = '';
-    var W = 300, H = 54;
-    var svg = svgRoot(W, H, { 'aria-label': 'Air quality index', preserveAspectRatio: 'none' });
-    var pts = view.filter(function (r) { return r.iaq !== null && r.iaq !== undefined; });
-    var val = pts.length ? pts[pts.length - 1].iaq : null;
+  function fillMeter(host, frac, hot) {
+    if (!host) return;
+    var n = Number(host.getAttribute('data-n')) || host.children.length || 10;
+    var on = frac === null || !isFinite(frac) ? 0 : Math.max(frac > 0 ? 1 : 0, Math.min(n, Math.round(frac * n)));
+    if (host.children.length !== n) { host.innerHTML = ''; for (var i = 0; i < n; i++) host.appendChild(document.createElement('i')); }
+    for (var k = 0; k < n; k++) { var want = k < on ? 'on' : ''; if (host.children[k].className !== want) host.children[k].className = want; }
+    host.classList.toggle('is-hot', !!hot);
+  }
+  function iaqBand(v) { var b = chan('iaq').bands; for (var i = 0; i < b.length; i++) if (v <= b[i]) return i; return b.length; }
+  var TILE_KEYS = ['co2', 'temp', 'hum', 'pres', 'iaq', 'light', 'voc'];
+  function renderTile(view, key) {
+    var ch = chan(key);
+    var pts = view.filter(function (r) { return r[key] !== null && r[key] !== undefined; });
+    var val = pts.length ? Number(pts[pts.length - 1][key]) : null;
+    var host = $('hbt-m-' + key), valEl = $(key + 'Val'), word = $(key + 'Verdict');
+    var tile = host && host.closest ? host.closest('.tile') : null;
+    if (val === null || !isFinite(val)) {
+      fillMeter(host, null, false);
+      if (valEl) { valEl.innerHTML = '—<em>' + ch.unit + '</em>'; valEl.classList.remove('hot'); }
+      if (word) { word.textContent = tr('No current reading'); word.classList.remove('hot'); }
+      if (tile) tile.classList.remove('is-hot');
+      return;
+    }
     var lo = ch.domain[0], hi = ch.domain[1];
-    var by = 8, bh = 18;
-    var px = function (v) { return W * (Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo); };
-
-    svg.appendChild(el('rect', { x: 0, y: by, width: W, height: bh, rx: 9, fill: HAIR }));
-    if (val !== null) {
-      var hot = isHot(ch, val);
-      svg.appendChild(el('rect', { x: 0, y: by, width: Math.max(6, px(val)), height: bh, rx: 9, fill: hot ? ALERT : ACCENT }));
-    }
-    // The bands' edges, ticked and numbered; the scale's ends as well.
-    [lo].concat(ch.bands, [hi]).forEach(function (v) {
-      var x = px(v);
-      svg.appendChild(el('line', { x1: x, x2: x, y1: by + bh + 5, y2: by + bh + 9, stroke: HAIR }));
-      var t = el('text', { x: Math.min(W - 10, Math.max(10, x)), y: by + bh + 20, 'text-anchor': 'middle',
-        fill: '#8B8B84', 'font-family': 'var(--mono)', 'font-size': '9' });
-      t.textContent = v;
-      svg.appendChild(t);
-    });
-    host.appendChild(svg);
-    fitText(svg);
-    if (val !== null) {
-      var hotNow = isHot(ch, val);
-      $('iaqVal').innerHTML = val.toFixed(ch.decimals) + '<em>IAQ</em>';
-      $('iaqVal').classList.toggle('hot', hotNow);
-      var cls = iaqClass(view);
-      $('iaqVerdict').textContent = cls ? tr(titled(cls)) : (hotNow ? tr('Over') + ' ' + ch.alertAbove : tr('Within limit'));
-      $('iaqVerdict').classList.toggle('hot', hotNow);
-    }
+    if (key === 'light' || key === 'voc') hi = Math.max(hi, niceMax(val));          // the scale widens when a reading passes it
+    var hot = isHot(ch, val);
+    var frac = key === 'iaq' ? (iaqBand(val) + 1) / (ch.bands.length + 1) : (Math.min(hi, Math.max(lo, val)) - lo) / ((hi - lo) || 1);
+    fillMeter(host, frac, hot);
+    if (valEl) { valEl.innerHTML = val.toFixed(ch.decimals) + '<em>' + ch.unit + '</em>'; valEl.classList.toggle('hot', hot); }
+    var text = '';
+    if (key === 'co2') text = hot ? tr('Over') + ' ' + ch.alertAbove + ' ppm' : tr('Within limit');
+    else if (key === 'iaq') { var cls = iaqClass(view); text = cls ? tr(titled(cls)) : (hot ? tr('Over') + ' ' + ch.alertAbove : tr('Within limit')); }
+    else if (key === 'hum') text = val < 30 ? tr('Dry') : val > 60 ? tr('Humid') : tr('Comfortable');
+    else if (key === 'temp') text = val < 18 ? tr('Cool') : val > 26 ? tr('Warm') : tr('Comfortable');
+    else if (key === 'pres') text = val < 990 ? tr('Low') : val > 1030 ? tr('High') : tr('Normal');
+    else if (key === 'light') text = val < 100 ? tr('Dim') : val > 750 ? tr('Bright') : tr('Normal');
+    else if (key === 'voc') text = val < 1 ? tr('Low') : val > 3 ? tr('High') : tr('Moderate');
+    if (word) { word.textContent = text; word.classList.toggle('hot', hot); }
+    if (tile) tile.classList.toggle('is-hot', hot);
   }
 
   /* --------------------------------- tile 5: daily averages over 15 days */
@@ -493,7 +316,7 @@
     { key: 'pres', name: tr('Air pressure'), unit: 'hPa', domain: [950, 1050] },
     { key: 'voc', name: tr('Volatile organic compounds'), unit: 'ppm', domain: [0, 10] },
     { key: 'iaq', name: tr('Air quality'), unit: 'IAQ', domain: [0, 500] },
-    { key: 'light', name: tr('Light'), unit: 'lx', domain: [0, 1000] },
+    { key: 'light', name: tr('Light::sensor'), unit: 'lx', domain: [0, 1000] },
     // the external node's own channels — drawn only while something reports them
     { key: 'bat', name: tr('Node battery'), unit: 'V', domain: [3, 4.5] },
     { key: 'rssi', name: tr('Node signal'), unit: 'dBm', domain: [-100, -30] }
@@ -700,7 +523,7 @@
     for (var i = 0; i < n; i++) {
       var isTodayCol = i + 1 === win.today && !frozen();
       if (slim && i % every && !isTodayCol && i !== n - 1) continue;
-      var anchor = i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle';
+      var anchor = 'middle';                                                    // each under its own day, the first and the last too (the margins have room): the last two never run together
       var tx = el('text', { x: x(i).toFixed(1), y: H - (slim ? 12 : 22), 'text-anchor': slim ? 'middle' : anchor,
         'class': 'taxis-t' + (isTodayCol ? ' today' : ''), style: 'font-weight:600;font-size:' + axisPx + 'px' });
       tx.textContent = win.run ? (slim ? pad2(i + 1) : 'SOL ' + pad2(i + 1)) : (slim ? String(new Date(win.days[i].start).getDate()) : fmtDate(win.days[i].start));
@@ -894,12 +717,7 @@
      live. The history stays on the trend graph, which is where history
      belongs. */
   function clearTiles() {
-    ['hbt-dial', 'hbt-ruler', 'hbt-level', 'hbt-pres', 'hbt-voc', 'hbt-iaq', 'hbt-light'].forEach(function (id) { var h = $(id); if (h) h.innerHTML = ''; });
-    var set = function (id, html) { var e = $(id); if (e) { e.innerHTML = html; e.classList.remove('hot'); } };
-    set('co2Val', '—<em>ppm</em>'); set('co2Verdict', tr('No current reading')); set('co2Sub', '');
-    set('tempVal', '—<em>°C</em>'); set('tempVerdict', tr('No current reading'));
-    set('humVal', '—<em>%</em>'); set('presVal', '—<em>hPa</em>'); set('vocVal', '—<em>ppm</em>'); set('lightVal', '—<em>lx</em>');
-    set('iaqVal', '—<em>IAQ</em>'); set('iaqVerdict', tr('No current reading'));
+    TILE_KEYS.forEach(function (k) { renderTile([], k); });                  // a dash, a dark meter and "No current reading" in every tile
   }
   /* The tiles are today: readings since midnight at the venue, and only
      while the newest of them is less than thirty minutes old. Anything else
@@ -932,13 +750,7 @@
       return;
     }
     HOST.hidden = false;
-    renderDial(view);
-    renderRuler(view);
-    renderLevel(view);
-    renderSpark(view, 'pres', 'hbt-pres', 'presVal');
-    renderSpark(view, 'voc', 'hbt-voc', 'vocVal');
-    renderSpark(view, 'light', 'hbt-light', 'lightVal');
-    renderIaq(view);
+    TILE_KEYS.forEach(function (k) { renderTile(view, k); });
     renderSpanCharts();
     fitAll();
     $('hbt-notes').innerHTML = notesHTML();

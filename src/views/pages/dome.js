@@ -2,7 +2,7 @@
 /**
  * The habitat as a picture: a geodesic dome, drawn as a wireframe over a
  * copper shell on a dark screen, with a hexagon set into it for each thing
- * that lives inside — the science bench, the three crew, the uplink, the
+ * that lives inside — the science bench, the three crew, the transmitter, the
  * power store, the water recycling loop, the hydroponic shelves and the
  * bicycle power generator — each named by a short label
  * on a leader line, and each opening, when pressed, a pop-up that says what
@@ -461,7 +461,7 @@ const ABOUT = {
   recycling: 'Nothing is thrown away. Used water passes through a planted filter bed, a screw press and a settling funnel and comes back as water for the plants and the crew. This loop decides how long the stores last.',
   aeroponics: 'Three shelves of plants grown without soil, their roots in nutrient-rich water — the habitat’s fresh food and part of its air. What grows here is counted with the food rations.',
   power: 'Everything in the habitat runs on what the crew can make and store. Heating, the galley, lighting and electronics draw on one battery, and the crew count the kilowatt-hours by category every day.',
-  comms: 'The uplink. Every message written on this station crosses the distance to the habitat and waits for the commanding officer, who reads it and answers from inside; the reply comes back to the board on every open phone. The real light-time between Earth and Mars is shown beside the composer.',
+  comms: 'The transmitter. Every message written on this station crosses the distance to the habitat and waits for the commanding officer, who reads it and answers from inside; the reply comes back to the board on every open phone. The real light-time between Earth and Mars is shown beside the composer.',
   generator: 'A bicycle generator: pedalling charges the battery. The health officer’s workout is also the habitat’s power plant — the steps and the kilowatt-hours are the same effort.',
   eva: ['Every day, the astronauts also leave the Habitat in their spacesuits for an EVA on the Mars landscape of Karlsruhe’s Marktplatz.',
     'An EVA — an extra-vehicular activity — is the walk outside, in the suit, on the square. Its hour is on the day’s schedule, and the pictures of it are on the Media page.'],

@@ -325,7 +325,7 @@ app.post('/screen/write', requireScreens, (req, res) => {
   if (body.length > MAX_CHARS) return answer({ error: `${ctx.T('Messages are limited to')} ${MAX_CHARS} ${ctx.T('characters.')}`, draft: body.slice(0, MAX_CHARS) });
   const since = new Date(Date.now() - 3600000).toISOString(), ip = hashIp(req.ip);
   const sent = db.prepare('SELECT COUNT(*) n FROM message WHERE ip_hash = ? AND submitted_at > ?').get(ip, since).n;
-  if (sent >= KIOSK_HOURLY_LIMIT) return answer({ error: 'The uplink is saturated from your position. Try again later.', draft: body });
+  if (sent >= KIOSK_HOURLY_LIMIT) return answer({ error: 'Too many transmissions from your position. Try again later.', draft: body });
   let tags = req.body.tags || [];
   if (!Array.isArray(tags)) tags = [tags];
   tags = tags.filter((t) => data.TAGS.includes(t)).slice(0, 3);
@@ -764,7 +764,7 @@ app.post('/communicate', (req, res) => {
     'SELECT COUNT(*) n FROM message WHERE (visitor_id = ? OR ip_hash = ?) AND submitted_at > ?'
   ).get(visitor.id, ip, since).n;
   if (recent >= Number(process.env.HOURLY_LIMIT || 6)) {
-    return composeView(req, res, { error: 'The uplink is saturated from your position. Try again later.', draft: body });
+    return composeView(req, res, { error: 'Too many transmissions from your position. Try again later.', draft: body });
   }
 
   let tags = req.body.tags || [];
@@ -952,23 +952,33 @@ app.get('/api/habitat/data', (req, res) => {
    and stores (src/lib/home-assistant.js); the browser reads this — rendered
    panel HTML plus a change mark, the same pattern as /api/board — so the
    token and the Home Assistant address never leave the server. */
+/* A poll's words in the page's own language: the one its address says (?lang= — the installation's screens carry no
+   cookie and say their language in the address; hardware.js and the gallery's screen pass it on), else the visitor's. */
+function pollCtx(req) {
+  const base = req.ctx();
+  const lang = i18n.LANGS.includes(req.query.lang) ? req.query.lang : base.lang;
+  return lang === base.lang ? base : { ...base, lang, T: i18n.of(lang) };
+}
 app.get('/api/hardware', (req, res) => {
-  const snap = homeAssistant.snapshot(24);
+  const snap = homeAssistant.snapshot(24), ctx = pollCtx(req);
   // `w`: the width the page shows a chart at, in CSS pixels (hardware.js measures its tiles) — the charts are drawn
   // for it, so their type keeps its size on a desk and on a phone alike
-  // `h`: the height, where the page wants a lower one than the usual 240 — the installation's screens on a short screen
+  // `h`: the height, where the page wants another than the usual 240 — lower on the installation's screens that show
+  // the panel whole, taller on the rolled Habitat screen, where the roll gives the charts room
   const asked = Math.round(Number(req.query.w)), askedH = Math.round(Number(req.query.h));
   const width = Number.isFinite(asked) && asked >= 240 ? Math.min(1400, asked) : 720;
-  const height = Number.isFinite(askedH) && askedH >= 120 ? Math.min(400, askedH) : 240;
+  const height = Number.isFinite(askedH) && askedH >= 120 ? Math.min(700, askedH) : 240;
   res.set('Cache-Control', 'no-store').json({
     version: homeAssistant.version(snap),
     frozen: snap.frozen,
     pollMs: snap.pollMs,
     w: width,
     h: height,
-    html: snap.configured && snap.sensors.length ? P.hardwareInner(snap, req.ctx().T, { width, height }) : '',
+    html: snap.configured && snap.sensors.length ? P.hardwareInner(snap, ctx.T, { width, height }) : '',
     // the power tile, whose metered category moves with the readings
-    power: P.powerTileInner(req.ctx(), content.powerLive()),
+    power: P.powerTileInner(ctx, content.powerLive()),
+    // the oxygen tile, the first of the Sensors panel's instruments, read from the hardware (8 October)
+    o2: P.oxygenTileInner(snap, ctx.T),
   });
 });
 
@@ -989,7 +999,7 @@ app.get('/api/cloud', (req, res) => {
   // can swap it in the moment the folder changes — the same pattern as the board
   const M = require('./views/pages/media');
   const model = { title: cloud.CFG.title, items: cloud.gallery(), snapshot: snap, limit: 6, sort: cloud.CFG.sort };
-  const ctx = req.ctx();
+  const ctx = pollCtx(req);                                              // the gallery's screen says its language (?lang=)
   // the venue's zone, for a file whose name carries no time (its own date, in the venue's time); the run and the language,
   // for the gallery's day heads
   const opts = { tz: ctx.mission.timezone, mission: ctx.mission, lang: ctx.lang };

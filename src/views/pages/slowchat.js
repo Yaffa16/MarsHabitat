@@ -37,7 +37,7 @@ function zoneName() { return require('./landing').ZONE; }
 
 const ICON = {
   entry: '<path d="M2.5 19.5h19"/><path d="M4.5 19.5a7.5 7.5 0 0 1 15 0"/><path d="M10.4 19.5v-2.6a1.6 1.6 0 0 1 3.2 0v2.6"/><path d="M7.2 14.2a5 5 0 0 1 2.3-2.4" style="opacity:.55"/><circle cx="16" cy="15" r=".9" fill="currentColor" stroke="none"/>',
-  uplink: '<path d="M4.6 12.8a6 6 0 0 0 8.5 0L4.6 4.3a6 6 0 0 0 0 8.5z"/><path d="M8.8 8.6l3-3"/><circle cx="12.4" cy="5" r="1" fill="currentColor" stroke="none"/><path d="M8 14.5l-1.6 5.5h5"/><path d="M15.5 3.5a4 4 0 0 1 4 4"/><path d="M16 .9a6.8 6.8 0 0 1 6.1 6.1" style="opacity:.55"/>',
+  transmit: '<path d="M4.6 12.8a6 6 0 0 0 8.5 0L4.6 4.3a6 6 0 0 0 0 8.5z"/><path d="M8.8 8.6l3-3"/><circle cx="12.4" cy="5" r="1" fill="currentColor" stroke="none"/><path d="M8 14.5l-1.6 5.5h5"/><path d="M15.5 3.5a4 4 0 0 1 4 4"/><path d="M16 .9a6.8 6.8 0 0 1 6.1 6.1" style="opacity:.55"/>',
   transit: '<circle cx="5" cy="18.5" r="2.6"/><circle cx="19" cy="5.5" r="2.6" fill="currentColor" style="fill-opacity:.18"/><path d="M7.4 16.4C8 10 11 7.2 16.4 6.3" style="stroke-dasharray:1.6 2.6"/><circle cx="11.2" cy="9.4" r="1.2" fill="currentColor" stroke="none"/>',
   downlink: '<path d="M5 4.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-7.5L7 20v-3.5H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2z"/><path d="M12 7.3l.95 2.25 2.25.95-2.25.95L12 13.7l-.95-2.25-2.25-.95 2.25-.95z" fill="currentColor" stroke="none"/>',
 };
@@ -73,10 +73,10 @@ function slowestChat(ctx) {
           <p>${T('Three crew members enter the Mars habitat at Marktplatz.')}</p>
         </div>
       </li>
-      <li class="slow-step s-uplink">
-        ${icon('uplink')}
+      <li class="slow-step s-transmit">
+        ${icon('transmit')}
         <div class="slow-txt">
-          <h3>${T('Uplink received')}</h3>
+          <h3>${T('Transmission received')}</h3>
           <div class="slow-bubble is-earth">${me ? `<span class="slow-bk">${esc(me)}</span>` : ''}${T('What does it smell like in there?')}</div>
           <p>${T('A message from Earth enters the communications queue. It will take time to reach the crew.')}
             <span class="step-space">${T('Every message goes two ways: to the crew in the Mars habitat — and, by radio, out into space, where it travels on at the speed of light. Tap it on the Message Board to see how far it has come.')}</span></p>

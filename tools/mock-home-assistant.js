@@ -2,10 +2,11 @@
 /**
  * A stand-in Home Assistant for rehearsing the habitat feed without the
  * venue network: answers /api/states/sensor.<id> and /api/history/period
- * for the M5 ENV Pro's seven entities, the light sensor and the eight power
- * channels (a draw in watts and an energy meter in kWh each — crickets,
- * science 1 and 2, living, table, food, water, hydroponics) with plausible,
- * slowly moving values. Not part of the station; a tool.
+ * for the M5 ENV Pro's seven entities, the light sensor, the cricket terrarium's
+ * temperature, the oxygen, the nitrogen dioxide and the carbon monoxide, and the
+ * eight power channels (a draw in watts and an energy meter in kWh each —
+ * crickets, science 1 and 2, living, table, food, water, hydroponics) with
+ * plausible, slowly moving values. Not part of the station; a tool.
  *
  *   node tools/mock-home-assistant.js 8123
  *   HA_HOST=localhost HA_PORT=8123 HA_API_TOKEN=x npm start
@@ -21,6 +22,12 @@ const ENT = {
   m5_env_pro_env_pro_breath_voc_equivalent: { unit: 'ppm', base: 1.1, swing: 0.7, period: 2700, dec: 2 },
   m5_env_pro_env_pro_iaq: { unit: '', base: 85, swing: 60, period: 3000, dec: 0 },
   environment_light_illuminance: { unit: 'lx', base: 320, swing: 260, period: 7200, dec: 0 },
+  // the habitat's other sensors (content/home-assistant.json, sensors): the cricket terrarium's temperature, the oxygen,
+  // and the nitrogen dioxide and carbon monoxide of the air quality chart
+  m5_temperatur_cricket_temperature: { unit: '°C', base: 27.4, swing: 1.6, period: 4800, dec: 1 },
+  environment_o2_oxygen: { unit: '%', base: 20.8, swing: 0.25, period: 6100, dec: 2 },
+  environment_no2_nitrogen_dioxide: { unit: 'ppm', base: 0.045, swing: 0.02, period: 3300, dec: 3 },
+  environment_co_carbon_monoxide: { unit: 'ppm', base: 1.1, swing: 0.6, period: 2900, dec: 2 },
 };
 // The eight power channels, each a draw in watts (a gauge that wanders round
 // its base) and an energy meter in kWh that only rises — at roughly the rate

@@ -1,17 +1,19 @@
 'use strict';
 /**
- * The installation's screens: one piece of the station a screen, full screen,
- * the whole of it in one glance, nothing to scroll — the habitat's instruments,
- * the message board, the composer (the writing screen), today's mission, the
- * three blogs, the day (schedule, meal, moods), the trends, the landing page's
- * first screen (the one with the ticker) and the media gallery. Each is a page of its own at /screen/<name>
+ * The installation's screens: one piece of the station a screen, full screen —
+ * the habitat's instruments, the message board, the composer (the writing
+ * screen), today's mission, the three blogs, the day (schedule, meal, moods),
+ * the trends, the landing page's first screen (the one with the ticker) and
+ * the media gallery. Each is a page of its own at /screen/<name>
  * (the list at /screens), without the station's chrome — no ticker but on the
  * landing screen, no menu, no bar of keys, no foot, no cookie question — in
  * the dark theme and in German unless the address says otherwise
  * (?theme=light, ?lang=en|de|fr). Landscape and upright screens alike: the
  * layout turns with the screen (public/screen.css), and what does not fit is
  * scaled down to fit (public/screen.js) or cut clean at the foot — the board's
- * cards, the gallery's tiles — never scrolled. What the site keeps live stays
+ * cards, the gallery's tiles — never scrolled by hand; the blogs and the habitat
+ * roll by on their own, slowly, at their full size (screen-blogs.js,
+ * screen-roll.js). What the site keeps live stays
  * live — the board, the habitat's readings, the pictures, the sky — and every
  * screen reloads itself every five minutes and at the venue's midnight, when
  * the sol turns (the writing screen waits while someone is writing).
@@ -33,11 +35,13 @@ const V = L.ASSET_V;
    scaled either: the piece is laid out to the stage's height by screen.css (the trends' graph, which is as wide as its
    panel whatever the scale, so scaling cannot make it fill the height — it is drawn to the height instead). `fitLandscape`:
    another way of fitting for a screen held landscape (the trends: scaled when upright, where the graph carries its
-   legend under it, filled when landscape). `minWidth`: how narrow the piece may be made by scaling up (the width it keeps
-   its layout at) — the scale is capped so the screen's width, divided by the scale, stays at least this. */
+   legend under it, filled when landscape); roll — laid out at a width of its own (1920 landscape, 1080 upright) and zoomed
+   to the screen's, the panel filling the stage, its head standing and its body rolling by under it, slowly, from top to
+   bottom (the habitat: public/screen-roll.js). `minWidth`: how narrow the piece may be made by scaling up (the width it
+   keeps its layout at) — the scale is capped so the screen's width, divided by the scale, stays at least this. */
 const SCREENS = [
   { name: 'landing', title: 'Landing page', fit: 'scale', minWidth: 1000, about: 'The first screen of the landing page — the name, the way to the habitat with the latest exchanges and pictures around the line — with the ticker' },
-  { name: 'habitat', title: 'Habitat', fit: 'scale', minWidth: 960, about: 'The habitat’s instruments: the readings, the crew’s figures, the stores and the power' },
+  { name: 'habitat', title: 'Habitat', fit: 'roll', about: 'The habitat’s instruments, large, one row under the other, rolling by slowly from top to bottom: the readings, the crew’s figures, the stores, the power, Karlsruhe and the astronauts, the hardware’s charts' },
   { name: 'board', title: 'Message Board', fit: 'clip', about: 'The ground station’s board, live: every message sent from the writing screen as it stands — in transit, awaiting a reply, answered — among the latest exchanges with the crew, the newest first, as many as fit' },
   { name: 'write', title: 'Write to the crew', fit: 'scale', minWidth: 640, about: 'The composer, full screen, for writing to the crew at the venue — every message from it as the ground station’s, under its one operator name' },
   { name: 'mission', title: 'Today’s Mission', fit: 'scale', minWidth: 760, about: 'The day’s scientific mission: its question, Morning, Afternoon and EVA' },
@@ -95,10 +99,14 @@ function landing(ctx, d) {
     ticker: P.ticker(ctx, { today: d.today }), scripts: ['/sky.js'].concat(d.cloud ? ['/cloud.js'] : []) });
 }
 
-/** The habitat's instruments: the Habitat panel as the dashboard has it, live. */
+/** The habitat's instruments: the Sensors panel as the dashboard has it, live — read from across a room (8 October: "a
+    vertical layout with scrolling, to show all the content clearly and slowly"): the panel fills the screen, its head
+    stands, and its rows — the eight instruments, the steps and the stores, the power with Karlsruhe and the astronauts,
+    the hardware's charts — stand at their full size and roll by under the head, slowly, then start again from the top
+    (public/screen-roll.js; the layout in public/screen.css). The astronauts wander on their radar (live.js). */
 function habitat(ctx, d) {
   const p = P.dashboardPanels(ctx, d);
-  return shell(ctx, { name: 'habitat', title: 'Habitat', body: p.habitat, fit: 'scale', scripts: ['/habitat.js', '/hardware.js'] });
+  return shell(ctx, { name: 'habitat', title: 'Habitat', body: `<div class="screen-roll" id="screen-roll">${p.habitat}</div>`, fit: 'roll', scripts: ['/habitat.js', '/hardware.js', '/live.js', '/screen-roll.js'] });
 }
 
 /** The trends on one graph — drawn by habitat.js, which needs the Habitat panel on the page: it stands here unshown.

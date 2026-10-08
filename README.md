@@ -136,7 +136,7 @@ answers with the list and a word, never with the site's 404 page and its cookie 
 - `/screen/landing` — the landing page's first screen — the way to the habitat, with the
   latest exchanges and pictures around the line — with the ticker (its light/language
   switches and its links are not drawn)
-- `/screen/habitat` — the Habitat instruments, live
+- `/screen/habitat` — the Habitat instruments, live, large, rolling by slowly from top to bottom
 - `/screen/board` — **the ground station's message board**, read-only, live; two columns (one
   upright), each card's line into space on one line, nothing to tap. Every message sent from
   the writing screen stands on it at once, under **BODENSTATION**, whatever its state — in
@@ -201,7 +201,7 @@ address.
 | Screen | Address | Shows |
 |---|---|---|
 | Landing page | `/screen/landing` | The station's first screen — the ticker across the top, then the page's words at the left and the way to the habitat at the right: the Earth, the line, the habitat far above, the latest exchanges and pictures either side of the line (*The landing page: four pages*). The one screen that keeps the ticker; the ticker's switches (light, language) and its links are not drawn |
-| Habitat | `/screen/habitat` | The Habitat panel of the dashboard: the readings, the crew's figures, the stores and the power — live. Set to be read from across a room: what each tile measures in 32px type, its scale under it in 18px, the figures 46–54px, and the drawings (the dial, the ruler, the radar, the orbit) smaller for it (`screen.css`, `#habitat`) |
+| Habitat | `/screen/habitat` | The Sensors panel of the dashboard, live, **in a vertical layout that rolls by slowly** (8 October: "a vertical layout with scrolling, to show all the content clearly and slowly — no overlap of text, no glitching"): the panel fills the screen and its head stands; its rows — the eight instruments (four to a row, two upright), the steps and the stores, the power with Karlsruhe and the astronauts (upright: Karlsruhe and the astronauts, then the power), the hardware's charts (two across, one upright) — stand at the size they are read at from across a room (each tile's name 30 px, its scale 18 px, the figures 76 px, its sign in a 62 px disc, the meters broad) and roll by under the head at 28 px a second; at the top and at the end the panel rests eight seconds, then fades and starts again from the top (`public/screen-roll.js`; the sheet is moved by transform, its edge fading where it passes under the head and where more is to come; `data-speed` and `data-hold` on `#screen-roll` say otherwise). Laid out as on a screen 1920 wide (1080 upright) and zoomed to the screen's actual width (`data-fit="roll"`, `screen.js`), so every screen shows the same rows; the charts are drawn a third smaller than shown, so their lines and type come out larger (`hardware.js`); the page's own reloads wait for the moment the panel is faded out. The astronauts wander on their radar (`live.js`) |
 | Message Board | `/screen/board` | The ground station's board: every message sent from the writing screen as it stands — in transit, awaiting a reply, answered — under BODENSTATION, then the latest exchanges, newest first, two across (one upright), as many as fit — live, a new exchange slides in as the board publishes it. Read-only: no composer, nothing to tap — a card's line into space stands on one line (*Diese Nachricht ist jetzt 20,02 Milliarden km von der Erde entfernt! · Gestartet vor 19 Stunden*) and opens no panel. The screen polls `/api/board?lang=<its language>&limit=400&station=1`, so the cards come back in the language the screen is in, all of them, the station's own among them |
 | Write to the crew | `/screen/write` | **The message-sending box, full screen** — the composer as the site has it (the crew's question of the day over it, the message box, the tags, the Transmit key), alone in the middle of the screen, for a touch screen in the square. **Every message sent from it is a new visitor's**: a callsign is minted for it alone (`src/lib/callsign.js`, `mint`; `POST /screen/write` in `server.js`), no cookie is set, so the next person at the screen starts afresh — no callsign carried over, no transit lock between them. Once a message is sent the crossing plays as on the site, then holds nine seconds on ARRIVED with the callsign named — *Your message went under the callsign DUST-465 — look for it on the Message Board once the crew have answered* — before the empty box comes back (`public/composer.js`, `data-hold`, `data-refresh`). The checks are the composer's (the channel open, the words within bounds); the hourly limit is the screen's own, per address, since all its messages come from one: `KIOSK_HOURLY_LIMIT`, sixty an hour. What is left half-written is cleared after three minutes with nobody touching the screen, and the page's own reloads wait while someone is writing or a message is crossing (`public/screen-write.js`) |
 | Today's Mission | `/screen/mission` | The day's mission from the sheet: its question, Morning, Afternoon, EVA, the question for the community hour — **typed out letter by letter** as if someone were writing it (`public/typed.js`: a cursor after the last letter, a halt at a full stop; typed to the end it stays three minutes, then is typed again; the site's dashboard shows the same panel still) |
@@ -389,10 +389,9 @@ file that has gone missing is restored from it at start-up. The reset does not r
 the two doors — no strip of thirteen sols (the sol is in the figures and the panels' heads), no
 LIVE pill under the figures, no cursor after the title; the folder's segmented control alone names
 a group of one folder (the Sensors), a group of four shows its four tabs across; **the habitat's
-readings stand in one plain column of compact readouts** — each tile its name and its scale at the
-left and its figure at the right, the CO₂ dial under its name, the thermometer's ruler, the radar
-and the big instruments left to a wider screen, the crew's figures without their doubled "nothing
-recorded"; the crew's rows put the condition's badge beside the name and the note under them. On
+readings stand in one plain column of compact readouts** — each tile its sign, its name and its
+scale at the left, its figure at the right and its meter under them, the radar left to a wider
+screen, the crew's figures without their doubled "nothing recorded"; the crew's rows put the condition's badge beside the name and the note under them. On
 the wall the bar wraps — the board's name and the count on one line, **the chips in a sideways row
 under them, fading at the end to say they go on** (they were squeezed into the bar's right edge
 and unreachable before) — and a note carries no reference number on the small screen.
@@ -1038,37 +1037,41 @@ files do not hold.
 The landing page — the mission page, `/` — keeps the layout of the design handoff of September
 2026, pared down — pages one under the other: **the way to the habitat** — the Earth at the
 foot of the screen, the habitat far above it, a dashed line between them, and the latest exchanges
-and pictures coming and going around it; **the second page** — the note (what MARS! is, the words
-of October's text sheet, with no keys under them any more) and under it **the two calls**
-(October; `calls()` in `src/views/pages/landing.js`, drawn into `note()`; `sheet.css` under *the
-two calls* and *the second page on a desk*) — **on a desk the note stands at the left and the two
-calls one over the other at its right** (`page2`, October's picture: the note a card at the page's left, as tall as the two calls,
-its words in the middle of its height; the two calls one over the other right beside it, across the rest of the page's
-width — "the 2 buttons on the right of the box" — their words at the left and the drawing small over them; the three
-cards one rectangle, and the whole fits a window of 900 px. **The widths are two variables on `.page2` in `sheet.css`**,
-to be changed in that one place: `--note-w`, how wide the note's card grows where the page allows — 1000 px, October:
-"double the width" — and `--calls-w`, the least the calls' column is — 460 px; the calls take what is left of the
-page, and on a narrower page the note gives way first), on a phone the note first and
-the two calls under it; each call a card of glass, the whole card the door, in the colours of the
-theme chosen: **Send a message to the crew**, with the thing to know set large under its title —
-**APPROVED MESSAGES ARE BEAMED INTO SPACE**, in capitals, in a gradient of Mars and light
-(`background-clip: text`) with a glow of Mars about the letters and a shimmer of light passing
-along them now and then (by day the light in the gradient is a pale peach, by night white;
+and pictures coming and going around it; **the second page** — **the two calls** alone (the note that stood beside them is gone —
+October asked for the box to go; `calls()` in `src/views/pages/landing.js`, drawn into `note()`;
+`sheet.css` under *the two calls* and *the second page on a desk*) — **two large cards side by side
+on a desk**, as wide as the page's column (`page2`, up to 1600 px; 8 October: "increase the size of
+the two boxes … text clearly readable"), one under the other on a phone; each card the door, a
+drawing across its whole width (600 × 200, the width of the card — 8 October: "the visualisation
+should span across the width, bigger and clearer") and its words under it at the left, set large:
+the eyebrow 13 px, the title up to 36 px, the sentence up to 18.5 px, the key 52 px tall.
+**Send a message to the crew** (eyebrow *01 · TRANSMIT*), with the thing to know set large under
+its title — **APPROVED MESSAGES ARE BEAMED INTO SPACE**, in capitals, in Mars with a glow about
+the letters (by night the gradient of Mars and light with a shimmer passing along it now and then;
 October: "the entire part should look exciting", then "the previous orange style" — the galaxy
 the letters were cut out of for an hour stays drawn, `tools/galaxy.py` and
-`public/space/galaxy.jpg`, unused); the sentence that says how (*Mission control reads every message. The ones it
-approves are beamed into space by radio.*) and the orange Write key (the count of messages sent
-into space is not written any more — `data.counts().sentToSpace` stays for whoever wants it);
-its drawing a dish sending at the foot, its waves going out, the dashed way up into space
-with WRITTEN and APPROVED standing on it and INTO SPACE under its open end — nothing drawn
-there: the Mars disc that stood at the end lost its dome, then went altogether (October, "have
-nothing there"), so the way ends in the open and the signal goes off it — a signal going along it again
-and again (SMIL `animateMotion`; still, and gone, where less motion is asked for); and **Follow
-what the crew is doing — live** in cobalt, with no drawing of its own — a LIVE pill on its line,
-the sentence and the Live Mission Dashboard key (no *Thirteen sols* line, no chips, and no line
-of what the crew are doing at this minute any more), its words in the middle of the card (a phone
-has the station's name at the head of this page, and the note and each door are stops of the
-scroll); and *Welcome to the World's Slowest Chat* under a heading of its
+`public/space/galaxy.jpg`, unused); the sentence that says how (*Mission control reads every
+message. The ones it approves are beamed into space by radio.*) and the orange Write key (the count
+of messages sent into space is not written any more — `data.counts().sentToSpace` stays for whoever
+wants it); its drawing the dish sending at the foot, its waves going out, the dashed way up into
+space with the two states a message passes on it — WRITTEN and APPROVED, each a station on the way
+with a dashed drop to its name on the drawing's foot line — and INTO SPACE over the way's open end:
+nothing drawn there (the Mars disc that stood at the end lost its dome, then went altogether —
+October, "have nothing there"), so the way ends in the open and the signal goes off it — a signal
+going along it again and again (SMIL `animateMotion`; still, and gone, where less motion is asked
+for). **Follow what the crew is doing — live** in cobalt (eyebrow *02 · LIVE FEED* with a LIVE
+pill), its sentence and the Live Mission Dashboard key; its drawing (8 October: "add a
+visualisation for the Live Mission Dashboard also") **the dashboard in small, as it reads now**:
+three of the habitat's instruments drawn as the Sensors panel draws them — the temperature, the
+humidity, the carbon dioxide, each with its sign in a disc, its name, its figure (the habitat's
+latest reading, `habitatNow()` in `public.js` — a dash where there has been none in the last half
+hour) and its meter (dots, segments, thin bars — lit in cobalt up to the reading, the last lit cell
+breathing) — and at the right the radar of the astronauts tracked, its sweep going round and a dot
+for each of the crew wandering on it (`aura.css`, `live.js`, as on the dashboard). A phone has the
+station's name at the head of this page, and each door is a stop of the scroll. The page keeps a gap
+above it, and a phone a wider one between the cards, so that where the scroll stops the room — or
+the card — before it has gone up behind the header whole, its foot and its shadow with it (8 October:
+no shadow showing where it should not); and *Welcome to the World's Slowest Chat* under a heading of its
 own — its name large and bold, a short orange rule — with a line across the page setting it apart
 from the note. Nothing stands under the three pages: the composer is the Write page's pop-up, and
 every Write door here leads to it (`/write#write`; see *The mission page*). (The handoff's page
@@ -1185,7 +1188,7 @@ window tall with its cards in the middle and air around them, a margin at both s
   Finite Resource*); the sensors as CO₂, temperature and humidity alone, with when they were read;
   the communication hour (when the next one is, and the day's question for it, the mission's
   community question); the water with the meals' hours on the schedule; the crickets' box
-  temperature from the hardware (Home Assistant's *Cricket Temperature*), the food rations when
+  temperature from the hardware (Home Assistant's *Cricket Terrarium Temperature*), the food rations when
   there is none; the crew's moods in the Living Quarters, the schedule in the Crew's room; the
   section's head asks *What's inside the habitat?* (`dome.js`, `figures()`). The scene
   and the cut-outs are made from the two files by **`tools/habitat-modules.py`** (Pillow: it composes
@@ -1334,7 +1337,7 @@ window tall with its cards in the middle and air around them, a margin at both s
   day at 19:00 CET, the Habitat opens its communication window…* — and no photograph; then what
   becomes of a message in three steps on one card of glass, each step's sign in a small tinted
   disc of its own colour — Earth's blue, the crossing's violet red, Mars orange — on a dashed
-  thread: **01 Uplink** *Send a message* (the visitor's words in a bubble under their own
+  thread: **01 Transmit** *Send a message* (the visitor's words in a bubble under their own
   callsign, and under the queue a line of its own: *Every message goes two ways: to the crew in
   the Mars habitat — and, by radio, out into space, where it travels on at the speed of light.
   Tap it on the Message Board to see how far it has come.*), **02 Transit** *Signal in transit*, **a dot crossing from Earth to Mars** in the
@@ -1635,14 +1638,20 @@ The parts are working parts, not decoration:
 
 - **The composer is a device.** An orange light (it pulses while a message crosses), a ribbed
   orange grip at the top edge, a soft knob and a row of vents; then the operator's callsign and
-  *UPLINK*; then, over the writing box, the day's question from the habitat as a prompt (see
+  *TRANSMIT*; then, over the writing box, the day's question from the habitat as a prompt (see
   *Today's Mission*). The one orange key transmits.
 - **The board is a second slab.** A pale raised panel beside the composer, nearly its width, so
   the correspondence gets as much room as the writing: callsigns in orange, the crew's replies
   in orange with a `✧`, an orange scrollbar, the counts and the filter chips in the foot.
 - **The crossing is a dial.** Pressing transmit lifts the device and swaps the form for a bezel
   with four screws round a dark gridded face: Earth at the foot, Mars at the head, the message
-  travelling the arc between them while `T−mm:ss` counts down beside it.
+  travelling the arc between them while `T−mm:ss` counts down beside it. The dial is the box's
+  picture while the message crosses (8 October: "the entire visualisation should be bigger and more
+  prominent"): on a desk it stands large at the left of the box (about 340 px in the 640 px window,
+  the readings and the Message Board key beside it), the two worlds drawn a size up and well apart
+  on the face, their names large — **EARTH** under the Earth, **MARS!platz** under Mars, as it is
+  written — and *SENDING* under them (`crossingDial()` in `src/views/pages/communicate.js`; the type
+  in `station.css`, the layout in `aura.css`); a phone keeps the dial above its readings.
 - **The station's name** is spelled letter by letter down the left margin; the run's thirteen days
   run down the right, today marked. Both fall away below 1420px.
 - **Readings** — link state, mission day, distance, one-way time, your callsign, the theme
@@ -1673,15 +1682,15 @@ The parts are working parts, not decoration:
   title; the sol and the crew figures rolling up from zero to their value once, when the page
   opens, as a readout settling — the values are the page's own, restored exactly; the sol of
   the day breathing on the strip. **Two instruments without a reading** stand among the
-  habitat's tiles, each on a row of its own, never side by side, each named small in its corner
-  and hidden from assistive technology: *Astronauts tracked* at the end of the sensors' third
-  row, after the light (the air quality, the compounds and the light make room for it) — a
-  radar: a sweep going round every four seconds over rings and a rim of ticks, and inside it
+  habitat's tiles, side by side beside the power (8 October), each named as the instruments are,
+  with its sign in a disc at its top right — a pin, a radar — and hidden from assistive
+  technology: *Astronauts tracked* — a radar: a sweep going round every four seconds over rings and a rim of ticks, and inside it
   **one dot an astronaut, three for the crew of three** (as many as the crew the head's figure
   counts; `vizTile`, `n`), each wandering about the disc on a slow spring towards a place of its
   own, two never on each other, each lit as the sweep passes over it and dimming until it comes
-  round again (`public/live.js`); *Karlsruhe* in the stores' row, between the stores and the
-  power — **the city as its fan**, the plan drawn from the Schloss as the mock-up draws it: a disc
+  round again (`public/live.js` — at a third of the pace they first had: 8 October, "reduce the
+  movement of the dots to a third", their own clock running at `PACE`); *Karlsruhe*, before it —
+  **the city as its fan**, the plan drawn from the Schloss as the mock-up draws it: a disc
   of rings (the kilometres whole, the half-kilometres dashed, nothing written on them and no N)
   and the thirty-two rays, north up, and on it, to scale, the station's three places — the
   Schloss at the centre, a small square; **Red Dust City** at the Marktplatz, 480 m south, a dot
@@ -1690,8 +1699,8 @@ The parts are working parts, not decoration:
   and back, and a sweep of Mars going round once in twenty-four seconds (`cityFan()` in
   `src/views/pages/public.js`, 31 units a kilometre; `aura.css` under *Karlsruhe as its fan*). On
   a phone each is the width of the panel, under the row it belongs to. The folder's open panel is framed with brackets at its four corners
-  and has a pulsing dot before each panel's name; a ring pulses out of each crew face and out
-  of the CO₂ dial; the task of the hour has a blinking dot before its time. No line sweeps over
+  and has a pulsing dot before each panel's name; a ring pulses out of each crew face; the task
+  of the hour has a blinking dot before its time. No line sweeps over
   anything. The Today's Mission panel on the dashboard stands as written. **On the
   installation's mission screen** (`/screen/mission`) **the day's mission is typed** instead:
   the panel's words — the title, the central question, the three parts of the day, the question
@@ -1769,9 +1778,8 @@ pop-up says *no figure filed yet* (`inventoryGauges()` in `src/views/pages/publi
 dashboard's Sensors tab the Resources tile is drawn as rings — one a store, four stores four rings,
 each large with its figure and unit in the middle and its name beneath, **and no count of days**
 (8 October: "remove the days count and make the layout bigger to show the text clearly"; the bars
-elsewhere keep their days remaining) — only as wide as its rings, Karlsruhe's fan beside it at its
-own width and the Power tile taking the rest of the row (the second row is laid out by its contents
-on a desk, `aura.css`).
+elsewhere keep their days remaining) — beside the steps, across three of the panel's four tracks,
+one ring a store at its own width, room at the tile's foot for the rings' shadows (`aura.css`).
 
 Everything in the habitat was carried in and nothing is resupplied, so over thirteen days the row
 visibly empties. That is the point of putting it on the front page rather than on a subpage.
@@ -2019,7 +2027,7 @@ pop-up* in `aura.css`): **the composer in a window in the middle of the screen, 
 and dimmed behind it**, on every public page (the Write to the crew key that floated at the foot of
 the window at the right is gone — 8 October: "remove the floating Write to the crew button"; the
 header's Write key, the `#write` doors and a phone's bar remain the ways in) (640px
-wide, on the notes' surface with a rule of Mars along its top): an eyebrow *Uplink · one-way
+wide, on the notes' surface with a rule of Mars along its top): an eyebrow *Transmit · One-way
 signal 14 min · 1.634 au*, the title *Write to the crew* with its cross, **your callsign**, the
 crew's question for the day, the writing box — **1000 characters** (`MESSAGE_MAX_CHARS`; the
 counter says `0 / 1000`) — the five tags (choose up to 3) and **Transmit** across the whole width;
@@ -2358,6 +2366,51 @@ beside the project (*MARS!platz Soft UI* and *Soft UI Night*).
 - **The Resources rings are larger** and carry the store's name under them and no count of days
   (*35 days*, *ample*, *no draw* are gone — and from the ring's hover title too): a ring a store with
   its figure and unit in the middle, its name large beneath.
+
+**8 October, the second pass** — after a racing car's dash for the instruments, and a screenshot of a square shadow:
+
+- **The Sensors panel, redrawn** (`SENSOR_TILES`, `sensorTile()`, `oxygenTileInner()` and `SENSOR_ICON` in
+  `src/views/pages/public.js`; `renderTile()` in `public/habitat.js`; *the habitat's Sensors panel* in `aura.css`).
+  The eight instruments come first, four to a row on a desk — **the oxygen, the carbon dioxide, the temperature, the
+  humidity; the air pressure, the air quality, the light, the volatile organic compounds** — then **the steps beside
+  the stores**, then **the power** with Karlsruhe and the astronauts beside it, then the hardware's charts two across:
+  **the power and the Cricket Terrarium Temperature, then the oxygen and the air quality**. Every instrument is a tile
+  of one make: its **sign in a disc at its top right** (white on the night's black, the ink by day; red while the reading
+  is past its limit) — the lungs, a molecule, a thermometer, a drop, a gauge, the wind, the sun, a flask; footprints for
+  the steps, a crate for the stores, a bolt for the power, a pin for Karlsruhe, a radar for the astronauts; the charts
+  carry the same signs in their captions — its name and scale, **the figure large**, **a meter under it** the racing dash's
+  way (a row of rounded segments, of thin bars or of dots, lit in Mars up to the reading on its scale, red past the
+  limit) and a word on it (*Within limit*, *Comfortable*, *Normal air*, *Lightly polluted* …). The air quality, the
+  compounds and the light, which had large tiles of their own, are tiles of the same make in the second row. **The
+  oxygen** is read from the habitat's own hardware (the sensor in `content/home-assistant.json` with O2 or oxygen in
+  its id or name; normal air 20.9 %, red under 19.5 % or over 23.5 %), kept live by `/api/hardware` with the charts.
+  The cricket's chart and its trend line are named **Cricket Terrarium Temperature**. A phone keeps one compact column,
+  each tile its sign, name and figure on a line and its meter under them.
+- **The habitat screen rolls** (`/screen/habitat`; `public/screen-roll.js`, `fit: 'roll'` in `screens.js`, the
+  rolled layout in `screen.css`): a vertical layout read from across a room, rolling by slowly from top to bottom and
+  starting again (see *The installation's screens*). The screen's own polls now ask in the screen's language.
+- **The second page's cards are large** and each carries a drawing across its whole width; the live card has the
+  dashboard in small (see *The landing page*). The word *Uplink* is gone from every page, in every language — the
+  composer's head, the first card and the chat's first step say **Transmit**.
+- **The astronauts** on the radar wander at a third of the pace they had (`public/live.js`, `PACE`).
+- **The crossing's dial is the Write box's picture** — larger, the worlds' names large (see *The crossing is a dial*).
+- **No shadow is square or cut off, anywhere** (`neu.css`, *the shadows, never square*): only a rounded thing casts a
+  soft shadow, and whatever is drawn inside a raised card lies flat on it — the theme pill's wrapper, the panel in the
+  dashboard's open folder, the About page's habitat drawing; a strip that scrolls sideways keeps room round its cards
+  for their shadows (At a Glance's booklet, whose keys to the day before and after now stand in the page's margin
+  instead of over its edge, where their light fell over the words; the newest pictures; a phone's board filters); the
+  stores' rounds have room at the foot of their tile; the screens' stage leaves room round its panels
+  (`overflow-clip-margin`); and where the landing page's scroll stops at the second page, at a card or at the chat,
+  the room or the card before it has gone up behind the header whole — its foot and its shadow too.
+- **The hardware's charts are drawn for their tiles' width again** — the sign in a chart's caption had been measured
+  instead of the chart, and the charts came out drawn 240 wide and stretched — and **they no longer draw themselves in
+  again every minute**: the lines draw in when the panel first arrives; a fresh reading swapped in later is simply
+  there (`public/hardware.js`, `is-live`).
+- **Words**: the light sensor is *Licht* and *Lumière*, not the theme's *Hell* and *Clair* — a key may carry its sense
+  after a double colon (`'Light::sensor'`, `src/lib/i18n.js`); the ticker's opening day is written in the visitor's
+  language (*öffnet Do., 15. Okt. 2026*); the steps tile says *nothing recorded* once, and an officer's title wraps
+  rather than being cut short; the trends' day labels stand centred under their days, so the last two no longer run
+  together.
 
 ## Three phases
 

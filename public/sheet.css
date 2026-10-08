@@ -819,8 +819,10 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
      in under them */
   body.landing .sheet-p2 { box-sizing: border-box; display: flex; flex-direction: column; justify-content: center;
     min-height: calc(100vh - 149px); min-height: calc(100lvh - 149px - env(safe-area-inset-bottom, 0px)); }
-  /* the second page: the note, then the two calls — with room around them (the station's name stands on the first page) */
-  body.landing .sheet-p2 { margin: 0; padding: 28px 0 24px; }
+  /* the second page: the note, then the two calls — with room around them (the station's name stands on the first page);
+     a gap over it, so that where it stops under the header the room before it — its foot and its shadow — has gone up
+     behind the header whole, no edge of it showing under the ticker (8 October: no shadow showing where it should not) */
+  body.landing .sheet-p2 { margin: 34px 0 0; padding: 28px 0 48px; }
   /* the chat: a page of its own */
   body.landing .sheet-p4 { margin: 0; padding: 30px 0 12px; }
   body.landing .part-head { gap: 8px; padding: 0 4px 14px; }
@@ -828,7 +830,7 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
   body.landing .sheet-p4::before { margin: -30px 0 30px; }
   /* a screen too short for a page as it is drawn above (public/sky.js marks it snug): the same page set a little closer,
      so that it still fits — the gaps and the photographs smaller, the type a step down */
-  body.landing .sheet-p2.is-snug { padding: 16px 0 12px; }
+  body.landing .sheet-p2.is-snug { padding: 16px 0 46px; }   /* (its foot as wide as ever: the last card's shadow behind the header where the chat stops) */
   body.landing .sheet-p2.is-snug .sheet-meta.is-ruled { padding-bottom: 12px; }
   /* the pages of the scroll: a swipe goes to the next; a page taller than the screen (public/sky.js marks it) stops at
      each of its parts too — the note, the card of steps and each step after the first — so nothing on it is passed
@@ -838,8 +840,9 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
   body.landing:not(.inner) [data-page] { scroll-snap-align: start; scroll-snap-stop: always; }
   body.landing:not(.inner) [data-page].is-tall :is(.call, .steps, .step + .step) { scroll-snap-align: start; }
   body.landing:not(.inner) [data-page].is-tall :is(.call, .steps, .step).no-stop { scroll-snap-align: none; }   /* too near the next stop (sky.js) */
-  body.landing:not(.inner) .foot { scroll-snap-align: end; content-visibility: visible; }   /* laid out from the start (aura.css
-     leaves it for later on a phone): the end of the scroll stays where it is */
+  body.landing:not(.inner) .foot { scroll-snap-align: end; content-visibility: visible; margin-top: 84px; }   /* laid out from the start (aura.css
+     leaves it for later on a phone): the end of the scroll stays where it is; far enough under the last step that its
+     light stays behind the bar of keys while the step is read */
   body.landing.messages .composer-device { padding-top: 52px; }
 }
 @media (max-width: 360px) {
@@ -856,13 +859,16 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
 }
 
 /* ====================================================================== the two calls (landing.js, calls) */
-/* Right after the room: two doors side by side, each a card of glass with a drawing across its top and its words under
-   it, the whole card the door — SEND A MESSAGE TO THE CREW in Mars, with the thing to know, that approved messages are
-   sent into space, and FOLLOW WHAT THE CREW IS DOING — LIVE in cobalt. A light of the card's colour in its top corner,
-   a faint grid behind the drawing. The uplink's drawing: a dish sending at the foot, its waves going out, the dashed way
-   up to the habitat with WRITTEN and APPROVED on it and INTO SPACE at its end, a signal going along it again and again
-   (SMIL). The live drawing: a trace of a day's readings drawing itself across, erasing from its start, a dot at its
-   head, a LIVE mark in the corner. Where less motion is asked for the drawings stand: the trace whole, the signal gone. */
+/* Right after the room: two doors side by side, each a large card with a drawing across its whole width and its words
+   under it, the whole card the door — SEND A MESSAGE TO THE CREW in Mars, with the thing to know, that approved messages
+   are sent into space, and FOLLOW WHAT THE CREW IS DOING — LIVE in cobalt (8 October: "increase the size of the two
+   boxes … text clearly readable; the visualisation should span across the width, bigger and clearer; add a
+   visualisation for the Live Mission Dashboard also"). A faint grid behind each drawing. The transmitting drawing: a dish
+   sending at the foot, its waves going out, the dashed way up into space with WRITTEN and APPROVED stations on it — their
+   names on the drawing's foot line — and INTO SPACE over its open end, a signal going along it again and again (SMIL).
+   The live drawing: three of the habitat's instruments as the dashboard draws them — the sign, the name, the figure (the
+   habitat's latest reading), the meter lit in cobalt, its last lit cell breathing — and the radar of the astronauts, its
+   sweep going round, the crew's dots wandering (aura.css, live.js). Where less motion is asked for the drawings stand. */
 body.landing .calls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: stretch; margin: 14px 0 0; }   /* under the note on a phone, beside it on a desk (below) */
 body.landing .call { --accent: var(--mars); --accent-rgb: 255,90,31; position: relative; display: flex; flex-direction: column; box-sizing: border-box; min-width: 0; padding: 22px 26px 26px; overflow: hidden; text-decoration: none; color: var(--ink);
   background: var(--glass); -webkit-backdrop-filter: blur(26px) saturate(1.35); backdrop-filter: blur(26px) saturate(1.35); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); border-radius: var(--r-lg);
@@ -884,8 +890,8 @@ body.landing .call-beam { display: inline-block; max-width: 22ch; font-size: 30p
 body.landing .call:hover { transform: translateY(-3px); border-color: rgba(var(--accent-rgb),.5); box-shadow: 0 30px 60px -30px rgba(var(--accent-rgb),.45), var(--glass-shadow); color: var(--ink); }
 body.landing .call:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 /* the drawing across the top */
-body.landing .call-art { position: relative; z-index: 1; display: block; width: 100%; height: auto; aspect-ratio: 560 / 150; overflow: visible; margin: 0 0 6px; }
-body.landing .call-art text { font-family: var(--display); font-size: 10px; font-weight: 600; letter-spacing: .14em; text-anchor: middle; fill: var(--dim); }
+body.landing .call-art { position: relative; z-index: 1; display: block; width: 100%; max-width: 100%; height: auto; aspect-ratio: 600 / 200; overflow: visible; margin: 0 0 14px; }
+body.landing .call-art text { font-family: var(--display); font-size: 15px; font-weight: 600; letter-spacing: .14em; text-anchor: middle; fill: var(--dim); }
 body.landing .call-grid line { stroke: var(--ink); stroke-opacity: .07; stroke-width: 1; }
 body.landing .call-dish path { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 body.landing .call-dish .call-dish-cup { fill: rgba(var(--cobalt-rgb),.1); }
@@ -895,8 +901,23 @@ body.landing .call-waves path:nth-child(2) { animation-delay: .4s; }
 body.landing .call-waves path:nth-child(3) { animation-delay: .8s; }
 @keyframes call-wave { 0% { opacity: 0; } 25% { opacity: .9; } 100% { opacity: 0; } }
 body.landing .call-way-line { fill: none; stroke: url(#call-way); stroke-width: 2; stroke-dasharray: 6 6; }
-body.landing .call-stations circle { fill: var(--paper); stroke: var(--mars); stroke-width: 2; }
-body.landing .call-hab text { fill: var(--mars-ink); font-weight: 700; }                 /* INTO SPACE under the way's open end — nothing drawn there (October) */
+body.landing .call-stations circle { fill: var(--paper); stroke: var(--mars); stroke-width: 2.2; }
+body.landing .call-stations text { fill: var(--ink); fill-opacity: .78; }
+body.landing .call-drop { stroke: var(--mars); stroke-opacity: .4; stroke-width: 1.2; stroke-dasharray: 2 4; }   /* from a station down to its name on the foot line */
+body.landing .call-hab text { fill: var(--mars-ink); font-weight: 700; text-anchor: end; }  /* INTO SPACE over the way's open end — nothing drawn there (October) */
+/* the live drawing: the instruments' signs in their discs, white on the night's black and the ink by day (aura.css,
+   --ic-disc); the names small in capitals, the figures large; the meters' cells dark, lit in cobalt up to the reading */
+body.landing .call-lv-disc { fill: var(--ic-disc); }
+body.landing .call-lv-ic { color: var(--ic-glyph); fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+body.landing .call-art .call-lv-k { font-size: 14px; letter-spacing: .14em; text-anchor: start; fill: var(--dim); }
+body.landing .call-art .call-lv-v { font-size: 25px; font-weight: 700; letter-spacing: -.01em; text-anchor: start; fill: var(--ink); }
+body.landing .call-art .call-lv-u { font-size: 14px; font-weight: 500; letter-spacing: 0; fill: var(--dim); }
+body.landing .call-lv-m circle, body.landing .call-lv-m rect { fill: var(--meter-off); }
+body.landing .call-lv-m .on { fill: var(--cobalt-fill); }
+:root[data-theme="dark"] body.landing .call-lv-m .on { fill: #6f86ff; filter: drop-shadow(0 0 4px rgba(111,134,255,.6)); }
+body.landing .call-lv-m .is-head { animation: call-breathe 2.4s ease-in-out infinite; }
+@keyframes call-breathe { 50% { opacity: .35; } }
+body.landing .call-art .call-radar { width: 176px; height: 176px; overflow: visible; }   /* the dashboard's radar (aura.css, .dl-radar), larger here */
 body.landing .call-sig { fill: #fff; stroke: var(--mars); stroke-width: 2; filter: drop-shadow(0 0 6px rgba(255,90,31,.85)); }
 body.landing .call-sig.is-tail { fill: var(--mars); stroke: none; opacity: .55; filter: none; }
 /* the live card carries no drawing: a LIVE pill on its line, its words in the middle of the card */
@@ -920,34 +941,51 @@ body.landing .call-key.is-write { background: linear-gradient(180deg, #ff8a3d, #
 :root[data-theme="dark"] body.landing .call-key.is-write { color: #1a0a02; }
 body.landing .call:hover .call-key { filter: brightness(1.08); transform: translateX(2px); }
 @media (min-width: 761px) and (min-height: 521px) {
-  /* the second page on a desk: the two calls side by side in the middle of the page (the note that stood at their left
-     is gone — October asked for the box to go); the calls compact, their words at the left, the drawing small over them,
-     so the whole stands in one window where the window allows */
-  body.landing .sheet-p2 { padding: 28px 0 32px; }
-  body.landing .page2 { max-width: 1120px; margin: 0 auto; }   /* the two calls, centred */
-  body.landing .calls { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; max-width: none; margin: 0; }
-  body.landing .call { padding: 22px 26px 24px; }                                                    /* the cards as the picture has them: low, their words at the left */
+  /* the second page on a desk: the two calls side by side, large, in the middle of the page (the note that stood at their
+     left is gone — October asked for the box to go); each drawing across its card's whole width, the words under it at
+     the left, set large (8 October: "increase the size of the two boxes … text clearly readable") */
+  body.landing .sheet-p2 { padding: 28px 0 32px; margin-top: 34px; }   /* (the gap: the room's foot and shadow behind the header where the page stops — see the phone's) */
+  body.landing .page2 { width: 100%; max-width: 1600px; margin: 0 auto; }   /* the two calls, centred, as wide as the page's column */
+  body.landing .calls { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px; max-width: none; margin: 0; }
+  body.landing .call { padding: 30px 34px 32px; }
   body.landing .call-text { align-items: flex-start; text-align: left; }
-  body.landing .call-art { width: 280px; height: 75px; max-width: 100%; margin: 0 0 2px; }   /* 560 : 150, at the left of the card */
-  body.landing .call-k { font-size: 10.5px; }
-  body.landing .call-title { margin-top: 8px; font-size: 22px; }
-  body.landing .call-punch { margin-top: 10px; font-size: 16px; }
-  body.landing .call-write .call-punch { margin-top: 10px; }
-  body.landing .call-beam { font-size: 20px; max-width: 26ch; }
-  body.landing .call-body { margin-top: 10px; max-width: 64ch; font-size: 14px; line-height: 1.55; }
-  body.landing .call-text > :nth-last-child(2) { margin-bottom: 16px; }
-  body.landing .call-key { min-height: 42px; padding: 0 18px 0 20px; font-size: 14px; }
+  body.landing .call-art { margin: 0 0 20px; }
+  body.landing .call-k { font-size: 13px; }
+  body.landing .call-livepill { font-size: 11.5px; }
+  body.landing .call-title { margin-top: 10px; font-size: clamp(28px, 2.4vw, 36px); }
+  body.landing .call-punch { margin-top: 12px; font-size: 19px; }
+  body.landing .call-write .call-punch { margin-top: 12px; }
+  body.landing .call-beam { font-size: clamp(24px, 2.05vw, 31px); max-width: 24ch; }
+  body.landing .call-body { margin-top: 12px; max-width: 54ch; font-size: clamp(16px, 1.25vw, 18.5px); line-height: 1.55; }
+  body.landing .call-text > :nth-last-child(2) { margin-bottom: 24px; }
+  body.landing .call-key { min-height: 52px; padding: 0 22px 0 24px; font-size: 16.5px; }
+}
+/* a desk window too short for the cards as set above: the gaps closer, so the page still stands in one window (the
+   drawings keep the cards' whole width) */
+@media (min-width: 761px) and (min-height: 521px) and (max-height: 860px) {
+  body.landing .sheet-p2 { padding: 18px 0 22px; }
+  body.landing .call { padding: 24px 30px 26px; }
+  body.landing .call-art { margin: 0 0 14px; }
+  body.landing .call-title { margin-top: 8px; }
+  body.landing .call-text > :nth-last-child(2) { margin-bottom: 18px; }
+  body.landing .call-key { min-height: 48px; }
 }
 @media (max-width: 760px) and (min-height: 521px) {
-  body.landing .calls { gap: 14px; margin-top: 14px; }
+  /* (the gap between the two cards, and the page's own under them, wide enough that where the scroll stops at a card —
+     or at the chat — the card before it has gone up behind the header with its shadow) */
+  body.landing .calls { gap: 32px; margin-top: 14px; }
   body.landing .call { padding: 16px 16px 20px; }
-  body.landing .call-art { margin: 0 0 2px; }
-  body.landing .call-title { font-size: 25px; }
+  body.landing .call-art { margin: 0 0 8px; }
+  body.landing .call-title { font-size: 26px; }
   body.landing .call-punch { font-size: 17px; }
-  body.landing .call-beam { font-size: 25px; }
-  body.landing .call-body { font-size: 15px; line-height: 1.55; }
-  body.landing .call-key { min-height: 44px; margin-top: 18px; }
-  body.landing .call-art text { font-size: 14px; }                                        /* the drawing is small here: its words a size up */
+  body.landing .call-beam { font-size: 26px; }
+  body.landing .call-body { font-size: 16px; line-height: 1.55; }
+  body.landing .call-key { min-height: 46px; margin-top: 18px; }
+  /* the drawings are small here: their words a size up, in the drawing's units */
+  body.landing .call-art text { font-size: 18px; }
+  body.landing .call-art .call-lv-k { font-size: 17px; }
+  body.landing .call-art .call-lv-v { font-size: 29px; }
+  body.landing .call-art .call-lv-u { font-size: 17px; }
 
   body.landing:not(.inner) [data-page].is-tall .call { scroll-snap-align: start; }
   body.landing:not(.inner) [data-page].is-tall .call.no-stop { scroll-snap-align: none; }
@@ -960,6 +998,7 @@ body.landing .call:hover .call-key { filter: brightness(1.08); transform: transl
   body.landing .call-sig { display: none; }
   body.landing .call-livepill i { animation: none; }
   body.landing .call-beam { animation: none; }
+  body.landing .call-lv-m .is-head { animation: none; }
   body.landing .call, body.landing .call:hover { transform: none; }
 }
 

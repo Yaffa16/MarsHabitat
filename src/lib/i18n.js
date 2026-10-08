@@ -46,6 +46,7 @@ const D = {
   'YOU': ['DU', 'VOUS'],
   'DAY': ['TAG', 'JOUR'],
   'Light': ['Hell', 'Clair'],
+  'Light::sensor': ['Licht', 'Lumière'],
   'Switch to light mode': ['Zum hellen Modus wechseln', 'Passer en mode clair'],
   'Switch to dark mode': ['Zum dunklen Modus wechseln', 'Passer en mode sombre'],
   'Back to the station': ['Zurück zur Station', 'Retour à la station'],
@@ -379,7 +380,7 @@ const D = {
   'Write something before transmitting.': ['Schreib etwas, bevor du sendest.', 'Écrivez quelque chose avant de transmettre.'],
   'Messages are limited to': ['Nachrichten sind begrenzt auf', 'Les messages sont limités à'],
   'characters.': ['Zeichen.', 'caractères.'],
-  'The uplink is saturated from your position. Try again later.': ['Der Uplink ist von deiner Position aus gesättigt. Versuch es später noch einmal.', 'La liaison montante est saturée depuis votre position. Réessayez plus tard.'],
+  'Too many transmissions from your position. Try again later.': ['Zu viele Übertragungen von deiner Position aus. Versuch es später noch einmal.', 'Trop de transmissions depuis votre position. Réessayez plus tard.'],
   'Waiting to be read in the habitat': ['Wartet darauf, im Habitat gelesen zu werden', 'En attente de lecture dans l’habitat'],
   'Read and cleared for the board': ['Gelesen und für das Board freigegeben', 'Lu et autorisé pour le tableau'],
   'Not carried forward': ['Nicht weitergetragen', 'Non retenu'],
@@ -759,7 +760,6 @@ const D = {
   'press a hexagon to open its panel': ['ein Sechseck drücken, um sein Feld zu öffnen', 'appuyer sur un hexagone pour ouvrir son panneau'],
   'Science lab': ['Wissenschaftslabor', 'Laboratoire scientifique'],
   'Plants': ['Pflanzen', 'Plantes'],
-  'Uplink': ['Uplink', 'Liaison montante'],
   // ---- the two calls on the landing page (landing.js, calls)
   'Two ways in': ['Zwei Wege hinein', 'Deux voies d’entrée'],
   'Send a message to the crew': ['Schick der Crew eine Nachricht', 'Envoyez un message à l’équipage'],
@@ -790,9 +790,9 @@ const D = {
   'not yet counted': ['noch nicht gezählt', 'pas encore compté'],
 
   'Water recycling': ['Wasserrecycling', 'Recyclage de l’eau'],
-  'The uplink. Every message written on this station crosses the distance to the habitat and waits for the commanding officer, who reads it and answers from inside; the reply comes back to the board on every open phone. The real light-time between Earth and Mars is shown beside the composer.': [
-    'Der Uplink. Jede auf dieser Station geschriebene Nachricht überquert die Distanz zum Habitat und wartet auf die Kommandantin, die sie von innen liest und beantwortet; die Antwort kommt auf jedem geöffneten Telefon zurück aufs Board. Die reale Lichtlaufzeit zwischen Erde und Mars steht neben dem Composer.',
-    'La liaison. Chaque message écrit sur cette station traverse la distance jusqu’à l’habitat et attend le commandant, qui le lit et y répond depuis l’intérieur ; la réponse revient sur le tableau de chaque téléphone ouvert. Le vrai temps-lumière entre la Terre et Mars est affiché à côté du composeur.'],
+  'The transmitter. Every message written on this station crosses the distance to the habitat and waits for the commanding officer, who reads it and answers from inside; the reply comes back to the board on every open phone. The real light-time between Earth and Mars is shown beside the composer.': [
+    'Der Sender. Jede auf dieser Station geschriebene Nachricht überquert die Distanz zum Habitat und wartet auf die Kommandantin, die sie von innen liest und beantwortet; die Antwort kommt auf jedem geöffneten Telefon zurück aufs Board. Die reale Lichtlaufzeit zwischen Erde und Mars steht neben dem Composer.',
+    'L’émetteur. Chaque message écrit sur cette station traverse la distance jusqu’à l’habitat et attend le commandant, qui le lit et y répond depuis l’intérieur ; la réponse revient sur le tableau de chaque téléphone ouvert. Le vrai temps-lumière entre la Terre et Mars est affiché à côté du composeur.'],
   'Hydroponics': ['Hydroponik', 'Hydroponie'],
   'Read More than Human on the About page': ['Mehr als menschlich auf der Über-Seite lesen', 'Lire Plus qu’humain sur la page À propos'],
   'Open the Daily Schedule': ['Den Tagesplan öffnen', 'Ouvrir le programme du jour'],
@@ -879,9 +879,9 @@ const D = {
   'Three shelves of plants grown without soil, their roots in nutrient water — the habitat’s fresh food and part of its air; what grows here is counted with the rations.':
     ['Drei Regale mit Pflanzen ohne Erde, die Wurzeln in Nährwasser — die frische Nahrung des Habitats und ein Teil seiner Luft; was hier wächst, zählt zu den Rationen.',
      'Trois étagères de plantes sans terre, les racines dans l’eau nutritive — la nourriture fraîche de l’habitat et une part de son air ; ce qui pousse ici compte avec les rations.'],
-  'The uplink: every message written here crosses to the habitat and waits for the commanding officer, whose answer comes back to the board on every open phone.':
-    ['Der Uplink: Jede hier geschriebene Nachricht geht hinüber ins Habitat und wartet auf die Kommandantin, deren Antwort auf jedem offenen Handy zurück aufs Board kommt.',
-     'La liaison montante : chaque message écrit ici traverse jusqu’à l’habitat et attend le commandant, dont la réponse revient sur le tableau de chaque téléphone ouvert.'],
+  'The transmitter: every message written here crosses to the habitat and waits for the commanding officer, whose answer comes back to the board on every open phone.':
+    ['Der Sender: Jede hier geschriebene Nachricht geht hinüber ins Habitat und wartet auf die Kommandantin, deren Antwort auf jedem offenen Handy zurück aufs Board kommt.',
+     'L’émetteur : chaque message écrit ici traverse jusqu’à l’habitat et attend le commandant, dont la réponse revient sur le tableau de chaque téléphone ouvert.'],
   'Each day has a scientific mission — a sheet with its central question, the work of the morning, the afternoon and the EVA, and a question for the community hour.':
     ['Jeder Tag hat eine wissenschaftliche Mission — ein Blatt mit seiner zentralen Frage, der Arbeit des Vormittags, des Nachmittags und der EVA und einer Frage für die Community-Stunde.',
      'Chaque jour a sa mission scientifique — une fiche avec sa question centrale, le travail du matin, de l’après-midi et de l’EVA, et une question pour l’heure communautaire.'],
@@ -1029,6 +1029,24 @@ const D = {
   // ---- the habitat tiles (public/habitat.js)
   'No current reading': ['Kein aktueller Messwert', 'Aucune mesure actuelle'],
   'Within limit': ['Innerhalb des Grenzwerts', 'Dans la limite'],
+  // ---- the Sensors panel's instruments, 8 October: the oxygen tile, a word on each reading, the cricket terrarium's chart
+  'Oxygen': ['Sauerstoff', 'Oxygène'],
+  'Normal air': ['Normale Luft', 'Air normal'],
+  'Low oxygen': ['Wenig Sauerstoff', 'Peu d’oxygène'],
+  'High oxygen': ['Viel Sauerstoff', 'Beaucoup d’oxygène'],
+  'No oxygen sensor connected': ['Kein Sauerstoffsensor angeschlossen', 'Aucun capteur d’oxygène connecté'],
+  'Dry': ['Trocken', 'Sec'],
+  'Humid': ['Feucht', 'Humide'],
+  'Comfortable': ['Angenehm', 'Agréable'],
+  'Cool': ['Kühl', 'Frais'],
+  'Warm': ['Warm', 'Chaud'],
+  'Dim': ['Gedämpft', 'Tamisé'],
+  'Bright': ['Hell', 'Lumineux'],
+  'Low': ['Niedrig', 'Bas'],
+  'Moderate': ['Mäßig', 'Modéré'],
+  'High': ['Hoch', 'Élevé'],
+  'Normal': ['Normal', 'Normal'],
+  'Cricket Terrarium Temperature': ['Temperatur im Grillen-Terrarium', 'Température du terrarium des grillons'],
   'Over': ['Über', 'Au-dessus de'],
   'in view': ['im Blick', 'dans la vue'],
   'limit': ['Grenzwert', 'limite'],
@@ -1061,7 +1079,7 @@ const D = {
   'How a message reaches the crew': ['Wie eine Nachricht die Crew erreicht', 'Comment un message parvient à l’équipage'],
   'Habitat entry': ['Einzug ins Habitat', 'Entrée dans l’habitat'],
   'Three crew members enter the Mars habitat at Marktplatz.': ['Drei Crewmitglieder ziehen in das Mars-Habitat auf dem Marktplatz ein.', 'Trois membres d’équipage entrent dans l’habitat martien, sur la Marktplatz.'],
-  'Uplink received': ['Uplink empfangen', 'Liaison montante reçue'],
+  'Transmission received': ['Übertragung empfangen', 'Transmission reçue'],
   'What does it smell like in there?': ['Wie riecht es da drin?', 'Ça sent quoi, là-dedans ?'],
   // ---- the slowest chat after October's text sheet
   'Welcome to the World’s Slowest Chat (that also zips into space!)': ['Willkommen im langsamsten Chat der Welt (der auch ins All saust!)', 'Bienvenue dans le chat le plus lent du monde (qui file aussi dans l’espace !)'],
@@ -1173,14 +1191,19 @@ const D = {
   'Sign out of the screens': ['Von den Screens abmelden', 'Se déconnecter des écrans'],
 };
 
+/* A word with two senses in English is told apart by its sense, after a double colon in its key — 'Light' is the
+   theme (Hell, Clair), 'Light::sensor' the habitat's light sensor (Licht, Lumière): the English is the part before the
+   colons, the other languages their own word. */
+const plain = (s) => { const i = typeof s === 'string' ? s.indexOf('::') : -1; return i > 0 ? s.slice(0, i) : s; };
+
 /** T for one language: exact English in, that language out; unknown stays English. */
 function of(lang) {
   const i = lang === 'de' ? 0 : lang === 'fr' ? 1 : -1;
   // the function carries its language (T.lang), for the few places that format a number or a date for it
-  if (i < 0) return Object.assign((s) => s, { lang: 'en' });
+  if (i < 0) return Object.assign((s) => plain(s), { lang: 'en' });
   return Object.assign((s) => {
     const row = D[s];
-    return row && row[i] ? row[i] : s;
+    return row && row[i] ? row[i] : plain(s);
   }, { lang });
 }
 
@@ -1207,4 +1230,4 @@ function table(lang) {
   return out;
 }
 
-module.exports = { LANGS, DEFAULT_LANG, of, pick, table, D };
+module.exports = { LANGS, DEFAULT_LANG, of, pick, table, plain, D };
