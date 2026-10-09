@@ -2120,6 +2120,10 @@ body.control .msg .reply-bar { align-items: center; gap: 12px; margin-top: 10px;
 body.control .msg .reply-bar .primary { min-width: 120px; }
 body.control .msg .reply-hint { font-size: 12.5px; color: var(--c-muted); }
 body.control .msg.rejected .quoted { border-left-color: var(--c-line); }
+/* a long question wraps inside its box (9 October: "for long questions, make sure it is wrapped properly in the controls
+   page"): a run of letters with no space in it — a link, a word typed on and on — breaks at the box's edge instead of
+   running out past it and off the page; words with spaces between them wrap as before, between the words */
+body.control .msg .quoted { overflow-wrap: anywhere; word-break: normal; min-width: 0; }
 @media (max-width: 700px) {
   body.control .msg-top { flex-direction: column; }
   body.control .msg-side { align-items: flex-start; }

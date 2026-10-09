@@ -5,12 +5,21 @@
  * blog takes the screen: the Commander Log, then the Daily Mission Report, then the Health Report, round and
  * round. A post short enough to fit is simply shown for a while; a blog with nothing written yet shows its note and
  * passes the turn on. The post is moved by transform, not scrolled, so nothing on the screen can be dragged.
+ * It rolls as fast as the habitat's roll on the same screen (9 October: "make the speed of the blog scroll the same as
+ * the sensor scroll"): the habitat rolls 14 of its layout's pixels a second (screen-roll.js), its layout zoomed to the
+ * screen's width — laid out 1920 wide, 1080 upright (screen.js, rollZoom) — while a blog is drawn at the screen's own
+ * pixels, so a blog rolls 14 times that zoom: 14 pixels a second on a screen 1920 wide (or 1080 upright), 28 on a 4K
+ * screen. (28 a second on any screen until then: twice the habitat's pace on a screen 1920 wide.)
  * Speed and pauses can be set on the wrapper: data-speed (pixels a second), data-hold (ms at the top and at the end). */
 (function () {
   'use strict';
   var wrap = document.getElementById('screen-blogs'); if (!wrap) return;
   var panels = [].slice.call(wrap.querySelectorAll('.dpanel.blogp')); if (!panels.length) return;
-  var SPEED = Number(wrap.getAttribute('data-speed')) || 28;              // pixels a second: a slow read
+  var SPEED = Number(wrap.getAttribute('data-speed')) || 0;               // pixels a second, if set; otherwise the habitat's pace
+  function habitatPace() {
+    var z = Math.max(0.5, Math.min(2, window.innerWidth / (window.innerWidth > window.innerHeight ? 1920 : 1080)));
+    return 14 * z;
+  }
   var HOLD = Number(wrap.getAttribute('data-hold')) || 5000;               // at the top before rolling, and at the end
   var SHORT = Number(wrap.getAttribute('data-short')) || 14000;            // a post that fits, or nothing written: this long
   var current = -1, raf = 0, timer = 0;
@@ -27,10 +36,10 @@
       var need = roll ? roll.scrollHeight - body.clientHeight : 0;
       if (!roll || need <= 8) { timer = setTimeout(next, SHORT); return; }
       timer = setTimeout(function () {
-        var start = 0, y = 0;
+        var start = 0, y = 0, pace = SPEED || habitatPace();              // the pace set once a roll, so it never jumps
         function frame(t) {
           if (!start) start = t;
-          y = Math.min(need, (t - start) / 1000 * SPEED);
+          y = Math.min(need, (t - start) / 1000 * pace);
           roll.style.transform = 'translateY(' + (-y).toFixed(1) + 'px)';
           if (y < need) raf = requestAnimationFrame(frame);
           else timer = setTimeout(next, HOLD);

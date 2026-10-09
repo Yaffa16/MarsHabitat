@@ -1959,6 +1959,23 @@ grep -qF ':root[data-theme="dark"] body.screen.screen-habitat {' public/screen.c
   && grep -qF ":root[data-theme=\"dark\"] body.screen.screen-habitat .screen-roll #habitat .hbt-trends-in .tchart { background: var(--neu-2) !important; box-shadow: var(--neu-out-sm) !important; }" public/screen.css \
   && grep -qF "body.screen .screen-roll #hbt-bento { gap: 24px; }" public/screen.css && grep -qF "body.screen .screen-roll #habitat .hbt .tile { padding: 20px 22px 22px; border-radius: 22px; gap: 5px; }" public/screen.css \
   && ok "the habitat screen's tiles a size smaller, and by night set clearly off a deeper ground — lighter, edged with a hairline of light, a shade under each, the charts and the trends raised like them" || bad "the habitat screen's tiles are not set off the ground by night"
+# 9 October: "the colour behind the individual resource tabs — make that the colour of the battery, all the air
+# measurements": by night the habitat sensor's tiles and the power generated, with its battery, in the stores' cards' grey
+grep -qF ':root[data-theme="dark"] body.screen.screen-habitat .screen-roll #habitat .hbt .tile.t-sens,' public/screen.css \
+  && grep -qF ':root[data-theme="dark"] body.screen.screen-habitat .screen-roll #habitat .hbt .tile.t-bike { background: var(--neu-3) !important; --dim: #b8b8be; --neu-dim: #b8b8be; }' public/screen.css \
+  && grep -qF 'body.landing .hbt .tile .gauge, :root[data-theme="dark"] body.landing .hbt .tile .gauge { background: var(--neu-3) !important; }' public/neu.css \
+  && ok "by night the habitat screen's air instruments and the battery stand in the grey of the stores' cards (--neu-3), their quieter words a shade lighter to read on it" || bad "the habitat screen's air instruments and battery are not in the stores' cards' grey"
+# 9 October: "make the header Sensoren as big as the Commander-Logbuch and sol 001 in the screen/blogs page"
+grep -qF 'body.screen .screen-roll #habitat .dpanel-title h3 { font-size: 46px; }' public/screen.css \
+  && grep -qF 'body.screen .screen-roll #habitat .dpanel-meta { font-size: 18px; letter-spacing: .1em; }' public/screen.css \
+  && grep -qF 'body.screen .screen-blogs .dpanel.blogp .dpanel-title h3 { font-size: clamp(30px, 2.4vw, 46px);' public/screen.css \
+  && grep -qF 'body.screen .screen-blogs .dpanel.blogp .dpanel-meta { font-size: clamp(13px, 1vw, 18px); }' public/screen.css \
+  && grep -qF '  body.screen .screen-roll #habitat .dpanel-title h3 { font-size: 34px; }' public/screen.css \
+  && ok "the habitat screen's head is as large as the blogs' — Sensoren 46px like a blog's name, its line 18px like the sol and date, on a screen 1920 wide" || bad "the habitat screen's head is not the size of the blogs'"
+# 9 October: "add more margins for the screen/habitat and screen/blog on left and right sides"
+grep -qF 'body.screen.screen-habitat .stage, body.screen.screen-blogs .stage { padding-left: max(28px, 6vw); padding-right: max(28px, 6vw); }' public/screen.css \
+  && grep -qF 'body.screen .stage { flex: 1 1 auto; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px; padding: 22px 28px 26px;' public/screen.css \
+  && ok "the habitat and blog screens stand further in from the screen's sides — six hundredths of its width each side, where the other screens keep 28px" || bad "the habitat and blog screens have no wider side margins"
 SCR_OK=1; for n in landing habitat board write mission blogs day trends media; do
   [ "$(curl -s -b $SK -o /dev/null -w '%{http_code}' $B/screen/$n)" = "200" ] || SCR_OK=0
 done
@@ -1978,7 +1995,20 @@ echo "$MIS" | grep -q '<div class="screen-turns" id="screen-turns">' && echo "$M
   && grep -q 'body.screen .screen-turns > .turn.is-on { display: block; }' public/screen.css && ! grep -q "turn-in" public/screen.css \
   && grep -qF "body.screen .mission-big .mb-title { margin: 0; font-family: var(--display); font-size: 68px;" public/screen.css \
   && grep -qF "body.screen .screen-turns #schedule .rows { column-count: 2; column-gap: 56px; padding-top: 6px; }" public/screen.css \
+  && grep -qF "body.screen.screen-mission .screen-turns *, body.screen.screen-mission .screen-turns *::before, body.screen.screen-mission .screen-turns *::after { animation: none !important; transition: none !important; }" public/screen.css \
   && ok "the mission screen shows the mission alone in large type — its number, title, central question, the community hour's question — then the schedule, the meal and the moods, each alone, changed at once and fitted before it is drawn; nothing types, nothing fades" || bad "the mission screen does not take its turns"
+# 9 October: "for long questions, make sure it is wrapped properly in the controls page" — a message with a run of
+# letters and no space in it wraps inside its box on mission control's queue (the boards wrap them already)
+grep -qF 'body.control .msg .quoted { overflow-wrap: anywhere; word-break: normal; min-width: 0; }' public/station.css \
+  && grep -q '<blockquote class="quoted">${esc(m.body)}</blockquote>' src/views/control/index.js \
+  && grep -qF 'body.landing .entry-post, body.landing .card-body, body.landing .note, body.landing .officer-mood,' public/neu.css \
+  && ok "a long question wraps inside its box on mission control's queue — a word with no end breaks at the box's edge, as it does on the boards" || bad "a long question can run out of its box on mission control"
+# 9 October: "in the crew moods only have the emoji, no rings around it" — on the mission screen the faces alone
+grep -qF 'body.screen.screen-mission .screen-turns #crew .officer-face { background: none !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; }' public/screen.css \
+  && grep -qF 'body.screen.screen-mission .screen-turns #crew .officer-face::before, body.screen.screen-mission .screen-turns #crew .officer-face::after { content: none !important; display: none !important; }' public/screen.css \
+  && grep -qF 'body.screen.screen-mission .screen-turns #crew .officer-face svg { width: 100%; height: 100%; }' public/screen.css \
+  && grep -qF 'body.landing .officer-face::after { content: ""; position: absolute; inset: -1px; border-radius: 50%;' public/aura.css \
+  && ok "on the mission screen each officer's mood is the face alone — no disc, no edge, no shade, no ring round it; the site keeps its discs" || bad "the mission screen's mood faces still stand in rings"
 # the screens' sky (8 October: "stars and comets in the background for all screens — always in the background only"):
 # every screen carries it, fixed under the stage and the ticker, the same scatter every time
 SKY_OK=1; for n in landing habitat board write mission blogs day trends media station livestream; do
@@ -2082,6 +2112,14 @@ echo "$BL" | grep -q 'class="screen-blogs" id="screen-blogs"' && echo "$BL" | gr
   && grep -q "translateY" public/screen-blogs.js && grep -q "requestAnimationFrame" public/screen-blogs.js \
   && ok "the blogs screen shows one blog at a time, the post rolling by — the Commander Log, then the Daily Mission Report, then the Health Report, round and round" || bad "the blogs screen is not one at a time"
 grep -q "font-size: clamp(20px, 1.2vw, 24px)" public/screen.css && ok "its text stands at the size of the panel's own notes, readable across the room" || bad "the blogs screen's text size is not set"
+# 9 October: "make the speed of the blog scroll the same as the sensor scroll" — the habitat's pace, 14 of its layout's
+# pixels a second (screen-roll.js) times the zoom its layout is shown at (screen.js, rollZoom)
+node --check public/screen-blogs.js && grep -qF "var SPEED = Number(wrap.getAttribute('data-speed')) || 0;" public/screen-blogs.js \
+  && grep -qF "var z = Math.max(0.5, Math.min(2, window.innerWidth / (window.innerWidth > window.innerHeight ? 1920 : 1080)));" public/screen-blogs.js \
+  && grep -qF "return 14 * z;" public/screen-blogs.js && grep -qF "pace = SPEED || habitatPace();" public/screen-blogs.js \
+  && grep -qF "var z = Math.max(0.5, Math.min(2, window.innerWidth / (window.innerWidth > window.innerHeight ? 1920 : 1080)));" public/screen.js \
+  && grep -qF "var SPEED = Number(root.getAttribute('data-speed')) || 14;" public/screen-roll.js \
+  && ok "a blog rolls as fast as the habitat on the same screen — 14px a second on a screen 1920 wide, the habitat's pace times its zoom" || bad "the blogs and the habitat roll at different speeds"
 grep -q 'body.screen .screen-blogs .blogp .dpanel-body > .empty { position: absolute; inset: 22px 40px 40px; min-height: 0; display: block; text-align: left;' public/screen.css \
   && ok "a blog with nothing written stands at the top left, across the width, like a post would" || bad "the empty blog note is not left-aligned across the width"
 # the board screen: its cards come back from the poll in the screen's own language, the latest nine; nothing on it is tappable

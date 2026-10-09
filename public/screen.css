@@ -22,6 +22,12 @@ body.screen .tabbar, body.screen .foot, body.screen #consent, body.screen .masth
 body.screen .ticker { position: static; flex: none; }                                /* the landing screen keeps the ticker, in flow */
 body.screen .stage { flex: 1 1 auto; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px; padding: 22px 28px 26px; box-sizing: border-box; }
 body.screen .stage.no-head { grid-template-rows: minmax(0, 1fr); }                /* no band over the piece (8 October): the body has the whole stage */
+/* the habitat and the blogs further in from the screen's sides (9 October: "add more margins for the screen/habitat and
+   screen/blog on left and right sides"): six hundredths of the screen's width each side (115 px on a screen 1920 wide,
+   65 on one 1080 wide, upright, 230 on a 4K screen) where the other screens keep 28 px — the habitat's tiles from 150 px
+   in on a screen 1920 wide (63 before), the blog's panel from 115 (28 before). The rolled habitat's rows and type stay
+   as they were, only narrower (screen.js, rollZoom: its zoom is the screen's width's alone). */
+body.screen.screen-habitat .stage, body.screen.screen-blogs .stage { padding-left: max(28px, 6vw); padding-right: max(28px, 6vw); }
 body.screen .stage-head { display: flex; align-items: baseline; gap: 18px; padding: 0 4px; font-family: var(--display); color: var(--ink); }
 body.screen .stage-brand { font-size: 22px; font-weight: 600; letter-spacing: -.03em; }
 body.screen .stage-brand b { color: var(--mars); font-weight: inherit; }
@@ -107,9 +113,18 @@ body.screen[data-fit="roll"] .stage-fit { height: 100%; flex: 1 1 auto; min-heig
 body.screen .screen-roll { height: 100%; }
 body.screen .screen-roll > #habitat.dpanel { height: 100%; max-height: none; display: flex; flex-direction: column; box-sizing: border-box; padding: 26px 34px 0; overflow: hidden; }
 body.screen .screen-roll > #habitat > .dpanel-head { flex: none; margin: 0; padding: 0 0 8px; }
-body.screen .screen-roll #habitat .dpanel-title h3 { font-size: 34px; }
-body.screen .screen-roll #habitat .dpanel-title .cloud-live { font-size: 14px; padding: 5px 12px; }
-body.screen .screen-roll #habitat .dpanel-meta { font-size: 17px; letter-spacing: .12em; }
+/* the head as large as the blogs' (9 October: "in the screen/habitat page make the header Sensoren as big as the
+   Commander-Logbuch and sol 001 in the screen/blogs page"): its name 46 px, as a blog's name stands on a screen 1920 wide,
+   its line 18 px spaced a tenth, as the blog's sol and date over it; the LIVE mark grown with the name. Upright it keeps
+   34 and 17 px, larger than the blog's head there already (30 and 13). */
+body.screen .screen-roll #habitat .dpanel-title h3 { font-size: 46px; }
+body.screen .screen-roll #habitat .dpanel-title .cloud-live { font-size: 16px; padding: 6px 14px; }
+body.screen .screen-roll #habitat .dpanel-meta { font-size: 18px; letter-spacing: .1em; }
+@media (orientation: portrait) {
+  body.screen .screen-roll #habitat .dpanel-title h3 { font-size: 34px; }
+  body.screen .screen-roll #habitat .dpanel-title .cloud-live { font-size: 14px; padding: 5px 12px; }
+  body.screen .screen-roll #habitat .dpanel-meta { font-size: 17px; letter-spacing: .12em; }
+}
 body.screen .screen-roll > #habitat > .dpanel-body { flex: 1 1 auto; min-height: 0; position: relative; display: block; overflow: hidden; padding: 22px 28px 0; margin: 0 -28px;
   --roll-ft: 0px; --roll-fb: 0px; transition: --roll-ft .7s ease, --roll-fb .7s ease;
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--roll-ft), #000 calc(100% - var(--roll-fb)), transparent 100%);
@@ -224,6 +239,16 @@ body.screen .screen-roll #habitat .hbt-trends-in .tchart-svg { width: 100%; heig
 }
 :root[data-theme="dark"] body.screen.screen-habitat .screen-roll #habitat .hw-chart,
 :root[data-theme="dark"] body.screen.screen-habitat .screen-roll #habitat .hbt-trends-in .tchart { background: var(--neu-2) !important; box-shadow: var(--neu-out-sm) !important; }
+/* the air's instruments and the battery in the colour of the stores' cards (9 October: "in the screen/habitat page, the
+   colour behind the individual resource tabs — make that the colour of the battery, all the air measurements"): by night
+   the tiles of the habitat sensor — the oxygen, the carbon dioxide, the temperature, the humidity, the air pressure, the
+   air quality, the light and the volatile organic compounds — and the power generated with its battery, the lighter grey
+   of the drinking water's, the food's, the medical kits' and the fire extinguishers' cards in the stores (--neu-3,
+   #40444b), a step lighter than the other tiles (#34373e) — their quieter words (a scale, a verdict, a unit) a shade
+   lighter with them, to read as well as on the darker tiles (#b8b8be, 5 : 1). By day every tile and card is the same
+   colour already. */
+:root[data-theme="dark"] body.screen.screen-habitat .screen-roll #habitat .hbt .tile.t-sens,
+:root[data-theme="dark"] body.screen.screen-habitat .screen-roll #habitat .hbt .tile.t-bike { background: var(--neu-3) !important; --dim: #b8b8be; --neu-dim: #b8b8be; }
 /* upright: the instruments two to a row (Karlsruhe beside the light); the steps the panel's width, then the power
    generated and the stores; the
    volatile organic compounds beside the astronauts, then the power the panel's width, right over its chart; the charts one
@@ -261,6 +286,16 @@ body.screen.screen-trends[data-fit="fill"] .tchart-svg { flex: 1 1 auto; min-hei
 body.screen .screen-turns > .turn { display: none; }
 body.screen .screen-turns > .turn.is-on { display: block; }
 body.screen .screen-turns > .turn > .dpanel { grid-column: auto !important; max-height: none; }
+/* and nothing in them moves (9 October: "from the Crew Moods remove the animation for the mission page"): the ring that
+   pinged out round each officer's face, the pulsing dot of the task now running, any other — stopped on this screen,
+   each standing as it rests (the site keeps them) */
+body.screen.screen-mission .screen-turns *, body.screen.screen-mission .screen-turns *::before, body.screen.screen-mission .screen-turns *::after { animation: none !important; transition: none !important; }
+/* the moods' faces alone (9 October: "in the crew moods only have the emoji, no rings around it"): no disc under each
+   officer's face, no edge round it, no shade, no ring — the face itself, in the colour of its mood, drawn the size the
+   disc was (the site keeps its discs) */
+body.screen.screen-mission .screen-turns #crew .officer-face { background: none !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
+body.screen.screen-mission .screen-turns #crew .officer-face::before, body.screen.screen-mission .screen-turns #crew .officer-face::after { content: none !important; display: none !important; }
+body.screen.screen-mission .screen-turns #crew .officer-face svg { width: 100%; height: 100%; }
 /* the mission alone, large: its number, its title, its central question, the question for the community hour (public.js,
    missionBig) — fitted to the screen like the rest (screen.js), so a short mission stands larger still */
 body.screen .mission-big { padding: 34px 46px 42px; }
