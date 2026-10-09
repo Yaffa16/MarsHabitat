@@ -425,11 +425,17 @@
   var PALETTE = ['#ff6a1a', '#4f7bd9', '#8b6fd6', '#3aa66f', '#d94f7b', '#2aa7b8', '#c48a1c', '#6b7a8f',
                  '#e0562e', '#3f5fbf', '#9c4dcc', '#2e8b57', '#b8336a', '#1f8fa3', '#a67c00', '#556677'];
   /* A colour for any number of lines: the fixed palette first, then evenly
-     spread hues so the fortieth line is still telling apart from its neighbours. */
+     spread hues so the fortieth line is still telling apart from its neighbours —
+     dark enough to read on a light page, light enough on a dark one (the screens). */
+  function darkPage() {
+    var t = document.documentElement.getAttribute('data-theme');
+    if (t) return t === 'dark';
+    return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
   function colourAt(i) {
     if (i < PALETTE.length) return PALETTE[i];
-    var k = i - PALETTE.length;
-    return 'hsl(' + Math.round((k * 137.508) % 360) + ',' + (k % 2 ? 62 : 48) + '%,' + (k % 3 ? 42 : 34) + '%)';
+    var k = i - PALETTE.length, dark = darkPage();
+    return 'hsl(' + Math.round((k * 137.508) % 360) + ',' + (k % 2 ? 62 : 48) + '%,' + (dark ? (k % 3 ? 64 : 72) : (k % 3 ? 42 : 34)) + '%)';
   }
   /* Each channel with the scale it is drawn against — the instrument's own
      range, so a line that barely moves is drawn barely moving. */
@@ -602,25 +608,56 @@
   }
 
   function narrow() { var h = $('hbt-tcharts'); return !!h && h.clientWidth > 0 && h.clientWidth < 700; }
+  /* The width a line's name takes, in the drawing's units: measured in the face it is set in (a canvas, the same font
+     the drawing asks for), with the letter-spacing added to every character. */
+  var measureCtx = null;
+  function nameWidth(text, font, track) {
+    try {
+      if (!measureCtx) measureCtx = document.createElement('canvas').getContext('2d');
+      measureCtx.font = font;
+      return measureCtx.measureText(text).width + track * text.length;
+    } catch (e) { return text.length * 8.4; }
+  }
   /* On a desk the graph is drawn in a box 1200 wide and scaled to the panel (about its own size), every line named at its
      right-hand end. On a phone it is drawn at the width it is shown at — one unit a pixel, so its figures are read at the
      size they are set — with the sols along the foot as their numbers, and the names of the lines in a legend under it
      (renderTrends), where a touch on a name lifts its line. */
   function drawAll(series, win) {
     var slim = narrow(), host = $('hbt-tcharts');
-    var visible = series.filter(function (s) { return !hidden[s.id] && s.lo !== null; }).length;
+    var shown = series.filter(function (s) { return !hidden[s.id] && s.lo !== null; });
+    var visible = shown.length;
     var W = slim ? Math.max(260, Math.round(host.clientWidth)) : 1200;
-    var padL = slim ? 38 : 50, padR = slim ? 10 : 250, padT = slim ? 14 : 18, padB = slim ? 34 : 50;
+    var padL = slim ? 38 : 50, padT = slim ? 14 : 18, padB = slim ? 34 : 50;
     var rowH = 17;
     var H = slim ? Math.round(Math.min(320, Math.max(220, W * 0.72))) : Math.max(380, visible * rowH + padT + padB + 8);
     // on one of the installation's screens, held landscape, the wide graph is drawn to the shape of the room it has
     // (screen.css fills the stage with the panel; data-fit="fill"), so that it fills the screen's height and not only
-    // its width — never squatter than the desk's graph
+    // its width — never squatter than the desk's graph. When there are more lines than the room's height holds names for
+    // at their size, the drawing is made wider instead (to the room's shape all the same), so it still fills the room.
     if (!slim && document.documentElement.classList.contains('screen') && document.body.getAttribute('data-fit') === 'fill') {
       var room = host.getBoundingClientRect();
-      if (room.width > 0 && room.height > 0) H = Math.max(H, Math.round(W * room.height / room.width));
+      if (room.width > 0 && room.height > 0) {
+        var Hroom = Math.round(W * room.height / room.width);
+        if (H > Hroom) W = Math.round(H * room.width / room.height);
+        else H = Hroom;
+      }
     }
     var labelFont = '13px ui-monospace, Menlo, Consolas, monospace';
+    // 9 October ("make sure the text stays inside the box"): the margin the names stand in is as wide as the longest of
+    // them needs — measured in the face they are set in — at the least the 250 it always had and at the most a little over
+    // a third of the drawing; a name still longer than that is cut short with an ellipsis, its whole name on hovering it.
+    // Every name so ends inside the drawing, and the drawing inside its box.
+    var LABEL_FONT = '600 ' + labelFont, LABEL_TRACK = 13 * 0.02, LABEL_AT = 14, LABEL_END = 18;
+    var nameW = {}, longest = 0;
+    if (!slim) shown.forEach(function (s) { nameW[s.id] = nameWidth(s.name, LABEL_FONT, LABEL_TRACK); longest = Math.max(longest, nameW[s.id]); });
+    var padR = slim ? 10 : Math.min(Math.round(W * 0.36), Math.max(250, Math.ceil(LABEL_AT + longest + LABEL_END)));
+    var nameRoom = padR - LABEL_AT - LABEL_END;
+    function fitName(s) {
+      if (!(nameW[s.id] > nameRoom)) return s.name;
+      var t = s.name;
+      while (t.length > 1 && nameWidth(t.replace(/[\s·,–-]+$/, '') + '…', LABEL_FONT, LABEL_TRACK) > nameRoom) t = t.slice(0, -1);
+      return t.replace(/[\s·,–-]+$/, '') + '…';
+    }
     var axisPx = slim ? readPx() : 13, datePx = 12, tagPx = slim ? readPx() - 1 : 11.5;
     var n = win.total;
     var x = function (i) { return padL + (n === 1 ? (W - padL - padR) / 2 : (i / (n - 1)) * (W - padL - padR)); };
@@ -712,7 +749,7 @@
       });
       // Where the line ends, its name goes (on a desk; a phone lists the names under the graph).
       var last = run[run.length - 1];
-      if (!slim) labels.push({ id: s.id, name: s.name, colour: s.colour, x: last[0], y: last[1], ty: last[1] });
+      if (!slim) labels.push({ id: s.id, name: s.name, text: fitName(s), colour: s.colour, x: last[0], y: last[1], ty: last[1] });
       svg.appendChild(g);
     });
     // Every line is named at its right-hand end, in its own colour. Lines that
@@ -720,13 +757,15 @@
     // joins a moved name back to its line so nothing is ambiguous.
     var gap = 16, top = padT + 5, bottom = H - padB - 3;
     labels.sort(function (a, b) { return a.y - b.y; });
+    // inside the band first, so that names of lines ending at the very top (a full store) are spaced from where they stand
+    labels.forEach(function (l) { l.ty = Math.min(bottom, Math.max(top, l.ty)); });
     labels.forEach(function (l, i) { if (i && l.ty < labels[i - 1].ty + gap) l.ty = labels[i - 1].ty + gap; });
     for (var li = labels.length - 1; li >= 0; li--) {
       var cap = li === labels.length - 1 ? bottom : labels[li + 1].ty - gap;
       if (labels[li].ty > cap) labels[li].ty = cap;
     }
     labels.forEach(function (l) { if (l.ty < top) l.ty = top; });
-    var lx = x(n - 1) + 14;
+    var lx = x(n - 1) + LABEL_AT;
     labels.forEach(function (l) {
       var lg = el('g', { 'class': 'tseries tlabel', 'data-series': l.id });
       if (Math.abs(l.ty - l.y) > 1 || lx - l.x > 20) {
@@ -735,7 +774,12 @@
       }
       var t = el('text', { x: lx.toFixed(1), y: (l.ty + 4).toFixed(1), 'text-anchor': 'start', fill: l.colour,
         style: 'font:600 ' + labelFont + ';fill:' + l.colour + ';letter-spacing:.02em' });
-      t.textContent = l.name;
+      t.textContent = l.text;
+      if (l.text !== l.name) {                                                  // cut short: the whole name on hovering it
+        var full = document.createElementNS(NS, 'title');
+        full.textContent = l.name;
+        t.appendChild(full);
+      }
       lg.appendChild(t);
       lg.addEventListener('mouseenter', function () { var h = $('hbt-tcharts'); if (h) h.setAttribute('data-lift', l.id); });
       lg.addEventListener('mouseleave', function () { var h = $('hbt-tcharts'); if (h) h.removeAttribute('data-lift'); });

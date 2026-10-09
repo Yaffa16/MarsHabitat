@@ -400,21 +400,25 @@ function tally() {
  * that day and the visitors first counted that day (a visitor is counted
  * when they accept the cookie or send a message — see tally), newest day
  * first, each with its mission day where the date is one of the run's. The
- * totals are the whole table's.
+ * totals are the whole table's. And the messages replied (9 October: "have the
+ * columns messages received, messages replied, visitors"): the replies that went
+ * out that day — a message's published reply, counted on the day it was published.
  */
 function tallyByDay(mission) {
   const missionLib = require('./mission');
   const tz = (mission && mission.timezone) || missionLib.config().timezone || 'Europe/Berlin';
   const day = (iso) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? null : missionLib.localDate(d, tz); };
   const rows = new Map();
-  const at = (date) => { if (!rows.has(date)) rows.set(date, { date, messages: 0, visitors: 0 }); return rows.get(date); };
+  const at = (date) => { if (!rows.has(date)) rows.set(date, { date, messages: 0, replied: 0, visitors: 0 }); return rows.get(date); };
   for (const r of db.prepare('SELECT submitted_at FROM message').all()) { const d = day(r.submitted_at); if (d) at(d).messages++; }
+  for (const r of db.prepare(`SELECT r.published_at FROM response r JOIN message m ON m.id = r.message_id
+    WHERE m.state = 'PUBLISHED' AND r.published_at IS NOT NULL`).all()) { const d = day(r.published_at); if (d) at(d).replied++; }
   for (const r of db.prepare('SELECT created_at FROM visitor').all()) { const d = day(r.created_at); if (d) at(d).visitors++; }
   const byDate = new Map();
   if (mission && mission.totalDays) for (let n = 1; n <= mission.totalDays; n++) byDate.set(missionLib.dateForDay(n), n);
   const days = [...rows.values()].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
     .map((r) => ({ ...r, missionDay: byDate.has(r.date) ? byDate.get(r.date) : null }));
-  return { days, messages: days.reduce((s, r) => s + r.messages, 0), visitors: days.reduce((s, r) => s + r.visitors, 0) };
+  return { days, messages: days.reduce((s, r) => s + r.messages, 0), replied: days.reduce((s, r) => s + r.replied, 0), visitors: days.reduce((s, r) => s + r.visitors, 0) };
 }
 
 /* ---------------------------------------------------------------- logbook */

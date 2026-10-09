@@ -133,8 +133,9 @@ function counts() {
     first: files.length ? files[0].mtime.toISOString() : null, last: files.length ? files[files.length - 1].mtime.toISOString() : null };
 }
 
-/** The whole log as one ZIP, streamed, with an index and a README inside. */
-async function sendZip(res, { writeZip, mission }) {
+/** The whole log as one ZIP, streamed, with an index and a README inside — and, as the archive's Sensor Data (9 October),
+ *  the day-by-day tables of the Sensors tab and Today's Meal beside it (`extra`: src/lib/sensor-data.js). */
+async function sendZip(res, { writeZip, mission, extra = null, filename = 'readings' }) {
   const files = list();
   const generatedAt = new Date().toISOString();
   const index = {
@@ -175,11 +176,15 @@ async function sendZip(res, { writeZip, mission }) {
   const entries = files.map((f) => ({ name: f.name, path: f.path, size: f.size, mtime: f.mtime }));
   for (const name of CSV_NAMES) entries.push({ name: `csv/${name}.csv`, data: Buffer.from(csv(name)) });
   index.tables = CSV_NAMES.map((n) => `csv/${n}.csv`);
+  if (extra) {
+    for (const e of extra.entries) entries.push(e);
+    index.sensorData = { days: extra.days, files: extra.entries.map((e) => e.name) };
+  }
   entries.push({ name: 'index.json', data: Buffer.from(JSON.stringify(index, null, 2) + '\n') });
-  entries.push({ name: 'README.txt', data: Buffer.from(readme) });
+  entries.push({ name: 'README.txt', data: Buffer.from((extra && extra.readme ? extra.readme + 'THE READINGS LOG\n\n' : '') + readme) });
   res.set({
     'Content-Type': 'application/zip',
-    'Content-Disposition': `attachment; filename="mars-station-readings-${generatedAt.slice(0, 10)}.zip"`,
+    'Content-Disposition': `attachment; filename="mars-station-${filename}-${generatedAt.slice(0, 10)}.zip"`,
     'Cache-Control': 'no-store',
   });
   try { await writeZip(res, entries, { comment: 'MARS station readings log' }); res.end(); }

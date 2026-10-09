@@ -94,14 +94,15 @@ curl -s -b $A $B/control | grep -q "Awaiting reply" && ok "control signed in" ||
 # control's alone): the two totals and a table of the days at the venue, newest first, with the mission day where the
 # date is the run's; not on the control page, not anywhere public
 ARCH0=$(curl -s -b $A $B/archive); TALLY_DATE=$(TZ=Europe/Berlin date +%F)
-echo "$ARCH0" | grep -q '<div class="tally" id="tally">' && echo "$ARCH0" | grep -q '<span class="tally-k">Messages sent</span><b class="tally-n">1</b><span class="tally-sub">total</span>' \
+echo "$ARCH0" | grep -q '<div class="tally" id="tally">' && echo "$ARCH0" | grep -q '<span class="tally-k">Messages received</span><b class="tally-n">1</b><span class="tally-sub">total</span>' \
+  && echo "$ARCH0" | grep -q '<span class="tally-k">Messages replied</span><b class="tally-n">0</b><span class="tally-sub">total</span>' \
   && echo "$ARCH0" | grep -q '<span class="tally-k">Visitors</span><b class="tally-n">[1-9][0-9]*</b><span class="tally-sub">total</span>' \
-  && echo "$ARCH0" | tr -d '\n' | grep -q '<table class="daylist tally-days">.*<th class="n">Messages sent</th><th class="n">Visitors</th>' \
-  && echo "$ARCH0" | tr -d '\n' | sed 's/  */ /g' | grep -qE "<td class=\"n\">0[0-9]{2}</td> <td>$TALLY_DATE</td> <td class=\"n\">1</td> <td class=\"n\">[1-9][0-9]*</td>" \
-  && ! echo "$ARCH0" | grep -q 'A visitor counts on the day' && [ "$(echo "$ARCH0" | tr -d '\n' | grep -o 'The mission, day by day.*Messages sent and visitors' | wc -l)" = "1" ] \
+  && echo "$ARCH0" | tr -d '\n' | grep -q '<table class="daylist tally-days">.*<th class="n">Messages received</th><th class="n">Messages replied</th><th class="n">Visitors</th>' \
+  && echo "$ARCH0" | tr -d '\n' | sed 's/  */ /g' | grep -qE "<td class=\"n\">0[0-9]{2}</td> <td>$TALLY_DATE</td> <td class=\"n\">1</td> <td class=\"n\">—</td> <td class=\"n\">[1-9][0-9]*</td>" \
+  && ! echo "$ARCH0" | grep -q 'A visitor counts on the day' && [ "$(echo "$ARCH0" | tr -d '\n' | grep -o 'The mission, day by day.*Messages received and replied, and visitors' | wc -l)" = "1" ] \
   && ! curl -s -b $A $B/control | grep -q 'class="tally"' && ! curl -s $B/ | grep -q 'class="tally"' && ! curl -s $B/write | grep -q 'class="tally"' && ! curl -s $B/dashboard | grep -q 'class="tally"' && ! curl -s $B/about | grep -q 'class="tally"' \
   && ! grep -q "MESSAGES SENT')}</dt>\|CALLSIGNS ISSUED')}</dt>" src/views/pages/public.js \
-  && ok "the tally — messages sent and visitors, total and day by day — stands in the archive, under the downloads, and nowhere else (not on the control page, nowhere public)" || bad "the tally is not in the archive as it should be, or is shown elsewhere"
+  && ok "the tally — messages received, messages replied and visitors, total and day by day — stands in the archive, under the downloads, and nowhere else (not on the control page, nowhere public)" || bad "the tally is not in the archive as it should be, or is shown elsewhere"
 [ "$(curl -s -X POST -d 'username=captain' -d 'password=cap-pass' -o /dev/null -w '%{http_code}' $B/control/login)" = "401" ] \
   && ok "no second account exists" || bad "another login still works"
 [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/log)" = "404" ] \
@@ -1448,6 +1449,16 @@ node -e 'const d = require(process.env.CONTENT_DIR + "/bike.json"); const t = d[
   && [ "$(echo "$BK" | tr -d '\n' | grep -o '<span class="batt-body">.*' | sed 's#</span>.*##' | grep -o '<i class="on">' | wc -l)" = "5" ] && echo "$BK" | grep -q '<span class="bike-pc">50<em>%</em></span>' \
   && echo "$BK" | grep -q '<svg viewBox="0 0 24 24"><circle cx="5.8" cy="15.8" r="3.7"/>' && ! echo "$BK" | grep -q '4,500 rounds charge the battery full' \
   && ok "the rounds alone: saved as typed, the battery worked out from them on the tile (2,250 rounds — 50 %), the odometer's drums — every figure white — and the battery's cells lit to it, a bike for its sign, no line under it (9 October)" || bad "the bike's rounds did not reach the tile as they should"
+echo "$BK" | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
+  const un = (x) => x.replace(/&quot;/g, "\"").replace(/&#39;/g, "\x27").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+  const i = s.indexOf("data-spec=\""), d = s.match(/id="hbt-trends" data-date="([0-9-]+)"/);
+  if (i < 0 || !d) process.exit(2);
+  const spec = JSON.parse(un(s.slice(i + 11, s.indexOf("\"", i + 11))));
+  const at = (id) => ((spec.series.find((x) => x.id === id) || {}).points || {})[d[1]];
+  const b = spec.series.find((x) => x.id === "bike-battery") || {};
+  process.exit(at("bike-rounds") === 2250 && at("bike-battery") === 50 && b.scaleMax === 100 && b.unit === "%" ? 0 : 1);
+});' && ok "and the trend graph carries the bike's day — 2,250 rounds pedalled, the battery at 50 % (on a scale to 100 %) — on today's date" || bad "the bike's day is not on the trend graph"
 curl -s -b $A -X POST -d "day=$TODAY" -d "rounds=2250" -d "battery=75" -o /dev/null $B/control/bike
 curl -s $B/dashboard | grep -q '<span class="bike-pc">75<em>%</em></span>' && ok "a battery figure typed by hand stands over the rounds' share" || bad "the battery typed by hand is not shown"
 curl -s -b $A -X POST -d "day=$TODAY" -d "rounds=" -d "battery=" -o /dev/null $B/control/bike
@@ -1634,6 +1645,16 @@ for S in meal-kcal meal-water meal-power act-tasks act-messages act-exchanges ac
   curl -s $B/dashboard | grep -q "id&quot;:&quot;$S&quot;" || MISSING="$MISSING $S"
 done
 [ -z "$MISSING" ] && ok "meals, the crew's steps and the day's activity are all on the graph" || bad "missing from the trend spec:$MISSING"
+# 9 October ("add all things from the Sensor data here"): everything the Sensor Data download holds is a series — each
+# officer's steps beside the crew's total, the bike's rounds and battery, and the rest of Today's Meal: the CO₂e, the water
+# footprint, the preparation time and the six nutrients
+MISSING=""
+for S in steps-communication-officer steps-science-officer steps-health-officer bike-rounds bike-battery meal-co2e meal-footprint meal-prep meal-protein_g meal-fat_g meal-carb_g meal-fiber_g meal-sugar_g meal-sodium_mg; do
+  curl -s $B/dashboard | grep -q "id&quot;:&quot;$S&quot;" || MISSING="$MISSING $S"
+done
+curl -s -H "Cookie: mcs_lang=en" $B/dashboard | grep -q 'Steps taken · Science officer' && curl -s -H "Cookie: mcs_lang=en" $B/dashboard | grep -q 'Steps taken · crew total' \
+  && curl -s -H "Cookie: mcs_lang=de" $B/dashboard | grep -q 'Mahlzeiten CO₂e' && curl -s -H "Cookie: mcs_lang=de" $B/dashboard | grep -q 'Gegangene Schritte · Wissenschaftsoffizier' || MISSING="$MISSING (names)"
+[ -z "$MISSING" ] && ok "the trend graph carries everything in the Sensor Data — each officer's steps and the crew's total, the bike's rounds and battery, the meals' CO₂e, water footprint, preparation and six nutrients — named in the visitor's language" || bad "missing from the trend spec:$MISSING"
 curl -s $B/dashboard | grep -q "id&quot;:&quot;calories&quot;" && bad "the calories are still a series on the trend graph" || ok "the calories consumed are no series on the trend graph any more"
 # the trend axis: always a fortnight of the calendar — the half of the month today is in, 1–14 or 15–29 (to the month's
 # end on the 30th and 31st) — the run's days named by their SOL (9 October: "always 14-day periods, 1–14th, 15–29th")
@@ -1645,6 +1666,16 @@ curl -s $B/dashboard | grep -q "data-axis-start=\"$FS\" data-axis-end=\"$FE\" da
   && grep -qF "days.push({ start: d.getTime(), end: e.getTime(), sol: k >= runStart && k <= runEnd ? Math.round((d.getTime() - r0) / 864e5) + 1 : 0 });" public/habitat.js \
   && grep -qF "tx.textContent = sol ? (slim ? pad2(sol) : 'SOL ' + pad2(sol)) : (slim ? String(new Date(win.days[i].start).getDate()) : fmtDate(win.days[i].start));" public/habitat.js \
   && ok "the trend axis is a fortnight of the calendar — the half of the month today is in ($FS to $FE) — the run's days named by their SOL, the others by their date" || bad "trend axis is not the fortnight"
+# 9 October ("make sure the text stays inside the box"): the names' margin is measured to the longest name, a name too long
+# for it is cut with an ellipsis (its whole name in a title), names ending together are spaced inside the band, and a
+# screen filling its room draws a graph of many lines wider rather than smaller
+grep -qF "measureCtx.font = font;" public/habitat.js \
+  && grep -qF "var padR = slim ? 10 : Math.min(Math.round(W * 0.36), Math.max(250, Math.ceil(LABEL_AT + longest + LABEL_END)));" public/habitat.js \
+  && grep -qF "return t.replace(/[\s·,–-]+\$/, '') + '…';" public/habitat.js && grep -qF "if (l.text !== l.name) {" public/habitat.js \
+  && grep -qF "labels.forEach(function (l) { l.ty = Math.min(bottom, Math.max(top, l.ty)); });" public/habitat.js \
+  && grep -qF "if (H > Hroom) W = Math.round(H * room.width / room.height);" public/habitat.js \
+  && grep -qF "(dark ? (k % 3 ? 64 : 72) : (k % 3 ? 42 : 34))" public/habitat.js \
+  && ok "every line's name stays inside the trend graph's box — the margin measured to the longest name (250 to 36 % of the drawing), a longer one cut with an ellipsis and whole in its title, names that end together spaced inside the band, a full screen's graph of many lines drawn wider not smaller, lighter hues past the sixteenth on a dark page" || bad "the trend graph's names are not kept inside its box"
 
 echo "── sensors"
 curl -s -X POST -H "Authorization: Bearer ${SENSOR_TOKEN:-test-token}" -H "Content-Type: application/json" \
@@ -1680,7 +1711,8 @@ import zipfile, json, sys
 z = zipfile.ZipFile("/tmp/readings.zip"); z.testzip()
 names = z.namelist(); idx = json.loads(z.read("index.json"))
 tables = idx.get("tables", [])
-sys.exit(0 if "index.json" in names and "README.txt" in names and any(n.startswith("ingest/") for n in names) and all(t in names for t in tables) and "csv/ingest.csv" in tables and idx["counts"]["total"] == len(names) - 2 - len(tables) else 1)
+sd = idx.get("sensorData", {}).get("files", [])
+sys.exit(0 if "index.json" in names and "README.txt" in names and any(n.startswith("ingest/") for n in names) and all(t in names for t in tables) and "csv/ingest.csv" in tables and all(f in names for f in sd) and idx["counts"]["total"] == len(names) - 2 - len(tables) - len(sd) else 1)
 ' && ok "the whole log downloads as one ZIP with an index and its CSV tables, verified by Python" || bad "readings ZIP broken"
 curl -s -b $A $B/archive/readings/ingest.csv | python3 -c '
 import csv, sys
@@ -1691,8 +1723,36 @@ sys.exit(0 if rows and rows[0][:3] == ["pulledAt", "deviceId", "metric"] and any
 [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/archive/readings/nonsense.csv)" = "404" ] && ok "an unknown table is a 404" || bad "unknown CSV table not refused"
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/archive/readings.zip)" = "302" ] && ok "the log is control-only" || bad "readings log is public"
 curl -s -b $A $B/archive/readings.json | grep -q '"bySource"' && ok "and listed at /archive/readings.json" || bad "no readings listing"
-curl -s -b $A $B/archive | grep -q 'href="/archive/readings.zip"' && ok "the archive page carries the download" || bad "no readings download on the archive page"
+curl -s -b $A $B/archive | grep -q 'href="/archive/sensor-data.zip"' && ok "the archive page carries the download, as Sensor Data" || bad "no sensor data download on the archive page"
 RL_BEFORE=$(find "$DATA_DIR/readings" -name '*.json' | wc -l)
+# 9 October: "in the archive page remove the readable copy button; rename the data copy as the data — all the data from
+# all the performance days; the readings log: rename it to Sensor Data — all the data in the Sensors tab and all the data
+# from Today's Meal for each day; remove crew's moods; remove the media archive"
+ARC=$(curl -s -b $A $B/archive)
+[ "$(echo "$ARC" | grep -o '<div class="dl-card">' | wc -l)" = "4" ] && echo "$ARC" | grep -q '<h3>The full record</h3>' && echo "$ARC" | grep -q '<h3>Data</h3>' && echo "$ARC" | grep -q '<h3>Sensor Data</h3>' && echo "$ARC" | grep -q '<h3>All the messages</h3>' \
+  && ! echo "$ARC" | grep -q '<h3>The readable copy</h3>\|<h3>The data copy</h3>\|<h3>The readings log</h3>\|<h3>The crew’s moods</h3>\|<h3>The media archive</h3>' \
+  && ! echo "$ARC" | grep -q 'href="/archive/export.md" download>Download\|href="/media/export.zip"' \
+  && [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/archive/export.md)" = "200" ] && [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/archive/moods.csv)" = "200" ] \
+  && ok "the archive's Take a copy is the full record, Data, Sensor Data and all the messages — no readable copy, no crew's moods, no media archive among them (their addresses still answer)" || bad "the archive's Take a copy is not as asked"
+curl -s -b $A $B/archive/export.json | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
+  const d = JSON.parse(s), day = d.days.find((x) => x.recorded);
+  process.exit(d.tally && d.tally.messagesReceived >= 1 && d.tally.messagesReplied != null && d.tally.visitors >= 1 && /Everything the station holds for each day of the run/.test(d.note)
+    && day && "powerGenerated" in day && "scienceMission" in day && day.scienceMission && day.scienceMission.title && "crewOnShift" in day && day.tally && Array.isArray(day.messages)
+    && day.tally.messagesReceived != null && (!day.messages.length || ("reply" in day.messages[0] && "state" in day.messages[0])) ? 0 : 1); });' \
+  && ok "the Data carries every day whole — the power generated, the day's mission, who was on shift, its tally (received, replied, visitors) and every message received with its reply — and the totals" || bad "the Data lacks a day's mission, tally or messages"
+curl -s -b $A -o /tmp/sensor-data.zip -w '%{http_code}' $B/archive/sensor-data.zip | grep -q 200 && python3 -c '
+import zipfile, json, sys, csv, io
+z = zipfile.ZipFile("/tmp/sensor-data.zip"); z.testzip(); names = set(z.namelist()); idx = json.loads(z.read("index.json"))
+days = idx["sensorData"]["days"]; need = ["habitat-sensor.csv", "hardware.csv", "daily-summary.csv", "sensors-tab.csv", "meals.csv", "meals-totals.csv"]
+ok = days and all("sensor-data/all-days/" + t in names for t in need) and all("sensor-data/" + d["folder"] + "/" + t in names for d in days for t in need)
+tab = list(csv.reader(io.StringIO(z.read("sensor-data/all-days/sensors-tab.csv").decode("utf-8-sig"))))
+meals = list(csv.reader(io.StringIO(z.read("sensor-data/all-days/meals.csv").decode("utf-8-sig"))))
+ok = ok and tab[0] == ["day", "date", "section", "item", "figure", "value", "unit", "note"] and meals[0][:6] == ["day", "date", "slot", "meal", "components", "kcal"]
+ok = ok and z.read("README.txt").decode().startswith("SENSOR DATA") and "THE READINGS LOG" in z.read("README.txt").decode()
+sys.exit(0 if ok else 1)' && curl -s -b $A -D - -o /dev/null $B/archive/sensor-data.zip | grep -qi 'filename="mars-station-sensor-data-' \
+  && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/archive/sensor-data.zip)" = "302" ] \
+  && ok "Sensor Data downloads as one ZIP: a folder for every day and all-days/ — the habitat sensor, the hardware, the daily summary, the Sensors tab's figures, the meals and their totals — with the readings log beside them, behind the sign-in" || bad "the Sensor Data ZIP is not as it should be"
 
 echo "── notes mirror the file"
 node -e '
@@ -1720,8 +1780,8 @@ echo "$LANDING" | grep -q 'id="ftab-hardware"' && bad "the Habitat hardware tab 
 # own, and the trends under the tiles, drawn smaller — no Trends tab; a link to #trends lands in the Sensors tab
 ! echo "$LANDING" | grep -q 'id="ftab-trends"' && echo "$LANDING" | grep -q '<div class="hbt-trends-in" id="trends">' && echo "$LANDING" | grep -q 'id="hbt-tcharts"' \
   && [ "$(echo "$LANDING" | grep -o 'id="hbt-trends"' | wc -l)" = "1" ] && ! echo "$LANDING" | grep -q '<h3>Habitat hardware</h3>' && ! grep -q "read by the station every" src/views/pages/public.js \
-  && grep -q "body.landing .folder-body .hbt-trends-in .tchart-svg { max-height: 300px; }" public/aura.css && grep -q "body.landing .folder-body #habitat .hw-chart svg { max-height: none; }" public/aura.css \
-  && ok "one Sensors tab: the trends stand inside it under the tiles, drawn smaller, the hardware's charts carry no heading, and there is no Trends tab" || bad "the Trends tab is still there, or the trends and the hardware are not inside the Sensors tab"
+  && grep -q "body.landing .folder-body .hbt-trends-in .tchart-svg { width: 100%; max-height: none; }" public/aura.css && ! grep -q "hbt-trends-in .tchart-svg { max-height: 300px; }" public/aura.css && grep -q "body.landing .folder-body #habitat .hw-chart svg { max-height: none; }" public/aura.css \
+  && ok "one Sensors tab: the trends stand inside it under the tiles, as wide as the tab (no longer held to 300px, which squeezed a graph of many lines narrow — 9 October), the hardware's charts carry no heading, and there is no Trends tab" || bad "the Trends tab is still there, or the trends and the hardware are not inside the Sensors tab"
 grep -q "body.landing .folder-body #habitat .hbt .tile h3 { font-size: 20px;" public/aura.css && grep -q "body.landing .folder-body #habitat .hbt .t-sens .big { font-size: 38px; }" public/aura.css \
   && grep -q "body.landing .folder-body #habitat .hbt .viz-k { font-size: 20px; line-height: 1.15; }" public/aura.css \
   && grep -q "body.landing .folder-body #mission-today.dpanel { padding: 0; }" public/aura.css && ok "inside the Sensors tab the type is set larger — what each tile measures 20px (Karlsruhe and the astronauts named the same), the figures 38px — and only there: Today's Mission keeps its type in its own folder" || bad "the Sensors tab's type is not enlarged, or the enlargement reaches past it"
@@ -2100,7 +2160,7 @@ echo "$SCR" | grep -q 'class="landing inner screen screen-board" data-screen="bo
 curl -s -b $SK $B/screen/trends | grep -q 'data-screen="trends" data-fit="scale" data-fit-landscape="fill" data-min-width="520"' \
   && grep -q "var f = (fitLand && window.innerWidth > window.innerHeight) ? fitLand : fitBase;" public/screen.js && grep -q "if (document.body.getAttribute('data-fit') !== fit) {" public/screen.js \
   && grep -q 'body.screen.screen-trends\[data-fit="fill"\] .tchart-svg { flex: 1 1 auto; min-height: 0; width: auto; height: 100%; max-width: 100%; max-height: none; margin: 0 auto; }' public/screen.css \
-  && grep -q "if (room.width > 0 && room.height > 0) H = Math.max(H, Math.round(W \* room.height / room.width));" public/habitat.js \
+  && grep -qF "var Hroom = Math.round(W * room.height / room.width);" public/habitat.js && grep -qF "if (H > Hroom) W = Math.round(H * room.width / room.height);" public/habitat.js && grep -qF "else H = Hroom;" public/habitat.js \
   && grep -q "function rollZoom() {" public/screen.js && grep -q "    var z = Math.max(0.5, Math.min(2, window.innerWidth / (window.innerWidth > window.innerHeight ? 1920 : 1080)));" public/screen.js \
   && grep -q "    if (fit === 'roll') return;" public/screen.js && grep -q "var reload = function () { if (window.MCSScreenRoll) window.MCSScreenRoll.reloadAtTurn(); else location.reload(); };" public/screen.js \
   && grep -q "want = Math.max(0.3, Math.min(top, want));" public/screen.js && grep -q "}).observe(fitEl, { childList: true, subtree: true, attributes: true });" public/screen.js && ! grep -q "attributeFilter" public/screen.js \
@@ -2326,8 +2386,8 @@ sys.exit(0 if ok else 1)
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/archive/moods.csv)" = "302" ] && [ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' -b $A $B/control/moods.csv)" = "301 $B/archive/moods.csv" ] \
   && ok "the CSV is behind the sign-in, and the old address under the officer's state leads to the archive's" || bad "the CSV is public, or the old address is dead"
 # the CSV is the Archive's, not the desk's (October): a card under Take a copy, no key under the officer's state
-curl -s -b $A $B/archive | grep -q "The crew’s moods" && curl -s -b $A $B/archive | grep -q 'href="/archive/moods.csv"' && ! echo "$MR" | grep -q 'mood-record-csv\|CSV · all officers' \
-  && ok "the crew's moods are a card of the Archive's Take a copy — CSV, one row per state — and the officer's state on the desk carries no CSV key" || bad "the moods CSV is not in the archive, or still under the officer's state"
+! curl -s -b $A $B/archive | grep -q "The crew’s moods" && ! curl -s -b $A $B/archive | grep -q 'href="/archive/moods.csv"' && ! echo "$MR" | grep -q 'mood-record-csv\|CSV · all officers' \
+  && ok "the crew's moods are no card of the Archive's any more (9 October) — the CSV still answers behind the sign-in — and the officer's state on the desk carries no CSV key" || bad "the moods card is still on the archive, or a CSV key under the officer's state"
 
 echo "── the board: the viewer's own messages, and the last nine the crew have answered"
 grep -q "BOARD_RECENT" src/server.js && grep -q "LIMIT 100" src/lib/data.js && grep -q "m.state = 'PUBLISHED' AND m.visitor_id != ?" src/lib/data.js \
@@ -3132,6 +3192,23 @@ const ok = r("schedule.json")["0"][0].label === "NOW briefing" && r("meals.json"
   && r("logbook.json")["0"]["COMMUNICATION OFFICER"] === "NOW words for the rehearsal" && r("notes.json")["0"][0].body === "NOW findings for the rehearsal"
   && r("inventory-levels.json")["0"].water.quantity === 480 && r("power.json").days["0"].food === 1.4 && r("crew-figures.json")["0"].steps === 4200;
 process.exit(ok ? 0 : 1);' && ok "everything filed under NOW lands in the content files under \"0\" — schedule, meals, blog, report, count, power, figures" || bad "NOW is not filed under 0 in the content files"
+# 9 October ("add all things from the Sensor data here"): before the run the trend graph carries NOW on today's date, as
+# the Sensor Data download does — the dashboard and the screens alike
+for U in /dashboard /screen/trends; do
+curl -s -b $SK "$B$U" | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
+  const un = (x) => x.replace(/&quot;/g, "\"").replace(/&#39;/g, "\x27").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+  const i = s.indexOf("data-spec=\""), d = s.match(/id="hbt-trends" data-date="([0-9-]+)"/);
+  if (i < 0 || !d) process.exit(2);
+  const spec = JSON.parse(un(s.slice(i + 11, s.indexOf("\"", i + 11))));
+  const at = (id) => ((spec.series.find((x) => x.id === id) || {}).points || {})[d[1]];
+  const ok = at("store-water") === 480 && at("use-water") === 22 && at("pwr-food") === 1.4 && at("pwr-total") >= 1.4 && at("steps") === 4200
+    && spec.series.some((x) => /^steps-/.test(x.id) && x.points[d[1]] === 4200) && at("meal-kcal") >= 400
+    && !spec.series.filter((x) => /^act-/.test(x.id)).some((x) => x.points[d[1]] != null);
+  process.exit(ok ? 0 : 1);
+});' || { bad "NOW is not on the trend graph of $U before the run"; NOWTR=1; }
+done
+[ -z "${NOWTR:-}" ] && ok "before the run the trend graph carries NOW on today's date — the store and its use, the power, the steps (the crew's and the officer's) and the meals filed under NOW, on the dashboard and the Trends screen; the day's activity has no NOW point" || true
 [ "$(node -e 'console.log(require("./src/db").db.prepare("SELECT COUNT(*) n FROM task WHERE mission_day = 1").get().n)')" = "$DAY1_TASKS" ] \
   && [ "$(node -e 'console.log(JSON.stringify(require("./src/db").db.prepare("SELECT quantity, consumption FROM inventory_level il JOIN inventory_item i ON i.id = il.item_id WHERE i.key = ? AND il.mission_day = 1").get("water")))')" = "$DAY1_WATER" ] \
   && ! grep -q "NOW words\|NOW briefing" "$CONTENT_DIR/resource-log.csv" \
@@ -3190,6 +3267,8 @@ curl -s -b $A $B/control/messages/export.pdf -o /tmp/now-msgs.pdf && pdftext /tm
 curl -s $B/logbook | grep -q 'href="#day-0"' && curl -s $B/logbook | grep -q 'NOW words for the rehearsal' && curl -s $B/at-a-glance | grep -q 'NOW words for the rehearsal' \
   && ok "the public crew log heads with NOW once it is written, and the booklet's NOW page is built from it" || bad "NOW is not on the public log or the booklet"
 curl -s -b $SK "$B/screen/blogs?lang=en" | grep -q 'NOW words for the rehearsal' && curl -s -b $SK "$B/screen/blogs?lang=en" | grep -q 'NOW · ' && ok "the blogs screen shows NOW's blogs before the run, headed NOW" || bad "the blogs screen does not show NOW"
+curl -s "$B/dashboard?lang=en" | grep -q 'NOW words for the rehearsal' && curl -s "$B/dashboard?lang=en" | grep -q 'NOW findings for the rehearsal' \
+  && ok "and so do the dashboard's blog panels — /dashboard is handed NOW as the screens are (9 October)" || bad "the dashboard's blog panels do not show NOW"
 
 echo "── start again for 15 October"
 grep -q "copyFileSync" src/lib/content.js && bad "content.js still uses fs.copyFile, which fails with EPERM on a Docker bind mount from Windows" || ok "the plan is copied by read-and-write, so reset works on a mounted content/ folder"

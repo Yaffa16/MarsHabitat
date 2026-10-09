@@ -16,9 +16,8 @@ const asIs = (v) => (v == null || v === '' ? '—' : esc(String(v)));
 
 /* ============================================================== CONTENTS */
 
-function contents(ctx, { days, counts, entryCounts, rehearsal = null, tally = { days: [], messages: 0, visitors: 0 } }) {
+function contents(ctx, { days, counts, entryCounts, rehearsal = null, tally = { days: [], messages: 0, replied: 0, visitors: 0 } }) {
   const recorded = days.filter((d) => d.isPast || d.isToday);
-  const mediaTotal = days.reduce((s, d) => s + (d.media || 0), 0);
 
   /* One download per card: what it is, what it is for, one button. */
   const card = ({ fmt, title, blurb, href, label, primary, also = [] }) => `
@@ -49,28 +48,18 @@ function contents(ctx, { days, counts, entryCounts, rehearsal = null, tally = { 
           + 'the stores as counted, the crew log with its photographs in place, every '
           + 'state filed and every reading of every day.',
         href: '/archive/export.pdf', label: 'Download PDF', primary: true })}
-      ${card({ fmt: 'Markdown · plain text', title: 'The readable copy',
-        blurb: 'Every day in order, as plain text. Opens in any editor, prints without a '
-          + 'stylesheet, and still makes sense with nothing left to render it.',
-        href: '/archive/export.md', label: 'Download .md' })}
-      ${card({ fmt: 'JSON · structured', title: 'The data copy',
-        blurb: 'The same record as one structured file, for machines: every day, every '
-          + 'reading, and the media index with every file’s SHA-256.',
+      ${card({ fmt: 'JSON · every day of the run', title: 'Data',
+        blurb: 'Everything the station holds for every day of the run, as one structured file: the schedule, '
+          + 'the meals, the stores, the steps, the power generated and consumed, the Commander Log and the reports, '
+          + 'every state filed, every sensor reading, the day’s mission, the messages received with their replies, '
+          + 'and the media index with every file’s SHA-256.',
         href: '/archive/export.json', label: 'Download .json' })}
-      ${card({ fmt: 'ZIP · raw readings', title: 'The readings log',
-        blurb: 'Every reading the station ever pulled or received — every poll, changed or '
-          + 'not — one JSON file per pull, written the moment it arrived and never changed, '
-          + 'with the same log as CSV tables inside. It survives the reset.',
-        href: '/archive/readings.zip', label: 'Download ZIP' })}
-      ${card({ fmt: 'CSV · one row per state', title: 'The crew’s moods',
-        blurb: 'Every state filed for every officer — the day and time, the sol, the mood and its '
-          + 'words, who filed it — oldest first, as mission control shows it under each officer.',
-        href: '/archive/moods.csv', label: 'Download CSV' })}
-      ${card({ fmt: 'ZIP · originals', title: 'The media archive',
-        blurb: `Every photograph, video and sound file the crew sent out${mediaTotal
-          ? ` — ${mediaTotal} so far` : ''}, byte for byte as uploaded, with the manifest
-          and every file’s hash inside.`,
-        href: '/media/export.zip', label: 'Download ZIP' })}
+      ${card({ fmt: 'ZIP · tables for a spreadsheet', title: 'Sensor Data',
+        blurb: 'Everything on the Sensors tab and in Today’s Meal, day by day: every reading of the habitat sensor '
+          + 'and the hardware, each day’s low, high and mean, the steps, the power generated and consumed, the '
+          + 'resources and every meal with its figures — a folder for each day and the same tables across them all. '
+          + 'With the raw readings log beside them: every reading ever pulled, kept for good.',
+        href: '/archive/sensor-data.zip', label: 'Download ZIP' })}
       ${card({ fmt: `PDF · ${counts.total} ${counts.total === 1 ? 'message' : 'messages'} · not part of the record`, title: 'All the messages',
         blurb: 'Every message that ever reached the station — published with its reply, rejected with '
           + 'the reason, still waiting or in transit — in the order it was sent.',
@@ -113,20 +102,22 @@ function contents(ctx, { days, counts, entryCounts, rehearsal = null, tally = { 
           : '<span style="color:var(--faint)">not yet</span>'}</td>
       </tr>`).join('')}</tbody>
     </table></div>
-    ${rehearsal ? `<p class="note" style="margin-top:10px"><b>NOW</b> is today${ctx.mission.phase === 'PRE_LAUNCH' ? ', before the run' : ' — this station rehearses against made-up dates'} — the rehearsal day, mission day 0. Its record is built the way a run day's is: today's readings from every source and the states filed today, the messages that came in before the run, and everything mission control files under <b>NOW</b> — the day picker's first stop on every tab — its schedule and meals, the Commander Log and the two reports, the counts, figures, power and media. Nothing of it touches the run's days. It is marked as a rehearsal wherever it appears — in the full record, the readable copy, the data copy, the readings log, the media archive and the messages — is not part of the record, and ${ctx.mission.phase === 'PRE_LAUNCH' ? 'disappears on the first day of the run' : 'is there only while the station rehearses against made-up dates'}.</p>` : ''}`)}
+    ${rehearsal ? `<p class="note" style="margin-top:10px"><b>NOW</b> is today${ctx.mission.phase === 'PRE_LAUNCH' ? ', before the run' : ' — this station rehearses against made-up dates'} — the rehearsal day, mission day 0. Its record is built the way a run day's is: today's readings from every source and the states filed today, the messages that came in before the run, and everything mission control files under <b>NOW</b> — the day picker's first stop on every tab — its schedule and meals, the Commander Log and the two reports, the counts, figures, power and media. Nothing of it touches the run's days. It is marked as a rehearsal wherever it appears — in the full record, the data, the sensor data and the messages — is not part of the record, and ${ctx.mission.phase === 'PRE_LAUNCH' ? 'disappears on the first day of the run' : 'is there only while the station rehearses against made-up dates'}.</p>` : ''}`)}
 
   ${panel('THE TALLY', `
-    ${eyebrow('Messages sent and visitors — mission control’s figures')}
+    ${eyebrow('Messages received and replied, and visitors — mission control’s figures')}
     <div class="tally" id="tally">
-      <div class="tally-item"><span class="tally-k">Messages sent</span><b class="tally-n">${tally.messages}</b><span class="tally-sub">total</span></div>
+      <div class="tally-item"><span class="tally-k">Messages received</span><b class="tally-n">${tally.messages}</b><span class="tally-sub">total</span></div>
+      <div class="tally-item"><span class="tally-k">Messages replied</span><b class="tally-n">${tally.replied || 0}</b><span class="tally-sub">total</span></div>
       <div class="tally-item"><span class="tally-k">Visitors</span><b class="tally-n">${tally.visitors}</b><span class="tally-sub">total</span></div>
     </div>
     ${tally.days.length ? `<div class="tw"><table class="daylist tally-days">
-      <thead><tr><th>Day</th><th>Date</th><th class="n">Messages sent</th><th class="n">Visitors</th></tr></thead>
+      <thead><tr><th>Day</th><th>Date</th><th class="n">Messages received</th><th class="n">Messages replied</th><th class="n">Visitors</th></tr></thead>
       <tbody>${tally.days.map((r) => `<tr>
         <td class="n">${r.missionDay != null ? dd(r.missionDay) : '—'}</td>
         <td>${esc(r.date)}</td>
         <td class="n">${r.messages || '—'}</td>
+        <td class="n">${r.replied || '—'}</td>
         <td class="n">${r.visitors || '—'}</td>
       </tr>`).join('')}</tbody>
     </table></div>` : '<p class="note">Nothing counted yet.</p>'}

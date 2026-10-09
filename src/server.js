@@ -748,12 +748,20 @@ app.get('/archive/day/:n/export.pdf', requireControl, (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-/* The readings log — every reading ever pulled, one JSON file per pull — as
-   one ZIP, and as a listing. See src/lib/readings-log.js. */
-app.get('/archive/readings.zip', requireControl, (req, res) => {
+/* Sensor Data (9 October: "the readings log: rename it to Sensor Data — all the data in the Sensors tab and all the
+   data from Today's Meal for each day"): the day-by-day tables of the Sensors tab and Today's Meal
+   (src/lib/sensor-data.js) — a folder a day and all-days/ — with the readings log beside them in the one ZIP: every
+   reading ever pulled, one JSON file per pull (src/lib/readings-log.js). The log's old address gives the same ZIP. */
+const sendSensorData = (req, res) => {
   const st = req.ctx().mission;
-  readingsLog.sendZip(res, { writeZip, mission: { name: st.name, start: st.start_date, end: st.end_date, timezone: st.timezone } });
-});
+  archive.rollupPending();
+  const sd = require('./lib/sensor-data');
+  let extra = null;
+  try { const built = sd.entries(); extra = { ...built, readme: sd.README }; } catch (e) { console.error('[sensor-data]', e.message); }
+  readingsLog.sendZip(res, { writeZip, mission: { name: st.name, start: st.start_date, end: st.end_date, timezone: st.timezone }, extra, filename: 'sensor-data' });
+};
+app.get('/archive/sensor-data.zip', requireControl, sendSensorData);
+app.get('/archive/readings.zip', requireControl, sendSensorData);
 /* The same log as flat tables: one CSV per source, built from the files on
    request. Also inside the ZIP under csv/. */
 app.get('/archive/readings/:name.csv', requireControl, (req, res, next) => {

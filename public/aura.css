@@ -1181,7 +1181,9 @@ body.landing .folder-body .hbt-trends-in { margin-top: 22px; padding-top: 18px; 
 body.landing .folder-body .hbt-trends-in .hbt-sec { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-bottom: 12px; }
 body.landing .folder-body .hbt-trends-in .hbt-sec h3 { font-family: var(--display); font-weight: 600; font-size: 22px; letter-spacing: -.01em; color: var(--ink); margin: 0; }
 body.landing .folder-body .hbt-trends-in .hbt-sec .sub { font-family: var(--display); font-size: 15px; color: var(--dim); }
-body.landing .folder-body .hbt-trends-in .tchart-svg { max-height: 300px; }
+/* the trends as wide as the tab: drawn taller the more lines there are to name (habitat.js, drawAll — every line's name
+   inside the drawing, 9 October), never squeezed narrower to a fixed height (300px until then) */
+body.landing .folder-body .hbt-trends-in .tchart-svg { width: 100%; max-height: none; }
 body.landing .folder-body #habitat .hw-chart svg { max-height: none; }                            /* the chart fills its tile: drawn for the tile's width (hardware.js) */
 body.landing .folder-body #habitat .hbt .tile h3 { font-size: 20px; line-height: 1.15; margin: 0 0 4px; overflow-wrap: break-word; }
 body.landing .folder-body #habitat .hbt .sub, body.landing .folder-body #habitat .hbt .t-pwr .sub { font-size: 14px; line-height: 1.35; }
