@@ -255,12 +255,40 @@ body.screen.screen-trends[data-fit="fill"] #trends .dpanel-body { flex: 1 1 auto
 body.screen.screen-trends[data-fit="fill"] #hbt-trends, body.screen.screen-trends[data-fit="fill"] #hbt-tcharts, body.screen.screen-trends[data-fit="fill"] .tchart { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; max-height: none; }
 body.screen.screen-trends[data-fit="fill"] .tchart-svg { flex: 1 1 auto; min-height: 0; width: auto; height: 100%; max-width: 100%; max-height: none; margin: 0 auto; }
 /* today's mission: the three parts fill the width, one under the other upright */
-/* the mission screen's two turns (screens.js, mission; screen-turns.js): the mission, typed, and the day after it — one
-   at a time, each fading in as its turn comes */
+/* the mission screen's turns (screens.js, mission; screen-turns.js — 9 October: "undo the typing; only show the mission,
+   in large type; then today's schedule, today's meal and the crew's moods one after another, not on the same page; no
+   typing, no movement"): the mission, the schedule, the meal and the moods, one at a time, each changed at once — no fade */
 body.screen .screen-turns > .turn { display: none; }
-body.screen .screen-turns > .turn.is-on { display: block; animation: turn-in .9s ease both; }
-@keyframes turn-in { from { opacity: 0; } to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { body.screen .screen-turns > .turn.is-on { animation: none; } }
+body.screen .screen-turns > .turn.is-on { display: block; }
+body.screen .screen-turns > .turn > .dpanel { grid-column: auto !important; max-height: none; }
+/* the mission alone, large: its number, its title, its central question, the question for the community hour (public.js,
+   missionBig) — fitted to the screen like the rest (screen.js), so a short mission stands larger still */
+body.screen .mission-big { padding: 34px 46px 42px; }
+body.screen .mission-big .dpanel-title h3 { font-size: 28px; }
+body.screen .mission-big .dpanel-meta { font-size: 17px; letter-spacing: .12em; }
+body.screen .mission-big .mb-no { display: block; margin: 22px 0 8px; font-family: var(--display); font-size: 20px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--mars-ink); }
+body.screen .mission-big .mb-title { margin: 0; font-family: var(--display); font-size: 68px; font-weight: 600; line-height: 1.05; letter-spacing: -.02em; color: var(--ink); text-wrap: balance; }
+body.screen .mission-big .mb-k { display: block; margin: 34px 0 10px; font-family: var(--display); font-size: 17px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+body.screen .mission-big .mb-q { margin: 0; max-width: 34em; font-family: var(--display); font-size: 38px; line-height: 1.28; color: var(--ink); text-wrap: pretty; }
+body.screen .mission-big .mb-cq { margin: 0; max-width: 38em; font-family: var(--display); font-size: 30px; line-height: 1.32; color: var(--ink); text-wrap: pretty; }
+/* the schedule, the meal and the moods, each alone on its turn: their names large, the schedule's hours and the meals in
+   two columns across the screen (one upright), so the screen's fitting can set them large rather than small */
+body.screen .screen-turns > .turn > .dpanel { padding: 30px 40px 34px; }
+body.screen .screen-turns > .turn > .dpanel .dpanel-title h3 { font-size: 28px; }
+body.screen .screen-turns > .turn > .dpanel .dpanel-meta { font-size: 16px; letter-spacing: .12em; }
+body.screen .screen-turns #schedule .rows { column-count: 2; column-gap: 56px; padding-top: 6px; }
+body.screen .screen-turns #schedule .row { break-inside: avoid; padding: 9px 0; gap: 18px; }
+body.screen .screen-turns #schedule .row .t { font-size: 19px; min-width: 64px; }
+body.screen .screen-turns #schedule .row .m b { font-size: 21px; line-height: 1.3; }
+body.screen .screen-turns #schedule .row .m span { font-size: 16px; }
+body.screen .screen-turns #galley .meals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 56px; }
+body.screen .screen-turns #galley .meal-slot { font-size: 15px; }
+body.screen .screen-turns #galley .meal b { font-size: 25px; line-height: 1.25; }
+body.screen .screen-turns #galley .meal-figs, body.screen .screen-turns #galley .meal-eco { font-size: 16px; }
+@media (orientation: portrait) {
+  body.screen .screen-turns #schedule .rows { column-count: 1; }
+  body.screen .screen-turns #galley .meals { grid-template-columns: minmax(0, 1fr); }
+}
 body.screen.screen-mission .mission-today { padding: 26px 34px 28px; }
 body.screen .mission-blog { display: none; }                                                        /* the key to the Science Blog is the site's: nothing to press on a screen */
 body.screen.screen-mission .mission-lead { max-width: none; }

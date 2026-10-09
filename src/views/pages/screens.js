@@ -139,19 +139,22 @@ function trends(ctx, d) {
   return shell(ctx, { name: 'trends', title: 'Trends', body: `${p.trends}<div class="screen-hidden">${p.habitat}</div>`, fit: 'scale', scripts: ['/habitat.js', '/hardware.js'] });
 }
 
-/** Today's mission — typed out as if someone were writing it, letter by letter, held a few minutes typed to the end,
-    then typed again (public/typed.js; the dashboard shows the same panel still). */
-/** The day's mission, typed (public/typed.js) — and, ten seconds after it has been typed to its end, the day: the
-    schedule, the meal and the crew's moods, as the Today screen shows them, for half a minute; then the mission typed
-    again, round and round (8 October: "in the mission screen display the daily mission as it is shown; once it is fully
-    shown wait ten seconds, then display what /screen/day shows; keep looping" — public/screen-turns.js). */
+/** The day, one thing at a time and still (9 October: "in the mission screen undo the typing; only show the mission, in
+    large type — the screen glitches and does not show the typing or small type well; then today's schedule, today's meal
+    and the crew's moods, one after another, not on the same page; no typing, no movement"): the day's mission in large
+    type (missionBig — its number, title, central question and the question for the community hour), then the schedule,
+    the meal and the crew's moods, each alone on the screen for its time (data-hold), and round again — each turn changed
+    at once, fitted to the screen before it is drawn (public/screen-turns.js). Until then the mission was typed out letter
+    by letter and the three panels stood side by side. */
 function mission(ctx, d) {
   const p = P.dashboardPanels(ctx, d);
-  const body = `<div class="screen-turns" id="screen-turns" data-after="10000" data-hold="30000">
-    <div class="turn is-on" data-turn="mission">${p.missionPanel}</div>
-    <div class="turn" data-turn="day"><div class="screen-three">${p.schedule}${p.galley}${p.crewPanel}</div></div>
+  const body = `<div class="screen-turns" id="screen-turns">
+    <div class="turn is-on" data-turn="mission" data-hold="40000">${p.missionBig}</div>
+    <div class="turn" data-turn="schedule" data-hold="25000">${p.schedule}</div>
+    <div class="turn" data-turn="galley" data-hold="20000">${p.galley}</div>
+    <div class="turn" data-turn="crew" data-hold="20000">${p.crewPanel}</div>
   </div>`;
-  return shell(ctx, { name: 'mission', title: 'Today’s Mission', body, fit: 'scale', scripts: ['/typed.js', '/screen-turns.js'] });
+  return shell(ctx, { name: 'mission', title: 'Today’s Mission', body, fit: 'scale', scripts: ['/screen-turns.js'] });
 }
 
 /** The three blogs one at a time, each filling the screen: its head, then the day's post rolling by from top to bottom

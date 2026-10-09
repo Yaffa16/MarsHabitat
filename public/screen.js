@@ -172,6 +172,9 @@
     if (fit === 'clip') { baseZoom(); fitClip(); } else if (fit === 'scale') fitScale(); else if (fit === 'roll') rollZoom();
     if (window.MCSBoardFit) window.MCSBoardFit();                          // the board's cards, at the zoom now given (board.js)
   }
+  // a piece that changes what it shows all at once (the mission screen's turns — screen-turns.js) has it fitted at once,
+  // before the screen is drawn again, rather than a moment later at the size the last one had
+  window.MCSScreenFit = function () { clearTimeout(pending); pending = null; fitNow(); };
   function refit() {
     clearTimeout(pending);
     pending = setTimeout(fitNow, 120);

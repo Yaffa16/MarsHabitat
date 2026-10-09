@@ -78,6 +78,28 @@
           Array.prototype.forEach.call(boxes, function (b) { if (b.checked) on++; });
           Array.prototype.forEach.call(boxes, function (b) { b.disabled = !b.checked && on >= 3; });
         });
+        /* A tag pressed and let go on it is ticked even where the browser hands the page the press and the release but no
+           click (9 October, the kiosk at the venue — the key's trouble; see bindForms' key below): a quarter of a second
+           after the release, a tag whose own click has not come is ticked here, once. */
+        var tagPress = null;
+        var tagOf = function (e) { return e.target && e.target.closest ? e.target.closest('label') : null; };
+        var tagDown = function (e) { var l = tagOf(e); if (!l || e.button) return; tagPress = { label: l, clicked: false }; };
+        var tagUp = function (e) {
+          var p = tagPress; if (!p) return;
+          if (tagOf(e) !== p.label) { tagPress = null; return; }
+          setTimeout(function () {
+            if (tagPress !== p) return;
+            tagPress = null;
+            if (p.clicked) return;
+            var b = p.label.querySelector('input[type=checkbox]');
+            if (!b || b.disabled) return;
+            b.checked = !b.checked;
+            b.dispatchEvent(new Event('change', { bubbles: true }));
+          }, 250);
+        };
+        tagBox.addEventListener('click', function (e) { if (tagPress && tagOf(e) === tagPress.label) tagPress.clicked = true; }, true);
+        if (window.PointerEvent) { tagBox.addEventListener('pointerdown', tagDown); tagBox.addEventListener('pointerup', tagUp); }
+        else { tagBox.addEventListener('mousedown', tagDown); tagBox.addEventListener('mouseup', tagUp); tagBox.addEventListener('touchstart', tagDown, { passive: true }); tagBox.addEventListener('touchend', tagUp); }
       }
       if (!stage) return;                                              // no device to swap into: a plain post
       var key = form.querySelector('button[type=submit]');
@@ -99,6 +121,10 @@
         else { key.addEventListener('mousedown', down); key.addEventListener('touchstart', down, { passive: false }); }
         key.addEventListener('click', function (e) { e.preventDefault(); send(form); });
       }
+      // and from the keyboard: Ctrl+Enter (or ⌘+Enter) in the writing box sends, as the key does — Enter alone stays a new line
+      if (body) body.addEventListener('keydown', function (e) {
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'Enter' || e.keyCode === 13)) { e.preventDefault(); send(form); }
+      });
       form.addEventListener('submit', function (e) {
         if (form.getAttribute('data-native')) return;                 // falling back to a plain post
         e.preventDefault();
@@ -136,6 +162,7 @@
       return;
     }
     form.setAttribute('data-sending', '1');
+    try { document.dispatchEvent(new CustomEvent('mcs:sending')); } catch (e) { /* an old browser: nobody listens */ }
     if (key) { key.disabled = true; key.classList.add('is-sending'); }
     var over = false, xhr = new XMLHttpRequest();
     function giveBack() {

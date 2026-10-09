@@ -1780,7 +1780,30 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, pow
     </section>`;
   })();
 
-  return { m, T, day3, blogDate, kpis, strip, cloudStrip, missionPanel, habitat, trends, schedule, galley, crewPanel, blogCommander, blogHealth, blogScience };
+  /* ---- the mission for the installation's mission screen (9 October: "undo the typing; only show the mission, in large
+     type"): the same mission alone and large — its number, its title, its central question, and the question for the
+     community hour in the screen's own language (the sheet's other, where it has only one) — without the parts of the day,
+     whose lists would only stand there small (the dashboard keeps them). Its own class, so the screen's rules (screen.css,
+     .mission-big) touch nothing on the site. */
+  const missionBig = (() => {
+    const missionNo = (no) => String(no).padStart(2, '0');
+    const head = `<header class="dpanel-head"><div class="dpanel-title"><h3>${T('Today’s Mission')}</h3></div>
+        <span class="dpanel-meta">SOL ${day3} · ${esc(shortDay(blogDate))}</span></header>`;
+    if (!mission) return `<section class="dpanel span-12 mission-big" aria-label="${esc(T('Today’s Mission'))}">${head}
+      <div class="dpanel-body"><p class="mb-q">${T('No mission filed for')} SOL ${day3}</p></div></section>`;
+    const c = mission.community || {}, de = ctx.lang === 'de';
+    const cq = de ? c.de || c.en : c.en || c.de, cqLang = cq && cq === c.de && !de ? ' lang="de"' : cq && cq === c.en && de ? ' lang="en"' : '';
+    return `<section class="dpanel span-12 mission-big" aria-labelledby="mission-big-title">${head}
+      <div class="dpanel-body">
+        <span class="mb-no">${T('Mission No.')} ${missionNo(mission.no)}</span>
+        <h4 class="mb-title" id="mission-big-title">${esc(mission.title)}</h4>
+        ${mission.question ? `<span class="mb-k">${T('Central question')}</span><p class="mb-q">${esc(mission.question)}</p>` : ''}
+        ${cq ? `<span class="mb-k">${T('Question for the community hour')}</span><p class="mb-cq"${cqLang}>${esc(cq)}</p>` : ''}
+      </div>
+    </section>`;
+  })();
+
+  return { m, T, day3, blogDate, kpis, strip, cloudStrip, missionPanel, missionBig, habitat, trends, schedule, galley, crewPanel, blogCommander, blogHealth, blogScience };
 }
 
 /* The dashboard's LIVE mark, at the right of its head: a pill with a pulsing dot (aura.css). Decoration — hidden from

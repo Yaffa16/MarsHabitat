@@ -40,6 +40,33 @@
     var h = device.offsetHeight;                                           // (the layout's pixels, whatever the screen's zoom)
     device.style.minHeight = h > 0 ? h + 'px' : was;
   }
+  /* ?probe=1 on the address (9 October, the kiosk at the venue, where the key seemed deaf): a small log at the foot of the
+     screen of what the browser hands the page for every press — down, up, click, and on what; a press, a release and no
+     click says the screen's browser (or what shows the page) sends no clicks, which the key and the tags no longer need.
+     Nothing in it leaves the screen. */
+  if (/[?&]probe=1(&|$)/.test(location.search)) {
+    var log = document.createElement('div'), lines = [];
+    log.setAttribute('style', 'position:fixed;left:8px;bottom:8px;z-index:99;max-width:60vw;padding:8px 10px;border-radius:8px;background:rgba(0,0,0,.82);color:#9f9;font:12px/1.35 ui-monospace,Menlo,Consolas,monospace;pointer-events:none;white-space:pre');
+    document.body.appendChild(log);
+    var what = function (el) {
+      if (!el || !el.tagName) return '?';
+      var c = typeof el.className === 'string' && el.className ? '.' + el.className.trim().split(/\s+/).slice(0, 2).join('.') : '';
+      return el.tagName.toLowerCase() + c;
+    };
+    var note = function (txt) {
+      var d = new Date();
+      lines.push(('0' + d.getMinutes()).slice(-2) + ':' + ('0' + d.getSeconds()).slice(-2) + '.' + ('00' + d.getMilliseconds()).slice(-3) + ' ' + txt);
+      if (lines.length > 12) lines.shift();
+      log.textContent = lines.join('\n');
+    };
+    ['pointerdown', 'pointerup', 'pointercancel', 'mousedown', 'mouseup', 'click', 'touchstart', 'touchend', 'submit'].forEach(function (type) {
+      document.addEventListener(type, function (e) {
+        note(type + ' ' + what(e.target) + (e.pointerType ? ' ' + e.pointerType : '') + (typeof e.button === 'number' && type.indexOf('touch') < 0 ? ' b' + e.button : '') + (typeof e.detail === 'number' && /mouse|click/.test(type) ? ' n' + e.detail : '') + (e.defaultPrevented ? ' (held)' : ''));
+      }, true);
+    });
+    document.addEventListener('mcs:sending', function () { note('→ SENDING'); });
+    note('probe on — ' + navigator.userAgent.replace(/^Mozilla\/5\.0 /, '').slice(0, 90));
+  }
   var again = null;
   function soon() { clearTimeout(again); again = setTimeout(holdSize, 60); }
   holdSize();

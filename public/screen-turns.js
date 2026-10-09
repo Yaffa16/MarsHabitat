@@ -1,32 +1,28 @@
 /* MARS!platz — the mission screen's turns (src/views/pages/screens.js, mission; public/screen.css).
  *
- * The day's mission, typed (public/typed.js); ten seconds after it stands whole (data-after), the day — the schedule,
- * the meal and the crew's moods, as the Today screen shows them — for half a minute (data-hold); then the mission again,
- * typed from its first letter, and so on, round and round (8 October: "in /screen/mission display the daily mission as
- * it is currently shown; once it is fully shown wait ten seconds, then display what /screen/day shows; keep looping").
- * Where the mission is not typed (less motion asked for, or no words to type) it stands whole for half a minute before
- * the day. The screen fits each turn as it comes (screen.js sees the change). Nothing here is sent anywhere. */
+ * One thing at a time, and still (9 October: "in the mission screen undo the typing; only show the mission, in large
+ * type — the screen glitches and does not show the typing or small type well; then today's schedule, today's meal and the
+ * crew's moods, one after another, not on the same page; no typing, no movement"): the day's mission in large type, then
+ * the schedule, the meal and the crew's moods, each alone on the screen for its own time (data-hold on the turn), and
+ * round again. A turn changes at once — no fade, nothing types, nothing moves — and is fitted to the screen before it is
+ * drawn (screen.js, MCSScreenFit), so it never shows at the last one's size first. (Until then the mission was typed out
+ * letter by letter, and the page was fitted again with every letter: the screen jumped as it typed.)
+ * Nothing here is sent anywhere. */
 (function () {
   'use strict';
   var root = document.getElementById('screen-turns'); if (!root) return;
-  var mission = root.querySelector('.turn[data-turn="mission"]'), day = root.querySelector('.turn[data-turn="day"]');
-  if (!mission || !day) return;
-  var AFTER = Number(root.getAttribute('data-after')) || 10000, HOLD = Number(root.getAttribute('data-hold')) || 30000;
-  var STILL = 30000;                                                     // an untyped mission's time on the screen
-  var timer = 0, typing = false;
-  function show(t) { [mission, day].forEach(function (x) { x.classList.toggle('is-on', x === t); }); }
-  function toDay() { clearTimeout(timer); show(day); timer = setTimeout(toMission, HOLD); }
-  function toMission() {
-    clearTimeout(timer); show(mission);
-    if (typing && window.MCSTyped) window.MCSTyped.restart();          // typed again; it says when it is done (below)
-    else timer = setTimeout(toDay, STILL);
+  var turns = [], kids = root.children, i;
+  for (i = 0; i < kids.length; i++) if (kids[i].classList.contains('turn')) turns.push(kids[i]);
+  if (!turns.length) return;
+  var at = 0, timer = 0;
+  function show(n) {
+    at = n;
+    for (var k = 0; k < turns.length; k++) turns[k].classList.toggle('is-on', k === n);
+    if (window.MCSScreenFit) window.MCSScreenFit();                     // fitted now, before the screen is drawn again
+    clearTimeout(timer);
+    if (turns.length > 1) timer = setTimeout(function () { show((at + 1) % turns.length); }, Number(turns[n].getAttribute('data-hold')) || 20000);
   }
-  document.addEventListener('mcs:typed', function () {                  // typed to its end: ten seconds, then the day
-    typing = true;
-    if (!mission.classList.contains('is-on')) return;
-    clearTimeout(timer); timer = setTimeout(toDay, AFTER);
-  });
-  // typed.js is there and types (it set MCSTyped): it will say when it is done — else the mission stands whole for a while
-  typing = !!window.MCSTyped && !!root.querySelector('#mission-today .mission-body .tw');
-  if (!typing) timer = setTimeout(toDay, STILL);
+  // (for the station's tests and a look at one turn: MCSTurns.show('galley') — it carries on round from there)
+  window.MCSTurns = { show: function (name) { for (var k = 0; k < turns.length; k++) if (turns[k].getAttribute('data-turn') === name) { show(k); return true; } return false; } };
+  show(0);
 })();

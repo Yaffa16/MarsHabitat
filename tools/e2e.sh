@@ -1964,16 +1964,21 @@ SCR_OK=1; for n in landing habitat board write mission blogs day trends media; d
 done
 [ $SCR_OK = 1 ] && ok "nine screens answer at /screen/<name>: landing, habitat, board, write, mission, blogs, day, trends, media" || bad "a screen does not answer"
 [ "$(curl -s -b $SK -o /dev/null -w '%{http_code}' $B/screen/nothing)" = "404" ] && ok "a name that is not a screen is a 404" || bad "/screen/nothing answers"
-# the mission screen's turns (8 October: "display the daily mission as it is shown; once it is fully shown wait ten seconds,
-# then display what /screen/day shows; keep looping")
+# the mission screen's turns (9 October: "undo the typing; only show the mission, in large type; then today's schedule,
+# today's meal and the crew's moods one after another, not on the same page; no typing, no movement")
 MIS=$(curl -s -b $SK "$B/screen/mission?lang=en")
-echo "$MIS" | grep -q '<div class="screen-turns" id="screen-turns" data-after="10000" data-hold="30000">' && echo "$MIS" | grep -q '<div class="turn is-on" data-turn="mission"><section class="dpanel span-12 mission-today" id="mission-today"' \
-  && echo "$MIS" | grep -q '<div class="turn" data-turn="day"><div class="screen-three">' && echo "$MIS" | grep -q 'id="schedule"' && echo "$MIS" | grep -q 'id="galley"' && echo "$MIS" | grep -q 'id="crew"' \
-  && echo "$MIS" | grep -q '<script src="/typed.js?v=[a-z0-9]*" defer></script>' && echo "$MIS" | grep -q '<script src="/screen-turns.js?v=[a-z0-9]*" defer></script>' && node --check public/screen-turns.js \
-  && grep -qF "try { document.dispatchEvent(new CustomEvent('mcs:typed')); }" public/typed.js && grep -qF "window.MCSTyped = { restart: function () { clearTimeout(timer); timer = null; clear(); resume(); } };" public/typed.js \
-  && grep -qF "function toDay() { clearTimeout(timer); show(day); timer = setTimeout(toMission, HOLD); }" public/screen-turns.js && grep -qF "clearTimeout(timer); timer = setTimeout(toDay, AFTER);" public/screen-turns.js \
-  && grep -q 'body.screen .screen-turns > .turn.is-on { display: block; animation: turn-in .9s ease both; }' public/screen.css \
-  && ok "the mission screen types the mission, ten seconds after it stands whole shows the day — schedule, meal, moods — for half a minute, then the mission again, round and round" || bad "the mission screen does not take its turns"
+echo "$MIS" | grep -q '<div class="screen-turns" id="screen-turns">' && echo "$MIS" | grep -q '<div class="turn is-on" data-turn="mission" data-hold="40000"><section class="dpanel span-12 mission-big"' \
+  && echo "$MIS" | tr -d '\n' | grep -q '<div class="turn" data-turn="schedule" data-hold="25000"> *<section class="dpanel[^"]*" id="schedule"' \
+  && echo "$MIS" | tr -d '\n' | grep -q '<div class="turn" data-turn="galley" data-hold="20000"> *<section class="dpanel[^"]*" id="galley"' \
+  && echo "$MIS" | tr -d '\n' | grep -q '<div class="turn" data-turn="crew" data-hold="20000"> *<section class="dpanel[^"]*" id="crew"' \
+  && ! echo "$MIS" | grep -q 'screen-three\|id="mission-today"\|src="/typed.js' && echo "$MIS" | grep -q '<h4 class="mb-title" id="mission-big-title">' \
+  && echo "$MIS" | grep -q '<script src="/screen-turns.js?v=[a-z0-9]*" defer></script>' && node --check public/screen-turns.js \
+  && grep -qF "if (window.MCSScreenFit) window.MCSScreenFit();" public/screen-turns.js && grep -qF "window.MCSScreenFit = function () { clearTimeout(pending); pending = null; fitNow(); };" public/screen.js \
+  && grep -qF "Number(turns[n].getAttribute('data-hold')) || 20000" public/screen-turns.js \
+  && grep -q 'body.screen .screen-turns > .turn.is-on { display: block; }' public/screen.css && ! grep -q "turn-in" public/screen.css \
+  && grep -qF "body.screen .mission-big .mb-title { margin: 0; font-family: var(--display); font-size: 68px;" public/screen.css \
+  && grep -qF "body.screen .screen-turns #schedule .rows { column-count: 2; column-gap: 56px; padding-top: 6px; }" public/screen.css \
+  && ok "the mission screen shows the mission alone in large type — its number, title, central question, the community hour's question — then the schedule, the meal and the moods, each alone, changed at once and fitted before it is drawn; nothing types, nothing fades" || bad "the mission screen does not take its turns"
 # the screens' sky (8 October: "stars and comets in the background for all screens — always in the background only"):
 # every screen carries it, fixed under the stage and the ticker, the same scatter every time
 SKY_OK=1; for n in landing habitat board write mission blogs day trends media station livestream; do
@@ -2086,7 +2091,7 @@ curl -s "$B/api/board?lang=de&limit=400" | grep -q 'Diese Nachricht ist jetzt' &
   && ok "/api/board answers in the language asked for, so the ticking words and the cards' words agree" || bad "/api/board ignores ?lang"
 grep -q "if (document.body.classList.contains('screen')) return;" public/board.js && grep -q 'body.screen .card.xc:not(.note) .card-space { flex-direction: row; flex-wrap: wrap;' public/screen.css && grep -q 'body.screen .card.xc:not(.note) .card-space-more { display: contents; }' public/screen.css \
   && ok "on the board screen the distance and the launch time share one line, and a tap opens nothing" || bad "the board screen's space line is not one line, or a tap still opens the panel"
-curl -s -b $SK $B/screen/mission | grep -q 'id="mission-today"' && curl -s -b $SK $B/screen/trends | grep -q 'id="trends"' && curl -s -b $SK $B/screen/habitat | grep -q 'id="hbt-bento"' && ok "the mission, the trends and the habitat screens carry the dashboard's own panels" || bad "a screen lacks its panel"
+curl -s -b $SK $B/screen/mission | grep -q 'class="dpanel span-12 mission-big"' && curl -s -b $SK $B/screen/trends | grep -q 'id="trends"' && curl -s -b $SK $B/screen/habitat | grep -q 'id="hbt-bento"' && ok "the mission, the trends and the habitat screens carry the dashboard's own panels" || bad "a screen lacks its panel"
 curl -s "$B/api/cloud?flat=1" | node -e 'let s="";process.stdin.on("data",(c)=>s+=c).on("end",()=>{const j=JSON.parse(s); process.exit(!j.configured || (j.html.indexOf("cloud-flat")>-1 && j.html.indexOf("cloud-day-head")<0) ? 0 : 1);});' \
   && ok "/api/cloud?flat=1 answers with the gallery as one grid, no day heads — what the media screen polls (data-api)" || bad "the flat gallery is wrong"
 curl -s -b $SK $B/screens | grep -q '/screen/board?lang=en&amp;theme=light' && ok "the list explains the switches" || bad "the list does not explain the switches"
@@ -2201,6 +2206,11 @@ grep -qF "var press = null;" public/composer.js && grep -qF "function pressUp(e)
   && grep -qF "body.landing .composer button.primary, body.landing .composer button.primary:hover, body.landing .composer button.primary:active { transform: none !important; }" public/aura.css \
   && grep -qF 'body.landing .composer button.primary::after { content: ""; position: absolute; inset: -12px -8px; border-radius: inherit; }' public/aura.css \
   && ok "the Transmit key cannot miss a press: it stands still, takes a press a little beyond its edge, and sends on the release over it as well as on the click — once" || bad "the Transmit key can still lose a press"
+grep -qF "var tagPress = null;" public/composer.js && grep -qF "if (p.clicked) return;" public/composer.js && grep -qF "b.dispatchEvent(new Event('change', { bubbles: true }));" public/composer.js \
+  && grep -qF "if ((e.ctrlKey || e.metaKey) && (e.key === 'Enter' || e.keyCode === 13)) { e.preventDefault(); send(form); }" public/composer.js \
+  && grep -qF "try { document.dispatchEvent(new CustomEvent('mcs:sending')); }" public/composer.js \
+  && grep -qF "if (/[?&]probe=1(&|$)/.test(location.search)) {" public/screen-write.js && grep -qF "document.addEventListener('mcs:sending', function () { note('→ SENDING'); });" public/screen-write.js \
+  && ok "a tag pressed and let go on it is ticked even where no click comes, once; Ctrl+Enter sends from the box; ?probe=1 logs what the browser hands the page for every press" || bad "the tags, Ctrl+Enter or the probe are missing"
 # 9 October: "the live button everywhere should be red and not orange"
 grep -qF ":root { --live: #ff3b30; --live-ink: #cf2419; --live-glow: rgba(255,59,48,.7); --live-wash: rgba(255,59,48,.08); }" public/neu.css \
   && grep -qF "body.landing .board .live, body.landing .cloud-live, body.landing .dl-live, body.landing .seq-fig.seq-live, body.landing .call-livepill," public/neu.css \
@@ -2819,9 +2829,9 @@ VZ=$(echo "$DASH" | node -e 'let s = ""; process.stdin.on("data", (c) => s += c)
 curl -s -H "Cookie: mcs_lang=de" $B/dashboard | grep -q '<span class="viz-k">Karlsruhe</span>' && curl -s -H "Cookie: mcs_lang=de" $B/dashboard | grep -q '<span class="viz-k">Astronauten erfasst</span>' && curl -s -H "Cookie: mcs_lang=de" $B/dashboard | grep -q '>Bodenstation</text>' && curl -s -H "Cookie: mcs_lang=fr" $B/dashboard | grep -q '<span class="viz-k">Karlsruhe</span>' && curl -s -H "Cookie: mcs_lang=fr" $B/dashboard | grep -q '>Station au sol</text>' && curl -s -H "Cookie: mcs_lang=fr" $B/dashboard | grep -q '<span class="viz-k">Astronautes suivis</span>' \
   && curl -s $B/dashboard | grep -q '<section class="tile t-viz t-viz-city" aria-hidden="true">' && curl -s $B/dashboard | grep -q '<section class="tile t-viz t-viz-radar" aria-hidden="true">' && curl -s $B/dashboard | grep -q '<div class="dash-live" aria-hidden="true"><span class="dl-live"><i></i>LIVE</span></div>' \
   && echo "$LAND" | grep -q 'src="/live.js' && ! echo "$LAND" | grep -q 'src="/typed.js' && curl -s $B/dashboard | grep -q 'src="/live.js' && ! curl -s $B/dashboard | grep -q 'src="/typed.js' \
-  && curl -s -b $SK $B/screen/mission | grep -q 'src="/typed.js' && curl -s -b $SK $B/screen/mission | grep -q '<section class="dpanel span-12 mission-today" id="mission-today"' && ! curl -s -b $SK $B/screen/habitat | grep -q 'src="/typed.js' \
+  && ! curl -s -b $SK $B/screen/mission | grep -q 'src="/typed.js' && curl -s -b $SK $B/screen/mission | grep -q '<section class="dpanel span-12 mission-big"' && ! curl -s -b $SK $B/screen/habitat | grep -q 'src="/typed.js' \
   && curl -s -o /dev/null -w '%{content_type}' $B/live.js | grep -q javascript && curl -s -o /dev/null -w '%{content_type}' $B/typed.js | grep -q javascript \
-  && ok "the instruments' names in German and French; the tiles and the LIVE mark on the dashboard page as well; live.js loaded on the landing page and the dashboard page alike; typed.js on the installation's mission screen alone — the dashboard's mission stands as written" || bad "the instruments are not on the dashboard page, or the scripts are not where they should be"
+  && ok "the instruments' names in German and French; the tiles and the LIVE mark on the dashboard page as well; live.js loaded on the landing page and the dashboard page alike; typed.js on no page any more — the mission screen shows the mission still and large (9 October), the dashboard's mission stands as written" || bad "the instruments are not on the dashboard page, or the scripts are not where they should be"
 grep -qF "var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;" public/live.js && grep -qF "var TURN = 4000, LIM = 40, C = 60;" public/live.js && grep -qF "radar.querySelectorAll('.dl-astro')" public/live.js \
   && grep -qF "if (dist < 1.5 || d.until <= 0) { d.to = somewhere(d); d.until = 6 + Math.random() * 8; }" public/live.js && grep -qF "if (dd < 9) { var push = (9 - dd) / 9 * 14 * dt;" public/live.js \
   && grep -qF "var bearing = (Math.atan2(d.x, -d.y) / (Math.PI * 2) + 1) % 1, since = (sweep - bearing + 1) % 1;" public/live.js && grep -qF "d.el.style.opacity = (0.4 + 0.6 * (1 - since)).toFixed(3);" public/live.js && ! grep -q "scatter\|dl-blip" public/live.js \
