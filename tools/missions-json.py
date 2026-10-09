@@ -219,6 +219,19 @@ def main():
     for f in files:
         with open(os.path.join(MISSIONS, f), 'rb') as fh:
             digests[f] = hashlib.sha256(fh.read()).hexdigest()
+    # two sheets under one number (a copy left behind under an old name — 9 October: MARS_Mission_00_Energy_Budget.pdf, a
+    # copy of the Energy Budget sheet, beside the written MARS_Mission_00_Setup_Habitat_After_Touchdown.pdf): the one that
+    # is no copy of another sheet is the mission; the others are left out, with a note to take them out of the folder —
+    # read, a copy titled as its original would pass for it, and the original for its copy
+    left_out = []
+    for n in sorted({int(FILE_RE.match(f).group(1)) for f in files}):
+        same_no = [f for f in files if int(FILE_RE.match(f).group(1)) == n]
+        if len(same_no) < 2:
+            continue
+        own = [f for f in same_no if sum(1 for g in files if digests[g] == digests[f]) == 1]
+        keep = (own or same_no)[0]
+        left_out += [(f, keep) for f in same_no if f != keep]
+    files = [f for f in files if f not in {f for f, _ in left_out}]
     # the title printed on each sheet, to tell a copy from its original
     parsed_titles = {}
     for f in files:
@@ -226,7 +239,8 @@ def main():
             parsed_titles[f] = parse(os.path.join(MISSIONS, f))['sheetTitle']
         except Exception:                                           # noqa: BLE001
             parsed_titles[f] = None
-    missions, problems = [], []
+    missions, problems = [], [f'{f} left out: {keep} is the sheet numbered {FILE_RE.match(f).group(1)} — take {f} out of missions/'
+                              for f, keep in left_out]
     for f in files:
         m = FILE_RE.match(f)
         no, title = int(m.group(1)), title_from_file(m.group(2))

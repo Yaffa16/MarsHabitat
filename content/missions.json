@@ -20,16 +20,46 @@
       "no": 0,
       "title": "Setup Habitat After Touchdown",
       "file": "MARS_Mission_00_Setup_Habitat_After_Touchdown.pdf",
-      "placeholder": "MARS_Mission_01_Energy_Budget.pdf",
-      "question": "",
-      "morning": [],
-      "afternoon": [],
-      "eva": [],
+      "question": "What does it take to turn an empty shell into a habitat that keeps us alive and connected?",
+      "morning": [
+        "HABITAT – UNPACK, CHECK, BUILD",
+        "• Walk through every module together and compare what is there with the packing list.",
+        "• Unpack and stow the supplies: water, food rations, medical kits, fire extinguishers.",
+        "• Set up the areas: sleeping, kitchen, research, hygiene, storage.",
+        "→ Who sleeps where? Where does each thing belong?",
+        "POWER – FIRST LIGHT",
+        "• Lay the cables, connect battery and power bike.",
+        "• Switch circuits on one by one; label every socket.",
+        "• Read the meters and note the first values.",
+        "→ What has to run all the time, and what can wait?"
+      ],
+      "afternoon": [
+        "SCENOGRAPHY – MAKING IT A PLACE",
+        "• Set up the lights, the signs and the crew’s corners.",
+        "• Hang the mission plan and the day’s schedule.",
+        "• Look at the habitat from outside: what do visitors see first?",
+        "→ What makes it feel like Mars, and what like home?",
+        "COMMUNICATION – FIRST CONTACT",
+        "• Connect the ground station: network, laptop, message board.",
+        "• Set up cameras and livestream; check the sound.",
+        "• Send a first message to Earth; wait for the answer.",
+        "→ How long does it take? What gets lost on the way?"
+      ],
+      "eva": [
+        "TEST EVERYTHING",
+        "Go round the habitat, inside and out, with the checklist:",
+        "• sensors: oxygen, CO₂, temperature, humidity",
+        "• power: sockets, meters, battery, power bike",
+        "• communication: network, cameras, livestream",
+        "• water, light, doors, emergency exit",
+        "→ Mark each point: works / partly / does not work.",
+        "Ask: What would we notice first if something failed, and who repairs what, with which tools?"
+      ],
       "community": {
-        "en": "",
-        "de": ""
+        "en": "What is the first thing you would set up in a new home far away?",
+        "de": "Was würdest du an einem neuen Ort weit weg als Erstes einrichten?"
       },
-      "materials": ""
+      "materials": "Packing list, toolbox, cable ties, gaffa tape, extension leads, power meters, power bike, laptop, router, cameras, labels"
     },
     {
       "no": 1,

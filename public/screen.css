@@ -57,6 +57,27 @@ body.screen .screen-write .dev-stage .transit-block { position: static; }       
 body.screen .screen-write .dev-stage .composer.ghost { display: none; }
 body.screen .screen-write .kiosk-cs { margin-top: 14px; font-family: var(--display); font-size: 15px; line-height: 1.45; color: var(--ink); }
 body.screen .screen-write .kiosk-cs b { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 16px; letter-spacing: .08em; color: var(--mars-ink); }
+/* what sending means, beside the box (9 October: "move the write to the right of the screen a bit and add the text from
+   the site's write card as context to the message sending; highlight the message sent into space part" — screens.js,
+   write): the site's three lines on the left, the box to their right, the two side by side in the middle of the screen
+   and fitted to it together (screen.js) — the box moved right to make room, its size as before; the line that approved
+   messages are beamed into space large, in capitals, in Mars orange with a glow about it. Upright, the lines over the box. */
+body.screen .screen-write.has-intro { align-items: center; gap: 64px; }
+body.screen .screen-write.has-intro .composer-device { flex: 0 0 640px; width: 640px; }
+body.screen .screen-write .write-intro { flex: 0 1 500px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+body.screen .screen-write .wi-title { margin: 0; font-family: var(--display); font-size: 40px; font-weight: 600; line-height: 1.08; letter-spacing: -.02em; color: var(--ink); text-wrap: balance; }
+body.screen .screen-write .wi-beam { margin: 0; font-family: var(--display); font-size: 36px; line-height: 1.06; text-wrap: balance; }
+body.screen .screen-write .wi-beam strong { font-weight: 800; letter-spacing: .01em; text-transform: uppercase; color: var(--mars); text-shadow: 0 0 22px rgba(255,106,46,.35); }
+:root[data-theme="light"] body.screen .screen-write .wi-beam strong { color: var(--mars-ink); text-shadow: none; }
+body.screen .screen-write .wi-body { margin: 0; max-width: 30em; font-family: var(--display); font-size: 20px; line-height: 1.5; color: var(--dim); text-wrap: pretty; }
+@media (orientation: portrait), (max-aspect-ratio: 4/3) {
+  body.screen .screen-write.has-intro { flex-direction: column; align-items: center; gap: 30px; }
+  body.screen .screen-write.has-intro .composer-device { flex: none; width: 100%; max-width: 640px; }
+  body.screen .screen-write .write-intro { flex: none; width: 100%; max-width: 640px; gap: 14px; }
+  body.screen .screen-write .wi-title { font-size: 34px; }
+  body.screen .screen-write .wi-beam { font-size: 30px; }
+  body.screen .screen-write .wi-body { font-size: 18px; }
+}
 /* the blogs, one at a time (screen-blogs.js): each panel fills the stage, its head stays, the post rolls by under it — the
    text at the size of the panel's own notes, large enough to read from across the room */
 body.screen.screen-blogs .stage-fit { height: 100%; flex: 1 1 auto; min-height: 0; }

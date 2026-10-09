@@ -192,7 +192,17 @@ function board(ctx, d) {
     screen's script (public/screen-write.js) clears what was left half-written after a while, and the page's own
     reloads wait while someone is writing. */
 function write(ctx, d) {
-  const body = `<div class="screen-write">${P.composerDevice(ctx, { inFlight: d.inFlight || null, error: d.error || null, draft: d.draft || '', kiosk: ctx.lang || 'de' })}</div>`;
+  // beside the box, what sending means (9 October: "move the write to the right of the screen a bit and add the text from
+  // the site's write card — send a message to the crew, approved messages are beamed into space, mission control reads
+  // every message… — as context to the message sending; highlight the message sent into space part"): the landing
+  // page's three lines (landing.js, the write card), in the screen's language, the beamed-into-space line highlighted
+  const T = ctx.T;
+  const intro = `<div class="write-intro">
+      <h2 class="wi-title">${T('Send a message to the crew')}</h2>
+      <p class="wi-beam"><strong>${T('Approved messages are beamed into space')}</strong></p>
+      <p class="wi-body">${T('Mission control reads every message. The ones it approves are beamed into space by radio.')}</p>
+    </div>`;
+  const body = `<div class="screen-write has-intro">${intro}${P.composerDevice(ctx, { inFlight: d.inFlight || null, error: d.error || null, draft: d.draft || '', kiosk: ctx.lang || 'de' })}</div>`;
   return shell(ctx, { name: 'write', title: 'Write to the crew', body, fit: 'scale', scripts: ['/composer.js', '/screen-write.js'] });
 }
 
