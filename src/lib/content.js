@@ -872,6 +872,7 @@ function missionForDay(missionDay) {
   return {
     no: Number(m.no), title: String(m.title || `Mission ${missionNo(m.no)}`), question: String(m.question || ''),
     morning: lines(m.morning), afternoon: lines(m.afternoon), eva: lines(m.eva),
+    evening: lines(m.evening),                         // the first day's sheet has its evening's in the EVA's place (9 October)
     community: { en: String((m.community || {}).en || ''), de: String((m.community || {}).de || '') },
     materials: String(m.materials || ''), file: m.file && /^[\w.-]+\.pdf$/i.test(String(m.file)) ? String(m.file) : null,
     placeholder: m.placeholder ? String(m.placeholder) : null, sheetNo: m.sheetNo != null ? String(m.sheetNo) : null,

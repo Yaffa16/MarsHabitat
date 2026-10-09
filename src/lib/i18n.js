@@ -227,6 +227,7 @@ const D = {
   'Central question': ['Zentrale Frage', 'Question centrale'],
   'Morning': ['Vormittag', 'Matin'],
   'Afternoon': ['Nachmittag', 'Après-midi'],
+  'Evening': ['Abend', 'Soir'],
   'Question for the community hour': ['Frage für die Community-Stunde', 'Question pour l’heure de la communauté'],
   // the day's question over the composer (public.js, composerPrompt)
   'The crew’s question today': ['Die Frage der Crew heute', 'La question de l’équipage aujourd’hui'],
@@ -792,6 +793,11 @@ const D = {
   'Mission control reads every message. The ones it approves are beamed into space by radio.':
     ['Die Missionskontrolle liest jede Nachricht. Was sie freigibt, wird per Funk ins All gesendet.',
      'Le contrôle de mission lit chaque message. Ceux qu’il approuve sont émis dans l’espace par radio.'],
+  // the writing screen's (screens.js, write — 9 October: "it should say the approved messages are transmitted into space by
+  // radio transmitters, where your messages will continue to fly through space")
+  'Mission control reads every message. Radio transmitters send the ones it approves into space — where your message keeps flying, on and on.':
+    ['Die Missionskontrolle liest jede Nachricht. Was sie freigibt, senden Funksender ins All – wo deine Nachricht immer weiter durch den Weltraum fliegt.',
+     'Le contrôle de mission lit chaque message. Ceux qu’il approuve sont envoyés dans l’espace par des émetteurs radio — où votre message continue de voler, encore et encore.'],
   'Commander': ['Kommandantin', 'Commandant'],
   'Written': ['Geschrieben', 'Écrit'],
   'Into space': ['Ins All', 'Dans l’espace'],

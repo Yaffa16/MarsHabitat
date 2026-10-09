@@ -1,5 +1,5 @@
 {
-  "_note": "The scientific missions of MARS! / Red Dust City, one a day, as the sheets in the missions/ folder give them (MARS_Mission_NN_….pdf, one page each) — written by tools/missions-json.py, which reads every sheet in the folder; run it again when a sheet changes. `days` says which mission the crew are on each day of the run (day → mission number): as shipped the sheets follow the days in sequence — 00 on day 1, 15 October, to 12 on day 13, 27 October — and the Science officer changes a day's mission from the desk's Science tab, which writes this map. `missions` carries each sheet's words: its number and title (the file's — the number printed on the sheet is kept as sheetNo where it is another), the central question, the Morning, Afternoon and EVA parts as lines (a line in capitals is a heading, one starting with • a bullet, one starting with → a pointer), the question for the community hour in English and German as the sheet has them, the material it needs, and the sheet's file. A sheet that is a copy of another's PDF (standing in until it is written) keeps its title and carries no words — `placeholder` names the file it copies. The Today's Mission panel at the head of the mission dashboard shows the day's mission from here and links to its sheet at /missions/<file>.",
+  "_note": "The scientific missions of MARS! / Red Dust City, one a day, as the sheets in the missions/ folder give them (MARS_Mission_NN_….pdf, one page each) — written by tools/missions-json.py, which reads every sheet in the folder; run it again when a sheet changes. `days` says which mission the crew are on each day of the run (day → mission number): as shipped the sheets follow the days in sequence — 00 on day 1, 15 October, to 12 on day 13, 27 October — and the Science officer changes a day's mission from the desk's Science tab, which writes this map. `missions` carries each sheet's words: its number and title (the file's — the number printed on the sheet is kept as sheetNo where it is another), the central question, the Morning, Afternoon and EVA parts as lines (a line in capitals is a heading, one starting with • a bullet, one starting with → a pointer; `evening` too on a sheet whose third column is the evening's, as the first day's is — the crew go in at five in the evening), the question for the community hour in English and German as the sheet has them, the material it needs, and the sheet's file. A sheet that is a copy of another's PDF (standing in until it is written) keeps its title and carries no words — `placeholder` names the file it copies. The Today's Mission panel at the head of the mission dashboard shows the day's mission from here and links to its sheet at /missions/<file>.",
   "days": {
     "1": 0,
     "2": 1,
@@ -21,39 +21,19 @@
       "title": "Setup Habitat After Touchdown",
       "file": "MARS_Mission_00_Setup_Habitat_After_Touchdown.pdf",
       "question": "What does it take to turn an empty shell into a habitat that keeps us alive and connected?",
-      "morning": [
-        "HABITAT – UNPACK, CHECK, BUILD",
-        "• Walk through every module together and compare what is there with the packing list.",
-        "• Unpack and stow the supplies: water, food rations, medical kits, fire extinguishers.",
-        "• Set up the areas: sleeping, kitchen, research, hygiene, storage.",
-        "→ Who sleeps where? Where does each thing belong?",
-        "POWER – FIRST LIGHT",
-        "• Lay the cables, connect battery and power bike.",
-        "• Switch circuits on one by one; label every socket.",
-        "• Read the meters and note the first values.",
-        "→ What has to run all the time, and what can wait?"
-      ],
-      "afternoon": [
-        "SCENOGRAPHY – MAKING IT A PLACE",
-        "• Set up the lights, the signs and the crew’s corners.",
-        "• Hang the mission plan and the day’s schedule.",
-        "• Look at the habitat from outside: what do visitors see first?",
-        "→ What makes it feel like Mars, and what like home?",
-        "COMMUNICATION – FIRST CONTACT",
-        "• Connect the ground station: network, laptop, message board.",
-        "• Set up cameras and livestream; check the sound.",
-        "• Send a first message to Earth; wait for the answer.",
-        "→ How long does it take? What gets lost on the way?"
-      ],
-      "eva": [
+      "morning": [],
+      "afternoon": [],
+      "eva": [],
+      "evening": [
+        "TOUCHDOWN – THE CREW MOVES IN",
+        "• Habitat: check the modules against the packing list; stow the supplies.",
+        "• Power: connect battery and power bike, switch on circuit by circuit, read the meters.",
+        "• Scenography: lights, signs, the crew’s corners.",
+        "• Communication: connect the ground station; send a first message to Earth.",
         "TEST EVERYTHING",
-        "Go round the habitat, inside and out, with the checklist:",
-        "• sensors: oxygen, CO₂, temperature, humidity",
-        "• power: sockets, meters, battery, power bike",
-        "• communication: network, cameras, livestream",
-        "• water, light, doors, emergency exit",
+        "• sensors, power, network, cameras, water, light, doors, emergency exit",
         "→ Mark each point: works / partly / does not work.",
-        "Ask: What would we notice first if something failed, and who repairs what, with which tools?"
+        "Ask: What would we notice first if something failed, and who repairs what?"
       ],
       "community": {
         "en": "What is the first thing you would set up in a new home far away?",

@@ -195,12 +195,14 @@ function write(ctx, d) {
   // beside the box, what sending means (9 October: "move the write to the right of the screen a bit and add the text from
   // the site's write card — send a message to the crew, approved messages are beamed into space, mission control reads
   // every message… — as context to the message sending; highlight the message sent into space part"): the landing
-  // page's three lines (landing.js, the write card), in the screen's language, the beamed-into-space line highlighted
+  // page's write card (landing.js) — its name and its beamed-into-space line, highlighted — and under them what becomes
+  // of a message, in the screen's language ("it should say the approved messages are transmitted into space by radio
+  // transmitters, where your messages will continue to fly through space")
   const T = ctx.T;
   const intro = `<div class="write-intro">
       <h2 class="wi-title">${T('Send a message to the crew')}</h2>
       <p class="wi-beam"><strong>${T('Approved messages are beamed into space')}</strong></p>
-      <p class="wi-body">${T('Mission control reads every message. The ones it approves are beamed into space by radio.')}</p>
+      <p class="wi-body">${T('Mission control reads every message. Radio transmitters send the ones it approves into space — where your message keeps flying, on and on.')}</p>
     </div>`;
   const body = `<div class="screen-write has-intro">${intro}${P.composerDevice(ctx, { inFlight: d.inFlight || null, error: d.error || null, draft: d.draft || '', kiosk: ctx.lang || 'de' })}</div>`;
   return shell(ctx, { name: 'write', title: 'Write to the crew', body, fit: 'scale', scripts: ['/composer.js', '/screen-write.js'] });

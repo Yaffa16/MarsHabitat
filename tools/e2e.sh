@@ -1880,7 +1880,7 @@ MT=$(panel mission-today)
 MNO=$(node -e 'const d=require(process.env.CONTENT_DIR+"/missions.json"); const no=d.days[String(process.argv[1])]; const m=d.missions.find((x)=>x.no===no); process.stdout.write(m ? String(no).padStart(2, "0")+"|"+m.title+"|"+m.file : "")' "$TODAY")
 echo "$MT" | grep -q "Mission No. ${MNO%%|*}<" && echo "$MT" | grep -q "id=\"mission-today-title\">$(echo "$MNO" | cut -d'|' -f2)<" && [ "${MNO%%|*}" = "$(printf '%02d' $((TODAY - 1)))" ] \
   && ok "the Today's Mission panel shows the day's mission — its two-figure number and title — as missions.json maps it (day $TODAY → mission ${MNO%%|*}, the sheets in sequence from 00)" || bad "the Today's Mission panel does not show the day's mission"
-echo "$MT" | grep -q 'class="mission-part is-morning"' && echo "$MT" | grep -q 'class="mission-part is-afternoon"' && echo "$MT" | grep -q 'class="mission-part is-eva"' && echo "$MT" | grep -q 'class="mission-community"' \
+{ if [ "${MNO%%|*}" = "00" ]; then echo "$MT" | grep -q 'class="mission-part is-evening"' && ! echo "$MT" | grep -q 'class="mission-part is-morning"'; else echo "$MT" | grep -q 'class="mission-part is-morning"' && echo "$MT" | grep -q 'class="mission-part is-afternoon"' && echo "$MT" | grep -q 'class="mission-part is-eva"' && ! echo "$MT" | grep -q 'is-evening'; fi; } && echo "$MT" | grep -q 'class="mission-community"' \
   && ok "with its central question, Morning, Afternoon and EVA, and the question for the community hour" || bad "the mission's parts are missing"
 curl -s $B/dashboard | node -e 'let s=""; process.stdin.on("data",(c)=>s+=c).on("end",()=>{ const a=s.indexOf("<section class=\"dpanel span-12 mission-today\" id=\"mission-today\""), b=s.indexOf("class=\"folder span-12\""), f=s.indexOf("<div class=\"fpage\" role=\"tabpanel\" id=\"fpage-mission-today\" aria-labelledby=\"ftab-mission-today\" data-folder=\"mission-today\" hidden>"), k=s.indexOf("<button type=\"button\" class=\"ftab\" role=\"tab\" id=\"ftab-mission-today\""), sch=s.indexOf("id=\"ftab-schedule\""), sens=s.indexOf("id=\"ftab-habitat\""); process.exit(a>-1 && b>-1 && b<a && f>-1 && f<a && k>-1 && sens<k && k<sch ? 0 : 1); });' \
   && curl -s $B/dashboard | grep -q '<span class="frow-k" aria-hidden="true">Daily Life</span><button type="button" class="ftab" role="tab" id="ftab-mission-today"' \
@@ -1892,7 +1892,7 @@ curl -s $B/write | grep -q "<p class=\"dev-prompt-q\">$MQ</p>" && curl -s $B/ | 
   && curl -s -H "Cookie: mcs_lang=de" $B/write | grep -q 'Die Frage der Crew heute' && curl -s -H "Cookie: mcs_lang=de" $B/write | grep -q 'Was ist eine Sache die zu Hause / in Karlsruhe grade passiert' \
   && ok "the day's question for the community hour stands over the writing box as a prompt — in the window, on every page, in German where the sheet has it" || bad "the composer carries no prompt, or the wrong one"
 [ "$(curl -s -o /dev/null -w '%{http_code}' "$B/missions/")" = "404" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' "$B/missions/nothing.txt")" = "404" ] && ok "and nothing but PDFs is served from it" || bad "the missions folder serves more than its PDFs"
-node -e 'const d=require(process.env.CONTENT_DIR+"/missions.json"); const nos=d.missions.map((m)=>m.no); process.exit(nos.length===13 && nos.every((n, i) => n === i) && Object.keys(d.days).length===13 && Object.entries(d.days).every(([k, n]) => n === Number(k) - 1) && d.missions.filter((m) => m.placeholder).map((m) => m.no).join() === "12" && d.missions.every((m) => m.placeholder ? !m.question && !m.morning.length : m.morning.length && m.afternoon.length && m.eva.length) && /tools\/missions-json\.py/.test(d._note) ? 0 : 1);' \
+node -e 'const d=require(process.env.CONTENT_DIR+"/missions.json"); const nos=d.missions.map((m)=>m.no); process.exit(nos.length===13 && nos.every((n, i) => n === i) && Object.keys(d.days).length===13 && Object.entries(d.days).every(([k, n]) => n === Number(k) - 1) && d.missions.filter((m) => m.placeholder).map((m) => m.no).join() === "12" && d.missions.every((m) => m.placeholder ? !m.question && !m.morning.length : (m.morning.length && m.afternoon.length && m.eva.length && !m.evening) || (m.no === 0 && m.evening && m.evening.length && !m.morning.length && !m.afternoon.length && !m.eva.length)) && /tools\/missions-json\.py/.test(d._note) ? 0 : 1);' \
   && ok "thirteen sheets, 00 to 12, thirteen days mapped to them in sequence in missions.json — written by tools/missions-json.py from the PDFs; 12, a copy of another sheet for now, carries its title and no words — 00 written since 9 October" || bad "missions.json is inconsistent"
 # the words are the sheets' own: tools/missions-json.py reads every PDF in missions/ by position — the three columns as
 # lines (a heading alone, a bullet with its wrapped words), the community hour's question parted into English and German
@@ -1906,12 +1906,23 @@ let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
     && by[8].afternoon[2] === "• What can it perceive?" && by[7].afternoon[2] === "• What rituals are central to religious meaning-making?" && by[7].community.en === "What rituals do you follow in your everyday life?" && by[7].community.de === "Welche Rituale hast du in deinem täglichen Leben?"
     && by[6].eva[0] === "Fictitious scenario: THE MARKETPLACE AS RESOURCE" && by[2].sheetNo === "12" && by[12].placeholder === "MARS_Mission_01_Energy_Budget.pdf" && by[11].question === ""
     && !by[0].placeholder && !by[0].sheetNo && by[0].title === "Setup Habitat After Touchdown" && by[0].question === "What does it take to turn an empty shell into a habitat that keeps us alive and connected?"
-    && by[0].morning[0] === "HABITAT – UNPACK, CHECK, BUILD" && by[0].morning[5] === "POWER – FIRST LIGHT" && by[0].afternoon[0] === "SCENOGRAPHY – MAKING IT A PLACE" && by[0].afternoon[5] === "COMMUNICATION – FIRST CONTACT"
-    && by[0].eva[0] === "TEST EVERYTHING" && by[0].eva[2] === "• sensors: oxygen, CO₂, temperature, humidity" && by[0].community.en === "What is the first thing you would set up in a new home far away?"
+    && !by[0].morning.length && !by[0].afternoon.length && !by[0].eva.length && by[0].evening[0] === "TOUCHDOWN – THE CREW MOVES IN" && by[0].evening[1].startsWith("• Habitat: check the modules")
+    && by[0].evening[5] === "TEST EVERYTHING" && by[0].evening[6] === "• sensors, power, network, cameras, water, light, doors, emergency exit" && !by[1].evening && !by[5].evening
+    && by[0].community.en === "What is the first thing you would set up in a new home far away?"
     && by[0].community.de === "Was würdest du an einem neuen Ort weit weg als Erstes einrichten?" && /^Packing list, toolbox/.test(by[0].materials);
   process.exit(ok ? 0 : 1); });
 ' && ok "tools/missions-json.py reads the sheets as laid out — the number and title from the file, the question, the columns line by line, bullets and headings kept, a broken word made whole, English and German parted, the printed number kept as sheetNo where it is another, a copied sheet marked" || bad "tools/missions-json.py does not read the sheets as it should"
 else ok "(pdfplumber is not installed here — tools/missions-json.py not run; content/missions.json as shipped is checked above)"; fi
+# 9 October: "in the habitat after touchdown only have evening, nothing in the morning" — the first day's mission (the
+# crew go in at five in the evening) has the evening alone, and the panel shows it alone, the parts' whole width
+node -e '
+const c = require("./src/lib/content"); const m = c.missionForDay(1);
+process.exit(m && m.no === 0 && !m.morning.length && !m.afternoon.length && !m.eva.length && m.evening[0] === "TOUCHDOWN – THE CREW MOVES IN" && m.evening.length === 9
+  && c.missionForDay(2).evening.length === 0 ? 0 : 1);' \
+  && grep -qF "\${part('eva', 'EVA')}\${part('evening', 'Evening')}</div>" src/views/pages/public.js && grep -qF "  'Evening': ['Abend', 'Soir']," src/lib/i18n.js \
+  && grep -qF 'body.landing .mission-parts > .mission-part:only-child { grid-column: 1 / -1; display: block; columns: 2 280px; column-gap: 44px; }' public/aura.css \
+  && grep -qF "    eva = word('EVA') or word('EVENING')" tools/missions-json.py \
+  && ok "the first day's mission has the evening alone — nothing in the morning or the afternoon, the crew go in at five — and its panel shows the evening alone, across the parts' width" || bad "the first day's mission is not the evening's alone"
 # 9 October: Mission 00 written, and a folder that still holds the copy it replaced (MARS_Mission_00_Energy_Budget.pdf,
 # the Energy Budget sheet's bytes) — the written sheet is 00, the copy left out with a note; 01 stays the Energy Budget
 if python3 -c "import pdfplumber" 2>/dev/null; then
@@ -1920,7 +1931,7 @@ cp missions/MARS_Mission_01_Energy_Budget.pdf "$MJ/missions/MARS_Mission_00_Ener
 MJN=$(python3 "$MJ/tools/missions-json.py" --check 2>&1 >"$MJ/out.json")
 node -e '
 const d = require(process.argv[1]), by = Object.fromEntries(d.missions.map((m) => [m.no, m]));
-process.exit(d.missions.length === 13 && by[0].file === "MARS_Mission_00_Setup_Habitat_After_Touchdown.pdf" && !by[0].placeholder && by[0].eva[0] === "TEST EVERYTHING"
+process.exit(d.missions.length === 13 && by[0].file === "MARS_Mission_00_Setup_Habitat_After_Touchdown.pdf" && !by[0].placeholder && by[0].evening[5] === "TEST EVERYTHING"
   && by[1].morning[0] === "ENERGY – FOOTPRINT – ENERGY BALANCE" && !by[1].placeholder && by[12].placeholder === "MARS_Mission_01_Energy_Budget.pdf" ? 0 : 1);' "$MJ/out.json" \
   && echo "$MJN" | grep -q "MARS_Mission_00_Energy_Budget.pdf left out: MARS_Mission_00_Setup_Habitat_After_Touchdown.pdf is the sheet numbered 00" \
   && ok "a copy left behind under Mission 00's number is left out by tools/missions-json.py, with a note — the written sheet is 00, Energy Budget stays 01" || bad "a second sheet under one number confuses tools/missions-json.py"
@@ -2178,13 +2189,24 @@ echo "$WR" | grep -q 'class="landing inner screen screen-write" data-screen="wri
 # the message sending; highlight the message sent into space part" — the card's three lines beside the box, in the
 # screen's language, the beamed-into-space line highlighted; the box to their right, upright under them
 echo "$WR" | grep -q '<h2 class="wi-title">Send a message to the crew</h2>' && echo "$WR" | grep -q '<p class="wi-beam"><strong>Approved messages are beamed into space</strong></p>' \
-  && echo "$WR" | grep -q '<p class="wi-body">Mission control reads every message. The ones it approves are beamed into space by radio.</p>' \
+  && echo "$WR" | grep -q '<p class="wi-body">Mission control reads every message. Radio transmitters send the ones it approves into space — where your message keeps flying, on and on.</p>' \
+  && curl -s -b $SK "$B/screen/write" | grep -q '<p class="wi-body">Die Missionskontrolle liest jede Nachricht. Was sie freigibt, senden Funksender ins All – wo deine Nachricht immer weiter durch den Weltraum fliegt.</p>' \
+  && grep -qF 'text-shadow: 0 0 6px rgba(255,138,85,.55), 0 0 18px rgba(255,106,46,.55), 0 0 42px rgba(255,90,31,.38), 0 0 80px rgba(255,90,31,.22); }' public/screen.css \
+  && grep -q "<p class=\"call-body\">\${T('Mission control reads every message. The ones it approves are beamed into space by radio.')}</p>" src/views/pages/landing.js \
   && curl -s -b $SK "$B/screen/write" | grep -q '<p class="wi-beam"><strong>Freigegebene Nachrichten werden ins All gefunkt</strong></p>' && curl -s -b $SK "$B/screen/write" | grep -q '<h2 class="wi-title">Schick der Crew eine Nachricht</h2>' \
-  && grep -qF 'body.screen .screen-write.has-intro { align-items: center; gap: 64px; }' public/screen.css && grep -qF 'body.screen .screen-write.has-intro .composer-device { flex: 0 0 640px; width: 640px; }' public/screen.css \
+  && grep -qF 'body.screen .screen-write.has-intro { align-items: center; gap: 40px; }' public/screen.css && grep -qF 'body.screen .screen-write .write-intro { flex: 0 1 460px; min-width: 0;' public/screen.css && grep -qF 'body.screen .screen-write.has-intro .composer-device { flex: 0 0 640px; width: 640px; }' public/screen.css \
   && grep -qF 'body.screen .screen-write .wi-beam strong { font-weight: 800; letter-spacing: .01em; text-transform: uppercase; color: var(--mars);' public/screen.css \
   && grep -qF '  body.screen .screen-write.has-intro { flex-direction: column; align-items: center; gap: 30px; }' public/screen.css \
   && ! curl -s -b $SK "$B/screen/station" | grep -q 'class="write-intro"' \
-  && ok "the writing screen has what sending means beside the box — the site's three lines, the beamed-into-space one large in Mars orange — the box to their right, upright under them; the ground station's screen as it was" || bad "the writing screen has no context beside the box"
+  && ok "the writing screen has what sending means beside the box — the site's name and beamed-into-space line, that one large in Mars orange and glowing, and how radio transmitters send a message on into space — the box to their right and close to them (40px, 9 October), upright under them; the ground station's screen as it was" || bad "the writing screen has no context beside the box"
+# 9 October: "in the write page remove, below the send button, Jede Nachricht wird außerdem per Funk ins All gesendet; remove
+# the SENDEN from the top right; increase the box for writing the message by moving the parts above it up; remove the six
+# lines on the right" — on the writing screen only (the ground station's screen and the site keep their box)
+grep -qF 'body.screen.screen-write .composer-device .dev-vents, body.screen.screen-write .composer-device .dev-head .dev-chan,' public/screen.css \
+  && grep -qF 'body.screen.screen-write .composer-device .composer .dev-space { display: none !important; }' public/screen.css \
+  && grep -qF 'body.screen.screen-write .composer-device { padding-top: 48px; }' public/screen.css && grep -qF 'body.screen.screen-write .composer-device form.composer .msgbox textarea { min-height: 286px; }' public/screen.css && grep -qF 'body.screen.screen-write .composer-device .dev-title { display: none; }' public/screen.css && curl -s -b $SK "$B/screen/write" | grep -q '<h2 class="dev-title" id="dev-title">Schreib der Crew</h2>' \
+  && grep -qF 'body.landing .composer .dev-space {' public/aura.css && grep -qF 'body.landing .dev-led, body.landing .dev-grip, body.landing .dev-vents { display: block; }' public/sheet.css \
+  && ok "the writing screen's box is plainer and roomier — no note under the key, no SENDEN at the head's right, no vents; the parts above nearer the top, no title in the box (Schreib der Crew — the words beside it say it), the writing box taller (286px, 190 before); the site's box as it was" || bad "the writing screen's box still carries the note, the head's word or the vents, or its writing box is not taller"
 WK=/tmp/kiosk.jar; rm -f $WK
 WR1=$(curl -s -b $SK -c $WK -b $WK -D /tmp/kiosk-h1.txt -H 'X-Requested-With: fetch' -d "body=First from the square" -d "tags=QUESTION" "$B/screen/write?lang=en")
 WR2=$(curl -s -b $SK -c $WK -b $WK -D /tmp/kiosk-h2.txt -H 'X-Requested-With: fetch' -d "body=Second from the square" "$B/screen/write?lang=en")

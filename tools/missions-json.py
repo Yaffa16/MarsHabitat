@@ -7,7 +7,9 @@ content/missions.json from the sheets in missions/ — one PDF a mission.
 
 Each sheet is one page laid out the same way (MARS! / SCIENTIFIC MISSION): the
 mission number at the top right, the title under RED DUST CITY, CENTRAL
-QUESTION, three columns headed MORNING, AFTERNOON and EVA, then QUESTION FOR
+QUESTION, three columns headed MORNING, AFTERNOON and EVA (on the first day's
+sheet EVENING in the EVA column's place: the crew go in at five in the evening,
+so its morning and afternoon stand empty — 9 October), then QUESTION FOR
 THE COMMUNITY HOUR (English, then German) beside MATERIAL – WHAT DOES THIS
 NEED. The words are read by position — the column a word is in, the line it
 is on, the gap to the line before — so each part comes out as the sheet's own
@@ -52,7 +54,8 @@ NOTE = ('The scientific missions of MARS! / Red Dust City, one a day, as the she
         'and the Science officer changes a day\'s mission from the desk\'s Science tab, which writes this map. `missions` '
         'carries each sheet\'s words: its number and title (the file\'s — the number printed on the sheet is kept as sheetNo '
         'where it is another), the central question, the Morning, Afternoon and EVA parts as lines (a line in capitals is a '
-        'heading, one starting with • a bullet, one starting with → a pointer), the question for the community hour in '
+        'heading, one starting with • a bullet, one starting with → a pointer; `evening` too on a sheet whose third column is the '
+        'evening\'s, as the first day\'s is — the crew go in at five in the evening), the question for the community hour in '
         'English and German as the sheet has them, the material it needs, and the sheet\'s file. A sheet that is a copy of '
         'another\'s PDF (standing in until it is written) keeps its title and carries no words — `placeholder` names the '
         'file it copies. The Today\'s Mission panel at the head of the mission dashboard shows the day\'s mission from here '
@@ -169,11 +172,13 @@ def parse(path):
     word = lambda text, above=None: next((w for w in sorted(words, key=lambda w: w['top'])          # noqa: E731
                                           if w['text'].upper() == text and w['size'] >= 8 and (above is None or w['top'] > above)), None)
     cq = find('CENTRAL QUESTION')
-    morning, afternoon, eva = word('MORNING'), word('AFTERNOON'), word('EVA')
+    morning, afternoon = word('MORNING'), word('AFTERNOON')
+    eva = word('EVA') or word('EVENING')                            # the third column: the EVA's, or the evening's
+    third = 'evening' if eva and eva['text'].upper() == 'EVENING' else 'eva'
     comm = find('QUESTION FOR THE COMMUNITY')
     foot = find('RED DUST SOCIETY')
     if not (cq and morning and afternoon and eva and comm and foot):
-        raise ValueError('not laid out as a mission sheet (CENTRAL QUESTION / MORNING / AFTERNOON / EVA / QUESTION FOR THE COMMUNITY HOUR / footer)')
+        raise ValueError('not laid out as a mission sheet (CENTRAL QUESTION / MORNING / AFTERNOON / EVA or EVENING / QUESTION FOR THE COMMUNITY HOUR / footer)')
     y_cols = max(morning['bottom'], afternoon['bottom'], eva['bottom'])
     mat = next((w for w in words if w['text'].upper().startswith('MATERIAL') and abs(w['top'] - comm['top']) < pitch), None)
     x_mat = mat['x0'] if mat else page.width * 0.55
@@ -205,7 +210,8 @@ def parse(path):
             en = community[0]
     return {
         'sheetNo': sheet_no.strip(), 'sheetTitle': title.strip(), 'question': re.sub(r'\s+', ' ', question).strip(),
-        'morning': parts[0], 'afternoon': parts[1], 'eva': parts[2],
+        'morning': parts[0], 'afternoon': parts[1], 'eva': parts[2] if third == 'eva' else [],
+        'evening': parts[2] if third == 'evening' else [],
         'community': {'en': en.strip(), 'de': de.strip()},
         'materials': materials.strip(),
     }
@@ -268,7 +274,10 @@ def main():
             continue
         if p['sheetNo'] and p['sheetNo'] != str(no) and p['sheetNo'] != f'{no:02d}':
             entry['sheetNo'] = p['sheetNo']
-        entry.update({k: p[k] for k in ('question', 'morning', 'afternoon', 'eva', 'community', 'materials')})
+        entry.update({k: p[k] for k in ('question', 'morning', 'afternoon', 'eva')})
+        if p['evening']:
+            entry['evening'] = p['evening']
+        entry.update({k: p[k] for k in ('community', 'materials')})
         missions.append(entry)
     # the days: the sheets in the file's order, 00 on day 1 — thirteen days, as many sheets as there are
     days = {str(i + 1): m['no'] for i, m in enumerate(missions[:13])}

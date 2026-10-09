@@ -889,6 +889,18 @@ body.landing .mission-parts { display: grid; grid-template-columns: repeat(3, mi
 body.landing .mission-part { --mp: var(--cobalt-fill); display: flex; flex-direction: column; gap: 8px; padding: 16px 18px 18px; border-radius: 18px; background: var(--tile); border: 1px solid rgba(var(--cobalt-rgb),.12); min-width: 0; }
 body.landing .mission-part.is-afternoon { --mp: #8b5cf6; }
 body.landing .mission-part.is-eva { --mp: var(--mars); }
+/* the evening — the first day's only part (9 October: "in the habitat after touchdown only have evening, nothing in the
+   morning": the crew go in at five in the evening): in the colour of the hour, and, standing alone, the parts' whole
+   width, its lines in two columns rather than one long narrow one (one on a narrow screen) */
+body.landing .mission-part.is-evening { --mp: #b7791f; }
+:root[data-theme="dark"] body.landing .mission-part.is-evening { --mp: #f0b54a; }
+body.landing .mission-parts > .mission-part:only-child { grid-column: 1 / -1; display: block; columns: 2 280px; column-gap: 44px; }
+body.landing .mission-parts > .mission-part:only-child > * + * { margin-top: 8px; }
+body.landing .mission-parts > .mission-part:only-child > h4 { column-span: all; margin-bottom: 18px; }
+body.landing .mission-parts > .mission-part:only-child > h4 + * { margin-top: 0; }   /* both columns' first lines on one line */
+body.landing .mission-parts > .mission-part:only-child > ul, body.landing .mission-parts > .mission-part:only-child > ol,
+body.landing .mission-parts > .mission-part:only-child > p { break-inside: avoid; }
+body.landing .mission-parts > .mission-part:only-child > .mission-sub { break-after: avoid; }
 body.landing .mission-part h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-family: var(--display); font-size: var(--fs-label); letter-spacing: .14em; text-transform: uppercase; font-weight: 600; color: var(--ink); }
 body.landing .mission-part h4::before { content: ""; flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--mp); box-shadow: 0 0 0 3px color-mix(in srgb, var(--mp) 22%, transparent); }
 body.landing .mission-part p, body.landing .mission-part li { margin: 0; font-size: var(--fs-note); line-height: 1.5; color: var(--ink); text-wrap: pretty; }

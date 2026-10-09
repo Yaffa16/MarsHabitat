@@ -57,17 +57,41 @@ body.screen .screen-write .dev-stage .transit-block { position: static; }       
 body.screen .screen-write .dev-stage .composer.ghost { display: none; }
 body.screen .screen-write .kiosk-cs { margin-top: 14px; font-family: var(--display); font-size: 15px; line-height: 1.45; color: var(--ink); }
 body.screen .screen-write .kiosk-cs b { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 16px; letter-spacing: .08em; color: var(--mars-ink); }
+/* the writing screen's box, plainer and roomier (9 October: "in the write page remove, below the send button, Jede
+   Nachricht wird außerdem per Funk ins All gesendet; remove the SENDEN from the top right; increase the box for writing
+   the message by moving the parts above it a bit up; remove the six lines on the right"): no note under the key (the
+   words beside the box say it now), no word at the right of the head, no vents in the corner; the title, the operator
+   and the crew's question nearer the top (the box's top 48 px, not 70; 10 px between them, not 14), and the writing box
+   taller — 250 px, not 190: what the parts above give up, and the note's room under the key. (The ground station's
+   screen keeps its box as it was.) */
+body.screen.screen-write .composer-device .dev-vents, body.screen.screen-write .composer-device .dev-head .dev-chan,
+body.screen.screen-write .composer-device .composer .dev-space { display: none !important; }
+body.screen.screen-write .composer-device { padding-top: 48px; }
+body.screen.screen-write .composer-device .dev-title { margin-bottom: 10px; }
+body.screen.screen-write .composer-device .dev-head { margin-bottom: 10px; }
+body.screen.screen-write .composer-device .dev-prompt { margin-bottom: 12px; }
+body.screen.screen-write .composer-device form.composer .msgbox textarea { min-height: 286px; }
+/* and no title in the box (9 October: "remove this from the message box: Schreib der Crew") — the words beside it say
+   it (Schick der Crew eine Nachricht); the box opens on the operator, and the writing box takes the title's room:
+   286 px, not 250 */
+body.screen.screen-write .composer-device .dev-title { display: none; }
 /* what sending means, beside the box (9 October: "move the write to the right of the screen a bit and add the text from
    the site's write card as context to the message sending; highlight the message sent into space part" — screens.js,
    write): the site's three lines on the left, the box to their right, the two side by side in the middle of the screen
-   and fitted to it together (screen.js) — the box moved right to make room, its size as before; the line that approved
-   messages are beamed into space large, in capitals, in Mars orange with a glow about it. Upright, the lines over the box. */
-body.screen .screen-write.has-intro { align-items: center; gap: 64px; }
+   and fitted to it together (screen.js) — the box moved right to make room, its size as before, and close to the words
+   (9 October: "move it a bit closer to the text": the words' column as wide as their longest lines and a little more —
+   460 px, so no line stands at its edge and none wraps anew when the box changes to the crossing and the screen is
+   fitted again by a hair — and 40 px between them and the box; 500 and 64 before); the line that approved messages are beamed into space large, in
+   capitals, in Mars orange with a glow about it. Upright, the lines over the box. */
+body.screen .screen-write.has-intro { align-items: center; gap: 40px; }
 body.screen .screen-write.has-intro .composer-device { flex: 0 0 640px; width: 640px; }
-body.screen .screen-write .write-intro { flex: 0 1 500px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+body.screen .screen-write .write-intro { flex: 0 1 460px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
 body.screen .screen-write .wi-title { margin: 0; font-family: var(--display); font-size: 40px; font-weight: 600; line-height: 1.08; letter-spacing: -.02em; color: var(--ink); text-wrap: balance; }
 body.screen .screen-write .wi-beam { margin: 0; font-family: var(--display); font-size: 36px; line-height: 1.06; text-wrap: balance; }
-body.screen .screen-write .wi-beam strong { font-weight: 800; letter-spacing: .01em; text-transform: uppercase; color: var(--mars); text-shadow: 0 0 22px rgba(255,106,46,.35); }
+/* its glow brighter (9 October: "make this text glow up a bit"): a near halo, a wide one and a faint far one, still — nothing
+   pulses */
+body.screen .screen-write .wi-beam strong { font-weight: 800; letter-spacing: .01em; text-transform: uppercase; color: var(--mars);
+  text-shadow: 0 0 6px rgba(255,138,85,.55), 0 0 18px rgba(255,106,46,.55), 0 0 42px rgba(255,90,31,.38), 0 0 80px rgba(255,90,31,.22); }
 :root[data-theme="light"] body.screen .screen-write .wi-beam strong { color: var(--mars-ink); text-shadow: none; }
 body.screen .screen-write .wi-body { margin: 0; max-width: 30em; font-family: var(--display); font-size: 20px; line-height: 1.5; color: var(--dim); text-wrap: pretty; }
 @media (orientation: portrait), (max-aspect-ratio: 4/3) {

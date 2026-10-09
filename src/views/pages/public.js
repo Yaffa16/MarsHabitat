@@ -1768,7 +1768,7 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, pow
           ${mission.question ? `<p class="mission-q"><span class="mission-k">${T('Central question')}</span>${esc(mission.question)}</p>` : ''}
           ${mission.placeholder ? `<p class="note mission-tocome">${T('The sheet for this mission is still to come.')}</p>` : ''}
         </div>
-        <div class="mission-parts">${part('morning', 'Morning')}${part('afternoon', 'Afternoon')}${part('eva', 'EVA')}</div>
+        <div class="mission-parts">${part('morning', 'Morning')}${part('afternoon', 'Afternoon')}${part('eva', 'EVA')}${part('evening', 'Evening')}</div>
         <div class="mission-foot">
           ${community}
           <a class="glance-link mission-blog" href="#blog-science" title="${esc(T('Daily Mission Report'))}">
