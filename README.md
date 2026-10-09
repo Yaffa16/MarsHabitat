@@ -136,13 +136,17 @@ answers with the list and a word, never with the site's 404 page and its cookie 
 - `/screen/landing` — the landing page's first screen — the way to the habitat, with the
   latest exchanges and pictures around the line — with the ticker (its light/language
   switches and its links are not drawn)
-- `/screen/habitat` — the Habitat instruments, live, large, rolling by slowly from top to bottom
-- `/screen/board` — **the ground station's message board**, read-only, live; two columns (one
-  upright), each card's line into space on one line, nothing to tap. Every message sent from
+- `/screen/habitat` — the Habitat instruments, live, large, rolling by slowly from top to bottom,
+  **the trends graph at the foot** (9 October), rolling by with the rest
+- `/screen/board` — **the ground station's message board**, read-only, live; its messages are
+  **the Write page's notes** (9 October: "make the messages in /screen/board look like the message
+  board in the main site") — the callsign and the round trip's mark in the head, the message and
+  its tags, the crew's answer as a card of its own, the distance into space and the time sent at
+  the foot — set a fifth larger for a room, nothing to tap. Every message sent from
   the writing screen stands on it at once, under **BODENSTATION**, whatever its state — in
   transit, awaiting a reply, answered — headed by that name, before everyone's answered
   exchanges: the board is the station's own, as a visitor's board on the site is theirs, never
-  the computer's cookie's. The screen polls `/api/board?…&station=1` for the same; the public
+  the computer's cookie's. The screen polls `/api/board?…&station=1&wall=1` for the same; the public
   board shows a station message only once it is published, like any other
 - `/screen/write` — **the message-sending box, full screen**: the composer alone, for writing
   to the crew at the venue. Its operator is the ground station itself: the composer's head says
@@ -241,9 +245,9 @@ address.
 | Screen | Address | Shows |
 |---|---|---|
 | Landing page | `/screen/landing` | The station's first screen — the ticker across the top, then the page's words at the left and the way to the habitat at the right: the Earth, the line, the habitat far above, the latest exchanges and pictures either side of the line (*The landing page: four pages*). The one screen that keeps the ticker; the ticker's switches (light, language) and its links are not drawn |
-| Habitat | `/screen/habitat` | The Sensors panel of the dashboard, live, **in a vertical layout that rolls by slowly** (8 October: "a vertical layout with scrolling, to show all the content clearly and slowly — no overlap of text, no glitching"): the panel fills the screen and its head stands; its rows — the eight instruments (four to a row, two upright), the steps and the stores, the power with the volatile organic compounds and the astronauts (upright: the volatile organic compounds and the astronauts, then the power) — Karlsruhe stands among the instruments, after the light — the hardware's charts (two across, one upright) — stand at the size they are read at from across a room (each tile's name 30 px, its scale 18 px, the figures 76 px, its sign in a 62 px disc, the drawings large — the round ones 156 px, the wide ones 118 px tall) and roll by under the head at 14 px a second (half the 28 it rolled at first — 8 October: "half the speed"); at the top and at the end the panel rests eight seconds, then fades and starts again from the top (`public/screen-roll.js`; the sheet is moved by transform, its edge fading where it passes under the head and where more is to come; `data-speed` and `data-hold` on `#screen-roll` say otherwise). Laid out as on a screen 1920 wide (1080 upright) and zoomed to the screen's actual width (`data-fit="roll"`, `screen.js`), so every screen shows the same rows; the charts are drawn a third smaller than shown, so their lines and type come out larger (`hardware.js`); the page's own reloads wait for the moment the panel is faded out. The astronauts wander on their radar (`live.js`) |
-| Message Board | `/screen/board` | The ground station's board: every message sent from the writing screen as it stands — in transit, awaiting a reply, answered — under BODENSTATION, then the latest exchanges, newest first, three across (one upright) — **the latest that fit, nine at the most**, none cut and none coming and going (`fitScreen` in `board.js`) — live, a new exchange slides in as the board publishes it. Read-only: no composer, nothing to tap — a card's line into space stands on one line (*Diese Nachricht ist jetzt 20,02 Milliarden km von der Erde entfernt! · Gestartet vor 19 Stunden*) and opens no panel. The screen polls `/api/board?lang=<its language>&limit=9&station=1`, so the cards come back in the language the screen is in — the latest nine, the station's own among them |
-| Write to the crew | `/screen/write` | **The message-sending box, full screen** — the composer as the site has it (the crew's question of the day over it, the message box, the tags, the Transmit key), alone in the middle of the screen, for a touch screen in the square. **Every message sent from it is a new visitor's**: a callsign is minted for it alone (`src/lib/callsign.js`, `mint`; `POST /screen/write` in `server.js`), no cookie is set, so the next person at the screen starts afresh — no callsign carried over, no transit lock between them. Once a message is sent the crossing plays as on the site, then holds nine seconds on ARRIVED with the callsign named — *Your message went under the callsign DUST-465 — look for it on the Message Board once the crew have answered* — before the empty box comes back (`public/composer.js`, `data-hold`, `data-refresh`). The checks are the composer's (the channel open, the words within bounds); the hourly limit is the screen's own, per address, since all its messages come from one: `KIOSK_HOURLY_LIMIT`, sixty an hour. What is left half-written is cleared after three minutes with nobody touching the screen, and the page's own reloads wait while someone is writing or a message is crossing (`public/screen-write.js`). **The Transmit key answers one click, however it is pressed** (8 October: "sometimes the send button does not work — simplify the button event catching"): a finger, a mouse, a pen and the keyboard all end in the one click the key listens for (`public/composer.js`, `bindForms`, `send`); no check of the browser's stands between the press and the sending — a box with nothing in it says *Write something before transmitting.* in the device, where a browser's own bubble might never show on the screen; the key keeps the writing box's focus when pressed, so a touch keyboard does not fold away and move the key from under the finger; nothing is refitted while someone writes (`screen.js`); one sending at a time; and the key can never stay dead — a sending with no answer within fifteen seconds gives it back, the draft kept, with *Not sent — the station could not be reached. Try again.* (the message goes as a plain urlencoded post, the way the form itself would send it, by `XMLHttpRequest` with its own timeout) |
+| Habitat | `/screen/habitat` | The Sensors panel of the dashboard, live, **in a vertical layout that rolls by slowly** (8 October: "a vertical layout with scrolling, to show all the content clearly and slowly — no overlap of text, no glitching"): the panel fills the screen and its head stands; its rows — the eight instruments (four to a row, two upright), the steps and the stores, the power with the volatile organic compounds and the astronauts (upright: the volatile organic compounds and the astronauts, then the power) — Karlsruhe stands among the instruments, after the light — the hardware's charts (two across, one upright), and at the foot **the trends graph** (9 October: "in the screen/habitat, at the bottom add the trends graph — it scrolls as the rest of the content": the dashboard's, every trend on one graph, the fortnight along its foot, each line named at its end — inside the panel, `trendsInside` in `screens.js`, drawn the panel's width, its name as large as a tile's) — stand at the size they are read at from across a room (each tile's name 30 px, its scale 18 px, the figures 76 px, its sign in a 62 px disc, the drawings large — the round ones 156 px, the wide ones 118 px tall) and roll by under the head at 14 px a second (half the 28 it rolled at first — 8 October: "half the speed"); at the top and at the end the panel rests eight seconds, then fades and starts again from the top (`public/screen-roll.js`; the sheet is moved by transform, its edge fading where it passes under the head and where more is to come; `data-speed` and `data-hold` on `#screen-roll` say otherwise). Laid out as on a screen 1920 wide (1080 upright) and zoomed to the screen's actual width (`data-fit="roll"`, `screen.js`), so every screen shows the same rows; the charts are drawn a third smaller than shown, so their lines and type come out larger (`hardware.js`); the page's own reloads wait for the moment the panel is faded out. The astronauts wander on their radar (`live.js`) |
+| Message Board | `/screen/board` | The ground station's board: every message sent from the writing screen as it stands — in transit, awaiting a reply, answered — under BODENSTATION, then the latest exchanges, newest first, three across (one upright) — **the latest that fit, nine at the most**, none cut and none coming and going (`fitScreen` in `board.js`) — live, a new exchange slides in as the board publishes it. **Its messages look like the Write page's** (9 October): the notes of the site's Message Board (`noteCard`) — the callsign and the round trip's mark in the head, the message as the note's title with its tags, the crew's answer as a card of its own (who answered, where, when; a white card with the blue wash by day), the distance into space (*21.10 billion km*, ticking) and the time sent at the foot — each as tall as what it holds, set a fifth larger than on the site for a room (`screen.css`, *the boards' notes*). Read-only: no composer, nothing to tap — no tag narrows the board, no › to a journey, no hint. The screen polls `/api/board?lang=<its language>&limit=9&station=1&wall=1`, so the cards come back in the language the screen is in, as notes — the latest nine, the station's own among them. The ground station's board (`/screen/station`) carries the same notes |
+| Write to the crew | `/screen/write` | **The message-sending box, full screen** — the composer as the site has it (the crew's question of the day over it, the message box, the tags, the Transmit key), alone in the middle of the screen, for a touch screen in the square. **Every message sent from it is a new visitor's**: a callsign is minted for it alone (`src/lib/callsign.js`, `mint`; `POST /screen/write` in `server.js`), no cookie is set, so the next person at the screen starts afresh — no callsign carried over, no transit lock between them. Once a message is sent the crossing plays as on the site, then holds nine seconds on ARRIVED with the callsign named — *Your message went under the callsign DUST-465 — look for it on the Message Board once the crew have answered* — before the empty box comes back (`public/composer.js`, `data-hold`, `data-refresh`). **The box keeps one size all the while** (9 October: "does the size of the box change when the message has been delivered? Do not have this effect — keep the box the same size"): the crossing's view is shorter than the form and the day's question goes while a message crosses, so the box shrank as the message left, grew the moment it arrived — the screen's fitting gave the shorter piece a larger scale once the crossing stood still — and shrank back with the form; its height with the form is now held as its least through the crossing and the arrival, the dial in the middle of the room the form had (`public/screen-write.js`, `holdSize`), on the ground station's screen too. The checks are the composer's (the channel open, the words within bounds); the hourly limit is the screen's own, per address, since all its messages come from one: `KIOSK_HOURLY_LIMIT`, sixty an hour. What is left half-written is cleared after three minutes with nobody touching the screen, and the page's own reloads wait while someone is writing or a message is crossing (`public/screen-write.js`). **The Transmit key answers one click, however it is pressed** (8 October: "sometimes the send button does not work — simplify the button event catching"): a finger, a mouse, a pen and the keyboard all end in the one click the key listens for (`public/composer.js`, `bindForms`, `send`); no check of the browser's stands between the press and the sending — a box with nothing in it says *Write something before transmitting.* in the device, where a browser's own bubble might never show on the screen; the key keeps the writing box's focus when pressed, so a touch keyboard does not fold away and move the key from under the finger; nothing is refitted while someone writes (`screen.js`); one sending at a time; and the key can never stay dead — a sending with no answer within fifteen seconds gives it back, the draft kept, with *Not sent — the station could not be reached. Try again.* (the message goes as a plain urlencoded post, the way the form itself would send it, by `XMLHttpRequest` with its own timeout) |
 | Today's Mission | `/screen/mission` | The day's mission from the sheet: its question, Morning, Afternoon, EVA, the question for the community hour — **typed out letter by letter** as if someone were writing it (`public/typed.js`: a cursor after the last letter, a halt at a full stop; the site's dashboard shows the same panel still) — **and then the day, round and round** (8 October: "display the daily mission as it is shown; once it is fully shown wait ten seconds, then display what /screen/day shows; keep looping"): ten seconds after the mission stands whole, the Today screen's schedule, meal and crew moods take the screen for half a minute, then the mission is typed again from its first letter (`public/screen-turns.js`, told by typed.js — `mcs:typed` — when the mission is typed, `window.MCSTyped.restart` to type it again; `data-after` and `data-hold` on `#screen-turns`, ten and thirty seconds; where less motion is asked for the mission stands whole for half a minute before the day) |
 | Blogs | `/screen/blogs` | The three blogs **one at a time**, each filling the screen: its head stays, the day's post rolls by underneath from top to bottom at reading pace (`public/screen-blogs.js`, 28 px a second, five seconds' hold at the top and at the end; a post that fits is shown for fourteen), then the next blog takes the screen — the Commander Log, the Daily Mission Report, the Health Report, round and round. The text is set at the size of the panels' own notes (about 23 px on a 1080p screen). A blog with nothing written yet shows its note and passes the turn on; the latest earlier post is carried forward, as the dashboard does |
 | Today | `/screen/day` | Today's Schedule, Today's Meal and the Crew Moods, three in a row (one under the other upright) |
@@ -860,13 +864,21 @@ the container: add `- /path/to/your/mountpoint:/cloud:ro` under the station's `v
 `docker-compose.yml` and set `CLOUD_DIR=/cloud`. The two ways are the same protocol and the
 same account; WebDAV from the station itself needs nothing installed and is the simpler one.
 
-## One rhythm: every fifteen minutes
+## Two rhythms: five minutes and fifteen
 
-Every source the station pulls from is read **every fifteen minutes** by default: the external
-sensor node (`CRITICAL_POLL_MS=900000`), Home Assistant (`HA_POLL_MS=900000`) and the cloud
-folder (`CLOUD_CHECK_SECONDS=900`); open pages ask the station for new readings on the same
-beat. A value set in `.env` overrides its default. The station reads as often as this; the
-sensor node itself still transmits on its own cycle, so its new values arrive as it sends them.
+**Everything from Home Assistant is read every five minutes** by default — the habitat sensor
+(`HABITAT_POLL_MS=300000`) and the habitat's hardware, the oxygen, the air quality, the
+crickets' terrarium and the power channels (`HA_POLL_MS=300000`) — and **a reading counts as
+current for a quarter of an hour**, three reads: if nothing has arrived for fifteen minutes,
+the tiles say there is no current reading (the habitat's, the oxygen tile) and so does the
+pill on a hardware chart's line. (9 October: "make the habitat air sensor and everything else
+from Home Assistant pull every 5 minutes"; it was every minute for the sensor, every fifteen
+for the hardware.) The external sensor node (`CRITICAL_POLL_MS=900000`) and the cloud folder
+(`CLOUD_CHECK_SECONDS=900`) are read every fifteen minutes. Open pages ask the station for new
+readings on the same beats. A value set in `.env` overrides its default — **a `HABITAT_POLL_MS`
+or `HA_POLL_MS` line left in an older `.env` keeps its old rhythm**: remove it, or set it to
+`300000`. The sensor node itself still transmits on its own cycle, so its new values arrive as
+it sends them; its readings count as current for half an hour.
 
 ## The habitat sensor
 
@@ -889,7 +901,7 @@ channels, mapped in **`content/home-assistant.json`** under `habitat`:
 | `iaqc` | `sensor.m5_env_pro_env_pro_iaq_classification` | the verdict under the index, in the visitor's language |
 
 The mapping is hot-read: change an entity id in the file and the next poll follows. The
-station reads the sensor every **`HABITAT_POLL_MS`** (a minute by default) — the current
+station reads the sensor every **`HABITAT_POLL_MS`** (five minutes by default) — the current
 state of every entity, and Home Assistant's history since the newest reading the station
 holds, so every change between two polls is kept however often the sensor reports. What is
 stored is one row per minute at most, each a full snapshot of every channel (a channel that
@@ -897,8 +909,9 @@ did not change carries its last value forward; one Home Assistant reports `unava
 carries nothing), into the same table the external node wrote — so the ticker, the trend
 graph, the booklet, the archive, the PDF record and the readings ZIP all carry the sensor
 exactly as they carried the node, with the two new channels beside the old. A reading counts
-as current for five minutes (or three polls, whichever is longer); after that the tiles
-clear and say so, as they always have.
+as current for a quarter of an hour (three polls, or three of a longer `HABITAT_POLL_MS`; it
+was five minutes while the sensor was read every minute); after that the tiles clear and say
+so, as they always have — at that moment, not at the page's next read (`public/habitat.js`).
 
 The source is chosen by **`HABITAT_SOURCE`**: `auto` (the default) reads the sensor whenever
 `HA_HOST` and `HA_API_TOKEN` are set in `.env` and the `habitat` block is filled, and the
@@ -946,9 +959,10 @@ the axis was the run itself, and before the run thirteen days from the build.
 reset.
 
 **The tiles are today, or nothing.** They draw the readings since midnight at the venue, and
-only while the newest of them is less than thirty minutes old (the node transmits every
-twenty). If no reading has arrived today, or none in the last thirty minutes, the tiles are
-cleared — a dash in every figure, *No current reading* — and the panel says which it is and
+only while the newest of them is current — less than fifteen minutes old for the habitat
+sensor, read every five, and less than thirty for the node, which transmits every twenty
+(`staleMs` in `src/lib/critical.js`). If no reading has arrived today, or none in that time,
+the tiles are cleared — a dash in every figure, *No current reading* — and the panel says which it is and
 when the last reading was. An old number is never left standing as if it were live. The
 history stays on the trend graph, which is where history belongs.
 
@@ -1056,10 +1070,14 @@ Three things will change, and none of them is code:
   the id (without the `sensor.` prefix), the label the station shows, a fallback unit, a
   `kind` (`gauge` reads as it is; `counter` only ever rises, like an energy meter, and its
   tile also says what today has added) and the decimals to print. The file is re-read on
-  every poll, so adding a device is an edit and it is on the station within a minute — no
+  every poll, so adding a device is an edit and it is on the station within a poll — no
   restart, no redeploy.
-- **How often** — `HA_POLL_MS` (default 900000, fifteen minutes); `HA_POLL=false` holds the bridge off
-  without removing the credentials.
+- **How often** — `HA_POLL_MS` (default 300000, five minutes); `HA_POLL=false` holds the bridge off
+  without removing the credentials. A device's reading counts as current while it arrived in the
+  last fifteen minutes (three polls) — read, not changed: a steady oxygen level Home Assistant
+  keeps reporting stays current however long it has not moved. Older, the oxygen tile shows a
+  dash and *No current reading*, and the line's pill on its chart says *no current reading*
+  instead of a figure.
 
 The browser never talks to Home Assistant: the server polls, stores every state change in
 its own database (`ha_reading`), backfills the drawn day from HA's history endpoint after a
@@ -1752,7 +1770,7 @@ station's own code (`server.js`, at the head of the middleware).
   readings (some 200 kB, at the run's minute-by-minute pace) for that one line.
 - **The dashboard reads the readings once, then only what is new**: the month at first — the days
   before today one reading in ten minutes (`?thin=1`; the trend graph draws a day's mean from them,
-  and the habitat sensor, read every minute, would send the run as some three megabytes), today
+  and the habitat sensor, then read every minute, would send the run as some three megabytes), today
   every reading for the tiles —, then on each beat only what came since an hour before the newest
   reading it holds (`?since=`); the whole month again every hour, and at once when the record is
   reset or its first instant moves. A browser that kept the readings from an earlier visit (its
@@ -2345,7 +2363,9 @@ cool drafting paper by day, a warm graphite (`#2f2b29`) a good step lighter than
 so every message box stands apart from the page (October asked for the difference), the crew's answer a white
 card on it (`#1a1716` by night). In the top-right corner, where a folded corner was, **the message's round trip**
 (October asked for something visual that shows whether a message has been answered or not — and not a tick): a
-small orbit between Earth, a cobalt disc at the lower left, and Mars at the upper right. Answered — the loop is
+small orbit between Earth, a cobalt disc at the lower left, and Mars at the upper right — **round** (9 October: "a
+round orbit instead of elliptical": a circle through the two about the mark's middle, its halves the way out and the
+way back; until then a narrow ellipse along the diagonal). Answered — the loop is
 closed in Mars orange and Mars is lit: the signal went out and came back (titled *Answered by the crew*, in German
 and French too). Not yet — only the way out is drawn, dashed, with the message as a dot flying along it, over and
 over, six seconds a crossing, the way back a ghost and Mars a hollow ring; once the message has arrived the dot

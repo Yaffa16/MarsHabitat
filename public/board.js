@@ -176,7 +176,7 @@
   // the band at the foot of a note: its tags are keys that narrow the wall to that tag, and bring its chip into view
   cardsBox.addEventListener('click', function (e) {
     var key = e.target.closest ? e.target.closest('.note-tag[data-filter]') : null;
-    if (!key) return;
+    if (!key || document.body.classList.contains('screen')) return;           // (the screens' notes narrow nothing: nothing on a screen is tappable)
     e.preventDefault(); e.stopPropagation();
     var which = key.getAttribute('data-filter') || '';
     var chip = bar.querySelector('button[data-filter="' + which + '"]');

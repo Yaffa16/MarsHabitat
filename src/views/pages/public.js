@@ -364,6 +364,9 @@ function composerDevice(ctx, { inFlight = null, error = null, draft = '', kiosk 
  * everyone's published exchanges and this visitor's own messages, whatever
  * their state. Drawn on the mission page and on the messages page alike.
  */
+/* (The installation's boards — the board screen, the ground station's beside its composer — carry the Write page's
+   notes since 9 October: "make the messages in /screen/board look like the message board in the main site" — noteCard,
+   drawn for a room in screen.css; their poll asks /api/board for the same, &wall=1. Nothing on them is tappable.) */
 function boardScreen(ctx, { recent = [], poll = '/api/board' } = {}) {
   const T = ctx.T;
   // This visitor's messages that mission control has not yet published —
@@ -379,7 +382,7 @@ function boardScreen(ctx, { recent = [], poll = '/api/board' } = {}) {
             <h2>${T('Message Board')}</h2>
             <span class="live" id="feed-live" title="${esc(T('The board refreshes itself every few seconds'))}">${T('LIVE')}</span>
           </div>
-          <div class="scroller feed"><div class="cards" id="feed-cards">${boardCards(recent, T)}
+          <div class="scroller feed"><div class="cards" id="feed-cards">${boardCards(recent, T, { wall: true })}
             <div class="empty" id="feed-empty"${recent.length ? ' style="display:none"' : ''}
               data-none="${esc(T('Nothing transmitted yet — the first message could be yours'))}"
               data-filtered="${esc(T('No messages match this filter'))}">${
@@ -428,15 +431,16 @@ function dashboardPage(ctx, d) {
  * slowly on a phone (aura.css), where it is how the station says what is
  * happening now.
  */
-/* The habitat's latest reading, for the running line: its temperature, humidity and CO₂ while the newest reading is less
-   than half an hour old, "no current reading" else. Written into the page with it and sent again with the schedule
+/* The habitat's latest reading, for the running line: its temperature, humidity and CO₂ while the newest reading is
+   current — a quarter of an hour for the habitat sensor, half an hour for the node (critical.js, staleMs) —, "no current
+   reading" else. Written into the page with it and sent again with the schedule
    (/api/ticker, every five minutes), so no page fetches the day's readings for one line (8 October: "the website is very
    heavy to load" — it was a day of readings, some 200 kB, on every page). */
 function habReading(ctx) {
   const T = ctx.T || ((s) => s);
-  let last = null;
-  try { last = require('../../lib/critical').lastStored(); } catch { last = null; }
-  if (!last || !(Date.now() - last.t <= 30 * 60 * 1000)) return T('no current reading');
+  let last = null, stale = 15 * 60 * 1000;
+  try { const critical = require('../../lib/critical'); last = critical.lastStored(); stale = critical.staleMs(); } catch { last = null; }
+  if (!last || !(Date.now() - last.t <= stale)) return T('no current reading');
   const bits = [];
   if (last.temp != null && Number.isFinite(Number(last.temp))) bits.push(Number(last.temp).toFixed(1) + ' °C');
   if (last.hum != null && Number.isFinite(Number(last.hum))) bits.push(Math.round(Number(last.hum)) + ' %');
@@ -966,14 +970,18 @@ const sensorTile = (T, d) => `
  * The oxygen: the first of the instruments, read from the habitat's own hardware (the oxygen sensor in
  * content/home-assistant.json — an id or a name with O2 or oxygen in it) rather than the habitat sensor. Rendered here
  * and by /api/hardware, which hardware.js polls on the hardware's cycle, so the figure moves with the readings. Normal
- * air is 20.9 %; under 19.5 % or over 23.5 % the figure and the meter turn red. A reading older than half an hour is
- * not a current one: the tile shows a dash, as the habitat sensor's tiles do.
+ * air is 20.9 %; under 19.5 % or over 23.5 % the figure and the meter turn red. A reading that has not arrived again
+ * for a quarter of an hour (three of Home Assistant's five-minute polls; hw.staleMs, src/lib/home-assistant.js — it was
+ * half an hour) is not a current one: the tile shows a dash and "No current reading", as the habitat sensor's tiles do.
+ * Arrived means read: a steady oxygen level Home Assistant keeps reporting is current however long it has not moved.
  */
-const O2 = { lo: 16, hi: 24, safeLo: 19.5, safeHi: 23.5, staleMs: 30 * 60 * 1000 };
+const O2 = { lo: 16, hi: 24, safeLo: 19.5, safeHi: 23.5, staleMs: 15 * 60 * 1000 };
+/** A device's reading is current while it last arrived less than hw.staleMs ago — a closed record keeps its last. */
+const hwCurrent = (hw, s) => !!s && s.value != null && (hw.frozen || Date.now() - (s.seen || s.t || 0) <= (Number(hw.staleMs) > 0 ? Number(hw.staleMs) : O2.staleMs));
 const oxygenSensor = (hw) => (hw && (hw.sensors || []).find((x) => /(^|[^a-z])o2([^a-z]|$)|oxygen/i.test(`${x.id} ${x.label}`))) || null;
 function oxygenTileInner(hw, T = same) {
   const s = oxygenSensor(hw);
-  const v = s && s.value != null && s.t && (hw.frozen || Date.now() - s.t <= O2.staleMs) ? Number(s.value) : null;
+  const v = hwCurrent(hw, s) ? Number(s.value) : null;
   const hot = v != null && (v < O2.safeLo || v > O2.safeHi);
   const verdict = v == null ? T(s ? 'No current reading' : 'No oxygen sensor connected') : hot ? T(v < O2.safeLo ? 'Low oxygen' : 'High oxygen') : T('Normal air');
   return `${sensorIcon('o2')}
@@ -1159,8 +1167,13 @@ function hwChart(hw, group, members, tz, T = same, W = HW_W, H = HW_H) {
   // always reads"). Pills that would overlap are moved apart.
   const pillName = (l) => String(l).split(' · ')[0];
   const tagH = 26;
+  // A line whose reading has not arrived for a quarter of an hour (hwCurrent) says so in its pill instead of a figure
+  // (9 October: "if nothing arrives for 15 minutes, … say there is no current reading").
   const pills = group.key === 'power' ? [] : series.map((r) => {
-    const text = `${series.length > 1 ? pillName(r.s.label) + ' ' : ''}${hwNum(r.s.kind === 'counter' && r.s.today != null ? r.s.today : r.s.value, r.s.decimals)}${r.s.unit ? ' ' + r.s.unit : ''}`;
+    const reading = hwCurrent(hw, r.s)
+      ? `${hwNum(r.s.kind === 'counter' && r.s.today != null ? r.s.today : r.s.value, r.s.decimals)}${r.s.unit ? ' ' + r.s.unit : ''}`
+      : T('no current reading');
+    const text = `${series.length > 1 ? pillName(r.s.label) + ' ' : ''}${reading}`;
     // a pill wide and tall enough to hold the figure (the type is larger than the plot's own: aura.css, .hw-tag), over
     // the line's end, or under it where the line runs near the top of the plot (the clock of the moment stands there)
     const tagW = 20 + text.length * 8.4;
@@ -2041,11 +2054,13 @@ function noteCard(m, { fresh, tags, st, sent, replied, T }) {
   // Not yet — the way out alone, dashed, with the message as a dot flying along it (the way back a ghost); once it has
   // arrived the dot rests inside Mars, hollow until the crew answer, and pulses (aura.css, .note-mark). Its words are
   // the state's own, as a title.
+  // The orbit is round (9 October: "make the message sent and received visual a round orbit instead of elliptical"):
+  // a circle through Earth and Mars about the middle of the mark — the two halves of it the way out and the way back.
   const planets = '<circle class="nm-earth" cx="7" cy="25" r="3.6"/><circle class="nm-mars" cx="25" cy="7" r="4.2"/>';
   const flying = m.state === 'TRANSMITTED' || m.state === 'IN_TRANSIT';
   const mark = m.response_body
-    ? `<span class="note-mark is-answered" title="${esc(T('Answered by the crew'))}"><svg viewBox="0 0 32 32" aria-hidden="true"><ellipse class="nm-loop" cx="16" cy="16" rx="12.7" ry="7" transform="rotate(-45 16 16)"/>${planets}</svg></span>`
-    : `<span class="note-mark is-waiting${flying ? '' : ' is-arrived'}" title="${esc(T(st.label))}"><svg viewBox="0 0 32 32" aria-hidden="true"><path class="nm-back" d="M25 7A12.7 7 -45 0 1 7 25"/><path class="nm-out" d="M7 25A12.7 7 -45 0 1 25 7"/>${planets}<circle class="nm-ship" r="2.2"/></svg></span>`;
+    ? `<span class="note-mark is-answered" title="${esc(T('Answered by the crew'))}"><svg viewBox="0 0 32 32" aria-hidden="true"><circle class="nm-loop" cx="16" cy="16" r="12.73"/>${planets}</svg></span>`
+    : `<span class="note-mark is-waiting${flying ? '' : ' is-arrived'}" title="${esc(T(st.label))}"><svg viewBox="0 0 32 32" aria-hidden="true"><path class="nm-back" d="M25 7A12.73 12.73 0 0 1 7 25"/><path class="nm-out" d="M7 25A12.73 12.73 0 0 1 25 7"/>${planets}<circle class="nm-ship" r="2.2"/></svg></span>`;
   return `<article class="card xc note${fresh ? ' fresh' : ''}${m.response_body ? ' has-reply' : ''}" id="m${m.id}"
       data-tags="${esc(tags.join(','))}"${m.mine ? ' data-mine="1"' : ''}${
       m.mine && m.pending ? ' data-pending="1"' : ''}>

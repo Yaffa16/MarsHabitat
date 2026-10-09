@@ -195,6 +195,15 @@ body.screen .screen-roll #habitat .hw-legend li i { width: 12px; height: 12px; }
 body.screen .screen-roll #habitat .hw-name { font-size: 19px; }
 body.screen .screen-roll #habitat .hw-range { font-size: 14px; }
 body.screen .screen-roll #habitat .hw-ax { font-size: 12.5px; }                                   /* in the drawing's units, shown a third larger */
+/* the trends at the foot, under the hardware's charts (9 October: "in the screen/habitat, at the bottom add the trends
+   graph; it scrolls as the rest of the content" — screens.js, trendsInside): the dashboard's graph, every trend on one
+   scale from 0 to 100 %, the fortnight along its foot, each line named at its right-hand end — sunk like the charts
+   above it, the panel's width, the drawing (habitat.js: 1200 wide) scaled to it; its name as large as a tile's */
+body.screen .screen-roll #habitat .hbt-trends-in { margin-top: 30px; padding: 0; border: 0; }
+body.screen .screen-roll #habitat .hbt-trends-in .hbt-sec { display: flex; align-items: baseline; margin: 0 0 16px; padding: 0; }
+body.screen .screen-roll #habitat .hbt-trends-in .hbt-sec h3 { margin: 0; font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.15; letter-spacing: -.01em; color: var(--ink); text-transform: none; }
+body.screen .screen-roll #habitat .hbt-trends-in .tchart { padding: 22px 24px 20px; border-radius: 26px; box-shadow: var(--neu-in-sm, none); }
+body.screen .screen-roll #habitat .hbt-trends-in .tchart-svg { width: 100%; height: auto; max-height: none; }
 /* upright: the instruments two to a row (Karlsruhe beside the light); the steps the panel's width, then the power
    generated and the stores; the
    volatile organic compounds beside the astronauts, then the power the panel's width, right over its chart; the charts one
@@ -254,16 +263,40 @@ body.screen.screen-board .cards { display: grid; grid-template-columns: repeat(3
 }
 body.screen.screen-board .feed-filter, body.screen.screen-board .feed-more { display: none !important; }
 body.screen.screen-board .board-head h2 { font-size: 26px; }
-body.screen.screen-board .card.xc .card-body { font-size: 19px; }
-body.screen.screen-board .card-reply p { font-size: 21px; }
+body.screen.screen-board .card.xc:not(.note) .card-body { font-size: 19px; }
+body.screen.screen-board .card.xc:not(.note) .card-reply p { font-size: 21px; }
 /* the card's line into space on one line — the distance alone (no longer when it was launched: 8 October) — nothing
    to tap (board.js opens no panel on a screen, and the Follow its journey key is not drawn) */
-body.screen .card.xc .card-space { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; font-size: 15px; cursor: default; }
-body.screen .card.xc .card-space-more { display: contents; }
+body.screen .card.xc:not(.note) .card-space { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; font-size: 15px; cursor: default; }
+body.screen .card.xc:not(.note) .card-space-more { display: contents; }
 @media (orientation: landscape) and (max-width: 1500px) {
-  body.screen .card.xc .card-space { font-size: 13px; }                                              /* a smaller screen: still one line */
+  body.screen .card.xc:not(.note) .card-space { font-size: 13px; }                                   /* a smaller screen: still one line */
 }
 body.screen .card.xc:has(.card-space[data-launched]) { cursor: default; }
+/* the boards' notes — the board screen's and the ground station's (9 October: "make the messages in /screen/board look
+   like the message board in the main site"): the Write page's notes as they are (aura.css, neu.css — a white card by day,
+   its answer in the blue wash) — the callsign and the round trip's mark in the head, the message as the note's title and
+   its tags under it, the crew's answer as a card of its own with who answered, where and when, the distance into space
+   and the time it was sent at the foot — set a fifth larger, for a room. Each row starts level and each note is as tall
+   as what it holds, as on the Write page. Nothing on them is tappable: no tag narrows the board, no › leads to a journey,
+   no hint comes up. */
+body.screen.screen-board .board .cards, body.screen.screen-station .board .cards { align-items: start; }
+body.screen .board .card.note { pointer-events: none; cursor: default; }
+body.screen .board .card.note .note-head { padding: 14px 54px 14px 19px; }
+body.screen .board .card.note .note-who .cs { font-size: 16px; }
+body.screen .board .card.note .note-mark { top: 7px; right: 7px; width: 38px; height: 38px; }
+body.screen .board .card.note .note-main { gap: 12px; padding: 17px 19px; }
+body.screen .board .card.note .card-body.note-title { font-size: 19.5px; }
+body.screen .board .card.note .note-tag { padding: 5px 11px; border-radius: 8px; font-size: 15px; }
+body.screen .board .card.note .card-reply.note-answer { padding: 12px 14px 13px; border-radius: 14px; }
+body.screen .board .card.note .note-ahead { margin-bottom: 8px; }
+body.screen .board .card.note .note-awho .cs { font-size: 15.5px; }
+body.screen .board .card.note .note-awho .note-role, body.screen .board .card.note .note-awhen { font-size: 14px; }
+body.screen .board .card.note .card-reply p { font-size: 17.5px; }
+body.screen .board .card.note .card-state { font-size: 12px; }
+body.screen .board .card.note .note-foot { padding: 12px 19px; font-size: 14.5px; }
+body.screen .board .card.note .card-space-compact { font-size: 14.5px; }
+body.screen .board .card.note .card-space-go { display: none; }
 @media (max-width: 700px) {
   body.screen.screen-board .cards { grid-template-columns: minmax(0, 1fr); }
 }

@@ -305,7 +305,7 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
     const critical = require('../../lib/critical');
     const last = critical.rows(2).pop();
     if (last) {
-      const snap = { staleMs: critical.source() === 'home-assistant' ? Math.max(5 * 60 * 1000, 3 * critical.CFG.habitatPollMs) : 30 * 60 * 1000 };
+      const snap = { staleMs: critical.staleMs() };                       // a quarter of an hour for the habitat sensor
       const at = (() => { try { return new Intl.DateTimeFormat('en-GB', { timeZone: m.timezone, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(last.t)); } catch { return ''; } })();
       if (Date.now() - last.t <= snap.staleMs) {
         const bits = [];                                                 // CO₂, temperature, humidity — and nothing else (October's text sheet)

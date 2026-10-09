@@ -855,16 +855,16 @@ grep -q ':root { --note-bg: #fbf6ee; --note-edge: #e4dac8;' public/aura.css && g
 # message has been answered or not" — and not a tick): Earth, cobalt, at the lower left, Mars at the upper right —
 # answered, the loop closed in Mars orange and Mars lit; still out, the way out alone, dashed, the message a dot flying
 # along it, Mars hollow; arrived, the dot inside Mars, pulsing; the viewer's own notes keep a Mars edge at the left
-echo "$BRD" | grep -q '<span class="note-mark is-answered" title="Answered by the crew"><svg viewBox="0 0 32 32" aria-hidden="true"><ellipse class="nm-loop" cx="16" cy="16" rx="12.7" ry="7" transform="rotate(-45 16 16)"/><circle class="nm-earth" cx="7" cy="25" r="3.6"/><circle class="nm-mars" cx="25" cy="7" r="4.2"/></svg></span>' \
+echo "$BRD" | grep -q '<span class="note-mark is-answered" title="Answered by the crew"><svg viewBox="0 0 32 32" aria-hidden="true"><circle class="nm-loop" cx="16" cy="16" r="12.73"/><circle class="nm-earth" cx="7" cy="25" r="3.6"/><circle class="nm-mars" cx="25" cy="7" r="4.2"/></svg></span>' \
   && V9=/tmp/visitor9.jar && rm -f $V9 && curl -s -c $V9 -X POST --data-urlencode "body=Is my signal still out there?" -o /dev/null $B/communicate \
-  && curl -s -b $V9 $B/write | grep -q '<span class="note-mark is-waiting" title="IN TRANSIT"><svg viewBox="0 0 32 32" aria-hidden="true"><path class="nm-back" d="M25 7A12.7 7 -45 0 1 7 25"/><path class="nm-out" d="M7 25A12.7 7 -45 0 1 25 7"/><circle class="nm-earth" cx="7" cy="25" r="3.6"/><circle class="nm-mars" cx="25" cy="7" r="4.2"/><circle class="nm-ship" r="2.2"/></svg></span>' \
+  && curl -s -b $V9 $B/write | grep -q '<span class="note-mark is-waiting" title="IN TRANSIT"><svg viewBox="0 0 32 32" aria-hidden="true"><path class="nm-back" d="M25 7A12.73 12.73 0 0 1 7 25"/><path class="nm-out" d="M7 25A12.73 12.73 0 0 1 25 7"/><circle class="nm-earth" cx="7" cy="25" r="3.6"/><circle class="nm-mars" cx="25" cy="7" r="4.2"/><circle class="nm-ship" r="2.2"/></svg></span>' \
   && sleep 4 && curl -s -b $V9 $B/write | grep -q '<span class="note-mark is-waiting is-arrived" title="AWAITING REPLY"><svg' \
   && curl -s -H "Cookie: mcs_lang=de" $B/write | grep -q 'class="note-mark is-answered" title="Von der Crew beantwortet"' && curl -s -H "Cookie: mcs_lang=fr" $B/write | grep -q 'title="Répondu par l’équipage"' \
   && ! grep -q 'body.landing .card.note::before\|body.landing .card.note::after\|body.landing .card.note\[data-mine\]::before\|nm-tick\|nm-disc' public/aura.css && ! grep -q 'nm-tick\|nm-arc' src/views/pages/public.js \
   && grep -q 'body.landing .card.note .note-mark { position: absolute; top: 6px; right: 6px; width: 32px; height: 32px; z-index: 2; color: var(--mars); pointer-events: none; }' public/aura.css \
   && grep -q 'body.landing .card.note .note-mark .nm-earth { fill: var(--cobalt); }' public/aura.css && grep -q 'body.landing .card.note .note-mark .nm-loop { stroke: var(--mars); stroke-width: 1.8; }' public/aura.css && grep -q 'body.landing .card.note .note-mark .nm-mars { fill: var(--mars); }' public/aura.css \
   && grep -q 'body.landing .card.note .note-mark.is-waiting .nm-out { stroke: currentColor; stroke-width: 1.8; stroke-dasharray: 2.8 2.6; }' public/aura.css && grep -q 'body.landing .card.note .note-mark.is-waiting .nm-mars { fill: none; stroke: var(--mars); stroke-width: 1.6; }' public/aura.css \
-  && grep -q "body.landing .card.note .note-mark.is-waiting .nm-ship { display: block; fill: currentColor; offset-path: path('M7 25A12.7 7 -45 0 1 25 7'); animation: nm-fly 6s linear infinite; }" public/aura.css \
+  && grep -q "body.landing .card.note .note-mark.is-waiting .nm-ship { display: block; fill: currentColor; offset-path: path('M7 25A12.73 12.73 0 0 1 25 7'); animation: nm-fly 6s linear infinite; }" public/aura.css \
   && grep -q 'body.landing .card.note .note-mark.is-arrived .nm-ship { animation: none; offset-distance: 100%; fill: var(--mars); }' public/aura.css && grep -q 'body.landing .card.note .note-mark.is-arrived .nm-mars { transform-origin: 25px 7px; animation: nm-pulse 2.8s ease-in-out infinite; }' public/aura.css \
   && grep -q '@keyframes nm-fly { from { offset-distance: 0%; } to { offset-distance: 100%; } }' public/aura.css && grep -q 'body.landing .card.note .note-mark.is-waiting .nm-ship { animation: none; offset-distance: 50%; }' public/aura.css \
   && grep -q 'body.landing .board .card.note\[data-mine\] { padding-left: 0; box-shadow: inset 3px 0 0 var(--mars), var(--note-shadow); }' public/aura.css \
@@ -2050,7 +2050,7 @@ STN=$(curl -s -b $SK "$B/screen/station?lang=en")
 echo "$STN" | grep -q 'class="landing inner screen screen-station" data-screen="station" data-fit="clip"' && echo "$STN" | grep -q '<div class="screen-station">' \
   && echo "$STN" | grep -q '<div class="screen-write station-write"><section class="device composer-device"' && echo "$STN" | grep -q 'class="dev-chip"[^>]*>BODENSTATION</span>' \
   && echo "$STN" | grep -q 'action="/screen/write?lang=en"' && echo "$STN" | grep -q 'data-refresh="/screen/write/composer?lang=en"' \
-  && echo "$STN" | grep -q '<div class="station-board"><div class="feed-wrap"><div class="feed-scroll" id="feed" data-poll="/api/board?lang=en&amp;limit=9&amp;station=1"' \
+  && echo "$STN" | grep -q '<div class="station-board"><div class="feed-wrap"><div class="feed-scroll" id="feed" data-poll="/api/board?lang=en&amp;limit=9&amp;station=1&amp;wall=1"' \
   && ! echo "$STN" | grep -q 'id="consent"\|consent-veil' && echo "$STN" | grep -q '/composer.js?v=' && echo "$STN" | grep -q '/screen-write.js?v=' && echo "$STN" | grep -q '/board.js?v=' \
   && curl -s -b $SK "$B/screens?lang=en" | grep -q '<a href="/screen/station"><b>Ground station</b><span>/screen/station</span></a>' && curl -s -b $SK $B/screens | grep -q '<a href="/screen/station"><b>Bodenstation</b>' \
   && grep -q 'body.screen.screen-station .screen-station { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 22px; height: 100%; min-height: 0; }' public/screen.css \
@@ -2072,11 +2072,11 @@ grep -q "font-size: clamp(20px, 1.2vw, 24px)" public/screen.css && ok "its text 
 grep -q 'body.screen .screen-blogs .blogp .dpanel-body > .empty { position: absolute; inset: 22px 40px 40px; min-height: 0; display: block; text-align: left;' public/screen.css \
   && ok "a blog with nothing written stands at the top left, across the width, like a post would" || bad "the empty blog note is not left-aligned across the width"
 # the board screen: its cards come back from the poll in the screen's own language, the latest nine; nothing on it is tappable
-echo "$SCR" | grep -q 'data-poll="/api/board?lang=de&amp;limit=9&amp;station=1"' && curl -s -b $SK "$B/screen/board?lang=en" | grep -q 'data-poll="/api/board?lang=en&amp;limit=9&amp;station=1"' \
+echo "$SCR" | grep -q 'data-poll="/api/board?lang=de&amp;limit=9&amp;station=1&amp;wall=1"' && curl -s -b $SK "$B/screen/board?lang=en" | grep -q 'data-poll="/api/board?lang=en&amp;limit=9&amp;station=1&amp;wall=1"' \
   && ok "the board screen polls /api/board for its own language and its nine cards, as the ground station" || bad "the board screen polls the visitor's board"
 curl -s "$B/api/board?lang=de&limit=400" | grep -q 'Diese Nachricht ist jetzt' && curl -s "$B/api/board?lang=fr" | grep -q 'Ce message est maintenant' && ! curl -s "$B/api/board?lang=de" | grep -q 'This message is currently' \
   && ok "/api/board answers in the language asked for, so the ticking words and the cards' words agree" || bad "/api/board ignores ?lang"
-grep -q "if (document.body.classList.contains('screen')) return;" public/board.js && grep -q 'body.screen .card.xc .card-space { flex-direction: row; flex-wrap: wrap;' public/screen.css && grep -q 'body.screen .card.xc .card-space-more { display: contents; }' public/screen.css \
+grep -q "if (document.body.classList.contains('screen')) return;" public/board.js && grep -q 'body.screen .card.xc:not(.note) .card-space { flex-direction: row; flex-wrap: wrap;' public/screen.css && grep -q 'body.screen .card.xc:not(.note) .card-space-more { display: contents; }' public/screen.css \
   && ok "on the board screen the distance and the launch time share one line, and a tap opens nothing" || bad "the board screen's space line is not one line, or a tap still opens the panel"
 curl -s -b $SK $B/screen/mission | grep -q 'id="mission-today"' && curl -s -b $SK $B/screen/trends | grep -q 'id="trends"' && curl -s -b $SK $B/screen/habitat | grep -q 'id="hbt-bento"' && ok "the mission, the trends and the habitat screens carry the dashboard's own panels" || bad "a screen lacks its panel"
 curl -s "$B/api/cloud?flat=1" | node -e 'let s="";process.stdin.on("data",(c)=>s+=c).on("end",()=>{const j=JSON.parse(s); process.exit(!j.configured || (j.html.indexOf("cloud-flat")>-1 && j.html.indexOf("cloud-day-head")<0) ? 0 : 1);});' \
@@ -2112,7 +2112,7 @@ curl -s -b $A "$B/control?show=pending" | grep -q '<span class="cs">BODENSTATION
 # its state, under the station's name, in the one sequence with everyone's exchanges (no group of its own at the top, no
 # headings) — the public board (a cookie's, or nobody's) shows nothing of it until it is published
 BD=$(curl -s -b $SK "$B/screen/board?lang=en")
-echo "$BD" | grep -q 'data-poll="/api/board?lang=en&amp;limit=9&amp;station=1"' && ! echo "$BD" | grep -q 'board-group' \
+echo "$BD" | grep -q 'data-poll="/api/board?lang=en&amp;limit=9&amp;station=1&amp;wall=1"' && ! echo "$BD" | grep -q 'board-group' \
   && echo "$BD" | grep -q 'First from the square' && echo "$BD" | grep -q 'Second from the square' && [ "$(echo "$BD" | grep -o '<span class="cs">BODENSTATION</span>' | wc -l)" -ge 2 ] \
   && curl -s "$B/api/board?lang=en&limit=9&station=1" | grep -q 'First from the square' && ! curl -s "$B/api/board?lang=en&limit=400" | grep -q 'First from the square' && ! curl -s $B/write | grep -q 'First from the square' \
   && ok "the board screen shows the writing screen's messages at once, unanswered, as BODENSTATION among the rest — no group of them at the top — and polls as the station; the public board shows them only once published" || bad "the board screen is not the ground station's board"
@@ -2121,12 +2121,46 @@ echo "$BD" | grep -q 'data-poll="/api/board?lang=en&amp;limit=9&amp;station=1"' 
 echo "$BD" | node -e '
 let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
   const a = s.indexOf("id=\"feed-cards\""), b = s.indexOf("id=\"feed-empty\"", a);
-  const cards = [...s.slice(a, b).matchAll(/<article class="card xc[^"]*" id="m(\d+)"[\s\S]*?<time datetime="([^"]+)"/g)].map((m) => ({ id: Number(m[1]), at: Date.parse(m[2]) }));
+  const cards = [...s.slice(a, b).matchAll(/<article class="card xc[^"]*" id="m(\d+)"[\s\S]*?<time class="note-when" datetime="([^"]+)"/g)].map((m) => ({ id: Number(m[1]), at: Date.parse(m[2]) }));
   const ok = cards.length >= 3 && cards.every((c, i) => !i || cards[i - 1].at >= c.at) && s.slice(a, b).indexOf("Second from the square") < s.slice(a, b).indexOf("First from the square")
     && cards.some((c) => c.at < cards[0].at);
   if (!ok) console.error(JSON.stringify(cards));
   process.exit(ok ? 0 : 1);
 });' && ok "the board screen's cards stand in one sequence by the moment sent, the newest first — the second message from the square before the first, the older exchanges after them" || bad "the board screen's cards are out of sequence"
+# 9 October: "make the messages in /screen/board look like the message board in the main site" — the Write page's notes
+# (noteCard) on the board screen and the ground station's, asked for with &wall=1, set a fifth larger for a room, each
+# as tall as what it holds, nothing on them tappable; and the round trip's mark is a round orbit ("a round orbit instead
+# of elliptical")
+STN9=$(curl -s -b $SK "$B/screen/station?lang=en")
+echo "$BD" | grep -q '<article class="card xc note' && ! echo "$BD" | grep -q '<div class="card-post">' && echo "$BD" | grep -q '<header class="note-head">' && echo "$BD" | grep -q '<footer class="note-foot">' \
+  && echo "$STN9" | grep -q '<article class="card xc note' && echo "$STN9" | grep -q 'data-poll="/api/board?lang=en&amp;limit=9&amp;station=1&amp;wall=1"' \
+  && curl -s "$B/api/board?lang=en&limit=9&station=1&wall=1" | grep -q '<article class=\\"card xc note' \
+  && grep -qF "body.screen.screen-board .board .cards, body.screen.screen-station .board .cards { align-items: start; }" public/screen.css \
+  && grep -qF "body.screen .board .card.note { pointer-events: none; cursor: default; }" public/screen.css && grep -qF "body.screen .board .card.note .card-body.note-title { font-size: 19.5px; }" public/screen.css \
+  && grep -qF "body.screen .board .card.note .card-reply p { font-size: 17.5px; }" public/screen.css && grep -qF "body.screen .board .card.note .card-space-go { display: none; }" public/screen.css \
+  && grep -qF "if (!key || document.body.classList.contains('screen')) return;" public/board.js \
+  && grep -qF '<circle class="nm-loop" cx="16" cy="16" r="12.73"/>' src/views/pages/public.js && ! grep -q '<ellipse class="nm-loop"' src/views/pages/public.js \
+  && grep -qF '<path class="nm-back" d="M25 7A12.73 12.73 0 0 1 7 25"/><path class="nm-out" d="M7 25A12.73 12.73 0 0 1 25 7"/>' src/views/pages/public.js \
+  && ok "the board screen and the ground station's board carry the Write page's notes — the callsign and the round orbit in the head, the message and its tags, the answer as a card, the distance and the time at the foot — larger for a room, nothing tappable" || bad "the screens' boards do not look like the Write page's board"
+# 9 October: "in the screen/habitat, at the bottom add the trends graph — it scrolls as the rest of the content": the
+# dashboard's trends inside the rolled panel's body, after the hardware's charts, drawn the panel's width
+HABT=$(curl -s -b $SK "$B/screen/habitat?lang=en")
+echo "$HABT" | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
+  const roll = s.indexOf("id=\"screen-roll\""), body = s.indexOf("class=\"dpanel-body", roll), t = s.indexOf("<div class=\"hbt-trends-in\" id=\"trends\">", body);
+  const end = s.indexOf("</main>", t), bento = s.indexOf("id=\"hbt-bento\"", body);
+  const ok = roll > 0 && body > roll && bento > body && t > bento && s.indexOf("id=\"hbt-tcharts\"", t) > t && s.indexOf("id=\"hbt-tcharts\"", t) < end
+    && (s.match(/id="hbt-trends"/g) || []).length === 1 && (s.match(/<section class="dpanel/g) || []).length === 1;
+  process.exit(ok ? 0 : 1);
+});' && grep -qF "const p = P.dashboardPanels(ctx, d, { trendsInside: true });" src/views/pages/screens.js \
+  && grep -qF "body.screen .screen-roll #habitat .hbt-trends-in .tchart-svg { width: 100%; height: auto; max-height: none; }" public/screen.css \
+  && grep -qF "body.screen .screen-roll #habitat .hbt-trends-in .hbt-sec h3 { margin: 0; font-family: var(--display); font-size: 30px;" public/screen.css \
+  && ok "the Habitat screen ends with the trends graph, inside the panel that rolls — after the instruments and the hardware's charts — drawn the panel's width" || bad "the Habitat screen has no trends graph at its foot"
+# 9 October: "in the screen/write, does the size of the box change when the message has been delivered? Do not have this
+# effect — keep the box the same size": the box's height with the form is held through the crossing and the arrival
+grep -qF "function holdSize() {" public/screen-write.js && grep -qF "if (device.classList.contains('sending') || !box()) return;" public/screen-write.js \
+  && grep -qF "device.style.minHeight = h > 0 ? h + 'px' : was;" public/screen-write.js && grep -qF "if (body) new MutationObserver(soon).observe(body, { childList: true });" public/screen-write.js \
+  && ok "the writing screen's box keeps the height it has with the form through the crossing and the arrival, so the screen's fitting never rescales it" || bad "the writing screen's box changes size as a message crosses"
 curl -s -b $SK "$B/screen/write/composer?lang=fr" | grep -q 'action="/screen/write?lang=fr"' && curl -s -b $SK "$B/screen/write/composer?lang=fr" | grep -q 'placeholder="Écrivez à l’équipage."' && ! curl -s -b $SK "$B/screen/write/composer?lang=fr" | grep -q 'transit-block' \
   && [ "$(curl -s -b $SK -o /dev/null -w '%{http_code}' -d "body=Plain from the square" "$B/screen/write?lang=en")" = "200" ] \
   && [ "$(curl -s -b $SK -H 'X-Requested-With: fetch' -d "body=x" "$B/screen/write?lang=en" | grep -c 'Write something before transmitting')" = "1" ] \
@@ -3079,8 +3113,31 @@ process.exit(c.anchorMs() === c.floorMs() && c.anchorMs() <= Date.now() ? 0 : 1)
 ' && ok "the day the readings were started again is kept — after a build, the trend axis starts there before the run" || bad "no readings anchor"
 grep -q "data-axis-start" public/habitat.js && grep -qF "p = sol ? (s.planned || {})[String(sol)] : undefined;" public/habitat.js && ok "the plan lines stand on the run's days alone, by their SOL — none on the days before or after it" || bad "the plan is not laid on the run's days by their SOL"
 grep -q "No current reading from the sensor node" public/habitat.js && grep -q "carries no readings for node" public/habitat.js && ok "the habitat panel explains empty tiles instead of showing dashes" || bad "no explanation for empty tiles"
-grep -q "function clearTiles" public/habitat.js && grep -q "!isCurrent()" public/habitat.js && grep -q "staleAfterMs: 30 \* 60 \* 1000" public/habitat.js && grep -q "newest >= dayStart()" public/habitat.js \
-  && ok "the tiles show today's readings only while the newest is under thirty minutes old — otherwise nothing" || bad "stale or yesterday's readings would be shown as live"
+grep -q "function clearTiles" public/habitat.js && grep -q "!isCurrent()" public/habitat.js && grep -q "staleAfterMs: 15 \* 60 \* 1000" public/habitat.js && grep -q "newest >= dayStart()" public/habitat.js \
+  && grep -q "else if (state.live && !isCurrent()) render();" public/habitat.js \
+  && ok "the tiles show today's readings only while the newest is current — and empty the moment it is not, not at the next read" || bad "stale or yesterday's readings would be shown as live"
+# 9 October: "make the habitat air sensor and everything else from Home Assistant pull every 5 minutes; if nothing arrives
+# for 15 minutes, the tiles say there is no current reading"
+grep -qF "habitatPollMs: Math.max(15000, Number(process.env.HABITAT_POLL_MS || 5 * 60 * 1000))," src/lib/critical.js \
+  && grep -qF "pollMs: Math.max(15000, Number(process.env.HA_POLL_MS || 5 * 60 * 1000))," src/lib/home-assistant.js \
+  && grep -qF "return src === 'home-assistant' ? Math.max(15 * 60 * 1000, 3 * CFG.habitatPollMs) : 30 * 60 * 1000;" src/lib/critical.js \
+  && grep -qF "const staleMs = () => Math.max(15 * 60 * 1000, 3 * CFG.pollMs);" src/lib/home-assistant.js \
+  && grep -q "^# HABITAT_POLL_MS=300000$" .env.example && grep -q "^# HA_POLL_MS=300000$" .env.example \
+  && grep -qF "const snap = { staleMs: critical.staleMs() };" src/views/pages/dome.js && ! grep -q "30 \* 60 \* 1000" src/views/pages/public.js \
+  && ok "Home Assistant — the habitat sensor and every device — is read every five minutes, and a reading is current for a quarter of an hour" || bad "the Home Assistant rhythm is not five minutes and fifteen"
+DATA_DIR=$(mktemp -d) node -e '
+const P = require("./src/views/pages/public"), ha = require("./src/lib/home-assistant");
+const now = Date.now(), day = now - (now % 86400000), hr = 3600000;
+const mk = (seen, t) => ({ configured: true, frozen: false, pollMs: 300000, staleMs: 900000, since: day, now: day + 24 * hr, liveNow: now, sensors: [
+  { id: "environment_o2_oxygen", label: "O₂ · oxygen", kind: "gauge", decimals: 1, unit: "%", value: 20.8, state: "20.8", t, seen, points: [[day + hr, 20.9], [day + 2 * hr, 20.8]] },
+  { id: "m5_temperatur_cricket_temperature", label: "Crickets · temperature", kind: "gauge", decimals: 1, unit: "°C", value: 24.2, state: "24.2", t, seen, points: [[day + hr, 24], [day + 2 * hr, 24.2]] }] });
+const pills = (h) => (h.match(/<g class="hw-tag">[\s\S]*?<\/g>/g) || []).map((g) => g.replace(/<[^>]+>/g, "").trim()).join("|");
+const steady = mk(now - 60000, now - 5 * hr), quiet = mk(now - 16 * 60000, now - 5 * hr);
+const ok = /id="o2Val">20\.8/.test(P.oxygenTileInner(steady)) && /id="o2Val">—/.test(P.oxygenTileInner(quiet)) && /No current reading/.test(P.oxygenTileInner(quiet))
+  && pills(P.hardwareInner(steady)) === "24.2 °C" && pills(P.hardwareInner(quiet)) === "no current reading"
+  && ha.version(steady) !== ha.version(quiet) && /id="o2Val">20\.8/.test(P.oxygenTileInner({ ...quiet, frozen: true }));
+process.exit(ok ? 0 : 1);' 2>/dev/null \
+  && ok "a device read in the last quarter of an hour is current however long its value has stood still; one not heard from for fifteen minutes says no current reading — on the oxygen tile and in its chart's pill — and the panel is drawn again for it" || bad "the hardware's readings do not go out of date after fifteen minutes"
 grep -q "var TILE_KEYS = \['co2', 'temp', 'hum', 'pres', 'iaq', 'light', 'voc'\];" public/habitat.js && ! grep -q "function fillMeter(" public/habitat.js && grep -q "host.classList.toggle('is-hot', !!hot);" public/habitat.js \
   && grep -q "function drawSpark(W, H, view, key, lo, hi, limit, hot) {" public/habitat.js && grep -q "function drawThermo(val, lo, hi) {" public/habitat.js && grep -q "function drawLiquid(val, key) {" public/habitat.js \
   && grep -q "function drawDial(W, H, val, lo, hi) {" public/habitat.js && grep -q "function drawBand(W, H, val, hot) {" public/habitat.js && grep -q "function drawSun(val, lo, hi) {" public/habitat.js && grep -q "function drawCols(W, H, view, key, hi) {" public/habitat.js \
@@ -3282,7 +3339,7 @@ let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
   process.exit(ok ? 0 : 1);
 });' && ok "every row carries CO₂, temperature, humidity, pressure, light in lux, VOC, the IAQ index and its classification as text" || bad "the sensor's rows are incomplete"
 echo "$HAB" | grep -q '"bat":null' && echo "$HAB" | grep -q '"rssi":null' && ok "the node's own channels (battery, signal) are empty, not invented" || bad "battery or signal not null"
-echo "$HAB" | grep -q '"pollMs":15000' && echo "$HAB" | grep -q '"staleMs":300000' && ok "the station tells the page how often it reads and how fresh is fresh" || bad "cadence not served"
+echo "$HAB" | grep -q '"pollMs":15000' && echo "$HAB" | grep -q '"staleMs":900000' && ok "the station tells the page how often it reads and how fresh is fresh" || bad "cadence not served"
 echo "$HAB" | node -e '
 let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
   const d = JSON.parse(s); const e = d.entities || {};
@@ -3324,7 +3381,8 @@ const { db } = require("./src/db"); const mission = require("./src/lib/mission")
 const today = mission.localDate(new Date(), m.timezone);
 const at = (hhmm) => mission.venueTimeUtc(today, hhmm, m.timezone);
 const ins = db.prepare("INSERT OR IGNORE INTO ha_reading (entity, t, value, state, unit) VALUES (?, ?, ?, ?, ?)");
-for (const [h, v] of [["00:05", 21.5], ["00:20", 21.9], ["00:40", 22.4]]) ins.run("m5_temperatur_cricket_temperature", at(h), v, String(v), "°C");
+// (the newest a minute ago — a reading older than a quarter of an hour is no current one, and its pill would say so)
+for (const [h, v] of [["00:05", 21.5], ["00:20", 21.9], ["00:40", 22.4]]) ins.run("m5_temperatur_cricket_temperature", h === "00:40" ? Math.max(at(h), Date.now() - 60000) : at(h), v, String(v), "°C");
 for (const [h, v] of [["00:05", 9], ["00:20", 11], ["00:40", 12]]) ins.run("habitat_power_crickets_leistung", at(h), v, String(v), "W");
 for (const [h, v] of [["00:05", 80], ["00:20", 86], ["00:40", 91]]) ins.run("habitat_power_food_leistung", at(h), v, String(v), "W");
 for (const [h, v] of [["00:05", 100.0], ["00:40", 100.3]]) ins.run("habitat_power_food_energie", at(h), v, String(v), "kWh");
@@ -3384,8 +3442,8 @@ curl -s -H "Authorization: Bearer x" localhost:8125/api/states/sensor.habitat_po
   && [ "$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer x" localhost:8125/api/states/sensor.habitat_power_kitchen_energie)" = "404" ] \
   && ok "the mock Home Assistant answers for all sixteen (a draw in W, a meter in kWh each) and no longer for the kitchen" || bad "tools/mock-home-assistant.js does not serve the sixteen power entities"
 echo "── 8 October, the second pass: the instruments after a racing car's dash, the habitat screen rolling, the second page's cards, the crossing's dial, the shadows"
-# (an oxygen reading a minute old, and the air quality's two gases, stored for today — the oxygen tile reads the
-# newest within half an hour; the Oxygen and Air quality charts draw what today has)
+# (an oxygen reading a minute old, and the air quality's two gases, stored for today, the newest a minute ago — the
+# oxygen tile and the pills read the newest within a quarter of an hour; the Air quality chart draws what today has)
 DATA_DIR="$DATA3" CONTENT_DIR="$CONT3" node -e '
 const { db } = require("./src/db"); const mission = require("./src/lib/mission"); const m = mission.config();
 const today = mission.localDate(new Date(), m.timezone);
@@ -3393,8 +3451,9 @@ const at = (hhmm) => mission.venueTimeUtc(today, hhmm, m.timezone);
 const ins = db.prepare("INSERT OR IGNORE INTO ha_reading (entity, t, value, state, unit) VALUES (?, ?, ?, ?, ?)");
 for (const [h, v] of [["00:05", 20.8], ["00:20", 20.9]]) ins.run("environment_o2_oxygen", at(h), v, String(v), "%");
 ins.run("environment_o2_oxygen", Date.now() - 60000, 20.9, "20.9", "%");
-for (const [h, v] of [["00:05", 0.04], ["00:20", 0.05]]) ins.run("environment_no2_nitrogen_dioxide", at(h), v, String(v), "ppm");
-for (const [h, v] of [["00:05", 1.0], ["00:20", 1.1]]) ins.run("environment_co_carbon_monoxide", at(h), v, String(v), "ppm");
+const fresh = (h) => (h === "00:20" ? Math.max(at(h), Date.now() - 60000) : at(h));
+for (const [h, v] of [["00:05", 0.04], ["00:20", 0.05]]) ins.run("environment_no2_nitrogen_dioxide", fresh(h), v, String(v), "ppm");
+for (const [h, v] of [["00:05", 1.0], ["00:20", 1.1]]) ins.run("environment_co_carbon_monoxide", fresh(h), v, String(v), "ppm");
 '
 LAND3O=$(curl -s $B3/dashboard)
 # the oxygen first among the instruments, read from the hardware; every tile with its sign in a disc; the charts in the

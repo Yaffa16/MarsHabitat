@@ -31,7 +31,7 @@
     dedupeWindowMs: 5 * 60 * 1000,
     localKey: 'mcs-habitat-rows',
     localMaxDays: 365,
-    staleAfterMs: 30 * 60 * 1000,    // a reading counts as current for this long (the station sends its own, data.staleMs)
+    staleAfterMs: 15 * 60 * 1000,    // a reading counts as current for this long (the station sends its own, data.staleMs)
     // The record closes with the run. From the end of 27 October 2026 — the
     // run's last day — the page stops asking for new readings and the graph
     // stands still on the run. (The server stops polling the node at the
@@ -846,8 +846,9 @@
     TILE_KEYS.forEach(function (k) { renderTile([], k); });                  // a dash, a dark meter and "No current reading" in every tile
   }
   /* The tiles are today: readings since midnight at the venue, and only
-     while the newest of them is less than thirty minutes old. Anything else
-     — nothing today, or nothing in the last half hour — shows nothing. */
+     while the newest of them is current — less than a quarter of an hour old
+     for the habitat sensor, half an hour for the node (data.staleMs). Anything
+     else — nothing today, or nothing in that time — shows nothing. */
   function dayStart() {
     var tile = $('hbt-trends');
     var v = tile ? Number(tile.getAttribute('data-day-start')) : NaN;
@@ -866,6 +867,7 @@
   /* ---------------------------------------------------------- render */
   function render() {
     var view = todayRows();
+    state.live = false;
     if (!view.length || !isCurrent()) {
       // Nothing current: the tiles say so. The trend graph still draws
       // whatever history there is.
@@ -876,6 +878,7 @@
       return;
     }
     HOST.hidden = false;
+    state.live = true;
     TILE_KEYS.forEach(function (k) { renderTile(view, k); });
     renderSpanCharts();
     fitAll();
@@ -972,6 +975,8 @@
   }
   setInterval(function () {
     if (!state.inFlight && Date.now() >= state.nextReadAt) refresh();
+    // the newest reading going out of date between two reads empties the tiles at that moment, not at the next read
+    else if (state.live && !isCurrent()) render();
   }, 1000);
   refresh();
 })();

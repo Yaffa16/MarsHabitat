@@ -45,10 +45,10 @@ const CFG = {
   // Home Assistant whenever it is configured and the habitat entities are
   // mapped in content/home-assistant.json, the node otherwise.
   source: String(process.env.HABITAT_SOURCE || 'auto').trim().toLowerCase(),
-  // The habitat feed reads Home Assistant every minute by default (the
-  // sensor itself reports every few seconds; the history call between two
-  // polls brings every change in between); HABITAT_POLL_MS overrides.
-  habitatPollMs: Math.max(15000, Number(process.env.HABITAT_POLL_MS || 60 * 1000)),
+  // The habitat feed reads Home Assistant every five minutes by default (9 October: "make the habitat air sensor and
+  // everything else from Home Assistant pull every 5 minutes"; it was every minute) — the sensor itself reports every
+  // few seconds, and the history call between two polls brings every change in between; HABITAT_POLL_MS overrides.
+  habitatPollMs: Math.max(15000, Number(process.env.HABITAT_POLL_MS || 5 * 60 * 1000)),
 };
 const frozen = () => Number.isFinite(CFG.freezeAt) && Date.now() > CFG.freezeAt;
 
@@ -364,7 +364,7 @@ function start() {
     // polls and hands its rows to persistHabitat.
     const feed = require('./habitat-feed');
     if (frozen()) { feed.poll(); return; }
-    console.log(`[habitat] readings come from the habitat sensor through Home Assistant, read every ${Math.round(CFG.habitatPollMs / 1000)} s`);
+    console.log(`[habitat] readings come from the habitat sensor through Home Assistant, read every ${CFG.habitatPollMs >= 120000 ? `${Math.round(CFG.habitatPollMs / 60000)} minutes` : `${Math.round(CFG.habitatPollMs / 1000)} s`}, current for ${Math.round(staleMs('home-assistant') / 60000)} minutes`);
     timer = setInterval(() => feed.poll().catch(() => {}), CFG.habitatPollMs);
     timer.unref();
     feed.poll().catch(() => {});
@@ -402,6 +402,17 @@ function rows(days = 30, { after = null, thin = false } = {}) {
   });
 }
 
+/**
+ * How old the newest habitat reading may be and still count as current — the tiles, the running line, the dome's text
+ * sheet all ask here. The habitat sensor, read through Home Assistant every five minutes: a quarter of an hour, three
+ * polls (9 October: "if nothing arrives for 15 minutes, the tiles say there is no current reading"; it was five
+ * minutes, with the sensor read every minute), or three of a longer HABITAT_POLL_MS. The node, which transmits every
+ * twenty minutes: half an hour.
+ */
+function staleMs(src = status.source || source()) {
+  return src === 'home-assistant' ? Math.max(15 * 60 * 1000, 3 * CFG.habitatPollMs) : 30 * 60 * 1000;
+}
+
 function snapshot(days = 30, opts = {}) {
   const src = status.source || source();
   const ha = src === 'home-assistant' ? (() => { try { return require('./habitat-feed').status(); } catch { return null; } })() : null;
@@ -409,10 +420,8 @@ function snapshot(days = 30, opts = {}) {
     source: src,
     sensorId: src === 'node' ? CFG.sensorId : null,
     pollMs: src === 'home-assistant' ? CFG.habitatPollMs : CFG.pollMs,
-    // How old the newest reading may be and still count as current: the
-    // node transmits every twenty minutes, so thirty; the habitat sensor is
-    // read every minute, so five — or three polls, whichever is longer.
-    staleMs: src === 'home-assistant' ? Math.max(5 * 60 * 1000, 3 * CFG.habitatPollMs) : 30 * 60 * 1000,
+    // how old the newest reading may be and still count as current (staleMs, below)
+    staleMs: staleMs(src),
     frozen: frozen(),
     lastReadAt: ha ? ha.lastReadAt : status.lastReadAt,
     lastError: ha ? ha.lastError : status.lastError,
@@ -431,4 +440,4 @@ function snapshot(days = 30, opts = {}) {
   };
 }
 
-module.exports = { start, poll, rows, snapshot, persist, persistHabitat, lastStored: () => lastStored.get() || null, source, floorMs, floorMode, anchorMs, runStartMs, todayStartMs, setFloor, applyBuild, buildStamp, DAYS_BEFORE, CFG, KEYS, TEXT_KEYS, frozen };
+module.exports = { start, poll, rows, snapshot, staleMs, persist, persistHabitat, lastStored: () => lastStored.get() || null, source, floorMs, floorMode, anchorMs, runStartMs, todayStartMs, setFloor, applyBuild, buildStamp, DAYS_BEFORE, CFG, KEYS, TEXT_KEYS, frozen };

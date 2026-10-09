@@ -621,7 +621,7 @@ body.landing .card.note .note-mark.is-waiting .nm-back { stroke: currentColor; s
 body.landing .card.note .note-mark.is-waiting .nm-mars { fill: none; stroke: var(--mars); stroke-width: 1.6; }
 body.landing .card.note .note-mark.is-waiting .nm-ship { display: none; }
 @supports (offset-path: path('M0 0L1 1')) {
-  body.landing .card.note .note-mark.is-waiting .nm-ship { display: block; fill: currentColor; offset-path: path('M7 25A12.7 7 -45 0 1 25 7'); animation: nm-fly 6s linear infinite; }
+  body.landing .card.note .note-mark.is-waiting .nm-ship { display: block; fill: currentColor; offset-path: path('M7 25A12.73 12.73 0 0 1 25 7'); animation: nm-fly 6s linear infinite; }
   body.landing .card.note .note-mark.is-arrived .nm-ship { animation: none; offset-distance: 100%; fill: var(--mars); }
 }
 body.landing .card.note .note-mark.is-arrived .nm-mars { transform-origin: 25px 7px; animation: nm-pulse 2.8s ease-in-out infinite; }

@@ -121,10 +121,12 @@ function landing(ctx, d) {
 /** The habitat's instruments: the Sensors panel as the dashboard has it, live — read from across a room (8 October: "a
     vertical layout with scrolling, to show all the content clearly and slowly"): the panel fills the screen, its head
     stands, and its rows — the instruments with Karlsruhe, the steps and the stores, the power with the astronauts,
-    the hardware's charts — stand at their full size and roll by under the head, slowly, then start again from the top
-    (public/screen-roll.js; the layout in public/screen.css). The astronauts wander on their radar (live.js). */
+    the hardware's charts, and at the foot the trends graph (9 October: "in the screen/habitat, at the bottom add the
+    trends graph; it scrolls as the rest of the content" — the dashboard's, inside the panel: trendsInside) — stand at
+    their full size and roll by under the head, slowly, then start again from the top (public/screen-roll.js; the layout
+    in public/screen.css). The astronauts wander on their radar (live.js). */
 function habitat(ctx, d) {
-  const p = P.dashboardPanels(ctx, d);
+  const p = P.dashboardPanels(ctx, d, { trendsInside: true });
   return shell(ctx, { name: 'habitat', title: 'Habitat', body: `<div class="screen-roll" id="screen-roll">${p.habitat}</div>`, fit: 'roll', scripts: ['/habitat.js', '/hardware.js', '/live.js', '/screen-roll.js'] });
 }
 
@@ -175,7 +177,9 @@ function board(ctx, d) {
   // the screen polls for its own nine cards in its own language, as the station (server.js /api/board, ?station=1,
   // stationBoard) — no cookie reaches a screen, and the board is the station's, not any visitor's; board.js shows the
   // latest of them that fit
-  return shell(ctx, { name: 'board', title: 'Message Board', body: P.boardScreen(ctx, { recent: d.recent, poll: `/api/board?lang=${ctx.lang || 'de'}&limit=9&station=1` }), fit: 'clip', scripts: ['/board.js'] });
+  // (the cards are the Write page's notes — 9 October: "make the messages in /screen/board look like the message board in
+  // the main site" — &wall=1 asks for them)
+  return shell(ctx, { name: 'board', title: 'Message Board', body: P.boardScreen(ctx, { recent: d.recent, poll: `/api/board?lang=${ctx.lang || 'de'}&limit=9&station=1&wall=1` }), fit: 'clip', scripts: ['/board.js'] });
 }
 
 /** The writing screen: the composer alone, full screen, for writing to the crew at the venue (the mission page's
@@ -207,7 +211,7 @@ function media(ctx, d) {
 function station(ctx, d) {
   const body = `<div class="screen-station">
     <div class="screen-write station-write">${P.composerDevice(ctx, { inFlight: d.inFlight || null, error: d.error || null, draft: d.draft || '', kiosk: ctx.lang || 'de' })}</div>
-    <div class="station-board">${P.boardScreen(ctx, { recent: d.recent, poll: `/api/board?lang=${ctx.lang || 'de'}&limit=9&station=1` })}</div>
+    <div class="station-board">${P.boardScreen(ctx, { recent: d.recent, poll: `/api/board?lang=${ctx.lang || 'de'}&limit=9&station=1&wall=1` })}</div>
   </div>`;
   return shell(ctx, { name: 'station', title: 'Ground station', body, fit: 'clip', scripts: ['/composer.js', '/screen-write.js', '/board.js'] });
 }

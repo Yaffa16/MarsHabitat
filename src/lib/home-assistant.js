@@ -35,9 +35,10 @@ const CFG = {
   host: (process.env.HA_HOST || '').trim(),
   port: String(process.env.HA_PORT || '80').trim(),
   token: (process.env.HA_API_TOKEN || '').trim(),
-  // Read every 15 minutes — the station's one rhythm for every source (the
-  // external node, the cloud folder); HA_POLL_MS in .env overrides.
-  pollMs: Math.max(15000, Number(process.env.HA_POLL_MS || 15 * 60 * 1000)),
+  // Read every five minutes (9 October: "make the habitat air sensor and everything else from Home Assistant pull
+  // every 5 minutes" — it was every fifteen, the rhythm of the external node and the cloud folder); HA_POLL_MS in .env
+  // overrides. A reading counts as current for three polls — a quarter of an hour (staleMs, below).
+  pollMs: Math.max(15000, Number(process.env.HA_POLL_MS || 5 * 60 * 1000)),
   attemptTimeoutMs: Number(process.env.HA_TIMEOUT_MS || 10000),
   attempts: 2,
   // A restart or a quiet spell is backfilled from HA's history endpoint,
@@ -50,6 +51,9 @@ const CFG = {
 };
 const frozen = () => Number.isFinite(CFG.freezeAt) && Date.now() > CFG.freezeAt;
 const configured = () => !!(CFG.host && CFG.token);
+/** How long a device's reading stays current once it has arrived (9 October: "if nothing arrives for 15 minutes, the
+    tiles say there is no current reading"): three polls — a quarter of an hour — or three of a longer HA_POLL_MS. */
+const staleMs = () => Math.max(15 * 60 * 1000, 3 * CFG.pollMs);
 
 /* ------------------------------------------------------------------ config */
 
@@ -229,9 +233,13 @@ async function pollEntity(s) {
     const unit = (d.attributes && d.attributes.unit_of_measurement) || s.unit || null;
     const friendly = (d.attributes && d.attributes.friendly_name) || null;
     const stored = store(id, t, d.state, unit);
+    // seenAt: when a live state last arrived — Home Assistant answering with one, changed or not (a steady device's
+    // last_updated may be hours old while it reports every few seconds); an `unavailable` keeps the time of the last
+    const prev = status.entities.get(id);
+    const alive = !DEAD.has(String(d.state ?? '').trim().toLowerCase());
     status.entities.set(id, {
       state: String(d.state), value: num(d.state), t, unit, friendly,
-      fetchedAt: Date.now(), missing: false,
+      fetchedAt: Date.now(), seenAt: alive ? Date.now() : (prev && prev.seenAt) || null, missing: false,
     });
     return { id, stored, state: String(d.state), t, value: num(d.state), unit, friendly,
       lastChanged: d.last_changed || null, lastUpdated: d.last_updated || null,
@@ -435,6 +443,8 @@ function snapshot(hours = 24) {
       value: cur ? cur.value : null,
       state: cur ? cur.state : null,
       t: cur ? cur.t : null,
+      // when the current reading last arrived: the last poll that had it (a steady value too), else its stored time
+      seen: live && !live.missing && live.state != null ? (live.seenAt || null) : cur ? cur.t : null,
       missing: !!(live && live.missing),
       error: live && live.error && !live.missing ? true : false,
       today,
@@ -443,7 +453,7 @@ function snapshot(hours = 24) {
     };
   });
   return {
-    configured: configured(), frozen: frozen(), pollMs: CFG.pollMs,
+    configured: configured(), frozen: frozen(), pollMs: CFG.pollMs, staleMs: staleMs(),
     lastPollAt: status.lastPollAt,
     down: !!status.lastError,
     hours, since, now: end, liveNow: liveEnd,
@@ -646,10 +656,13 @@ function hourly(window) {
 
 /** A cheap change mark: the browser swaps the panel only when this moves. */
 function version(snap) {
-  return (snap.sensors || []).map((s) => `${s.id}:${s.t || 0}:${s.state || ''}`).join('|')
+  // a reading going out of date redraws the panel too (its pill then says there is no current reading — public.js)
+  const stale = Number(snap.staleMs) > 0 ? Number(snap.staleMs) : staleMs();
+  const old = (s) => !snap.frozen && s.value != null && Date.now() - (s.seen || s.t || 0) > stale;
+  return (snap.sensors || []).map((s) => `${s.id}:${s.t || 0}:${s.state || ''}${old(s) ? ':stale' : ''}`).join('|')
     + `|${snap.since || 0}`   // the day turning over redraws the axis
     + (snap.down ? '|down' : '') + (snap.frozen ? '|frozen' : '');
 }
 
-module.exports = { start, poll, snapshot, readings, daily, daySummary, hourly, version, clear, sensors, sensorsFor, habitatMap, HABITAT_CHANNELS, fetchJson, configured, frozen, counterDay, counterToday, counterBetween,
+module.exports = { start, poll, snapshot, readings, daily, daySummary, hourly, version, clear, sensors, sensorsFor, habitatMap, HABITAT_CHANNELS, fetchJson, configured, frozen, staleMs, counterDay, counterToday, counterBetween,
                    mealsConfig, mealPower, parseWindow, parseTime, slotForTime, MEALS_DEFAULT, CFG };
