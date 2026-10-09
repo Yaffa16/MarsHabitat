@@ -16,10 +16,10 @@
  *    themselves, a graph drawn again), whenever the screen changes size or turns, and every other second if the last
  *    fitting was overtaken by a drawing that grew after it;
  *  - keeps the clock in the head on the venue's time;
- *  - reloads the page every five minutes (a little apart on every screen, so the station is not asked by all at once)
- *    and at the venue's midnight, when the sol turns — not while someone is writing on the writing screen, and on the
- *    rolled habitat at the roll's turn, while its sheet is faded out (screen-roll.js); the board screens, live by their
- *    own poll, only at midnight — or when their poll has stopped answering (board.js, MCSBoardAlive).
+ *  - reloads the page only when the station has been started anew (new code: the page's data-v against
+ *    /api/screens/version) and at the venue's midnight, when the sol turns — never on a timer (9 October: "make sure
+ *    the screens do not continuously reload"), not while someone is writing on the writing screen or the livestream
+ *    plays, and on the rolled habitat at the roll's turn, while its sheet is faded out (screen-roll.js).
  * The screens are display-only but for the writing screen (screen-write.js): nothing here is ever sent anywhere. */
 (function () {
   'use strict';
@@ -216,7 +216,15 @@
   }
   tick(); setInterval(tick, 1000);
 
-  /* ------------------------------------------------------------ reloading: every five minutes, and at the venue's midnight */
+  /* ------------------------------------------------------------ reloading: when the station is started anew, and at midnight */
+  /* (9 October: "make sure the screens do not continuously reload" — until then every screen reloaded itself every five
+     minutes, to pick up whatever had changed. What changes reaches the screens by their own polls — the board's cards,
+     the habitat's readings, the hardware, the gallery, the schedule — so the timed reload is gone.) A screen reloads
+     only when the station has been started anew — new code, new styles: the version the page was built with (data-v)
+     against the station's own, asked every minute or so (/api/screens/version), and never while the station does not
+     answer, which would leave the screen on the browser's error page — and at the venue's midnight, when the sol turns.
+     Neither waits on a timer of its own: not while someone is writing on the writing screen or the livestream plays
+     (MCSScreenBusy — the reload comes when they are done), and the rolled habitat at its roll's turn (MCSScreenRoll). */
   function venueDate() {
     try { return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); }
     catch (e) { return new Date().toISOString().slice(0, 10); }
@@ -225,10 +233,15 @@
   var busy = function () { return !!(window.MCSScreenBusy && window.MCSScreenBusy()); };
   // (a rolled screen reloads at its roll's turn, while its sheet is faded out — screen-roll.js, MCSScreenRoll)
   var reload = function () { if (window.MCSScreenRoll) window.MCSScreenRoll.reloadAtTurn(); else location.reload(); };
-  // (the board screens are kept live by their own poll — board.js, MCSBoardAlive — and are not reloaded while it answers:
-  // a reload would blank the board for a moment every five minutes, 8 October; one whose poll has stopped answering is)
-  var liveBoard = function () { return !!(window.MCSBoardAlive && Date.now() - window.MCSBoardAlive < 90000); };
-  var day0 = venueDate();
-  (function later(ms) { setTimeout(function () { if (busy()) return later(60000); if (liveBoard()) return later(5 * 60 * 1000); reload(); }, ms); })(5 * 60 * 1000 + Math.floor(Math.random() * 20000));
-  setInterval(function () { if (venueDate() !== day0 && !busy()) reload(); }, 30000);
+  var day0 = venueDate(), built = document.body.getAttribute('data-v') || '', due = false;
+  function reloadWhenFree() { if (busy()) { due = true; return; } due = false; reload(); }
+  function newer() {
+    if (!built || !window.fetch) return;
+    fetch('/api/screens/version', { cache: 'no-store', credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { if (j && j.v && String(j.v) !== built) reloadWhenFree(); })
+      .catch(function () { /* the station out of reach: the screen stands as it is, and asks again */ });
+  }
+  setInterval(function () { if (due) reloadWhenFree(); else newer(); }, 60000 + Math.floor(Math.random() * 15000));
+  setInterval(function () { if (venueDate() !== day0) reloadWhenFree(); }, 30000);
 })();

@@ -90,7 +90,7 @@ function shell(ctx, { name, title, body, scripts = [], fit = 'scale', ticker = '
 <link rel="stylesheet" href="/screen.css?v=${V}">
 <link rel="stylesheet" href="/neu.css?v=${V}">
 ${L.clientTable(lang)}
-</head><body class="landing${inner ? ' inner' : ''} screen screen-${name}" data-screen="${name}" data-fit="${fit}"${fitLandscape ? ` data-fit-landscape="${fitLandscape}"` : ''}${minWidth ? ` data-min-width="${minWidth}"` : ''} data-tz="${esc(m.timezone)}">
+</head><body class="landing${inner ? ' inner' : ''} screen screen-${name}" data-screen="${name}" data-fit="${fit}"${fitLandscape ? ` data-fit-landscape="${fitLandscape}"` : ''}${minWidth ? ` data-min-width="${minWidth}"` : ''} data-tz="${esc(m.timezone)}" data-v="${V}">
 ${screenSky()}
 ${ticker}
 <main class="stage${head ? '' : ' no-head'}">${head ? `

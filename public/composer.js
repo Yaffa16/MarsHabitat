@@ -25,14 +25,37 @@
 
   /* --------------------------------------------------------------- forms */
   /* The Transmit key (8 October: "on the writing screen the send button sometimes does not work — simplify the button
-     event catching and make sure it works simply"). One way in: a click on the key — what a mouse, a finger, a pen and
-     the keyboard all end in — and the form's own submit routed to the same place, never twice at once. No check of the
-     browser's stands between the press and the sending: a box with nothing in it says so in the device, in words,
-     instead of a bubble the screen may never show. The key keeps the writing box's focus when it is pressed, so a touch
-     keyboard does not fold away and move the key from under the finger before the press lands. And the key can never
-     stay dead: a sending with no answer within fifteen seconds gives the key back, the draft kept, with a word on the
-     writing screen (the site falls back to a plain post, as before). */
+     event catching and make sure it works simply"; 9 October, at the venue: "the button lifts, but the click is not
+     registered — make it foolproof"). A press of the key sends — its release on the key or just beside it, its click, or
+     the form's own submit, whichever the browser gives, all routed to one place and never twice at once (bindForms). No
+     check of the browser's stands between the press and the sending: a box with nothing in it says so in the device, in
+     words, instead of a bubble the screen may never show. A touch keeps the writing box's focus when it presses the key,
+     so a touch keyboard does not fold away and move the key from under the finger before the press lands. And the key
+     can never stay dead: a sending with no answer within fifteen seconds gives the key back, the draft kept, with a word
+     on the writing screen (the site falls back to a plain post, as before). */
   var WAIT = 15000;
+  /* The press of a Transmit key under way — one at a time, whichever form the device shows (each new one is bound as it
+     comes): its release anywhere is looked at once, here, and sends if it lands on the key or within a finger's breadth
+     of it, the press having begun on the key. */
+  var press = null;
+  function pressUp(e) {
+    if (!press) return;
+    var p = press; press = null;
+    if (Date.now() - p.at > 15000 || !p.key.isConnected) return;
+    var pt = e.changedTouches && e.changedTouches.length ? e.changedTouches[0] : e;
+    if (typeof pt.clientX !== 'number') { send(p.form); return; }
+    var r = p.key.getBoundingClientRect(), m = 18;
+    if (pt.clientX >= r.left - m && pt.clientX <= r.right + m && pt.clientY >= r.top - m && pt.clientY <= r.bottom + m) send(p.form);
+  }
+  function pressCancel() { press = null; }
+  if (window.PointerEvent) {
+    document.addEventListener('pointerup', pressUp, true);
+    document.addEventListener('pointercancel', pressCancel, true);
+  } else {
+    document.addEventListener('mouseup', pressUp, true);
+    document.addEventListener('touchend', pressUp, true);
+    document.addEventListener('touchcancel', pressCancel, true);
+  }
   function bindForms(root) {
     var forms = root.querySelectorAll('form.composer:not(.ghost)');
     Array.prototype.forEach.call(forms, function (form) {
@@ -59,9 +82,21 @@
       if (!stage) return;                                              // no device to swap into: a plain post
       var key = form.querySelector('button[type=submit]');
       if (key) {
-        var keep = function (e) { e.preventDefault(); };               // the focus stays in the box: nothing moves under the finger
-        key.addEventListener('mousedown', keep);
-        if (window.PointerEvent) key.addEventListener('pointerdown', keep);
+        /* (9 October, the writing screen at the venue: "the button lifts when the cursor is over it, but the click is not
+           registered". The key rose a pixel under the pointer and sank two when pressed — a press near its edge began on
+           the key and ended beside it, and the browser sent no click at all; and a press whose default is held back, as
+           the key held back every press to keep the box's focus, is one more way for a browser to send none.) Now the
+           key stands still (aura.css) and a press is caught three ways, any of which sends, once: the release — wherever
+           it lands, so long as it is on the key or within a finger's breadth of it, the press having begun on the key —
+           the click, and the form's own submit. Only a touch or a pen keeps the writing box's focus (a touch keyboard
+           must not fold away under the finger); a mouse is left to the browser. */
+        var down = function (e) {
+          if (e.button) return;                                         // the main button, a finger or a pen only
+          press = { form: form, key: key, at: Date.now() };
+          if (e.type === 'touchstart' || (e.pointerType && e.pointerType !== 'mouse')) e.preventDefault();
+        };
+        if (window.PointerEvent) key.addEventListener('pointerdown', down);
+        else { key.addEventListener('mousedown', down); key.addEventListener('touchstart', down, { passive: false }); }
         key.addEventListener('click', function (e) { e.preventDefault(); send(form); });
       }
       form.addEventListener('submit', function (e) {

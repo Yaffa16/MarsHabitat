@@ -315,3 +315,15 @@ body.landing .wall-bar .board-head h2 { font-family: var(--display); font-size: 
 body.landing .card.note .note-mark .nm-loop, body.landing .card.note .note-mark.is-waiting .nm-out, body.landing .card.note .note-mark.is-waiting .nm-back { stroke: #111; }
 :root[data-theme="dark"] body.landing .card.note .note-mark .nm-loop, :root[data-theme="dark"] body.landing .card.note .note-mark.is-waiting .nm-out,
 :root[data-theme="dark"] body.landing .card.note .note-mark.is-waiting .nm-back { stroke: #f1f1ef; }
+/* LIVE in red, wherever it stands (9 October: "the live button everywhere should be red and not orange"): the pill's edge
+   and its pulsing dot a broadcast red, the word in a red that reads on its ground (deeper by day, lighter by night) — the
+   message boards', the Sensors panel's and the pictures' pills, the dashboard's, the landing page's sky and its Live
+   feed, the header's dot, the livestream's badge. A board whose poll has stopped keeps its hollow dot (.stale). */
+:root { --live: #ff3b30; --live-ink: #cf2419; --live-glow: rgba(255,59,48,.7); --live-wash: rgba(255,59,48,.08); }
+:root[data-theme="dark"] { --live-ink: #ff6a61; }
+body.landing .board .live, body.landing .cloud-live, body.landing .dl-live, body.landing .seq-fig.seq-live, body.landing .call-livepill,
+:root[data-theme="dark"] body.landing .seq-fig.seq-live { color: var(--live-ink) !important; border-color: var(--live) !important; }
+body.landing .dl-live, body.landing .call-livepill { background: var(--live-wash) !important; }
+body.landing .board .live:not(.stale)::before, body.landing .cloud-live i, body.landing .dl-live i, body.landing .seq-live i, body.landing .call-livepill i,
+body.landing .live-dot, body.screen .live-badge i { background: var(--live) !important; box-shadow: 0 0 10px 2px var(--live-glow) !important; }
+body.screen .live-badge { border-color: rgba(255,59,48,.6) !important; }

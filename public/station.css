@@ -1017,7 +1017,7 @@ button.primary:active { transform: translateY(2px); }
 .board-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--screen-rule); }
 .board-head h2 { margin: 0; font-size: 16px; color: var(--on-screen); letter-spacing: -0.01em; }
 .board .live { font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; color: var(--on-screen-dim); white-space: nowrap; }
-.board .live::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--orange); margin-right: 7px; vertical-align: 1px; box-shadow: 0 0 6px var(--orange); animation: live-pulse 2.4s ease-in-out infinite; }
+.board .live::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #ff3b30; margin-right: 7px; vertical-align: 1px; box-shadow: 0 0 6px #ff3b30; animation: live-pulse 2.4s ease-in-out infinite; }
 .board .live.stale::before { background: transparent; box-shadow: none; border: 1px solid var(--on-screen-dim); animation: none; }
 @keyframes live-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 .feed-note { margin: 8px 0 0; flex: none; font-family: var(--mono); font-size: 9px; letter-spacing: 0.06em; color: var(--orange); padding: 8px 10px; border: 1px dashed rgba(255,106,26,.5); border-radius: 8px; }
@@ -2299,9 +2299,9 @@ body.landing.inner .cloud-gallery:first-child { margin-top: 26px; }
 .cloud-strip .mtile-visual img, .cloud-grid .mtile-visual img { width: 100%; height: 100%; object-fit: cover; }
 .cloud-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
 /* LIVE, top right of the gallery head: an orange dot that breathes */
-.cloud-live { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--orange); font-family: var(--mono); font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--orange); white-space: nowrap; }
-.cloud-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 0 0 rgba(255,106,0,.5); animation: cloud-pulse 1.8s ease-out infinite; }
-@keyframes cloud-pulse { 0% { box-shadow: 0 0 0 0 rgba(255,106,0,.55); } 70% { box-shadow: 0 0 0 7px rgba(255,106,0,0); } 100% { box-shadow: 0 0 0 0 rgba(255,106,0,0); } }
+.cloud-live { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; padding: 4px 10px; border-radius: 20px; border: 1px solid #ff3b30; font-family: var(--mono); font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: #d0261c; white-space: nowrap; }   /* LIVE in red, as everywhere (9 October) */
+.cloud-live i { width: 7px; height: 7px; border-radius: 50%; background: #ff3b30; box-shadow: 0 0 0 0 rgba(255,59,48,.5); animation: cloud-pulse 1.8s ease-out infinite; }
+@keyframes cloud-pulse { 0% { box-shadow: 0 0 0 0 rgba(255,59,48,.55); } 70% { box-shadow: 0 0 0 7px rgba(255,59,48,0); } 100% { box-shadow: 0 0 0 0 rgba(255,59,48,0); } }
 .cloud-gallery .log-day-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
 .cloud-latest-head .sub .cloud-live { margin-left: 10px; }
 .dpanel-title .cloud-live { margin-left: 10px; align-self: center; }
@@ -2432,7 +2432,7 @@ textarea.blog-box { min-height: 340px; font-size: 16px; line-height: 1.65; }
 .block-sub { margin: 0; font-size: 13px; color: var(--c-muted, var(--dim)); }
 .block-sub b { color: var(--c-text, var(--ink)); font-weight: 600; }
 .block-state { flex: none; align-self: center; padding: 5px 11px; border-radius: 20px; border: 1px solid var(--c-line, var(--rule)); font-size: 12px; color: var(--c-muted, var(--dim)); white-space: nowrap; }
-.block-state.live { border-color: var(--orange); color: var(--orange); font-weight: 600; }
+.block-state.live { border-color: #e0291e; color: #d0261c; font-weight: 600; }                       /* LIVE in red, as everywhere (9 October) */
 .block-state.live::before { content: "●"; margin-right: 6px; font-size: 9px; vertical-align: 1px; }
 .block-hint { margin: 0 0 12px; }
 /* The composer, laid out like a classic post editor: a grey toolbar strip

@@ -2090,10 +2090,18 @@ curl -s -b $SK $B/screen/mission | grep -q 'id="mission-today"' && curl -s -b $S
 curl -s "$B/api/cloud?flat=1" | node -e 'let s="";process.stdin.on("data",(c)=>s+=c).on("end",()=>{const j=JSON.parse(s); process.exit(!j.configured || (j.html.indexOf("cloud-flat")>-1 && j.html.indexOf("cloud-day-head")<0) ? 0 : 1);});' \
   && ok "/api/cloud?flat=1 answers with the gallery as one grid, no day heads — what the media screen polls (data-api)" || bad "the flat gallery is wrong"
 curl -s -b $SK $B/screens | grep -q '/screen/board?lang=en&amp;theme=light' && ok "the list explains the switches" || bad "the list does not explain the switches"
-grep -q "location.reload" public/screen.js && grep -q "venueDate() !== day0" public/screen.js \
-  && grep -qF "var liveBoard = function () { return !!(window.MCSBoardAlive && Date.now() - window.MCSBoardAlive < 90000); };" public/screen.js \
-  && grep -qF "if (busy()) return later(60000); if (liveBoard()) return later(5 * 60 * 1000); reload();" public/screen.js && grep -qF "window.MCSBoardAlive = Date.now();" public/board.js \
-  && ok "every screen reloads itself every five minutes and at the venue's midnight — the board screens, live by their poll, only at midnight or when their poll has stopped answering (a reload would blank the board)" || bad "screen.js does not reload as it should"
+# 9 October: "make sure the screens do not continuously reload" — no reload on a timer: only when the station has been
+# started anew (the page's version against the station's) and at the venue's midnight, never while someone writes
+SCRV=$(curl -s -b $SK "$B/screen/write?lang=en")
+grep -q "location.reload" public/screen.js && grep -q "venueDate() !== day0" public/screen.js && ! grep -q "later(\|5 \* 60 \* 1000\|liveBoard" public/screen.js \
+  && grep -qF "var day0 = venueDate(), built = document.body.getAttribute('data-v') || '', due = false;" public/screen.js \
+  && grep -qF "function reloadWhenFree() { if (busy()) { due = true; return; } due = false; reload(); }" public/screen.js \
+  && grep -qF ".then(function (j) { if (j && j.v && String(j.v) !== built) reloadWhenFree(); })" public/screen.js \
+  && grep -qF "setInterval(function () { if (venueDate() !== day0) reloadWhenFree(); }, 30000);" public/screen.js \
+  && V9=$(echo "$SCRV" | grep -o 'data-v="[0-9a-z]*"' | head -1 | cut -d'"' -f2) && [ -n "$V9" ] \
+  && [ "$(curl -s -o /dev/null -w '%{http_code}' "$B/api/screens/version")" = "200" ] && curl -s "$B/api/screens/version" | grep -q "\"v\":\"$V9\"" \
+  && echo "$SCRV" | grep -q "/screen.js?v=$V9" \
+  && ok "no screen reloads on a timer: only when the station has been started anew — the page's version (data-v) against /api/screens/version — and at the venue's midnight, waiting for anyone writing" || bad "the screens still reload on a timer, or cannot tell a new station"
 # the landing screen is the first page as the site has it now: the way to the habitat, with the sky, under the ticker
 curl -s -b $SK "$B/screen/landing?lang=en" | grep -q '<div class="space-room" id="space-room">' && curl -s -b $SK "$B/screen/landing?lang=en" | grep -q 'id="dome-sky-data"' && ! curl -s -b $SK "$B/screen/landing" | grep -q 'id="habitat-dome"' \
   && ok "the landing screen shows the way to the habitat — the Earth, the line, the sky around it — under the ticker" || bad "the landing screen is not the first page"
@@ -2173,7 +2181,7 @@ curl -s -b $SK "$B/screen/write/composer?lang=fr" | grep -q 'action="/screen/wri
   && [ "$(curl -s -b $SK -o /dev/null -w '%{http_code}' -d "body=Plain from the square" "$B/screen/write?lang=en")" = "200" ] \
   && [ "$(curl -s -b $SK -H 'X-Requested-With: fetch' -d "body=x" "$B/screen/write?lang=en" | grep -c 'Write something before transmitting')" = "1" ] \
   && ok "the fresh composer comes from the screen's own address in its language; a plain post is answered with the screen itself; a word too short is refused as on the site" || bad "the writing screen's fragment or its refusals are wrong"
-grep -q "window.MCSScreenBusy = busy;" public/screen-write.js && grep -q "if (busy()) return later(60000);" public/screen.js && grep -q "venueDate() !== day0 && !busy()" public/screen.js && grep -q "var IDLE = 3 \* 60 \* 1000" public/screen-write.js \
+grep -q "window.MCSScreenBusy = busy;" public/screen-write.js && grep -qF "function reloadWhenFree() { if (busy()) { due = true; return; }" public/screen.js && grep -q "var IDLE = 3 \* 60 \* 1000" public/screen-write.js \
   && grep -qF "key.addEventListener('click', function (e) { e.preventDefault(); send(form); });" public/composer.js && grep -qF "xhr.timeout = WAIT;" public/composer.js \
   && grep -qF "say(form, t('Write something before transmitting.'));" public/composer.js && grep -qF "if (kiosk) { say(form, t('Not sent — the station could not be reached. Try again.')); return; }" public/composer.js \
   && ! grep -q "URLSearchParams(new FormData" public/composer.js && grep -qF "if (form.getAttribute('data-sending')) return;" public/composer.js \
@@ -2181,6 +2189,24 @@ grep -q "window.MCSScreenBusy = busy;" public/screen-write.js && grep -q "if (bu
   && grep -q "var refreshUrl = (stage && stage.getAttribute('data-refresh')) || '/api/composer';" public/composer.js && grep -q "Number(block.dataset.hold) || 2600" public/composer.js && grep -q "chip.textContent = chip0;" public/composer.js \
   && grep -q "body.screen .screen-write .dev-stage .transit-block { position: static; }" public/screen.css && grep -q "body.screen .screen-write .dev-close { display: none !important; }" public/screen.css \
   && ok "the Transmit key answers one click however it is pressed — a box with nothing in it says so, a sending with no answer gives the key back in fifteen seconds with a word, the piece stands still while someone writes (8 October); the screen's reloads wait while someone is writing, what is left half-written is cleared after three minutes, and the device's head goes back to Callsign on sending for the next person" || bad "the writing screen's script is not wired"
+# 9 October, the kiosk at the venue: "the button lifts when the cursor is over it, but the click is not registered — make
+# it foolproof": the key stands still under the pointer and when pressed; a press that began on it sends on its release
+# on the key or within a finger's breadth of it, on its click, or by the form's submit — once; only a touch keeps the box's
+# focus; and the key takes a press a little beyond its edge
+grep -qF "var press = null;" public/composer.js && grep -qF "function pressUp(e) {" public/composer.js \
+  && grep -qF "document.addEventListener('pointerup', pressUp, true);" public/composer.js && grep -qF "document.addEventListener('touchend', pressUp, true);" public/composer.js \
+  && grep -qF "press = { form: form, key: key, at: Date.now() };" public/composer.js \
+  && grep -qF "if (e.type === 'touchstart' || (e.pointerType && e.pointerType !== 'mouse')) e.preventDefault();" public/composer.js \
+  && ! grep -qF "key.addEventListener('mousedown', keep);" public/composer.js \
+  && grep -qF "body.landing .composer button.primary, body.landing .composer button.primary:hover, body.landing .composer button.primary:active { transform: none !important; }" public/aura.css \
+  && grep -qF 'body.landing .composer button.primary::after { content: ""; position: absolute; inset: -12px -8px; border-radius: inherit; }' public/aura.css \
+  && ok "the Transmit key cannot miss a press: it stands still, takes a press a little beyond its edge, and sends on the release over it as well as on the click — once" || bad "the Transmit key can still lose a press"
+# 9 October: "the live button everywhere should be red and not orange"
+grep -qF ":root { --live: #ff3b30; --live-ink: #cf2419; --live-glow: rgba(255,59,48,.7); --live-wash: rgba(255,59,48,.08); }" public/neu.css \
+  && grep -qF "body.landing .board .live, body.landing .cloud-live, body.landing .dl-live, body.landing .seq-fig.seq-live, body.landing .call-livepill," public/neu.css \
+  && grep -qF "body.landing .live-dot, body.screen .live-badge i { background: var(--live) !important; box-shadow: 0 0 10px 2px var(--live-glow) !important; }" public/neu.css \
+  && grep -qF ".block-state.live { border-color: #e0291e; color: #d0261c; font-weight: 600; }" public/station.css && grep -qF "border: 1px solid #ff3b30;" public/station.css \
+  && ok "every LIVE mark is red — the pills' edges and dots, the word, by day and by night, on the site, the screens and in mission control" || bad "a LIVE mark is still orange"
 
 echo "── mission control: the composer's one form, the record of the crew's states"
 ! grep -q 'data-mode="text"' public/entry-editor.js && ! grep -q 'ed-bar-tabs' public/entry-editor.js public/station.css && ok "the blog composer has no Visual | Text switch — the sheet is the one form" || bad "the Visual | Text switch is still in the composer"

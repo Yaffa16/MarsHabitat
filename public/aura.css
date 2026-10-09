@@ -458,6 +458,16 @@ body.landing .composer .tags { gap: 6px; flex: none; width: 100%; min-width: 0; 
 body.landing .composer hr { margin: 14px 0; border: 0; height: 2px; border-radius: 1px; background: linear-gradient(90deg, var(--mars), rgba(255,90,31,.15)); }
 body.landing .composer .dev-foot { justify-content: stretch; }
 body.landing .composer button.primary { width: 100%; padding: 0 34px; border-radius: 999px; }
+/* the Transmit key stands still under the pointer (9 October, the writing screen at the venue: "the button lifts when the
+   cursor is over it, but the click is not registered" — it rose a pixel under the pointer and sank two when pressed, so a
+   press near its edge began on the key and ended beside it, and no click came): it brightens under the pointer and
+   darkens while pressed, in place — and it takes a press a little beyond its edge, an invisible margin round it
+   (composer.js catches the release there too) */
+body.landing .composer button.primary, body.landing .composer button.primary:hover, body.landing .composer button.primary:active { transform: none !important; }
+body.landing .composer button.primary { position: relative; transition: filter .12s ease, box-shadow .12s ease; }
+body.landing .composer button.primary:hover { filter: brightness(1.08); }
+body.landing .composer button.primary:active { filter: brightness(.88); }
+body.landing .composer button.primary::after { content: ""; position: absolute; inset: -12px -8px; border-radius: inherit; }
 /* the key while its message leaves (composer.js): held, dimmed a little, a slow pulse — pressed, and heard (8 October) */
 body.landing .composer button.primary.is-sending { opacity: .72; cursor: progress; animation: key-sending 1.1s ease-in-out infinite; }
 @keyframes key-sending { 50% { opacity: .5; } }

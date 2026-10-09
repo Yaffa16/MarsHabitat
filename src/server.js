@@ -367,6 +367,10 @@ function screenCtx(req) {
   return { ...base, lang, T: i18n.of(lang), theme: req.query.theme === 'light' ? 'light' : 'dark', offer: '', visitor: null, callsign: '' };
 }
 app.get('/screens', requireScreens, (req, res) => res.set('Cache-Control', 'no-store').send(require('./views/pages/screens').index(screenCtx(req))));
+// The version the station's pages are built with — a new one each time the station starts: an open screen that finds its
+// own older reloads itself, once, to take up the new code (public/screen.js; 9 October: "make sure the screens do not
+// continuously reload" — no screen reloads on a timer any more). A stamp and nothing else, so it asks for no password.
+app.get('/api/screens/version', (req, res) => res.set('Cache-Control', 'no-store').json({ v: require('./views/layout').ASSET_V }));
 app.get(['/screen', '/screen/'], (req, res) => res.redirect('/screens'));                 // the list, for an address without a name
 app.get('/screens/:name', (req, res) => res.redirect(`/screen/${encodeURIComponent(req.params.name)}${req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''}`));   // /screens/write, a slip of the hand, is /screen/write
 // The installation's board (the board screen, and the ground station's beside its composer): the ground station's board —
