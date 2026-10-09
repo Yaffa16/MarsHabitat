@@ -56,6 +56,12 @@
     var grow = function () { box.style.height = 'auto'; box.style.height = Math.max(112, Math.min(400, box.scrollHeight + 2)) + 'px'; };
     box.addEventListener('input', grow);
     grow();
+    // the count of characters against the limit — five hundred, as a visitor's message (8 October): the box stops there
+    var count = document.getElementById(box.getAttribute('data-count') || ''), max = Number(box.getAttribute('maxlength')) || 500;
+    if (count) {
+      var show = function () { var n = box.value.length; count.textContent = n + ' / ' + max; count.classList.toggle('is-full', n >= max); };
+      box.addEventListener('input', show); show();
+    }
   });
 
   // Destructive forms ask first.

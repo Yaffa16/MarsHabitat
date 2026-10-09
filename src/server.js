@@ -32,9 +32,94 @@ app.disable('x-powered-by');
 app.use(express.urlencoded({ extended: false, limit: '64kb' }));
 app.use(express.json({ limit: '256kb' }));
 app.use(require('./lib/cookies'));
+
+/* Lighter pages (8 October: "the website is very heavy to load — keep all the functions, but make it lighter"): every
+   text the station sends goes compressed to a browser that takes it — Brotli, else gzip, by Node's own zlib, nothing to
+   install. The station's own stylesheets and scripts (public/*.css, *.js and public/vendor/) are compressed once, at
+   Brotli's best, and kept until the file changes on disk; asked for with their version in the address (?v=, which
+   changes with every start of the station) a browser keeps them a year and asks again for none of them — the four
+   stylesheets alone go from some 600 kB to under 100. What the pages render and the API answers is compressed as it
+   is sent (res.send: HTML, JSON, text, SVG, a playlist; a kilobyte at the least). Pictures and files go as they are. */
+const zlib = require('zlib');
+const fs = require('fs');
+function encodingFor(req) {
+  if (req.method === 'HEAD') return null;
+  const ae = String(req.headers['accept-encoding'] || '');
+  return /\bbr\b/.test(ae) ? 'br' : /\bgzip\b/.test(ae) ? 'gzip' : null;
+}
+// a text compressed both ways, at their best, once: what is sent again and again
+function pack(raw, type) {
+  return { raw, type,
+    br: zlib.brotliCompressSync(raw, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11, [zlib.constants.BROTLI_PARAM_SIZE_HINT]: raw.length } }),
+    gzip: zlib.gzipSync(raw, { level: 9 }),
+    etag: '"' + crypto.createHash('sha1').update(raw).digest('base64').slice(0, 27) + '"' };
+}
+function sendPacked(req, res, e) {
+  const enc = encodingFor(req);
+  res.set({ 'Content-Type': e.type, Vary: 'Accept-Encoding', ETag: e.etag,
+    'Cache-Control': req.query.v ? 'public, max-age=31536000, immutable' : 'public, max-age=3600' });
+  if (req.headers['if-none-match'] === e.etag) return res.status(304).end();
+  const body = enc ? e[enc] : e.raw;
+  if (enc) res.set('Content-Encoding', enc);
+  res.set('Content-Length', String(body.length));
+  return req.method === 'HEAD' ? res.end() : res.end(body);
+}
+const PACKED = new Map();                                                         // file → its pack, with the file's mtime and size
+function packed(file) {
+  let st; try { st = fs.statSync(file); } catch { return null; }
+  if (!st.isFile()) return null;
+  const hit = PACKED.get(file);
+  if (hit && hit.mtimeMs === st.mtimeMs && hit.size === st.size) return hit;
+  const entry = Object.assign(pack(fs.readFileSync(file), file.endsWith('.css') ? 'text/css; charset=utf-8' : 'application/javascript; charset=utf-8'),
+    { mtimeMs: st.mtimeMs, size: st.size });
+  PACKED.set(file, entry);
+  return entry;
+}
+const PUBLIC_DIR = path.join(__dirname, '../public');
+app.use((req, res, next) => {
+  if ((req.method !== 'GET' && req.method !== 'HEAD') || !/^\/(?:vendor\/)?[A-Za-z0-9_-][A-Za-z0-9._-]*\.(?:css|js)$/.test(req.path)) return next();
+  const e = packed(path.join(PUBLIC_DIR, req.path)); if (!e) return next();
+  return sendPacked(req, res, e);
+});
+// the browser's dictionary, a script of its own for each language (src/views/layout.js, clientTable): kept by the browser
+// rather than sent with every page
+const TABLES = {};
+app.get(/^\/i18n\/(de|fr)\.js$/, (req, res) => {
+  const lang = req.params[0];
+  const e = TABLES[lang] || (TABLES[lang] = pack(Buffer.from(require('./views/layout').tableScript(lang), 'utf8'), 'application/javascript; charset=utf-8'));
+  return sendPacked(req, res, e);
+});
+// the night sky's stars as a picture of their own (src/views/sky.js): the site's pages by night lay it under everything —
+// fetched once (neu.css asks for it with a version: kept a year), never sent with a page, and not at all by day
+let SKY_SVG = null;
+app.get('/sky.svg', (req, res) => sendPacked(req, res, SKY_SVG || (SKY_SVG = pack(Buffer.from(require('./views/sky').svg(), 'utf8'), 'image/svg+xml; charset=utf-8'))));
+const PACKABLE = /^(text\/|application\/(json|javascript|xml|vnd\.apple\.mpegurl|x-mpegurl)|image\/svg\+xml)/i;
+app.use((req, res, next) => {
+  const enc = encodingFor(req);
+  if (!enc) return next();
+  const send = res.send;
+  res.send = function (body) {
+    try {
+      if ((typeof body === 'string' || Buffer.isBuffer(body)) && !this.get('Content-Encoding') && this.statusCode !== 204 && this.statusCode !== 304) {
+        if (typeof body === 'string' && !this.get('Content-Type')) this.type('html');
+        const type = String(this.get('Content-Type') || '');
+        const buf = typeof body === 'string' ? Buffer.from(body, 'utf8') : body;
+        if (buf.length >= 1024 && PACKABLE.test(type)) {
+          const out = enc === 'br' ? zlib.brotliCompressSync(buf, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 5, [zlib.constants.BROTLI_PARAM_SIZE_HINT]: buf.length } }) : zlib.gzipSync(buf, { level: 6 });
+          this.set('Content-Encoding', enc);
+          this.vary('Accept-Encoding');
+          this.removeHeader('Content-Length');
+          return send.call(this, out);
+        }
+      }
+    } catch { /* sent as it is */ }
+    return send.call(this, body);
+  };
+  next();
+});
 // redirect: false — a folder's address (/crew, the portraits' folder) is not sent to /crew/, so the old page's address
 // below can send it on to its section of the Write page
-app.use(express.static(path.join(__dirname, '../public'), { maxAge: '1h', redirect: false }));
+app.use(express.static(PUBLIC_DIR, { maxAge: '1h', redirect: false }));
 // The scientific missions' sheets, one PDF a mission, from the missions/ folder beside content/ (the Today's Mission
 // panel links to the day's; content/missions.json says which sheet is which day's). PDFs only; nothing else in the
 // folder is served.
@@ -74,8 +159,8 @@ app.use((req, res, next) => {
     // interface string into it. Mission control and the archive ignore both.
     const lang = i18n.pick(req);
     cached = {
-      // dark unless the visitor has chosen light with the switch (October: the site opens dark, and in German)
-      theme: req.cookies.mcs_theme === 'light' ? 'light' : 'dark',
+      // light unless the visitor chose dark (8 October: "the project should open in light mode by default")
+      theme: req.cookies.mcs_theme === 'dark' ? 'dark' : 'light',
       lang,
       T: i18n.of(lang),
       logo: logo(),
@@ -277,17 +362,31 @@ function screenCtx(req) {
   const base = req.ctx();
   const lang = i18n.LANGS.includes(req.query.lang) ? req.query.lang : 'de';
   // no visitor on a screen: a screen in the square is nobody's browser (the writing screen mints one a message)
+  // every screen dark unless the address says ?theme=light (8 October: "everything in /screens, all the pages there,
+  // should have the dark mode" — the site itself opens light)
   return { ...base, lang, T: i18n.of(lang), theme: req.query.theme === 'light' ? 'light' : 'dark', offer: '', visitor: null, callsign: '' };
 }
 app.get('/screens', requireScreens, (req, res) => res.set('Cache-Control', 'no-store').send(require('./views/pages/screens').index(screenCtx(req))));
 app.get(['/screen', '/screen/'], (req, res) => res.redirect('/screens'));                 // the list, for an address without a name
 app.get('/screens/:name', (req, res) => res.redirect(`/screen/${encodeURIComponent(req.params.name)}${req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''}`));   // /screens/write, a slip of the hand, is /screen/write
+// The installation's board (the board screen, and the ground station's beside its composer): the ground station's board —
+// its own messages, everything sent from the writing screen under the station's name, whatever their state, among
+// everyone's answered exchanges — the latest nine of them, in the one sequence, newest first (8 October: "the latest
+// messages that fit on the screen, nine at the most"; board.js shows as many of them as fit). The page and its poll
+// (/api/board?station=1) take the same nine, so the board's version is the same in both.
+const SCREEN_BOARD_MAX = 9;
+function stationBoard(limit = SCREEN_BOARD_MAX) {
+  const at = (m) => Date.parse(m.submitted_at || '') || 0;
+  return data.board(limit, null, { callsign: callsign.STATION }).sort((a, b) => at(b) - at(a) || b.id - a.id).slice(0, limit);
+}
 app.get('/screen/:name', requireScreens, (req, res) => {
   const ctx = req.params.name === 'write' || req.params.name === 'station' ? writeCtx(req) : screenCtx(req);   // the composer's head names the operator
   // the board screen is the ground station's board: its own messages — everything sent from the writing screen, under
-  // the station's name — stand on it whatever their state, before everyone's answered exchanges (data.board, callsign)
+  // the station's name — stand on it whatever their state, among everyone's answered exchanges (data.board, callsign);
+  // the board and the station screens take the latest nine (stationBoard), the landing screen's sky the lot
   const S = require('./views/pages/screens');
-  const html = S.render(req.params.name, ctx, { ...stationData(ctx), recent: data.board(400, null, { callsign: callsign.STATION }) });
+  const boardOnly = req.params.name === 'board' || req.params.name === 'station';
+  const html = S.render(req.params.name, ctx, { ...stationData(ctx), recent: boardOnly ? stationBoard() : data.board(400, null, { callsign: callsign.STATION }) });
   // a name that is no screen's: the list, with a word, in the screens' own dress — never the site's 404 page, which
   // carries the cookie question (October: no screen address is ever to ask about cookies)
   if (!html) return res.status(404).set('Cache-Control', 'no-store').send(S.index(ctx, { missing: req.params.name }));
@@ -710,7 +809,7 @@ app.get('/archive/message/:id', requireControl, (req, res, next) => {
 
 /* =========================================================== COMMUNICATION */
 
-const MAX_CHARS = Number(process.env.MESSAGE_MAX_CHARS || 1000);   // a message's length: a thousand characters unless .env says otherwise
+const MAX_CHARS = require('./lib/limits').MESSAGE_MAX;   // a message's length: five hundred characters at the most (src/lib/limits.js — 8 October)
 const BOARD_RECENT = Math.max(1, Number(process.env.BOARD_RECENT || 9));   // the answered exchanges the first poll of a board shows, newest first (the sky, the screens)
 const BOARD_PAGE = Math.max(5, Number(process.env.BOARD_PAGE || 20));      // the Write page's board: a page of exchanges, the next fetched as the reader scrolls
 const TRANSIT_MS = Number(process.env.TRANSIT_SECONDS || 12) * 1000;
@@ -755,8 +854,8 @@ app.get('/api/composer', (req, res) => composerFragment(req, res));
  */
 app.get('/api/board', (req, res) => {
   const ctx = req.ctx();
-  // The installation's board screen polls with ?lang= and ?limit=400: it shows every published exchange as many as
-  // fit, in the language its address names (no cookie reaches a screen), and its cards must come back in the same
+  // The installation's board screen polls with ?lang=, ?limit=9 and ?station=1: the latest nine, as many of them shown
+  // as fit, in the language its address names (no cookie reaches a screen), and its cards must come back in the same
   // language they were drawn in — otherwise the words the page ticks (board.js: Milliarden, vor 19 Stunden) and the
   // words the cards carry would be in two languages.
   const T = i18n.LANGS.includes(req.query.lang) ? i18n.of(req.query.lang) : ctx.T;
@@ -773,8 +872,9 @@ app.get('/api/board', (req, res) => {
     return res.set('Cache-Control', 'no-store').json({ cards: P.boardCards(older, T, { wall }), count: older.length, more: older.length >= limit });
   }
   // ?station=1: the installation's board screen asks for the ground station's board — its own messages are the ones
-  // under the station's name (everything the writing screen sends), not a cookie's (a screen has none)
-  const recent = req.query.station === '1' ? data.board(limit, null, { callsign: callsign.STATION }) : data.board(limit, ctx.visitor ? ctx.visitor.id : null);
+  // under the station's name (everything the writing screen sends), not a cookie's (a screen has none) — the latest of
+  // them all, as many as it asks for (nine: stationBoard)
+  const recent = req.query.station === '1' ? stationBoard(limit) : data.board(limit, ctx.visitor ? ctx.visitor.id : null);
   const counts = data.counts();
   res.set('Cache-Control', 'no-store').json({
     version: P.boardVersion(recent),
@@ -911,6 +1011,7 @@ app.get('/api/ticker', (req, res) => {
     sol: st.clampedDay, totalDays: st.totalDays, phase: st.phase, open: st.open, venueTime: st.venueTime,
     opensAt: st.opensAt, epoch: content.resetEpoch(),
     tasks: today ? today.tasks.map((t) => ({ time: t.time, label: t.label, detail: t.detail || '' })) : [],
+    hab: P.habReading(req.ctx()),   // the running line's habitat reading (public.js, habReading)
   });
 });
 
@@ -998,7 +1099,10 @@ app.get('/api/content', (req, res) => {
    this endpoint hands the browser everything it needs to draw. */
 app.get('/api/habitat/data', (req, res) => {
   const days = Math.min(365, Math.max(1, Number(req.query.days || 30)));
-  res.json(critical.snapshot(days));
+  // ?since=<ms>: only the readings from then on; ?thin=1: the days before today one reading in ten minutes
+  // (src/lib/critical.js, rows — the dashboard reads the month so once, then only what is new; public/habitat.js)
+  const after = Number(req.query.since);
+  res.json(critical.snapshot(days, { after: after > 0 ? after : null, thin: req.query.thin === '1' }));
 });
 
 /* The habitat's own hardware, read through Home Assistant. The server polls

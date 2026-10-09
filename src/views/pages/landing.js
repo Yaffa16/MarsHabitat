@@ -84,10 +84,10 @@ const INTRO_TEXT = 'MARS! turns the Karlsruhe Marktplatz into MARS!platz. Can we
 /* ---------------------------------------------------------------- the first page: Earth to the habitat */
 /**
  * The first screen, after the mock-up: the Earth at the foot of the page —
- * a photograph of its limb from orbit (public/space/earth.jpg), the horizon
+ * a photograph of its limb from orbit (public/space/earth.webp — earth.jpg, as WebP), the horizon
  * curving away, and over it a mesh of dots that thins out quickly with
  * height; the habitat far above it at the top — the geodesic dome as a line
- * drawing (public/space/habitat.png), white on the night, named Red Dust
+ * drawing (public/space/habitat.webp — habitat.png, as lossless WebP, half the size), white on the night, named Red Dust
  * City in Mars orange; and the way a message goes between them: on a phone
  * a dashed line straight up, with a signal climbing it and the crew's answer
  * coming down; on a wider screen the Earth stands in the lower left corner
@@ -141,14 +141,14 @@ function space(ctx, { sky = null } = {}) {
     <div class="space-room" id="space-room">
       <div class="space-stars" aria-hidden="true"></div>
       <div class="space-dome" data-sky-solid aria-hidden="true">
-        <img class="space-dome-img" src="/space/habitat.png" alt="" width="${HABITAT.w}" height="${HABITAT.h}" decoding="async">
+        <img class="space-dome-img" src="/space/habitat.webp" alt="" width="${HABITAT.w}" height="${HABITAT.h}" decoding="async">
         <span class="space-tag space-tag-dome" data-sky-solid>RED DUST CITY</span>
       </div>
       <i class="space-line" data-sky-solid aria-hidden="true"></i>
       ${groundDish()}
       ${trajectory()}
       <div class="space-earth" aria-hidden="true">
-        <img class="space-earth-img" src="/space/earth.jpg" alt="" width="${EARTH.w}" height="${EARTH.h}" decoding="async">
+        <img class="space-earth-img" src="/space/earth.webp" alt="" width="${EARTH.w}" height="${EARTH.h}" decoding="async">
         ${halo('desk')}${halo('phone')}
         <i class="space-globe" data-sky-round data-r="0.52" style="${globe}"></i>
       </div>

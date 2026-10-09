@@ -1040,8 +1040,9 @@ body.landing .hbt .odo b { position: relative; display: grid; place-items: cente
   font-family: var(--mono); font-size: clamp(26px, calc(3.4 * var(--u)), 40px); font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.08), inset 0 -1px 0 rgba(0,0,0,.7), 0 2px 6px rgba(0,0,0,.25); }
 body.landing .hbt .odo b::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: rgba(0,0,0,.55); box-shadow: 0 1px 0 rgba(255,255,255,.05); }   /* the drum's seam */
-body.landing .hbt .odo b.z { color: #5d5d66; }
-body.landing .hbt .odo b:last-child:not(.z) { color: #ff7a3d; }
+/* every drum's figure white — the leading zeros and the last drum too (9 October: "make sure the Power generated, Rounds
+   pedalled is all white numbers"; until then the zeros were dim and the last drum Mars orange) */
+body.landing .hbt .odo b.z, body.landing .hbt .odo b:last-child { color: #f4f4f1; }
 body.landing .hbt .batt { display: flex; align-items: center; width: 100%; max-width: 270px; }
 body.landing .hbt .batt-body { flex: 1 1 auto; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 3px; height: clamp(36px, calc(4.6 * var(--u)), 52px); padding: 4px; box-sizing: border-box; border: 2px solid var(--ink); border-radius: 9px; }
 body.landing .hbt .batt-body i { border-radius: 3px; background: rgba(var(--cobalt-rgb), .13); }
@@ -1209,6 +1210,22 @@ body.landing .hw-pulse { opacity: .35; transform-box: fill-box; transform-origin
 body.landing .hw-tag text { font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: .02em; fill: #fff; }   /* the figure in its pill (public.js, hwChart, sizes the pill to it) */
 body.landing .hw-tag { animation: hw-fade .8s ease-out 1s both; }
 body.landing #hw-live.is-live .hw-line, body.landing #hw-live.is-live .hw-area, body.landing #hw-live.is-live .hw-tag { animation: none; }   /* a reading swapped in later is simply there (hardware.js) */
+/* what the pointer reads (hardware.js — 9 October: "for all lines, when I hover show the current power rating"): a dashed
+   line at the hour under the pointer, a dot on every line there, and beside it a card with every line's figure */
+body.landing .hw-chart > svg { cursor: crosshair; touch-action: pan-y; }
+body.landing .hw-hover { pointer-events: none; }
+body.landing .hw-hover line { stroke: var(--ink); stroke-opacity: .4; stroke-width: 1; stroke-dasharray: 3 3; }
+body.landing .hw-hover circle { stroke: #fff; stroke-width: 2; }
+body.landing .hw-tip { position: absolute; z-index: 4; min-width: 150px; max-width: 240px; padding: 10px 12px 11px; border-radius: 14px; box-sizing: border-box;
+  background: #fff; color: #1b2142; box-shadow: 0 14px 34px -12px rgba(15,21,64,.45), 0 0 0 1px rgba(15,21,64,.06); font-family: var(--display); font-size: 13px; line-height: 1.3; pointer-events: none; }
+:root[data-theme="dark"] body.landing .hw-tip { background: #2a2d33; color: #f1f1ef; box-shadow: 0 14px 34px -12px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.08); }
+body.landing .hw-tip[hidden] { display: none; }
+body.landing .hw-tip-t { display: block; margin: 0 0 6px; font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; opacity: .65; font-variant-numeric: tabular-nums; }
+body.landing .hw-tip ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+body.landing .hw-tip li { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; column-gap: 8px; }
+body.landing .hw-tip li i { width: 8px; height: 8px; border-radius: 50%; }
+body.landing .hw-tip-n { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.landing .hw-tip-v { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 body.landing .hw-legend { flex-direction: row; flex-wrap: wrap; gap: 6px 26px; margin-top: 10px; }    /* the lines named side by side under the plot */
 body.landing .hw-legend li { flex: 0 1 auto; display: grid; grid-template-columns: 8px auto; column-gap: 10px; row-gap: 2px; align-items: baseline; min-width: 0; }   /* the dot, the name; the low and high under the name */
 body.landing .hw-legend li i { grid-row: 1; align-self: center; }
@@ -1236,20 +1253,18 @@ body.landing .tlegend { list-style: none; margin: 16px 2px 0; padding: 0; displa
 body.landing .tlegend li { display: flex; align-items: baseline; gap: 8px; font-family: var(--display); font-size: var(--fs-note); line-height: 1.3; color: var(--ink); cursor: pointer; transition: opacity .15s; }
 body.landing .tlegend i { flex: none; width: 10px; height: 10px; border-radius: 50%; transform: translateY(1px); }
 
-/* the three blogs: on the installation's screens each under a head of colour of its own; on the site the head is a heading
-   like every other panel's — the blog's name and its day, no band of colour, no grain, no shade (8 October: "remove the
-   card and the shading for Commander Log, Health Report, Daily Mission Report — just keep the headings") */
+/* the three blogs: on the site and on the installation's screens alike the head is a heading like every other panel's —
+   the blog's name and its day, no band of colour, no grain, no shade (8 October: "remove the card and the shading for
+   Commander Log, Health Report, Daily Mission Report — just keep the headings"; that evening, for the screens too: "from
+   /screen/blogs also remove the shading of the top tab with the name of the Commander Logbuch etc., for all the
+   officers" — each stood under a head of colour of its own, purple and orange, blue, green and gold) */
 body.landing .dpanel.blogp { padding: 0; overflow: hidden; }
-body.landing.screen .dpanel.blogp .dpanel-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "meta meta" "title title"; align-items: baseline; align-content: start; gap: 8px 12px; margin: 0; padding: 22px 28px; min-height: 150px; box-sizing: border-box; color: #fff; border-bottom: 0; position: relative; isolation: isolate; }
+body.landing.screen .dpanel.blogp .dpanel-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "meta meta" "title title"; align-items: baseline; align-content: start; gap: 8px 12px; margin: 0; padding: 22px 28px 16px; box-sizing: border-box; color: var(--ink); background: none; border-bottom: 1px solid var(--hair); position: relative; }
 body.landing.screen .dpanel.blogp .dpanel-title { display: contents; }
 body.landing.screen .dpanel.blogp .dpanel-title h3 { grid-area: title; margin: 0; }
 body.landing.screen .dpanel.blogp .dpanel-meta { grid-area: meta; }
-body.landing.screen .dpanel.blogp .dpanel-head::before { content: ""; position: absolute; inset: 0; z-index: -1; background-image: url("/grain.png"); background-size: 110px 110px; mix-blend-mode: overlay; opacity: .9; }   /* the mock-up's film grain over the colour */
-body.landing.screen .dpanel.blogp .dpanel-title h3 { color: #fff; font-size: 23.5px; text-shadow: 0 1px 12px rgba(0,0,0,.35); }
-body.landing.screen .dpanel.blogp .dpanel-meta { color: #fff; text-align: right; max-width: none; }
-body.landing.screen #blog-commander .dpanel-head { background: radial-gradient(ellipse 200px 125px at 52% 136%, #ffb347 0, #ffb347 52%, rgba(255,179,71,0) 100%), radial-gradient(ellipse 180px 155px at 86% 44%, #ff7a00 0, #ff7a00 52%, rgba(255,122,0,0) 100%), radial-gradient(ellipse 200px 165px at 28% 30%, #7a2bff 0, #7a2bff 52%, rgba(122,43,255,0) 100%), #1c0a3d; }
-body.landing.screen #blog-health .dpanel-head { background: radial-gradient(ellipse 200px 125px at 52% 136%, #8fd3ff 0, #8fd3ff 52%, rgba(143,211,255,0) 100%), radial-gradient(ellipse 180px 155px at 86% 44%, #2b9bd8 0, #2b9bd8 52%, rgba(43,155,216,0) 100%), radial-gradient(ellipse 200px 165px at 28% 30%, #2f45e8 0, #2f45e8 52%, rgba(47,69,232,0) 100%), #0b1a5c; }
-body.landing.screen #blog-science .dpanel-head { background: radial-gradient(ellipse 190px 120px at 56% 140%, #19c04a 0, #19c04a 52%, rgba(25,192,74,0) 100%), radial-gradient(ellipse 170px 155px at 86% 56%, #e6b83c 0, #e6b83c 52%, rgba(230,184,60,0) 100%), radial-gradient(ellipse 200px 150px at 30% 32%, #12b886 0, #12b886 52%, rgba(18,184,134,0) 100%), #06140c; }
+body.landing.screen .dpanel.blogp .dpanel-title h3 { color: var(--ink); font-size: 23.5px; }
+body.landing.screen .dpanel.blogp .dpanel-meta { color: var(--dim); text-align: left; max-width: none; }
 body.landing .dpanel.blogp .dpanel-body { padding: 24px 28px 34px; }
 body.landing .blog-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: var(--mars) transparent; -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 34px), transparent); mask-image: linear-gradient(180deg, #000 calc(100% - 34px), transparent); }
 body.landing .blogp .card { background: transparent; box-shadow: none; border: 0; padding: 0; }
@@ -1694,6 +1709,9 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
   body.landing .hbt .t-sens > h3, body.landing .hbt .t-sens > .sub { margin: 0; padding-right: 0; overflow-wrap: normal; word-break: normal; -webkit-hyphens: auto; hyphens: auto; }
   body.landing .hbt .t-sens > h3 { grid-area: h; }
   body.landing .hbt .t-sens > .sub { grid-area: sub; }
+  /* the sign stands in its own column here, not over the words: the room a wider screen keeps it at their right goes back
+     to the name and the scale (8 October — "Air pressure" and its scale had wrapped on two lines for nothing) */
+  body.landing .hbt .tile.t-sens > .t-ic ~ h3, body.landing .hbt .tile.t-sens > .t-ic ~ .sub { padding-right: 0; }
   body.landing .hbt .t-sens .t-read, body.landing .hbt .t-sens .t-read.has-side { display: contents; }
   body.landing .hbt .t-sens .big { grid-area: big; justify-self: end; font-size: 22px; text-align: right; white-space: nowrap; }
   body.landing .hbt .t-sens .big em { font-size: 12.5px; margin-left: 3px; }
@@ -1728,7 +1746,7 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
   body.landing .dpanel .dpanel-meta { text-align: left; max-width: none; }
   body.landing .glance-link { justify-content: space-between; gap: 10px; padding: 0 16px 0 18px; min-height: 42px; }
   body.landing .glance-link-title { font-size: 15.5px; }
-  body.landing.screen .dpanel.blogp .dpanel-head { min-height: 112px; padding: 16px 20px; }
+  body.landing.screen .dpanel.blogp .dpanel-head { padding: 16px 20px 12px; }
   body.landing.screen .dpanel.blogp .dpanel-title h3 { font-size: 20px; }
   /* the index of folders: each row's name above its track, three narrow keys a track, the sign and the code on one line and
      the name beneath; the open folder as tall as its panel — the page is one scroll on a phone, the folder scrolls with it */
@@ -1907,7 +1925,7 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
   html.js body.landing.messages .dev-close svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
   html.js body.landing.messages .dev-close:active { transform: scale(.92); background: rgba(15,21,64,.12); }
   html.js[data-theme="dark"] body.landing.messages .dev-close { background: rgba(255,255,255,.08); }
-  body.landing.messages .dev-head { margin: 0 0 12px; gap: 10px; font-size: 13px; }
+  body.landing.messages .dev-head { margin: 0 0 12px; gap: 10px; font-size: 13px; letter-spacing: .08em; text-wrap: balance; }   /* (its line whole on a 390 px phone; balanced over two where it cannot be) */
   body.landing.messages .dev-chip { font-size: 14px; padding: 5px 12px; }
   /* the day's question in the pop-up: compact, so the writing box keeps its room; while the keyboard is up the
      question stays and its invitation goes */
@@ -1931,11 +1949,11 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
   body.landing.messages .composer hr { display: none; }
   body.landing.messages .composer .tagbar { grid-area: tags; min-width: 0; margin: 0; flex-direction: row; align-items: center; gap: 0; }
   body.landing.messages .composer .tagbar .lbl { display: none; }
-  /* the five tags in one line, every one whole: the type is sized to the row (container units — a hair under 10 px on
-     a 390 px phone, 9 px on a 360 px one), and only the narrowest phones (320 px) slide the row sideways */
-  body.landing.messages .composer .tags { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; justify-content: space-between; gap: 3px; padding: 0; container-type: inline-size; overflow-x: auto; scrollbar-width: none; }
-  body.landing.messages .composer .tags::-webkit-scrollbar { display: none; }
-  body.landing.messages .composer .tags label { flex: 0 0 auto; min-width: 0; justify-content: center; min-height: 36px; padding: 0 5px; font-size: 10px; font-size: clamp(9px, 2.85cqw, 10px); letter-spacing: 0; white-space: nowrap; }
+  /* the five tags as whole keys, in two short rows in the middle of the pop-up, each its name with room round it (8
+     October: "in the light mode, fix the hashtags" — squeezed into one line that scrolled sideways, their raised edges
+     were cut flat by the row and the names touched the keys' sides, the last key cut off); nothing clips their shadows */
+  body.landing.messages .composer .tags { flex: 1 1 auto; min-width: 0; flex-wrap: wrap; justify-content: center; gap: 10px 8px; padding: 2px 0 4px; overflow: visible; }
+  body.landing.messages .composer .tags label { flex: 0 0 auto; min-width: 0; justify-content: center; min-height: 34px; padding: 0 14px; font-size: 12px; letter-spacing: .03em; white-space: nowrap; }
   body.landing.messages .composer .tags label span { display: block; overflow: visible; }
   body.landing.messages .flash.err { margin: 0 0 10px; }
   /* the keyboard is up (tabbar.js sets body.kb from the visible part of the page, which the keyboard shortens): the bar of

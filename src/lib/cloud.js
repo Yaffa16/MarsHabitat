@@ -9,7 +9,7 @@
  * every CLOUD_CHECK_SECONDS, and keeps a copy of every image on the station-data
  * volume under /data/cloud, beside a manifest. The browser only ever talks
  * to the station: /media/cloud/<id> serves the copy, /media/cloud/<id>/thumb
- * a preview that Nextcloud rendered. So the grid stands with the cloud
+ * a preview that Nextcloud rendered (and /small a smaller one, for phones). So the grid stands with the cloud
  * slow, unreachable or the venue network unplugged, and the credentials
  * stay on the server.
  *
@@ -50,6 +50,7 @@ const CFG = {
   maxFiles: Number(process.env.CLOUD_MAX_FILES || 50000),
   depth: Number(process.env.CLOUD_DEPTH || 3),            // subfolders followed this deep
   thumb: Number(process.env.CLOUD_THUMB || 960),           // preview width, px (16:9 → 960×540)
+  small: Number(process.env.CLOUD_SMALL || 480),           // the small preview's: a phone's tile, the sky's picture (16:9 → 480×270)
   sort: process.env.CLOUD_SORT === 'name' ? 'name' : 'newest',
   title: (process.env.CLOUD_TITLE || 'Gallery').trim(),
   dir: (process.env.CLOUD_DIR || '').trim(),                // a mounted copy of the folder, instead of WebDAV
@@ -216,6 +217,7 @@ async function listImages() {
 const idOf = (p) => crypto.createHash('sha1').update(p).digest('hex').slice(0, 16);
 const filePath = (it) => path.join(DIR, `${it.id}.${it.ext}`);
 const thumbPath = (it) => path.join(DIR, `${it.id}.thumb.jpg`);
+const smallPath = (it) => path.join(DIR, `${it.id}.small.jpg`);
 
 async function download(url, dest) {
   // a picture may be large and the link slow: six times the listing's limit, two minutes by default
@@ -253,6 +255,19 @@ async function cacheThumb(it) {
   catch { return false; }
 }
 
+/** And a small one, half as wide (CLOUD_SMALL): what a phone's tile and the
+ *  pictures in the landing page's sky are drawn from — a quarter of the
+ *  bytes (8 October: "the website is very heavy to load"). Rendered by
+ *  Nextcloud the same way; without it the page takes the preview above. */
+async function cacheSmall(it) {
+  const dest = smallPath(it);
+  if (fs.existsSync(dest) && it.smallEtag === it.etag) return true;
+  if (fromDir() || !it.fileId) return false;
+  const url = `${CFG.url}/index.php/core/preview?fileId=${encodeURIComponent(it.fileId)}&x=${CFG.small}&y=${Math.round(CFG.small * 9 / 16)}&a=1&forceIcon=0`;
+  try { await download(url, dest); it.smallEtag = it.etag; return true; }
+  catch { return false; }
+}
+
 /* ---------------------------------------------------------------- polling */
 
 /* One read of the folder at a time. A read that is still running when the
@@ -283,7 +298,7 @@ async function poll() {
       const id = idOf(e.path);
       const prev = before.get(id) || {};
       return { id, path: e.path, name: e.name, size: e.size, modified: e.modified, etag: e.etag, fileId: e.fileId, mime: e.mime, ext: e.ext, local: e.local || null,
-        cachedEtag: prev.cachedEtag || null, thumbEtag: prev.thumbEtag || null, tooBig: false,
+        cachedEtag: prev.cachedEtag || null, thumbEtag: prev.thumbEtag || null, smallEtag: prev.smallEtag || null, tooBig: false,
         // when it was ADDED to the folder — not the date the picture carries,
         // which a camera or a phone may have set days earlier: on the cloud
         // Nextcloud numbers every file as it arrives (oc:fileid, ever rising),
@@ -304,6 +319,7 @@ async function poll() {
       if (quiet()) { held = next.length - cached; break; }                   // 22:00 came while copying: the rest waits for the morning
       try { if (await cacheFile(it)) cached++; } catch (e) { it.error = `copy: ${e.message}`; }
       await cacheThumb(it);
+      await cacheSmall(it);
     }
     if (held) console.log(`[cloud] ${QUIET.from} at the venue — stopped copying; ${held} picture${held === 1 ? '' : 's'} wait${held === 1 ? 's' : ''} until ${QUIET.to}`);
     if (seq !== pollSeq) return;
@@ -353,6 +369,7 @@ function gallery() {
   return items.filter((it) => !it.tooBig && fs.existsSync(filePath(it))).map((it) => ({
     id: it.id, name: it.name, path: it.path, size: it.size, modified: it.modified, added: it.added, mime: it.mime, taken: takenFromName(it.name),
     url: `/media/cloud/${it.id}`, thumb: fs.existsSync(thumbPath(it)) ? `/media/cloud/${it.id}/thumb` : `/media/cloud/${it.id}`,
+    small: fs.existsSync(smallPath(it)) ? `/media/cloud/${it.id}/small` : null,
   }));
 }
 const get = (id) => items.find((it) => it.id === id) || null;
@@ -363,7 +380,7 @@ const get = (id) => items.find((it) => it.id === id) || null;
  *  line and keep it current on the same beat. */
 function version() {
   const h = crypto.createHash('sha1');
-  for (const it of items) h.update(`${it.id}|${it.etag}|${it.cachedEtag || ''}|${it.thumbEtag || ''}|${it.tooBig ? 1 : 0};`);
+  for (const it of items) h.update(`${it.id}|${it.etag}|${it.cachedEtag || ''}|${it.thumbEtag || ''}|${it.smallEtag || ''}|${it.tooBig ? 1 : 0};`);
   h.update(`@${status.lastPollAt ? Math.floor(status.lastPollAt / 60000) : 0}|${status.lastError ? Math.floor(status.lastError.at / 60000) : 0}`);
   return h.digest('hex').slice(0, 12);
 }
@@ -377,4 +394,4 @@ function snapshot() {
     tooBig: items.filter((i) => i.tooBig).map((i) => i.path) };
 }
 
-module.exports = { CFG, DIR, QUIET, configured, quiet, start, poll, gallery, get, filePath, thumbPath, snapshot, takenFromName };
+module.exports = { CFG, DIR, QUIET, configured, quiet, start, poll, gallery, get, filePath, thumbPath, smallPath, snapshot, takenFromName };

@@ -148,12 +148,16 @@ function cloudWhen(x, tz = 'Europe/Berlin') {
 
 /** One picture from the cloud folder as a tile: the preview, and under it the
  *  date and the time it was taken — or, in the gallery, where the day heads
- *  its row of pictures already, the time alone (`timeOnly`). */
+ *  its row of pictures already, the time alone (`timeOnly`). Where the small
+ *  preview is there (src/lib/cloud.js, cacheSmall) a phone takes it and a
+ *  wider screen the larger one (srcset), so a phone loads a quarter of the
+ *  bytes (8 October: lighter); the page's sky reads its picture off the tile's
+ *  src, the small one. */
 function cloudTile(x, tz, { timeOnly = false } = {}) {
   const when = cloudWhen(x, tz);
   const text = when ? (timeOnly ? when.text.split(' · ').pop() : when.text) : '';
   return `<a class="mtile kind-image" href="${x.url}" data-id="${x.id}" title="${esc(x.name)}" target="_blank" rel="noopener">
-      <span class="mtile-visual"><img src="${x.thumb}" alt="${esc(x.name)}" loading="lazy" decoding="async"></span>${
+      <span class="mtile-visual"><img src="${x.small || x.thumb}"${x.small ? ` srcset="${x.small} 480w, ${x.thumb} 960w" sizes="(max-width: 760px) 160px, 340px"` : ''} alt="${esc(x.name)}" loading="lazy" decoding="async"></span>${
       when ? `<span class="mtile-text mtile-stamp"><time class="mtile-when" datetime="${esc(when.iso)}">${esc(text)}</time></span>` : ''}</a>`;
 }
 

@@ -40,7 +40,7 @@
     freezeMs: Date.parse('2026-10-27T23:59:59+01:00')   // end of that day, Berlin (winter time)
   };
   function frozen() { return Date.now() > CFG.freezeMs; }
-  CFG.url = '/api/habitat/data?days=30';
+  CFG.url = '/api/habitat/data?days=30&thin=1';
 
   // the drawing's colours, read off the page: the accent from the body (where a theme laid over the page, like the blue day of
   // public/light.css, now laid aside, sets it), ink and hairline from the root; read again when the theme turns (switches.js)
@@ -91,7 +91,7 @@
         return row;
       }).filter(function (r) { return Number.isFinite(r.t); });
       rows.sort(function (a, b) { return a.t - b.t; });
-      return { rows: rows, savedAt: obj.savedAt || null, stamp: obj.stamp };
+      return { rows: rows, savedAt: obj.savedAt || null, stamp: obj.stamp, fullAt: Number(obj.fullAt) || 0 };
     } catch (err) { return { rows: [], savedAt: null }; }
   }
   function saveLocal() {
@@ -102,7 +102,7 @@
         KEYS.forEach(function (k) { if (r[k] !== null && r[k] !== undefined) o[k] = r[k]; });
         return o;
       });
-      localStorage.setItem(CFG.localKey, JSON.stringify({ savedAt: Date.now(), stamp: state.stamp, rows: rows }));
+      localStorage.setItem(CFG.localKey, JSON.stringify({ savedAt: Date.now(), stamp: state.stamp, fullAt: state.fullAt || 0, rows: rows }));
     } catch (err) { /* quota or private mode: the server keeps the real history */ }
   }
 
@@ -460,29 +460,30 @@
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
   function dayKey(ms) { var d = new Date(ms); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
 
-  /* The axis. During and after the run it is the run, first day to last —
-     15 to 27 October, SOL 01 to 13. Before the run it starts on the day the
-     readings were last started again (the build, or the reset) and runs
-     thirteen days from there, so the node's readings are on the graph from
-     today. The tile carries the dates (data-axis-start / data-axis-end) and
-     whether the axis is the run (data-axis-run), so a rehearsal against
-     other dates gets its own. `today` is 1-based within the axis, 0 before it. */
+  /* The axis: always a fortnight of the calendar (9 October: "the Trends graph should always show trends for 14-day
+     periods — 1–14th, 15–29th"): the half of the month today is in, which the station names (data-axis-start /
+     data-axis-end: 1 to 14 October until the run, 15 to 29 October from its first day, where it stands still after its
+     last). A day of the run is named by its SOL — counted from the run's first day (data-run-start / data-run-end), so
+     a rehearsal against other dates gets its own — and carries the plan for that SOL; any other day is named by its
+     date. `today` is 1-based within the axis, 0 before it. */
   function dayWindow() {
     var tile = $('hbt-trends');
     if (!tile) return null;
     var today = tile.getAttribute('data-date') || dayKey(Date.now());
-    var first = tile.getAttribute('data-axis-start') || tile.getAttribute('data-run-start') || CFG.anchor;
-    var lastDay = tile.getAttribute('data-axis-end') || tile.getAttribute('data-run-end') || CFG.freezeDate;
-    var isRun = tile.getAttribute('data-axis-run') !== '0';
-    var days = [], todayIdx = 0, d = new Date(first + 'T00:00:00'), end = new Date(lastDay + 'T00:00:00');
+    var runStart = tile.getAttribute('data-run-start') || CFG.anchor, runEnd = tile.getAttribute('data-run-end') || CFG.freezeDate;
+    var first = tile.getAttribute('data-axis-start') || runStart;
+    var lastDay = tile.getAttribute('data-axis-end') || runEnd;
+    var days = [], todayIdx = 0, d = new Date(first + 'T00:00:00'), end = new Date(lastDay + 'T00:00:00'), r0 = new Date(runStart + 'T00:00:00').getTime();
     for (var i = 0; d.getTime() <= end.getTime() && i < 60; i++) {
       var e = new Date(d); e.setDate(e.getDate() + 1);
-      if (dayKey(d.getTime()) === today) todayIdx = i + 1;
-      days.push({ start: d.getTime(), end: e.getTime() });
+      var k = dayKey(d.getTime());
+      if (k === today) todayIdx = i + 1;
+      days.push({ start: d.getTime(), end: e.getTime(), sol: k >= runStart && k <= runEnd ? Math.round((d.getTime() - r0) / 864e5) + 1 : 0 });
       d = e;
     }
     if (today > lastDay) todayIdx = days.length;   // the axis is behind us: everything on it has happened
-    return { days: days, today: todayIdx, total: days.length, first: days.length ? days[0].start : 0, run: isRun };
+    var anySol = days.some(function (x) { return x.sol > 0; });
+    return { days: days, today: todayIdx, total: days.length, first: days.length ? days[0].start : 0, run: anySol };
   }
 
   /* Monotone cubic (Fritsch–Carlson): smooth, and never overshoots a level. */
@@ -589,7 +590,7 @@
     (spec.series || []).forEach(function (s) {
       var values = [], held = [];
       keys.forEach(function (k, i) {
-        var v = (s.points || {})[k], p = win.run ? (s.planned || {})[String(i + 1)] : undefined;
+        var sol = win.days[i].sol, v = (s.points || {})[k], p = sol ? (s.planned || {})[String(sol)] : undefined;   // the plan on the run's days, by their SOL
         if (v !== undefined && v !== null) { values.push(v); held.push(null); }
         else if (p !== undefined && p !== null) { values.push(p); held.push(-1); }
         else { values.push(null); held.push(null); }
@@ -625,7 +626,7 @@
     var x = function (i) { return padL + (n === 1 ? (W - padL - padR) / 2 : (i / (n - 1)) * (W - padL - padR)); };
     var y = function (p) { return padT + (H - padT - padB) * (1 - Math.min(100, Math.max(0, p)) / 100); };
 
-    var svg = svgRoot(W, H, { 'class': 'tchart-svg tone' + (slim ? ' narrow' : ''), role: 'img', 'aria-label': win.run ? 'Every trend across the ' + n + ' days of the run' : 'The habitat over ' + n + ' days before the run' });
+    var svg = svgRoot(W, H, { 'class': 'tchart-svg tone' + (slim ? ' narrow' : ''), role: 'img', 'aria-label': 'Every trend over the ' + n + ' days from ' + fmtDate(win.days[0].start) + ' to ' + fmtDate(win.days[n - 1].start) });
     if (slim) { svg.setAttribute('width', W); svg.style.width = W + 'px'; svg.style.height = H + 'px'; }
     var defs = el('defs', {});
     svg.appendChild(defs);
@@ -650,9 +651,10 @@
       var anchor = 'middle';                                                    // each under its own day, the first and the last too (the margins have room): the last two never run together
       var tx = el('text', { x: x(i).toFixed(1), y: H - (slim ? 12 : 22), 'text-anchor': slim ? 'middle' : anchor,
         'class': 'taxis-t' + (isTodayCol ? ' today' : ''), style: 'font-weight:600;font-size:' + axisPx + 'px' });
-      tx.textContent = win.run ? (slim ? pad2(i + 1) : 'SOL ' + pad2(i + 1)) : (slim ? String(new Date(win.days[i].start).getDate()) : fmtDate(win.days[i].start));
+      var sol = win.days[i].sol;                                                // a day of the run by its SOL, any other by its date
+      tx.textContent = sol ? (slim ? pad2(sol) : 'SOL ' + pad2(sol)) : (slim ? String(new Date(win.days[i].start).getDate()) : fmtDate(win.days[i].start));
       svg.appendChild(tx);
-      if (!slim && win.run) {
+      if (!slim && sol) {
         var dx2 = el('text', { x: x(i).toFixed(1), y: H - 5, 'text-anchor': anchor,
           'class': 'taxis-t' + (isTodayCol ? ' today' : ''), style: 'font-size:' + datePx + 'px;opacity:.75' });
         dx2.textContent = fmtDate(win.days[i].start);
@@ -665,7 +667,7 @@
         svg.appendChild(tag);
       }
     }
-    if (slim && win.run) {                                                        // the axis named once, at its start
+    if (slim && win.days[0].sol) {                                                // the axis named once, at its start — where it starts with the run
       var solK = el('text', { x: 2, y: H - 12, 'text-anchor': 'start', 'class': 'taxis-t', style: 'font-size:' + (axisPx - 1) + 'px;opacity:.75' });
       solK.textContent = 'SOL';
       svg.appendChild(solK);
@@ -880,11 +882,20 @@
     $('hbt-notes').innerHTML = notesHTML();
   }
 
-  /* --------------------------------------------------- fetch + timers */
+  /* --------------------------------------------------- fetch + timers
+     The month once — the days before today one reading in ten minutes, today every reading (src/lib/critical.js,
+     rows) —, then only what is new: from an hour before the newest reading this page holds, so that a reading the
+     station stores late is still caught (mergeRows folds the copies). The whole month again every hour, and at once
+     whenever the station's record has been reset or its first instant has moved. A page that kept the readings from
+     an earlier visit (the local store) asks only for what came after them. (8 October: "the website is very heavy to
+     load" — this was the whole month, every minute.) */
+  var FULL_EVERY = 3600000, OVERLAP = 3600000;
   function refresh() {
     if (state.inFlight) return;
     state.inFlight = true;
-    fetch(CFG.url, { cache: 'no-store' })
+    var newest = state.rows.length ? state.rows[state.rows.length - 1].t : 0;
+    var part = state.stamp !== undefined && newest > 0 && Date.now() - (state.fullAt || 0) < FULL_EVERY;
+    fetch(CFG.url + (part ? '&since=' + Math.floor(newest - OVERLAP) : ''), { cache: 'no-store' })
       .then(function (res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         return res.json();
@@ -898,13 +909,18 @@
         // The station is the record: a reset, or the start of the run, means
         // whatever this browser remembered from before is not part of it.
         var stamp = String(data.epoch || '') + '|' + String(data.floor || '');
-        if (state.stamp !== undefined && state.stamp !== stamp) state.rows = [];
+        if (state.stamp !== undefined && state.stamp !== stamp) {
+          state.rows = [];
+          // what was asked for was only what is new: the record is read again, whole, at once
+          if (part) { state.stamp = stamp; state.fullAt = 0; state.nextReadAt = Date.now(); return; }
+        }
         state.stamp = stamp;
+        if (!part) state.fullAt = Date.now();
         var floor = Number(data.floor) || -Infinity;
         state.rows = mergeRows(state.rows, rows).filter(function (r) { return r.t >= floor; });
         // Prefer the server's own read time; it is the one polling the node.
-        state.lastReadAt = data.rows && data.rows.length
-          ? data.rows[data.rows.length - 1].t : (data.lastReadAt || state.lastReadAt);
+        var latest = rows.length ? rows[rows.length - 1].t : part ? newest : 0;
+        state.lastReadAt = latest || data.lastReadAt || state.lastReadAt;
         state.failure = data.lastError || null;
         state.polledAt = data.lastReadAt || (data.lastError ? data.lastError.at : null) || null;
         state.nodeRows = data.nodeRows === undefined ? null : data.nodeRows;
@@ -950,6 +966,7 @@
   if (stored.rows.length) {
     state.rows = stored.rows;
     state.stamp = stored.stamp;
+    state.fullAt = stored.fullAt;
     state.lastReadAt = stored.savedAt;
     render();
   }

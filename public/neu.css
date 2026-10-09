@@ -30,16 +30,25 @@
   --neu-faint: #8d95b5;
   --neu-on: var(--mars-ink);      /* what is chosen: orange */
   --neu-glow: 0 10px 22px -10px rgba(255,90,31,.6);
+  /* by day every level is the one ground (the levels are the night's) */
+  --neu-1: var(--neu); --neu-2: var(--neu); --neu-3: var(--neu); --neu-sunk: var(--neu);
   color-scheme: light;
 }
-/* night: black leaves no room below it for a shade, so the ground is the station's night paper (#121214, black to the
-   eye), the shade true black, the light a faint grey — and every raised thing has a one-pixel rim of light along its
-   top-left edge, the way a console's keys catch a lamp in the dark */
+/* night: greys in levels (8 October: "in the dark mode use shades of the cards as shown here — the various greys to show a
+   visual difference between the background and the content", after a dark banking app's sheet): the ground the darkest
+   (#1c1d20), a card or a panel on it a step lighter (--neu-1, #26292e), a tile in a card a step lighter again (--neu-2,
+   #303338), what stands in a tile lighter still (--neu-3, #393c42); a field or a well sunk darker than the card it is in
+   (--neu-sunk). The shade near black, the light a faint grey — and every raised thing a one-pixel rim of light along its
+   top-left edge, the way a console's keys catch a lamp in the dark (until 8 October one ground for all, #121214) */
 :root[data-theme="dark"] {
-  --neu: #121214;
-  --neu-d: #000000;
-  --neu-l: #29292e;
-  --neu-rim: inset 1px 1px 0 rgba(255,255,255,.07);
+  --neu: #1c1d20;
+  --neu-1: #26292e;
+  --neu-2: #303338;
+  --neu-3: #393c42;
+  --neu-sunk: #19191c;
+  --neu-d: #0b0c0e;
+  --neu-l: #2b2e33;
+  --neu-rim: inset 1px 1px 0 rgba(255,255,255,.06);
   --neu-line: rgba(255,255,255,.075);
   --neu-out: 10px 10px 26px var(--neu-d), -7px -7px 20px var(--neu-l), var(--neu-rim);
   --neu-out-sm: 6px 6px 14px var(--neu-d), -4px -4px 11px var(--neu-l), var(--neu-rim);
@@ -53,17 +62,17 @@
   --neu-glow: 0 0 22px -2px rgba(255,106,46,.55);
   color-scheme: dark;
 }
-/* the station's tokens, re-pointed: one ground, no glass, the soft shadows */
+/* the station's tokens, re-pointed: the ground, the levels on it (one by day), no glass, the soft shadows */
 :root, :root[data-theme="light"], :root[data-theme="dark"] {
   --paper: var(--neu); --ground: var(--neu); --ground-2: var(--neu);
   --ink: var(--neu-ink); --dim: var(--neu-dim); --faint: var(--neu-faint);
-  --tile: var(--neu); --glass: var(--neu); --glass-soft: var(--neu); --glass-solid: var(--neu);
+  --tile: var(--neu-1); --glass: var(--neu-1); --glass-soft: var(--neu-1); --glass-solid: var(--neu-1);
   --glass-edge: transparent; --glass-shadow: var(--neu-out); --hair: var(--neu-line);
-  --raise: var(--neu); --raise-2: var(--neu); --well: var(--neu);
+  --raise: var(--neu-1); --raise-2: var(--neu-2); --well: var(--neu-sunk);
   --rule: var(--neu-line); --rule-hard: var(--neu-line); --edge: transparent;
   --sh-raise: var(--neu-out); --sh-raise-lg: var(--neu-out); --sh-raise-sm: var(--neu-out-sm); --sh-inset: var(--neu-in-sm);
-  --note-bg: var(--neu); --note-edge: transparent; --note-shadow: var(--neu-out);
-  --paper-2: var(--neu); --screen: var(--neu); --screen-2: var(--neu);
+  --note-bg: var(--neu-2); --note-edge: transparent; --note-shadow: var(--neu-out);
+  --paper-2: var(--neu); --screen: var(--neu-1); --screen-2: var(--neu-2);
   --r: 24px; --r-lg: 30px; --r-sm: 16px;
 }
 
@@ -77,20 +86,20 @@ body.landing .tk-window { border-top: 1px solid var(--neu-line) !important; }
 body.landing .tk-nav a, :root[data-theme="dark"] body.landing .tk-nav a { background-image: none !important; border: 0 !important; border-radius: 18px !important; box-shadow: var(--neu-out-sm), inset 1px 1px 2px rgba(255,255,255,.28) !important; }
 body.landing .tk-nav a.tk-write, :root[data-theme="dark"] body.landing .tk-nav a.tk-write { background: linear-gradient(180deg, #ff8a3d, #ff5a1f) !important; color: #1a0a02 !important; box-shadow: var(--neu-out-sm), var(--neu-glow), inset 1px 1px 1px rgba(255,255,255,.38) !important; }
 body.landing .tk-nav a.tk-dash, :root[data-theme="dark"] body.landing .tk-nav a.tk-dash { background: linear-gradient(180deg, #4f63ff, #2f45e8) !important; color: #fff !important; box-shadow: var(--neu-out-sm), inset 1px 1px 1px rgba(255,255,255,.28) !important; }
-body.landing .tk-nav a.tk-about, :root[data-theme="dark"] body.landing .tk-nav a.tk-about { background: var(--neu) !important; color: var(--neu-ink) !important; box-shadow: var(--neu-out-sm) !important; }
+body.landing .tk-nav a.tk-about, :root[data-theme="dark"] body.landing .tk-nav a.tk-about { background: var(--neu-2) !important; color: var(--neu-ink) !important; box-shadow: var(--neu-out-sm) !important; }
 /* the page's own key is pressed in (its focus ring stays, from station.css) */
 body.landing .tk-nav a[aria-current="page"], :root[data-theme="dark"] body.landing .tk-nav a[aria-current="page"] { box-shadow: var(--neu-in-sm) !important; }
 body.landing .tk-nav a[aria-current="page"]:not(:focus-visible) { outline: 0 !important; }
 body.landing .tk-nav a:hover { transform: none !important; filter: none !important; }
 body.landing .tk-sol { border: 0 !important; box-shadow: var(--neu-out-xs) !important; }
-body.landing .tk-right form button, body.landing .tk-right .lang button, body.landing .status button, body.landing .lang { border: 0 !important; background: var(--neu) !important; box-shadow: var(--neu-out-xs) !important; color: var(--neu-dim) !important; }
+body.landing .tk-right form button, body.landing .tk-right .lang button, body.landing .status button, body.landing .lang { border: 0 !important; background: var(--neu-2) !important; box-shadow: var(--neu-out-xs) !important; color: var(--neu-dim) !important; }
 /* the theme key's form is only a wrapper: no ground and no shadow of its own — a square shade stood round the round key
    (8 October: "this artefact of a square box or shadow") */
 body.landing .status form.theme, body.landing .tk-right form.theme, :root[data-theme] body.landing .status form.theme { background: transparent !important; box-shadow: none !important; border: 0 !important; }
-body.landing .status .lang button.on { box-shadow: var(--neu-in-sm) !important; color: var(--neu-on) !important; background: var(--neu) !important; }
-body.landing .status .lang-menu > summary, :root[data-theme="dark"] body.landing .status .lang-menu > summary { background: var(--neu) !important; background-image: none !important; color: var(--neu-dim) !important; border: 0 !important; box-shadow: var(--neu-out-xs) !important; }
-body.landing .status .lang-menu > .lang { background: var(--neu) !important; border: 0 !important; box-shadow: var(--neu-out-sm) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
-body.landing .status .theme button, :root[data-theme="dark"] body.landing .status .theme button { background: var(--neu) !important; border: 0 !important; box-shadow: var(--neu-out-xs) !important; color: var(--neu-dim) !important; }
+body.landing .status .lang button.on { box-shadow: var(--neu-in-sm) !important; color: var(--neu-on) !important; background: var(--neu-sunk) !important; }
+body.landing .status .lang-menu > summary, :root[data-theme="dark"] body.landing .status .lang-menu > summary { background: var(--neu-2) !important; background-image: none !important; color: var(--neu-dim) !important; border: 0 !important; box-shadow: var(--neu-out-xs) !important; }
+body.landing .status .lang-menu > .lang { background: var(--neu-1) !important; border: 0 !important; box-shadow: var(--neu-out-sm) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+body.landing .status .theme button, :root[data-theme="dark"] body.landing .status .theme button { background: var(--neu-2) !important; border: 0 !important; box-shadow: var(--neu-out-xs) !important; color: var(--neu-dim) !important; }
 
 /* ------------------------------------------------------------------------- cards, panels, sheets */
 body.landing .about-sec, body.landing .call, body.landing .steps, body.landing .dpanel, body.landing .panel, body.landing .foot,
@@ -98,19 +107,21 @@ body.landing .sol-side, body.landing .portal-pop .device, body.landing .device, 
 body.landing .card.xc, body.landing .card.note, body.landing .board .card.note, :root[data-theme="dark"] body.landing .card.xc.note,
 body.landing .officer-card, body.landing .hab-card, body.landing .dcard, body.landing .mission-card, body.landing .blog, body.landing .post,
 body.landing .sheet-p1, body.landing .dome-panel, body.landing .legend, body.landing .kv-card, body.landing .hw-tile, body.landing .pwr-tile, body.landing .sens-tile {
-  background: var(--neu) !important; background-image: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  background: var(--neu-1) !important; background-image: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
   border-color: transparent !important; box-shadow: var(--neu-out) !important; }
-body.landing .about-sec .panel, body.landing .dpanel .panel { box-shadow: var(--neu-out-sm) !important; }
+body.landing .about-sec .panel, body.landing .dpanel .panel { background: var(--neu-2) !important; box-shadow: var(--neu-out-sm) !important; }
+/* a card in a card a step lighter — the notes on the board, the board's own panel being the card (by night) */
+body.landing .board .card.note, :root[data-theme="dark"] body.landing .board .card.xc.note { background: var(--neu-2) !important; }
 body.landing .call::before, body.landing .call::after, body.landing .steps::before, body.landing .about-sec::before { display: none !important; }
 body.landing .call:hover, body.landing .card.note:hover, body.landing .card.note:has(.card-space[data-launched]):hover { transform: none !important; box-shadow: var(--neu-out) !important; border-color: transparent !important; }
 /* what stands sunk into the surface: the fields, the crew's answer, the wells, the charts, a note's tags */
 body.landing textarea, body.landing input[type="text"], body.landing input[type="search"], body.landing input[type="email"], body.landing select, body.landing .msgbox textarea, body.landing .composer .msgbox textarea,
 body.landing .card-reply.note-answer, body.landing .card.note .card-reply.note-answer, :root[data-theme="dark"] body.landing .card.note .card-reply.note-answer,
 body.landing .well, body.landing .chart, body.landing .hw-chart, body.landing .trend-box, body.landing .space-room, body.landing .note-tags .note-tag {
-  background: var(--neu) !important; background-image: none !important; border: 0 !important; box-shadow: var(--neu-in-sm) !important; }
+  background: var(--neu-sunk) !important; background-image: none !important; border: 0 !important; box-shadow: var(--neu-in-sm) !important; }
 body.landing textarea, body.landing .composer .msgbox textarea { box-shadow: var(--neu-in) !important; border-radius: 20px !important; }
 /* the night window: the room stays space — black, the stars, the Earth — set into the ground like a screen, with a bevel */
-body.landing .space-room { background: #000 !important; box-shadow: var(--neu-out) !important; border-radius: 30px !important; }
+body.landing .space-room { background: var(--room-sky, #000) !important; box-shadow: var(--neu-out) !important; border-radius: 30px !important; }
 body.landing .space-room::after { content: ""; position: absolute; inset: 0; z-index: 6; pointer-events: none; border-radius: inherit;
   box-shadow: inset 10px 10px 24px rgba(0,0,0,.65), inset -10px -10px 24px rgba(255,255,255,.07); }
 /* the notes on the board */
@@ -118,16 +129,21 @@ body.landing .card.note .note-head, body.landing .board .card.note .note-head, :
 body.landing .card.note .note-foot { border-top: 1px solid var(--neu-line) !important; }
 body.landing .card.note[data-mine], body.landing .board .card.note[data-mine] { box-shadow: var(--neu-out), inset 3px 0 0 var(--mars) !important; }
 body.landing .card.note .note-tag { color: var(--cobalt) !important; }
+/* the messages by day (9 October: "for the light mode, add a colour to the message cards to distinguish them from the
+   background"): every message a white card on the grey ground, the soft shade kept, and the crew's answer in it a pale
+   wash of the station's blue with a hair of the same blue round it; by night the greys in levels part them (above) */
+:root[data-theme="light"] body.landing .card.xc, :root[data-theme="light"] body.landing .card.note, :root[data-theme="light"] body.landing .board .card.note { background: #fff !important; }
+:root[data-theme="light"] body.landing .card.note .card-reply.note-answer { background: #eef1fe !important; box-shadow: inset 0 0 0 1px rgba(47,69,232,.13) !important; }
 body.landing .note-mark { filter: drop-shadow(2px 2px 3px var(--neu-d)); }
 /* the keys and chips: pressed up out of the ground; pressed in where chosen, and while held */
 body.landing .btn, body.landing .chip, body.landing .tags label, body.landing .status button, body.landing .know-more, body.landing .call-key, body.landing .sky-note-btn,
 body.landing .masthead-btn, body.landing .dash-tab, body.landing .fold-tab, body.landing .seg button, body.landing .segmented button, body.landing .daypick a, body.landing .pill,
 :root[data-theme="dark"] body.landing .btn, :root[data-theme="dark"] body.landing .chip, :root[data-theme="dark"] body.landing .tags label {
-  background: var(--neu) !important; background-image: none !important; border: 0 !important; color: var(--neu-dim) !important; box-shadow: var(--neu-out-sm) !important; transform: none !important; }
+  background: var(--neu-2) !important; background-image: none !important; border: 0 !important; color: var(--neu-dim) !important; box-shadow: var(--neu-out-sm) !important; transform: none !important; }
 body.landing .chip:hover, body.landing .btn:hover, body.landing .tags label:hover { color: var(--neu-ink) !important; }
 body.landing .chip.active, body.landing .tags label:has(input:checked), body.landing .seg button.on, body.landing .segmented button[aria-selected="true"], body.landing .dash-tab.on, body.landing .dash-tab[aria-selected="true"], body.landing .daypick a.on,
 :root[data-theme="dark"] body.landing .chip.active, :root[data-theme="dark"] body.landing .tags label:has(input:checked) {
-  background: var(--neu) !important; color: var(--neu-on) !important; box-shadow: var(--neu-in-sm) !important; }
+  background: var(--neu-sunk) !important; color: var(--neu-on) !important; box-shadow: var(--neu-in-sm) !important; }
 body.landing :is(.btn, .chip, .tags label, .call-key, .know-more, .masthead-btn, .tk-nav a, .about-jump a, .status button):active { box-shadow: var(--neu-in-sm) !important; }
 body.landing .feed-filter .chip.mine { color: var(--mars-ink) !important; }
 body.landing .feed-filter .chip.mine.active { color: var(--mars-ink) !important; box-shadow: var(--neu-in-sm) !important; }
@@ -146,31 +162,34 @@ body.landing .call-beam, body.landing .call-write .call-beam { background: none 
 /* the rules and the small things */
 body.landing hr, body.landing .about-sec-head, body.landing .sheet-meta.is-ruled, body.landing .eyebrow::after { border-color: var(--neu-line) !important; }
 body.landing .sol-kind { border: 0 !important; box-shadow: var(--neu-out-xs) !important; }
-body.landing .sol-officer-disc { box-shadow: var(--neu-in-sm) !important; background: var(--neu) !important; }
-body.landing .sol-item.is-now { background: var(--neu) !important; box-shadow: var(--neu-in-sm) !important; border-top: 0 !important; padding-left: 10px !important; padding-right: 10px !important; margin: 4px -10px !important; }
+body.landing .sol-officer-disc { box-shadow: var(--neu-in-sm) !important; background: var(--neu-sunk) !important; }
+body.landing .sol-item.is-now { background: var(--neu-sunk) !important; box-shadow: var(--neu-in-sm) !important; border-top: 0 !important; padding-left: 10px !important; padding-right: 10px !important; margin: 4px -10px !important; }
 body.landing .officer-pic img, body.landing .crew-pic img, body.landing .logos .logo { box-shadow: var(--neu-out-sm) !important; }
-body.landing .logos .logo { background: var(--neu) !important; border: 0 !important; }
+body.landing .logos .logo { background: var(--neu-2) !important; border: 0 !important; }
 body.landing .round-track { stroke: var(--neu-d) !important; }
 body.landing .dpanel-title, body.landing .chan { color: var(--neu-dim) !important; }
-body.landing .seq-sheet, body.landing .sheet-p1 .seq { background: var(--neu) !important; }
-body.landing .about-jump a, :root[data-theme="dark"] body.landing .about-jump a { background: var(--neu) !important; border: 0 !important; box-shadow: var(--neu-out-xs) !important; color: var(--neu-dim) !important; }
+body.landing .seq-sheet, body.landing .sheet-p1 .seq { background: var(--neu-1) !important; }
+body.landing .about-jump a, :root[data-theme="dark"] body.landing .about-jump a { background: var(--neu-2) !important; border: 0 !important; box-shadow: var(--neu-out-xs) !important; color: var(--neu-dim) !important; }
 body.landing .about-jump a:hover { color: var(--neu-ink) !important; }
 /* the dashboard's folders and tiles: the rows of tabs sunk into the panel, the front tab raised, the tiles raised */
-body.landing .frow, :root[data-theme="dark"] body.landing .frow, body.landing .fgroups, :root[data-theme="dark"] body.landing .fgroups { background: var(--neu) !important; box-shadow: var(--neu-in-sm) !important; }
+body.landing .frow, :root[data-theme="dark"] body.landing .frow, body.landing .fgroups, :root[data-theme="dark"] body.landing .fgroups { background: var(--neu-sunk) !important; box-shadow: var(--neu-in-sm) !important; }
 body.landing .ftab, body.landing .fgroup { background: transparent !important; box-shadow: none !important; color: var(--neu-dim) !important; }
-body.landing .folder .frow .ftab.is-front, body.landing .folder .frow .ftab.is-front:hover, :root[data-theme="dark"] body.landing .folder .frow .ftab.is-front, body.landing .fgroup.is-cur { background: var(--neu) !important; color: var(--neu-on) !important; box-shadow: var(--neu-out-xs) !important; }
+body.landing .folder .frow .ftab.is-front, body.landing .folder .frow .ftab.is-front:hover, :root[data-theme="dark"] body.landing .folder .frow .ftab.is-front, body.landing .fgroup.is-cur { background: var(--neu-2) !important; color: var(--neu-on) !important; box-shadow: var(--neu-out-xs) !important; }
 body.landing .folder .frow .ftab.is-front .ftab-ic, :root[data-theme="dark"] body.landing .folder .frow .ftab.is-front .ftab-ic { stroke: var(--neu-on) !important; }
 body.landing .dpanel .hbt .tile, body.landing .hbt .tile, body.landing .slab, body.landing .msg, body.landing .dp-inner, body.landing .mday, body.landing .fold, body.landing .quoted, body.landing .scale, body.landing .orbit-frame {
-  background: var(--neu) !important; background-image: none !important; border: 0 !important; box-shadow: var(--neu-out-sm) !important; }
+  background: var(--neu-2) !important; background-image: none !important; border: 0 !important; box-shadow: var(--neu-out-sm) !important; }
 body.landing .run-strip i { background: var(--neu-d) !important; }
 body.landing .run-strip .now i, :root[data-theme] body.landing .run-strip .now i { background: var(--mars) !important; box-shadow: 0 0 10px 2px rgba(255,106,46,.55) !important; }
 body.landing .sol-item.is-now, :root[data-theme] body.landing .sol-item.is-now { box-shadow: var(--neu-in-sm), inset 3px 0 0 var(--mars) !important; }
-body.landing .dash-rail, body.landing .dash-rail a, body.landing .folder-tabs a, body.landing .ftab { background: var(--neu) !important; border: 0 !important; }
+body.landing .dash-rail, body.landing .dash-rail a, body.landing .folder-tabs a { background: var(--neu-1) !important; border: 0 !important; }
+body.landing .ftab { border: 0 !important; }
+/* what stands raised in a tile, a step lighter than the tile: the stores' rounds */
+body.landing .hbt .tile .gauge, :root[data-theme="dark"] body.landing .hbt .tile .gauge { background: var(--neu-3) !important; }
 body.landing .dash-rail a[aria-current], body.landing .dash-rail a.on, body.landing .ftab.on { box-shadow: var(--neu-in-sm) !important; color: var(--neu-on) !important; }
 body.landing .gauge .gauge-head, body.landing .gauge-val { color: var(--neu-ink) !important; }
-body.landing .kpi, body.landing .figure, body.landing .figure-tile, body.landing .stat { background: var(--neu) !important; border: 0 !important; box-shadow: var(--neu-out-sm) !important; }
+body.landing .kpi, body.landing .figure, body.landing .figure-tile, body.landing .stat { background: var(--neu-1) !important; border: 0 !important; box-shadow: var(--neu-out-sm) !important; }
 body.landing .rows .row { border-color: var(--neu-line) !important; }
-body.landing .empty { background: var(--neu) !important; box-shadow: var(--neu-in-sm) !important; border: 0 !important; }
+body.landing .empty { background: var(--neu-sunk) !important; box-shadow: var(--neu-in-sm) !important; border: 0 !important; }
 /* the foot */
 body.landing .foot { box-shadow: var(--neu-out) !important; border-radius: 30px !important; }
 /* the live pictures: raised, their dark stamp band kept */
@@ -181,11 +200,11 @@ body.landing .mtile { border: 0 !important; box-shadow: var(--neu-out-sm) !impor
 body.landing .dpanel.blogp .card.log-entry, :root[data-theme="dark"] body.landing .dpanel.blogp .card.log-entry { background: transparent !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; }
 body.landing .dpanel.blogp .card.log-entry + .card.log-entry { margin-top: 22px !important; padding-top: 22px !important; border-top: 1px solid var(--neu-line) !important; }
 body.landing .dpanel.blogp .empty, :root[data-theme="dark"] body.landing .dpanel.blogp .empty { background: transparent !important; box-shadow: none !important; border: 0 !important; padding: 0 !important; }
-body.landing.screen .dpanel.blogp .card.log-entry, :root[data-theme="dark"] body.landing.screen .dpanel.blogp .card.log-entry { background: var(--neu) !important; box-shadow: var(--neu-in-sm) !important; border-radius: 20px !important; padding: clamp(18px, 2.4vw, 32px) clamp(18px, 2.8vw, 40px) !important; }
+body.landing.screen .dpanel.blogp .card.log-entry, :root[data-theme="dark"] body.landing.screen .dpanel.blogp .card.log-entry { background: var(--neu-sunk) !important; box-shadow: var(--neu-in-sm) !important; border-radius: 20px !important; padding: clamp(18px, 2.4vw, 32px) clamp(18px, 2.8vw, 40px) !important; }
 /* where the message is (board.js): the panel on the ground, its close key a soft round raised out of it — the cross drawn
    in its middle (aura.css), pressed in while held */
-body .journey .jr-panel, :root[data-theme="dark"] body .journey .jr-panel { background: var(--neu) !important; border-color: transparent !important; }
-body .journey .jr-close { background: var(--neu) !important; border: 0 !important; color: var(--neu-dim) !important; box-shadow: var(--neu-out-xs) !important; }
+body .journey .jr-panel, :root[data-theme="dark"] body .journey .jr-panel { background: var(--neu-1) !important; border-color: transparent !important; }
+body .journey .jr-close { background: var(--neu-2) !important; border: 0 !important; color: var(--neu-dim) !important; box-shadow: var(--neu-out-xs) !important; }
 body .journey .jr-close:hover { color: var(--neu-ink) !important; }
 body .journey .jr-close:active { box-shadow: var(--neu-in-sm) !important; }
 
@@ -207,7 +226,7 @@ body.landing .folder-body .dpanel, :root[data-theme] body.landing .folder-body .
 /* the About page's habitat: its drawing and its pop-up lie flat in the section's card */
 body.landing .about-sec .hab-card, body.landing .about-sec .hab-card .dome-panel, :root[data-theme] body.landing .about-sec .hab-card .dome-panel { box-shadow: none !important; background-color: transparent !important; border-radius: 0 !important; }
 /* the officers of the day: rounded cards */
-body.landing .officer-card { border-radius: 22px !important; }
+body.landing .officer-card { border-radius: 22px !important; box-sizing: border-box; padding: clamp(14px, 3.6vw, 22px) clamp(16px, 4.2vw, 24px) !important; }   /* its words inside it, not on its edge (8 October) */
 /* At a Glance's booklet scrolls sideways, page by page: room round each page for its shadow */
 body.landing .booklet { padding: 28px 30px 34px !important; margin: -28px -30px -28px !important; gap: 60px !important; scroll-padding-inline: 30px; }
 /* its keys to the day before and after stand in the page's margin, beside the page — not over its edge, where their
@@ -221,3 +240,78 @@ body.landing .cloud-strip { padding: 16px 18px 20px !important; margin: -16px -1
   body.landing .board .feed-filter, body.landing .wall-bar .feed-filter { padding-top: 16px !important; padding-bottom: 18px !important; margin-top: -4px !important; margin-bottom: -6px !important; }
 }
 
+
+/* ------------------------------------------------------------------------- the dashboard's index on a phone, uncluttered */
+/* (8 October: "on mobile the tabs and inner tabs are too cluttered; text does not fit or bleeds to the edge — make
+   everything scale properly"): no card round the folder — the open panel has the page's width, its tiles the room they
+   lost to two frames —; the groups a segmented control as before; the group's folders one row of pills under it, each its
+   short name on one line (Mission · Schedule · Meal · Moods; Commander · Health · Report), no signs, no underline — the
+   open one raised and in Mars, as every chosen key; a row too long for a narrow phone scrolls sideways rather than wrap.
+   Both rows stick under the top bar on the page's own ground, from edge to edge. A wider screen keeps its rail. */
+body.landing .ftab .ftab-s { display: none; }
+@media (max-width: 760px) and (min-height: 521px) {
+  body.landing .folder, :root[data-theme="dark"] body.landing .folder { background: transparent !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important; overflow: visible !important; }
+  body.landing .folder-tabs, :root[data-theme="dark"] body.landing .folder-tabs { margin: 0 calc(-1 * var(--gutter, 16px)); padding: 8px var(--gutter, 16px) 10px !important; border-radius: 0 !important;
+    background: var(--neu) !important; border-bottom: 1px solid var(--neu-line, rgba(0,0,0,.06)) !important; box-shadow: 0 10px 18px -16px rgba(0,0,0,.35) !important; }
+  body.landing .fgroups { gap: 3px !important; padding: 4px !important; border-radius: 14px !important; }
+  body.landing .fgroup { min-height: 38px !important; padding: 0 6px !important; font-size: 12px !important; letter-spacing: .1em !important; white-space: nowrap; }
+  body.landing .frow.is-cur, :root[data-theme="dark"] body.landing .frow.is-cur { display: flex !important; flex-wrap: nowrap; gap: 6px; margin: 9px -4px 0 !important; padding: 3px 4px 4px !important;
+    background: transparent !important; box-shadow: none !important; border-radius: 0 !important; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  body.landing .frow.is-cur::-webkit-scrollbar { display: none; }
+  body.landing .frow.n1.is-cur, :root[data-theme="dark"] body.landing .frow.n1.is-cur { display: none !important; }   /* one folder in the group: the segmented control names it already */
+  body.landing .frow .ftab, body.landing .ftab { flex: 1 0 auto; display: inline-flex !important; flex-direction: row; align-items: center; justify-content: center; gap: 0; min-height: 34px; padding: 0 14px !important;
+    border-radius: 999px !important; text-align: center; }
+  body.landing .ftab .ftab-ic, body.landing .ftab .ftab-l { display: none !important; }
+  body.landing .ftab .ftab-s { display: inline; font-family: var(--display); font-size: 13.5px; font-weight: 600; letter-spacing: -.005em; line-height: 1; white-space: nowrap; color: inherit; }
+  body.landing .folder .frow .ftab.is-front, body.landing .folder .frow .ftab.is-front:hover, :root[data-theme="dark"] body.landing .folder .frow .ftab.is-front, :root[data-theme="dark"] body.landing .folder .frow .ftab.is-front:hover {
+    background: var(--neu-2) !important; box-shadow: var(--neu-out-xs) !important; color: var(--neu-on) !important; }
+  body.landing .folder .frow .ftab.is-front::after { display: none !important; }
+  body.landing .folder-body { padding: 22px 0 18px !important; }
+}
+
+/* a word longer than its line — a pasted name, a link, a list run together — breaks where it must instead of running out
+   of its card (8 October: "text bleeds to the edge") */
+body.landing .entry-post, body.landing .card-body, body.landing .note, body.landing .officer-mood, body.landing .card-reply p, body.landing .mission-part p, body.landing .mission-part li { overflow-wrap: anywhere; }
+/* the dashboard's line under its name: balanced over its two lines on a phone, never one word alone on the second */
+body.landing .dash-sub { text-wrap: balance; }
+
+/* the night sky on every page by night (8 October: "keep the dots and comets on all pages that are in dark mode"): the
+   screens' sky (views/sky.js) — four hundred dots, a fifth of them twinkling, the stars a picture of their own (/sky.svg,
+   kept by the browser; never fetched by day) — and the same five comets, each now and then on a round of its own; fixed
+   under the whole page, the panels, the cards and the keys standing over it (the body its own layer, so the sky lies
+   over its ground and under everything on it); none of it by day; the comets gone, the stars still, where less motion
+   is asked for */
+body.landing .night-sky { display: none; }
+:root[data-theme="dark"] body.landing:not(.screen) { isolation: isolate; }
+:root[data-theme="dark"] body.landing:not(.screen) .night-sky { display: block; position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none;
+  background: url("/sky.svg?v=1") center / cover no-repeat; }
+body.landing .night-sky .comet { position: absolute; width: 240px; height: 2px; border-radius: 2px; opacity: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.75)); }
+body.landing .night-sky .comet::after { content: ""; position: absolute; right: -3px; top: -2px; width: 6px; height: 6px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px 3px rgba(255,255,255,.65); }
+body.landing .night-sky .comet.c1 { top: 14%; left: -12%; animation: night-comet-1 19s linear 4s infinite; }
+body.landing .night-sky .comet.c2 { top: 4%; left: 38%; animation: night-comet-2 27s linear 12s infinite; }
+body.landing .night-sky .comet.c3 { top: 72%; left: -8%; animation: night-comet-3 33s linear 21s infinite; }
+body.landing .night-sky .comet.c4 { top: 46%; left: -10%; animation: night-comet-1 41s linear 30s infinite; }
+body.landing .night-sky .comet.c5 { top: 26%; left: 58%; animation: night-comet-2 47s linear 37s infinite; }
+@keyframes night-comet-1 { 0% { opacity: 0; transform: rotate(14deg) translateX(0); } 1% { opacity: 1; } 8% { opacity: 0; transform: rotate(14deg) translateX(1500px); } 100% { opacity: 0; transform: rotate(14deg) translateX(1500px); } }
+@keyframes night-comet-2 { 0% { opacity: 0; transform: rotate(31deg) translateX(0); } 1% { opacity: .9; } 6% { opacity: 0; transform: rotate(31deg) translateX(1200px); } 100% { opacity: 0; transform: rotate(31deg) translateX(1200px); } }
+@keyframes night-comet-3 { 0% { opacity: 0; transform: rotate(-11deg) translateX(0); } 1% { opacity: .85; } 5.5% { opacity: 0; transform: rotate(-11deg) translateX(1400px); } 100% { opacity: 0; transform: rotate(-11deg) translateX(1400px); } }
+@media (max-width: 700px) { body.landing .night-sky .comet { width: 150px; } }   /* a phone's comets a little shorter */
+@media (prefers-reduced-motion: reduce) { body.landing .night-sky .comet { display: none; } }
+
+/* the board's name as large as the dashboard's (9 October: "make the font size of Message Board the same as it is for
+   Mission dashboard on the Live Mission Dashboard page"): 38px, 30 on a phone — where it had been a small label */
+body.landing .wall-bar .board-head h2 { font-family: var(--display); font-size: 38px; line-height: 1.05; letter-spacing: -.025em; font-weight: 600; text-transform: none; }
+@media (max-width: 760px), (max-height: 520px) {
+  body.landing.messages .wall-bar .board-head h2, body.landing .wall-bar .board-head h2 { font-size: 30px; letter-spacing: -.025em; text-transform: none; color: var(--ink); font-weight: 600; }
+  /* (on its own line: LIVE and the count under it) */
+  body.landing.messages .wall-bar .board-head { flex-wrap: wrap; row-gap: 4px; }
+  body.landing.messages .wall-bar .board-head h2 { flex: 1 0 100%; white-space: nowrap; }
+}
+
+/* the lines between the two circles of a note's mark — the Earth and Mars — black, not Mars orange (9 October: "make the
+   lines connecting the 2 circles black, not orange"): the answered loop and the waiting dashes alike; white by night,
+   where black would vanish into the card */
+body.landing .card.note .note-mark .nm-loop, body.landing .card.note .note-mark.is-waiting .nm-out, body.landing .card.note .note-mark.is-waiting .nm-back { stroke: #111; }
+:root[data-theme="dark"] body.landing .card.note .note-mark .nm-loop, :root[data-theme="dark"] body.landing .card.note .note-mark.is-waiting .nm-out,
+:root[data-theme="dark"] body.landing .card.note .note-mark.is-waiting .nm-back { stroke: #f1f1ef; }

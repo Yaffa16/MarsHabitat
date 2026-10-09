@@ -378,16 +378,31 @@ function start() {
 
 /* -------------------------------------------------------------------- read */
 
-function rows(days = 30) {
+function rows(days = 30, { after = null, thin = false } = {}) {
   // Counted back from now — or from the close of the record, once that has
   // passed, so the closed record does not slide out of view.
   const since = Math.min(Date.now(), Number.isFinite(CFG.freezeAt) ? CFG.freezeAt : Infinity) - days * 86400000;
-  return db.prepare(
+  // `after`: only the readings from that instant on — a page that holds the
+  // rest asks for what is new (public/habitat.js)
+  const all = db.prepare(
     `SELECT t, ${KEYS.join(', ')}, ${TEXT_KEYS.join(', ')} FROM external_reading WHERE t >= ? ORDER BY t`
-  ).all(Math.max(since, floorMs()));
+  ).all(Math.max(since, floorMs(), Number.isFinite(after) ? after : -Infinity));
+  if (!thin) return all;
+  // `thin`: the days before today one reading in ten minutes — the trend
+  // graph draws a day's mean from them, and the habitat sensor, read every
+  // minute, would send a month of the run as some three megabytes —; today,
+  // and the hour before it, every reading, for the tiles (8 October: lighter)
+  const cut = todayStartMs() - 3600000;
+  let slot = null;
+  return all.filter((r) => {
+    if (r.t >= cut) return true;
+    const k = Math.floor(r.t / 600000);
+    if (k === slot) return false;
+    slot = k; return true;
+  });
 }
 
-function snapshot(days = 30) {
+function snapshot(days = 30, opts = {}) {
   const src = status.source || source();
   const ha = src === 'home-assistant' ? (() => { try { return require('./habitat-feed').status(); } catch { return null; } })() : null;
   return {
@@ -412,7 +427,7 @@ function snapshot(days = 30) {
     floor: floorMs(),
     mode: floorMode(),
     epoch: require('./content').resetEpoch(),
-    rows: rows(days),
+    rows: rows(days, opts),
   };
 }
 

@@ -37,6 +37,12 @@ router.get('/cloud/:id([0-9a-f]{16})/thumb', (req, res, next) => {
   const p = cloud.thumbPath(it); if (!fs.existsSync(p)) return res.redirect(`/media/cloud/${it.id}`);
   res.set('Cache-Control', 'public, max-age=3600').type('image/jpeg').sendFile(p);
 });
+// the small preview — a phone's tile, the sky's picture (src/lib/cloud.js, cacheSmall); without it, the preview
+router.get('/cloud/:id([0-9a-f]{16})/small', (req, res, next) => {
+  const it = cloud.get(req.params.id); if (!it) return next();
+  const p = cloud.smallPath(it); if (!fs.existsSync(p)) return res.redirect(`/media/cloud/${it.id}/thumb`);
+  res.set('Cache-Control', 'public, max-age=3600').type('image/jpeg').sendFile(p);
+});
 
 router.get('/manifest.json', (req, res) => {
   res.set('Cache-Control', 'no-store').attachment('mars-station-media-manifest.json').json(media.manifest());

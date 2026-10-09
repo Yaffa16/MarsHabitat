@@ -2,9 +2,6 @@
 const L = require('../layout');
 const { esc, panel, eyebrow } = L;
 const orbital = require('../../lib/orbital');
-const officer = require('../../lib/officer');
-const moodLib = require('../../lib/mood');
-const content = require('../../lib/content');
 const { habitatInside } = require('./inside');
 const { solFold } = require('./sol');
 
@@ -111,32 +108,11 @@ function aboutFold(ctx) {
   </div>`;
 }
 
-/* The three officers in the order of October's text sheet — Commanding, Health, Science — each a card: over the role
-   its brief (the role line from content/crew-and-inventory.json: Order & Communications, Health & Life Support,
-   Research & Systems), then the portrait of the person on shift that day (content/shifts.json, content.crewOnShift —
-   the day's crew from 08:00 at the venue; no portrait while the plan names nobody), then the role's name, then their
-   state as mission control filed it — the words the dashboard's Crew Moods carry. */
-const OFFICER_ORDER = ['COMMUNICATION OFFICER', 'HEALTH OFFICER', 'SCIENCE OFFICER'];
-const person = (who) => CREW.find((c) => c.file.replace(/\.jpg$/i, '').toLowerCase() === who || String(c.last).toLowerCase() === who) || null;
-
 function whoFold(crew, T, ctx) {
-  const onShift = content.crewOnShift(ctx.mission);
-  const ordered = OFFICER_ORDER.map((d) => crew.find((c) => String(c.designation).toUpperCase() === d)).filter(Boolean)
-    .concat(crew.filter((c) => !OFFICER_ORDER.includes(String(c.designation).toUpperCase())));
+  // (the CREW panel — the three officers of the day, each under its brief, their portraits on shift and their states —
+  // stood first here until 8 October: "from the About page, under Who we are, remove the Crew tab with all the text";
+  // the dashboard's Crew Moods keeps the officers and their states)
   return `
-  ${panel('CREW', `
-    <div class="grid g3 officers-today">
-    ${ordered.map((c) => {
-      const who = onShift[String(c.designation).toUpperCase()], pic = who ? person(who) : null;
-      const t = moodLib.translate(c.mood);
-      return `
-      <div class="officer-card">
-        <div class="eyebrow">${esc(T(c.role))}</div>
-        ${pic ? `<figure class="officer-pic"><img src="/crew/${esc(pic.file)}" alt="${esc(fullName(pic))}" width="800" height="1200" loading="lazy" decoding="async"><figcaption>${esc(fullName(pic))}</figcaption></figure>` : ''}
-        <h3 class="officer-title">${esc(officer.shown(c.designation))}</h3>
-        <p class="note officer-mood">${c.mood ? `${esc(T(t.condition))} · ${esc(T(t.lines[0]))}` : T('No state filed yet')}</p>
-      </div>`; }).join('')}
-    </div>`, 'mars-side')}
   ${CREW.length ? panel('THE CREW', `
     <div class="crew-wall">
       ${CREW.map((c) => `<figure class="crew-pic"><img src="/crew/${esc(c.file)}" alt="" width="800" height="1200" loading="lazy" decoding="async"><figcaption>${esc(fullName(c))}</figcaption></figure>`).join('')}

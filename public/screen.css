@@ -57,7 +57,7 @@ body.screen.screen-blogs .stage-fit { height: 100%; flex: 1 1 auto; min-height: 
 body.screen .screen-blogs { position: relative; height: 100%; }
 body.screen .screen-blogs > .dpanel { position: absolute; inset: 0; grid-column: auto !important; height: 100%; max-height: none; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; opacity: 0; visibility: hidden; transition: opacity .7s ease, visibility 0s linear .7s; }
 body.screen .screen-blogs > .dpanel.is-on { opacity: 1; visibility: visible; transition: opacity .7s ease; }
-body.screen .screen-blogs .dpanel.blogp .dpanel-head { flex: none; min-height: 190px; padding: 30px 40px; }
+body.screen .screen-blogs .dpanel.blogp .dpanel-head { flex: none; padding: 30px 40px 20px; }   /* a heading, no band of colour (8 October) */
 body.screen .screen-blogs .dpanel.blogp .dpanel-title h3 { font-size: clamp(30px, 2.4vw, 46px); white-space: normal; overflow: visible; text-overflow: clip; }
 body.screen .screen-blogs .dpanel.blogp .dpanel-meta { font-size: clamp(13px, 1vw, 18px); }
 body.screen .screen-blogs .dpanel-body { flex: 1 1 auto; min-height: 0; position: relative; overflow: hidden; padding: 22px 40px 0; display: block; }
@@ -69,7 +69,7 @@ body.screen .screen-blogs .blogp .entry-figure { max-width: 70%; margin: 18px 0;
 /* a blog with nothing written yet: its note at the top left, across the width, like a post would be */
 body.screen .screen-blogs .blogp .dpanel-body > .empty { position: absolute; inset: 22px 40px 40px; min-height: 0; display: block; text-align: left; font-size: clamp(20px, 1.2vw, 24px); line-height: 1.5; letter-spacing: .08em; padding: 22px 26px 24px; border-radius: var(--r-lg, 18px); background: var(--tile); border: 1px solid var(--hair); height: max-content; }
 @media (orientation: portrait) {
-  body.screen .screen-blogs .dpanel.blogp .dpanel-head { min-height: 160px; padding: 26px 30px; }
+  body.screen .screen-blogs .dpanel.blogp .dpanel-head { padding: 26px 30px 18px; }
   body.screen .screen-blogs .dpanel-body { padding: 20px 30px 0; }
   body.screen .screen-blogs .blog-scroll { left: 30px; right: 30px; top: 20px; }
   body.screen .screen-blogs .blogp .log-entry .card-body { font-size: clamp(20px, 2vw, 26px); }
@@ -226,6 +226,12 @@ body.screen.screen-trends[data-fit="fill"] #trends .dpanel-body { flex: 1 1 auto
 body.screen.screen-trends[data-fit="fill"] #hbt-trends, body.screen.screen-trends[data-fit="fill"] #hbt-tcharts, body.screen.screen-trends[data-fit="fill"] .tchart { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; max-height: none; }
 body.screen.screen-trends[data-fit="fill"] .tchart-svg { flex: 1 1 auto; min-height: 0; width: auto; height: 100%; max-width: 100%; max-height: none; margin: 0 auto; }
 /* today's mission: the three parts fill the width, one under the other upright */
+/* the mission screen's two turns (screens.js, mission; screen-turns.js): the mission, typed, and the day after it — one
+   at a time, each fading in as its turn comes */
+body.screen .screen-turns > .turn { display: none; }
+body.screen .screen-turns > .turn.is-on { display: block; animation: turn-in .9s ease both; }
+@keyframes turn-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { body.screen .screen-turns > .turn.is-on { animation: none; } }
 body.screen.screen-mission .mission-today { padding: 26px 34px 28px; }
 body.screen .mission-blog { display: none; }                                                        /* the key to the Science Blog is the site's: nothing to press on a screen */
 body.screen.screen-mission .mission-lead { max-width: none; }
@@ -235,8 +241,9 @@ body.screen.screen-mission .mission-part p, body.screen.screen-mission .mission-
 @media (orientation: portrait) {
   body.screen.screen-mission .mission-parts { grid-template-columns: minmax(0, 1fr); }
 }
-/* the message board: the latest exchanges in three columns (one upright), as many as fit — the rest cut clean (screen.js);
-   the filter bar and the key for more stand unshown, the script needs them */
+/* the message board: the latest exchanges in three columns (one upright) — fewer, wider ones where those hold more of
+   them — as many as fit and nine at the most, the rest out of the grid (board.js, fitScreen); the filter bar and the key
+   for more stand unshown, the script needs them */
 body.screen.screen-board .feed-wrap { min-height: 0; height: 100%; position: relative; }
 body.screen.screen-board .feed-scroll { position: absolute; inset: 0; }
 body.screen.screen-board .screen.board { height: 100%; box-sizing: border-box; display: flex; flex-direction: column; min-height: 0; padding: 26px 30px 20px; }
@@ -321,6 +328,22 @@ body.screen.screen-media .mtile-stamp .mtile-when { font-size: var(--fs-label); 
 }
 /* what is cut at the foot is hidden, so the last row is whole */
 body.screen .is-cut { visibility: hidden; }
+/* the board screens' cards (board.js, fitScreen — 8 October: "only the latest that fit, nine at the most, and stable"):
+   the ones that do not fit are out of the grid; while the script measures them the rows are not stretched (it puts them
+   back before anything is drawn); until it has fitted them, none is shown — and should it never come, they show after
+   two seconds as they stand */
+body.screen .board .cards > .card.is-off { display: none !important; }
+/* nothing runs over the board's foot any more, so its list keeps no room under the cards for their shadows: they are
+   let out over its edge instead (a browser without the clip margin cuts them square, as before) */
+body.screen.screen-board .board .scroller, body.screen.screen-station .board .scroller { padding-bottom: 2px; }
+@supports (overflow-clip-margin: 24px) {
+  body.screen.screen-board .board .scroller, body.screen.screen-station .board .scroller { overflow: clip; overflow-clip-margin: 24px; }
+}
+body.screen .board .cards.is-measuring { align-items: start !important; }
+body.screen .board .cards:not(.is-fitted) > .card { visibility: hidden; animation: board-unfitted 0s linear 2s forwards; }
+@keyframes board-unfitted { to { visibility: visible; } }
+/* one exchange taller than the board (written before the limit of five hundred): alone, its foot faded out, not cut */
+body.screen .board .cards > .card.is-tall { overflow: hidden; -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 120px), transparent); mask-image: linear-gradient(180deg, #000 calc(100% - 120px), transparent); }
 /* the landing screen: the ticker, then the name in its band and the habitat with its sky, as the site's first screen —
    the nudge to scroll is not drawn */
 body.screen.screen-landing .stage { padding: 0 var(--gutter) 0; }
@@ -356,13 +379,21 @@ body.screen .screen-login-form label { display: grid; gap: 6px; font-size: 12px;
 body.screen .screen-login-form input { font: 16px var(--display); padding: 12px 14px; border-radius: 12px; border: 1px solid var(--glass-edge); background: var(--tile); color: var(--ink); }
 body.screen .screen-login-form button { justify-self: start; margin-top: 4px; font-family: var(--display); font-size: 14px; font-weight: 700; letter-spacing: .04em; text-transform: none; padding: 12px 22px; border-radius: 999px; }
 
-/* the livestream (screens.js, livestream; screen-live.js — 8 October): the stream the whole screen, black round it; LIVE
-   at the top left while it plays, a word at the foot while it connects or is off the air, the large play key in the
-   middle whenever it stands still, Sound on at the bottom right while it plays muted. A stream of sound alone: the
-   station's name and its rings, breathing, where the picture would be. */
+/* the livestream (screens.js, livestream; screen-live.js — 8 October): the stream the whole screen, black round it,
+   without its sound; a word at the foot while it connects or is off the air, the large play key in the middle whenever
+   it stands still. A stream of sound alone: the station's name and its rings, breathing, where the picture would be.
+   Over it the space HUD (below). */
 body.screen.screen-livestream .stage { padding: 0; }
 body.screen.screen-livestream .stage-fit { height: 100%; flex: 1 1 auto; min-height: 0; }
-body.screen .screen-live { position: relative; width: 100%; height: 100%; overflow: hidden; background: #000; color: #fff; }
+/* the picture framed in the HUD's brackets in the middle of the screen (9 October: "frame the image inside the
+   brackets"): as large as the screen allows, with a band over it and one under it for the HUD's words, in the picture's
+   own shape (--ar, which screen-live.js takes from the stream: 16:9 until it says otherwise) */
+body.screen .screen-live { --band: clamp(86px, 15cqh, 210px); --side: clamp(20px, 3cqw, 64px);
+  position: relative; width: 100%; height: 100%; overflow: hidden; background: #000; color: #fff; container-type: size; display: grid; place-items: center; }
+body.screen .live-frame { --out: clamp(10px, 1.4cqmin, 20px); --hud-c: clamp(34px, 5.6cqmin, 84px);
+  position: relative; width: min(100cqw - 2 * var(--side), (100cqh - 2 * var(--band)) * var(--ar, 1.7778)); aspect-ratio: var(--ar, 1.7778); }
+:root[data-theme="dark"] body.screen .live-frame { background: rgba(0,0,0,.34); }   /* by night a faint ground in the frame, the picture's place, until it comes */
+:root[data-theme="dark"] body.screen .screen-live, :root[data-theme="dark"] body.screen .live-video { background: transparent; }   /* by night the sky round the picture and behind it until it comes, its dots and comets (8 October: "on all pages in dark mode") */
 body.screen .screen-live [hidden] { display: none !important; }
 body.screen .live-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
 body.screen .live-audio { display: none; }
@@ -374,8 +405,8 @@ body.screen .la-mark { position: relative; font-family: var(--display); font-siz
 body.screen .la-mark b { color: var(--mars); font-weight: inherit; }
 body.screen .la-sub { position: relative; font-family: var(--display); font-size: clamp(16px, 2vmin, 24px); letter-spacing: .3em; text-transform: uppercase; color: rgba(255,255,255,.7); }
 @keyframes la-ring { from { transform: scale(.35); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
-body.screen .live-badge { position: absolute; top: 28px; left: 32px; display: inline-flex; align-items: center; gap: 10px; padding: 9px 16px 9px 14px; border-radius: 999px;
-  background: rgba(0,0,0,.55); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); font-family: var(--display); font-size: 16px; font-weight: 600; letter-spacing: .16em; }
+body.screen .live-badge { display: inline-flex; align-items: center; gap: .6em; padding: .45em .95em .45em .8em; border-radius: 999px;
+  background: rgba(0,0,0,.55); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border: 1px solid rgba(255,59,47,.6); font-family: var(--display); font-size: clamp(14px, 2vmin, 28px); font-weight: 700; letter-spacing: .16em; }
 body.screen .live-badge i { width: 11px; height: 11px; border-radius: 50%; background: #ff3b2f; box-shadow: 0 0 12px rgba(255,59,47,.9); animation: live 2s ease-in-out infinite; }
 body.screen .live-word { position: absolute; left: 50%; bottom: 10%; transform: translateX(-50%); max-width: min(80%, 900px); padding: 14px 26px; border-radius: 16px;
   background: rgba(0,0,0,.62); font-family: var(--display); font-size: clamp(16px, 2.2vmin, 26px); line-height: 1.4; text-align: center; }
@@ -384,20 +415,52 @@ body.screen .live-play { position: absolute; left: 50%; top: 50%; transform: tra
 body.screen .live-play svg { width: clamp(96px, 16vmin, 168px); height: clamp(96px, 16vmin, 168px); padding: 26% 22% 26% 30%; box-sizing: border-box; border-radius: 50%;
   background: linear-gradient(180deg, #ff8a3d, #ff5a1f); fill: #0f1540; box-shadow: 0 24px 60px -16px rgba(255,70,0,.85); transition: transform .15s ease; }
 body.screen .live-play:active svg { transform: scale(.96); }
-body.screen .live-sound { position: absolute; right: 32px; bottom: 32px; display: inline-flex; align-items: center; gap: 12px; margin: 0; padding: 14px 24px 14px 18px; border: 0; border-radius: 999px;
-  background: rgba(255,255,255,.94); color: #0f1540; box-shadow: 0 12px 30px -10px rgba(0,0,0,.6); cursor: pointer; font-family: var(--display); font-size: clamp(15px, 1.8vmin, 21px); font-weight: 600; letter-spacing: .04em; }
-body.screen .live-sound svg { width: 1.4em; height: 1.4em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-body.screen .live-sound svg path:first-child { fill: currentColor; stroke: none; }
-@media (prefers-reduced-motion: reduce) { body.screen .la-ring { animation: none; opacity: .5; } body.screen .live-badge i { animation: none; } }
+/* the space HUD round the stream (8 October: "add a space HUD; text that says Live, MARS!platz Habitat, the current day
+   and time"): the picture framed in four brackets just outside its corners (9 October: "frame the image inside the
+   brackets"), the rulers along the brackets' top and foot, a faint reticle in the picture's middle turning slowly, a scan
+   over the picture; the words outside the frame, at its corners — over it at the left LIVE (while it plays) and
+   MARS!platz Habitat, at the right the day of the run and the date; under it at the left the venue's clock to the
+   second and the place, Karlsruhe, MARS!platz, at the right the signal's time to Mars and the distance (screen-live.js
+   keeps the clock and the day). White on any theme: the stream's ground is black, or the night's sky. */
+body.screen .live-hud { position: absolute; inset: 0; pointer-events: none; }
+body.screen .hud-scan { position: absolute; inset: 0; opacity: .5; background: repeating-linear-gradient(0deg, rgba(255,255,255,.045) 0 1px, rgba(255,255,255,0) 1px 4px); }
+body.screen .hud-c { position: absolute; width: var(--hud-c); height: var(--hud-c); border: 0 solid rgba(255,255,255,.8); }
+body.screen .hud-c.tl { top: calc(-1 * var(--out)); left: calc(-1 * var(--out)); border-top-width: 2px; border-left-width: 2px; }
+body.screen .hud-c.tr { top: calc(-1 * var(--out)); right: calc(-1 * var(--out)); border-top-width: 2px; border-right-width: 2px; }
+body.screen .hud-c.bl { bottom: calc(-1 * var(--out)); left: calc(-1 * var(--out)); border-bottom-width: 2px; border-left-width: 2px; }
+body.screen .hud-c.br { bottom: calc(-1 * var(--out)); right: calc(-1 * var(--out)); border-bottom-width: 2px; border-right-width: 2px; }
+body.screen .hud-rule { position: absolute; left: 50%; width: 34%; height: 12px; transform: translateX(-50%); opacity: .7;
+  background: repeating-linear-gradient(90deg, #fff 0 1px, transparent 1px 2.5%) 0 0 / 100% 6px no-repeat, repeating-linear-gradient(90deg, #fff 0 1px, transparent 1px 12.5%) 0 0 / calc(100% + 1px) 12px no-repeat; }
+body.screen .hud-rule.top { top: calc(-1 * var(--out)); }
+body.screen .hud-rule.bottom { bottom: calc(-1 * var(--out)); transform: translateX(-50%) scaleY(-1); }
+body.screen .hud-reticle { position: absolute; left: 50%; top: 50%; width: clamp(80px, 12cqmin, 170px); height: auto; transform: translate(-50%, -50%); overflow: visible; opacity: .5; }
+body.screen .hud-reticle circle, body.screen .hud-reticle path { fill: none; stroke: #fff; stroke-width: 1.2; }
+body.screen .hud-reticle .dash { stroke-dasharray: 3 7; transform-origin: 0 0; animation: hud-turn 40s linear infinite; }
+body.screen .hud-reticle .dot { fill: #fff; stroke: none; }
+@keyframes hud-turn { to { transform: rotate(360deg); } }
+body.screen .hud-tl, body.screen .hud-read { --hud-gap: calc(var(--out) + clamp(8px, 1.3cqh, 18px)); position: absolute; z-index: 1; pointer-events: none; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.65); white-space: nowrap; }
+body.screen .hud-tl { left: calc(-1 * var(--out)); bottom: calc(100% + var(--hud-gap)); display: flex; align-items: center; gap: clamp(10px, 1.4vmin, 18px); }
+body.screen .hud-name { font-family: var(--display); font-size: clamp(20px, 3.3vmin, 46px); font-weight: 600; letter-spacing: -.01em; }
+body.screen .hud-name b, body.screen .hud-k b { color: var(--mars); font-weight: inherit; }
+body.screen .hud-read { display: flex; flex-direction: column; gap: 4px; }
+body.screen .hud-tr { right: calc(-1 * var(--out)); bottom: calc(100% + var(--hud-gap)); align-items: flex-end; text-align: right; }
+body.screen .hud-bl { left: calc(-1 * var(--out)); top: calc(100% + var(--hud-gap)); }
+body.screen .hud-br { right: calc(-1 * var(--out)); top: calc(100% + var(--hud-gap)); align-items: flex-end; text-align: right; }
+body.screen .hud-bl, body.screen .hud-br { flex-direction: column-reverse; }   /* the figure over its name under the frame */
+body.screen .hud-k { font-family: var(--display); font-size: clamp(12px, 1.7vmin, 22px); font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.8); }
+body.screen .hud-v { font-family: var(--display); font-size: clamp(20px, 3.2vmin, 44px); font-weight: 600; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+body.screen .hud-clock { font-size: clamp(24px, 4.2vmin, 58px); letter-spacing: .06em; }
+@media (prefers-reduced-motion: reduce) { body.screen .la-ring { animation: none; opacity: .5; } body.screen .live-badge i { animation: none; } body.screen .hud-reticle .dash { animation: none; } }
 
 /* the screens' sky (screens.js, screenSky — 8 October: "stars and comets in the background for all screens, always in
-   the background only"): fixed under everything — the stage and the ticker stand over it — a field of stars, a sixth of
-   them twinkling, and three comets, each crossing now and then on a round of its own (19, 27 and 33 seconds: rarely two
-   at once), along its own axis; by day the stars and the comets are the ink's, faint; still, and the comets gone, where
-   less motion is asked for */
+   the background only"): fixed under everything — the stage and the ticker stand over it — four hundred stars, every
+   one a dot, a fifth of them twinkling, and five comets, each crossing now and then on a round of its own (19, 27, 33, 41
+   and 47 seconds: rarely two at once), along its own axis; no planets (8 October: "remove all the planets from the
+   background, only have dots as stars"); none of it by day (below); still, and the comets gone, where less motion is
+   asked for */
 body.screen .screen-sky { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-body.screen .screen-sky svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-body.screen .screen-sky circle { fill: #fff; }
+body.screen .screen-sky .sky-field { position: absolute; inset: 0; width: 100%; height: 100%; }
+body.screen .screen-sky .sky-field circle { fill: #fff; }
 body.screen .screen-sky .tw { animation: sky-tw 5.5s ease-in-out infinite; }
 @keyframes sky-tw { 0%, 100% { opacity: .9; } 50% { opacity: .12; } }
 body.screen > .stage, body.screen > .ticker { position: relative; z-index: 1; }
@@ -407,11 +470,15 @@ body.screen .comet::after { content: ""; position: absolute; right: -3px; top: -
 body.screen .comet.c1 { top: 14%; left: -12%; animation: comet-1 19s linear 4s infinite; }
 body.screen .comet.c2 { top: 4%; left: 38%; animation: comet-2 27s linear 12s infinite; }
 body.screen .comet.c3 { top: 72%; left: -8%; animation: comet-3 33s linear 21s infinite; }
+body.screen .comet.c4 { top: 46%; left: -10%; animation: comet-1 41s linear 30s infinite; }
+body.screen .comet.c5 { top: 26%; left: 58%; animation: comet-2 47s linear 37s infinite; }
 @keyframes comet-1 { 0% { opacity: 0; transform: rotate(14deg) translateX(0); } 1% { opacity: 1; } 8% { opacity: 0; transform: rotate(14deg) translateX(1500px); } 100% { opacity: 0; transform: rotate(14deg) translateX(1500px); } }
 @keyframes comet-2 { 0% { opacity: 0; transform: rotate(31deg) translateX(0); } 1% { opacity: .9; } 6% { opacity: 0; transform: rotate(31deg) translateX(1200px); } 100% { opacity: 0; transform: rotate(31deg) translateX(1200px); } }
 @keyframes comet-3 { 0% { opacity: 0; transform: rotate(-11deg) translateX(0); } 1% { opacity: .85; } 5.5% { opacity: 0; transform: rotate(-11deg) translateX(1400px); } 100% { opacity: 0; transform: rotate(-11deg) translateX(1400px); } }
-:root[data-theme="light"] body.screen .screen-sky circle { fill: #2b3152; }
-:root[data-theme="light"] body.screen .screen-sky svg { opacity: .45; }
-:root[data-theme="light"] body.screen .comet { background: linear-gradient(90deg, rgba(43,49,82,0), rgba(43,49,82,.5)); }
-:root[data-theme="light"] body.screen .comet::after { background: #2b3152; box-shadow: 0 0 8px 2px rgba(43,49,82,.35); }
+/* no sky by day (8 October: "do not have the background stars in light mode"): a light screen stands on its plain ground */
+:root[data-theme="light"] body.screen .screen-sky { display: none; }
 @media (prefers-reduced-motion: reduce) { body.screen .screen-sky .tw { animation: none; } body.screen .comet { display: none; } }
+/* the sky behind the sensors and the messages (8 October: "have it behind the message and Sensors"): the panel the
+   habitat's tiles stand in and the board the messages stand on lie on the sky with no ground of their own — no fill, no
+   glass, no shadow —, so the stars show between the tiles and between the cards; each tile and each card keeps its own */
+body.screen.screen-habitat #habitat.dpanel, body.screen .screen.board { background: transparent !important; border-color: transparent !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }

@@ -4,7 +4,7 @@ const { esc, panel, eyebrow, orbitPlot, pipeline } = L;
 const orbital = require('../../lib/orbital');
 const { TAGS } = require('../../lib/data');
 
-const MAX = Number(process.env.MESSAGE_MAX_CHARS || 1000);
+const MAX = require('../../lib/limits').MESSAGE_MAX;   // five hundred characters (src/lib/limits.js — 8 October)
 // The channel is open by default before the run so the station can be used and
 // shown in full. Set this to hold it shut until the crew are actually inside.
 const HOLD_BEFORE_LAUNCH = process.env.HOLD_CHANNEL_BEFORE_LAUNCH === 'true';

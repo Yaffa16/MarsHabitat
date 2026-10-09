@@ -39,7 +39,7 @@
       var body = form.querySelector('textarea[name=body]');
       var count = form.querySelector('.counter');
       if (body && count) {
-        var max = Number(body.getAttribute('maxlength')) || 1000;
+        var max = Number(body.getAttribute('maxlength')) || 500;
         var update = function () {
           count.textContent = body.value.length + ' / ' + max;
           count.classList.toggle('over', body.value.length > max * 0.9);
@@ -219,8 +219,17 @@
       x2 = parseFloat(chord.getAttribute('x2')); y2 = parseFloat(chord.getAttribute('y2'));
     }
 
+    // the word that takes the clock's place is longer than the clock in some languages — ANGEKOMMEN where T−00:12 stood
+    // (8 October: "fix the Angekommen text", cut off at the column's edge): it is set a size down until it fits its column
+    function fitWord(el) {
+      if (!el || !el.isConnected) return;
+      el.style.fontSize = '';
+      var fs = parseFloat(getComputedStyle(el).fontSize) || 0, w = el.clientWidth, sw = el.scrollWidth;
+      if (fs && w && sw > w + 1) el.style.fontSize = Math.max(14, Math.floor(fs * w / sw * 0.97)) + 'px';
+    }
     function arrived() {
-      if (clock) clock.textContent = t('ARRIVED');
+      if (clock) { clock.textContent = t('ARRIVED'); clock.classList.add('is-word'); fitWord(clock); }
+      window.addEventListener('resize', function () { if (block.isConnected) fitWord(clock); });
       if (bar) bar.style.width = '100%';
       if (pct) pct.textContent = '100%';
       place(1);

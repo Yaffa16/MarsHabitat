@@ -98,6 +98,14 @@ const D = {
   'Livestream': ['Livestream', 'Direct'],
   'Play': ['Abspielen', 'Lecture'],
   'Sound on': ['Ton an', 'Activer le son'],
+  // its space HUD (8 October): the venue's clock, and the signal's way to Mars
+  'Local time': ['Ortszeit', 'Heure locale'],
+  // the dashboard's keys on a phone, their short names (public.js, folder)
+  'Moods': ['Stimmungen', 'Humeurs'],
+  'Commander::tab': ['Commander', 'Commandant'],
+  'Report::tab': ['Bericht', 'Rapport'],
+  'Signal travel time': ['Signallaufzeit', 'Temps de trajet du signal'],
+  'Every screen is dark and in German unless its address says otherwise:': ['Jeder Bildschirm ist dunkel und auf Deutsch, wenn seine Adresse nichts anderes sagt:', 'Chaque écran est sombre et en allemand sauf si son adresse dit autre chose :'],
   'Connecting to the livestream…': ['Verbindung zum Livestream …', 'Connexion au direct…'],
   'The livestream is not on air right now — it comes back by itself.': ['Der Livestream ist gerade nicht auf Sendung – er kommt von selbst zurück.', 'Le direct n’est pas à l’antenne pour l’instant – il revient de lui-même.'],
   'This screen’s browser cannot play the livestream.': ['Der Browser dieses Bildschirms kann den Livestream nicht abspielen.', 'Le navigateur de cet écran ne peut pas lire le direct.'],

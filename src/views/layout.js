@@ -40,8 +40,9 @@ const NAV = [
 
 /** The theme switch, as a form: one press flips the cookie. `cls` is the
  *  wrapper's class — a rail cell on mission control, the round key in the
- *  header of the public pages. The station is dark until a visitor chooses
- *  light with it. */
+ *  header of the public pages. The station is light until a visitor chooses
+ *  dark with it (8 October: "the project should open in light mode by
+ *  default" — it was dark until then). */
 function themeSwitch(ctx, cls, T = ctx.T || same) {
   // the key names the mode the page is in — Dark by night, Light by day (October: "the light mode should read Dark and
   // vice versa" — the word is the state, the title the action); a press turns it (public/switches.js relabels)
@@ -240,12 +241,20 @@ function foot(ctx, T = ctx.T || same, landing = false) {
 /* The dictionary for the browser: the page scripts (board, composer, the
    ticker, the habitat tiles) build a few strings of their own, and read
    them through `t()` from this table — the current language's entries
-   only, nothing for English. Emitted in the head so the inline scripts
-   further down can use it too. */
+   only, nothing for English. Loaded in the head so the inline scripts
+   further down can use it too: a script of its own (server.js, /i18n/de.js
+   and /i18n/fr.js), which a browser keeps while the station runs — its
+   address carries ASSET_V —, so the table (some 80 kB) is not sent again
+   with every page (8 October: "the website is very heavy to load"). English
+   needs no table: its t() is written into the page. */
+// (a key with its sense after a double colon — 'Light::sensor' — reads as the part before it where there is no word for it)
+const T_FN = "function t(s){var v=(window.MCS_T||{})[s],i=String(s).indexOf('::');return v||(i>0?String(s).slice(0,i):s)}";
+function tableScript(lang) {
+  return `window.MCS_T=${JSON.stringify(i18n.table(lang)).replace(/</g, '\\u003c')};${T_FN}\n`;
+}
 function clientTable(lang) {
-  const json = JSON.stringify(i18n.table(lang)).replace(/</g, '\\u003c');
-  // (a key with its sense after a double colon — 'Light::sensor' — reads as the part before it where there is no word for it)
-  return `<script>window.MCS_T=${json};function t(s){var v=(window.MCS_T||{})[s],i=String(s).indexOf('::');return v||(i>0?String(s).slice(0,i):s)}</script>`;
+  if (lang !== 'de' && lang !== 'fr') return `<script>window.MCS_T={};${T_FN}</script>`;
+  return `<script src="/i18n/${lang}.js?v=${ASSET_V}"></script>`;
 }
 
 /* The composer's pop-up (src/views/pages/public.js, portal), on every public page: a #write door on the page opens the
@@ -319,7 +328,7 @@ function page({ title, ctx, body, current, bodyClass = '', head = '', scripts = 
 <link rel="stylesheet" href="/station.css?v=${ASSET_V}">${styles.map((s) => `\n<link rel="stylesheet" href="${s}?v=${ASSET_V}">`).join('')}
 ${translate ? clientTable(lang) : ''}
 ${head}
-</head><body class="${bodyClass}">
+</head><body class="${bodyClass}">${aura ? `\n${require('./sky').nightSky()}` : ''}
 ${hero}
 ${hideRail ? '' : rail(ctx, bodyClass.includes('landing'), T)}
 ${control || hideNav ? '' : nav(current, T)}
@@ -555,5 +564,5 @@ module.exports = {
   page, panel, eyebrow, readout, orbitPlot, sparkline, pipeline, scaleStrip,
   statusStrip, langSwitch, themeSwitch, sym, legend, SYMBOL_KEY, esc, NAV, MESSAGE_STATES,
   mealEco, mealEcoText, MEAL_NUTRIENTS, slotName, mealFigs, mealHoursLine,
-  clientTable, ASSET_V,   // the installation's screens (pages/screens.js) build their own shell from these
+  clientTable, tableScript, ASSET_V,   // the installation's screens (pages/screens.js) build their own shell from these
 };

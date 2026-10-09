@@ -6,7 +6,8 @@
  * letter typed. Every word is on the page from the start and keeps its place; the ones not yet typed are simply not
  * seen (colour: transparent), so nothing moves while the typing goes on, and a reader with assistive technology reads
  * the whole text as written. Typed to the end, the words stay for a few minutes (HOLD); then the panel is cleared and
- * typed again. The typing waits until the panel is in view, so it is seen from its first letter; it stands still where
+ * typed again — or, on the mission screen, the page is told (mcs:typed) and its turns (public/screen-turns.js) show the
+ * day and have the mission typed again when it comes back (window.MCSTyped.restart). The typing waits until the panel is in view, so it is seen from its first letter; it stands still where
  * the visitor asks for less motion (the words then shown whole). Nothing here is sent anywhere. */
 (function () {
   'use strict';
@@ -47,11 +48,19 @@
     if (cursor.parentNode) cursor.parentNode.removeChild(cursor);
     body.classList.remove('is-typing');
   }
+  // on the mission screen the turns (public/screen-turns.js) say when the mission is typed again: told it stands whole,
+  // they show the day, and come back to it with restart(); alone, the words stay for HOLD and are typed again
+  var turns = !!document.getElementById('screen-turns');
+  function done() {
+    showAll();
+    try { document.dispatchEvent(new CustomEvent('mcs:typed')); } catch (e) { /* an old browser: the turns keep their own time */ }
+    if (!turns) timer = setTimeout(function () { clear(); step(); }, HOLD);
+  }
   function step() {
     timer = null;
     if (!seen) return;                           // out of view: the typing waits where it is
     var s = slots[at];
-    if (!s) { showAll(); timer = setTimeout(function () { clear(); step(); }, HOLD); return; }
+    if (!s) { done(); return; }
     if (pos === 0 && s.li) s.li.classList.add('tw-seen');
     // the next letter — leading blanks all at once, they are not typed
     var next = pos; while (next < s.text.length && /\s/.test(s.text.charAt(next))) next++;
@@ -65,6 +74,7 @@
   }
   function resume() { if (seen && !timer && at < slots.length) step(); }
 
+  window.MCSTyped = { restart: function () { clearTimeout(timer); timer = null; clear(); resume(); } };
   // typed from the first letter when the panel comes into view; carried on when it comes back
   clear();
   if ('IntersectionObserver' in window) {

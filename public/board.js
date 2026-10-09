@@ -27,7 +27,12 @@
    the foot of a note names its tags: a press on one narrows the wall to it.
    (The installation's board screen keeps the older way: every card swapped
    for the fresh set.) The Show more key of the old phone board is gone;
-   a phone's wall loads as it scrolls like any other. */
+   a phone's wall loads as it scrolls like any other.
+
+   The installation's board (the board screen, and the ground station's
+   beside its composer) shows the latest exchanges that fit on the screen
+   and no more — nine at the most — fitted the moment its cards arrive,
+   before they are painted (fitScreen, below). */
 (function () {
   'use strict';
   /* The visitor's language: t() reads the table the page carries in its
@@ -180,6 +185,112 @@
     if (top < 0 || top > 160) bar.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
+  /* ------------------------------------- the board screen: the latest that fit, nine at the most */
+  /* On the installation's board (screens.js: the board screen, and the ground station's beside its composer) the board
+     stands whole: the newest exchanges that fit on the screen and no more — the last three where three fit, the last one
+     where only one does, nine at the most (the station sends no more than nine: server.js, stationBoard) — none of them
+     cut at the foot. Each card is measured at its own height (a row as tall as its tallest card), and the cards that
+     would not fit are taken out of the grid altogether — in the same moment as the cards arrive, before the browser
+     draws them, so the screen never shows a card and takes it away again (8 October: "the board is glitching on and off
+     — make it very smart and stable"). Where fewer, wider columns hold more of the latest — a long message and a long
+     answer stand shorter across two columns' width than in one — the board is laid out in fewer (the stylesheet's own
+     three where fewer hold no more); the latest alone too tall for any is faded out at its foot. The first fitting waits
+     for the fonts and for the zoom screen.js gives the screen (the cards are not shown until then — screen.css); after
+     that the count moves only when it must: one fewer the moment the cards standing grow over the foot, one more only
+     when there is room to spare for it — a line that wraps, a figure a digit longer, never has a card come and go. A
+     fresh set of cards and a new size of board are fitted anew, the columns chosen again. */
+  var onScreen = document.body.classList.contains('screen');
+  var MOST = 9, fitted = 0, across = 0, started = false, size = '';
+  function rowsHeight(hs, n, cols, gap, foot) {                              // the height the first n cards take, row by row
+    var total = 0, rows = 0;
+    for (var i = 0; i < n; i += cols) {
+      var h = 0;
+      for (var j = i; j < n && j < i + cols; j++) if (hs[j] > h) h = hs[j];
+      total += h; rows++;
+    }
+    return total + gap * Math.max(0, rows - 1) - (foot || 0);                // (the last row's margin under it is no part of what shows)
+  }
+  function fitScreen(fresh) {
+    if (!onScreen || !cardsBox || !started) return;
+    var list = cards.filter(function (c) { return !c.classList.contains('is-hidden'); });
+    var box = scroller || cardsBox.parentElement;
+    // (layout pixels throughout — offsetHeight, clientHeight, the computed gap — which the screen's zoom does not change)
+    var bs = getComputedStyle(box);
+    var room = box.clientHeight - (parseFloat(bs.paddingTop) || 0) - (parseFloat(bs.paddingBottom) || 0);
+    if (!list.length || room <= 0) { if (!list.length) fitted = 0; cardsBox.classList.add('is-fitted'); return; }   // nothing to fit, or not laid out yet
+    var now = Math.round(room) + 'x' + box.clientWidth;                      // a board of another size is fitted anew
+    if (now !== size) { size = now; fresh = true; }
+    // every card in the grid for the moment, the rows not stretched: each card at its own height, in the stylesheet's
+    // columns and in fewer (nothing of this is painted — the cards are put back before the browser draws)
+    list.forEach(function (c) { c.classList.remove('is-off', 'is-tall'); c.style.maxHeight = ''; });
+    cardsBox.classList.add('is-measuring');
+    cardsBox.style.gridTemplateColumns = '';
+    var cs = getComputedStyle(cardsBox);
+    var base = Math.max(1, String(cs.gridTemplateColumns || '').trim().split(/\s+/).length);   // the stylesheet's columns, for this screen
+    var gap = parseFloat(cs.rowGap) || 0, mb = parseFloat(getComputedStyle(list[0]).marginBottom) || 0;
+    // a few pixels kept for the rounding of the measures; and more — some 3 % of the board — before one more is let in
+    // on a second look, so that a card that has just gone does not come straight back
+    var most = Math.min(MOST, list.length), slack = 4, spare = Math.max(24, room * 0.03);
+    var lay = function (c) { cardsBox.style.gridTemplateColumns = c === base ? '' : 'repeat(' + c + ', minmax(0, 1fr))'; };
+    var heights = function (c) {
+      lay(c);
+      return list.map(function (el) { var m = getComputedStyle(el); return el.offsetHeight + (parseFloat(m.marginTop) || 0) + (parseFloat(m.marginBottom) || 0); });
+    };
+    var upTo = function (hs, c, limit) {                                     // how many of the latest fit, c across (0: not even the latest)
+      if (rowsHeight(hs, 1, c, gap, mb) > limit) return 0;
+      var n = 1; while (n < most && rowsHeight(hs, n + 1, c, gap, mb) <= limit) n++; return n;
+    };
+    var c = Math.min(across || base, base), hs = null, n = 0;
+    if (!fresh && fitted) {
+      // a second look: in the columns standing, one fewer if the cards run over the foot, one more only with room to spare
+      hs = heights(c);
+      var keep = Math.min(fitted, most), fit = upTo(hs, c, room - slack);
+      if (!fit) fresh = true;                                                // not even the latest fits as it stands: fitted anew
+      else if (rowsHeight(hs, keep, c, gap, mb) > room + 1) n = fit;
+      else n = Math.max(keep, upTo(hs, c, room - spare));
+    }
+    if (fresh || !fitted) {
+      // the columns that hold the most of the latest: the stylesheet's own, or fewer only where they hold more
+      var best = null;
+      for (var k = base; k >= 1; k--) {
+        var h = heights(k), m = upTo(h, k, room - slack);
+        if (!best || m > best.n) best = { c: k, hs: h, n: m };
+        if (m >= most) break;                                                // all of them already: no fewer columns needed
+      }
+      if (!best.n) best = { c: 1, hs: heights(1), n: 1 };                     // the latest too tall even across the whole board
+      c = best.c; hs = best.hs; n = best.n;
+    }
+    lay(c);
+    cardsBox.classList.remove('is-measuring');
+    list.forEach(function (el, i) { el.classList.toggle('is-off', i >= n); });
+    // the latest alone taller than the whole board (an exchange written before the limit of five hundred): faded out at
+    // its foot rather than cut
+    if (rowsHeight(hs, 1, c, gap, mb) > room) { list[0].classList.add('is-tall'); list[0].style.maxHeight = Math.floor(room) + 'px'; }
+    fitted = n; across = c;
+    cardsBox.classList.add('is-fitted');
+  }
+  if (onScreen && cardsBox) {
+    cardsBox.setAttribute('data-fit-own', '');                               // (screen.js leaves these cards to this script)
+    // the first fitting: once the fonts are in and screen.js has given the screen its zoom (it calls MCSBoardFit when it
+    // has) — or after a second and a half, whatever is late
+    var zoomed = !document.getElementById('stage-fit'), late = false;
+    var start = function () {
+      if (started || (!zoomed && !late)) return;
+      if (!late && document.fonts && document.fonts.status === 'loading') { document.fonts.ready.then(start); return; }
+      started = true;
+      fitScreen(true);
+    };
+    window.MCSBoardFit = function () { zoomed = true; if (started) fitScreen(false); else start(); };
+    setTimeout(function () { late = true; start(); }, 1500);
+    // the cards growing or shrinking (a line wrapping, a figure longer), or the board's room changing: looked at again
+    if (window.ResizeObserver) {
+      var ro = new ResizeObserver(function () { fitScreen(false); });
+      ro.observe(scroller || cardsBox.parentElement); ro.observe(cardsBox);
+    } else window.addEventListener('resize', function () { setTimeout(function () { fitScreen(false); }, 350); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (started) fitScreen(true); });
+    setInterval(function () { if (!document.hidden) fitScreen(false); }, 30000);   // and now and then, for whatever was missed
+  }
+
   /* ---------------------------------------------------------- live refresh */
   var url = feed.getAttribute('data-poll');
   // The page carries the version of the board it was rendered with, so even
@@ -235,6 +346,7 @@
     else cardsBox.insertAdjacentHTML('afterbegin', data.cards);
     collect();
     apply();
+    fitScreen(true);                                                         // the board screen: fitted before it is painted
     if (scroller && top > 0) scroller.scrollTop = top + (scroller.scrollHeight - before);
     counts(data);
   }
@@ -262,6 +374,7 @@
           version = data.version;
         }
         wait = BASE_MS;
+        window.MCSBoardAlive = Date.now();                                   // (a board screen alive: screen.js does not reload it)
         if (live) live.classList.remove('stale');
       })
       .catch(function () {
@@ -284,6 +397,7 @@
 
   collect();
   apply();
+  fitScreen(true);                                                           // (on a screen: once it has started, above)
   poll();
   if (seek && !document.getElementById('m' + seek[1])) sought();              // a link to an exchange further down the wall
 

@@ -3,8 +3,9 @@
  * What the page does for a screen that must show the whole of one thing at a glance:
  *  - fits the stage's body to the screen: where the body's content is taller (or wider) than the room it has, it is
  *    scaled down until it fits (the browser's zoom where it has one, a transform where not) — a long mission, the day;
- *    on the board and in the gallery nothing is scaled: the cards or tiles that would be cut at the foot are hidden
- *    instead, so the last row is whole (data-fit="clip"); the trends, landscape, are drawn to the height by the
+ *    on the board and in the gallery nothing is scaled: the tiles that would be cut at the foot are hidden instead, so
+ *    the last row is whole (data-fit="clip") — the board's cards are board.js's own to fit (the latest that fit, nine at
+ *    the most, data-fit-own on their grid); the trends, landscape, are drawn to the height by the
  *    stylesheet alone (data-fit-landscape="fill"); the habitat is laid out at a screen's width of its own — 1920 wide
  *    landscape, 1080 upright — and zoomed to the screen's actual width, its panel rolling by under its head
  *    (data-fit="roll", screen-roll.js) — screens.js says which way each screen is fitted; the browser's zoom is used
@@ -17,7 +18,8 @@
  *  - keeps the clock in the head on the venue's time;
  *  - reloads the page every five minutes (a little apart on every screen, so the station is not asked by all at once)
  *    and at the venue's midnight, when the sol turns — not while someone is writing on the writing screen, and on the
- *    rolled habitat at the roll's turn, while its sheet is faded out (screen-roll.js).
+ *    rolled habitat at the roll's turn, while its sheet is faded out (screen-roll.js); the board screens, live by their
+ *    own poll, only at midnight — or when their poll has stopped answering (board.js, MCSBoardAlive).
  * The screens are display-only but for the writing screen (screen-write.js): nothing here is ever sent anywhere. */
 (function () {
   'use strict';
@@ -132,7 +134,8 @@
     // A card is over the edge where it reaches past the body's foot — or past the foot of any box round it that cuts
     // what runs over (the board's list: its cards end above the panel's own foot, 8 October), less that box's padding,
     // which is there for the cards' shadows: a card reaching into it would have its shadow cut square.
-    var items = fitEl.querySelectorAll('.card, .mtile'), r = body.getBoundingClientRect(), run = {};
+    // (the board's cards are not looked at here: board.js fits them itself — the latest that fit, the rest out of the grid)
+    var items = [].filter.call(fitEl.querySelectorAll('.card, .mtile'), function (el) { return !el.closest('[data-fit-own]'); }), r = body.getBoundingClientRect(), run = {};
     var foot = r.bottom - 2, edge = r.right + 1;                          // a hair inside the body's foot
     function limits(el) {
       var b = foot, rt = edge, p = el.parentElement;
@@ -167,6 +170,7 @@
   function fitNow() {
     chooseFit();
     if (fit === 'clip') { baseZoom(); fitClip(); } else if (fit === 'scale') fitScale(); else if (fit === 'roll') rollZoom();
+    if (window.MCSBoardFit) window.MCSBoardFit();                          // the board's cards, at the zoom now given (board.js)
   }
   function refit() {
     clearTimeout(pending);
@@ -185,7 +189,9 @@
   // (nor while someone types or presses the key on the writing screen: what changes in its form — the count of
   // characters, the key held while a message leaves — changes nothing of its size, and a fitting then could move the key
   // from under a finger; the form's swap for the crossing, and back, is a change of the device and is fitted)
-  var inForm = function (n) { var e = n && n.nodeType === 1 ? n : n && n.parentNode; return !!(e && e.closest && e.closest('form.composer')); };
+  // (nor for the board's cards: board.js fits them itself, as they change — their figures ticking every second are no
+  // change of the screen's)
+  var inForm = function (n) { var e = n && n.nodeType === 1 ? n : n && n.parentNode; return !!(e && e.closest && e.closest('form.composer, [data-fit-own]')); };
   if (window.MutationObserver) new MutationObserver(function (ms) {
     if (fit === 'roll') return;
     for (var i = 0; i < ms.length; i++) if (ms[i].target !== fitEl && !inForm(ms[i].target)) { refit(); return; }
@@ -219,7 +225,10 @@
   var busy = function () { return !!(window.MCSScreenBusy && window.MCSScreenBusy()); };
   // (a rolled screen reloads at its roll's turn, while its sheet is faded out — screen-roll.js, MCSScreenRoll)
   var reload = function () { if (window.MCSScreenRoll) window.MCSScreenRoll.reloadAtTurn(); else location.reload(); };
+  // (the board screens are kept live by their own poll — board.js, MCSBoardAlive — and are not reloaded while it answers:
+  // a reload would blank the board for a moment every five minutes, 8 October; one whose poll has stopped answering is)
+  var liveBoard = function () { return !!(window.MCSBoardAlive && Date.now() - window.MCSBoardAlive < 90000); };
   var day0 = venueDate();
-  (function later(ms) { setTimeout(function () { if (busy()) return later(60000); reload(); }, ms); })(5 * 60 * 1000 + Math.floor(Math.random() * 20000));
+  (function later(ms) { setTimeout(function () { if (busy()) return later(60000); if (liveBoard()) return later(5 * 60 * 1000); reload(); }, ms); })(5 * 60 * 1000 + Math.floor(Math.random() * 20000));
   setInterval(function () { if (venueDate() !== day0 && !busy()) reload(); }, 30000);
 })();

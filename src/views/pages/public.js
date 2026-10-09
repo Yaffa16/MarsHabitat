@@ -371,7 +371,7 @@ function boardScreen(ctx, { recent = [], poll = '/api/board' } = {}) {
   const pendingMine = recent.filter((m) => m.mine && m.pending).length;
   const openOnMine = false;   // ALL opens first
   // the page polls /api/board for the same cards it was drawn with (the installation's board screen names its own
-  // address: its language and its 400 cards — views/pages/screens.js)
+  // address: its language and its nine cards — views/pages/screens.js)
   return `<div class="feed-wrap"><div class="feed-scroll" id="feed" data-poll="${esc(poll)}" data-open="${ctx.mission.open ? 1 : 0}"
           data-version="${boardVersion(recent)}">
         <div class="screen board">
@@ -428,6 +428,22 @@ function dashboardPage(ctx, d) {
  * slowly on a phone (aura.css), where it is how the station says what is
  * happening now.
  */
+/* The habitat's latest reading, for the running line: its temperature, humidity and CO₂ while the newest reading is less
+   than half an hour old, "no current reading" else. Written into the page with it and sent again with the schedule
+   (/api/ticker, every five minutes), so no page fetches the day's readings for one line (8 October: "the website is very
+   heavy to load" — it was a day of readings, some 200 kB, on every page). */
+function habReading(ctx) {
+  const T = ctx.T || ((s) => s);
+  let last = null;
+  try { last = require('../../lib/critical').lastStored(); } catch { last = null; }
+  if (!last || !(Date.now() - last.t <= 30 * 60 * 1000)) return T('no current reading');
+  const bits = [];
+  if (last.temp != null && Number.isFinite(Number(last.temp))) bits.push(Number(last.temp).toFixed(1) + ' °C');
+  if (last.hum != null && Number.isFinite(Number(last.hum))) bits.push(Math.round(Number(last.hum)) + ' %');
+  if (last.co2 != null && Number.isFinite(Number(last.co2))) bits.push('CO₂ ' + Math.round(Number(last.co2)) + ' ppm');
+  return bits.length ? bits.join(' · ') : T('no current reading');
+}
+
 function ticker(ctx, { today } = {}) {
   const m = ctx.mission, T = ctx.T;
   const pre = m.phase === 'PRE_LAUNCH', over = m.phase === 'COMPLETE';
@@ -451,7 +467,7 @@ function ticker(ctx, { today } = {}) {
     cells.push(`${T('The crew are currently:')} <b id="tk-now">${nowTask ? say(nowTask) : T('off the schedule')}</b>`);
     cells.push(`${T('Next:')} <b id="tk-next">${nextTask ? say(nextTask) : T('nothing more today')}</b>`);
   }
-  cells.push(`${T('Habitat:')} <b id="tk-hab">${T('awaiting reading')}</b>`);   // the one-way signal is read where a message is written, and nowhere else
+  cells.push(`${T('Habitat:')} <b id="tk-hab">${esc(habReading(ctx))}</b>`);   // the one-way signal is read where a message is written, and nowhere else
   if (!over) cells.push(`${T('Communication window daily')} <b>${esc(LP.windowWhen(ctx))}</b>`);   // when the crew answer — "19:00 CET" (landing.js)
   const line = cells.map((c) => `<span class="tk-cell">${c}</span>`).join('<span class="tk-sep">·</span>');
   /* The header of every public page, after the design handoff's reference sheet: a row with the wordmark (the way home),
@@ -582,6 +598,8 @@ function ticker(ctx, { today } = {}) {
         if ((d.phase && d.phase !== phase) || (d.epoch && epoch && String(d.epoch) !== epoch)) { turn(); return; }
         if (d.opensAt) opens = Date.parse(d.opensAt) || opens;
         if (Array.isArray(d.tasks)) { tasks = d.tasks; retask(); }
+        // the habitat's latest reading comes with the schedule (habReading)
+        if (typeof d.hab === 'string' && d.hab) all('[id="tk-hab"]').forEach(function (n) { n.textContent = d.hab; });
       }).catch(function () { /* next time */ });
     }
     // every five minutes; every ten seconds in the last minute before the run
@@ -590,22 +608,6 @@ function ticker(ctx, { today } = {}) {
       if (left < 60000) refetch();
     }, 10000));
     timers.push(setInterval(refetch, 5 * 60 * 1000));
-    function reading() {
-      fetch('/api/habitat/data?days=1', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
-        var rows = d.rows || [], last = rows[rows.length - 1];
-        var fresh = last && (Date.now() - last.t) <= 30 * 60 * 1000;
-        var text = t('no current reading');
-        if (fresh) {
-          var bits = [];
-          if (last.temp != null) bits.push(last.temp.toFixed(1) + ' \u00b0C');
-          if (last.hum != null) bits.push(Math.round(last.hum) + ' %');
-          if (last.co2 != null) bits.push('CO\u2082 ' + Math.round(last.co2) + ' ppm');
-          if (bits.length) text = bits.join(' \u00b7 ');
-        }
-        all('[id="tk-hab"]').forEach(function (n) { n.textContent = text; });
-      }).catch(function () { /* next cycle */ });
-    }
-    reading(); timers.push(setInterval(reading, 5 * 60 * 1000));
   })();
   </script>`;
 }
@@ -796,9 +798,10 @@ function figureTile(figures, mission, { key, label, unit, colour, fmt, T = same,
  * Power generated (8 October: "in the Sensors tab add another measurement, Power generated — the logo a bike — and
  * inside it two visualisations, the number of rounds pedalled and the percentage of battery charged"): the bicycle
  * generator's day from content/bike.json, filed by hand on the Habitat tab of mission control (Power generated by
- * bike). The rounds on a bicycle computer's odometer — five drums, the leading zeros dim, the last drum in Mars — and
+ * bike). The rounds on a bicycle computer's odometer — five drums, every figure white (9 October) — and
  * the battery as a battery: ten cells lit to its charge, the next one pulsing while it is not full, the per cent
- * beside it. 4,500 rounds charge it full; a day filed without a battery figure shows the rounds' share of a full
+ * beside it (no line under them since 9 October: "remove the 4,500 rounds charge the battery full text"). 4,500 rounds
+ * charge it full; a day filed without a battery figure shows the rounds' share of a full
  * charge (content.bikeBattery). The day shown: before the run NOW's, the rehearsal day's (filed under NOW on the desk);
  * during it today's, else the last day filed, as the steps do. The About page's Cycle leads here (#bike, inside.js).
  */
@@ -816,7 +819,8 @@ function bikeTile(T, bike = {}, mission) {
     : pre ? T('Today · before the run')
     : day === n0 ? `${T('Day')} ${String(n0).padStart(3, '0')}`
     : `${T('Last recorded')} · ${T('Day')} ${String(day).padStart(3, '0')}`;
-  // the odometer: five drums at the least, more for a larger count; the zeros before the count dim
+  // the odometer: five drums at the least, more for a larger count; every figure white, the zeros before the count too
+  // (9 October — the .z they carry is no longer dimmed: aura.css)
   const str = rounds == null ? '' : String(rounds), width = Math.max(5, str.length);
   const drums = rounds == null
     ? Array.from({ length: width }, () => '<b class="z">–</b>').join('')
@@ -842,8 +846,7 @@ function bikeTile(T, bike = {}, mission) {
               <span class="bike-pc">${pctText}<em>%</em></span>
             </div>
           </div>
-          <div class="verdict">${T('4,500 rounds charge the battery full')}</div>
-        </section>`;
+        </section>`;   // (no line under it: "remove the 4,500 rounds charge the battery full text" — 9 October)
 }
 
 
@@ -1144,17 +1147,38 @@ function hwChart(hw, group, members, tz, T = same, W = HW_W, H = HW_H) {
   const suffix = (l) => { const i = String(l).lastIndexOf(' · '); return i > 0 ? String(l).slice(i) : null; };
   const shared = series.length > 1 && suffix(series[0].s.label) && series.every((r) => suffix(r.s.label) === suffix(series[0].s.label)) ? suffix(series[0].s.label) : null;
   const legendName = (l) => (shared ? String(l).slice(0, -shared.length) : l);
-  // The newest reading of the first line, in a tag above its end — named
-  // after the line where the chart has more than one (Crickets 44 W; the
-  // name is the label's first part, before any " · "), so the figure is
-  // not taken for the chart's.
-  const lead = series[0];
+  // The newest reading of every line, in a pill above its end — named after
+  // the line where the chart has more than one (CO 1.2 ppm; the name is the
+  // label's first part, before any " · "), so a figure is not taken for
+  // another line's. (Until 9 October only the first line had one: the
+  // Power chart always read the crickets', the air quality's never the CO's
+  // — "CO · carbon monoxide does not show any value: make it display the
+  // current value".) The Power chart has none — its eight lines say their
+  // figures under the pointer (hardware.js, data-hw below; "for all lines,
+  // when I hover show the current power rating … remove the cricket value it
+  // always reads"). Pills that would overlap are moved apart.
   const pillName = (l) => String(l).split(' · ')[0];
-  const tagText = `${series.length > 1 ? pillName(lead.s.label) + ' ' : ''}${hwNum(lead.s.kind === 'counter' && lead.s.today != null ? lead.s.today : lead.s.value, lead.s.decimals)}${lead.s.unit ? ' ' + lead.s.unit : ''}`;
-  // the tag: a pill wide and tall enough to hold the figure (the type is larger than the plot's own: aura.css, .hw-tag)
-  // over the line's end, or under it where the line runs near the top of the plot (the clock of the moment stands there)
-  const tagW = 20 + tagText.length * 8.4, tagH = 26, tagX = Math.min(W - padR - tagW, Math.max(padL, lead.ex - tagW / 2)), tagY = lead.ey - 38 >= padT + 2 ? lead.ey - 38 : lead.ey + 12;
-  return `<figure class="hw-chart hw-${esc(group.key.replace(/[^a-z0-9]+/gi, '-'))}">
+  const tagH = 26;
+  const pills = group.key === 'power' ? [] : series.map((r) => {
+    const text = `${series.length > 1 ? pillName(r.s.label) + ' ' : ''}${hwNum(r.s.kind === 'counter' && r.s.today != null ? r.s.today : r.s.value, r.s.decimals)}${r.s.unit ? ' ' + r.s.unit : ''}`;
+    // a pill wide and tall enough to hold the figure (the type is larger than the plot's own: aura.css, .hw-tag), over
+    // the line's end, or under it where the line runs near the top of the plot (the clock of the moment stands there)
+    const tagW = 20 + text.length * 8.4;
+    return { r, text, w: tagW, x: Math.min(W - padR - tagW, Math.max(padL, r.ex - tagW / 2)), y: r.ey - 38 >= padT + 2 ? r.ey - 38 : r.ey + 12 };
+  }).sort((a, b) => a.y - b.y);
+  for (let i = 1; i < pills.length; i++) {
+    for (let j = 0; j < i; j++) {
+      const a = pills[j], b = pills[i];
+      if (a.x < b.x + b.w && b.x < a.x + a.w && b.y < a.y + tagH + 4) b.y = a.y + tagH + 4;   // under the one it would cover
+    }
+  }
+  pills.forEach((t) => { t.y = Math.min(bottom - tagH, t.y); });
+  // what the pointer reads (hardware.js): every line's points — minutes since midnight and the value in the chart's unit —
+  // with its name and colour, and where the plot lies in the drawing
+  const hover = { pl: padL, iw, pt: padT, ih, W, H, since: hw.since, span, tz, unit: group.unit || '', lo: ax.lo, hi: ax.hi,
+    s: series.map((r) => ({ n: legendName(r.s.label), c: r.colour, d: Math.max(0, Math.min(3, r.s.decimals == null ? 1 : r.s.decimals)),
+      p: r.s.points.map((p) => [Math.round((p[0] - hw.since) / 60000), Number(val(r.s, p[1]).toFixed(3))]) })) };
+  return `<figure class="hw-chart hw-${esc(group.key.replace(/[^a-z0-9]+/gi, '-'))}" data-hw="${esc(JSON.stringify(hover))}">
   <figcaption class="hw-title">${sensorIcon(group.key === 'power' || group.key.startsWith('energy') ? 'pwr' : group.key === 'temperature' ? 'temp' : /oxygen/i.test(group.title) ? 'o2' : /air quality/i.test(group.title) ? 'iaq' : 'pres', 'hw-ic')}<b>${esc(T(group.title))}</b>${unit ? ` <span class="hw-unit">${unit}${group.key === 'power' ? ` · ${T('hourly average')}` : ''}</span>` : ''}</figcaption>
   <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(T(group.title))} — ${esc(T('today, midnight to midnight venue time, one line per device, on one scale in'))} ${unit || '—'}">
     <defs>${series.map((r) => `
@@ -1173,12 +1197,12 @@ function hwChart(hw, group, members, tz, T = same, W = HW_W, H = HW_H) {
       ${r.pts.slice(0, -1).map(([x, y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.8" fill="${r.colour}" class="hw-dot"/>`).join('')}
       <circle cx="${r.ex.toFixed(1)}" cy="${r.ey.toFixed(1)}" r="9" fill="${r.colour}" class="hw-pulse"/>
       <circle cx="${r.ex.toFixed(1)}" cy="${r.ey.toFixed(1)}" r="4.2" fill="${r.colour}" class="hw-end"/>`).join('')}
-    <g class="hw-tag"><rect x="${tagX.toFixed(1)}" y="${tagY.toFixed(1)}" width="${tagW.toFixed(1)}" height="${tagH}" rx="${tagH / 2}" fill="${lead.colour}"/>
-      <text x="${(tagX + tagW / 2).toFixed(1)}" y="${(tagY + tagH / 2).toFixed(1)}" text-anchor="middle" dominant-baseline="central">${esc(tagText)}</text></g>
+    ${pills.map((t) => `<g class="hw-tag"><rect x="${t.x.toFixed(1)}" y="${t.y.toFixed(1)}" width="${t.w.toFixed(1)}" height="${tagH}" rx="${tagH / 2}" fill="${t.r.colour}"/>
+      <text x="${(t.x + t.w / 2).toFixed(1)}" y="${(t.y + tagH / 2).toFixed(1)}" text-anchor="middle" dominant-baseline="central">${esc(t.text)}</text></g>`).join('')}
   </svg>
   <ul class="hw-legend">${series.map((r) => `
     <li><i style="background:${r.colour}"></i><span class="hw-name">${esc(legendName(r.s.label))}</span>${
-      r.s.kind === 'counter' ? '' : `<span class="hw-range">${T('low')} ${hwNum(r.lo, r.s.decimals)} · ${T('high')} ${hwNum(r.hi, r.s.decimals)}</span>`}</li>`).join('')}
+      r.s.kind === 'counter' || group.key === 'power' ? '' : `<span class="hw-range">${T('low')} ${hwNum(r.lo, r.s.decimals)} · ${T('high')} ${hwNum(r.hi, r.s.decimals)}</span>`}</li>`).join('')}
   </ul>
 </figure>`;
 }
@@ -1193,6 +1217,9 @@ function hwCharts(hw, tz, T = same, W = HW_W, H = HW_H) {
   (hw.sensors || []).forEach((s, i) => {
     const g = hwGroupOf(s);
     if (g.key.startsWith('energy')) return;
+    // no Oxygen graph (9 October: "remove the Oxygen graph"): the oxygen stands in the Sensors panel's first tile, read
+    // from the same sensor (oxygenSensor) — the device keeps its place in the list, so every other keeps its colour
+    if (/(^|[^a-z])o2([^a-z]|$)|oxygen/i.test(`${s.id} ${s.label}`)) return;
     let e = groups.get(g.key);
     if (!e) groups.set(g.key, e = { group: g, members: [] });
     e.members.push({ s, colour: hwColour(i) });
@@ -1311,7 +1338,9 @@ const tabIcon = (id) => TAB_ICONS[id] ? `<svg class="ftab-ic" viewBox="0 0 24 24
 const folder = (T, rows, { id = 'day-folder', label = '', title = '' } = {}) => {
   rows = rows.map((row) => ({ label: row.label, tabs: row.tabs.filter(Boolean) })).filter((row) => row.tabs.length);
   const tabs = rows.flatMap((row) => row.tabs);
-  const tab = (t, i) => `<button type="button" class="ftab${i === 0 ? ' is-front' : ''}" role="tab" id="ftab-${t.id}" aria-controls="fpage-${t.id}" aria-selected="${i === 0 ? 'true' : 'false'}"${i === 0 ? '' : ' tabindex="-1"'} data-folder="${t.id}">${tabIcon(t.id)}<span class="ftab-l">${esc(t.label)}</span></button>`;
+  // (a phone shows the key's short name, one word, on one line — t.short; aura.css: 8 October, "the tabs and inner tabs
+  // are too cluttered on mobile")
+  const tab = (t, i) => `<button type="button" class="ftab${i === 0 ? ' is-front' : ''}" role="tab" id="ftab-${t.id}" aria-controls="fpage-${t.id}" aria-selected="${i === 0 ? 'true' : 'false'}"${i === 0 ? '' : ' tabindex="-1"'} data-folder="${t.id}">${tabIcon(t.id)}<span class="ftab-l">${esc(t.label)}</span>${t.short ? `<span class="ftab-s">${esc(t.short)}</span>` : ''}</button>`;
   return `
   <section class="folder span-12" id="${id}" data-stop aria-label="${esc(label)}">
     <div class="folder-tabs">
@@ -1424,22 +1453,23 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, pow
   const tasksDone = byDay((n) => { const d = allDays[n - 1]; return d && d.tasks.length ? d.tasks.filter((t) => t.status === 'DONE').length : null; });
   const written = byDay((n) => { const d = logDays[n - 1]; return d ? d.written : null; });
   const count = (k) => byDay((n) => (act[n] || {})[k] || 0);
-  /* The axis of the trend graph. During and after the run it is the run,
-     SOL 01 to 13 — and so it is before the run once Reset to 15 October has
-     been pressed. Until then, after a fresh build, it starts on the build
-     day and runs thirteen days from there, so what the node sends now is on
-     the graph from today. */
-  let axis = { start: m.start_date, end: m.end_date, run: true };
+  /* The axis of the trend graph: always a fortnight of the calendar (9 October: "the Trends graph should always show
+     trends for 14-day periods — 1–14th, 15–29th"): the half of the month today is in — the 1st to the 14th, or the
+     15th to the 29th (to the month's end on the 30th and 31st) — and once the run is over the half it began in, where
+     the record stands still. So it is 1 to 14 October until the run, and the run's own fortnight, 15 to 29 October —
+     SOL 01 to 13 and the two days after — from its first day. `run` says whether any day of the run is on it: those
+     days are named by their SOL (the run's dates go with it, data-run-start / data-run-end), the others by the date. */
+  const fortnight = (iso) => {
+    const [Y, Mo, D] = String(iso).split('-').map(Number), last = new Date(Date.UTC(Y, Mo, 0)).getUTCDate();
+    const p2 = (n) => String(n).padStart(2, '0');
+    const a = D <= 14 ? 1 : 15, b = D <= 14 ? 14 : (D <= 29 ? Math.min(29, last) : last);
+    return { start: `${Y}-${p2(Mo)}-${p2(a)}`, end: `${Y}-${p2(Mo)}-${p2(b)}` };
+  };
+  const span14 = fortnight(m.phase === 'COMPLETE' ? m.start_date : m.today);
+  const axis = { ...span14, run: span14.start <= m.end_date && span14.end >= m.start_date };
+  // (whether the readings run from a fresh build rather than from the reset — the plan's dashed lines below)
   let fromBuild = false;
   try { fromBuild = require('../../lib/critical').floorMode() === 'build'; } catch { /* the run */ }
-  if (pre && fromBuild) {
-    let anchor = m.today;
-    try { anchor = missionLib.localDate(new Date(require('../../lib/critical').anchorMs()), m.timezone); } catch { /* today */ }
-    if (anchor > m.today) anchor = m.today;
-    const end = new Date(Date.parse(anchor + 'T00:00:00Z') + 12 * 86400000).toISOString().slice(0, 10);
-    axis = { start: anchor, end: end < m.start_date ? end : m.start_date, run: false };
-    if (axis.end < axis.start) axis.end = axis.start;
-  }
   const trendSpec = {
     series: [
       ...ingest.map((c) => ({ id: 'ingest-' + c.metric, name: T(c.label), unit: c.unit, group: T('Habitat'), domain: c.domain, points: c.points })),
@@ -1490,7 +1520,7 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, pow
      the instruments, the hardware and the trends, and a link to #trends
      lands on them there. */
   const trendsBlock = `
-    <div class="trends" id="hbt-trends" data-date="${esc(m.today)}" data-day-start="${missionLib.venueMidnightUtc(m.today, m.timezone)}" data-axis-start="${esc(axis.start)}" data-axis-end="${esc(axis.end)}" data-axis-run="${axis.run ? '1' : '0'}" data-spec="${esc(JSON.stringify(trendSpec))}">
+    <div class="trends" id="hbt-trends" data-date="${esc(m.today)}" data-day-start="${missionLib.venueMidnightUtc(m.today, m.timezone)}" data-axis-start="${esc(axis.start)}" data-axis-end="${esc(axis.end)}" data-axis-run="${axis.run ? '1' : '0'}" data-run-start="${esc(m.start_date)}" data-run-end="${esc(m.end_date)}" data-spec="${esc(JSON.stringify(trendSpec))}">
       <div id="hbt-tcharts"></div>
     </div>`;
   const trends = dpanel({ id: 'trends', title: T('Trends'), span: 12 }, trendsBlock);
@@ -1630,8 +1660,9 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, pow
   // Each officer with their current condition — the latest state filed from
   // mission control, translated to language in src/lib/mood.js. The slider
   // number itself is never published; only the word and the sentence.
-  const crewPanel = dpanel({ id: 'crew', title: T('Crew Moods'),
-      meta: T('Condition as reported · never as numbers'), span: 4, cls: 'h-3 scroll' },
+  // (no line under its heading: "Condition as reported · never as numbers" stood there until 8 October — "from Crew
+  // Moods remove: Condition as reported · never as numbers"; the numbers stay unpublished all the same)
+  const crewPanel = dpanel({ id: 'crew', title: T('Crew Moods'), span: 4, cls: 'h-3 scroll' },
     `<div class="officers">${crew.map((c) => {
       const t = moodLib.translate(c.mood);
       // The face mission control filed — the nearest of its five, calm to
@@ -1854,14 +1885,14 @@ function dashboard(ctx, args) {
         { label: T('Sensors'), tabs: [
           { id: 'habitat', label: T('Sensors'), html: habitat } ] },
         { label: T('Daily Life'), tabs: [
-          { id: 'mission-today', label: T('Today’s Mission'), html: missionPanel },
-          { id: 'schedule', label: T('Today’s Schedule'), html: schedule },
-          { id: 'galley', label: T('Today’s Meal'), html: galley },
-          { id: 'crew', label: T('Crew Moods'), html: crewPanel } ] },
+          { id: 'mission-today', label: T('Today’s Mission'), short: T('Mission'), html: missionPanel },
+          { id: 'schedule', label: T('Today’s Schedule'), short: T('Schedule'), html: schedule },
+          { id: 'galley', label: T('Today’s Meal'), short: T('Meal'), html: galley },
+          { id: 'crew', label: T('Crew Moods'), short: T('Moods'), html: crewPanel } ] },
         { label: T('Blogs'), tabs: [
-          { id: 'blog-commander', label: T('Commander Log'), html: blogCommander },
-          { id: 'blog-health', label: T('Health Report'), html: blogHealth },
-          { id: 'blog-science', label: T('Daily Mission Report'), html: blogScience } ] },
+          { id: 'blog-commander', label: T('Commander Log'), short: T('Commander::tab'), html: blogCommander },
+          { id: 'blog-health', label: T('Health Report'), short: T('Health'), html: blogHealth },
+          { id: 'blog-science', label: T('Daily Mission Report'), short: T('Report::tab'), html: blogScience } ] },
       ], { label: `${T('Mission dashboard')} · SOL ${day3} · ${shortDay(blogDate)}`, title: T('Mission dashboard') })}
     </div>
   </section>`;
@@ -2126,6 +2157,6 @@ function single(ctx, { message }) {
 
 module.exports = {
   mission, writePage, dashboardPage, complete, inventoryGauges, boardCards, boardVersion, archive, single, messageCard,
-  hardwareInner, powerTileInner, oxygenTileInner, ticker, dashboardPanels, boardScreen, habitatDome, composerDevice, portal,
+  hardwareInner, powerTileInner, oxygenTileInner, ticker, habReading, dashboardPanels, boardScreen, habitatDome, composerDevice, portal,
   SENSOR_ICON,
 };

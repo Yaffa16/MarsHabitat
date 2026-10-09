@@ -206,10 +206,25 @@ body.landing .hab-line-text { font-family: var(--display); font-size: 18px; line
    and the line: data-sky-round, data-sky-solid). On the Earth, the nudge to scroll on. Night in both themes: the room is
    space. Lines, the two pictures and a few gradients — nothing blurred. */
 body.landing .space { display: flex; flex-direction: column; }
-body.landing .space-room { --dome-w: clamp(190px, 30vh, 330px); --dome-top: 8px; --earth-w: 125%; --earth-arc: clamp(90px, 12.5vh, 125px);
+/* (the Earth's picture is --earth-k times the room's width; its limb stands --earth-arc above the room's foot — never
+   higher than the picture reaches below its limb, some 0.18 of its width, so the picture always stands on the room's
+   foot, however narrow and tall the room: the room is a container, its width 100cqw — 9 October) */
+body.landing .space-room { container-type: inline-size; --dome-w: clamp(190px, 30vh, 330px); --dome-top: 8px; --earth-k: 1.25; --earth-w: calc(var(--earth-k) * 100%); --earth-arc: min(clamp(90px, 12.5vh, 125px), calc(var(--earth-k) * 18cqw));
   --hud: #fff; --hud-rgb: 255,255,255; --hud-hot: #ff6a2e; --hud-hot-rgb: 255,106,46; --hud-ground: rgba(0,0,0,.45); --seq-ground: #0a0a0c;
-  position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; border-radius: var(--r-lg); color: #fff; background: #000; }
+  /* the sky of the room: a sunrise over the Earth's limb — night at the top, the blue of the high air, then the pale band
+     and the orange of the dawn at the horizon (8 October: "instead of the black background behind the Earth, this image
+     or a similar gradient, generated — whichever is better and lighter": generated, from the picture's own colours, no
+     bytes to load); the Earth's picture is clear where its sky was black (public/space/earth.webp), so the dawn shows
+     round its limb */
+  /* (the station's own black, blue and orange were tried in its place that evening and taken back: "revert the gradient
+     to the previous gradient"; the next morning the picture's colours were drawn together at the horizon — "more orange
+     and blue at the horizon, and then black, like 80 percent" — and then bent round the Earth: "make the gradient go
+     round the curve of the Earth, not flat". The sky is space black; the dawn is a ring round the limb, drawn on the
+     globe's own circle — .space-earth::before, below) */
+  --room-sky: #000;
+  position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; border-radius: var(--r-lg); color: #fff; background: var(--room-sky); }
 /* the stars: a field of small lights, still */
+/* (the stars over the whole black sky: the dawn's ring round the Earth lies over them where it is bright) */
 body.landing .space-stars { position: absolute; inset: 0; z-index: 0; pointer-events: none; background-image:
   radial-gradient(1.2px 1.2px at 8% 18%, #fff 99%, transparent), radial-gradient(1px 1px at 19% 61%, rgba(255,255,255,.7) 99%, transparent),
   radial-gradient(1.4px 1.4px at 27% 9%, #fff 99%, transparent), radial-gradient(1px 1px at 33% 44%, rgba(255,255,255,.6) 99%, transparent),
@@ -287,6 +302,16 @@ body.landing .space-arc .arc-flare { fill: none; stroke: #fff; stroke-width: 1.5
 body.landing .space-earth { position: absolute; z-index: 1; left: 50%; bottom: 0; width: var(--earth-w); aspect-ratio: 1414 / 340; pointer-events: none;
   transform: translate(-50%, calc(100% - var(--earth-arc) - 24.1%)); }
 body.landing .space-earth-img { display: block; width: 100%; height: 100%; }
+/* the dawn round the Earth (9 October: "make the gradient go round the curve of the Earth, not flat"): a ring of light on
+   the limb — the dawn's orange on it, a pale band, the blues of the high air over that, fading into the black some
+   sixth of the picture's width above it — drawn on the globe's own circle behind the picture, so it bends with the Earth
+   at any size of the room (the limb in public/space/earth.webp is a circle: its centre 47.67 % across the picture and
+   0.7566 of its width down, its radius 0.6997 of its width — the ring reaches 0.8597 of it); the colours the picture
+   handed over on 8 October, drawn together at the horizon ("more orange and blue at the horizon, then black") */
+body.landing .space-earth::before { content: ""; position: absolute; z-index: -1; left: 47.67%; top: 314.66%; width: 171.94%; aspect-ratio: 1;
+  transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(251, 112, 0, 0) 0, rgba(251, 112, 0, 0) 79%, #fb7000 80.6%, #fb7000 81.4%, #fd8300 82%, #fe991e 83%, #fead47 84.2%, #fac693 85.2%, #b8c5c1 86.2%,
+    #3798c2 87.6%, #0082b8 89.4%, #005595 91.8%, #001a42 94.6%, #00061a 97.4%, rgba(0, 6, 26, 0) 100%); }
 body.landing .space-halo { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; }
 body.landing .space-halo circle { vector-effect: non-scaling-stroke; stroke-width: 1.8px; }
 body.landing .space-halo.is-phone { display: none; }
@@ -738,7 +763,7 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
      two is deep; the dashed line straight down from the habitat's foot onto the limb, the signal up it and the answer
      down (the trajectory, the desk's arc of an earlier layout, stays off: public/sky.js keeps the sky's items either
      side of the line, as on a phone) */
-  body.landing .space-room { margin-top: 12px; min-height: 0; --dome-w: clamp(170px, 22vh, 250px); --dome-top: 10px; --earth-w: 118%; --earth-arc: clamp(100px, 14vh, 150px); }
+  body.landing .space-room { margin-top: 12px; min-height: 0; --dome-w: clamp(170px, 22vh, 250px); --dome-top: 10px; --earth-k: 1.18; --earth-arc: min(clamp(100px, 14vh, 150px), calc(var(--earth-k) * 18cqw)); }
   body.landing .sheet-p1 { height: max(660px, calc(100vh - 113px)); padding: 0 20px 48px; box-sizing: border-box; }   /* the ground line clear of the window's foot */
   /* the words: the eyebrow, MARS!platz large with Ground Station under it, the paragraph, the run */
   body.landing .sheet-intro { align-self: center; display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 12px 0 24px; }
@@ -815,7 +840,7 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
   body.landing .sheet-intro .intro-text { margin-top: 16px; font-size: 16px; line-height: 1.5; }
   body.landing .sheet-intro .run-dates { margin-top: 16px; line-height: 1.6; }
   body.landing .space-room { flex: none; height: max(440px, calc(100vh - 149px)); height: max(440px, calc(100svh - 149px - env(safe-area-inset-bottom, 0px)));
-    --dome-w: 150px; --dome-top: 12px; --earth-w: 108%; --earth-arc: 74px; border-radius: 0; }   /* the picture a little wider than the screen: its foot reaches the room's, the limb 74 px up */
+    --dome-w: 150px; --dome-top: 12px; --earth-k: 1.08; --earth-arc: min(74px, calc(var(--earth-k) * 18cqw)); border-radius: 0; }   /* the picture a little wider than the screen: its foot reaches the room's, the limb 74 px up */
   body.landing:not(.inner) .space-room { scroll-snap-align: start; scroll-snap-stop: always; }
   body.landing .space-halo.is-desk { display: none; }
   body.landing .space-halo.is-phone { display: block; }
@@ -881,7 +906,7 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
 /* a phone held sideways: the pages under one another, the first page and the habitat no taller than the screen */
 @media (max-height: 520px) {
   body.landing .space { height: auto; min-height: max(400px, calc(100vh - 90px)); }
-  body.landing .space-room { --dome-w: 130px; --dome-top: 8px; --earth-w: 110%; --earth-arc: 60px; min-height: 380px; }
+  body.landing .space-room { --dome-w: 130px; --dome-top: 8px; --earth-k: 1.1; --earth-arc: min(60px, calc(var(--earth-k) * 18cqw)); min-height: 380px; }
   body.landing .sheet-p2 { margin-top: 44px; }
   body.landing .sheet-p4 { margin-top: 52px; }
 }
@@ -987,16 +1012,23 @@ body.landing .call:hover .call-key { filter: brightness(1.08); transform: transl
   body.landing .call-key { min-height: 48px; }
 }
 @media (max-width: 760px) and (min-height: 521px) {
-  /* (the gap between the two cards, and the page's own under them, wide enough that where the scroll stops at a card —
-     or at the chat — the card before it has gone up behind the header with its shadow) */
-  body.landing .calls { gap: 32px; margin-top: 14px; }
-  body.landing .call { padding: 16px 16px 20px; }
-  body.landing .call-art { margin: 0 0 8px; }
-  body.landing .call-title { font-size: 26px; }
-  body.landing .call-punch { font-size: 17px; }
-  body.landing .call-beam { font-size: 26px; }
-  body.landing .call-body { font-size: 16px; line-height: 1.55; }
-  body.landing .call-key { min-height: 46px; margin-top: 18px; }
+  /* the two calls on a phone, smaller and in the middle (8 October: "on mobile the two boxes … are too big: centre them
+     and make them smaller and better placed"): narrower than the page and centred in it, the drawing, the type and the
+     key a size down, so that the two stand together in the middle of the screen, between the header and the bar of
+     keys (the page centres them, above) — where a short screen cannot hold both, the scroll stops at each (sky.js) */
+  body.landing .sheet-p2 { padding: 20px 0 32px; }
+  body.landing .calls { gap: 16px; width: 100%; max-width: 340px; margin: 0 auto; }
+  body.landing .call { padding: 12px 18px 16px; }
+  body.landing .call-art { width: 76%; margin: 0 auto 4px; }
+  body.landing .call-k { font-size: 10.5px; }
+  body.landing .call-livepill { margin-left: 8px; padding: 2px 8px 2px 6px; font-size: 9.5px; }
+  body.landing .call-title { margin-top: 6px; font-size: 20px; }
+  body.landing .call-punch, body.landing .call-write .call-punch { margin-top: 7px; font-size: 15px; }
+  body.landing .call-beam { font-size: 16.5px; max-width: 24ch; }
+  body.landing .call-body { margin-top: 7px; max-width: 40ch; font-size: 13px; line-height: 1.45; }
+  body.landing .call-text > :nth-last-child(2) { margin-bottom: 12px; }
+  body.landing .call-key { gap: 10px; min-height: 38px; margin-top: 12px; padding: 0 16px 0 18px; font-size: 14px; }
+  body.landing .call-key span[aria-hidden] { font-size: 15px; }
   /* the drawings are small here: their words a size up, in the drawing's units */
   body.landing .call-art text { font-size: 18px; }
 

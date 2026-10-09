@@ -42,14 +42,14 @@ const V = L.ASSET_V;
 const SCREENS = [
   { name: 'landing', title: 'Landing page', fit: 'scale', minWidth: 1000, about: 'The first screen of the landing page — the name, the way to the habitat with the latest exchanges and pictures around the line — with the ticker' },
   { name: 'habitat', title: 'Habitat', fit: 'roll', about: 'The habitat’s instruments, large, one row under the other, rolling by slowly from top to bottom: the readings and Karlsruhe, the crew’s figures, the stores, the power and the astronauts, the hardware’s charts' },
-  { name: 'board', title: 'Message Board', fit: 'clip', about: 'The ground station’s board, live: every message sent from the writing screen as it stands — in transit, awaiting a reply, answered — among the latest exchanges with the crew, the newest first, as many as fit' },
+  { name: 'board', title: 'Message Board', fit: 'clip', about: 'The ground station’s board, live: every message sent from the writing screen as it stands — in transit, awaiting a reply, answered — among the latest exchanges with the crew, the newest first — the latest that fit, nine at the most, never one cut' },
   { name: 'write', title: 'Write to the crew', fit: 'scale', minWidth: 640, about: 'The composer, full screen, for writing to the crew at the venue — every message from it as the ground station’s, under its one operator name' },
-  { name: 'mission', title: 'Today’s Mission', fit: 'scale', minWidth: 760, about: 'The day’s scientific mission: its question, Morning, Afternoon and EVA' },
+  { name: 'mission', title: 'Today’s Mission', fit: 'scale', minWidth: 760, about: 'The day’s scientific mission, typed: its question, Morning, Afternoon and EVA — ten seconds after it stands whole, the day (the schedule, the meal and the crew’s moods) for half a minute, then the mission again, round and round' },
   { name: 'blogs', title: 'Blogs', fit: 'none', about: 'The Commander Log, the Daily Mission Report and the Health Report, one at a time — each post rolling by from top to bottom, then the next blog' },
   { name: 'day', title: 'Today', fit: 'scale', minWidth: 640, about: 'Today’s Schedule, Today’s Meal and the Crew Moods' },
   { name: 'trends', title: 'Trends', fit: 'scale', fitLandscape: 'fill', minWidth: 520, about: 'The run’s trends on one graph' },
   { name: 'media', title: 'Media', fit: 'clip', about: 'The newest pictures out of the habitat in one grid, as many as fit, live' },
-  { name: 'livestream', title: 'Livestream', fit: 'none', about: 'The habitat’s livestream, full screen, playing by itself — with its sound where the screen allows a page to play sound unasked, else muted with a key to turn the sound on; a large play key whenever it stands still; it picks itself up again when the stream drops' },
+  { name: 'livestream', title: 'Livestream', fit: 'none', about: 'The habitat’s livestream, playing by itself without its sound, framed in a space HUD’s four brackets — over it LIVE · MARS!platz Habitat, the day of the run and the date; under it the clock in Karlsruhe, MARS!platz, and the signal’s time to Mars; a large play key whenever it stands still; it picks itself up again when the stream drops' },
   { name: 'station', title: 'Ground station', fit: 'clip', about: 'The writing screen and the message board side by side, for the ground station’s own PC on the square — write to the crew as BODENSTATION, and every message sent stands on the board at once; no cookie question, ever' },
 ];
 const BY_NAME = Object.fromEntries(SCREENS.map((s) => [s.name, s]));
@@ -57,17 +57,15 @@ const BY_NAME = Object.fromEntries(SCREENS.map((s) => [s.name, s]));
 /** The screens' sky (8 October: "add stars and comets in the background for all screens — always in the background
     only"): a field of stars, a few of them twinkling, and now and then a comet crossing — behind everything a screen
     shows: fixed under the stage, which stands over it (screen.css, .screen-sky), so a panel is never covered and the sky
-    shows only round and between the pieces. The same scatter on every load (seeded); still where less motion is asked
-    for; by day the stars are the ink's, faint. */
+    shows round and between the pieces — and between the habitat's tiles and the board's messages, whose panels lie on it
+    without a ground of their own. Four hundred stars, every one a dot (that evening: "remove all the planets from the
+    background, only have dots as stars" — the planets, the moon, the nebula and the bright stars' rays, added an hour
+    before, are gone), and five comets. The same scatter on every load (seeded); still where less motion is asked for;
+    by day none of it (8 October: "do not have the background stars in light mode" — screen.css). */
 function screenSky() {
-  let seed = 20261015;
-  const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
-  const stars = Array.from({ length: 170 }, (_, i) => {
-    const x = Math.round(rnd() * 1920), y = Math.round(rnd() * 1080), r = (0.5 + rnd() * rnd() * 1.5).toFixed(2), o = (0.22 + rnd() * 0.6).toFixed(2);
-    const tw = i % 6 === 0 ? ` class="tw" style="animation-delay:-${(rnd() * 6).toFixed(1)}s"` : '';
-    return `<circle cx="${x}" cy="${y}" r="${r}" opacity="${o}"${tw}/>`;
-  }).join('');
-  return `<div class="screen-sky" aria-hidden="true"><svg viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">${stars}</svg><i class="comet c1"></i><i class="comet c2"></i><i class="comet c3"></i></div>`;
+  // (the stars and the comets are the site's night sky as well — src/views/sky.js)
+  const SKY = require('../sky');
+  return `<div class="screen-sky" aria-hidden="true"><svg class="sky-field" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">${SKY.circles()}</svg>${SKY.COMETS}</div>`;
 }
 
 /** The page around a screen: the stylesheets and the dictionary the site uses, the stage, the scripts — nothing else. */
@@ -141,9 +139,17 @@ function trends(ctx, d) {
 
 /** Today's mission — typed out as if someone were writing it, letter by letter, held a few minutes typed to the end,
     then typed again (public/typed.js; the dashboard shows the same panel still). */
+/** The day's mission, typed (public/typed.js) — and, ten seconds after it has been typed to its end, the day: the
+    schedule, the meal and the crew's moods, as the Today screen shows them, for half a minute; then the mission typed
+    again, round and round (8 October: "in the mission screen display the daily mission as it is shown; once it is fully
+    shown wait ten seconds, then display what /screen/day shows; keep looping" — public/screen-turns.js). */
 function mission(ctx, d) {
   const p = P.dashboardPanels(ctx, d);
-  return shell(ctx, { name: 'mission', title: 'Today’s Mission', body: p.missionPanel, fit: 'scale', scripts: ['/typed.js'] });
+  const body = `<div class="screen-turns" id="screen-turns" data-after="10000" data-hold="30000">
+    <div class="turn is-on" data-turn="mission">${p.missionPanel}</div>
+    <div class="turn" data-turn="day"><div class="screen-three">${p.schedule}${p.galley}${p.crewPanel}</div></div>
+  </div>`;
+  return shell(ctx, { name: 'mission', title: 'Today’s Mission', body, fit: 'scale', scripts: ['/typed.js', '/screen-turns.js'] });
 }
 
 /** The three blogs one at a time, each filling the screen: its head, then the day's post rolling by from top to bottom
@@ -162,12 +168,14 @@ function day(ctx, d) {
 
 /** The message board — the ground station's: everything sent from the writing screen, under the station's name,
     stands on it at once, whatever its state (in transit, awaiting a reply, answered), among everyone's answered
-    exchanges in one sequence, the newest first, as many as fit, three across. Kept live by board.js (its filter bar
-    stands unshown — the script needs it — and the cards are cut clean at the foot by screen.js). */
+    exchanges in one sequence, the newest first, three across: the latest nine, as many of them standing as fit — the
+    last three where three fit, the last one where one does — and none cut (board.js, fitScreen). Kept live by board.js
+    (its filter bar stands unshown — the script needs it). */
 function board(ctx, d) {
-  // the screen polls for its own 400 cards in its own language, as the station (server.js /api/board, ?station=1) —
-  // no cookie reaches a screen, and the board is the station's, not any visitor's
-  return shell(ctx, { name: 'board', title: 'Message Board', body: P.boardScreen(ctx, { recent: d.recent, poll: `/api/board?lang=${ctx.lang || 'de'}&limit=400&station=1` }), fit: 'clip', scripts: ['/board.js'] });
+  // the screen polls for its own nine cards in its own language, as the station (server.js /api/board, ?station=1,
+  // stationBoard) — no cookie reaches a screen, and the board is the station's, not any visitor's; board.js shows the
+  // latest of them that fit
+  return shell(ctx, { name: 'board', title: 'Message Board', body: P.boardScreen(ctx, { recent: d.recent, poll: `/api/board?lang=${ctx.lang || 'de'}&limit=9&station=1` }), fit: 'clip', scripts: ['/board.js'] });
 }
 
 /** The writing screen: the composer alone, full screen, for writing to the crew at the venue (the mission page's
@@ -199,7 +207,7 @@ function media(ctx, d) {
 function station(ctx, d) {
   const body = `<div class="screen-station">
     <div class="screen-write station-write">${P.composerDevice(ctx, { inFlight: d.inFlight || null, error: d.error || null, draft: d.draft || '', kiosk: ctx.lang || 'de' })}</div>
-    <div class="station-board">${P.boardScreen(ctx, { recent: d.recent, poll: `/api/board?lang=${ctx.lang || 'de'}&limit=400&station=1` })}</div>
+    <div class="station-board">${P.boardScreen(ctx, { recent: d.recent, poll: `/api/board?lang=${ctx.lang || 'de'}&limit=9&station=1` })}</div>
   </div>`;
   return shell(ctx, { name: 'station', title: 'Ground station', body, fit: 'clip', scripts: ['/composer.js', '/screen-write.js', '/board.js'] });
 }
@@ -213,14 +221,35 @@ function station(ctx, d) {
     stalls. Played by hls.js (public/vendor/hls.min.js), or by the browser itself where it plays HLS (Safari); a stream
     of sound alone shows the station's name with its rings instead of a black picture (public/screen-live.js). */
 function livestream(ctx) {
-  const T = ctx.T;
-  const body = `<div class="screen-live" id="screen-live" data-src="/screen/livestream/stream.m3u8">
-    <video class="live-video" id="live-video" playsinline autoplay preload="auto" aria-label="${esc(T('Livestream'))}"></video>
+  const T = ctx.T, m = ctx.mission, g = ctx.geo || {};
+  const orbital = require('../../lib/orbital');
+  const signal = g.lightSeconds ? `${orbital.formatLightTime(g.lightSeconds)} · ${Number(g.distanceAu).toFixed(3)} AU` : '';
+  /* the space HUD round the picture (8 October: "add a space HUD; add text that says Live, MARS!platz Habitat, the
+     current day and time"): the picture framed in its four brackets (9 October: "frame the image inside the brackets"),
+     a faint reticle in its middle, the rulers along its top and its foot, a scan over it; over the frame at the left LIVE
+     (while it plays) and MARS!platz Habitat, at the right the day of the run and the date; under it the venue's clock to
+     the second — the place, Karlsruhe, MARS!platz (9 October: "location is Karlsruhe, MARSplatz") — and the signal's
+     one-way time to Mars and the distance. screen-live.js keeps the clock and the day current — the page is never
+     reloaded while it plays — and gives the frame the picture's own shape. */
+  const hud = `
+    <div class="live-hud" aria-hidden="true">
+      <i class="hud-scan"></i><i class="hud-rule top"></i><i class="hud-rule bottom"></i>
+      <i class="hud-c tl"></i><i class="hud-c tr"></i><i class="hud-c bl"></i><i class="hud-c br"></i>
+      <svg class="hud-reticle" viewBox="-50 -50 100 100"><circle r="20"/><circle r="34" class="dash"/><path d="M-46 0h12M34 0h12M0-46v12M0 34v12"/><circle r="1.6" class="dot"/></svg>
+    </div>
+    <div class="hud-tl"><div class="live-badge" id="live-badge" hidden><i aria-hidden="true"></i>${T('LIVE')}</div><span class="hud-name">MARS<b>!</b>platz ${esc(T('Habitat'))}</span></div>
+    <div class="hud-tr hud-read"><span class="hud-v" id="hud-sol">${esc(m.phase === 'ACTIVE' ? `SOL ${String(m.clampedDay).padStart(2, '0')} / ${String(m.totalDays).padStart(2, '0')}` : m.phase === 'PRE_LAUNCH' ? `T−${m.countdown.days}D` : T('Mission complete'))}</span><span class="hud-k" id="hud-date"></span></div>
+    <div class="hud-bl hud-read"><span class="hud-k">${esc(T('Local time'))} · Karlsruhe, MARS<b>!</b>platz</span><span class="hud-v hud-clock" id="hud-clock">${esc(m.venueTime || '')}</span></div>${signal ? `
+    <div class="hud-br hud-read"><span class="hud-k">${esc(T('Signal travel time'))} · ${esc(T('Earth'))} → Mars</span><span class="hud-v">${esc(signal)}</span></div>` : ''}`;
+  const body = `<div class="screen-live" id="screen-live" data-src="/screen/livestream/stream.m3u8" data-tz="${esc(m.timezone)}" data-lang="${esc(ctx.lang || 'de')}"
+      data-start="${esc(m.start_date)}" data-days="${esc(String(m.totalDays))}" data-opens="${esc(m.opensAt || '')}" data-over="${m.phase === 'COMPLETE' ? '1' : ''}">
+    <div class="live-frame" id="live-frame">
+    <video class="live-video" id="live-video" playsinline autoplay muted preload="auto" aria-label="${esc(T('Livestream'))}"></video>
     <div class="live-audio" aria-hidden="true"><span class="la-ring"></span><span class="la-ring"></span><span class="la-ring"></span><span class="la-mark">MARS<b>!</b>platz</span><span class="la-sub">${esc(T('Livestream'))}</span></div>
-    <div class="live-badge" id="live-badge" hidden><i aria-hidden="true"></i>${T('LIVE')}</div>
+    ${hud}
     <div class="live-word" id="live-word" role="status">${T('Connecting to the livestream…')}</div>
     <button type="button" class="live-play" id="live-play" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19.2 12z"/></svg><span>${T('Play')}</span></button>
-    <button type="button" class="live-sound" id="live-sound" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9.2a4 4 0 0 1 0 5.6M18 6.8a7.4 7.4 0 0 1 0 10.4"/></svg><span>${T('Sound on')}</span></button>
+    </div>
   </div>`;
   return shell(ctx, { name: 'livestream', title: 'Livestream', body, fit: 'none', scripts: ['/vendor/hls.min.js', '/screen-live.js'] });
 }

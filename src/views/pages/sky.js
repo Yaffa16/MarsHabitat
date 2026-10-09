@@ -74,7 +74,7 @@ function pictures(cloud, tz) {
   const { cloudWhen } = require('./media');
   return cloud.items.slice(0, PICTURES).map((x) => {
     const when = cloudWhen(x, tz);
-    return { id: x.id, url: x.url, thumb: x.thumb, when: when ? when.text : '' };
+    return { id: x.id, url: x.url, thumb: x.small || x.thumb, when: when ? when.text : '' };   // the small preview where there is one (8 October: lighter)
   });
 }
 

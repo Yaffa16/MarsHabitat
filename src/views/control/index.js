@@ -7,6 +7,7 @@ const orbital = require('../../lib/orbital');
 const mood = require('../../lib/mood');
 const missionLib = require('../../lib/mission');
 const officer = require('../../lib/officer');
+const { REPLY_MAX } = require('../../lib/limits');   // the crew's answer: five hundred characters, as a message (8 October)
 
 const dd = (n) => String(n).padStart(3, '0');
 
@@ -131,9 +132,10 @@ function messageCard(m, crew, show, space = null) {
             ${crew.map((c) => `<option value="${c.id}"${m.crew_id === c.id ? ' selected' : ''}>${esc(officer.shown(c.designation))}</option>`).join('')}
           </select></label>
         </div>
-        <textarea name="body" id="reply-${m.id}" rows="4" required minlength="2" class="reply-box"
-          placeholder="Answer as the crew.">${esc(m.response_body || '')}</textarea>
+        <textarea name="body" id="reply-${m.id}" rows="4" required minlength="2" maxlength="${REPLY_MAX}" class="reply-box"
+          placeholder="Answer as the crew." data-count="reply-count-${m.id}">${esc(m.response_body || '')}</textarea>
         <div class="reply-bar">
+          <span class="reply-count" id="reply-count-${m.id}" aria-live="polite">${String(m.response_body || '').length} / ${REPLY_MAX}</span>
           <button name="action" value="publish" class="primary">${m.state === 'PUBLISHED' ? 'Update reply' : 'Reply'}</button>
           <span class="reply-hint">${m.state === 'PUBLISHED' ? 'Published on the board — saving replaces it.' : 'Goes to the board the moment it is sent · Ctrl+Enter'}</span>
         </div>

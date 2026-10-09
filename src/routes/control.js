@@ -377,6 +377,13 @@ router.post('/:id(\\d+)/reply', (req, res) => {
     setFlash(req, 'A reply needs actual text before it can be sent.', true);
     return toQueue(req, res);
   }
+  // the answer as long as the question may be, five hundred characters (src/lib/limits.js — 8 October: "the same limit
+  // for the answer and the question: 500, so that everything fits well"); the box itself stops at it
+  const REPLY_MAX = require('../lib/limits').REPLY_MAX;
+  if (body.length > REPLY_MAX) {
+    setFlash(req, `A reply is limited to ${REPLY_MAX} characters — this one has ${body.length}. Shorten it and send it again.`, true);
+    return toQueue(req, res);
+  }
   const crewId = req.body.crew_id ? Number(req.body.crew_id) : null;
   const publish = req.body.action !== 'draft';
   const existing = db.prepare('SELECT * FROM response WHERE message_id = ?').get(id);
