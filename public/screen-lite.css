@@ -82,3 +82,9 @@ html.lite body.screen .la-ring:nth-child(2) { transform: scale(.72); }
 html.lite body.screen .la-ring:nth-child(3) { transform: scale(1.3); opacity: .22; }
 /* the glows that were shadows of light round small things (the LIVE dot, the play key) — a flat colour does */
 html.lite body.screen .live-badge i, html.lite body.screen .live-play svg { box-shadow: none !important; }
+/* the habitat's head-up display (screen.css, screen-habitat-hud.js): a page of tiles comes, and goes, at once */
+html.lite body.screen .hab-hud .hh-item, html.lite body.screen .hab-hud .hh-item.is-on { transition: none !important; }
+/* (its middle unmasked, the Earth's sides faded into the ground by a gradient laid over them instead — by night; by day the
+   middle is a window with its own edges) */
+html.lite:not([data-theme="light"]) body.screen .hh-centre::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none;
+  background: linear-gradient(90deg, var(--neu, #0e0f11) 0, rgba(14,15,17,0) 70px, rgba(14,15,17,0) calc(100% - 70px), var(--neu, #0e0f11) 100%); }

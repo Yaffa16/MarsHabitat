@@ -502,4 +502,4 @@ function scrollNudge(ctx) {
       </a>`;
 }
 
-module.exports = { intro, space, calls, note, slowChat, underLine, scrollNudge, trajectory, WINDOW_TIME, ZONE, windowWhen, dayMonth, zoneName };
+module.exports = { intro, space, calls, note, slowChat, underLine, scrollNudge, trajectory, halo, EARTH, HABITAT, WINDOW_TIME, ZONE, windowWhen, dayMonth, zoneName };

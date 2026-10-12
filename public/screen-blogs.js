@@ -24,7 +24,7 @@
   var SPEED = Number(wrap.getAttribute('data-speed')) || 0;               // pixels a second, if set; otherwise the habitat's pace
   function habitatPace() {
     var z = Math.max(0.5, Math.min(2, window.innerWidth / (window.innerWidth > window.innerHeight ? 1920 : 1080)));
-    return 14 * z;
+    return 20 * z;
   }
   var HOLD = Number(wrap.getAttribute('data-hold')) || 5000;               // at the top before rolling, and at the end
   var SHORT = Number(wrap.getAttribute('data-short')) || 14000;            // a post that fits, or nothing written: this long

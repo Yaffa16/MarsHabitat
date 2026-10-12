@@ -191,4 +191,4 @@ function habitatSheet(ctx) {
       </div>`;
 }
 
-module.exports = { habitatSky, habitatSheet, stamp, responder };
+module.exports = { habitatSky, habitatSheet, stamp, responder, exchanges, pictures };

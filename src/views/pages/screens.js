@@ -6,14 +6,17 @@
  * the trends, the landing page's first screen (the one with the ticker) and
  * the media gallery. Each is a page of its own at /screen/<name>
  * (the list at /screens), without the station's chrome — no ticker but on the
- * landing screen, no menu, no bar of keys, no foot, no cookie question — in
+ * landing screen (and the running line along the habitat's head-up display), no
+ * menu, no bar of keys, no foot, no cookie question — in
  * the dark theme and in German unless the address says otherwise
  * (?theme=light, ?lang=en|de|fr). Landscape and upright screens alike: the
  * layout turns with the screen (public/screen.css), and what does not fit is
  * scaled down to fit (public/screen.js) or cut clean at the foot — the board's
- * cards, the gallery's tiles — never scrolled by hand; the blogs and the habitat
- * roll by on their own, slowly, at their full size (screen-blogs.js,
- * screen-roll.js). What the site keeps live stays
+ * cards, the gallery's tiles — never scrolled by hand; the blogs roll by on
+ * their own, slowly, at their full size (screen-blogs.js), and the habitat's
+ * tiles come a page at a time round the way from the Earth to the habitat
+ * (screen-habitat-hud.js; rolled by, as before, at ?roll=1: screen-roll.js).
+ * What the site keeps live stays
  * live — the board, the habitat's readings, the pictures, the sky — and every
  * screen reloads itself every five minutes and at the venue's midnight, when
  * the sol turns (the writing screen waits while someone is writing).
@@ -25,8 +28,8 @@
  * of the screens page, restore to previous state", every screen is as it was again, its movement and effects whole):
  * html.lite and public/screen-lite.css, last — nothing blurred, masked, filtered or glowing, nothing moving by itself
  * but the landing screen's running line and the LIVE dots, the soft UI's shades without their blur, the stars still and
- * no comets (screenSky); the habitat and the blogs turn a page at a time instead of rolling (screen-roll.js,
- * screen-blogs.js) — server.js, screenCtx: ctx.lite.
+ * no comets (screenSky); the habitat's display turns its pages at once, and the rolled habitat and the blogs turn a page
+ * at a time instead of rolling (screen-habitat-hud.js, screen-roll.js, screen-blogs.js) — server.js, screenCtx: ctx.lite.
  */
 const L = require('../layout');
 const { esc } = L;
@@ -44,12 +47,13 @@ const V = L.ASSET_V;
    panel whatever the scale, so scaling cannot make it fill the height — it is drawn to the height instead). `fitLandscape`:
    another way of fitting for a screen held landscape (the trends: scaled when upright, where the graph carries its
    legend under it, filled when landscape); roll — laid out at a width of its own (1920 landscape, 1080 upright) and zoomed
-   to the screen's, the panel filling the stage, its head standing and its body rolling by under it, slowly, from top to
-   bottom (the habitat: public/screen-roll.js). `minWidth`: how narrow the piece may be made by scaling up (the width it
+   to the screen's, filling the stage: the habitat's head-up display (public/screen-habitat-hud.js), or with ?roll=1 its
+   panel, its head standing and its body rolling by under it, slowly, from top to bottom (public/screen-roll.js).
+   `minWidth`: how narrow the piece may be made by scaling up (the width it
    keeps its layout at) — the scale is capped so the screen's width, divided by the scale, stays at least this. */
 const SCREENS = [
   { name: 'landing', title: 'Landing page', fit: 'scale', minWidth: 1000, about: 'The first screen of the landing page — the name, the way to the habitat with the latest exchanges and pictures around the line — with the ticker' },
-  { name: 'habitat', title: 'Habitat', fit: 'roll', about: 'The habitat’s instruments, large, one row under the other, rolling by slowly from top to bottom: the readings and Karlsruhe, the crew’s figures, the stores, the power and the astronauts, the hardware’s charts' },
+  { name: 'habitat', title: 'Habitat', fit: 'roll', about: 'The habitat’s instruments, live, as a head-up display: over it Habitat and LIVE, the day, the date and the clock; in the middle the way from the Earth to the habitat, the latest exchange and the latest picture beside its line; at the left and at the right every tile of the Sensors panel — the readings and Karlsruhe, the stores, the steps, the astronauts, the current crew, the power and the bike, the hardware’s charts, the trends — a page at a time, the tiles coming one after another; the running line along the foot (the panel rolling by slowly from top to bottom, as it did: ?roll=1)' },
   { name: 'board', title: 'Message Board', fit: 'clip', about: 'The ground station’s board, live: every message sent from the writing screen as it stands — in transit, awaiting a reply, answered — among the latest exchanges with the crew, the newest first — the latest that fit, nine at the most, never one cut' },
   { name: 'write', title: 'Write to the crew', fit: 'scale', minWidth: 640, about: 'The composer, full screen, for writing to the crew at the venue — every message from it as the ground station’s, under its one operator name' },
   { name: 'mission', title: 'Today’s Mission', fit: 'scale', minWidth: 760, about: 'The day’s scientific mission, typed: its question, Morning, Afternoon and EVA — ten seconds after it stands whole, the day (the schedule, the meal and the crew’s moods) for half a minute, then the mission again, round and round' },
@@ -82,8 +86,9 @@ function screenSky({ still = false } = {}) {
 /* `head`: the thin band over the piece — MARS!platz, the screen's name, the sol and the clock. No screen carries it any
    more (8 October: "from the /screen pages remove the MARS!platz header, have nothing there"): the piece has the whole
    screen; only the screens' sign-in page keeps it, to say where it is. */
-/* (light when the address says ?lite=1 — ctx.lite, server.js: html.lite, screen-lite.css after the others, the sky still) */
-function shell(ctx, { name, title, body, scripts = [], fit = 'scale', ticker = '', head = false, inner = true }) {
+/* (light when the address says ?lite=1 — ctx.lite, server.js: html.lite, screen-lite.css after the others, the sky still)
+   (`stage`: a class more on the stage — the habitat's head-up display has the whole stage, edge to edge: is-hud) */
+function shell(ctx, { name, title, body, scripts = [], fit = 'scale', ticker = '', head = false, inner = true, stage = '' }) {
   const T = ctx.T, m = ctx.mission, lang = ctx.lang || 'en', minWidth = (BY_NAME[name] && BY_NAME[name].minWidth) || 0,
     fitLandscape = (BY_NAME[name] && BY_NAME[name].fitLandscape) || '', lite = !!ctx.lite;
   const stamp = m.phase === 'ACTIVE' ? `SOL ${String(m.clampedDay).padStart(2, '0')}/${m.totalDays}`
@@ -106,7 +111,7 @@ ${L.clientTable(lang)}
 </head><body class="landing${inner ? ' inner' : ''} screen screen-${name}" data-screen="${name}" data-fit="${fit}"${fitLandscape ? ` data-fit-landscape="${fitLandscape}"` : ''}${minWidth ? ` data-min-width="${minWidth}"` : ''} data-tz="${esc(m.timezone)}" data-v="${V}">
 ${screenSky({ still: lite })}
 ${ticker}
-<main class="stage${head ? '' : ' no-head'}">${head ? `
+<main class="stage${head ? '' : ' no-head'}${stage ? ` ${stage}` : ''}">${head ? `
   <header class="stage-head">
     <span class="stage-brand">MARS<b>!</b>platz</span>
     <span class="stage-title">${esc(T(title))}</span>
@@ -131,16 +136,116 @@ function landing(ctx, d) {
     ticker: P.ticker(ctx, { today: d.today }), scripts: ['/sky.js'].concat(d.cloud ? ['/cloud.js'] : []) });
 }
 
-/** The habitat's instruments: the Sensors panel as the dashboard has it, live — read from across a room (8 October: "a
-    vertical layout with scrolling, to show all the content clearly and slowly"): the panel fills the screen, its head
-    stands, and its rows — the instruments with Karlsruhe, the steps and the stores, the power with the astronauts,
-    the hardware's charts, and at the foot the trends graph (9 October: "in the screen/habitat, at the bottom add the
-    trends graph; it scrolls as the rest of the content" — the dashboard's, inside the panel: trendsInside) — stand at
-    their full size and roll by under the head, slowly, then start again from the top (public/screen-roll.js; the layout
-    in public/screen.css). The astronauts wander on their radar (live.js). */
+/** The habitat's instruments, live, read from across a room — as a head-up display (12 October: "make the actual
+    screens/habitat look like this" — the mock-up in the screens' own dress — "make all the tiles from the original screen
+    show up one after another"): over it all the name, Habitat, with LIVE beside it, and at the right the day of the run,
+    the date, the place and the clock; in the middle the landing page's way from the Earth to the habitat — the dome, Red
+    Dust City, the dashed line with the signal going up it and the answer coming down, the latest picture out of the
+    habitat on one side of it and the latest exchange on the other, the signal's time and the distance beside it, and the
+    Earth at the foot with its dawn and its rings of dots (landing.js); at the left and at the right a column of the
+    Sensors panel's own tiles, live — every one of them, a page of them at a time, the next page coming tile by tile,
+    one after another, every few seconds (public/screen-habitat-hud.js): the instruments, the stores, Karlsruhe, the
+    steps, the volatile organic compounds and the astronauts at the left; the current crew, the power, the bike, the
+    hardware's charts and the trends at the right; along the foot the running line (the ticker). Each tile is the
+    dashboard's, drawn as the rolled screen drew it and shown smaller to fit its column, so it reads as it did; the
+    tiles are kept live by the scripts that always kept them (habitat.js, hardware.js, live.js, screen-habitat-fx.js).
+    The rolled screen (8 October: "a vertical layout with scrolling, to show all the content clearly and slowly" — the
+    panel filling the screen, its rows rolling by under its head: screen-roll.js) is there still, at ?roll=1. */
 function habitat(ctx, d) {
   const p = P.dashboardPanels(ctx, d, { trendsInside: true });
-  return shell(ctx, { name: 'habitat', title: 'Habitat', body: `<div class="screen-roll" id="screen-roll">${p.habitat}</div>`, fit: 'roll', scripts: ['/habitat.js', '/hardware.js', '/live.js', '/screen-roll.js'] });
+  const live = ['/habitat.js', '/hardware.js', '/live.js'];
+  if (ctx.roll) return shell(ctx, { name: 'habitat', title: 'Habitat', body: `<div class="screen-roll" id="screen-roll">${p.habitat}</div>`, fit: 'roll', scripts: live.concat('/screen-roll.js', '/screen-habitat-fx.js') });
+  return shell(ctx, { name: 'habitat', title: 'Habitat', body: habitatHud(ctx, d, p), fit: 'roll', stage: 'is-hud',
+    scripts: live.concat(d.cloud ? ['/cloud.js'] : [], '/screen-habitat-fx.js', '/screen-habitat-hud.js') });
+}
+
+/* "Thu 15 Oct", "Do 15 Okt", "jeu 15 oct" — a day short, in the screen's language, without the dots */
+const LOCALES = { en: 'en-GB', de: 'de-DE', fr: 'fr-FR' };
+function dayShort(iso, lang) {
+  const d = new Date(String(iso) + 'T12:00:00Z');
+  if (isNaN(d.getTime())) return String(iso || '');
+  try {
+    const o = {};
+    new Intl.DateTimeFormat(LOCALES[lang] || 'en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })
+      .formatToParts(d).forEach((x) => { o[x.type] = x.value.replace(/\.$/, ''); });
+    return `${o.weekday} ${o.day} ${o.month}`;
+  } catch { return String(iso); }
+}
+
+/** The head-up display's markup (habitat, above): the head, the two columns the tiles are shown in (empty — the script
+    stands the tiles over them), the way from the Earth to the habitat in the middle, the running line, and — unseen
+    until the script has laid them out — the current crew's card and the Sensors panel, whose tiles they are. */
+function habitatHud(ctx, d, p) {
+  const T = ctx.T, m = ctx.mission, lang = ctx.lang || 'de', tz = m.timezone, g = ctx.geo || {};
+  const pad = (n) => String(n).padStart(2, '0');
+  const SKY = require('./sky');
+  // the head: the name and LIVE (while there is a habitat to be live), and the day, the date, the place and the clock
+  const sol = m.phase === 'ACTIVE' ? `SOL <b>${pad(m.clampedDay)}</b> / ${pad(m.totalDays)}` : m.phase === 'PRE_LAUNCH' ? `T−<b>${m.countdown.days}</b>D` : esc(T('Mission complete'));
+  const head = `
+    <header class="hh-head">
+      <h1 class="hh-title">${esc(T('Habitat'))}${m.phase === 'COMPLETE' ? '' : `<span class="cloud-live hh-live"><i></i>${T('LIVE')}</span>`}</h1>
+      <p class="hh-meta">${sol} · ${esc(dayShort(m.today, lang))} · Karlsruhe, MARS<b class="bang">!</b>platz <b class="hh-clock" id="hh-clock">${esc(String(m.venueTime || '').slice(0, 5))}</b></p>
+    </header>`;
+  // the latest exchange, answered, and the latest picture — kept current by the script (the board's, the strip's)
+  const ex = SKY.exchanges(d.recent || [], T), x = ex.find((e) => e.reply) || ex[0] || null;
+  // (the officer who answered as the board's notes name them — "Kommandantin", "Science officer": public.js, noteCard)
+  const raw = x ? (d.recent || []).find((m) => m.id === x.id) : null, shownAs = require('../../lib/officer').shown;
+  const rwho = raw && raw.responder ? T(shownAs(raw.responder).charAt(0) + shownAs(raw.responder).slice(1).toLowerCase()) : T('Crew');
+  const pic = SKY.pictures(d.cloud, tz)[0] || null;
+  const msg = `
+        <div class="hh-note hh-msg" id="hh-msg"${x ? ` data-id="${esc(String(x.id))}"` : ' hidden'} data-q="${esc(T('Question'))}" data-a="${esc(T('Answer'))}">
+          <span class="hh-note-k"><i></i>${T('Latest message:')}</span>
+          <span class="hh-q-k">${x ? `${esc(T('Question'))} · ${esc(x.who)}${SKY.stamp(x.at, tz) ? ` · ${esc(SKY.stamp(x.at, tz))}` : ''}` : ''}</span>
+          <span class="hh-q">${x ? esc(x.text) : ''}</span>
+          <span class="hh-a"${x && x.reply ? '' : ' hidden'}><span class="hh-a-k">${x && x.reply ? `${esc(T('Answer'))} · ✧ ${esc(rwho)}` : ''}</span><span class="hh-a-t">${x && x.reply ? esc(x.reply) : ''}</span></span>
+          <i class="hh-bk tl"></i><i class="hh-bk tr"></i><i class="hh-bk bl"></i><i class="hh-bk br"></i>
+        </div>`;
+  const shot = `
+        <div class="hh-note hh-pic" id="hh-pic"${pic ? ` data-id="${esc(String(pic.id))}"` : ' hidden'}>
+          <span class="hh-note-k"><i></i>${T('Latest image')}</span>
+          <span class="hh-pic-frame"><img src="${pic ? esc(pic.thumb) : ''}" alt="" decoding="async"></span>
+          <span class="hh-pic-when">${pic ? esc(String(pic.when).replace(/(\d{2})\.(\d{2})\.\d{4}/, '$1.$2')) : ''}</span>
+          <i class="hh-bk tl"></i><i class="hh-bk tr"></i><i class="hh-bk bl"></i><i class="hh-bk br"></i>
+        </div>`;
+  const signal = g.lightSeconds ? `<span class="hh-signal">↑ ${esc(require('../../lib/orbital').formatLightTime(g.lightSeconds))} · ${Math.round(g.distanceKm / 1e6)} ${esc(T('M km'))}</span>` : '';
+  // the middle: the landing page's way from the Earth to the habitat, its own drawing and its own classes (sheet.css)
+  const centre = `
+    <div class="hh-centre" aria-hidden="true">
+      <div class="space-stars"></div>
+      <div class="space-dome">
+        <img class="space-dome-img" src="/space/habitat.webp" alt="" width="${LP.HABITAT.w}" height="${LP.HABITAT.h}" decoding="async">
+        <span class="space-tag space-tag-dome">RED DUST CITY</span>
+      </div>
+      <i class="space-line"></i>
+      ${shot}
+      <div class="hh-side">${msg}${signal}
+      </div>
+      <div class="space-earth">
+        <img class="space-earth-img" src="/space/earth.webp" alt="" width="${LP.EARTH.w}" height="${LP.EARTH.h}" decoding="async">
+        ${LP.halo('desk')}
+      </div>
+    </div>`;
+  // the current crew, as the landing page's card has them (landing.js, crewNow): the sol and its date over the title
+  const content = require('../../lib/content'), SOL = require('./sol'), now = content.crewNow(m);
+  const when = now && now.day != null ? `SOL ${pad(now.day)} · ${dayShort(require('../../lib/mission').dateForDay(now.day), lang)}` : T('The crew is not named yet');
+  const crew = `
+      <section class="tile hh-crew" id="hh-crew" aria-label="${esc(T('Current Crew'))}">
+        <span class="hh-crew-k">${esc(when)}</span>
+        <h3>${esc(T('Current Crew'))}</h3>${SOL.crewList(ctx, { crew: SOL.CREW, onShift: (now && now.crew) || {} })}
+      </section>`;
+  // the pictures' strip, unseen: cloud.js keeps it in line with the folder, and the latest picture follows it
+  const strip = d.cloud ? `<div class="screen-hidden"><div class="cloud-latest" id="cloud-latest" data-version="${esc(d.cloud.snapshot.version || '')}" data-poll="${(Number(d.cloud.snapshot.checkSeconds) || 20) * 1000}">${M.cloudLatestInner(T, d.cloud, { tz })}</div></div>` : '';
+  return `<div class="screen-roll hab-hud" id="hab-hud" data-hold="12000" data-tz="${esc(tz)}" data-lang="${esc(lang)}">
+    <div class="hh-grid">${head}
+      <div class="hh-col hh-left" id="hh-left"></div>${centre}
+      <div class="hh-col hh-right" id="hh-right"></div>
+    </div>
+    ${P.ticker(ctx, { today: d.today })}
+    <div class="hh-deck" id="hh-deck">${crew}
+      ${p.habitat}
+    </div>
+    ${strip}
+  </div>`;
 }
 
 /** The trends on one graph — drawn by habitat.js, which needs the Habitat panel on the page: it stands here unshown.

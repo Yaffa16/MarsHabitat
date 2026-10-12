@@ -2271,8 +2271,9 @@ echo "$LIV" | grep -q 'class="landing inner screen screen-livestream" data-scree
   && [ "$(curl -s -b $SK -o /dev/null -w '%{http_code}' "$B/screen/livestream/..%2F..%2Fetc%2Fpasswd")" = "404" ] && [ "$(curl -s -b $SK -o /dev/null -w '%{http_code}' "$B/screen/livestream/a%5Cb")" = "404" ] \
   && [ "$(curl -s -b $SK -o /dev/null -w '%{http_code}' "$B/screen/livestream/http:%2F%2Fexample.com%2Fx")" = "404" ] \
   && ok "the Livestream screen: the stream through the station (its address in no page), playing by itself without its sound, framed in a space HUD's four brackets in its own shape (LIVE · MARS!platz Habitat, the day and the date over it; the clock in Karlsruhe, MARS!platz, and the signal's time to Mars under it) — the play key where play is refused — taken up again when it drops; the pass-through behind the sign-in, kept to the stream's own folder" || bad "the Livestream screen is not as it should be"
-TICK_OK=1; for n in habitat board write mission blogs day trends media; do curl -s -b $SK $B/screen/$n | grep -q 'class="ticker"' && TICK_OK=0; done
-[ $TICK_OK = 1 ] && curl -s -b $SK $B/screen/landing | grep -q 'class="ticker"' && ok "no ticker on the screens, but on the landing screen, which keeps it" || bad "a ticker is on a screen, or off the landing screen"
+TICK_OK=1; for n in board write mission blogs day trends media "habitat?roll=1"; do curl -s -b $SK "$B/screen/$n" | grep -q 'class="ticker"' && TICK_OK=0; done
+[ $TICK_OK = 1 ] && curl -s -b $SK $B/screen/landing | grep -q 'class="ticker"' && curl -s -b $SK $B/screen/habitat | grep -q 'class="ticker"' \
+  && ok "no ticker on the screens, but on the landing screen, which keeps it, and on the habitat's head-up display, its running line along the foot (12 October)" || bad "a ticker is on a screen, or off the landing screen or the habitat's display"
 SCR=$(curl -s -b $SK $B/screen/board)
 echo "$SCR" | grep -q '<html lang="de" data-theme="dark" class="js screen">' && echo "$SCR" | grep -q 'Nachrichtenboard' && curl -s -b $SK $B/screen/station | grep -q '<html lang="de" data-theme="dark" class="js screen">' \
   && curl -s -b $SK $B/screen/habitat | grep -q '<html lang="de" data-theme="dark" class="js screen">' && curl -s -b $SK $B/screens | grep -q 'data-theme="dark" class="js screen"' \
@@ -2311,9 +2312,9 @@ done
   && ! curl -s -b $SK $B/screens | grep -q 'fx=1\|lite=1\|leicht gezeichnet' && curl -s -b $SK $B/screens | grep -q 'rolling by slowly from top to bottom' \
   && ok "every screen is drawn whole again, its movement and effects as they were (12 October: \"undo the simplification of the screens page\"); with ?lite=1 a screen is drawn light — nothing blurred, masked, filtered or glowing, nothing moving by itself but the landing screen's running line and the blinking LIVE dots, the shades without their blur, the habitat and the blogs a page at a time, the radar still, the sky still; the list of the screens says nothing of it" || bad "the screens are not drawn whole by default, or ?lite=1 does not draw them light"
 echo "$SCR" | grep -q 'class="landing inner screen screen-board" data-screen="board" data-fit="clip"' && curl -s -b $SK $B/screen/habitat | grep -q 'class="landing inner screen screen-habitat" data-screen="habitat" data-fit="roll" data-tz=' \
-  && curl -s -b $SK $B/screen/habitat | tr -d '\n' | grep -q '<div class="stage-fit" id="stage-fit"><div class="screen-roll" id="screen-roll"> *<section class="dpanel span-12 compact" id="habitat">' \
-  && curl -s -b $SK $B/screen/habitat | grep -q '<script src="/screen-roll.js?v=' && curl -s -b $SK $B/screen/habitat | grep -q '<script src="/live.js?v=' \
-  && ok "the board is cut clean at the foot (data-fit=clip); the habitat rolls (data-fit=roll): its panel in the roll's wrapper, screen-roll.js and live.js on the page" || bad "the fit attributes are wrong"
+  && curl -s -b $SK "$B/screen/habitat?roll=1" | tr -d '\n' | grep -q '<div class="stage-fit" id="stage-fit"><div class="screen-roll" id="screen-roll"> *<section class="dpanel span-12 compact" id="habitat">' \
+  && curl -s -b $SK "$B/screen/habitat?roll=1" | grep -q '<script src="/screen-roll.js?v=' && curl -s -b $SK $B/screen/habitat | grep -q '<script src="/live.js?v=' \
+  && ok "the board is cut clean at the foot (data-fit=clip); the habitat is laid out at a width of its own and zoomed to the screen (data-fit=roll) — rolled, at ?roll=1, its panel in the roll's wrapper with screen-roll.js; live.js on the page" || bad "the fit attributes are wrong"
 # every screen fits a full screen, whatever the monitor (October): the trends drawn to the stage's height landscape (a
 # graph as wide as its panel at any scale cannot be scaled to fit the height), scaled upright; the habitat's hardware
 # charts four across under the instruments, drawn as short as a short screen needs; the fitting looked at every other
@@ -2368,10 +2369,10 @@ grep -q "font-size: clamp(20px, 1.2vw, 24px)" public/screen.css && ok "its text 
 # pixels a second (screen-roll.js) times the zoom its layout is shown at (screen.js, rollZoom)
 node --check public/screen-blogs.js && grep -qF "var SPEED = Number(wrap.getAttribute('data-speed')) || 0;" public/screen-blogs.js \
   && grep -qF "var z = Math.max(0.5, Math.min(2, window.innerWidth / (window.innerWidth > window.innerHeight ? 1920 : 1080)));" public/screen-blogs.js \
-  && grep -qF "return 14 * z;" public/screen-blogs.js && grep -qF "pace = SPEED || habitatPace();" public/screen-blogs.js \
+  && grep -qF "return 20 * z;" public/screen-blogs.js && grep -qF "pace = SPEED || habitatPace();" public/screen-blogs.js \
   && grep -qF "var z = Math.max(0.5, Math.min(2, window.innerWidth / (window.innerWidth > window.innerHeight ? 1920 : 1080)));" public/screen.js \
-  && grep -qF "var SPEED = Number(root.getAttribute('data-speed')) || 14;" public/screen-roll.js \
-  && ok "a blog rolls as fast as the habitat on the same screen — 14px a second on a screen 1920 wide, the habitat's pace times its zoom" || bad "the blogs and the habitat roll at different speeds"
+  && grep -qF "var SPEED = Number(root.getAttribute('data-speed')) || 20;" public/screen-roll.js \
+  && ok "a blog rolls as fast as the habitat on the same screen — 20 px a second on a screen 1920 wide (14 until 12 October), the habitat's pace times its zoom" || bad "the blogs and the habitat roll at different speeds"
 grep -q 'body.screen .screen-blogs .blogp .dpanel-body > .empty { position: absolute; inset: 22px 40px 40px; min-height: 0; display: block; text-align: left;' public/screen.css \
   && ok "a blog with nothing written stands at the top left, across the width, like a post would" || bad "the empty blog note is not left-aligned across the width"
 # the board screen: its cards come back from the poll in the screen's own language, the latest nine; nothing on it is tappable
@@ -2477,7 +2478,8 @@ echo "$BD" | grep -q '<article class="card xc note' && ! echo "$BD" | grep -q '<
   && ok "the board screen and the ground station's board carry the Write page's notes — the callsign and the round orbit in the head, the message and its tags, the answer as a card, the distance and the time at the foot — larger for a room, nothing tappable" || bad "the screens' boards do not look like the Write page's board"
 # 9 October: "in the screen/habitat, at the bottom add the trends graph — it scrolls as the rest of the content": the
 # dashboard's trends inside the rolled panel's body, after the hardware's charts, drawn the panel's width
-HABT=$(curl -s -b $SK "$B/screen/habitat?lang=en")
+# (the rolled screen, at ?roll=1 since the head-up display of 12 October, below)
+HABT=$(curl -s -b $SK "$B/screen/habitat?lang=en&roll=1")
 echo "$HABT" | node -e '
 let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
   const roll = s.indexOf("id=\"screen-roll\""), body = s.indexOf("class=\"dpanel-body", roll), t = s.indexOf("<div class=\"hbt-trends-in\" id=\"trends\">", body);
@@ -3867,13 +3869,56 @@ echo "$LAND3O" | grep -q '<section class="tile t-sens t-o2" id="o2-live"><span c
   && grep -q "function pollCtx(req) {" src/server.js && grep -q "const snap = homeAssistant.snapshot(24), ctx = pollCtx(req);" src/server.js && grep -qF 'data-api="/api/cloud?flat=1${opts && opts.lang' src/views/pages/media.js \
   && ok "the instruments after a racing car's dash: the oxygen first, read from the hardware; every tile of the panel with its sign in a disc (fourteen, the bike's with them) and a drawing of its own for each reading (seven drawn by habitat.js, the oxygen's ring by the server); the charts in the panel's order — Power, Cricket Terrarium Temperature, Air quality (no Oxygen graph since 9 October: the oxygen is the panel's first tile) — each with its sign, the air quality's two gases each its pill (CO 1.1 ppm, NO₂ 0.05 ppm); every chart's figures for the pointer; the hardware's words in the language the page asks for (?lang=, the screens'), else the visitor's" || bad "the Sensors panel's instruments, signs or charts are not as they should be"
 # the habitat screen rolls: its sheet moved by transform, slowly, resting at the top and at the end, fading back to the top
-grep -qF "var SPEED = Number(root.getAttribute('data-speed')) || 14;" public/screen-roll.js && grep -qF "var HOLD = Number(root.getAttribute('data-hold')) || 8000;" public/screen-roll.js \
+grep -qF "var SPEED = Number(root.getAttribute('data-speed')) || 20;" public/screen-roll.js && grep -qF "var HOLD = Number(root.getAttribute('data-hold')) || 8000;" public/screen-roll.js \
   && grep -qF "sheet.style.transform = y > 0 ? 'translate3d(0,' + (-y).toFixed(1) + 'px,0)' : '';" public/screen-roll.js && grep -qF "window.MCSScreenRoll = {" public/screen-roll.js \
   && grep -qF "if (calm) { turnPage(); return; }" public/screen-roll.js && grep -qF "need = Math.max(0, Math.round(sheet.offsetTop + sheet.offsetHeight - view.clientHeight));" public/screen-roll.js \
   && ! grep -q "fetch(\|XMLHttpRequest\|sendBeacon\|scrollTop\|scrollTo(" public/screen-roll.js \
   && grep -q "body.screen .screen-roll > #habitat > .dpanel-body.is-rolled { --roll-ft: 64px; }" public/screen.css && grep -q "body.screen .screen-roll > #habitat > .dpanel-body.has-more { --roll-fb: 110px; }" public/screen.css \
   && grep -q "body.screen .screen-roll .roll-in.is-faded { opacity: 0; }" public/screen.css && curl -s -o /dev/null -w '%{content_type}' $B/screen-roll.js | grep -q javascript \
-  && ok "the Habitat screen rolls: the panel's rows on one sheet moved by transform at 14 px a second (data-speed; half the first 28, 8 October), eight seconds' rest at the top and at the end (data-hold), then faded back to the top; the edge fading where the rows pass under the head and where more is to come; a screenful at a time where less motion is asked for; nothing sent anywhere" || bad "the Habitat screen does not roll as it should"
+  && ok "the Habitat screen rolls: the panel's rows on one sheet moved by transform at 20 px a second (data-speed; half the first 28, 8 October, then a bit quicker, 12 October), eight seconds' rest at the top and at the end (data-hold), then faded back to the top; the edge fading where the rows pass under the head and where more is to come; a screenful at a time where less motion is asked for; nothing sent anywhere" || bad "the Habitat screen does not roll as it should"
+# the habitat screen blinking (12 October: "more urgent and alive and blinky", then "just make the scroll a bit faster
+# and make it blinky — keep the original aesthetic"): the tiles as they were; a status light blinking by each name, a
+# changed reading lighting its tile's edge once, a reading over its limit throbbing red — the script on the habitat
+# screen alone, still on a screen drawn light; none of the glossy preview's glass and colours
+HABP=$(curl -s -b $SK $B/screen/habitat)
+echo "$HABP" | grep -q '<script src="/screen-habitat-fx.js?v=' && ! curl -s -b $SK $B/screen/board | grep -q 'screen-habitat-fx.js' && curl -s -o /dev/null -w '%{content_type}' $B/screen-habitat-fx.js | grep -q javascript \
+  && node --check public/screen-habitat-fx.js && grep -qF "if (document.documentElement.classList.contains('lite')) return;" public/screen-habitat-fx.js \
+  && grep -qF "if (!/\d/.test(now) || !/\d/.test(was)) return;" public/screen-habitat-fx.js && ! grep -q "fetch(\|XMLHttpRequest\|sendBeacon\|is-sweep" public/screen-habitat-fx.js \
+  && grep -qF 'body.screen.screen-habitat .screen-roll #habitat #hbt-bento > section.tile.is-hot > .hab-ring {' public/screen.css && grep -qF '@keyframes hab-blink { 0%, 62% { opacity: 1; } 63%, 100% { opacity: .15; } }' public/screen.css \
+  && grep -qF 'background: var(--live, #ff3b30); box-shadow: 0 0 10px 1px var(--live-glow, rgba(255,59,48,.6)); animation: hab-blink 2.4s steps(1, end) infinite; }' public/screen.css \
+  && ! grep -q 'hab-sweep\|glossy and alive\|rgba(13,19,38' public/screen.css && grep -q "classList.toggle('is-hot', hot)" public/habitat.js \
+  && ok "the habitat screen blinks, its look as it was: a status light blinking by each tile's name, a changed reading lighting its tile's edge once, a reading over its limit throbbing red, the LIVE faster — opacity only; its own script, still on a light screen" || bad "the habitat screen does not blink as it should, or the glossy preview's look is on it"
+# the habitat screen as a head-up display (12 October: "make the actual screens/habitat look like this" — the mock-up in
+# the screens' own dress — "make all the tiles from the original screen show up one after another"): the head (Habitat,
+# LIVE, the day, the date, the place, the clock), a column of tiles at each side, the landing page's way from the Earth to
+# the habitat between them with the latest exchange and picture beside its line, the running line at the foot; the
+# Sensors panel whole under it — every tile, the hardware's charts, the trends — and the current crew's card, laid out
+# over the columns a page at a time by its own script, which only reads; the rolled screen at ?roll=1
+HUD=$(curl -s -b $SK "$B/screen/habitat?lang=en")
+echo "$HUD" | tr -d '\n' | grep -q '<main class="stage no-head is-hud"> *<div class="stage-body" id="stage-body"><div class="stage-fit" id="stage-fit"><div class="screen-roll hab-hud" id="hab-hud" data-hold="12000"' \
+  && echo "$HUD" | grep -q '<h1 class="hh-title">Habitat<span class="cloud-live hh-live"><i></i>LIVE</span></h1>' \
+  && echo "$HUD" | grep -q 'Karlsruhe, MARS<b class="bang">!</b>platz <b class="hh-clock" id="hh-clock">[0-9][0-9]:[0-9][0-9]</b></p>' \
+  && echo "$HUD" | grep -q '<div class="hh-col hh-left" id="hh-left"></div>' && echo "$HUD" | grep -q '<div class="hh-col hh-right" id="hh-right"></div>' \
+  && echo "$HUD" | grep -q '<img class="space-dome-img" src="/space/habitat.webp"' && echo "$HUD" | grep -q '<span class="space-tag space-tag-dome">RED DUST CITY</span>' \
+  && echo "$HUD" | grep -q '<i class="space-line"></i>' && echo "$HUD" | grep -q '<img class="space-earth-img" src="/space/earth.webp"' && echo "$HUD" | grep -q '<svg class="space-halo is-desk"' \
+  && echo "$HUD" | grep -q 'class="hh-note hh-msg" id="hh-msg"' && echo "$HUD" | grep -q 'class="hh-note hh-pic" id="hh-pic"' && echo "$HUD" | grep -q '<span class="hh-note-k"><i></i>Latest message:</span>' \
+  && echo "$HUD" | grep -q '<span class="hh-signal">↑ [0-9]* min · [0-9]* M km</span>' \
+  && echo "$HUD" | grep -q '<section class="tile hh-crew" id="hh-crew" aria-label="Current Crew">' && echo "$HUD" | grep -q '<ul class="crew-now-list">' \
+  && echo "$HUD" | grep -q '<header class="ticker"' && echo "$HUD" | grep -q '<div class="hh-deck" id="hh-deck">' \
+  && [ "$(echo "$HUD" | grep -o '<section class="tile t-[a-z]*' | wc -l)" = "14" ] && echo "$HUD" | grep -q '<div class="hbt-trends-in" id="trends">' \
+  && echo "$HUD" | grep -q '<script src="/screen-habitat-hud.js?v=' && echo "$HUD" | grep -q '<script src="/screen-habitat-fx.js?v=' && ! echo "$HUD" | grep -q 'screen-roll.js' \
+  && ! curl -s -b $SK "$B/screen/habitat?roll=1" | grep -q 'hab-hud\|screen-habitat-hud.js' && curl -s -b $SK "$B/screen/habitat?lang=de" | grep -q '<span class="hh-note-k"><i></i>Neueste Nachricht:</span>' \
+  && curl -s -o /dev/null -w '%{content_type}' $B/screen-habitat-hud.js | grep -q javascript && node --check public/screen-habitat-hud.js \
+  && ! grep -q "XMLHttpRequest\|sendBeacon\|method: *'POST'\|localStorage" public/screen-habitat-hud.js && grep -qF "fetch('/api/board?lang=' + encodeURIComponent(lang) + '&limit=12&wall=1'" public/screen-habitat-hud.js \
+  && grep -qF "var SMALL = 387, WIDE = 798;" public/screen-habitat-hud.js && grep -qF "if (page.length && y + GAP + tall(u) > H) { k++; continue; }" public/screen-habitat-hud.js \
+  && grep -qF "var left = [pair('.t-o2', '.t-co2'), pair('.t-temp', '.t-hum'), pair('.t-pres', '.t-iaq'), pair('.t-light', '.t-voc'), full('#hbt-notes')];" public/screen-habitat-hud.js \
+  && grep -qF "right.push(wide('#bike'), wide('#stores'), full('#trends'), pair('.t-viz-city', '.t-viz-radar'));" public/screen-habitat-hud.js \
+  && grep -qF "window.MCSScreenRoll = { reloadAtTurn:" public/screen-habitat-hud.js \
+  && grep -qF 'body.screen .hab-hud > .hh-deck :is(#habitat, #habitat > .dpanel-body, #sensors, #hbt-bento, #hardware, #hardware > .hbt, #hw-live, #hw-live > .hw-charts) { display: contents; }' public/screen.css \
+  && grep -qF 'body.screen .stage.is-hud { padding: 0; grid-template-columns: minmax(0, 1fr); }' public/screen.css \
+  && grep -qF 'html.lite body.screen .hab-hud .hh-item, html.lite body.screen .hab-hud .hh-item.is-on { transition: none !important; }' public/screen-lite.css \
+  && grep -qF "roll: req.query.roll === '1'" src/server.js && grep -qF "module.exports = { habitatSky, habitatSheet, stamp, responder, exchanges, pictures };" src/views/pages/sky.js \
+  && ok "the habitat screen is a head-up display: Habitat and LIVE, the day, the date, Karlsruhe and the clock over it; a column of tiles at each side — every tile of the Sensors panel, the hardware's charts, the trends and the current crew, a page at a time, the next page's tiles coming one after another; the way from the Earth to the habitat in the middle with the latest exchange and picture by its line; the running line at the foot; its script only reads (the board's notes); the rolled screen at ?roll=1" || bad "the habitat screen is not the head-up display it should be"
 # the word Uplink is gone, Transmit in its place
 ! grep -rqi "uplink" src public && ! curl -s $B/ | grep -qi uplink && ! curl -s -H "Cookie: mcs_lang=de" $B/write | grep -qi uplink && ! curl -s -H "Cookie: mcs_lang=fr" $B/ | grep -qi uplink \
   && curl -s $B/ | grep -q '<b>01</b>Transmit\|01 · Transmit' && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '01 · Senden' \

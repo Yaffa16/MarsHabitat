@@ -22,7 +22,7 @@
   'use strict';
   var root = document.getElementById('screen-roll'); if (!root) return;
   var view = root.querySelector('.dpanel-body'); if (!view) return;
-  var SPEED = Number(root.getAttribute('data-speed')) || 14;              // pixels a second, in the layout's own pixels: a slow read (half the first 28 — 8 October)
+  var SPEED = Number(root.getAttribute('data-speed')) || 20;              // pixels a second, in the layout's own pixels: a slow read (half the first 28 — 8 October — then a bit quicker, 12 October: "increase the speed of the screen/habitat scroll a bit")
   var HOLD = Number(root.getAttribute('data-hold')) || 8000;               // at the top before rolling, and at the end
   var FADE = 900;                                                          // the sheet fading out at the end, and in at the top
   var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;

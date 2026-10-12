@@ -643,3 +643,153 @@ body.screen .comet.c5 { top: 26%; left: 58%; animation: comet-2 47s linear 37s i
    habitat's tiles stand in and the board the messages stand on lie on the sky with no ground of their own — no fill, no
    glass, no shadow —, so the stars show between the tiles and between the cards; each tile and each card keeps its own */
 body.screen.screen-habitat #habitat.dpanel, body.screen .screen.board { background: transparent !important; border-color: transparent !important; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+
+/* ====================================================================== the habitat screen, blinking
+   12 October: "make it look more urgent and alive and blinky", then "no — just make the scroll a bit faster and make it
+   blinky; keep the original aesthetic" (the glass tiles and colours of that afternoon's preview are not taken): the
+   tiles as they were, and a status light blinking beside each tile's name in the LIVE red, the tiles out of step with
+   one another; a reading that changes lights its tile's edge once (public/screen-habitat-fx.js); a reading over its
+   limit (CO₂ over 800 ppm, air quality over 150 — habitat.js, is-hot) throbs red at its edge, its light blinking fast,
+   until it is back within; the panel's LIVE blinks the faster. Only opacity moves; still on a screen drawn light. */
+body.screen.screen-habitat .screen-roll #habitat #hbt-bento > section.tile h3::after { content: ""; display: inline-block; width: 9px; height: 9px; margin: 0 0 3px 12px; border-radius: 50%; vertical-align: middle;
+  background: var(--live, #ff3b30); box-shadow: 0 0 10px 1px var(--live-glow, rgba(255,59,48,.6)); animation: hab-blink 2.4s steps(1, end) infinite; }
+body.screen.screen-habitat .screen-roll #habitat #hbt-bento > section.tile:nth-child(3n+2) h3::after { animation-delay: -.8s; }
+body.screen.screen-habitat .screen-roll #habitat #hbt-bento > section.tile:nth-child(3n) h3::after { animation-delay: -1.6s; }
+body.screen.screen-habitat .screen-roll #habitat #hbt-bento > section.tile.is-hot h3::after { animation-duration: .7s; }
+@keyframes hab-blink { 0%, 62% { opacity: 1; } 63%, 100% { opacity: .15; } }
+body.screen.screen-habitat .screen-roll #habitat #hbt-bento > section.tile > .hab-ring { position: absolute; inset: 0; z-index: 2; pointer-events: none; border-radius: inherit; opacity: 0;
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.6), inset 0 0 50px -14px rgba(255,255,255,.5); }
+:root[data-theme="light"] body.screen.screen-habitat .screen-roll #habitat #hbt-bento > section.tile > .hab-ring { box-shadow: inset 0 0 0 2px rgba(47,69,232,.55), inset 0 0 50px -14px rgba(47,69,232,.35); }
+body.screen.screen-habitat .screen-roll #habitat #hbt-bento > section.tile.is-pulse > .hab-ring { animation: hab-ring 1.7s ease-out; }
+body.screen.screen-habitat .screen-roll #habitat #hbt-bento > section.tile.is-hot > .hab-ring { box-shadow: inset 0 0 0 2px var(--live, #ff3b30), inset 0 0 60px -12px var(--live, #ff3b30); animation: hab-alarm 1.1s ease-in-out infinite; }
+@keyframes hab-ring { 0% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes hab-alarm { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+body.screen.screen-habitat .screen-roll #habitat .dpanel-title .cloud-live i { animation: hab-blink 1.2s steps(1, end) infinite; }
+
+/* ====================================================================== the habitat as a head-up display
+   12 October: "make the actual screens/habitat look like this" — the mock-up in the screens' own dress — "make all the
+   tiles from the original screen show up one after another" (screens.js, habitatHud; public/screen-habitat-hud.js).
+   Laid out 1920 wide (1080 upright) and zoomed to the screen's width, as the rolled screen was (screen.js, rollZoom); the
+   stage is the display's, edge to edge: over it the head — Habitat and LIVE at the left; the day of the run, the date,
+   the place and the clock at the right —, under it a column of tiles at each side, 470 wide, and the way from the Earth to
+   the habitat between them, and along the foot the running line. Upright: the head, the way to the habitat, and the two
+   columns side by side under it. ?roll=1 shows the rolled screen instead (above). */
+body.screen .stage.is-hud { padding: 0; grid-template-columns: minmax(0, 1fr); }   /* (the stage as wide as the screen, whatever the running line's length) */
+body.screen .stage.is-hud > .stage-body { min-width: 0; }
+body.screen .hab-hud { position: relative; height: 100%; display: flex; flex-direction: column; overflow: hidden; --hh-col: 470px; }
+body.screen .hab-hud > .hh-grid { flex: 1 1 auto; min-height: 0; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, var(--hh-col)) minmax(0, 1fr) minmax(0, var(--hh-col));
+  grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "head head head" "left centre right"; column-gap: 30px; row-gap: 22px; padding: 30px 72px 16px; }
+/* the head: the name as large as the rolled screen's, LIVE beside it blinking, and the day, the date, the place and the
+   clock in small capitals at the right */
+body.screen .hh-head { grid-area: head; display: flex; align-items: center; justify-content: space-between; gap: 24px; min-width: 0; }
+body.screen .hh-title { margin: 0; display: flex; align-items: center; gap: 20px; font-family: var(--display); font-size: 46px; font-weight: 600; line-height: 1.1; letter-spacing: -.01em; color: var(--ink); }
+body.screen .hh-title .hh-live { margin: 0; font-family: var(--display); font-size: 16px; padding: 6px 14px; letter-spacing: .12em; }
+body.screen .hh-title .hh-live i { animation: hab-blink 1.2s steps(1, end) infinite; }
+body.screen .hh-meta { margin: 0; font-family: var(--display); font-size: 18px; line-height: 1.2; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
+body.screen .hh-meta b { color: var(--ink); font-weight: 600; }
+body.screen .hh-meta .bang { color: inherit; font-weight: inherit; }
+body.screen .hh-col { min-width: 0; min-height: 0; }
+body.screen .hh-left { grid-area: left; }
+body.screen .hh-right { grid-area: right; }
+/* the middle: the landing page's way from the Earth to the habitat (landing.js, sheet.css — its own classes, sized here):
+   the dome far up, Red Dust City under it, the dashed line down to the Earth's limb with the signal going up and the
+   answer coming down, the Earth at the foot with its dawn and its rings of dots, the room's sides fading into the
+   columns; by day a window of night (below) */
+body.screen .hh-centre { grid-area: centre; position: relative; min-width: 0; min-height: 0; margin-bottom: -16px; overflow: hidden; color: #fff;
+  --dome-w: 280px; --dome-top: 26px; --earth-w: 1180px; --earth-arc: 150px; --hud: #fff; --hud-rgb: 255,255,255; --hud-hot: #ff6a2e; --hud-hot-rgb: 255,106,46;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 70px, #000 calc(100% - 70px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 70px, #000 calc(100% - 70px), transparent 100%); }
+body.screen .hh-centre .space-tag-dome { left: 50%; right: auto; transform: translateX(-50%); margin-top: 12px; font-size: 16px; letter-spacing: .32em; text-shadow: 0 0 18px rgba(255,106,42,.6); }
+body.screen .hh-centre .space-line { z-index: 2; top: calc(var(--dome-top) + var(--dome-w) * .7 + 46px); }
+body.screen .hh-centre .space-earth { z-index: 0; }
+/* the notes beside the line: the latest picture at its left, the latest exchange at its right — each in a hairline frame
+   with a bracket at each corner and its head in small capitals, as the landing page's sky has them */
+body.screen .hh-note { position: absolute; z-index: 3; box-sizing: border-box; padding: 10px 12px 11px; border: 1px solid rgba(255,255,255,.28); background: rgba(14,15,17,.6); color: #ececea; }
+body.screen .hh-note[hidden] { display: none; }
+body.screen .hh-side { position: absolute; z-index: 3; left: calc(50% + 32px); top: calc(var(--dome-top) + var(--dome-w) * .7 + 84px); width: 330px; display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+body.screen .hh-side .hh-msg { position: relative; width: 100%; }
+body.screen .hh-pic { right: calc(50% + 36px); top: calc(var(--dome-top) + var(--dome-w) * .7 + 160px); width: 200px; }
+body.screen .hh-bk { position: absolute; width: 10px; height: 10px; border: 2px solid #f0f0f0; }
+body.screen .hh-bk.tl { left: -2px; top: -2px; border-right: 0; border-bottom: 0; }
+body.screen .hh-bk.tr { right: -2px; top: -2px; border-left: 0; border-bottom: 0; }
+body.screen .hh-bk.bl { left: -2px; bottom: -2px; border-right: 0; border-top: 0; }
+body.screen .hh-bk.br { right: -2px; bottom: -2px; border-left: 0; border-top: 0; }
+body.screen .hh-note-k, body.screen .hh-q-k, body.screen .hh-a-k, body.screen .hh-pic-when, body.screen .hh-signal { display: block; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.screen .hh-note-k { display: flex; align-items: center; gap: 8px; font-size: 11px; letter-spacing: .14em; color: #cfcfcf; }
+body.screen .hh-note-k i { flex: none; width: 6px; height: 6px; border-radius: 50%; background: #fff; box-shadow: 0 0 6px #fff; animation: hab-blink 2.4s steps(1, end) infinite; }
+body.screen .hh-q-k { margin-top: 8px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,.18); font-size: 10.5px; letter-spacing: .1em; color: #9b9ba2; }
+body.screen .hh-q, body.screen .hh-a-t { display: block; font-family: var(--display); font-size: 15px; line-height: 1.3; color: #ececea; }
+body.screen .hh-q { margin: 6px 0 10px; }
+body.screen .hh-a { display: block; padding-left: 9px; border-left: 2px solid var(--hud-hot); }
+body.screen .hh-a[hidden] { display: none; }
+body.screen .hh-a-k { font-size: 10.5px; letter-spacing: .1em; color: var(--hud-hot); }
+body.screen .hh-a-t { margin-top: 4px; }
+body.screen .hh-pic-frame { display: block; margin-top: 7px; aspect-ratio: 16 / 9; overflow: hidden; background: #0a0a0c; }
+body.screen .hh-pic-frame img { display: block; width: 100%; height: 100%; object-fit: cover; }
+body.screen .hh-pic-when { margin-top: 5px; text-align: right; font-size: 10px; letter-spacing: .1em; color: #e6e6e6; }
+body.screen .hh-signal { margin-left: -18px; font-size: 12px; letter-spacing: .08em; text-transform: none; color: #cfcfcf; }   /* the signal's time and the distance, under the exchange, by the line */
+/* a new exchange or a new picture: a bright line sweeps down its frame once */
+body.screen .hh-note::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; z-index: 2; pointer-events: none; opacity: 0; background: rgba(255,255,255,.75); box-shadow: 0 0 8px rgba(255,255,255,.8); }
+body.screen .hh-note.is-new::before { animation: sky-sweep 1.1s ease-out .15s 1 both; }
+/* by day the middle is a window of night: space, black, its own stars, its corners rounded, no fading sides */
+body.screen .hh-centre .space-stars { display: none; }
+:root[data-theme="light"] body.screen .hh-centre { margin-bottom: 0; border-radius: 22px; background: #000; -webkit-mask-image: none; mask-image: none; }
+:root[data-theme="light"] body.screen .hh-centre .space-stars { display: block; }
+/* the running line along the foot: the ticker's line alone, in small capitals on a band of the ground */
+:root[data-theme] body.screen .hab-hud > .ticker { position: relative; z-index: 3; flex: none; background: rgba(14,15,17,.92) !important; border: 0 !important; box-shadow: 0 -1px 0 rgba(255,255,255,.08) !important; }
+:root[data-theme="light"] body.screen .hab-hud > .ticker { background: var(--neu, #eef0f5) !important; box-shadow: 0 -1px 0 rgba(15,21,64,.1) !important; }
+body.screen .hab-hud > .ticker .tk-bar { display: none; }
+body.screen .hab-hud > .ticker .tk-window { height: 44px; padding: 0 72px; border-top: 0; --tk-inset: 72px; }
+body.screen .hab-hud > .ticker .tk-cell { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; }
+/* the tiles, over the columns (screen-habitat-hud.js): the Sensors panel's own, unseen until laid out — the panel and what
+   holds the tiles stand aside (display: contents), so that each tile is placed for itself over the display, laid out at
+   the width the rolled screen gave it and shown smaller (a transform from its top left corner); a page's tiles come in
+   one after another (--hh-d), each rising a little into its place, and go together, fading */
+body.screen .hab-hud > .hh-deck { position: absolute; inset: 0; z-index: 2; visibility: hidden; pointer-events: none; }
+body.screen .hab-hud > .hh-deck :is(#habitat, #habitat > .dpanel-body, #sensors, #hbt-bento, #hardware, #hardware > .hbt, #hw-live, #hw-live > .hw-charts) { display: contents; }
+body.screen .hab-hud > .hh-deck #habitat > .dpanel-head { display: none; }
+body.screen .hab-hud .hh-item { position: absolute !important; z-index: 1; margin: 0 !important; box-sizing: border-box; max-width: none; transform-origin: 0 0;
+  opacity: 0 !important; visibility: hidden !important; transition: opacity .5s ease, transform .5s ease, visibility 0s linear .5s !important; }
+body.screen .hab-hud .hh-item.is-on { opacity: 1 !important; visibility: visible !important;
+  transition: opacity .6s ease var(--hh-d, 0ms), transform .9s cubic-bezier(.2, .75, .25, 1) var(--hh-d, 0ms), visibility 0s linear var(--hh-d, 0ms) !important; }
+/* the current crew, as the landing page's card has them: the sol and its date, the title, the three — each photograph,
+   role and name — at the size the other tiles are laid out at (shown, like them, smaller) */
+body.screen .hab-hud .hh-crew { display: flex; flex-direction: column; padding: 34px 36px 38px; border-radius: 22px; background: var(--neu-2); box-shadow: var(--neu-out-sm); color: var(--ink); }
+body.screen .hh-crew-k { font-family: var(--display); font-size: 21px; line-height: 1.2; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+body.screen .hh-crew h3 { margin: 10px 0 0; font-family: var(--display); font-size: 44px; font-weight: 600; line-height: 1.1; letter-spacing: -.015em; color: var(--ink); }
+body.screen .hh-crew .crew-now-list { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 24px; }
+body.screen .hh-crew .crew-now-officer { display: grid; grid-template-columns: 108px minmax(0, 1fr); align-items: center; gap: 28px; min-width: 0; }
+body.screen .hh-crew .crew-now-officer img { width: 108px; height: 108px; border-radius: 50%; object-fit: cover; background: #101012; box-shadow: 0 0 0 5px var(--neu-2), 0 0 0 7px rgba(var(--cobalt-rgb, 91,109,255), .45); }
+body.screen .hh-crew .sol-officer-who { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+body.screen .hh-crew .sol-officer-who b { font-family: var(--mono, ui-monospace, monospace); font-size: 19px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); }
+body.screen .hh-crew .sol-officer-who span { font-family: var(--display); font-size: 32px; font-weight: 600; line-height: 1.15; color: var(--ink); overflow-wrap: anywhere; }
+body.screen .hh-crew .crew-now-officer.is-open .sol-officer-who span { color: var(--faint); font-weight: 500; }
+body.screen .hh-crew .sol-officer-who .nb { white-space: nowrap; }
+/* the hardware's charts, the trends and the panel's words, laid out at the column's width (and drawn for it): their type
+   and their corners at the size the smaller-shown tiles have */
+body.screen .screen-roll.hab-hud #habitat .hw-chart.hh-item { padding: 13px 15px 12px; border-radius: 13px; }
+body.screen .screen-roll.hab-hud #habitat .hw-title { font-size: 15px; gap: 6px 10px; margin-bottom: 6px; }
+body.screen .screen-roll.hab-hud #habitat .hw-ic { width: 32px; height: 32px; }
+body.screen .screen-roll.hab-hud #habitat .hw-ic svg { width: 17px; height: 17px; }
+body.screen .screen-roll.hab-hud #habitat .hw-legend { gap: 4px 16px; margin-top: 8px; }
+body.screen .screen-roll.hab-hud #habitat .hw-legend li { grid-template-columns: 9px auto; column-gap: 7px; }
+body.screen .screen-roll.hab-hud #habitat .hw-legend li i { width: 9px; height: 9px; }
+body.screen .screen-roll.hab-hud #habitat .hw-name { font-size: 12.5px; }
+body.screen .screen-roll.hab-hud #habitat .hw-range { font-size: 10.5px; }
+body.screen .screen-roll.hab-hud #habitat .hbt-trends-in.hh-item { padding: 12px 14px 12px; border-radius: 13px; background: var(--neu-2); box-shadow: var(--neu-out-sm); }
+body.screen .screen-roll.hab-hud #habitat .hbt-trends-in .hbt-sec { margin: 0 0 8px; }
+body.screen .screen-roll.hab-hud #habitat .hbt-trends-in .hbt-sec h3 { font-size: 15px; }
+:root[data-theme] body.screen.screen-habitat .screen-roll.hab-hud #habitat .hbt-trends-in .tchart { padding: 0; border-radius: 0; background: none !important; box-shadow: none !important; }
+body.screen .screen-roll.hab-hud #habitat .tlegend { margin: 8px 0 0; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px 10px; }
+body.screen .screen-roll.hab-hud #habitat .tlegend li { font-size: 11px; gap: 5px; line-height: 1.25; }
+body.screen .screen-roll.hab-hud #habitat .tlegend i { width: 7px; height: 7px; }
+body.screen .screen-roll.hab-hud #habitat #hbt-notes .note, body.screen .screen-roll.hab-hud #habitat #hw-live > .note { font-size: 12.5px; line-height: 1.4; padding: 9px 12px; margin: 0; }
+/* upright: the head, the way to the habitat under it, then the two columns side by side; the notes beside the dome */
+@media (orientation: portrait) {
+  body.screen .hab-hud > .hh-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 700px minmax(0, 1fr); grid-template-areas: "head head" "centre centre" "left right"; padding: 28px 40px 16px; }
+  body.screen .hh-centre { margin-bottom: 0; }
+  body.screen .hh-side { left: calc(50% + 172px); top: 40px; width: 300px; }
+  body.screen .hh-signal { margin-left: 0; }
+  body.screen .hh-pic { right: calc(50% + 176px); top: 70px; }
+  body.screen .hab-hud > .ticker .tk-window { padding: 0 40px; --tk-inset: 40px; }
+}

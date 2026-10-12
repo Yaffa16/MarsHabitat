@@ -366,8 +366,9 @@ function screenCtx(req) {
   // should have the dark mode" — the site itself opens light); drawn light — still, with nothing blurred, masked or
   // glowing (views/pages/screens.js, public/screen-lite.css) — only when it says ?lite=1, for a computer with little
   // graphics power (12 October: light by default from the morning — "make the pages very very light to load" — until
-  // the afternoon: "undo the simplification of the screens page, restore to previous state")
-  return { ...base, lang, T: i18n.of(lang), theme: req.query.theme === 'light' ? 'light' : 'dark', lite: req.query.lite === '1', offer: '', visitor: null, callsign: '' };
+  // the afternoon: "undo the simplification of the screens page, restore to previous state"); the habitat as it rolled
+  // before its head-up display (12 October), one row under the other, only when the address says ?roll=1
+  return { ...base, lang, T: i18n.of(lang), theme: req.query.theme === 'light' ? 'light' : 'dark', lite: req.query.lite === '1', roll: req.query.roll === '1', offer: '', visitor: null, callsign: '' };
 }
 app.get('/screens', requireScreens, (req, res) => res.set('Cache-Control', 'no-store').send(require('./views/pages/screens').index(screenCtx(req))));
 // The version the station's pages are built with — a new one each time the station starts: an open screen that finds its
