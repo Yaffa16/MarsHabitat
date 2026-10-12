@@ -263,9 +263,10 @@
    book (content/recipes.json, carried into the page as #recipe-book). Choosing a
    recipe fills the card's name, kcal, prep time, nutrients, CO2e and water
    footprint; every field stays editable, and the save keeps what the fields
-   hold. The dropdown opens on "Choose meal"; "Empty" clears the card to be filled in by hand — saved for that
-   day only, never added to the book. Without JavaScript the dropdown is still posted, and the
-   server records the recipe the card names.
+   hold. The dropdown holds Empty and the book's recipes, nothing else, and a meal stands on Empty until a recipe
+   is chosen (12 October); choosing Empty clears the card to be filled in by hand — saved for that day only,
+   never added to the book. Without JavaScript the dropdown is still posted, and the server records the recipe
+   the card names.
    "+ Add a meal" puts another card after the three (EXTRA1, EXTRA2, … — the form's template, numbered as it is
    cloned), with the same dropdown and fields and the time it is served at — the clock's time as it is added, to be
    changed on the card; the meal counts with Breakfast, Lunch or Dinner by it — and a card's × takes it off the day —
@@ -297,7 +298,7 @@
       var v = sel.value;
       sel.setAttribute('data-base', v);                       // the choice itself is never marked
       var figs = form.querySelector('.meal-slot-edit[data-slot="' + slot + '"] .meal-recipe-figs');
-      if (v === '__empty') {                                          // a one-off: the recipe's figures go, the name is typed
+      if (v === '' || v === '__empty') {                              // Empty: the recipe's figures go, the name is typed (__empty: the older pages')
         set(form, slot + '_name', '');
         set(form, slot + '_components', '');
         set(form, slot + '_kcal', '');

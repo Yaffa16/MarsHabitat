@@ -1,5 +1,9 @@
 'use strict';
 /**
+ * (12 October: "from About remove A sol on MARS!platz" — the section is gone from the About page, info.js; solFold
+ * below is kept, unused, should the run want it back. What this file serves now is Current Crew: crewBox, crewList,
+ * crewWhen and the crew's portraits, CREW, for the About page and the landing page.)
+ *
  * A sol on MARS!platz — the About page's section under What's inside the
  * habitat? (October, 7 October: "add a part: A sol on MARS!platz … depending
  * on the daily shift, a very sensible design of the daily activities"): the
@@ -25,16 +29,25 @@
  * names one (content/shifts.json, content.crewOnShift — the day's crew from
  * 08:00 at the venue). During the run the activity under way is marked NOW
  * — the one whose span holds the venue's clock (mission.venueTime) — and the
- * ones behind it are dimmed. Beside the rail: the three on shift, the key to
- * the colours, the day's fixed hours — the communication hour and lights
- * out, read off the schedule, not written here — and a line on where the
- * schedule is changed.
+ * ones behind it are dimmed. Since 12 October each activity stands once and
+ * without its hours, and nothing stands beside the rail (solFold, below).
  */
 const { esc } = require('../layout');
 const content = require('../../lib/content');
 const officer = require('../../lib/officer');
+const missionLib = require('../../lib/mission');
 
 const ROLES = ['COMMUNICATION OFFICER', 'HEALTH OFFICER', 'SCIENCE OFFICER'];   // the three, in the order of the text sheet
+
+/* The crew's portraits — public/crew, made by tools/crew-pictures.py from the photographs in public/Astronaut_Pictures
+   (Firstname_Lastname.jpg): one picture per person at 800 × 1200, and crew.json, the people in the order of their
+   surnames with the two names as the file names give them, then the crew with one name (the habitat's robot dog,
+   Robodog). Read here once at start: the About page (info.js — Current Crew, Who we are) and the
+   landing page's second page (landing.js — Current Crew over the two calls) show them. */
+const CREW = (() => {
+  try { return JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../../../public/crew/crew.json'), 'utf8')).filter((x) => x && x.file && (x.last || x.first)); }
+  catch { return []; }
+})();
 
 /* The kinds, in the order the key lists them; each with the officer it belongs to, where it belongs to one. The words
    are matched on the activity's label — "Science Block 2 / Hot Water Prep with Bike" is science, "EVA (Extra Vehicular
@@ -73,92 +86,143 @@ const cap = (s) => { s = String(s || ''); return s.charAt(0).toUpperCase() + s.s
 /** The role as the page names it, in the visitor's language: "Commanding officer" → T → Kommandantin. */
 const roleName = (T, role) => T(cap(officer.shown(role)));
 
+/* Who a name in the shift plan is (content/shifts.json): the member of the crew whose portrait it names — by the
+   picture's file (vlaminck-maurer, kloeck) or the surname, else the one first name, in any case — or someone the station
+   has no portrait of yet, by the name as written ("Laura B."), shown with the habitat's robot dog's picture (12 October:
+   "for any photos that do not exist, show the robot dog"). `{ name, file, photo }`; null for nobody. */
+const ROBODOG = 'robodog.jpg';
+function personOf(crew, who) {
+  const w = String(who || '').trim();
+  if (!w) return null;
+  const k = w.toLowerCase();
+  const people = (crew || []).filter((c) => c && c.file && c.last);
+  const c = people.find((x) => String(x.file).replace(/\.jpg$/i, '').toLowerCase() === k || String(x.last).toLowerCase() === k)
+    || (() => { const f = people.filter((x) => String(x.first || '').toLowerCase() === k); return f.length === 1 ? f[0] : null; })();
+  return c ? { name: `${c.first} ${c.last}`.trim(), file: c.file, photo: true } : { name: w, file: ROBODOG, photo: false };
+}
+
 /**
  * The section's inner HTML. `today` is data.day(...) for the day shown (null
  * when the station has no day yet); `crew` the crew rows (crew.json, with
- * file, first, last) for the portraits of those on shift.
+ * file, first, last) for the names of those on shift.
+ *
+ * 12 October ("remove repeating things — just have the activity irrespective
+ * of the hour; remove the note, the keys, the tabs on the right column"): the
+ * day's activities, each once and without its hours — an entry that carries
+ * on the one before it (the same first activity: EVA / Science Block 3 twice
+ * over, Science Block 2 and then Science Block 2 / Hot Water Prep with Bike)
+ * is folded into it, and one already on the list is not shown again — on the
+ * rail in the colours of their kinds, alone across the section: no word for
+ * the kind at the row's end, and no crew, key, fixed hours or note beside it
+ * (the crew stand just above it, in Current Crew). The hours still decide which activity is under way
+ * during the run (NOW) and which are behind it; they are no longer shown.
  */
 function solFold(ctx, { today = null, crew = [] } = {}) {
   const T = ctx.T, m = ctx.mission;
   const all = (today && Array.isArray(today.tasks) ? today.tasks : []).filter((t) => t && t.time && t.label);
-  const tasks = all.map((t) => ({ ...t, label: shown(t.label), next: null })).filter((t) => t.label);   // the shift changes left out
-  // each activity runs to the next entry of the schedule, the shift changes included: the last social hour ends at lights out
-  all.forEach((t, i) => { const own = tasks.find((x) => x.time === t.time && x.label === shown(t.label)); if (own) own.next = all[i + 1] ? all[i + 1].time : null; });
+  // each entry runs to the next one of the schedule, the shift changes included: the last social hour ends at lights out
+  const entries = all.map((t, i) => ({ label: shown(t.label), detail: t.detail || '', start: mins(t.time), next: all[i + 1] ? mins(all[i + 1].time) : null }));
+  const same = (a, b) => String(a).toLowerCase() === String(b).toLowerCase();
+  const rows = [];
+  for (const e of entries) {
+    if (!e.label) continue;                                                       // a shift change alone: never shown
+    const parts = e.label.split(/\s*\/\s*/).filter(Boolean);
+    const prev = rows[rows.length - 1];
+    if (prev && same(prev.parts[0], parts[0])) {                                  // carries on the activity before it
+      for (const x of parts) if (!prev.parts.some((y) => same(y, x))) prev.parts.push(x);
+      prev.spans.push([e.start, e.next]);
+      if (!prev.detail && e.detail) prev.detail = e.detail;
+      continue;
+    }
+    const seen = rows.find((r) => r.parts.length === parts.length && r.parts.every((y, i) => same(y, parts[i])));
+    if (seen) { seen.spans.push([e.start, e.next]); continue; }                 // on the list already
+    rows.push({ parts, detail: e.detail, spans: [[e.start, e.next]] });
+  }
   const onShift = content.crewOnShift(m);
-  const person = (who) => crew.find((c) => c && c.file && (String(c.file).replace(/\.jpg$/i, '').toLowerCase() === who || String(c.last || '').toLowerCase() === who)) || null;
+  const person = (who) => personOf(crew, who);
   const live = m.phase === 'ACTIVE';
   const nowMin = live ? mins(m.venueTime) : null;                                  // the venue's clock, during the run
 
-  // the rail: one row an activity, its time and the time the next entry begins; the last — lights out — stands as the
-  // end of the day; during the run the one under way is NOW and the ones behind it are done
-  const items = tasks.map((t) => {
-    const start = mins(t.time), next = t.next ? mins(t.next) : null;
-    const spans = start != null && next != null && next > start;
-    const kind = kindOf(t.label);
+  // the rail: one row an activity; the last — lights out — stands as the end of the day; during the run the one under
+  // way is NOW and the ones behind it are done
+  const items = rows.map((r) => {
+    const label = r.parts.join(' / ');
+    const kind = kindOf(label);
     const who = kind.role ? onShift[kind.role] : null, p = who ? person(who) : null;
-    const now = nowMin != null && start != null && nowMin >= start && (next == null || nowMin < next);
-    const done = nowMin != null && next != null && nowMin >= next;
-    const cls = ['sol-item', `kind-${kind.key}`, now ? 'is-now' : '', done ? 'is-done' : '', spans ? '' : 'is-end'].filter(Boolean).join(' ');
+    const isEnd = r.spans.every(([s, n]) => !(s != null && n != null && n > s));
+    const now = nowMin != null && r.spans.some(([s, n]) => s != null && nowMin >= s && (n == null || nowMin < n));
+    const done = nowMin != null && !now && r.spans.every(([, n]) => n != null && nowMin >= n);
+    const cls = ['sol-item', `kind-${kind.key}`, now ? 'is-now' : '', done ? 'is-done' : '', isEnd ? 'is-end' : ''].filter(Boolean).join(' ');
     return `
         <li class="${cls}">
-          <span class="sol-time"><b>${esc(t.time)}</b>${spans ? `<i>–${esc(t.next)}</i>` : ''}</span>
           <span class="sol-bar" aria-hidden="true"></span>
           <span class="sol-what">
-            <b class="sol-label">${esc(t.label)}</b>${t.detail ? `<span class="sol-detail">${esc(t.detail)}</span>` : ''}
-            ${kind.role ? `<span class="sol-role">${esc(roleName(T, kind.role))}${p ? ` · ${esc(p.first)} ${esc(p.last)}` : ''}</span>` : ''}
+            <b class="sol-label">${esc(label)}${now ? ` <span class="sol-now">${esc(T('NOW'))}</span>` : ''}</b>${r.detail ? `<span class="sol-detail">${esc(r.detail)}</span>` : ''}
+            ${kind.role ? `<span class="sol-role">${esc(roleName(T, kind.role))}${p ? ` · ${esc(p.name)}` : ''}</span>` : ''}
           </span>
-          <span class="sol-kind">${esc(T(kind.word))}</span>${now ? `<span class="sol-now">${esc(T('NOW'))}</span>` : ''}
         </li>`;
-  }).join('');
-
-  // the day's fixed hours, read off the schedule: the communication hour and lights out (the entry that says so, else
-  // the day's last)
-  const last = tasks[tasks.length - 1];
-  const comms = tasks.find((t) => kindOf(t.label).key === 'comms');
-  const out = tasks.find((t) => /lights\s*out/i.test(t.label)) || last;
-  const fixed = [
-    comms ? [T('Communication hour'), comms.time] : null,
-    out && out !== comms ? [T('Lights out'), out.time] : null,
-  ].filter(Boolean);
-
-  // the three on shift: the portrait and the name where the plan names someone, the role alone where not
-  const shift = ROLES.map((role) => {
-    const who = onShift[role], p = who ? person(who) : null;
-    return `
-          <li class="sol-officer${p ? '' : ' is-open'}">
-            ${p ? `<img src="/crew/${esc(p.file)}" alt="" width="96" height="144" loading="lazy" decoding="async">` : `<span class="sol-officer-disc" aria-hidden="true">${esc(cap(officer.shown(role)).charAt(0))}</span>`}
-            <span class="sol-officer-who"><b>${esc(roleName(T, role))}</b><span>${p ? `${esc(p.first)} ${esc(p.last)}` : T('to be named')}</span></span>
-          </li>`;
   }).join('');
 
   const when = live ? `SOL ${String(m.clampedDay).padStart(2, '0')}${today && today.date ? ` · ${esc(shortDay(today.date))}` : ''}`
     : m.phase === 'PRE_LAUNCH' ? T('The typical sol, as every day of the run is planned') : T('The last sol, as it was planned');
-  const kinds = KINDS.map((k) => `<li class="kind-${k.key}"><i aria-hidden="true"></i>${esc(T(k.word))}</li>`).join('');
 
   return `
   <div class="sol">
     <div class="sol-rail">
       <p class="sol-when">${when}</p>
-      ${tasks.length ? `<ol class="sol-list">${items}
+      ${rows.length ? `<ol class="sol-list">${items}
       </ol>` : `<p class="note">${T('No schedule filed for today')}</p>`}
     </div>
-    <aside class="sol-side">
-      <div class="sol-block">
-        <div class="eyebrow">${esc(live ? T('Today’s crew') : T('The three roles'))}</div>
-        <ul class="sol-shift">${shift}
-        </ul>
-      </div>
-      <div class="sol-block">
-        <div class="eyebrow">${esc(T('Key'))}</div>
-        <ul class="sol-key">${kinds}</ul>
-      </div>
-      ${fixed.length ? `<div class="sol-block">
-        <div class="eyebrow">${esc(T('Fixed hours'))}</div>
-        <dl class="sol-fixed">${fixed.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
-      </div>` : ''}
-      <p class="note sol-note">${T('Times are habitat-local. Every sol follows the typical schedule; mission control changes a day on the Habitat tab.')}</p>
-    </aside>
   </div>`;
+}
+
+/**
+ * Current Crew — on the About page between What's inside the habitat and Who we are (12 October: "add a title, Current
+ * Crew: in it show the Three Roles box from A sol on MARS!platz, without the key; instead of the C, H, S display the photo
+ * of the astronaut according to who is in there that day and in what role; for any photos that do not exist show the
+ * robot dog"; at first at the top of the page, then moved above A sol on MARS!platz the same day, which then went), and
+ * on the landing page over the two calls (landing.js): the three roles, each with the photograph of the astronaut the shift plan puts in it for the day
+ * `onShift` holds (content.crewNow — before the run the first day's) and their name; the robot dog's picture for someone
+ * the station has no portrait of, and for a role the plan names nobody in (then "to be named"). crewList is the three;
+ * crewBox, the About page's box of them under its eyebrow — three across on a desk, one under the other on a phone
+ * (aura.css, .crew-now). The pictures load as they come near (loading="lazy": neither page opens on them).
+ */
+function crewList(ctx, { crew = [], onShift = {} } = {}) {
+  const T = ctx.T;
+  // a name too long for its line breaks between the names, never inside one: Matthieu / Vlaminck-Maurer, not at the hyphen
+  const named = (n) => { const i = n.lastIndexOf(' '); return i < 0 ? `<span class="nb">${esc(n)}</span>` : `${esc(n.slice(0, i))} <span class="nb">${esc(n.slice(i + 1))}</span>`; };
+  const items = ROLES.map((role) => {
+    const p = personOf(crew, onShift[role]);
+    return `
+        <li class="crew-now-officer${p ? (p.photo ? '' : ' is-robodog') : ' is-robodog is-open'}">
+          <img src="/crew/${esc(p ? p.file : ROBODOG)}" alt="" width="200" height="300" loading="lazy" decoding="async">
+          <span class="sol-officer-who"><b>${esc(roleName(T, role))}</b><span>${p ? named(p.name) : esc(T('to be named'))}</span></span>
+        </li>`;
+  }).join('');
+  return `
+    <ul class="crew-now-list">${items}
+    </ul>`;
+}
+function crewBox(ctx, opts = {}) {
+  return `
+  <div class="crew-now">
+    <div class="eyebrow">${esc(ctx.T('The three roles'))}</div>${crewList(ctx, opts)}
+  </div>`;
+}
+
+/** Whose crew Current Crew shows: before the run the first day's, during it the shift's (from 08:00 at the venue), after
+    it the last day's (`now`: content.crewNow) — said by its sol and date alone, "SOL 01 · Thu 15 Oct" (12 October: "from
+    the Current Crew remove: The first day’s crew" — the words that stood before it, The first day’s crew, In the habitat
+    now, The last day’s crew, went all three). crewWhen is the line under the title on the About page; the landing page
+    sets it over its title (crewWhenParts: `day`, the sol and its date — '' while the plan names nobody, and then `what`,
+    The crew is not named yet). */
+function crewWhenParts(ctx, now) {
+  if (!now || now.day == null) return { what: ctx.T('The crew is not named yet'), day: '' };
+  return { what: '', day: `SOL ${String(now.day).padStart(2, '0')} · ${shortDay(missionLib.dateForDay(now.day))}` };
+}
+function crewWhen(ctx, now) {
+  const w = crewWhenParts(ctx, now);
+  return w.day || w.what;
 }
 
 /** "Thu 15 Oct" — the station's short day, as the dashboard's strip writes it. */
@@ -168,4 +232,4 @@ function shortDay(iso) {
   return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).replace(',', '');
 }
 
-module.exports = { solFold, kindOf, shown, KINDS };
+module.exports = { solFold, crewBox, crewList, crewWhen, crewWhenParts, personOf, shortDay, kindOf, shown, KINDS, ROLES, CREW };

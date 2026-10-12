@@ -1,8 +1,8 @@
 /* The entry composer — every blog box in mission control.
    One sheet, written like a document: the text flows, Enter starts a new
-   paragraph, and a photograph or a film sits in the flow where the cursor
-   was when it was added — under a toolbar with Photo / video, like a
-   classic post editor (the sheet is the one form there is; the plain text
+   paragraph, and an image sits in the flow where the cursor was when it
+   was added — under a toolbar with Image (12 October: "for all the blogs,
+   not Image/video — only Image"), like a classic post editor (the sheet is the one form there is; the plain text
    the station stores is never shown for editing by hand). A picture
    uploads there and then, shows its preview in place, can be captioned
    under itself, and ✕ takes it out of the post. Underneath, the same plain
@@ -14,7 +14,9 @@
   if (!window.FormData || !window.XMLHttpRequest || !window.fetch) return;
   var MARK = /(\[media:\d+\])/;
   var THUMB = 640;
-  var ACCEPT_VISUAL = '.jpg,.jpeg,.png,.gif,.webp,.avif,.heic,.heif,.tif,.tiff,.mp4,.m4v,.mov,.webm,.mkv';
+  // a blog takes images only (12 October); a film already in an entry from before still shows in it
+  var ACCEPT_IMAGE = '.jpg,.jpeg,.png,.gif,.webp,.avif,.heic,.heif,.tif,.tiff';
+  var isImage = function (file) { return /^image\//.test(file.type) || /\.(jpe?g|png|gif|webp|avif|hei[cf]|tiff?)$/i.test(file.name || ''); };
   var ACCEPT_DOC = '.pdf,.txt,.md,.csv,.json';
 
   /* ------------------------------------------------------------ previews */
@@ -126,13 +128,13 @@
     var attach = form.querySelector('.attach'); if (attach) attach.classList.add('ed-hidden');
     var pick = form.querySelector('.attach input[type=file]'); if (pick) pick.disabled = true;
 
-    // The editor: a toolbar strip (Photo / video), one editable sheet, and
+    // The editor: a toolbar strip (Image), one editable sheet, and
     // a foot with the word count.
     this.root = el('div', 'ed');
     this.root.innerHTML =
       '<div class="ed-bar">' +
         '<div class="ed-bar-add">' +
-          '<button type="button" data-add="visual" title="Add a photograph or video where the cursor is">' + ICON.image + '<span>Photo / video</span></button>' +
+          '<button type="button" data-add="visual" title="Add an image where the cursor is">' + ICON.image + '<span>Image</span></button>' +
         '</div>' +
       '</div>' +
       '<div class="ed-doc" contenteditable="true" spellcheck="true"></div>' +
@@ -167,7 +169,7 @@
       var b = e.target.closest('button[data-add]'); if (!b) return;
       if (self.mode === 'text') self.setMode('visual');
       var input = document.createElement('input');
-      input.type = 'file'; input.multiple = true; input.accept = ACCEPT_VISUAL;
+      input.type = 'file'; input.multiple = true; input.accept = ACCEPT_IMAGE;
       var at = self.caretBlock();
       input.addEventListener('change', function () { self.insertFiles(at, Array.prototype.slice.call(input.files || [])); });
       input.click();
@@ -177,7 +179,9 @@
     ['dragenter', 'dragover'].forEach(function (ev) { self.root.addEventListener(ev, function (e) { e.preventDefault(); self.root.classList.add('over'); }); });
     ['dragleave', 'drop'].forEach(function (ev) { self.root.addEventListener(ev, function (e) { e.preventDefault(); self.root.classList.remove('over'); }); });
     this.root.addEventListener('drop', function (e) {
-      var files = e.dataTransfer && e.dataTransfer.files ? Array.prototype.slice.call(e.dataTransfer.files) : [];
+      var dropped = e.dataTransfer && e.dataTransfer.files ? Array.prototype.slice.call(e.dataTransfer.files) : [];
+      var files = dropped.filter(isImage);                                   // images only — anything else is left out, and the foot says so
+      if (files.length < dropped.length) { var hint = self.root.querySelector('.ed-hint'); if (hint) hint.textContent = 'Only images go into a blog — ' + (dropped.length - files.length) + ' other file' + (dropped.length - files.length === 1 ? ' was' : 's were') + ' left out'; }
       if (!files.length) return;
       if (self.mode === 'text') self.setMode('visual');
       var at = e.target.closest ? e.target.closest('.ed-doc > *') : null;

@@ -7,6 +7,25 @@ const orbital = require('../lib/orbital');
    needed in the gallery. */
 const ASSET_V = Date.now().toString(36);
 
+/* The favicons (12 October, the second set: "replace the favicon with the favicons from here; have the same favicon
+   irrespective of dark or light mode"): the habitat's badge — the geodesic dome on the red plain under the stars, in its
+   gold ring — as favicon.io made it, in public/: favicon.ico (16 and 32 px), favicon-16x16.png, favicon-32x32.png, the
+   touch icon (apple-touch-icon.png, 180 px) and the app icons (android-chrome-192x192.png, -512x512.png, named in
+   site.webmanifest). One set for both themes: the badge stands on its own round, clear outside it, so it reads on a
+   light tab as on a dark one — nothing turns when the theme does (the first set, of the morning — the Red Dust Society
+   badge on white by day and on the dark ground by night, swapped by public/switches.js — is gone). Asked for with ?v=2,
+   so that a browser holding the first set's icon in its cache takes the new one. Every page's head carries them — the
+   site's, mission control's, the archive's and the screens'. */
+const FAVICONS = [
+  '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">',
+  '<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">',
+  '<link rel="shortcut icon" href="/favicon.ico?v=2">',
+  '<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">',
+  '<meta name="apple-mobile-web-app-title" content="MARS!platz">',
+  '<link rel="manifest" href="/site.webmanifest?v=2">',
+].join('\n');
+function favicons() { return FAVICONS; }
+
 /* The station in three languages — German, English, French — from the
    station's own dictionary (src/lib/i18n.js), switched by the DE·EN·FR
    control beside the theme switch and kept in a cookie like the theme.
@@ -323,6 +342,7 @@ function page({ title, ctx, body, current, bodyClass = '', head = '', scripts = 
 <meta charset="utf-8">${aura ? '\n<script>document.documentElement.className += " js"</script>' : ''}
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
+${favicons()}
 <title>${current === '/' || title === 'Mission' ? T('MARS!platz – Ground Station') : `${esc(T(title))} — ${T('MARS!platz – Ground Station')}`}</title>
 <meta name="description" content="${esc(T('A live communication interface between an Earth-based audience and the crew of the MARS habitat.'))}">
 <link rel="stylesheet" href="/station.css?v=${ASSET_V}">${styles.map((s) => `\n<link rel="stylesheet" href="${s}?v=${ASSET_V}">`).join('')}
@@ -564,5 +584,5 @@ module.exports = {
   page, panel, eyebrow, readout, orbitPlot, sparkline, pipeline, scaleStrip,
   statusStrip, langSwitch, themeSwitch, sym, legend, SYMBOL_KEY, esc, NAV, MESSAGE_STATES,
   mealEco, mealEcoText, MEAL_NUTRIENTS, slotName, mealFigs, mealHoursLine,
-  clientTable, tableScript, ASSET_V,   // the installation's screens (pages/screens.js) build their own shell from these
+  clientTable, tableScript, ASSET_V, favicons,   // the installation's screens (pages/screens.js) build their own shell from these
 };

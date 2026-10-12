@@ -900,7 +900,10 @@ router.post('/meals', (req, res) => {
     const was = current.find((m) => m.slot === slot) || {}, is = posted.get(slot) || {};
     const choice = String(req.body[`${slot}_recipe`] ?? '');
     const rec = is.recipe && is.recipe !== (was.recipe || '') ? book.find((x) => x.slug === is.recipe) : null;
-    const emptied = choice === '__empty' && (was.recipe || was.name);
+    // Empty chosen: the dropdown's Empty (value "") over a card that had a recipe — a card with none stands on Empty
+    // already, and saving it is no choice (12 October) — or an older page's "__empty"
+    const emptied = (choice === '__empty' && (was.recipe || was.name))
+      || (choice === '' && !!was.recipe && Object.prototype.hasOwnProperty.call(req.body, `${slot}_recipe`));
     let base;                                                // the values the choice put in the fields
     if (rec) {
       base = { name: rec.name, components: '', kcal: r2(rec.kcal == null ? null : Math.round(rec.kcal), 0), prep: r2(rec.prep_minutes, 0),

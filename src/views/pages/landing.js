@@ -5,7 +5,8 @@
  * line between them and the latest exchanges and pictures coming and going
  * around it (sky.js, public/sky.js), with the station's name, the eyebrow,
  * the paragraph on what the site is for and the run at its left on a wider
- * screen and over it on a phone (intro); the two calls — the doors to the
+ * screen and over it on a phone (intro); the crew in the habitat today (the
+ * About page's Current Crew, since 12 October) over the two calls — the doors to the
  * composer and the dashboard (the note on what MARS is that stood beside
  * them is gone; the About page tells it); the habitat itself (dome.js) — the dome on its
  * sheet, its keys floating about it; and the world's slowest chat — its
@@ -34,7 +35,9 @@
  */
 const { esc } = require('../layout');
 const orbital = require('../../lib/orbital');
+const content = require('../../lib/content');
 const { stamp, responder } = require('./sky');
+const { crewList, crewWhenParts, CREW } = require('./sol');
 
 const WINDOW_TIME = '19:00';                                 // the crew answer from seven in the evening — the communication hour — every day of the run
 const LOCALE = { en: 'en-GB', de: 'de-DE', fr: 'fr-FR' };
@@ -208,18 +211,41 @@ function trajectory() {
 }
 
 /* ---------------------------------------------------------------- the second page */
-/** The second page: the two calls (calls, below) — the page's doors to the composer and to the dashboard — side by side
-    on a desk, one under the other on a phone (`crew`: how many dots the live card's radar carries). The note that stood beside them (MARS! – Mobilizing Awareness for
+/** The second page: the crew in the habitat (crewNow, below) over the two calls (calls, below) — the page's doors to the
+    composer and to the dashboard — side by side on a desk, one under the other on a phone (`crew`: how many dots the live
+    card's radar carries). The note that stood beside them (MARS! – Mobilizing Awareness for
     Resilient Societies! – is a three-part project…) is gone: October asked for the box to go; the About page tells the
     project. The section keeps its id, `note`: the nudge on the Earth and the phone's scroll lead to it. */
 function note(ctx, { crew = 3 } = {}) {
   const T = ctx.T;
   return `
   <section class="sheet sheet-p2" id="note" aria-label="${esc(T('Write to the crew, or follow them'))}" data-page>
-    <div class="page2 is-calls">
+    <div class="page2 is-calls">${crewNow(ctx)}
       ${calls(ctx, { crew })}
     </div>
   </section>`;
+}
+
+/* ---------------------------------------------------------------- the crew, over the two calls */
+/** Current Crew over the two calls (12 October: "add the current crew images on the landing page, on the same page as
+    Send a message to the crew and Follow what the crew is doing live; place it above these two boxes"): the About page's
+    Current Crew — the three roles, each with the photograph and the name of the astronaut in it, the robot dog's picture
+    for someone the station has no portrait of (sol.js, crewList) — under its title, and over the title the sol and its
+    date: before the run the first day's, during it the shift's from 08:00 at the venue, after it the last day's
+    (content.crewNow; sol.js, crewWhenParts) — no words of whose crew it is under the title since 12 October ("remove: The
+    first day’s crew"; only while the plan names nobody, The crew is not named yet). A card as wide as the two calls
+    under it: the words at its left and the three across on a wide desk, the words over the three on a narrower one, the
+    three one under the other on a phone (sheet.css, .land-crew). */
+function crewNow(ctx) {
+  const T = ctx.T, now = content.crewNow(ctx.mission), w = crewWhenParts(ctx, now);
+  return `
+      <div class="land-crew" role="group" aria-labelledby="land-crew-title">
+        <header class="land-crew-head">${w.day ? `
+          <span class="land-crew-k">${esc(w.day)}</span>` : ''}
+          <h2 class="land-crew-title" id="land-crew-title">${esc(T('Current Crew'))}</h2>${w.what ? `
+          <p class="land-crew-when">${esc(w.what)}</p>` : ''}
+        </header>${crewList(ctx, { crew: CREW, onShift: now.crew })}
+      </div>`;
 }
 
 /* ---------------------------------------------------------------- the two calls */

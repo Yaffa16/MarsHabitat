@@ -102,7 +102,7 @@ body.landing .status .lang-menu > .lang { background: var(--neu-1) !important; b
 body.landing .status .theme button, :root[data-theme="dark"] body.landing .status .theme button { background: var(--neu-2) !important; border: 0 !important; box-shadow: var(--neu-out-xs) !important; color: var(--neu-dim) !important; }
 
 /* ------------------------------------------------------------------------- cards, panels, sheets */
-body.landing .about-sec, body.landing .call, body.landing .steps, body.landing .dpanel, body.landing .panel, body.landing .foot,
+body.landing .about-sec, body.landing .call, body.landing .land-crew, body.landing .steps, body.landing .dpanel, body.landing .panel, body.landing .foot,
 body.landing .sol-side, body.landing .portal-pop .device, body.landing .device, body.landing .gauge, body.landing .tile,
 body.landing .card.xc, body.landing .card.note, body.landing .board .card.note, :root[data-theme="dark"] body.landing .card.xc.note,
 body.landing .officer-card, body.landing .hab-card, body.landing .dcard, body.landing .mission-card, body.landing .blog, body.landing .post,

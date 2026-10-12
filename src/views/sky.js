@@ -9,12 +9,15 @@
  * a picture of their own, /sky.svg (server.js) — fetched once and kept by the browser, never sent with a page, and not
  * fetched at all by day — the five comets over it (views/layout.js; public/neu.css, *the night sky*).
  */
-function circles() {
+/* `still`: none of them twinkling — the installation's light screens (views/pages/screens.js; 12 October: the screens'
+   computers have little graphics power) — the same scatter all the same. */
+function circles({ still = false } = {}) {
   let seed = 20261015;
   const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
   return Array.from({ length: 400 }, (_, i) => {
     const x = Math.round(rnd() * 1920), y = Math.round(rnd() * 1080), r = (0.45 + rnd() * rnd() * 1.6).toFixed(2), o = (0.2 + rnd() * 0.65).toFixed(2);
-    const tw = i % 5 === 0 ? ` class="tw" style="animation-delay:-${(rnd() * 6).toFixed(1)}s"` : '';
+    const delay = i % 5 === 0 ? (rnd() * 6).toFixed(1) : null;                       // (drawn either way: the scatter stays the same)
+    const tw = delay != null && !still ? ` class="tw" style="animation-delay:-${delay}s"` : '';
     return `<circle cx="${x}" cy="${y}" r="${r}" opacity="${o}"${tw}/>`;
   }).join('');
 }

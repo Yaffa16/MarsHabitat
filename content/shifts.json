@@ -1,5 +1,5 @@
 {
-  "_note": "Who is in the habitat each day of the run — the shift plan (October). For each mission day (1 = Thursday 15 October … 13 = Tuesday 27 October), the person in each role, by their surname as public/crew/crew.json spells the picture's file name (bechtloff, dipper, gerigk, jain, kautz, lintermann, lorenz, schmidt, stricot, vlaminck-maurer, wilcox). The About page shows the day's three portraits over the roles from 08:00 at the venue, the morning the day crew come on, until 08:00 the next morning — the nights, when people are rotated out, are not shown. A day with no entry, or a role with none, shows the role without a portrait. The keys are the designations the station files under: COMMUNICATION OFFICER (shown everywhere as the Commanding Officer), HEALTH OFFICER, SCIENCE OFFICER. Edit and save; the station reads the file fresh. `_example` shows the shape and is not read.",
+  "_note": "Who is in the habitat each day of the run — the shift plan (MARS_Performance_Shiftplan_2, 12 October: the day shifts, 08:00–22:00; Thursday 15 October from 17:00). For each mission day (1 = Thursday 15 October … 13 = Tuesday 27 October), the person in each role: by their surname as public/crew/crew.json spells the picture's file name (bechtloff, dipper, gerigk, jain, kautz, kloeck, lintermann, lorenz, milbrandt, schmidt, stricot, vlaminck-maurer, wilcox), or — for someone the station has no picture of — their name as it is to be shown (\"Laura B.\"), who then appears with the robot dog's picture. The About page shows the day's crew at its head, under Current Crew — before the run the first day's, during it the day's from 08:00 at the venue, the morning the day crew come on, until 08:00 the next morning; a day with no entry (the last, the teardown) keeps the crew of the day before — and A sol on MARS!platz names the same three on their activities during the run (a day with no entry names nobody there). The nights, when two of the three stay in, are not shown. The keys are the designations the station files under: COMMUNICATION OFFICER (shown everywhere as the Commanding Officer), HEALTH OFFICER, SCIENCE OFFICER. Edit and save; the station reads the file fresh. `_example` shows the shape and is not read.",
   "_example": {
     "1": {
       "COMMUNICATION OFFICER": "jain",
@@ -7,5 +7,18 @@
       "SCIENCE OFFICER": "dipper"
     }
   },
-  "days": {}
+  "days": {
+    "1": { "COMMUNICATION OFFICER": "wilcox", "HEALTH OFFICER": "stricot", "SCIENCE OFFICER": "kautz" },
+    "2": { "COMMUNICATION OFFICER": "wilcox", "HEALTH OFFICER": "lorenz", "SCIENCE OFFICER": "vlaminck-maurer" },
+    "3": { "COMMUNICATION OFFICER": "gerigk", "HEALTH OFFICER": "stricot", "SCIENCE OFFICER": "vlaminck-maurer" },
+    "4": { "COMMUNICATION OFFICER": "vlaminck-maurer", "HEALTH OFFICER": "stricot", "SCIENCE OFFICER": "Laura B." },
+    "5": { "COMMUNICATION OFFICER": "wilcox", "HEALTH OFFICER": "lintermann", "SCIENCE OFFICER": "dipper" },
+    "6": { "COMMUNICATION OFFICER": "wilcox", "HEALTH OFFICER": "lorenz", "SCIENCE OFFICER": "bechtloff" },
+    "7": { "COMMUNICATION OFFICER": "schmidt", "HEALTH OFFICER": "lorenz", "SCIENCE OFFICER": "vlaminck-maurer" },
+    "8": { "COMMUNICATION OFFICER": "lintermann", "HEALTH OFFICER": "dipper", "SCIENCE OFFICER": "lorenz" },
+    "9": { "COMMUNICATION OFFICER": "vlaminck-maurer", "HEALTH OFFICER": "stricot", "SCIENCE OFFICER": "lorenz" },
+    "10": { "COMMUNICATION OFFICER": "vlaminck-maurer", "HEALTH OFFICER": "bechtloff", "SCIENCE OFFICER": "milbrandt" },
+    "11": { "COMMUNICATION OFFICER": "wilcox", "HEALTH OFFICER": "stricot", "SCIENCE OFFICER": "Ralf E." },
+    "12": { "COMMUNICATION OFFICER": "kloeck", "HEALTH OFFICER": "stricot", "SCIENCE OFFICER": "jain" }
+  }
 }

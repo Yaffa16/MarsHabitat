@@ -3,7 +3,8 @@ const L = require('../layout');
 const { esc, panel, eyebrow } = L;
 const orbital = require('../../lib/orbital');
 const { habitatInside } = require('./inside');
-const { solFold } = require('./sol');
+const { crewBox, crewWhen, CREW } = require('./sol');
+const content = require('../../lib/content');
 
 /**
  * The project, the habitat in section and the credits — About, What's inside
@@ -17,13 +18,9 @@ const { solFold } = require('./sol');
 /* Who we are: the crew's portraits — public/crew, made by tools/crew-pictures.py from the photographs in
    public/Astronaut_Pictures (Firstname_Lastname.jpg): one picture per person at 800 × 1200 and crew.json, the people in
    the order of their surnames with the two names as the file names give them, then the crew with one name — the
-   habitat's robot dog, Robodog (8 October) — read here once at start — and the partners
-   (public/partners — the logos from public/PartnerLogo, in the order the folder gives them: 1 and 2 in cooperation with,
-   3 to 5 supporters). */
-const CREW = (() => {
-  try { return JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../../../public/crew/crew.json'), 'utf8')).filter((x) => x && x.file && (x.last || x.first)); }
-  catch { return []; }
-})();
+   habitat's robot dog, Robodog (8 October) — read once at start (sol.js, CREW: the landing page shows them too) — and
+   the partners (public/partners — the logos from public/PartnerLogo, in the order the folder gives them: 1 and 2 in
+   cooperation with, 3 to 5 supporters). */
 const PARTNERS = {
   cooperation: [['staatstheater-karlsruhe', 'Badisches Staatstheater Karlsruhe'], ['naturkundemuseum-karlsruhe', 'Naturkundemuseum Karlsruhe']],
   supporters: [['eon-foundation', 'E.ON Foundation'], ['lbbw-stiftung', 'LBBW Stiftung'], ['innovationsfonds-kunst', 'Innovationsfonds Kunst Baden-Württemberg']],
@@ -139,16 +136,21 @@ function whoFold(crew, T, ctx) {
  * #about-project, #what and #who-we-are (public.js, mission()). Beside the
  * prose, the panels that remain: the mission's facts (About), the habitat's
  * picture with every module a key (What's inside the habitat — inside.js,
- * habitatInside, which was the landing page's third page), a sol on
- * MARS!platz — the day's schedule on a rail, hour by hour, with the three on
- * shift beside it (sol.js, solFold; October, 7 October) — the crew — the
+ * habitatInside, which was the landing page's third page), the crew — the
  * three officers and the portraits — and the producer with the partners
- * (Who we are).
+ * (Who we are). Between the habitat and Who we are, since 12 October, the
+ * Current Crew: the three roles with the photographs of the astronauts in
+ * them on the day (sol.js, crewBox; content.crewNow — before the run the
+ * first day's crew), under the sol and its date — at the top of the page at
+ * first, then above A sol on MARS!platz, the day's schedule on a rail (sol.js,
+ * solFold; 7 October), which went the same day ("from About remove A sol on
+ * MARS!platz"; solFold is kept, unused, should the run want it back); the
+ * landing page shows the same three over its two calls (landing.js).
  */
 const PARTS = [
   ['about-project', 'About', 'MARS! – Mobilizing Awareness for Resilient Societies!'],
   ['inside', 'What’s inside the habitat?', null],
-  ['sol', 'A sol on MARS!platz', 'The day in the habitat, activity by activity — from breakfast to lights out'],
+  ['crew-now', 'Current Crew', null],
   ['who-we-are', 'Who we are', 'The crew, the producer, the partners'],
 ];
 
@@ -157,17 +159,22 @@ function aboutPage(ctx, { crew = [], habitat = null } = {}) {
   // the habitat's section: its head's line is the drawing's hint (Point at a room… on a desk, Tap a room… on a touch
   // screen — sheet.css shows the one that applies), and the drawing itself stands under it on the section's sheet
   const hint = `<span class="dome-meta dome-hint"><span class="dome-hint-click">${T('Point at a room to know what is inside.')}</span><span class="dome-hint-tap">${T('Tap a room to know what is inside.')}</span></span>`;
-  const inner = { 'about-project': () => aboutFold(ctx), inside: () => `<div class="hab-card">${habitatInside(ctx, habitat || {})}</div>`,
-    sol: () => solFold(ctx, { today: (habitat || {}).today || null, crew: CREW }), 'who-we-are': () => whoFold(crew, T, ctx) };
+  // Current Crew: the day whose crew it is, under the title, by its sol and date — before the run the first day's, during
+  // it the shift's (from 08:00 at the venue), after it the last day's (content.crewNow; sol.js, crewWhen)
+  const now = content.crewNow(ctx.mission);
+  const subs = { 'crew-now': esc(crewWhen(ctx, now)), inside: hint };
+  const inner = { 'crew-now': () => crewBox(ctx, { crew: CREW, onShift: now.crew }),
+    'about-project': () => aboutFold(ctx), inside: () => `<div class="hab-card">${habitatInside(ctx, habitat || {})}</div>`,
+    'who-we-are': () => whoFold(crew, T, ctx) };
   const body = `
   <nav class="about-jump" aria-label="${esc(T('On this page'))}">
     ${PARTS.map(([id, title]) => `<a href="#${id}">${esc(T(title))}</a>`).join('')}
   </nav>
   ${PARTS.map(([id, title, sub]) => `
-  <section class="about-sec${id === 'inside' ? ' habitat-sec' : ''}" id="${id}" aria-labelledby="${id}-title">
+  <section class="about-sec${id === 'inside' ? ' habitat-sec' : id === 'crew-now' ? ' crew-sec' : ''}" id="${id}" aria-labelledby="${id}-title">
     <header class="about-sec-head">
-      <h2 class="bigsec" id="${id}-title">${esc(T(title))}</h2>
-      <p class="dash-sub">${sub ? esc(T(sub)) : hint}</p>
+      <h2 class="bigsec" id="${id}-title">${esc(T(title))}</h2>${subs[id] != null || sub ? `
+      <p class="dash-sub">${subs[id] != null ? subs[id] : esc(T(sub))}</p>` : ''}
     </header>
     ${inner[id]()}
   </section>`).join('')}`;

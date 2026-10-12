@@ -20,10 +20,15 @@
  *    /api/screens/version) and at the venue's midnight, when the sol turns — never on a timer (9 October: "make sure
  *    the screens do not continuously reload"), not while someone is writing on the writing screen or the livestream
  *    plays, and on the rolled habitat at the roll's turn, while its sheet is faded out (screen-roll.js).
+ * On a light screen — every screen unless its address says ?fx=1 (html.lite; screens.js, screen-lite.css; 12 October:
+ * the screens' computers have little graphics power) — a change under the stage is not fitted at once but looked at a
+ * moment later, cheaply, and fitted only if it no longer fits (or has room to spare); and the drawings that move by
+ * themselves (SMIL) are stopped.
  * The screens are display-only but for the writing screen (screen-write.js): nothing here is ever sent anywhere. */
 (function () {
   'use strict';
   var body = document.getElementById('stage-body'), fitEl = document.getElementById('stage-fit'); if (!body || !fitEl) return;
+  var LITE = document.documentElement.classList.contains('lite');            // a light screen (above)
   // how the piece is fitted: data-fit, or data-fit-landscape while the screen is wider than tall (the trends: scaled
   // upright, drawn to the height landscape — screen.css, data-fit="fill"); the body carries the way in use, for the
   // stylesheet
@@ -195,20 +200,36 @@
   // (nor for the board's cards: board.js fits them itself, as they change — their figures ticking every second are no
   // change of the screen's)
   var inForm = function (n) { var e = n && n.nodeType === 1 ? n : n && n.parentNode; return !!(e && e.closest && e.closest('form.composer, [data-fit-own]')); };
+  // (a light screen only looks, a moment after the change — one measuring, no fitting unless it is needed: a fitting
+  // lays the whole piece out several times over, which a small computer feels when the landing screen's sky changes
+  // every second or two)
+  var lookAt = null;
+  function lookSoon() { if (!lookAt) lookAt = setTimeout(function () { lookAt = null; look(); }, 400); }
   if (window.MutationObserver) new MutationObserver(function (ms) {
     if (fit === 'roll') return;
-    for (var i = 0; i < ms.length; i++) if (ms[i].target !== fitEl && !inForm(ms[i].target)) { refit(); return; }
+    for (var i = 0; i < ms.length; i++) if (ms[i].target !== fitEl && !inForm(ms[i].target)) { if (LITE) lookSoon(); else refit(); return; }
   }).observe(fitEl, { childList: true, subtree: true, attributes: true });
   setTimeout(refit, 1500); setTimeout(refit, 4000);                    // the habitat's instruments and the trends draw themselves a moment after the page
   // and, whatever was missed — a drawing that grew after the last fitting without a word — the fit is looked at every
   // other second: over the edge, or with room to spare it could take, the piece is fitted again (a cheap look otherwise)
-  setInterval(function () {
+  function look() {
     if (pending || document.hidden) return;
     if (fit === 'scale') {
       var e = extent(), top = Math.min(2, minWidth ? Math.max(1, window.innerWidth / minWidth) : 2);
       if (e.need > e.have + 1 || e.needW > e.haveW + 1 || (e.need < e.have * 0.92 && curZ < top - 0.02 && !wideBound)) fitNow();
     } else if (fit === 'clip') fitClip();
+  }
+  setInterval(function () {
+    look();
   }, 2000);
+
+  /* ------------------------------------------------------------ light: the drawings that move by themselves stand still
+     (SMIL — the landing page's way to the habitat, landing.js, trajectory, which a screen does not show; any other): held
+     at their start, so the browser no longer draws them over and over */
+  if (LITE) [].forEach.call(document.querySelectorAll('svg'), function (s) {
+    if (s.ownerSVGElement || !s.pauseAnimations || !s.querySelector('animate, animateMotion, animateTransform, set')) return;
+    try { s.pauseAnimations(); s.setCurrentTime(0); } catch (e) { /* as it stands */ }
+  });
 
   /* ------------------------------------------------------------ the clock, on the venue's time */
   var clock = document.getElementById('stage-clock');

@@ -779,6 +779,11 @@ function power() {
  * when the recipe is chosen. Read fresh on every call, like the power file,
  * so an edit is live the moment it is saved. A slot keeps its own copy of the
  * figures (meals.json), so changing a recipe never rewrites a planned day.
+ * Since 12 October the file is the recipes' footprint export as it comes
+ * (rezept-fussabdruck: generated_at, basis, recipe_count, recipes — each with
+ * its name, slug, servings, times, per_serving and coverage): its prep time is
+ * read off `times` (recipeMinutes, below); an older book's prep_minutes still
+ * counts first.
  */
 const NUTRIENTS = [
   { key: 'protein_g', label: 'Protein', unit: 'g' },
@@ -833,8 +838,11 @@ const missionNo = (no) => String(Number(no)).padStart(2, '0');
  * come on, until 08:00 the next morning — so before 08:00 it is still the day
  * before's crew; the nights, when people are rotated out, are never shown.
  * Read fresh, like the missions; a missing or broken file, a day without an
- * entry or a run that has not begun is nobody on shift: the About page then
- * shows the roles without portraits (views/pages/info.js, whoFold).
+ * entry or a run that has not begun is nobody on shift: A sol on MARS!platz
+ * then names nobody on its activities (views/pages/sol.js). Someone the
+ * station has no portrait of is written as their name is to be shown
+ * ("Laura B.") and shown with the robot dog's picture (sol.js, personOf).
+ * Each name comes back as written; the portrait is found in any case.
  */
 function crewOnShift(mission) {
   let days;
@@ -843,11 +851,41 @@ function crewOnShift(mission) {
   if (!mission || mission.phase !== 'ACTIVE') return {};
   const hour = Number(String(mission.venueTime || '').slice(0, 2));
   const day = Number(mission.clampedDay) - (Number.isFinite(hour) && hour < 8 ? 1 : 0);
-  const d = days[String(day)];
-  if (!d || typeof d !== 'object') return {};
+  return crewForDay(day, days);
+}
+/** The shift plan's days as written: mission day → { role → name }; {} for a missing or broken file. */
+function shiftDays() {
+  try { const obj = JSON.parse(fs.readFileSync(path.join(DIR, 'shifts.json'), 'utf8')) || {}; return obj.days && typeof obj.days === 'object' ? obj.days : {}; }
+  catch { return {}; }
+}
+/** One day's crew from the plan: role (upper case) → the name as written; {} for a day it names nobody on. */
+function crewForDay(missionDay, days = shiftDays()) {
+  const d = days[String(missionDay)];
   const out = {};
-  for (const [role, who] of Object.entries(d)) if (typeof who === 'string' && who.trim()) out[String(role).toUpperCase()] = who.trim().toLowerCase();
+  if (d && typeof d === 'object') for (const [role, who] of Object.entries(d)) if (typeof who === 'string' && who.trim()) out[String(role).toUpperCase()] = who.trim();
   return out;
+}
+/**
+ * The crew the About page's Current Crew shows (12 October: "for now, show the
+ * faces of the first day's crew"): before the run the first day's; during it
+ * the day's from 08:00 at the venue — before 08:00 still the day before's, as
+ * A sol on MARS!platz has it (crewOnShift), the first day's on its own
+ * morning; for a day the plan names nobody on (the last, the teardown) the
+ * latest day before it that has a crew; after the run the last day's crew.
+ * `{ day, crew }`: the mission day whose crew it is (null while the plan names
+ * nobody at all) and its roles → names.
+ */
+function crewNow(mission) {
+  const days = shiftDays();
+  const total = Number((mission && mission.totalDays) || 13);
+  let day = 1;
+  if (mission && mission.phase === 'ACTIVE') {
+    const hour = Number(String(mission.venueTime || '').slice(0, 2));
+    day = Math.max(1, Number(mission.clampedDay) - (Number.isFinite(hour) && hour < 8 ? 1 : 0));
+  } else if (mission && mission.phase === 'COMPLETE') day = total;
+  for (let n = day; n >= 1; n--) { const crew = crewForDay(n, days); if (Object.keys(crew).length) return { day: n, crew }; }
+  for (let n = day + 1; n <= total; n++) { const crew = crewForDay(n, days); if (Object.keys(crew).length) return { day: n, crew }; }   // a plan that begins later
+  return { day: null, crew: {} };
 }
 
 /** The plan as the desk edits it: the missions as a list (number, title, and the file a placeholder sheet copies) and
@@ -887,6 +925,32 @@ function recipesFile() {
   } catch { return { recipes: [] }; }
 }
 
+/**
+ * A recipe's time in minutes, for the slot's Prep min: an older book's prep_minutes; else the footprint export's
+ * `times` — total_minutes, else cook_minutes, else the minutes its words give, total's before cook's: "0:20" → 20,
+ * "5min" → 5, "etwa 8–10 Minuten" → the longer, 10, "1 Std. 30 Min." → 90. Null where it gives none (the slot's
+ * Prep min then stays blank).
+ */
+function recipeMinutes(r) {
+  const n = (v) => (v == null || v === '' || !Number.isFinite(Number(v)) || Number(v) <= 0 ? null : Math.round(Number(v)));
+  if (n(r.prep_minutes) != null) return n(r.prep_minutes);
+  const t = (r.times && typeof r.times === 'object') ? r.times : {};
+  if (n(t.total_minutes) != null) return n(t.total_minutes);
+  if (n(t.cook_minutes) != null) return n(t.cook_minutes);
+  for (const w of [t.total, t.cook]) {
+    const s = String(w == null ? '' : w).trim();
+    if (!s) continue;
+    const clock = /^(\d{1,2}):(\d{2})$/.exec(s);
+    if (clock) { const v = Number(clock[1]) * 60 + Number(clock[2]); if (v > 0) return v; continue; }
+    const num = (x) => Number(String(x).replace(',', '.'));
+    const h = /(\d+(?:[.,]\d+)?)\s*(?:h|std\.?|stunden?|hours?|hrs?)(?![a-z])/i.exec(s);
+    const m = /(\d+)(?:\s*[–-]\s*(\d+))?\s*(?:min|minuten|minutes|mins)(?![a-z])/i.exec(s);
+    const v = Math.round((h ? num(h[1]) * 60 : 0) + (m ? Math.max(num(m[1]), m[2] ? num(m[2]) : 0) : 0));
+    if (v > 0) return v;
+  }
+  return null;
+}
+
 /** The recipes, flattened for the desk and the loader. */
 function recipeBook() {
   const seen = new Set();
@@ -902,7 +966,7 @@ function recipeBook() {
       slug, name: String(r.name), placeholder: isPlaceholder(String(r.name)),
       servings: num(r.servings),
       kcal: num(ps.kcal), nutrients, co2e_kg: num(ps.co2e_kg), water_total_l: num(ps.water_total_l),
-      prep_minutes: num(r.prep_minutes), sample: !!r.sample,
+      prep_minutes: recipeMinutes(r), sample: !!r.sample,
       coverage: r.coverage || null,
     };
   });
@@ -1022,4 +1086,4 @@ module.exports = { load, watch, status, edit, templates, crewFigures, bike, bike
                    resourceLogRows, resourceLogCsv, LOG_FILE,
                    planStatus, savePlan, ensurePlan, reset, resetLocked, resetEpoch, inventoryStart, PLAN_DIR, PLAN_FILES,
                    PLACEHOLDER, BLOG_OFFICER, isPlaceholder, placeholderCue, placeholderPublic, placeholderFor,
-                   NUTRIENTS, mealNutrients, recipesFile, recipeBook, slugify, missionsFile, missionForDay, missionPlan, missionNo, crewOnShift };
+                   NUTRIENTS, mealNutrients, recipesFile, recipeBook, recipeMinutes, slugify, missionsFile, missionForDay, missionPlan, missionNo, crewOnShift, shiftDays, crewForDay, crewNow };

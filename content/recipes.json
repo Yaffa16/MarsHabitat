@@ -1,241 +1,436 @@
 {
-  "_note": "The recipe book for the food plan: what the Breakfast, Lunch and Dinner dropdowns on mission control's Habitat tab offer. Chili Non Carne and Pfannenbrot carry measured figures; the recipes marked \"sample\": true are invented placeholders — names, nutrients, CO2e, water footprint and prep time made up to fill the list — replace them with real ones here. Choosing a recipe fills the slot's name, kcal, prep time, nutrients, CO2e and water footprint (per serving); the slot keeps its own copy in meals.json. The dropdown's first option leaves the slot empty to be filled in by hand; that never adds a recipe. water_total_l is the water footprint, not water drunk; prep_minutes is minutes of preparation. This file is edited here only — mission control has no recipe editor.",
+  "_note": "The recipe book: what the Breakfast, Lunch and Dinner dropdowns — and an added meal's — on mission control's Habitat tab offer (12 October: the recipes' footprint export, rezept-fussabdruck, generated 12 October 2026, as it came — thirteen recipes, per serving). Choosing one fills the slot's name, kcal, prep time, the six nutrients, CO2e and water footprint (water_total_l is the water footprint, not water drunk); every field stays editable, and the slot keeps its own copy in meals.json, so changing a recipe here never rewrites a planned day. The prep time is read off times — total_minutes, else cook_minutes, else the minutes written in total or cook (\"0:20\" → 20, \"5min\" → 5, \"etwa 8–10 Minuten\" → 10) — and stays blank where the export gives none. coverage says for how much of each recipe's lines the figures were found. To change the book, replace this file with a new export of the same shape (this note may go or stay); a recipe a planned meal names (meals.json, \"recipe\") must stay in it under the same slug. Mission control has no recipe editor.",
+  "generated_at": "2026-10-12T08:33:03.362615Z",
+  "basis": "per_serving",
+  "recipe_count": 13,
   "recipes": [
+    {
+      "name": "Bohnen Schwarz-Weiss Salat mit Mais",
+      "slug": "bohnen-schwarz-weiss-salat-mit-mais",
+      "servings": 4,
+      "servings_known": true,
+      "times": {
+        "cook": null,
+        "cook_minutes": null,
+        "total": null,
+        "total_minutes": null
+      },
+      "per_serving": {
+        "kcal": 542.8,
+        "nutrients": {
+          "protein_g": 24.02,
+          "fat_g": 23.72,
+          "carb_g": 43.07,
+          "fiber_g": 26.52,
+          "sugar_g": 10.05,
+          "sodium_mg": 895.98
+        },
+        "co2e_kg": 0.5111,
+        "water_total_l": 1431.3
+      },
+      "coverage": {
+        "lines_total": 9,
+        "lines_with_mass": 9,
+        "kcal_pct": 100,
+        "co2e_pct": 77.8,
+        "water_pct": 77.8,
+        "is_complete": false
+      }
+    },
     {
       "name": "Chili Non Carne",
       "slug": "chili-non-carne",
+      "servings": 4,
+      "servings_known": true,
+      "times": {
+        "cook": "0:20",
+        "cook_minutes": 20,
+        "total": null,
+        "total_minutes": null
+      },
       "per_serving": {
         "kcal": 467.7,
         "nutrients": {
           "protein_g": 22.85,
           "fat_g": 16.55,
           "carb_g": 37.88,
-          "fiber_g": 20.0,
+          "fiber_g": 20,
           "sugar_g": 18.41,
           "sodium_mg": 1425.89
         },
-        "co2e_kg": 0.5351,
-        "water_total_l": 979.0
+        "co2e_kg": 0.5533,
+        "water_total_l": 979
       },
-      "prep_minutes": 45,
-      "sample": false
+      "coverage": {
+        "lines_total": 17,
+        "lines_with_mass": 17,
+        "kcal_pct": 100,
+        "co2e_pct": 88.2,
+        "water_pct": 94.1,
+        "is_complete": false
+      }
     },
     {
-      "name": "Pfannenbrot",
-      "slug": "pfannenbrot",
-      "servings": 10.0,
+      "name": "Daal – Rote Linsen Curry mit Kokosmilch",
+      "slug": "daal-rote-linsen-curry-mit-kokosmilch",
+      "servings": 4,
+      "servings_known": true,
+      "times": {
+        "cook": "0:30",
+        "cook_minutes": 30,
+        "total": null,
+        "total_minutes": null
+      },
       "per_serving": {
-        "kcal": 107.6,
+        "kcal": 622.2,
         "nutrients": {
-          "protein_g": 2.9,
-          "fat_g": 2.13,
-          "carb_g": 18.47,
-          "fiber_g": 1.49,
-          "sugar_g": 0.5,
-          "sodium_mg": 229.8
+          "protein_g": 23.55,
+          "fat_g": 33.97,
+          "carb_g": 44.33,
+          "fiber_g": 13.88,
+          "sugar_g": 8.12,
+          "sodium_mg": 154.31
         },
-        "co2e_kg": 0.0259,
-        "water_total_l": 55.7
+        "co2e_kg": 0.268,
+        "water_total_l": 853.5
+      },
+      "coverage": {
+        "lines_total": 14,
+        "lines_with_mass": 14,
+        "kcal_pct": 100,
+        "co2e_pct": 85.7,
+        "water_pct": 85.7,
+        "is_complete": false
+      }
+    },
+    {
+      "name": "Erdnussbutter Udon",
+      "slug": "erdnussbutter-udon",
+      "servings": 3,
+      "servings_known": true,
+      "times": {
+        "cook": null,
+        "cook_minutes": null,
+        "total": null,
+        "total_minutes": null
+      },
+      "per_serving": {
+        "kcal": 134.4,
+        "nutrients": {
+          "protein_g": 4.88,
+          "fat_g": 10.74,
+          "carb_g": 3.48,
+          "fiber_g": 1.37,
+          "sugar_g": 2.69,
+          "sodium_mg": 845.62
+        },
+        "co2e_kg": 0.038,
+        "water_total_l": 121.2
+      },
+      "coverage": {
+        "lines_total": 6,
+        "lines_with_mass": 6,
+        "kcal_pct": 100,
+        "co2e_pct": 83.3,
+        "water_pct": 100,
+        "is_complete": false
+      }
+    },
+    {
+      "name": "Frühstück Porridge",
+      "slug": "fruhstuck-porridge",
+      "servings": 3,
+      "servings_known": true,
+      "times": {
+        "cook": null,
+        "cook_minutes": null,
+        "total": "5min",
+        "total_minutes": null
+      },
+      "per_serving": {
+        "kcal": 181,
+        "nutrients": {
+          "protein_g": 5.76,
+          "fat_g": 3.42,
+          "carb_g": 28.81,
+          "fiber_g": 5.41,
+          "sugar_g": 6.69,
+          "sodium_mg": 2.52
+        },
+        "co2e_kg": 0.0429,
+        "water_total_l": 132.7
       },
       "coverage": {
         "lines_total": 7,
         "lines_with_mass": 7,
-        "kcal_pct": 100.0,
-        "co2e_pct": 85.7,
-        "water_pct": 85.7,
-        "is_complete": false
+        "kcal_pct": 100,
+        "co2e_pct": 100,
+        "water_pct": 100,
+        "is_complete": true
+      }
+    },
+    {
+      "name": "Abendessen Knäckebrot",
+      "slug": "dinner-knackebrot",
+      "servings": 3,
+      "servings_known": true,
+      "times": {
+        "cook": null,
+        "cook_minutes": null,
+        "total": null,
+        "total_minutes": null
       },
-      "prep_minutes": 20,
-      "sample": false
-    },
-    {
-      "name": "Oat Porridge with Dried Apple",
-      "slug": "oat-porridge-dried-apple",
-      "sample": true,
-      "prep_minutes": 10,
       "per_serving": {
-        "kcal": 385.0,
+        "kcal": 299.8,
         "nutrients": {
-          "protein_g": 11.2,
-          "fat_g": 7.4,
-          "carb_g": 66.3,
-          "fiber_g": 8.1,
-          "sugar_g": 14.9,
-          "sodium_mg": 95.0
+          "protein_g": 8.65,
+          "fat_g": 1.27,
+          "carb_g": 54.38,
+          "fiber_g": 18.25,
+          "sugar_g": 1.75,
+          "sodium_mg": 486.11
         },
-        "co2e_kg": 0.212,
-        "water_total_l": 310.0
+        "co2e_kg": 0.1236,
+        "water_total_l": 130.4
+      },
+      "coverage": {
+        "lines_total": 1,
+        "lines_with_mass": 1,
+        "kcal_pct": 100,
+        "co2e_pct": 100,
+        "water_pct": 100,
+        "is_complete": true
       }
     },
     {
-      "name": "Lentil and Tomato Stew",
-      "slug": "lentil-tomato-stew",
-      "sample": true,
-      "prep_minutes": 35,
+      "name": "Lasagnesuppe",
+      "slug": "lasagnesuppe",
+      "servings": 4,
+      "servings_known": true,
+      "times": {
+        "cook": null,
+        "cook_minutes": null,
+        "total": "etwa 8–10 Minuten",
+        "total_minutes": null
+      },
       "per_serving": {
-        "kcal": 512.4,
+        "kcal": 413.7,
         "nutrients": {
-          "protein_g": 27.6,
-          "fat_g": 9.8,
-          "carb_g": 74.2,
-          "fiber_g": 16.3,
-          "sugar_g": 9.7,
-          "sodium_mg": 780.5
+          "protein_g": 24.89,
+          "fat_g": 2.46,
+          "carb_g": 63.68,
+          "fiber_g": 18.1,
+          "sugar_g": 13.56,
+          "sodium_mg": 1455.52
         },
-        "co2e_kg": 0.418,
-        "water_total_l": 655.0
+        "co2e_kg": 0.3717,
+        "water_total_l": 1270.2
+      },
+      "coverage": {
+        "lines_total": 11,
+        "lines_with_mass": 11,
+        "kcal_pct": 81.8,
+        "co2e_pct": 90.9,
+        "water_pct": 72.7,
+        "is_complete": false
       }
     },
     {
-      "name": "Chickpea Flatbread with Hummus",
-      "slug": "chickpea-flatbread-hummus",
-      "sample": true,
-      "prep_minutes": 25,
+      "name": "Pfannenbrot",
+      "slug": "pfannenbrot",
+      "servings": 3,
+      "servings_known": true,
+      "times": {
+        "cook": null,
+        "cook_minutes": null,
+        "total": null,
+        "total_minutes": null
+      },
       "per_serving": {
-        "kcal": 448.9,
+        "kcal": 420.6,
         "nutrients": {
-          "protein_g": 17.3,
-          "fat_g": 15.2,
-          "carb_g": 58.6,
-          "fiber_g": 11.4,
-          "sugar_g": 3.8,
-          "sodium_mg": 640.2
+          "protein_g": 11.76,
+          "fat_g": 12.27,
+          "carb_g": 63.09,
+          "fiber_g": 4.69,
+          "sugar_g": 3.37,
+          "sodium_mg": 408.31
         },
-        "co2e_kg": 0.301,
-        "water_total_l": 402.0
+        "co2e_kg": 0.2566,
+        "water_total_l": 315.7
+      },
+      "coverage": {
+        "lines_total": 8,
+        "lines_with_mass": 7,
+        "kcal_pct": 87.5,
+        "co2e_pct": 75,
+        "water_pct": 75,
+        "is_complete": false
       }
     },
     {
-      "name": "Rice, Beans and Preserved Greens",
-      "slug": "rice-beans-greens",
-      "sample": true,
-      "prep_minutes": 30,
+      "name": "Pfannkuchen ohne Ei und Milch",
+      "slug": "pfannkuchen-ohne-ei-und-milch",
+      "servings": 2,
+      "servings_known": true,
+      "times": {
+        "cook": null,
+        "cook_minutes": null,
+        "total": null,
+        "total_minutes": null
+      },
       "per_serving": {
-        "kcal": 598.3,
+        "kcal": 529,
         "nutrients": {
-          "protein_g": 21.4,
-          "fat_g": 8.1,
-          "carb_g": 106.7,
-          "fiber_g": 14.9,
-          "sugar_g": 4.2,
-          "sodium_mg": 520.8
+          "protein_g": 15.7,
+          "fat_g": 1.4,
+          "carb_g": 109.38,
+          "fiber_g": 7.95,
+          "sugar_g": 0.46,
+          "sodium_mg": 951.1
         },
-        "co2e_kg": 0.566,
-        "water_total_l": 1120.0
+        "co2e_kg": 0.1306,
+        "water_total_l": 283.6
+      },
+      "coverage": {
+        "lines_total": 6,
+        "lines_with_mass": 6,
+        "kcal_pct": 100,
+        "co2e_pct": 66.7,
+        "water_pct": 66.7,
+        "is_complete": false
       }
     },
     {
-      "name": "Potato and Pea Curry",
-      "slug": "potato-pea-curry",
-      "sample": true,
-      "prep_minutes": 40,
+      "name": "Pilzrisotto DM",
+      "slug": "pilzrisotto-dm",
+      "servings": 3,
+      "servings_known": true,
+      "times": {
+        "cook": "0:25",
+        "cook_minutes": 25,
+        "total": null,
+        "total_minutes": null
+      },
       "per_serving": {
-        "kcal": 472.6,
+        "kcal": 186.3,
         "nutrients": {
-          "protein_g": 13.9,
-          "fat_g": 14.6,
-          "carb_g": 70.3,
-          "fiber_g": 12.2,
-          "sugar_g": 8.8,
-          "sodium_mg": 890.4
+          "protein_g": 1,
+          "fat_g": 18.5,
+          "carb_g": 2.93,
+          "fiber_g": 0.87,
+          "sugar_g": 2.91,
+          "sodium_mg": 458.41
         },
-        "co2e_kg": 0.344,
-        "water_total_l": 287.0
+        "co2e_kg": 0.0683,
+        "water_total_l": 275.4
+      },
+      "coverage": {
+        "lines_total": 7,
+        "lines_with_mass": 7,
+        "kcal_pct": 85.7,
+        "co2e_pct": 57.1,
+        "water_pct": 42.9,
+        "is_complete": false
       }
     },
     {
-      "name": "Barley and Mushroom Risotto",
-      "slug": "barley-mushroom-risotto",
-      "sample": true,
-      "prep_minutes": 45,
+      "name": "Reis als Beilage im Kochsack",
+      "slug": "reis-als-beilage-im-kochsack",
+      "servings": 3,
+      "servings_known": true,
+      "times": {
+        "cook": null,
+        "cook_minutes": null,
+        "total": null,
+        "total_minutes": null
+      },
       "per_serving": {
-        "kcal": 436.2,
+        "kcal": 175.5,
         "nutrients": {
-          "protein_g": 12.8,
-          "fat_g": 10.9,
-          "carb_g": 70.1,
-          "fiber_g": 13.6,
-          "sugar_g": 3.1,
-          "sodium_mg": 710.0
+          "protein_g": 3.97,
+          "fat_g": 0.31,
+          "carb_g": 38.55,
+          "fiber_g": 1.25,
+          "sugar_g": 0.14,
+          "sodium_mg": 7.88
         },
-        "co2e_kg": 0.389,
-        "water_total_l": 498.0
+        "co2e_kg": 0.155,
+        "water_total_l": 79.8
+      },
+      "coverage": {
+        "lines_total": 3,
+        "lines_with_mass": 3,
+        "kcal_pct": 100,
+        "co2e_pct": 66.7,
+        "water_pct": 66.7,
+        "is_complete": false
       }
     },
     {
-      "name": "Peanut Noodles with Sprouts",
-      "slug": "peanut-noodles-sprouts",
-      "sample": true,
-      "prep_minutes": 20,
+      "name": "Süßkartoffel Daal",
+      "slug": "susskartoffel-daal",
+      "servings": 4,
+      "servings_known": true,
+      "times": {
+        "cook": null,
+        "cook_minutes": null,
+        "total": null,
+        "total_minutes": null
+      },
       "per_serving": {
-        "kcal": 561.7,
+        "kcal": 489.9,
         "nutrients": {
-          "protein_g": 20.5,
-          "fat_g": 22.3,
-          "carb_g": 69.4,
-          "fiber_g": 7.8,
-          "sugar_g": 9.6,
-          "sodium_mg": 1105.3
+          "protein_g": 17.72,
+          "fat_g": 13.22,
+          "carb_g": 66.09,
+          "fiber_g": 11.81,
+          "sugar_g": 12.74,
+          "sodium_mg": 692.73
         },
-        "co2e_kg": 0.452,
-        "water_total_l": 733.0
+        "co2e_kg": 0.1024,
+        "water_total_l": 485.6
+      },
+      "coverage": {
+        "lines_total": 12,
+        "lines_with_mass": 12,
+        "kcal_pct": 100,
+        "co2e_pct": 75,
+        "water_pct": 75,
+        "is_complete": false
       }
     },
     {
-      "name": "Black Bean Soup",
-      "slug": "black-bean-soup",
-      "sample": true,
-      "prep_minutes": 30,
+      "name": "Vegane Bolognese",
+      "slug": "vegane-bolognese",
+      "servings": 3,
+      "servings_known": true,
+      "times": {
+        "cook": null,
+        "cook_minutes": null,
+        "total": null,
+        "total_minutes": null
+      },
       "per_serving": {
-        "kcal": 398.5,
+        "kcal": 741.5,
         "nutrients": {
-          "protein_g": 22.1,
-          "fat_g": 5.3,
-          "carb_g": 63.9,
-          "fiber_g": 18.7,
-          "sugar_g": 5.4,
-          "sodium_mg": 960.1
+          "protein_g": 38.67,
+          "fat_g": 23.43,
+          "carb_g": 85.72,
+          "fiber_g": 14.5,
+          "sugar_g": 18.65,
+          "sodium_mg": 1376.05
         },
-        "co2e_kg": 0.276,
-        "water_total_l": 574.0
-      }
-    },
-    {
-      "name": "Millet with Roasted Root Vegetables",
-      "slug": "millet-root-vegetables",
-      "sample": true,
-      "prep_minutes": 40,
-      "per_serving": {
-        "kcal": 452.3,
-        "nutrients": {
-          "protein_g": 11.6,
-          "fat_g": 11.8,
-          "carb_g": 74.8,
-          "fiber_g": 9.9,
-          "sugar_g": 10.2,
-          "sodium_mg": 410.6
-        },
-        "co2e_kg": 0.237,
-        "water_total_l": 366.0
-      }
-    },
-    {
-      "name": "Soy Protein Scramble",
-      "slug": "soy-protein-scramble",
-      "sample": true,
-      "prep_minutes": 15,
-      "per_serving": {
-        "kcal": 342.8,
-        "nutrients": {
-          "protein_g": 29.4,
-          "fat_g": 17.1,
-          "carb_g": 16.2,
-          "fiber_g": 5.6,
-          "sugar_g": 2.9,
-          "sodium_mg": 690.3
-        },
-        "co2e_kg": 0.198,
-        "water_total_l": 241.0
+        "co2e_kg": 0.5017,
+        "water_total_l": 499.8
+      },
+      "coverage": {
+        "lines_total": 13,
+        "lines_with_mass": 13,
+        "kcal_pct": 100,
+        "co2e_pct": 84.6,
+        "water_pct": 84.6,
+        "is_complete": false
       }
     }
   ]

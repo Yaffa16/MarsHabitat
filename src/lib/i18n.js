@@ -106,6 +106,10 @@ const D = {
   'Report::tab': ['Bericht', 'Rapport'],
   'Signal travel time': ['Signallaufzeit', 'Temps de trajet du signal'],
   'Every screen is dark and in German unless its address says otherwise:': ['Jeder Bildschirm ist dunkel und auf Deutsch, wenn seine Adresse nichts anderes sagt:', 'Chaque écran est sombre et en allemand sauf si son adresse dit autre chose :'],
+  'What the site keeps live stays live on the screen; a screen reloads itself only when the station is started anew, and at midnight, when the sol turns.': ['Was die Website live hält, bleibt auf dem Bildschirm live; ein Bildschirm lädt sich nur neu, wenn die Station neu gestartet wird, und um Mitternacht, wenn der Sol wechselt.', 'Ce que le site garde en direct reste en direct à l’écran ; un écran ne se recharge que lorsque la station est redémarrée, et à minuit, quand le sol change.'],
+  // the screens drawn light (12 October; views/pages/screens.js — ?fx=1 for the effects)
+  'Every screen is drawn light, for a computer with little graphics power: still, with nothing blurred or glowing, a page at a time where there is more than fits.': ['Jeder Bildschirm wird leicht gezeichnet, für einen Rechner mit wenig Grafikleistung: ruhig, nichts unscharf oder leuchtend, Seite für Seite, wo mehr da ist, als passt.', 'Chaque écran est dessiné léger, pour un ordinateur peu puissant en graphisme : immobile, sans flou ni halo, page par page là où il y a plus que ce qui tient.'],
+  'brings the movement and the effects back, for a screen whose computer has the graphics for them.': ['bringt die Bewegung und die Effekte zurück, für einen Bildschirm, dessen Rechner die Grafik dafür hat.', 'rétablit le mouvement et les effets, pour un écran dont l’ordinateur a la puissance graphique nécessaire.'],
   'Connecting to the livestream…': ['Verbindung zum Livestream …', 'Connexion au direct…'],
   'The livestream is not on air right now — it comes back by itself.': ['Der Livestream ist gerade nicht auf Sendung – er kommt von selbst zurück.', 'Le direct n’est pas à l’antenne pour l’instant – il revient de lui-même.'],
   'This screen’s browser cannot play the livestream.': ['Der Browser dieses Bildschirms kann den Livestream nicht abspielen.', 'Le navigateur de cet écran ne peut pas lire le direct.'],
@@ -866,6 +870,9 @@ const D = {
   'More-than-Human': ['More-than-Human', 'More-than-Human'],
   'Science Mission': ['Wissenschaftsmission', 'Mission scientifique'],
   'Living Quarters': ['Wohnquartier', 'Quartiers d’habitation'],
+  // 12 October: the crew's room is Living, the living quarters the Nap pods
+  'Living': ['Wohnbereich', 'Espace de vie'],
+  'Nap pods': ['Schlafkapseln', 'Capsules de sieste'],
   'Water Recycling': ['Wasserrecycling', 'Recyclage de l’eau'],
   'Electricity': ['Elektrizität', 'Électricité'],
   'Going Outside': ['Nach draußen', 'Sortir dehors'],
@@ -1170,7 +1177,8 @@ const D = {
     ['MARS! macht den Karlsruher Marktplatz zum MARS!platz. Können wir zum Mars fliegen, um die Erde zu retten? Drei Astronautinnen und Astronauten finden es heraus – und du kannst helfen! Schreib ihnen eine Nachricht, wirf einen Blick auf das Missions-Dashboard, um zu sehen, ob ihre Lebensmittelvorräte knapp werden, oder schau, was sie gerade erforschen.',
      'MARS! transforme la Marktplatz de Karlsruhe en MARS!platz. Peut-on aller sur Mars pour sauver la Terre ? Trois astronautes cherchent la réponse, et vous pouvez les aider ! Écrivez-leur un message, jetez un œil au tableau de bord de la mission pour savoir si leurs réserves de nourriture s’épuisent ou voyez ce qu’ils étudient en ce moment.'],
   'Write to the crew, or follow them': ['Schreib der Crew oder folge ihr', 'Écrivez à l’équipage, ou suivez-le'],
-  // ---- A sol on MARS!platz (src/views/pages/sol.js): the About page's day on a rail
+  // ---- A sol on MARS!platz (src/views/pages/sol.js): the About page's day on a rail — off the page since 12 October,
+  // kept with solFold
   'A sol on MARS!platz': ['Ein Sol auf dem MARS!platz', 'Un sol sur la MARS!platz'],
   'The day in the habitat, activity by activity — from breakfast to lights out': ['Der Tag im Habitat, Aktivität für Aktivität — vom Frühstück bis Lights-out', 'La journée dans l’habitat, activité par activité — du petit-déjeuner à l’extinction des feux'],
   'The typical sol, as every day of the run is planned': ['Der typische Sol, wie jeder Tag des Laufs geplant ist', 'Le sol type, tel que chaque journée de la mission est prévue'],
@@ -1178,6 +1186,10 @@ const D = {
   'Today’s crew': ['Die Crew heute', 'L’équipage aujourd’hui'],
   'The three roles': ['Die drei Rollen', 'Les trois rôles'],
   'to be named': ['noch offen', 'à désigner'],
+  // Current Crew (12 October; info.js, sol.js crewBox, landing.js crewNow) — its title, and the line under it while the
+  // plan names nobody (whose crew it is — The first day's crew, In the habitat now — is no longer said: 12 October)
+  'Current Crew': ['Aktuelle Crew', 'Équipage actuel'],
+  'The crew is not named yet': ['Die Crew ist noch nicht benannt', 'L’équipage n’est pas encore nommé'],
   'Science': ['Wissenschaft', 'Science'],
   'EVA': ['EVA', 'EVA'],
   'Health': ['Gesundheit', 'Santé'],

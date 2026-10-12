@@ -1,0 +1,21 @@
+{
+  "name": "MARS!platz – Ground Station",
+  "short_name": "MARS!platz",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "theme_color": "#1a1a1d",
+  "background_color": "#1a1a1d",
+  "display": "standalone"
+}

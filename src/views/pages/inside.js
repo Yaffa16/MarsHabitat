@@ -7,7 +7,8 @@
  * each a stack of pictures: the Mars plain, the geodesic dome, and the
  * thirteen modules under it, each in its own box): the dome on the plain
  * drawn in its white lines (public/habitat/scene-lines.webp, the line-art
- * stack composed, 1536 × 1024), and **every module a key**: under the hand
+ * stack composed, 1536 × 1024), and **every module a key** (all but two since
+ * 12 October — Storage and the Equipment Lockers are lines only): under the hand
  * the module shows itself in colour — its cut-out of the coloured picture
  * (public/habitat/modules/<id>.webp, cut at twice the size for sharpness)
  * comes in over its lines, a bright sweep crosses it once, its name comes
@@ -47,7 +48,9 @@ const MODULE_PICS = '/habitat/modules/';      // the modules in colour, one cut-
    picture's coordinates — the line-art file's layer, trimmed where two overlapped), its name (the file's layer name),
    the fields of dome.js figures() whose live sentences it carries (fig), what it is (about — the words the dome's keys
    and the earlier drawing carried, where there are any) and the panel of the dashboard it leads to (href). A module with
-   no sentences of its own (the lockers) lights up and is named, and opens nothing. */
+   no sentences of its own would light up and be named, and open nothing. 12 October: the crew's room is Living, the
+   living quarters are the Nap pods ("replace Crew with Living, rename Living Quarters to Nap pods"), and Storage and the
+   Equipment Lockers are keys no more — eleven modules. */
 const ROOMS = [
   { id: 'hydroponics', label: 'More-than-Human', href: '/dashboard#stores', btn: 'Open the Resources', fig: ['aeroponics-text', 'aeroponics-more'], rect: [270, 346, 325, 147],
     about: ['The habitat’s other astronauts: live crickets performing as our alternate protein source, a robot dog as an astronaut’s best friend and helper for space walks and an emotional support robot assisting in our mental health — and the gardens and hydroponic shelves, where fresh food can grow without soil.'] },
@@ -59,14 +62,13 @@ const ROOMS = [
   { id: 'airlock', label: 'Airlock', href: '/dashboard#schedule', btn: 'Open the Daily Schedule', fig: ['eva-text', 'eva-more'], rect: [102, 493, 109, 177],
     about: ['Going outside on Mars requires space suits and passing through an air lock. An EVA — extra-vehicular activity — is the crew’s daily walk on the Mars landscape of Karlsruhe’s Marktplatz at 16:00. Its mission is connected to the science mission of the day.'] },
   { id: 'kitchen', label: 'Kitchen', href: '/dashboard#galley', fig: ['kitchen-text', 'kitchen-more'], rect: [211, 493, 278, 177], about: [] },
-  { id: 'storage', label: 'Storage', href: '/dashboard#stores', fig: ['recycling-text', 'aeroponics-text'], rect: [489, 493, 89, 177],
-    about: ['Everything was carried in and nothing is resupplied: water, rations, medical kits, extinguishers. Used water passes through the recycling loop; the crew count the stores each evening.'] },
-  { id: 'lounge', label: 'Crew', href: '/media', btn: 'Open the Media Gallery', fig: ['crew-more'], rect: [578, 493, 335, 187],
+  // (Storage stood here, and Equipment Lockers on the ground floor, until 12 October: "remove Equipment Lockers, remove
+  // Storage" — their lines stay in the drawing, but they are no keys and carry no name)
+  { id: 'lounge', label: 'Living', href: '/media', btn: 'Open the Media Gallery', fig: ['crew-more'], rect: [578, 493, 335, 187],
     about: ['Three astronauts from ZKM — Commander/Comms, Health Officer, and Science Officer — have volunteered to lead this experiment and are now stationed in the Red Dust City Habitat, each with their own role and responsibilities. You can check what they’re doing in the livestream gallery, see their moods and find out more about their daily duties.'] },
-  { id: 'quarters', label: 'Living Quarters', href: '/dashboard#crew', btn: 'Open Crew Moods', fig: ['crew-text'], rect: [913, 493, 238, 178],
+  { id: 'quarters', label: 'Nap pods', href: '/dashboard#crew', btn: 'Open Crew Moods', fig: ['crew-text'], rect: [913, 493, 238, 178],
     about: ['Each day has a strict schedule the astronauts adhere to and the Habitat is divided into specific zones for working, cooking, playing and sleeping — because going out for a stroll requires serious effort. Have a look in the media gallery or look inside our windows on the MARS!platz to see how we are using the space.'] },
   { id: 'health', label: 'Health Station', href: '/dashboard#crew', fig: ['health-text', 'health-more'], rect: [1151, 493, 288, 178], about: [] },
-  { id: 'lockers', label: 'Equipment Lockers', href: null, fig: [], rect: [46, 666, 149, 164], about: [] },
   { id: 'recycling', label: 'Water Recycling', href: '/dashboard#stores', btn: 'Open the Resources', fig: ['recycling-text', 'recycling-more'], rect: [195, 670, 420, 165],
     about: ['When every liter of water has to be carried up by space rocket, we become more mindful of our usage. Our water recycling system is one of the things we brought to reflect on resources and how we are currently treating them on Earth.'] },
   { id: 'cycle', label: 'Cycle (Power Generation)', href: '/dashboard#bike', btn: 'Open the Power generated', fig: ['generator-text', 'generator-more'], rect: [904, 680, 191, 155],

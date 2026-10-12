@@ -111,9 +111,10 @@
     function fit() {
       var s = seq.getBoundingClientRect(), d = shell.getBoundingClientRect();
       if (!s.width || !d.width) return;
-      var r = d.width / 2;
-      seq.style.setProperty('--orb-x', Math.round(d.left - s.left + r) + 'px');
-      seq.style.setProperty('--orb-base', Math.round(d.top - s.top + r) + 'px');
+      var z = seq.offsetWidth ? s.width / seq.offsetWidth : 1;            // (the zoom a screen shows it at: measured zoomed, set unzoomed)
+      var r = d.width / 2 / z;
+      seq.style.setProperty('--orb-x', Math.round((d.left - s.left) / z + r) + 'px');
+      seq.style.setProperty('--orb-base', Math.round((d.top - s.top) / z + r) + 'px');
       seq.style.setProperty('--orb-r', Math.round(r) + 'px');
     }
     fit();
@@ -402,7 +403,13 @@
   // one goes, its place comes free) — nothing is ever laid over anything else. Nothing moves: each fades in, stands,
   // and fades out.
   var held = [], lately = [];
-  function box(el) { var r = el.getBoundingClientRect(), k = sky.getBoundingClientRect(); return { x: r.left - k.left, y: r.top - k.top, w: r.width, h: r.height }; }
+  // (in the sky's own pixels, the ones its places are set in: on the installation's landing screen the piece is zoomed
+  // to fit the screen — screen.js — and the browser measures what it shows, zoomed; measured unzoomed, a line or a
+  // snapshot would stand a zoom's worth off its place, over the line — 12 October)
+  function box(el) {
+    var r = el.getBoundingClientRect(), k = sky.getBoundingClientRect(), z = sky.offsetWidth && k.width ? k.width / sky.offsetWidth : 1;
+    return { x: (r.left - k.left) / z, y: (r.top - k.top) / z, w: r.width / z, h: r.height / z };
+  }
   // the discs, in the sky's own coordinates: a disc's centre is its box's, a half disc's the middle of its box's foot;
   // its radius half the box's width, or the part of it the page gives (data-r — the Earth's air reaches past its globe)
   // (the globe's radius from its laid-out width, not its box: on a desk the Earth is turned about the globe's centre,

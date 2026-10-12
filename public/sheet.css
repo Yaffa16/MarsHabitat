@@ -911,6 +911,50 @@ body.landing .consent-signal { left: 50%; top: 50%; bottom: auto; transform: tra
   body.landing .sheet-p4 { margin-top: 52px; }
 }
 
+/* ====================================================================== the crew, over the two calls (landing.js, crewNow) */
+/* Current Crew on the second page, over the two calls (12 October: "add the current crew images on the landing page …
+   place it above these two boxes"): a card as wide as the two calls under it — over its title the line that says whose
+   crew it is (the first day's before the run, the shift's during it), then the three roles, each with the photograph of
+   the astronaut in it in a round frame and their name under the role; the robot dog's picture for someone the station
+   has no portrait of (sol.js, crewList — the About page's Current Crew). On a phone (here) the card as narrow as the calls
+   under it, its words over the three, one under the other; on a desk (below) the three across, the words over them, and
+   on a wide desk the words at the card's left. */
+body.landing .land-crew { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; box-sizing: border-box; width: 100%; max-width: 340px; margin: 0 auto 16px; padding: 14px 18px 16px;
+  background: var(--glass); border: 1px solid var(--glass-edge); box-shadow: var(--glass-shadow); border-radius: var(--r-lg); color: var(--ink); }
+body.landing .land-crew-head { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; text-align: center; }
+body.landing .land-crew-k { font-family: var(--display); font-size: 10.5px; font-weight: 600; line-height: 1.35; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
+body.landing .land-crew-title { margin: 0; font-family: var(--display); font-size: 20px; line-height: 1.1; font-weight: 600; letter-spacing: -.022em; color: var(--ink); text-wrap: balance; }
+body.landing .land-crew-when { margin: 0; font-size: 13px; line-height: 1.35; color: var(--dim); text-wrap: balance; }
+body.landing .land-crew .crew-now-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; justify-self: center; }
+body.landing .land-crew .crew-now-officer { display: flex; align-items: center; gap: 14px; min-width: 0; }
+body.landing .land-crew .crew-now-officer img { flex: none; width: 52px; height: 52px; border-radius: 50%; object-fit: cover; object-position: 50% 18%; background: #101012;
+  box-shadow: 0 0 0 2px var(--neu-1, var(--paper)), 0 0 0 3px rgba(var(--cobalt-rgb), .35); }
+body.landing .land-crew .crew-now-officer.is-robodog img { object-position: 50% 34%; }
+body.landing .land-crew .sol-officer-who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+body.landing .land-crew .sol-officer-who b { font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
+body.landing .land-crew .sol-officer-who span { font-family: var(--display); font-size: 16px; line-height: 1.2; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+body.landing .land-crew .crew-now-officer.is-open .sol-officer-who span { color: var(--faint); font-weight: 500; }   /* a role the plan names nobody in */
+body.landing .land-crew .sol-officer-who .nb { white-space: nowrap; }                                              /* a surname whole: Matthieu / Vlaminck-Maurer */
+/* (on a desk the card's sizes follow the window's height, as the calls' under it do — so that the crew and the two calls
+   stand in one window together: below, *the second page on a desk*) */
+@media (min-width: 761px) and (min-height: 521px) {
+  body.landing .land-crew { max-width: none; margin: 0 0 clamp(12px, 2.4vh, 30px); padding: clamp(12px, 2.2vh, 24px) clamp(22px, 2vw, 34px); gap: clamp(10px, 1.8vh, 18px) 44px; }
+  body.landing .land-crew-head { align-items: flex-start; gap: 6px; text-align: left; }
+  body.landing .land-crew-k { font-size: clamp(11px, 1.3vh, 12px); }
+  body.landing .land-crew-title { font-size: clamp(20px, 3vh, 30px); }
+  body.landing .land-crew-when { font-size: 14.5px; }
+  body.landing .land-crew .crew-now-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 28px; justify-self: stretch; }
+  body.landing .land-crew .crew-now-officer { gap: 16px; }
+  body.landing .land-crew .crew-now-officer img { width: clamp(50px, 8.6vh, 84px); height: clamp(50px, 8.6vh, 84px); box-shadow: 0 0 0 3px var(--neu-1, var(--paper)), 0 0 0 4px rgba(var(--cobalt-rgb), .35); }
+  body.landing .land-crew .sol-officer-who { gap: 4px; }
+  body.landing .land-crew .sol-officer-who b { font-size: clamp(10.5px, 1.3vh, 11.5px); }
+  body.landing .land-crew .sol-officer-who span { font-size: clamp(16px, min(1.35vw, 2.2vh), 21px); }
+}
+@media (min-width: 1180px) and (min-height: 521px) {
+  body.landing .land-crew { grid-template-columns: auto minmax(0, 1fr); align-items: center; }
+  body.landing .land-crew-head { max-width: 250px; }
+}
+
 /* ====================================================================== the two calls (landing.js, calls) */
 /* Right after the room: two doors side by side, each a large card with a drawing across its whole width and its words
    under it, the whole card the door — SEND A MESSAGE TO THE CREW in Mars, with the thing to know, that approved messages
@@ -982,34 +1026,28 @@ body.landing .call-key.is-write { background: linear-gradient(180deg, #ff8a3d, #
 :root[data-theme="dark"] body.landing .call-key.is-write { color: #1a0a02; }
 body.landing .call:hover .call-key { filter: brightness(1.08); transform: translateX(2px); }
 @media (min-width: 761px) and (min-height: 521px) {
-  /* the second page on a desk: the two calls side by side, large, in the middle of the page (the note that stood at their
-     left is gone — October asked for the box to go); each drawing across its card's whole width, the words under it at
-     the left, set large (8 October: "increase the size of the two boxes … text clearly readable") */
-  body.landing .sheet-p2 { padding: 28px 0 32px; margin-top: 34px; }   /* (the gap: the room's foot and shadow behind the header where the page stops — see the phone's) */
+  /* the second page on a desk: the day's crew over the two calls, the calls side by side in the middle of the page (the
+     note that stood at their left is gone — October asked for the box to go), each card's words under its drawing at the
+     left — and the whole of it in one window (12 October: "on desktop reduce the size of these two buttons, 01 Transmit
+     and 02 Live Feed, to fit all three things properly on one screen — the Current Crew, Transmit and Live Feed"): the
+     drawings, the type, the key and the gaps follow the window's height — a drawing a seventh of it high, centred in its
+     card's width — so that the crew and the two calls stand between the header and the window's foot from a laptop's
+     650 px or so up, and a taller window shows them larger (until 12 October they were set by the width alone, 8 October:
+     "increase the size of the two boxes … text clearly readable", and a laptop's window cut the second call off) */
+  body.landing .sheet-p2 { padding: clamp(10px, 2.2vh, 28px) 0 clamp(12px, 2.6vh, 32px); margin-top: 34px; }   /* (the gap: the room's foot and shadow behind the header where the page stops — see the phone's) */
   body.landing .page2 { width: 100%; max-width: 1600px; margin: 0 auto; }   /* the two calls, centred, as wide as the page's column */
   body.landing .calls { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px; max-width: none; margin: 0; }
-  body.landing .call { padding: 30px 34px 32px; }
+  body.landing .call { padding: clamp(14px, 2.4vh, 28px) clamp(22px, 2vw, 32px) clamp(16px, 2.6vh, 30px); }
   body.landing .call-text { align-items: flex-start; text-align: left; }
-  body.landing .call-art { margin: 0 0 20px; }
-  body.landing .call-k { font-size: 13px; }
-  body.landing .call-livepill { font-size: 11.5px; }
-  body.landing .call-title { margin-top: 10px; font-size: clamp(28px, 2.4vw, 36px); }
-  body.landing .call-punch { margin-top: 12px; font-size: 19px; }
-  body.landing .call-write .call-punch { margin-top: 12px; }
-  body.landing .call-beam { font-size: clamp(24px, 2.05vw, 31px); max-width: 24ch; }
-  body.landing .call-body { margin-top: 12px; max-width: 54ch; font-size: clamp(16px, 1.25vw, 18.5px); line-height: 1.55; }
-  body.landing .call-text > :nth-last-child(2) { margin-bottom: 24px; }
-  body.landing .call-key { min-height: 52px; padding: 0 22px 0 24px; font-size: 16.5px; }
-}
-/* a desk window too short for the cards as set above: the gaps closer, so the page still stands in one window (the
-   drawings keep the cards' whole width) */
-@media (min-width: 761px) and (min-height: 521px) and (max-height: 860px) {
-  body.landing .sheet-p2 { padding: 18px 0 22px; }
-  body.landing .call { padding: 24px 30px 26px; }
-  body.landing .call-art { margin: 0 0 14px; }
-  body.landing .call-title { margin-top: 8px; }
-  body.landing .call-text > :nth-last-child(2) { margin-bottom: 18px; }
-  body.landing .call-key { min-height: 48px; }
+  body.landing .call-art { height: clamp(72px, 14.5vh, 190px); aspect-ratio: auto; margin: 0 0 clamp(8px, 1.6vh, 18px); }
+  body.landing .call-k { font-size: clamp(11px, 1.45vh, 13px); }
+  body.landing .call-livepill { font-size: clamp(10px, 1.3vh, 11.5px); }
+  body.landing .call-title { margin-top: clamp(4px, .8vh, 10px); font-size: clamp(20px, 3.3vh, 34px); }
+  body.landing .call-punch, body.landing .call-write .call-punch { margin-top: clamp(4px, .9vh, 12px); font-size: 17px; }
+  body.landing .call-beam { font-size: clamp(16px, 2.7vh, 29px); max-width: 26ch; }
+  body.landing .call-body { margin-top: clamp(4px, .9vh, 12px); max-width: 56ch; font-size: clamp(13.5px, 1.9vh, 17.5px); line-height: 1.5; }
+  body.landing .call-text > :nth-last-child(2) { margin-bottom: clamp(10px, 2vh, 22px); }
+  body.landing .call-key { min-height: clamp(36px, 5.4vh, 50px); padding: 0 20px 0 22px; font-size: clamp(14px, 1.8vh, 16px); }
 }
 @media (max-width: 760px) and (min-height: 521px) {
   /* the two calls on a phone, smaller and in the middle (8 October: "on mobile the two boxes … are too big: centre them
