@@ -1,8 +1,9 @@
 'use strict';
 /**
- * (12 October: "from About remove A sol on MARS!platz" — the section is gone from the About page, info.js; solFold
- * below is kept, unused, should the run want it back. What this file serves now is Current Crew: crewBox, crewList,
- * crewWhen and the crew's portraits, CREW, for the About page and the landing page.)
+ * (12 October: "from About remove A sol on MARS!platz", then "remove Current Crew from About" — both are gone from the
+ * About page, info.js; solFold, crewBox and crewWhen below are kept, unused, should the run want them back. What this
+ * file serves now is the landing page's Current Crew — crewList and crewWhenParts — and the crew's portraits, CREW, for
+ * the landing page and the About page's Who we are.)
  *
  * A sol on MARS!platz — the About page's section under What's inside the
  * habitat? (October, 7 October: "add a part: A sol on MARS!platz … depending
@@ -42,8 +43,8 @@ const ROLES = ['COMMUNICATION OFFICER', 'HEALTH OFFICER', 'SCIENCE OFFICER'];   
 /* The crew's portraits — public/crew, made by tools/crew-pictures.py from the photographs in public/Astronaut_Pictures
    (Firstname_Lastname.jpg): one picture per person at 800 × 1200, and crew.json, the people in the order of their
    surnames with the two names as the file names give them, then the crew with one name (the habitat's robot dog,
-   Robodog). Read here once at start: the About page (info.js — Current Crew, Who we are) and the
-   landing page's second page (landing.js — Current Crew over the two calls) show them. */
+   Robodog). Read here once at start: the About page (info.js — Who we are) and the landing page's second page
+   (landing.js — Current Crew over the two calls) show them. */
 const CREW = (() => {
   try { return JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../../../public/crew/crew.json'), 'utf8')).filter((x) => x && x.file && (x.last || x.first)); }
   catch { return []; }
@@ -177,15 +178,18 @@ function solFold(ctx, { today = null, crew = [] } = {}) {
 }
 
 /**
- * Current Crew — on the About page between What's inside the habitat and Who we are (12 October: "add a title, Current
- * Crew: in it show the Three Roles box from A sol on MARS!platz, without the key; instead of the C, H, S display the photo
- * of the astronaut according to who is in there that day and in what role; for any photos that do not exist show the
- * robot dog"; at first at the top of the page, then moved above A sol on MARS!platz the same day, which then went), and
- * on the landing page over the two calls (landing.js): the three roles, each with the photograph of the astronaut the shift plan puts in it for the day
+ * Current Crew — on the landing page over the two calls (landing.js). It began on the About page (12 October: "add a
+ * title, Current Crew: in it show the Three Roles box from A sol on MARS!platz, without the key; instead of the C, H, S
+ * display the photo of the astronaut according to who is in there that day and in what role; for any photos that do not
+ * exist show the robot dog"), at the top, then above A sol on MARS!platz, then between the habitat and Who we are — and
+ * went from there the same day ("remove Current Crew from About"): the three roles, each with the photograph of the astronaut the shift plan puts in it for the day
  * `onShift` holds (content.crewNow — before the run the first day's) and their name; the robot dog's picture for someone
  * the station has no portrait of, and for a role the plan names nobody in (then "to be named"). crewList is the three;
- * crewBox, the About page's box of them under its eyebrow — three across on a desk, one under the other on a phone
- * (aura.css, .crew-now). The pictures load as they come near (loading="lazy": neither page opens on them).
+ * crewBox, the About page's box of them under its eyebrow while it was there — three across on a desk, one under the
+ * other on a phone (aura.css, .crew-now) — unused now. The pictures load as they come near (loading="lazy"). They are the
+ * round pictures' own close-ups, public/crew/face/<file> (12 October: "when the images are shown as icons, it scales
+ * weirdly" — one square cut of every photograph had put each face elsewhere): each cut round its face, every face the
+ * same size at the same height, 400 × 400 (tools/crew-pictures.py, FACES).
  */
 function crewList(ctx, { crew = [], onShift = {} } = {}) {
   const T = ctx.T;
@@ -195,7 +199,7 @@ function crewList(ctx, { crew = [], onShift = {} } = {}) {
     const p = personOf(crew, onShift[role]);
     return `
         <li class="crew-now-officer${p ? (p.photo ? '' : ' is-robodog') : ' is-robodog is-open'}">
-          <img src="/crew/${esc(p ? p.file : ROBODOG)}" alt="" width="200" height="300" loading="lazy" decoding="async">
+          <img src="/crew/face/${esc(p ? p.file : ROBODOG)}" alt="" width="400" height="400" loading="lazy" decoding="async">
           <span class="sol-officer-who"><b>${esc(roleName(T, role))}</b><span>${p ? named(p.name) : esc(T('to be named'))}</span></span>
         </li>`;
   }).join('');
@@ -213,8 +217,8 @@ function crewBox(ctx, opts = {}) {
 /** Whose crew Current Crew shows: before the run the first day's, during it the shift's (from 08:00 at the venue), after
     it the last day's (`now`: content.crewNow) — said by its sol and date alone, "SOL 01 · Thu 15 Oct" (12 October: "from
     the Current Crew remove: The first day’s crew" — the words that stood before it, The first day’s crew, In the habitat
-    now, The last day’s crew, went all three). crewWhen is the line under the title on the About page; the landing page
-    sets it over its title (crewWhenParts: `day`, the sol and its date — '' while the plan names nobody, and then `what`,
+    now, The last day’s crew, went all three). crewWhen was the line under the title on the About page (unused since
+    Current Crew went from there); the landing page sets it over its title (crewWhenParts: `day`, the sol and its date — '' while the plan names nobody, and then `what`,
     The crew is not named yet). */
 function crewWhenParts(ctx, now) {
   if (!now || now.day == null) return { what: ctx.T('The crew is not named yet'), day: '' };

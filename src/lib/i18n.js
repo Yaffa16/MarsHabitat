@@ -1186,8 +1186,9 @@ const D = {
   'Today’s crew': ['Die Crew heute', 'L’équipage aujourd’hui'],
   'The three roles': ['Die drei Rollen', 'Les trois rôles'],
   'to be named': ['noch offen', 'à désigner'],
-  // Current Crew (12 October; info.js, sol.js crewBox, landing.js crewNow) — its title, and the line under it while the
-  // plan names nobody (whose crew it is — The first day's crew, In the habitat now — is no longer said: 12 October)
+  // Current Crew (12 October; landing.js crewNow — on the About page too, until it went from there the same day) — its
+  // title, and the line under it while the plan names nobody (whose crew it is — The first day's crew, In the habitat
+  // now — is no longer said: 12 October)
   'Current Crew': ['Aktuelle Crew', 'Équipage actuel'],
   'The crew is not named yet': ['Die Crew ist noch nicht benannt', 'L’équipage n’est pas encore nommé'],
   'Science': ['Wissenschaft', 'Science'],

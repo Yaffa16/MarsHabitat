@@ -710,7 +710,7 @@ echo "$ABOUTFR" | grep -q '<p>Dans le cadre du projet MARS! – Mobilizing Aware
   && curl -s $B/dashboard | grep -q '<span class="officer-role">Order &amp; Communications</span>' && curl -s -H "Cookie: mcs_lang=de" $B/dashboard | grep -q '<span class="officer-role">Ordnung &amp; Kommunikation</span>' \
   && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q 'Abteilung für künstlerische Forschung &amp; Entwicklung, <a href="https://zkm.de/en/hertzlab"' \
   && ok "Who we are has no CREW panel any more — the crew's portraits and the producer stand; the dashboard keeps the officers' role lines; the producer is the department, Hertzlab linked" || bad "the CREW panel is still on the About page, or Who we are lost more than it should"
-# the shift plan: with today's crew named in content/shifts.json the About page carries their portraits over the roles —
+# the shift plan: with today's crew named in content/shifts.json Current Crew (the landing page's) carries their portraits —
 # from 08:00 at the venue; before 08:00 the day before's (the suite's station is on its fifth day; the file is read fresh)
 SHIFT_DAY=$(curl -s $B/api/status | grep -oE '"missionDay":[0-9]+' | cut -d: -f2); SHIFT_HOUR=$(TZ=Europe/Berlin date +%H); [ "$SHIFT_HOUR" -lt 8 ] && SHIFT_DAY=$((SHIFT_DAY - 1))
 node -e 'require("fs").writeFileSync(process.argv[1], JSON.stringify({ days: { [process.argv[2]]: { "COMMUNICATION OFFICER": "jain", "HEALTH OFFICER": "Lorenz", "SCIENCE OFFICER": "dipper" }, [String(Number(process.argv[2]) + 1)]: { "COMMUNICATION OFFICER": "wilcox", "HEALTH OFFICER": "schmidt", "SCIENCE OFFICER": "kautz" } } }))' "$CONTENT_DIR/shifts.json" "$SHIFT_DAY"
@@ -719,33 +719,18 @@ grep -q "const day = Number(mission.clampedDay) - (Number.isFinite(hour) && hour
   && grep -q '"_example": {' content/shifts.json && node -e 'const d = JSON.parse(require("fs").readFileSync("content/shifts.json", "utf8")).days;
 process.exit(Object.keys(d).length === 12 && !d["13"] && d["1"]["COMMUNICATION OFFICER"] === "wilcox" && d["1"]["HEALTH OFFICER"] === "stricot" && d["1"]["SCIENCE OFFICER"] === "kautz"
   && d["4"]["SCIENCE OFFICER"] === "Laura B." && d["11"]["SCIENCE OFFICER"] === "Ralf E." && d["12"]["COMMUNICATION OFFICER"] === "kloeck" && d["12"]["SCIENCE OFFICER"] === "jain" ? 0 : 1);' \
-  && ok "the shift plan, content/shifts.json (surnames as crew.json spells the files, in any case), is read the day's from 08:00 at the venue, the day before's until then (A sol on MARS!platz, which named them on their activities, went on 12 October); the shipped file carries the shift plan (12 October, MARS_Performance_Shiftplan_2): twelve days, Wilcox, Stricot and Kautz on the first, Laura B. and Ralf E. by their names, nobody on the teardown day" || bad "the shift plan's portraits are not on the About page as they should be"
-# Current Crew (12 October: "at the top add a title, Current Crew: in it the Three Roles box from A sol on MARS!platz,
-# without the key; instead of the C, H, S the photo of the astronaut in that role that day; for any photo that does not
-# exist the robot dog"; then "move the Current Crew to be above A sol on MARS!platz", "from About remove A sol on
-# MARS!platz" and "from the Current Crew remove: The first day’s crew"): the section after What's inside the habitat and
-# right before Who we are, its pill in that place among the pills; during the run the crew on shift, each with their
-# photograph (loaded as it comes near) and name, the line under the title the sol and its date alone
-node -e '
-const h = process.argv[1], day = Number(process.argv[2]);
-const nav = h.indexOf("<nav class=\"about-jump\""), sec = h.indexOf("<section class=\"about-sec crew-sec\" id=\"crew-now\" aria-labelledby=\"crew-now-title\">"), about = h.indexOf("id=\"about-project\""), inside = h.indexOf("<section class=\"about-sec habitat-sec\" id=\"inside\""), who = h.indexOf("<section class=\"about-sec\" id=\"who-we-are\"");
-const part = sec < 0 ? "" : h.slice(sec, h.indexOf("</section>", sec));
-const people = [...part.matchAll(/<li class="crew-now-officer([^"]*)">\s*<img src="\/crew\/([a-z-]+)\.jpg" alt="" width="200" height="300" loading="lazy" decoding="async">\s*<span class="sol-officer-who"><b>([^<]*)<\/b><span>([\s\S]*?)<\/span><\/span>\s*<\/li>/g)].map((m) => [m[1], m[2], m[3], m[4].replace(/<[^>]+>/g, "")]);
-const ok = nav > -1 && about > nav && inside > about && sec > inside && who > sec && !/<section[^>]*>/.test(h.slice(h.indexOf("</section>", sec) + 10, who))
-  && h.includes("<a href=\"#about-project\">About</a><a href=\"#inside\">What’s inside the habitat?</a><a href=\"#crew-now\">Current Crew</a><a href=\"#who-we-are\">Who we are</a>")
-  && part.includes("<h2 class=\"bigsec\" id=\"crew-now-title\">Current Crew</h2>")
-  && new RegExp("<p class=\"dash-sub\">SOL " + String(day).padStart(2, "0") + " · [A-Z][a-z]{2} [0-9]{1,2} [A-Z][a-z]{2}</p>").test(part) && !/In the habitat now|first day’s crew|last day’s crew/.test(h)
-  && part.includes("<div class=\"eyebrow\">The three roles</div>") && !part.includes("sol-key") && !part.includes("sol-officer-disc") && !part.includes("Fixed hours")
-  && JSON.stringify(people) === JSON.stringify([["", "jain", "Commanding officer", "Yasha Jain"], ["", "lorenz", "Health officer", "Tina Lorenz"], ["", "dipper", "Science officer", "Götz Dipper"]]);
-process.exit(ok ? 0 : 1);' "$ABOUT_S" "$SHIFT_DAY" \
-  && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<h2 class="bigsec" id="crew-now-title">Aktuelle Crew</h2>' && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<p class="dash-sub">SOL ' && ! curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q 'Jetzt im Habitat' \
-  && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q '<a href="#crew-now">Équipage actuel</a>' \
-  && grep -q 'body.landing.about .crew-now-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 28px; }' public/aura.css \
-  && grep -qF "  ['inside', 'What’s inside the habitat?', null]," src/views/pages/info.js && grep -qF "  ['crew-now', 'Current Crew', null]," src/views/pages/info.js \
-  && ok "Current Crew stands on the About page between What's inside the habitat and Who we are, its pill in that place: the three roles, each with the photograph and the name of the astronaut on shift (Yasha Jain, Tina Lorenz, Götz Dipper), three across, under the sol and its date alone — no In the habitat now — in German and French too" || bad "Current Crew is not where it should be on the About page, or its line still says whose crew it is"
+  && ok "the shift plan, content/shifts.json (surnames as crew.json spells the files, in any case), is read the day's from 08:00 at the venue, the day before's until then (A sol on MARS!platz, which named them on their activities, went on 12 October); the shipped file carries the shift plan (12 October, MARS_Performance_Shiftplan_2): twelve days, Wilcox, Stricot and Kautz on the first, Laura B. and Ralf E. by their names, nobody on the teardown day" || bad "the shift plan is not read as it should be"
+# Current Crew is gone from the About page (12 October: "remove Current Crew from About" — it stood there that day, at the
+# top, then above A sol on MARS!platz, then between What's inside the habitat and Who we are); the landing page keeps it
+# over its two calls (below): no section, no pill, in no language — the pills About, What's inside the habitat?, Who we are
+! echo "$ABOUT_S" | grep -q 'id="crew-now"\|href="#crew-now"\|crew-now-list\|Current Crew' \
+  && echo "$ABOUT_S" | grep -q '<a href="#about-project">About</a><a href="#inside">What’s inside the habitat?</a><a href="#who-we-are">Who we are</a>' \
+  && ! curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q 'Aktuelle Crew\|crew-now' && ! curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q 'Équipage actuel\|crew-now' \
+  && ! grep -qF "['crew-now', 'Current Crew', null]," src/views/pages/info.js && ! grep -q 'crewBox(\|crewWhen(' src/views/pages/info.js \
+  && ok "Current Crew is gone from the About page — no section, no pill, in German and French neither: About, What's inside the habitat? and Who we are" || bad "Current Crew is still on the About page"
 # Current Crew on the landing page as well (12 October: "add the current crew images on the landing page, on the same
 # page as Send a message to the crew and Follow what the crew is doing live; place it above these two boxes"): on the
-# second page, over the two calls — the same three as the About page's, each with their photograph (loaded as it comes
+# second page, over the two calls — the crew on shift (Current Crew's one place since it went from the About page), each with their photograph (loaded as it comes
 # near) and name under the role, the sol and its date over the title and nothing under it (12 October: "remove: The first
 # day’s crew"); German and French too; a card as wide as the two calls, the three one under the other on a phone, three
 # across on a desk
@@ -754,7 +739,7 @@ node -e '
 const h = process.argv[1], day = Number(process.argv[2]);
 const note = h.indexOf("<section class=\"sheet sheet-p2\" id=\"note\""), card = h.indexOf("<div class=\"land-crew\" role=\"group\" aria-labelledby=\"land-crew-title\">"), calls = h.indexOf("<div class=\"calls\" id=\"calls\">");
 const part = card < 0 || calls < card ? "" : h.slice(card, calls);
-const people = [...part.matchAll(/<li class="crew-now-officer([^"]*)">\s*<img src="\/crew\/([a-z-]+)\.jpg" alt="" width="200" height="300" loading="lazy" decoding="async">\s*<span class="sol-officer-who"><b>([^<]*)<\/b><span>([\s\S]*?)<\/span><\/span>\s*<\/li>/g)].map((m) => [m[1], m[2], m[3], m[4].replace(/<[^>]+>/g, "")]);
+const people = [...part.matchAll(/<li class="crew-now-officer([^"]*)">\s*<img src="\/crew\/face\/([a-z-]+)\.jpg" alt="" width="400" height="400" loading="lazy" decoding="async">\s*<span class="sol-officer-who"><b>([^<]*)<\/b><span>([\s\S]*?)<\/span><\/span>\s*<\/li>/g)].map((m) => [m[1], m[2], m[3], m[4].replace(/<[^>]+>/g, "")]);
 const ok = note > -1 && card > note && calls > card && h.indexOf("</section>", note) > calls
   && /^<div class="land-crew"[^>]*>\s*<header class="land-crew-head">\s*<span class="land-crew-k">SOL [0-9]{2} · [A-Z][a-z]{2} [0-9]{1,2} [A-Z][a-z]{2}<\/span>\s*<h2 class="land-crew-title" id="land-crew-title">Current Crew<\/h2>\s*<\/header>/.test(part) && !part.includes("land-crew-when")
   && part.includes("<span class=\"land-crew-k\">SOL " + String(day).padStart(2, "0") + " · ")
@@ -767,7 +752,7 @@ process.exit(ok ? 0 : 1);' "$LAND_C" "$SHIFT_DAY" \
   && grep -qF "  body.landing .land-crew { grid-template-columns: auto minmax(0, 1fr); align-items: center; }" public/sheet.css \
   && grep -qF "body.landing .about-sec, body.landing .call, body.landing .land-crew, body.landing .steps," public/neu.css \
   && grep -qF "const { crewList, crewWhenParts, CREW } = require('./sol');" src/views/pages/landing.js \
-  && ok "the landing page shows Current Crew on its second page, over the two calls — the same three as the About page's (Yasha Jain, Tina Lorenz, Götz Dipper), each with their photograph and name under the role, SOL and the date over the title and nothing under it — a card as wide as the two calls, three across on a desk, one under the other on a phone — in German and French too" || bad "Current Crew is not over the two calls on the landing page as it should be"
+  && ok "the landing page shows Current Crew on its second page, over the two calls — the crew on shift (Yasha Jain, Tina Lorenz, Götz Dipper), each with their photograph and name under the role, SOL and the date over the title and nothing under it — a card as wide as the two calls, three across on a desk, one under the other on a phone — in German and French too" || bad "Current Crew is not over the two calls on the landing page as it should be"
 # A sol on MARS!platz is gone from the About page (12 October: "from About remove A sol on MARS!platz"; it stood under
 # What's inside the habitat from 7 October — the day's activities on a rail): no section, no pill, in no language; no
 # shift change anywhere, and the shipped schedule keeps its sixteen entries, 08:30 to 22:00 Lights Out
@@ -777,20 +762,20 @@ process.exit(ok ? 0 : 1);' "$LAND_C" "$SHIFT_DAY" \
   && ! echo "$ABOUT_S" | grep -qi 'shift change' && ! curl -s $B/dashboard | grep -qi 'shift change' && ! curl -s $B/ | grep -qi 'shift change' && [ "$(node -e 'const j = require("./content/schedule.json"); console.log(Object.keys(j).filter((k) => /^\d+$/.test(k)).every((k) => j[k].length === 16 && !j[k].some((t) => /shift change/i.test(t.label)) && j[k][0].time === "08:30" && j[k][15].label === "Lights Out"))')" = "true" ] \
   && ok "A sol on MARS!platz is gone from the About page — no section, no pill, in German and French neither; no shift change anywhere; the shipped schedule keeps its sixteen entries" || bad "A sol on MARS!platz is still on the About page"
 # someone without a portrait (the plan's Laura B.) and a role the plan names nobody in stand with the robot dog's picture
-# in Current Crew; a day the plan names nobody on keeps the crew of the day before
+# in Current Crew, over the landing page's calls; a day the plan names nobody on keeps the crew of the day before
 node -e 'require("fs").writeFileSync(process.argv[1], JSON.stringify({ days: { [process.argv[2]]: { "COMMUNICATION OFFICER": "Wilcox", "SCIENCE OFFICER": "Laura B." } } }))' "$CONTENT_DIR/shifts.json" "$SHIFT_DAY"
-ABOUT_R=$(curl -s $B/about)
+LAND_R=$(curl -s $B/)
 node -e 'require("fs").writeFileSync(process.argv[1], JSON.stringify({ days: { [String(Number(process.argv[2]) - 1)]: { "COMMUNICATION OFFICER": "kloeck", "HEALTH OFFICER": "stricot", "SCIENCE OFFICER": "milbrandt" } } }))' "$CONTENT_DIR/shifts.json" "$SHIFT_DAY"
-ABOUT_F=$(curl -s $B/about)
+LAND_F=$(curl -s $B/)
 node -e '
 const h = process.argv[1], f = process.argv[2], day = Number(process.argv[3]);
 const cut = (s, a) => { const i = s.indexOf(a); return i < 0 ? "" : s.slice(i, s.indexOf("</ul>", i)); };
-const people = (s) => [...cut(s, "<ul class=\"crew-now-list\">").matchAll(/<li class="crew-now-officer([^"]*)">\s*<img src="\/crew\/([a-z-]+)\.jpg"[^>]*>\s*<span class="sol-officer-who"><b>[^<]*<\/b><span>([\s\S]*?)<\/span><\/span>\s*<\/li>/g)].map((m) => [m[1].trim(), m[2], m[3].replace(/<[^>]+>/g, "")]);
+const people = (s) => [...cut(s, "<ul class=\"crew-now-list\">").matchAll(/<li class="crew-now-officer([^"]*)">\s*<img src="\/crew\/face\/([a-z-]+)\.jpg"[^>]*>\s*<span class="sol-officer-who"><b>[^<]*<\/b><span>([\s\S]*?)<\/span><\/span>\s*<\/li>/g)].map((m) => [m[1].trim(), m[2], m[3].replace(/<[^>]+>/g, "")]);
 const ok = JSON.stringify(people(h)) === JSON.stringify([["", "wilcox", "Dan Wilcox"], ["is-robodog is-open", "robodog", "to be named"], ["is-robodog", "robodog", "Laura B."]])
   && JSON.stringify(people(f)) === JSON.stringify([["", "kloeck", "Franziska Klöck"], ["", "stricot", "Morgan Stricot"], ["", "milbrandt", "Finn Milbrandt"]])
-  && f.includes("<p class=\"dash-sub\">SOL " + String(day - 1).padStart(2, "0") + " · ");
-process.exit(ok ? 0 : 1);' "$ABOUT_R" "$ABOUT_F" "$SHIFT_DAY" \
-  && grep -qF "body.landing.about .crew-now-officer.is-robodog img { object-position: 50% 34%; }" public/aura.css \
+  && f.includes("<span class=\"land-crew-k\">SOL " + String(day - 1).padStart(2, "0") + " · ");
+process.exit(ok ? 0 : 1);' "$LAND_R" "$LAND_F" "$SHIFT_DAY" \
+  && ! grep -q 'is-robodog img\|object-position: 50% 18%' public/aura.css public/sheet.css \
   && ok "someone without a portrait (Laura B.) and a role nobody is named in stand with the robot dog's picture in Current Crew; a day the plan names nobody on keeps the day before's crew there (Klöck, Stricot, Milbrandt), under that day's sol" || bad "the robot dog, or the day before's crew, is not in Current Crew as it should be"
 cp content/shifts.json "$CONTENT_DIR/shifts.json"
 node -e '
@@ -799,7 +784,20 @@ const want = ["Till Bechtloff", "Götz Dipper", "Jan Gerigk", "Yasha Jain", "Dom
 process.exit(JSON.stringify(names) === JSON.stringify(want) ? 0 : 1);
 ' "$ABOUT" && ok "the names are the files' (Firstname_Lastname), in the order of the surnames — Bechtloff to Wilcox, Klöck and Milbrandt in their places — and Robodog, one name, after them" || bad "the crew's names or their order are not the files'"
 for f in bechtloff dipper gerigk jain kautz kloeck lintermann lorenz milbrandt schmidt stricot vlaminck-maurer wilcox robodog; do [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/$f.jpg)" = "200" ] || bad "no portrait /crew/$f.jpg"; done; ok "every portrait is served"
-[ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/crew.json)" = "200" ] && grep -q "'../../../public/crew/crew.json'" src/views/pages/sol.js && ! grep -q "crew.json'" src/views/pages/info.js && grep -qF "const { crewBox, crewWhen, CREW } = require('./sol');" src/views/pages/info.js && ok "the list is public/crew/crew.json, written by tools/crew-pictures.py and read once by the pages (sol.js — the About page and the landing page both show it)" || bad "the crew's list is not read from crew.json"
+# the round pictures (12 October: "when the images are shown as icons, it scales weirdly"): close-ups of their own, one
+# for each of the crew, cut round the face — 400 × 400, the tool's FACES naming every photograph, so the cut is the same
+# whenever the pictures are made again
+for f in bechtloff dipper gerigk jain kautz kloeck lintermann lorenz milbrandt schmidt stricot vlaminck-maurer wilcox robodog; do [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/face/$f.jpg)" = "200" ] || bad "no close-up /crew/face/$f.jpg"; done
+python3 - <<'PY' && ok "every one of the crew has a close-up for the round pictures — 400 × 400, cut where tools/crew-pictures.py's FACES says, which names every photograph" || bad "a close-up is missing, not square, or not in FACES"
+import json, os, sys, unicodedata
+from PIL import Image
+crew = json.load(open('public/crew/crew.json', encoding='utf-8'))
+tool = open('tools/crew-pictures.py', encoding='utf-8').read()
+photos = [unicodedata.normalize('NFC', f) for f in os.listdir('public/Astronaut_Pictures') if f.lower().endswith(('.jpg', '.jpeg'))]
+sys.exit(0 if len(crew) == 14 and all(Image.open('public/crew/face/' + c['file']).size == (400, 400) for c in crew)
+         and len(photos) == 14 and all(repr(p) + ': (' in tool for p in photos) else 1)
+PY
+[ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/crew.json)" = "200" ] && grep -q "'../../../public/crew/crew.json'" src/views/pages/sol.js && ! grep -q "crew.json'" src/views/pages/info.js && grep -qF "const { CREW } = require('./sol');" src/views/pages/info.js && ok "the list is public/crew/crew.json, written by tools/crew-pictures.py and read once by the pages (sol.js — the About page's Who we are and the landing page's Current Crew)" || bad "the crew's list is not read from crew.json"
 node -e '
 const h = process.argv[1];
 const row = (label) => { const i = h.indexOf("<div class=\"eyebrow\">" + label + "</div>"); if (i < 0) return null; const j = h.indexOf("</div></div>", i); return [...h.slice(i, j).matchAll(/<img src="\/partners\/([a-z-]+)\.png" alt="([^"]*)"/g)].map((m) => m[1]); };
@@ -2767,12 +2765,12 @@ let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
 # on the Mars plain in its lines, every module a key that shows itself in colour, EVA and the Dashboard as round keys on the
 # ground in front of the habitat, on a card of glass (inside.js, habitatInside)
 ABOUTP=$(curl -s $B/about)
-HAB=$(echo "$ABOUTP" | node -e 'let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const a = s.indexOf("<section class=\"about-sec habitat-sec\" id=\"inside\""); process.stdout.write(a < 0 ? "" : s.slice(a, s.indexOf("<section class=\"about-sec crew-sec\" id=\"crew-now\"", a))); });')
+HAB=$(echo "$ABOUTP" | node -e 'let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const a = s.indexOf("<section class=\"about-sec habitat-sec\" id=\"inside\""); process.stdout.write(a < 0 ? "" : s.slice(a, s.indexOf("<section class=\"about-sec\" id=\"who-we-are\"", a))); });')
 MODS="hydroponics comms science airlock kitchen lounge quarters health recycling cycle power"
 [ -n "$HAB" ] && echo "$HAB" | grep -q '<section class="about-sec habitat-sec" id="inside" aria-labelledby="inside-title">' && echo "$HAB" | grep -q '<div class="hab-card">' \
   && echo "$HAB" | grep -q '<h2 class="bigsec" id="inside-title">What’s inside the habitat?</h2>' \
   && echo "$HAB" | grep -q '<p class="dash-sub"><span class="dome-meta dome-hint"><span class="dome-hint-click">Point at a room to know what is inside.</span><span class="dome-hint-tap">Tap a room to know what is inside.</span></span></p>' \
-  && echo "$ABOUTP" | grep -q '<nav class="about-jump" aria-label="On this page">' && echo "$ABOUTP" | grep -q '<a href="#about-project">About</a><a href="#inside">What’s inside the habitat?</a><a href="#crew-now">Current Crew</a><a href="#who-we-are">Who we are</a>' \
+  && echo "$ABOUTP" | grep -q '<nav class="about-jump" aria-label="On this page">' && echo "$ABOUTP" | grep -q '<a href="#about-project">About</a><a href="#inside">What’s inside the habitat?</a><a href="#who-we-are">Who we are</a>' \
   && [ "$(echo "$ABOUTP" | node -e 'let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const a = s.indexOf("id=\"about-project\""), b = s.indexOf("id=\"inside\""), c = s.indexOf("id=\"who-we-are\""); process.stdout.write(a > -1 && b > a && c > b ? "ordered" : "out of order"); });')" = "ordered" ] \
   && ! echo "$LAND" | grep -q 'id="habitat-dome"\|class="hab-card"\|sheet-p3' \
   && echo "$HAB" | grep -q '<p class="in-credit">AI generated image</p>' && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<p class="in-credit">KI-generiertes Bild</p>' && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q '<p class="in-credit">Image générée par IA</p>' \
@@ -3331,21 +3329,16 @@ let s = ""; process.stdin.on("data", (d) => s += d).on("end", () => {
 });' && ok "the rehearsal page is a complete day page — schedule, meals, consumption rings, power and habitat, the real feel of SOL 001" || bad "the rehearsal page is missing day blocks"
 
 # Current Crew before the run (12 October: "for now, show the faces of the first day's crew"): the first day's crew from the
-# shipped shift plan — Dan Wilcox, Morgan Stricot, Dominik Kautz — with the line saying so
-curl -s $B/about | node -e '
-let h = ""; process.stdin.on("data", (c) => h += c).on("end", () => {
-  const i = h.indexOf("<section class=\"about-sec crew-sec\" id=\"crew-now\""), part = i < 0 ? "" : h.slice(i, h.indexOf("</section>", i));
-  const pics = [...part.matchAll(/<img src="\/crew\/([a-z-]+)\.jpg"/g)].map((m) => m[1]);
-  process.exit(JSON.stringify(pics) === JSON.stringify(["wilcox", "stricot", "kautz"]) && part.includes("<span>Dan <span class=\"nb\">Wilcox</span></span>") && part.includes("<span>Dominik <span class=\"nb\">Kautz</span></span>")
-    && /<p class="dash-sub">SOL 01 · [A-Z][a-z]{2} [0-9]{1,2} [A-Z][a-z]{2}<\/p>/.test(part) && !h.includes("first day’s crew") ? 0 : 1);
-});' && ! curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q 'Die Crew des ersten Tages' \
+# shipped shift plan — Dan Wilcox, Morgan Stricot, Dominik Kautz — over the landing page's two calls (the About page has
+# no Current Crew since 12 October)
+! curl -s $B/about | grep -q 'crew-now' \
   && curl -s $B/ | node -e '
 let h = ""; process.stdin.on("data", (c) => h += c).on("end", () => {
   const i = h.indexOf("<div class=\"land-crew\""), part = i < 0 ? "" : h.slice(i, h.indexOf("<div class=\"calls\"", i));
-  const pics = [...part.matchAll(/<img src="\/crew\/([a-z-]+)\.jpg"/g)].map((m) => m[1]);
+  const pics = [...part.matchAll(/<img src="\/crew\/face\/([a-z-]+)\.jpg"/g)].map((m) => m[1]);
   process.exit(JSON.stringify(pics) === JSON.stringify(["wilcox", "stricot", "kautz"]) && /<span class="land-crew-k">SOL 01 · [A-Z][a-z]{2} [0-9]{1,2} [A-Z][a-z]{2}<\/span>/.test(part) && !part.includes("land-crew-when") ? 0 : 1);
 });' && ! curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q 'Die Crew des ersten Tages' \
-  && ok "before the run Current Crew shows the first day's crew from the shift plan — Dan Wilcox, Morgan Stricot, Dominik Kautz — under SOL 01 and its date alone (12 October: no The first day’s crew), on the About page and over the landing page's two calls alike" || bad "Current Crew does not show the first day's crew before the run"
+  && ok "before the run Current Crew shows the first day's crew from the shift plan — Dan Wilcox, Morgan Stricot, Dominik Kautz — under SOL 01 and its date alone (12 October: no The first day’s crew), over the landing page's two calls" || bad "Current Crew does not show the first day's crew before the run"
 
 echo "── NOW — the rehearsal day, mission day 0: filed apart from the run's days, in every export, gone with the reset"
 # the schedule file was left broken on purpose earlier (a broken file must not take the site down); NOW files a schedule, so put the plan's back first

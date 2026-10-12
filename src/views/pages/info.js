@@ -3,8 +3,7 @@ const L = require('../layout');
 const { esc, panel, eyebrow } = L;
 const orbital = require('../../lib/orbital');
 const { habitatInside } = require('./inside');
-const { crewBox, crewWhen, CREW } = require('./sol');
-const content = require('../../lib/content');
+const { CREW } = require('./sol');
 
 /**
  * The project, the habitat in section and the credits — About, What's inside
@@ -138,19 +137,17 @@ function whoFold(crew, T, ctx) {
  * picture with every module a key (What's inside the habitat — inside.js,
  * habitatInside, which was the landing page's third page), the crew — the
  * three officers and the portraits — and the producer with the partners
- * (Who we are). Between the habitat and Who we are, since 12 October, the
- * Current Crew: the three roles with the photographs of the astronauts in
- * them on the day (sol.js, crewBox; content.crewNow — before the run the
- * first day's crew), under the sol and its date — at the top of the page at
- * first, then above A sol on MARS!platz, the day's schedule on a rail (sol.js,
- * solFold; 7 October), which went the same day ("from About remove A sol on
- * MARS!platz"; solFold is kept, unused, should the run want it back); the
- * landing page shows the same three over its two calls (landing.js).
+ * (Who we are). Current Crew — the three roles with the photographs of the
+ * astronauts in them on the day — stood between the habitat and Who we are
+ * on 12 October, and went the same day ("remove Current Crew from About";
+ * sol.js keeps crewBox and crewWhen, unused); the landing page shows the
+ * three over its two calls (landing.js). A sol on MARS!platz, the day's
+ * schedule on a rail (sol.js, solFold; 7 October), went before it, that day
+ * too ("from About remove A sol on MARS!platz"; solFold kept, unused).
  */
 const PARTS = [
   ['about-project', 'About', 'MARS! – Mobilizing Awareness for Resilient Societies!'],
   ['inside', 'What’s inside the habitat?', null],
-  ['crew-now', 'Current Crew', null],
   ['who-we-are', 'Who we are', 'The crew, the producer, the partners'],
 ];
 
@@ -159,19 +156,15 @@ function aboutPage(ctx, { crew = [], habitat = null } = {}) {
   // the habitat's section: its head's line is the drawing's hint (Point at a room… on a desk, Tap a room… on a touch
   // screen — sheet.css shows the one that applies), and the drawing itself stands under it on the section's sheet
   const hint = `<span class="dome-meta dome-hint"><span class="dome-hint-click">${T('Point at a room to know what is inside.')}</span><span class="dome-hint-tap">${T('Tap a room to know what is inside.')}</span></span>`;
-  // Current Crew: the day whose crew it is, under the title, by its sol and date — before the run the first day's, during
-  // it the shift's (from 08:00 at the venue), after it the last day's (content.crewNow; sol.js, crewWhen)
-  const now = content.crewNow(ctx.mission);
-  const subs = { 'crew-now': esc(crewWhen(ctx, now)), inside: hint };
-  const inner = { 'crew-now': () => crewBox(ctx, { crew: CREW, onShift: now.crew }),
-    'about-project': () => aboutFold(ctx), inside: () => `<div class="hab-card">${habitatInside(ctx, habitat || {})}</div>`,
+  const subs = { inside: hint };
+  const inner = { 'about-project': () => aboutFold(ctx), inside: () => `<div class="hab-card">${habitatInside(ctx, habitat || {})}</div>`,
     'who-we-are': () => whoFold(crew, T, ctx) };
   const body = `
   <nav class="about-jump" aria-label="${esc(T('On this page'))}">
     ${PARTS.map(([id, title]) => `<a href="#${id}">${esc(T(title))}</a>`).join('')}
   </nav>
   ${PARTS.map(([id, title, sub]) => `
-  <section class="about-sec${id === 'inside' ? ' habitat-sec' : id === 'crew-now' ? ' crew-sec' : ''}" id="${id}" aria-labelledby="${id}-title">
+  <section class="about-sec${id === 'inside' ? ' habitat-sec' : ''}" id="${id}" aria-labelledby="${id}-title">
     <header class="about-sec-head">
       <h2 class="bigsec" id="${id}-title">${esc(T(title))}</h2>${subs[id] != null || sub ? `
       <p class="dash-sub">${subs[id] != null ? subs[id] : esc(T(sub))}</p>` : ''}
