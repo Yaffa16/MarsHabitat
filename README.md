@@ -1249,9 +1249,10 @@ the drawing 14.5 % of the window's height (72 to 190 px), the title 3.3 % (20 to
 sentence 13.5 to 17.5 px, the key 36 to 50 px tall, the gaps with them — so the crew and both calls stand in one window
 from a laptop's 650 px or so up (checked from 1024 × 768 and 1280 × 649 to 2560 × 1271), larger in a taller one; until
 then they were set by the width, and a laptop's window cut the second call off. The crew's card is the taller for it
-(12 October: "increase the height of the Current Crew tab"): its photographs 11.5 % of the window's height (64 to
-120 px), its names up to 24 px, more air round them — 122 px tall in a laptop's 1366 × 657 (87 before), 180 px in
-1920 × 969 (128 before).
+(12 October: "increase the height of the Current Crew tab", then "make the tile of the current crew a bit bigger"): its
+photographs 13.5 % of the window's height (72 to 140 px; on a desk narrower than 1180 px, where the words stand over
+the three, 11.5 %, 64 to 120 px), its names up to 27 px, more air round them — 143 px tall in a laptop's 1366 × 657
+(87 that morning), 210 px in 1920 × 969 (128).
 **Send a message to the crew** (eyebrow *01 · TRANSMIT*), with the thing to know set large under
 its title — **APPROVED MESSAGES ARE BEAMED INTO SPACE**, in capitals, in Mars with a glow about
 the letters (by night the gradient of Mars and light with a shimmer passing along it now and then;
@@ -3001,8 +3002,12 @@ nothing else: no account, no name. The same browser gets the same callsign back 
 as the cookie lasts; a cleared browser, private window or second device is a new visitor.
 Unused callsigns are pruned after seven days. The station asks before setting it: on first
 contact every public page carries the **cookie question** (`consent()` in
-`src/views/layout.js`, `POST /consent`), a card over the page — at its head a strip of night with
-the stars drifting and a dashed orbit round *Incoming transmission* — that greets the visitor by the
+`src/views/layout.js`, `POST /consent`), a small card at the foot of the window, at the right — on a phone a sheet above
+the bar of keys — with the page open and usable as it is behind it, nothing dimmed or blurred (12 October: "on opening
+the website do not have accept cookies in the centre; have a pop-up on the bottom right and open the website as is"; it
+stood in the middle over a blurred page before) — at its head a thin strip of night with
+the stars drifting and a dashed orbit, no word in it (12 October: *Incoming transmission* went from it, and *We do
+not track anything.* from the card's sentence) — that greets the visitor by the
 callsign they will keep (*Welcome OXIDE-569*: the name is picked on arrival and is the one the composer shows and a
 first message is sent under) and says why to accept, with **Learn more** (the ZKM privacy policy, in a new
 tab, the card stays) and **Agree and close**. Until it is answered a page view sets no cookie at all and the composer

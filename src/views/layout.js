@@ -212,25 +212,28 @@ function tabbar(current, T = same) {
 /* The cookie question, asked once on first contact (server.js, /consent):
    the facts of the station's one cookie in a few small lines, and Accept or
    Reject. A form, so it works without a script; the answer sends the visitor
-   back to the page. */
+   back to the page. (12 October: "from the cookies tab remove We don't track
+   anything and Incoming transmission" — the strip of night at its head keeps
+   its stars and its orbit, with no word in it.) */
 function consent(current, T = same, callsign = '') {
   // The callsign the visitor has, or will get on agreeing: the one they were
   // given for this visit if they have written already, otherwise a free one
   // picked now and carried in the form, so the name greeted is the name kept.
-  // Shown in the middle of the screen over a blurred page (.consent-veil,
-  // aura.css), so it is read before anything else.
+  // Shown as a small card at the foot of the window, at the right — on a
+  // phone above the bar of keys — with the page open and usable as it is
+  // behind it (.consent-veil, aura.css; 12 October: "do not have accept
+  // cookies in the centre; have a pop-up on the bottom right").
   return `<div class="consent-veil" id="consent-veil">
-  <aside class="consent" id="consent" role="dialog" aria-modal="true" aria-labelledby="consent-title" aria-describedby="consent-text">
+  <aside class="consent" id="consent" role="dialog" aria-labelledby="consent-title" aria-describedby="consent-text">
     <div class="consent-sky" aria-hidden="true">
       <span class="consent-stars"></span>
       <span class="consent-orbit"></span>
-      <span class="consent-signal"><i></i>${T('Incoming transmission')}</span>
     </div>
     <form method="post" action="/consent">
       <input type="hidden" name="back" value="${esc(current || '/')}">
       ${callsign ? `<input type="hidden" name="callsign" value="${esc(callsign)}">` : ''}
       <h2 id="consent-title">${T('Welcome')}${callsign ? ` <b class="consent-cs">${esc(callsign)}</b>` : ''}</h2>
-      <p id="consent-text">${T('To make sure you talk to the Mars habitat under the same call sign every time, please accept. If you do not, you will be given a new name on each visit and cannot see your own messages. We do not track anything.')}</p>
+      <p id="consent-text">${T('To make sure you talk to the Mars habitat under the same call sign every time, please accept. If you do not, you will be given a new name on each visit and cannot see your own messages.')}</p>
       <div class="consent-keys">
         <button type="submit" name="choice" value="no" class="btn">${T('Reject')}</button>
         <button type="submit" name="choice" value="yes" class="btn primary">${T('Agree and close')}</button>

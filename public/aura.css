@@ -405,17 +405,17 @@ body.landing .dev-prompt-q { margin: 0; font-family: var(--display); font-size: 
 body.landing .dev-prompt-n { font-size: 13px; line-height: 1.4; color: var(--dim); }
 body.landing .composer-device.sending .dev-prompt { display: none; }                  /* the dial has the box to itself while a message crosses */
 
-/* the cookie question (layout.js, consent()): a card at the foot of the window until it is answered — on a desk at the
-   right, on a phone (below) a sheet above the bar of keys */
-/* the cookie card: centred on the screen over the page, which is blurred and dimmed behind it */
-body.landing .consent-veil { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15,21,64,.28); -webkit-backdrop-filter: blur(10px) saturate(1.1); backdrop-filter: blur(10px) saturate(1.1); }
-:root[data-theme="dark"] body.landing .consent-veil { background: rgba(0,0,0,.45); }
-html:has(.consent-veil), body:has(.consent-veil) { overflow: hidden; }   /* the page behind stays put while the card is up */
-body.landing .consent { position: relative; z-index: 91; width: min(480px, 100%); padding: 22px 24px 20px; border-radius: 22px; background: var(--glass-solid); border: 1px solid var(--glass-edge); box-shadow: 0 24px 60px -24px rgba(15,21,64,.45), 0 2px 6px rgba(30,40,120,.08); color: var(--ink); }
+/* the cookie question (layout.js, consent()): a small card at the foot of the window, at the right, until it is answered
+   — the page opens as it is behind it, nothing dimmed or blurred, nothing held still (12 October: "on opening the website
+   do not have accept cookies in the centre; have a pop-up on the bottom right and open the website as is" — it had stood
+   in the middle over a blurred page since October); on a phone (below) a sheet above the bar of keys */
+body.landing .consent-veil { position: fixed; right: 20px; bottom: 20px; z-index: 90; width: min(380px, calc(100vw - 40px)); max-height: calc(100vh - 40px); pointer-events: none; }
+body.landing .consent-veil > .consent { pointer-events: auto; }
+body.landing .consent { position: relative; z-index: 91; width: 100%; max-height: calc(100vh - 40px); overflow: auto; padding: 18px 20px 16px; border-radius: 22px; background: var(--glass-solid); border: 1px solid var(--glass-edge); box-shadow: 0 24px 60px -24px rgba(15,21,64,.45), 0 2px 6px rgba(30,40,120,.08); color: var(--ink); }
 :root[data-theme="dark"] body.landing .consent { background: var(--glass-solid); box-shadow: 0 24px 60px -24px rgba(0,0,0,.7); }
 body.landing .consent .consent-cs { color: var(--mars-ink, #ff5a1f); font-weight: 700; letter-spacing: .08em; }
 body.landing .consent h2 { margin: 0 0 8px; font-family: var(--display); font-size: 14px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink); }
-body.landing .consent p { margin: 0 0 16px; font-family: var(--display); font-size: 15px; line-height: 1.5; color: var(--dim); }
+body.landing .consent p { margin: 0 0 14px; font-family: var(--display); font-size: 14px; line-height: 1.5; color: var(--dim); }
 body.landing .consent-keys { display: flex; gap: 8px; }
 body.landing .consent-keys .btn { flex: 1 1 0; min-height: 42px; padding: 0 12px; font-size: 12px; letter-spacing: .1em; }
 body.landing .consent-keys a.btn { display: inline-flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; }
@@ -424,7 +424,7 @@ body.landing .consent-keys .btn:not(.primary) { background: rgba(255,255,255,.5)
 /* the card's sky: a strip of night with a slow field of stars, Mars rising at the edge, and a crew member in a helmet
    floating in it — a space suit and a visor, no face, nobody in particular; the card rises into view once */
 body.landing .consent { overflow: hidden; padding-top: 0; animation: consent-in .5s cubic-bezier(.2,.8,.2,1) both; }
-body.landing .consent-sky { position: relative; height: 150px; margin: 0 -24px 18px; overflow: hidden; background: radial-gradient(120% 140% at 80% 120%, #3a2a8a 0%, #15185a 45%, #070a26 100%); }
+body.landing .consent-sky { position: relative; height: 150px; margin: 0 -20px 14px; overflow: hidden; background: radial-gradient(120% 140% at 80% 120%, #3a2a8a 0%, #15185a 45%, #070a26 100%); }
 body.landing .consent-stars { position: absolute; inset: -40px; background-image:
   radial-gradient(1.2px 1.2px at 12% 22%, #fff 99%, transparent), radial-gradient(1px 1px at 28% 68%, #fff 99%, transparent),
   radial-gradient(1.4px 1.4px at 44% 14%, #fff 99%, transparent), radial-gradient(1px 1px at 58% 52%, rgba(255,255,255,.7) 99%, transparent),
@@ -436,9 +436,7 @@ body.landing .consent-planet { position: absolute; right: -60px; bottom: -130px;
 body.landing .consent-orbit { position: absolute; left: 50%; top: 50%; width: 260px; height: 90px; margin: -45px 0 0 -130px; border: 1px dashed rgba(255,255,255,.18); border-radius: 50%; transform: rotate(-12deg); }
 body.landing .consent-astro { position: absolute; left: 50%; top: 14px; width: 128px; height: 136px; margin-left: -64px; filter: drop-shadow(0 12px 18px rgba(0,0,0,.45)); transform-origin: 50% 60%; animation: consent-float 6s ease-in-out infinite; }
 body.landing .consent-astro .consent-blink { animation: consent-blink 1.6s steps(2) infinite; }
-body.landing .consent-signal { position: absolute; left: 14px; top: 12px; display: inline-flex; align-items: center; gap: 7px; padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); color: #fff; font-family: var(--display); font-size: var(--fs-tag); letter-spacing: .16em; text-transform: uppercase; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
-body.landing .consent-signal i { width: 7px; height: 7px; border-radius: 50%; background: #ff5a1f; box-shadow: 0 0 8px 2px rgba(255,90,31,.8); animation: live 1.4s ease-in-out infinite; }
-body.landing .consent h2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 26px; letter-spacing: -.02em; text-transform: none; }
+body.landing .consent h2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 21px; letter-spacing: -.02em; text-transform: none; }
 body.landing .consent .consent-cs { font-size: 14px; letter-spacing: .12em; padding: 4px 10px; border-radius: 999px; background: rgba(255,90,31,.12); border: 1px solid rgba(255,90,31,.35); align-self: center; }
 body.landing .consent-keys .btn { display: inline-flex; align-items: center; justify-content: center; text-align: center; }
 body.landing .consent-more { display: block; width: fit-content; margin: 12px auto 0; padding: 0; border: 0; box-shadow: none; background: none; text-align: center; font-family: var(--display); font-size: var(--fs-label); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); text-decoration: none; }
@@ -1994,12 +1992,12 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
   body.landing.messages .transit .tbar { height: 5px; margin: 0 auto 8px; max-width: 280px; }
   body.landing.messages .transit .honesty { margin-top: 4px; font-size: 12px; letter-spacing: .06em; }
   body.landing.messages .transit.closed { padding: 4px 0; }
-  /* the cookie question as a sheet above the bar of keys */
-  body.landing .consent { width: 100%; max-height: calc(100vh - 32px); overflow: auto; padding: 0 16px 14px; }
-  body.landing .consent-sky { height: 124px; margin: 0 -16px 14px; }
+  /* the cookie question as a sheet above the bar of keys, the page usable round it */
+  body.landing .consent-veil { left: 10px; right: 10px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); width: auto; max-height: calc(100vh - 96px); }
+  body.landing .consent { width: 100%; max-height: calc(100vh - 96px); overflow: auto; padding: 0 16px 14px; }
+  body.landing .consent-sky { height: 124px; margin: 0 -16px 12px; }
   body.landing .consent-astro { width: 104px; height: 110px; margin-left: -52px; top: 12px; left: 62%; }
-  body.landing .consent-signal { top: auto; bottom: 12px; }
-  body.landing .consent h2 { font-size: 22px; }
+  body.landing .consent h2 { font-size: 19px; }
   body.landing .consent-keys .btn { min-height: 40px; }
   /* the peek tiles: the sol, the signal, the crew's latest line — under the doors, before the portal */
   body.landing .peek { display: grid; gap: 10px; margin: -6px 0 26px; }
