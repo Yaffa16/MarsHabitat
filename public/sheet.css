@@ -935,19 +935,21 @@ body.landing .land-crew .sol-officer-who span { font-family: var(--display); fon
 body.landing .land-crew .crew-now-officer.is-open .sol-officer-who span { color: var(--faint); font-weight: 500; }   /* a role the plan names nobody in */
 body.landing .land-crew .sol-officer-who .nb { white-space: nowrap; }                                              /* a surname whole: Matthieu / Vlaminck-Maurer */
 /* (on a desk the card's sizes follow the window's height, as the calls' under it do — so that the crew and the two calls
-   stand in one window together: below, *the second page on a desk*) */
+   stand in one window together: below, *the second page on a desk*; 12 October: "increase the height of the Current
+   Crew tab" — the photographs, the type and the air round them a size up, the card some 40 % taller: 87 → 122 px in a
+   laptop's 1366 × 657, 128 → 180 in 1920 × 969, the calls still in the window) */
 @media (min-width: 761px) and (min-height: 521px) {
-  body.landing .land-crew { max-width: none; margin: 0 0 clamp(12px, 2.4vh, 30px); padding: clamp(12px, 2.2vh, 24px) clamp(22px, 2vw, 34px); gap: clamp(10px, 1.8vh, 18px) 44px; }
+  body.landing .land-crew { max-width: none; margin: 0 0 clamp(12px, 2.4vh, 30px); padding: clamp(18px, 3.4vh, 38px) clamp(24px, 2.4vw, 40px); gap: clamp(12px, 2vh, 20px) 44px; }
   body.landing .land-crew-head { align-items: flex-start; gap: 6px; text-align: left; }
   body.landing .land-crew-k { font-size: clamp(11px, 1.3vh, 12px); }
-  body.landing .land-crew-title { font-size: clamp(20px, 3vh, 30px); }
+  body.landing .land-crew-title { font-size: clamp(22px, 3.4vh, 34px); }
   body.landing .land-crew-when { font-size: 14.5px; }
   body.landing .land-crew .crew-now-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 28px; justify-self: stretch; }
-  body.landing .land-crew .crew-now-officer { gap: 16px; }
-  body.landing .land-crew .crew-now-officer img { width: clamp(50px, 8.6vh, 84px); height: clamp(50px, 8.6vh, 84px); box-shadow: 0 0 0 3px var(--neu-1, var(--paper)), 0 0 0 4px rgba(var(--cobalt-rgb), .35); }
-  body.landing .land-crew .sol-officer-who { gap: 4px; }
-  body.landing .land-crew .sol-officer-who b { font-size: clamp(10.5px, 1.3vh, 11.5px); }
-  body.landing .land-crew .sol-officer-who span { font-size: clamp(16px, min(1.35vw, 2.2vh), 21px); }
+  body.landing .land-crew .crew-now-officer { gap: 18px; }
+  body.landing .land-crew .crew-now-officer img { width: clamp(64px, 11.5vh, 120px); height: clamp(64px, 11.5vh, 120px); box-shadow: 0 0 0 3px var(--neu-1, var(--paper)), 0 0 0 4px rgba(var(--cobalt-rgb), .35); }
+  body.landing .land-crew .sol-officer-who { gap: 5px; }
+  body.landing .land-crew .sol-officer-who b { font-size: clamp(10.5px, 1.4vh, 12.5px); }
+  body.landing .land-crew .sol-officer-who span { font-size: clamp(16px, min(1.45vw, 2.6vh), 24px); }
 }
 @media (min-width: 1180px) and (min-height: 521px) {
   body.landing .land-crew { grid-template-columns: auto minmax(0, 1fr); align-items: center; }

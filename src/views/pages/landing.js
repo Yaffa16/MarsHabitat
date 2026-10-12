@@ -380,6 +380,9 @@ const ICON = {
 /** A step's head: its sign in a small tinted disc, its number and its name. */
 const stepHead = (k, n, name) => `<div class="step-k"><span class="step-ic" aria-hidden="true"><svg viewBox="0 0 24 24">${ICON[k]}</svg></span><span class="step-l"><b>${n}</b>${name}</span></div>`;
 
+/* (the example in the first and the third step, a message and the crew's answer: 12 October, "give me more casual
+   examples of the communication — not technical like CO₂", then "What's the part of the mission nobody sees?" and its
+   answer — the CO₂ sensors' question and answer stood there until then) */
 function slowChat(ctx) {
   const T = ctx.T;
   const b = (s) => `<b>${esc(s)}</b>`;
@@ -399,7 +402,7 @@ function slowChat(ctx) {
         ${stepHead('up', '01', T('Transmit'))}
         <div class="step-body">
           <h3>${T('Send a message')}</h3>
-          <div class="step-card is-earth">${me ? `<span class="step-who">${esc(me)}</span>` : ''}${T('Have you checked your CO₂ sensors lately? They seem to be running dangerously high')}</div>
+          <div class="step-card is-earth">${me ? `<span class="step-who">${esc(me)}</span>` : ''}${T('What’s the part of the mission nobody sees?')}</div>
           <p>${T('Your message from Earth will travel to Mars to reach the crew on MARS!platz, where it will be seen and answered accordingly.')}
             <span class="step-space">${T('At the same time, your message will also travel into space. Click on the Message Board to see how far your message has gone. Keep it family friendly.')}</span></p>
         </div>
@@ -420,7 +423,7 @@ function slowChat(ctx) {
         <div class="step-body">
           <h3>${T('Crew response')}</h3>
           <p class="step-flag">${T('Downlink received')}</p>
-          <div class="step-card is-crew"><span class="step-who">${T('Crew answer')}</span>${T('Yes, CO₂ levels were elevated. We took countermeasures and sensors indicate we are back at normal parameters. Thanks for the heads up!')}</div>
+          <div class="step-card is-crew"><span class="step-who">${T('Crew answer')}</span>${T('Keeping track of all our supplies, from food and water to the energy we cook with. Nothing gets used without being counted.')}</div>
           <p>${fill(T, 'Messages will be answered during the day and can be viewed on the {board}. Also, at {time}, the daily communication window opens where people on MARS!platz can communicate directly with the crew.', { board: `<a class="step-link" href="/write#exchanges">${esc(T('message board'))}</a>`, time: b(when) })}</p>
         </div>
       </li>

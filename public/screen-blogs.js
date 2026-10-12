@@ -10,7 +10,7 @@
  * screen's width — laid out 1920 wide, 1080 upright (screen.js, rollZoom) — while a blog is drawn at the screen's own
  * pixels, so a blog rolls 14 times that zoom: 14 pixels a second on a screen 1920 wide (or 1080 upright), 28 on a 4K
  * screen. (28 a second on any screen until then: twice the habitat's pace on a screen 1920 wide.)
- * On a light screen — every screen unless its address says ?fx=1 (html.lite; screens.js, screen-lite.css; 12 October:
+ * On a light screen — one whose address says ?lite=1 (html.lite; screens.js, screen-lite.css; 12 October:
  * "make the pages very very light … computers with not so much graphics power … glitching and giving artifacts") — the
  * post does not roll: it turns a page at a time, at once, each page beginning with the first paragraph (or picture) the
  * page before showed only in part, what lies under its last whole one out of sight until the next (clipped), a

@@ -750,9 +750,11 @@ process.exit(ok ? 0 : 1);' "$LAND_C" "$SHIFT_DAY" \
   && grep -qF "body.landing .land-crew .crew-now-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; justify-self: center; }" public/sheet.css \
   && grep -qF "  body.landing .land-crew .crew-now-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 28px; justify-self: stretch; }" public/sheet.css \
   && grep -qF "  body.landing .land-crew { grid-template-columns: auto minmax(0, 1fr); align-items: center; }" public/sheet.css \
+  && grep -qF "  body.landing .land-crew .crew-now-officer img { width: clamp(64px, 11.5vh, 120px); height: clamp(64px, 11.5vh, 120px);" public/sheet.css \
+  && grep -qF "  body.landing .land-crew { max-width: none; margin: 0 0 clamp(12px, 2.4vh, 30px); padding: clamp(18px, 3.4vh, 38px) clamp(24px, 2.4vw, 40px);" public/sheet.css \
   && grep -qF "body.landing .about-sec, body.landing .call, body.landing .land-crew, body.landing .steps," public/neu.css \
   && grep -qF "const { crewList, crewWhenParts, CREW } = require('./sol');" src/views/pages/landing.js \
-  && ok "the landing page shows Current Crew on its second page, over the two calls — the crew on shift (Yasha Jain, Tina Lorenz, Götz Dipper), each with their photograph and name under the role, SOL and the date over the title and nothing under it — a card as wide as the two calls, three across on a desk, one under the other on a phone — in German and French too" || bad "Current Crew is not over the two calls on the landing page as it should be"
+  && ok "the landing page shows Current Crew on its second page, over the two calls — the crew on shift (Yasha Jain, Tina Lorenz, Götz Dipper), each with their photograph and name under the role, SOL and the date over the title and nothing under it — a card as wide as the two calls, three across on a desk — its photographs and air a size up (12 October: "increase the height of the Current Crew tab") — one under the other on a phone — in German and French too" || bad "Current Crew is not over the two calls on the landing page as it should be"
 # A sol on MARS!platz is gone from the About page (12 October: "from About remove A sol on MARS!platz"; it stood under
 # What's inside the habitat from 7 October — the day's activities on a rail): no section, no pill, in no language; no
 # shift change anywhere, and the shipped schedule keeps its sixteen entries, 08:30 to 22:00 Lights Out
@@ -2223,8 +2225,8 @@ grep -qF 'body.screen.screen-mission .screen-turns #crew .officer-face { backgro
 SKY_OK=1; for n in landing habitat board write mission blogs day trends media station livestream; do
   curl -s -b $SK "$B/screen/$n" | grep -q '<div class="screen-sky" aria-hidden="true"><svg class="sky-field" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">' || SKY_OK=0
 done
-SKYD=$(curl -s -b $SK "$B/screen/day?fx=1" | tr '\n' ' ' | grep -o '<div class="screen-sky".*<i class="comet c5"></i></div>')
-SKYB=$(curl -s -b $SK "$B/screen/board?fx=1" | tr '\n' ' ' | grep -o '<div class="screen-sky".*<i class="comet c5"></i></div>')
+SKYD=$(curl -s -b $SK "$B/screen/day" | tr '\n' ' ' | grep -o '<div class="screen-sky".*<i class="comet c5"></i></div>')
+SKYB=$(curl -s -b $SK "$B/screen/board" | tr '\n' ' ' | grep -o '<div class="screen-sky".*<i class="comet c5"></i></div>')
 # (four hundred stars since the evening of 8 October, every one a dot — "remove all the planets from the background, only
 # have dots as stars" —, five comets; the habitat's panel and the board lie on the sky with no ground of their own)
 [ $SKY_OK = 1 ] && [ "$(echo "$SKYD" | grep -o '<circle cx="[0-9]*" cy="[0-9]*" r="[0-9.]*" opacity=' | wc -l)" = "400" ] && [ "$(echo "$SKYD" | grep -o '<circle ' | wc -l)" = "400" ] \
@@ -2233,10 +2235,10 @@ SKYB=$(curl -s -b $SK "$B/screen/board?fx=1" | tr '\n' ' ' | grep -o '<div class
   && grep -q 'body.screen .screen-sky { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }' public/screen.css && grep -q 'body.screen > .stage, body.screen > .ticker { position: relative; z-index: 1; }' public/screen.css \
   && grep -q 'body.screen.screen-habitat #habitat.dpanel, body.screen .screen.board { background: transparent !important; border-color: transparent !important; box-shadow: none !important;' public/screen.css \
   && grep -q '@media (prefers-reduced-motion: reduce) { body.screen .screen-sky .tw { animation: none; } body.screen .comet { display: none; } }' public/screen.css \
-  && ok "every screen has its sky — four hundred stars, every one a dot, some twinkling, five comets now and then (?fx=1), no planets — fixed behind the stage, the same on every screen and every load; the habitat's tiles and the board's messages stand on it" || bad "a screen lacks its sky, or it is not behind the stage, or it carries more than dots"
-# a light screen's sky (12 October — every screen unless its address says ?fx=1): the same four hundred dots in the same
+  && ok "every screen has its sky — four hundred stars, every one a dot, some twinkling, five comets now and then, no planets — fixed behind the stage, the same on every screen and every load; the habitat's tiles and the board's messages stand on it" || bad "a screen lacks its sky, or it is not behind the stage, or it carries more than dots"
+# a light screen's sky (12 October — a screen whose address says ?lite=1): the same four hundred dots in the same
 # places, none twinkling, and no comets
-curl -s -b $SK $B/screen/day | node -e '
+curl -s -b $SK "$B/screen/day?lite=1" | node -e '
 let h = ""; process.stdin.on("data", (c) => h += c).on("end", () => {
   const a = h.indexOf("<div class=\"screen-sky\""), sky = a < 0 ? "" : h.slice(a, h.indexOf("</div>", a) + 6);
   const fx = process.argv[1].replace(/ class="tw" style="animation-delay:-[0-9.]+s"/g, "").replace(/<i class="comet c[1-5]"><\/i>/g, "").trim();
@@ -2271,39 +2273,42 @@ echo "$LIV" | grep -q 'class="landing inner screen screen-livestream" data-scree
 TICK_OK=1; for n in habitat board write mission blogs day trends media; do curl -s -b $SK $B/screen/$n | grep -q 'class="ticker"' && TICK_OK=0; done
 [ $TICK_OK = 1 ] && curl -s -b $SK $B/screen/landing | grep -q 'class="ticker"' && ok "no ticker on the screens, but on the landing screen, which keeps it" || bad "a ticker is on a screen, or off the landing screen"
 SCR=$(curl -s -b $SK $B/screen/board)
-echo "$SCR" | grep -q '<html lang="de" data-theme="dark" class="js screen lite">' && echo "$SCR" | grep -q 'Nachrichtenboard' && curl -s -b $SK $B/screen/station | grep -q '<html lang="de" data-theme="dark" class="js screen lite">' \
-  && curl -s -b $SK $B/screen/habitat | grep -q '<html lang="de" data-theme="dark" class="js screen lite">' && curl -s -b $SK $B/screens | grep -q 'data-theme="dark" class="js screen lite"' \
+echo "$SCR" | grep -q '<html lang="de" data-theme="dark" class="js screen">' && echo "$SCR" | grep -q 'Nachrichtenboard' && curl -s -b $SK $B/screen/station | grep -q '<html lang="de" data-theme="dark" class="js screen">' \
+  && curl -s -b $SK $B/screen/habitat | grep -q '<html lang="de" data-theme="dark" class="js screen">' && curl -s -b $SK $B/screens | grep -q 'data-theme="dark" class="js screen"' \
   && ok "every screen is dark and in German unless its address says otherwise (8 October: every page in /screens dark; the site itself opens light)" || bad "the screens' default is not dark and German"
-curl -s -b $SK "$B/screen/board?lang=en&theme=light" | grep -q '<html lang="en" data-theme="light" class="js screen lite">' && curl -s -b $SK "$B/screen/board?lang=fr" | grep -q '<html lang="fr" data-theme="dark"' \
+curl -s -b $SK "$B/screen/board?lang=en&theme=light" | grep -q '<html lang="en" data-theme="light" class="js screen">' && curl -s -b $SK "$B/screen/board?lang=fr" | grep -q '<html lang="fr" data-theme="dark"' \
   && grep -q ':root\[data-theme="light"\] body.screen .screen-sky { display: none; }' public/screen.css \
   && ok "?lang=en|fr and ?theme=light switch it; a light screen has no sky behind it" || bad "the switches in the address do not work"
-# the screens drawn light (12 October: "for all the pages in screen/, make the pages very very light to load — they are set
-# up on computers with not so much graphics power or GLSL, and it is glitching and giving artifacts"): every screen light
-# unless its address says ?fx=1 — html.lite, screen-lite.css after every other sheet (nothing blurred, masked, filtered,
-# blended or held as a layer; nothing moving by itself but the landing screen's running line; the shades without their
-# blur); the habitat and the blogs a page at a time, whole pixels, no layer; the radar's astronauts still; a change under
-# the stage looked at, not fitted at once; SMIL held — and with ?fx=1 all of it as it was; the list of the screens says so
+# the screens drawn light — on request (12 October: "for all the pages in screen/, make the pages very very light to load —
+# they are set up on computers with not so much graphics power or GLSL, and it is glitching and giving artifacts" made it
+# every screen's way; that afternoon "undo the simplification of the screens page, restore to previous state"): every
+# screen drawn whole again, its movement and effects as they were; with ?lite=1 html.lite and screen-lite.css after every
+# other sheet (nothing blurred, masked, filtered, blended or held as a layer; nothing moving by itself but the landing
+# screen's running line and the LIVE dots, which blink; the shades without their blur); the habitat and the blogs a page
+# at a time, whole pixels, no layer; the radar's astronauts still; a change under the stage looked at, not fitted at once;
+# SMIL held; the list of the screens says nothing of it any more
 LITE_OK=1; for n in landing habitat board write mission blogs day trends media station livestream; do
-  P=$(curl -s -b $SK "$B/screen/$n")
+  P=$(curl -s -b $SK "$B/screen/$n?lite=1")
   { echo "$P" | grep -q 'class="js screen lite"' && echo "$P" | tr -d '\n' | grep -q '<link rel="stylesheet" href="/neu.css?v=[^"]*"> *<link rel="stylesheet" href="/screen-lite.css?v=[^"]*">'; } || LITE_OK=0
-  P=$(curl -s -b $SK "$B/screen/$n?fx=1")
-  { echo "$P" | grep -q 'class="js screen"' && ! echo "$P" | grep -q 'screen-lite.css'; } || LITE_OK=0
+  P=$(curl -s -b $SK "$B/screen/$n")
+  { echo "$P" | grep -q 'class="js screen"' && ! echo "$P" | grep -q 'screen-lite.css\|screen lite'; } || LITE_OK=0
 done
-[ $LITE_OK = 1 ] && curl -s -b $SK $B/screens | grep -q 'class="js screen lite"' && curl -s -o /dev/null -w '%{content_type}' $B/screen-lite.css | grep -q 'text/css' \
+[ $LITE_OK = 1 ] && ! curl -s -b $SK $B/screens | grep -q 'class="js screen lite"' && curl -s -o /dev/null -w '%{content_type}' $B/screen-lite.css | grep -q 'text/css' \
   && grep -qF '  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;' public/screen-lite.css && grep -qF '  -webkit-mask-image: none !important; mask-image: none !important;' public/screen-lite.css \
   && grep -qF '  will-change: auto !important;' public/screen-lite.css && grep -qF '  transition: none !important;' public/screen-lite.css \
   && grep -qF 'html.lite *:not(.tk-track), html.lite *::before, html.lite *::after { animation: none !important; }' public/screen-lite.css \
   && grep -qF 'html.lite body.screen .board .cards:not(.is-fitted) > .card { animation: board-unfitted 0s linear 2s forwards !important; }' public/screen-lite.css \
   && grep -qF '  --neu-out: inset 0 0 0 1px rgba(255,255,255,.08), 0 2px 3px rgba(0,0,0,.5) !important;' public/screen-lite.css && grep -qF 'html.lite body.screen .comet, html.lite body.screen .hud-scan { display: none !important; }' public/screen-lite.css \
-  && grep -qF "fx: req.query.fx === '1'" src/server.js && grep -qF "fitLandscape = (BY_NAME[name] && BY_NAME[name].fitLandscape) || '', lite = !ctx.fx;" src/views/pages/screens.js \
+  && grep -qF "lite: req.query.lite === '1'" src/server.js && grep -qF "fitLandscape = (BY_NAME[name] && BY_NAME[name].fitLandscape) || '', lite = !!ctx.lite;" src/views/pages/screens.js \
+  && grep -qF "html.lite body.screen .board .live:not(.stale)::before { animation: lite-blink 1.2s steps(1, end) infinite !important; }" public/screen-lite.css \
   && grep -qF "if (LITE) { nextPage(); return; }" public/screen-roll.js && grep -qF "sheet.style.transform = y > 0 ? 'translateY(' + (-Math.round(y)) + 'px)' : '';" public/screen-roll.js \
   && grep -qF "var PAGE = Number(root.getAttribute('data-page-hold')) || 15000;" public/screen-roll.js && grep -qF "if (h > H * 0.9) continue;" public/screen-roll.js \
   && grep -qF "if (LITE) { pages(roll, body); return; }" public/screen-blogs.js && grep -qF "}, Math.max(10000, Math.min(75000, shown / pace * 1000)));" public/screen-blogs.js \
   && grep -qF "if (document.documentElement.classList.contains('lite')) calm = true;" public/live.js \
   && grep -qF "if (LITE) lookSoon(); else refit();" public/screen.js && grep -qF "try { s.pauseAnimations(); s.setCurrentTime(0); } catch (e) { /* as it stands */ }" public/screen.js \
   && node --check public/screen-roll.js && node --check public/screen-blogs.js && node --check public/screen.js && node --check public/live.js \
-  && curl -s -b $SK $B/screens | grep -q '<code>?fx=1</code>' && curl -s -b $SK $B/screens | grep -q 'Jeder Bildschirm wird leicht gezeichnet' \
-  && ok "every screen is drawn light unless its address says ?fx=1 — nothing blurred, masked, filtered or glowing, nothing moving by itself but the landing screen's running line, the shades without their blur, the habitat and the blogs a page at a time, the radar still, the sky still; ?fx=1 brings it all back; the list of the screens says so" || bad "the screens are not drawn light, or ?fx=1 does not bring the effects back"
+  && ! curl -s -b $SK $B/screens | grep -q 'fx=1\|lite=1\|leicht gezeichnet' && curl -s -b $SK $B/screens | grep -q 'rolling by slowly from top to bottom' \
+  && ok "every screen is drawn whole again, its movement and effects as they were (12 October: \"undo the simplification of the screens page\"); with ?lite=1 a screen is drawn light — nothing blurred, masked, filtered or glowing, nothing moving by itself but the landing screen's running line and the blinking LIVE dots, the shades without their blur, the habitat and the blogs a page at a time, the radar still, the sky still; the list of the screens says nothing of it" || bad "the screens are not drawn whole by default, or ?lite=1 does not draw them light"
 echo "$SCR" | grep -q 'class="landing inner screen screen-board" data-screen="board" data-fit="clip"' && curl -s -b $SK $B/screen/habitat | grep -q 'class="landing inner screen screen-habitat" data-screen="habitat" data-fit="roll" data-tz=' \
   && curl -s -b $SK $B/screen/habitat | tr -d '\n' | grep -q '<div class="stage-fit" id="stage-fit"><div class="screen-roll" id="screen-roll"> *<section class="dpanel span-12 compact" id="habitat">' \
   && curl -s -b $SK $B/screen/habitat | grep -q '<script src="/screen-roll.js?v=' && curl -s -b $SK $B/screen/habitat | grep -q '<script src="/live.js?v=' \
@@ -3070,14 +3075,16 @@ echo "$LAND" | grep -q '<div class="calls" id="calls">' && ! echo "$LAND" | grep
 curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q 'Willkommen im langsamsten Chat der Welt' && curl -s -H "Cookie: mcs_lang=fr" $B/ | grep -q 'Bienvenue dans le chat le plus lent du monde' \
   && ok "in German and French as well" || bad "the slowest chat is not translated"
 echo "$LAND" | grep -q '<span class="step-space">At the same time, your message will also travel into space. Click on the Message Board to see how far your message has gone. Keep it family friendly.</span>' \
-  && echo "$LAND" | grep -q 'Have you checked your CO₂ sensors lately? They seem to be running dangerously high</div>' && echo "$LAND" | grep -q '<p>Your message from Earth will travel to Mars to reach the crew on MARS!platz, where it will be seen and answered accordingly.' \
-  && echo "$LAND" | grep -q '<span class="step-who">Crew answer</span>Yes, CO₂ levels were elevated. We took countermeasures and sensors indicate we are back at normal parameters. Thanks for the heads up!</div>' \
+  && echo "$LAND" | grep -q 'What’s the part of the mission nobody sees?</div>' && echo "$LAND" | grep -q '<p>Your message from Earth will travel to Mars to reach the crew on MARS!platz, where it will be seen and answered accordingly.' \
+  && echo "$LAND" | grep -q '<span class="step-who">Crew answer</span>Keeping track of all our supplies, from food and water to the energy we cook with. Nothing gets used without being counted.</div>' \
+  && ! echo "$LAND" | grep -q 'CO₂ sensors\|CO₂ levels were elevated' && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q 'Welchen Teil der Mission sieht niemand?' \
+  && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q 'Nichts wird verbraucht, ohne dass es gezählt wird.</div>' && curl -s -H "Cookie: mcs_lang=fr" $B/ | grep -q 'Rien n’est utilisé sans être compté.</div>' \
   && echo "$LAND" | grep -q 'Messages will be answered during the day and can be viewed on the <a class="step-link" href="/write#exchanges">message board</a>.' && echo "$LAND" | grep -q '<p class="steps-how">How it works:</p>' \
   && echo "$LAND" | grep -q '<p class="intro-text">MARS! turns the Karlsruhe Marktplatz into MARS!platz. Can we go to Mars to save the Earth? Three astronauts are finding out, and you can help! Write them a message, have a look on the mission dashboard to find out if their food supply is running low or see what they’re currently researching.</p>' && ! echo "$LAND" | grep -q 'turns the Marktplatz into' \
   && ! echo "$LAND" | grep -q 'This website is your portal\|durational performance in which\|What does it smell like in there\|Lentils. Mostly lentils' \
   && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q 'Gleichzeitig reist deine Nachricht auch ins All.' && curl -s -H "Cookie: mcs_lang=fr" $B/ | grep -q 'En même temps, votre message voyagera aussi dans l’espace.' \
   && grep -q 'body.landing .step-body .step-space { display: block; margin-top: 8px; }' public/sheet.css \
-  && ok "October's text sheet on the landing page: the note says what MARS! is (the name a link to its page at ZKM) and what the site is for; the slowest chat welcomes the ground station's personnel (and zips into space), How it works:, the CO₂ example and its answer, the message board linked, the communication hour at 19:00 CET — in the three languages" || bad "the landing page's words are not October's text sheet's"
+  && ok "October's text sheet on the landing page: the note says what MARS! is (the name a link to its page at ZKM) and what the site is for; the slowest chat welcomes the ground station's personnel (and zips into space), How it works:, the example — What’s the part of the mission nobody sees?, and the crew's answer, keeping track of all the supplies (12 October; the CO₂ example went) — the message board linked, the communication hour at 19:00 CET — in the three languages" || bad "the landing page's words are not October's text sheet's"
 SKYCSS=$(awk '/the sky of the first page, and the world.s slowest chat/,0' public/aura.css)
 grep -q '\.dome-sky, \.dome-seq, \.slow-chat { display: none; }' public/station.css && echo "$SKYCSS" | grep -q 'html.js body.landing .space-room .dome-sky { display: block; position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; }' \
   && ! grep -q 'dome-panel.has-sky' public/aura.css && ! grep -q 'dome-panel.has-sky' public/sheet.css \
@@ -3962,7 +3969,7 @@ NS_OK=1; for u in / /dashboard /about /write /media; do curl -s -H "Cookie: mcs_
 [ $NS_OK = 1 ] && ! curl -s $B/control/login | grep -q 'class="night-sky"' \
   && curl -s -o /dev/null -D - "$B/sky.svg?v=1" | grep -qi '^content-type: image/svg+xml' && curl -s -o /dev/null -D - "$B/sky.svg?v=1" | grep -qi '^cache-control: public, max-age=31536000, immutable' \
   && [ "$(curl -s "$B/sky.svg?v=1" | grep -o '<circle ' | wc -l)" = "400" ] && [ "$(curl -s -H 'Accept-Encoding: br' -o /dev/null -w '%{size_download}' "$B/sky.svg?v=1")" -lt 8000 ] \
-  && [ "$(curl -s "$B/sky.svg" | grep -o '<circle[^>]*>' | md5sum)" = "$(curl -s -b $SK "$B/screen/day?fx=1" | grep -o '<circle[^>]*>' | head -400 | md5sum)" ] \
+  && [ "$(curl -s "$B/sky.svg" | grep -o '<circle[^>]*>' | md5sum)" = "$(curl -s -b $SK "$B/screen/day" | grep -o '<circle[^>]*>' | head -400 | md5sum)" ] \
   && grep -q 'body.landing .night-sky { display: none; }' public/neu.css && grep -q ':root\[data-theme="dark"\] body.landing:not(.screen) { isolation: isolate; }' public/neu.css \
   && grep -q ':root\[data-theme="dark"\] body.landing:not(.screen) .night-sky { display: block; position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none;' public/neu.css \
   && grep -q '  background: url("/sky.svg?v=1") center / cover no-repeat; }' public/neu.css && grep -q '@media (prefers-reduced-motion: reduce) { body.landing .night-sky .comet { display: none; } }' public/neu.css \

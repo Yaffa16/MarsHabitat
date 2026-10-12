@@ -20,7 +20,7 @@
  *    /api/screens/version) and at the venue's midnight, when the sol turns — never on a timer (9 October: "make sure
  *    the screens do not continuously reload"), not while someone is writing on the writing screen or the livestream
  *    plays, and on the rolled habitat at the roll's turn, while its sheet is faded out (screen-roll.js).
- * On a light screen — every screen unless its address says ?fx=1 (html.lite; screens.js, screen-lite.css; 12 October:
+ * On a light screen — one whose address says ?lite=1 (html.lite; screens.js, screen-lite.css; 12 October:
  * the screens' computers have little graphics power) — a change under the stage is not fitted at once but looked at a
  * moment later, cheaply, and fitted only if it no longer fits (or has room to spare); and the drawings that move by
  * themselves (SMIL) are stopped.

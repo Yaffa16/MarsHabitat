@@ -11,7 +11,7 @@
  * Moved by transform, not scrolled: nothing on the screen can be dragged. Asked for less motion, the sheet turns over a
  * screenful at a time instead of rolling. The page's own reloads (screen.js) wait for the moment the sheet is faded out,
  * so a reload never cuts the roll short. Nothing here is ever sent anywhere.
- * On a light screen — every screen unless its address says ?fx=1 (html.lite; screens.js, screen-lite.css; 12 October:
+ * On a light screen — one whose address says ?lite=1 (html.lite; screens.js, screen-lite.css; 12 October:
  * "make the pages very very light … computers with not so much graphics power … glitching and giving artifacts") — the
  * sheet does not roll: it turns a page at a time, at once — no movement, no fade, no layer held for it. Each page begins
  * with the first row the page before showed only in part, and what lies under the page's last whole row is out of sight

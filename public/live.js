@@ -10,12 +10,12 @@
  *  - the figures in the dashboard's head roll up from zero to their value when the page opens (the sol, the crew), as a
  *    readout settling — the values themselves are the page's, untouched.
  * Where the visitor asks for less motion the dots stand where they are, lit, and the figures stand as written — and so
- * on the installation's light screens (html.lite: every screen unless its address says ?fx=1; 12 October).
+ * on the installation's light screens (html.lite: a screen whose address says ?lite=1; 12 October).
  * Nothing here is sent anywhere. */
 (function () {
   'use strict';
   var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (document.documentElement.classList.contains('lite')) calm = true;   // a light screen (screens.js, ?fx=1 aside): still, as for less motion
+  if (document.documentElement.classList.contains('lite')) calm = true;   // a light screen (screens.js, ?lite=1): still, as for less motion
 
   /* ------------------------------------------------------------ the astronauts, wandering about the radar */
   var radar = document.querySelector('.dl-radar');

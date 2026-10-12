@@ -19,12 +19,14 @@
  * the sol turns (the writing screen waits while someone is writing).
  * They wear the site's soft UI (public/neu.css, over screen.css — October: "make sure the visualisations also change
  * for the /screens page"), by night and by day, as the public pages do.
- * And every screen is light unless its address says ?fx=1 (12 October: "make the pages very very light to load — they
- * are set up on computers with not so much graphics power or GLSL, and it is glitching and giving artifacts"): html.lite
- * and public/screen-lite.css, last — nothing blurred, masked, filtered or glowing, nothing moving by itself but the
- * landing screen's running line, the soft UI's shades without their blur, the stars still and no comets (screenSky); the
- * habitat and the blogs turn a page at a time instead of rolling (screen-roll.js, screen-blogs.js). ?fx=1 brings the
- * movement and the effects back for a screen whose computer has the graphics for them (server.js, screenCtx: ctx.fx).
+ * A screen can be drawn light on request, ?lite=1 in its address, for a computer with little graphics power (12 October:
+ * "make the pages very very light to load — they are set up on computers with not so much graphics power or GLSL, and it
+ * is glitching and giving artifacts" made it every screen's way that morning; that afternoon, "undo the simplification
+ * of the screens page, restore to previous state", every screen is as it was again, its movement and effects whole):
+ * html.lite and public/screen-lite.css, last — nothing blurred, masked, filtered or glowing, nothing moving by itself
+ * but the landing screen's running line and the LIVE dots, the soft UI's shades without their blur, the stars still and
+ * no comets (screenSky); the habitat and the blogs turn a page at a time instead of rolling (screen-roll.js,
+ * screen-blogs.js) — server.js, screenCtx: ctx.lite.
  */
 const L = require('../layout');
 const { esc } = L;
@@ -47,11 +49,11 @@ const V = L.ASSET_V;
    keeps its layout at) — the scale is capped so the screen's width, divided by the scale, stays at least this. */
 const SCREENS = [
   { name: 'landing', title: 'Landing page', fit: 'scale', minWidth: 1000, about: 'The first screen of the landing page — the name, the way to the habitat with the latest exchanges and pictures around the line — with the ticker' },
-  { name: 'habitat', title: 'Habitat', fit: 'roll', about: 'The habitat’s instruments, large, one row under the other, a page at a time from top to bottom (rolling by slowly with ?fx=1): the readings and Karlsruhe, the crew’s figures, the stores, the power and the astronauts, the hardware’s charts' },
+  { name: 'habitat', title: 'Habitat', fit: 'roll', about: 'The habitat’s instruments, large, one row under the other, rolling by slowly from top to bottom: the readings and Karlsruhe, the crew’s figures, the stores, the power and the astronauts, the hardware’s charts' },
   { name: 'board', title: 'Message Board', fit: 'clip', about: 'The ground station’s board, live: every message sent from the writing screen as it stands — in transit, awaiting a reply, answered — among the latest exchanges with the crew, the newest first — the latest that fit, nine at the most, never one cut' },
   { name: 'write', title: 'Write to the crew', fit: 'scale', minWidth: 640, about: 'The composer, full screen, for writing to the crew at the venue — every message from it as the ground station’s, under its one operator name' },
   { name: 'mission', title: 'Today’s Mission', fit: 'scale', minWidth: 760, about: 'The day’s scientific mission, typed: its question, Morning, Afternoon and EVA — ten seconds after it stands whole, the day (the schedule, the meal and the crew’s moods) for half a minute, then the mission again, round and round' },
-  { name: 'blogs', title: 'Blogs', fit: 'none', about: 'The Commander Log, the Daily Mission Report and the Health Report, one at a time — each post a page at a time from top to bottom (rolling by with ?fx=1), then the next blog' },
+  { name: 'blogs', title: 'Blogs', fit: 'none', about: 'The Commander Log, the Daily Mission Report and the Health Report, one at a time — each post rolling by from top to bottom, then the next blog' },
   { name: 'day', title: 'Today', fit: 'scale', minWidth: 640, about: 'Today’s Schedule, Today’s Meal and the Crew Moods' },
   { name: 'trends', title: 'Trends', fit: 'scale', fitLandscape: 'fill', minWidth: 520, about: 'The run’s trends on one graph' },
   { name: 'media', title: 'Media', fit: 'clip', about: 'The newest pictures out of the habitat in one grid, as many as fit, live' },
@@ -67,9 +69,9 @@ const BY_NAME = Object.fromEntries(SCREENS.map((s) => [s.name, s]));
     without a ground of their own. Four hundred stars, every one a dot (that evening: "remove all the planets from the
     background, only have dots as stars" — the planets, the moon, the nebula and the bright stars' rays, added an hour
     before, are gone), and five comets. The same scatter on every load (seeded); still where less motion is asked for;
-    by day none of it (8 October: "do not have the background stars in light mode" — screen.css). On a light screen
-    (`still` — every screen unless its address says ?fx=1; 12 October) the stars stand still and there are no comets:
-    the same four hundred dots, none twinkling, nothing crossing. */
+    by day none of it (8 October: "do not have the background stars in light mode" — screen.css). On a screen drawn
+    light (`still` — ?lite=1 in its address; 12 October) the stars stand still and there are no comets: the same four
+    hundred dots, none twinkling, nothing crossing. */
 function screenSky({ still = false } = {}) {
   // (the stars and the comets are the site's night sky as well — src/views/sky.js)
   const SKY = require('../sky');
@@ -80,10 +82,10 @@ function screenSky({ still = false } = {}) {
 /* `head`: the thin band over the piece — MARS!platz, the screen's name, the sol and the clock. No screen carries it any
    more (8 October: "from the /screen pages remove the MARS!platz header, have nothing there"): the piece has the whole
    screen; only the screens' sign-in page keeps it, to say where it is. */
-/* (light unless the address says ?fx=1 — ctx.fx, server.js: html.lite, screen-lite.css after the others, the sky still) */
+/* (light when the address says ?lite=1 — ctx.lite, server.js: html.lite, screen-lite.css after the others, the sky still) */
 function shell(ctx, { name, title, body, scripts = [], fit = 'scale', ticker = '', head = false, inner = true }) {
   const T = ctx.T, m = ctx.mission, lang = ctx.lang || 'en', minWidth = (BY_NAME[name] && BY_NAME[name].minWidth) || 0,
-    fitLandscape = (BY_NAME[name] && BY_NAME[name].fitLandscape) || '', lite = !ctx.fx;
+    fitLandscape = (BY_NAME[name] && BY_NAME[name].fitLandscape) || '', lite = !!ctx.lite;
   const stamp = m.phase === 'ACTIVE' ? `SOL ${String(m.clampedDay).padStart(2, '0')}/${m.totalDays}`
     : m.phase === 'PRE_LAUNCH' ? `T−${m.countdown.days}d` : T('Mission complete');
   return `<!doctype html>
@@ -305,7 +307,6 @@ function index(ctx, { missing = null } = {}) {
       </ul>
       ${require('../../lib/screens-auth').enabled ? `<form method="post" action="/screens/logout" class="screen-index-out"><button type="submit">${T('Sign out of the screens')}</button></form>` : ''}
       <p class="screen-index-note">${T('Every screen is dark and in German unless its address says otherwise:')} <code>?theme=light</code> · <code>?lang=en</code> · <code>?lang=fr</code> — ${T('for example')} <code>/screen/board?lang=en&amp;theme=light</code>. ${T('What the site keeps live stays live on the screen; a screen reloads itself only when the station is started anew, and at midnight, when the sol turns.')}</p>
-      <p class="screen-index-note">${T('Every screen is drawn light, for a computer with little graphics power: still, with nothing blurred or glowing, a page at a time where there is more than fits.')} <code>?fx=1</code> ${T('brings the movement and the effects back, for a screen whose computer has the graphics for them.')}</p>
     </div>`;
   return shell(ctx, { name: 'index', title: 'Screens', body, fit: 'none' });
 }

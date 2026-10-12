@@ -1,4 +1,5 @@
-/* MARS!platz — the installation's screens, light (src/views/pages/screens.js: html.lite on every screen, this sheet last).
+/* MARS!platz — the installation's screens, light (src/views/pages/screens.js: html.lite on a screen whose address says
+   ?lite=1, this sheet last).
  *
  * 12 October: "for all the pages in screen/, make the pages very very light to load — they are set up on computers with
  * not so much graphics power or GLSL, and it is glitching and giving artifacts; make sure it is light to load and to
@@ -17,8 +18,10 @@
  *    than roll (screen-roll.js, screen-blogs.js); the radar's astronauts stand (live.js); the landing screen's signal stands
  *    halfway up its line (below); a change under the stage is fitted at the next look, a moment later, only if it is
  *    needed (screen.js).
- * A screen whose computer has the graphics for it takes the movement and the effects back with ?fx=1 in its address
- * (this sheet is then not on the page at all).
+ * Light only on request since that afternoon ("undo the simplification of the screens page, restore to previous state"):
+ * every screen is drawn with its movement and effects whole, and this sheet is on the page only with ?lite=1 in its
+ * address. On a light screen the LIVE dots blink all the same (12 October: "make all live buttons have a blinking dot"):
+ * a dot switched on and off — no fading, a few pixels drawn anew twice a second.
  */
 
 /* ---------------------------------------------------------------- no blur, no mask, no filter, no blend, no layers */
@@ -33,6 +36,11 @@ html.lite *, html.lite *::before, html.lite *::after {
 
 /* ---------------------------------------------------------------- nothing moves by itself */
 html.lite *:not(.tk-track), html.lite *::before, html.lite *::after { animation: none !important; }
+/* (but the LIVE dots blink — on the board, the habitat's and the pictures' LIVE, the livestream's badge — switched on and
+   off, steps, nothing faded) */
+html.lite body.screen :is(.live-badge i, .cloud-live i, .dl-live i, .call-livepill i, .seq-live i, .live-dot),
+html.lite body.screen .board .live:not(.stale)::before { animation: lite-blink 1.2s steps(1, end) infinite !important; }
+@keyframes lite-blink { 50% { opacity: .2; } }
 /* (the board's safety: a card its script did not fit stands after two seconds — screen.css, board-unfitted) */
 html.lite body.screen .board .cards:not(.is-fitted) > .card { animation: board-unfitted 0s linear 2s forwards !important; }
 /* (the landing screen's exchanges and pictures come and go at once: shown while they are on — sheet.css) */

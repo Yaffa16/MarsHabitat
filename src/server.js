@@ -363,11 +363,11 @@ function screenCtx(req) {
   const lang = i18n.LANGS.includes(req.query.lang) ? req.query.lang : 'de';
   // no visitor on a screen: a screen in the square is nobody's browser (the writing screen mints one a message)
   // every screen dark unless the address says ?theme=light (8 October: "everything in /screens, all the pages there,
-  // should have the dark mode" — the site itself opens light); and light unless it says ?fx=1 (12 October: "make the
-  // pages very very light to load — computers with not so much graphics power … glitching and giving artifacts"): still,
-  // with nothing blurred, masked or glowing (views/pages/screens.js, public/screen-lite.css) — ?fx=1 gives a screen with
-  // the graphics for it the movement and the effects back
-  return { ...base, lang, T: i18n.of(lang), theme: req.query.theme === 'light' ? 'light' : 'dark', fx: req.query.fx === '1', offer: '', visitor: null, callsign: '' };
+  // should have the dark mode" — the site itself opens light); drawn light — still, with nothing blurred, masked or
+  // glowing (views/pages/screens.js, public/screen-lite.css) — only when it says ?lite=1, for a computer with little
+  // graphics power (12 October: light by default from the morning — "make the pages very very light to load" — until
+  // the afternoon: "undo the simplification of the screens page, restore to previous state")
+  return { ...base, lang, T: i18n.of(lang), theme: req.query.theme === 'light' ? 'light' : 'dark', lite: req.query.lite === '1', offer: '', visitor: null, callsign: '' };
 }
 app.get('/screens', requireScreens, (req, res) => res.set('Cache-Control', 'no-store').send(require('./views/pages/screens').index(screenCtx(req))));
 // The version the station's pages are built with — a new one each time the station starts: an open screen that finds its
