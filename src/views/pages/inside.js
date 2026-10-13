@@ -117,9 +117,10 @@ const mark = (p) => `<svg class="dome-mark" viewBox="-30 -30 60 60" aria-hidden=
         <g class="dome-ic dome-ic-line" transform="translate(-12 -12)">${ICONS[p.id]}</g></svg>`;
 
 /** A module's layers, bottom to top, each carrying the module's id: its picture in colour (over its lines; unseen until
- *  lit, when it comes in over them), the sweep that crosses it once when lit (a band clipped to the module), then its
- *  box itself as the key, and its name on a tag at its floor line (unseen until lit). */
-const picture = (r) => { const b = rectOf(r); return `<image class="in-pic" data-hex="${r.id}" href="${MODULE_PICS}${r.id}.webp?v=2" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" preserveAspectRatio="none"/>`; };
+ *  lit, when it comes in over them — its address in data-href, fetched the first time the room lights up: 13 October,
+ *  "make it lighter"), the sweep that crosses it once when lit (a band clipped to the module), then its box itself as
+ *  the key, and its name on a tag at its floor line (unseen until lit). */
+const picture = (r) => { const b = rectOf(r); return `<image class="in-pic" data-hex="${r.id}" data-href="${MODULE_PICS}${r.id}.webp?v=2" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" preserveAspectRatio="none"/>`; };
 function sweep(r) {
   const b = rectOf(r), w = Math.round(b.w * 0.26);
   return `<g clip-path="url(#in-clip-${r.id})"><rect class="in-sweep" data-hex="${r.id}" x="${b.x}" y="${b.y - 20}" width="${w}" height="${b.h + 40}"/></g>`;
@@ -186,13 +187,14 @@ function habitatInside(ctx, args) {
           </defs>
           <clipPath id="in-frame-clip"><rect class="in-frame" x="${VIEW.x}" y="${VIEW.y}" width="${VIEW.w}" height="${VIEW.h}" rx="26"/></clipPath>
           <g class="in-picture" clip-path="url(#in-frame-clip)">
-            <image class="in-scene" href="${SCENE}" x="0" y="0" width="${PIC.w}" height="${PIC.h}" preserveAspectRatio="none" aria-hidden="true"/>
+            <image class="in-scene" data-href="${SCENE}" x="0" y="0" width="${PIC.w}" height="${PIC.h}" preserveAspectRatio="none" aria-hidden="true"/>
             <g class="in-pics" aria-hidden="true">${ROOMS.map(picture).join('')}</g>
             <g class="in-sweeps" aria-hidden="true">${ROOMS.map(sweep).join('')}</g>
           </g>
           <g class="in-rooms">${ROOMS.map((r) => roomSvg(r, T)).join('')}</g>
           <g class="dome-hexes">${KEYS.map((k) => keySvg(k, T)).join('')}</g>
         </svg>
+        <noscript><style>body.landing .is-inside .dome-svg { display: none; }</style><img class="in-noscript" src="${SCENE}" alt="${esc(T('The habitat in section: its rooms under the dome, on the Mars plain'))}" width="${PIC.w}" height="${PIC.h}"></noscript>
       </div>
       <aside class="in-aside">
         <p class="in-aside-hint">${hint}</p>
@@ -204,6 +206,15 @@ function habitatInside(ctx, args) {
     <script>
     (function () {
       var root = document.getElementById('habitat-dome'); if (!root) return;
+      // The pictures come only when they are wanted (13 October: "make it lighter"): the drawing once the section is
+      // near the screen, a room's colour the first time that room lights up — a visitor who never scrolls this far loads
+      // none of it, one who touches a single room that room's colour alone
+      function want(n) { var u = n && n.getAttribute('data-href'); if (u && !n.getAttribute('href')) n.setAttribute('href', u); }
+      var scene = root.querySelector('.in-scene');
+      if ('IntersectionObserver' in window) {
+        var near = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { want(scene); near.disconnect(); } }); }, { rootMargin: '800px 0px' });
+        near.observe(root);
+      } else want(scene);
       var VB = [${VIEW.x}, ${VIEW.y}, ${VIEW.w}, ${VIEW.h}], AX = ${APEX_X};
       var hover = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);   // a desk: the hand alone opens a room
       function dialogOf(id) { var d = document.getElementById('dome-' + id); return d && d.tagName === 'DIALOG' ? d : null; }
@@ -309,7 +320,10 @@ function habitatInside(ctx, args) {
       // One rule for a part's light: it is lit while the hand is over it (or over its pop-up), while it has keyboard
       // focus, or while its pop-up is open — and goes dark the moment none of those is true (:focus-visible: a click's
       // focus alone does not count). Every layer of a room carries its id, so all of them light together.
-      function lit(id, on) { root.querySelectorAll('[data-hex="' + id + '"]').forEach(function (x) { x.classList.toggle('lit', !!on); }); }
+      function lit(id, on) {
+        if (on) want(root.querySelector('.in-pic[data-hex="' + id + '"]'));   // its colour, fetched the first time it lights up
+        root.querySelectorAll('[data-hex="' + id + '"]').forEach(function (x) { x.classList.toggle('lit', !!on); });
+      }
       function is(x, sel) { try { return x.matches(sel); } catch (e) { return sel === ':focus-visible' ? x === document.activeElement : false; } }
       function settle(id) {
         var d = dialogOf(id), any = !!(d && d.open);

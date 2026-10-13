@@ -19,7 +19,6 @@ export MISSION_OVERRIDE=true    # a rehearsal: the real dates are fixed in src/l
 export MISSION_START=${MISSION_START:-$(date -u -d '-4 days' +%F)}
 export MISSION_END=${MISSION_END:-$(date -u -d '+8 days' +%F)}
 export REHEARSAL_NOW_UNTIL=${REHEARSAL_NOW_UNTIL:-2099-12-31}   # NOW ends on the run's real first day (15 October 2026, src/lib/mission.js); the suite's rehearsal keeps it at hand after that day too
-export HOURLY_LIMIT=${HOURLY_LIMIT:-60}   # the suite posts many messages from one address; the station's own six an hour would saturate it
 export CONTROL_PASSWORD=${CONTROL_PASSWORD:-${ADMIN_PASSWORD:-control123}}
 export CONTROL_USER=${CONTROL_USER:-${ADMIN_USER:-control}}
 export DATA_DIR=$(mktemp -d)
@@ -73,7 +72,7 @@ echo "── the habitat in section: on the About page, before Who we are, every
 DOME=$(curl -s $B/about)
 echo "$DOME" | grep -q 'id="habitat-dome"' && [ "$(echo "$DOME" | grep -o '<rect class="in-room" data-hex="[a-z]*"' | wc -l)" = "11" ] && [ "$(echo "$DOME" | grep -o '<g class="dome-hex in-key" data-hex="[a-z]*"' | wc -l)" = "2" ] && [ "$(echo "$DOME" | grep -o '<dialog class="popup dome-popup" id="dome-[a-z]*"' | wc -l)" = "13" ] \
   && ! echo "$DOME" | grep -q 'id="dome-seq"\|class="seq-grid"\|class="seq-ruler"\|class="dome-foot"\|id="habitat-page"\|id="cutaway"\|class="cut-svg"\|class="dome-aura"\|class="dome-mesh"' \
-  && echo "$DOME" | grep -q '<image class="in-scene" href="/habitat/scene-lines.webp?v=1"' \
+  && echo "$DOME" | grep -q '<image class="in-scene" data-href="/habitat/scene-lines.webp?v=1"' \
   && ok "the habitat in section on the Mars plain, with its eleven modules (Storage and the Equipment Lockers are keys no more — 12 October), its two outside keys and their thirteen pop-ups, is on the About page — no sequencer's sheet, no ruler, no grid under it, nothing at its foot; the dome and the earlier cutaway are gone" || bad "the habitat is not drawn on the About page as it should be"
 curl -s $B/api/dome | node -e '
 let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
@@ -2804,7 +2803,7 @@ MOCK_PORT=$MOCKP node tools/spacespeak-mock.js > /tmp/spacespeak-mock.log 2>&1 &
 MOCKPID=$!
 DATA4=$(mktemp -d); CONT4=$(mktemp -d); cp content/*.json "$CONT4"/
 DATA_DIR="$DATA4" CONTENT_DIR="$CONT4" node src/db/seed.js > /dev/null 2>&1
-DATA_DIR="$DATA4" CONTENT_DIR="$CONT4" PORT=$RELP TRANSIT_SECONDS=1 HOURLY_LIMIT=60 SPACESPEAK_URL=http://localhost:$MOCKP \
+DATA_DIR="$DATA4" CONTENT_DIR="$CONT4" PORT=$RELP TRANSIT_SECONDS=1 SPACESPEAK_URL=http://localhost:$MOCKP \
   SPACESPEAK_USER=station SPACESPEAK_PASSWORD=secret SPACESPEAK_GAP_SECONDS=2 SPACESPEAK_ATTEMPTS=2 \
   node src/server.js > /tmp/srv4.log 2>&1 &
 SRV4=$!
@@ -2948,15 +2947,15 @@ MODS="hydroponics comms science airlock kitchen lounge quarters health recycling
   && ! echo "$HAB" | grep -q 'id="dome-seq"\|class="seq-\|class="dome-foot"\|id="dome-sky-data"\|class="sky-msg"\|class="sky-pic"\|RED DUST CITY · R75-2\|class="dome-aura"\|class="dome-mesh"\|class="dome-labels"' \
   && echo "$HAB" | grep -q '<svg class="dome-svg inside-svg" viewBox="0 0 1536 1024" data-view="0 0 1536 1024" data-view-phone="0 0 1536 1024" preserveAspectRatio="xMidYMid meet" role="img" aria-label="The habitat in section: its rooms under the dome, on the Mars plain">' \
   && echo "$HAB" | grep -q '<clipPath id="in-frame-clip"><rect class="in-frame" x="0" y="0" width="1536" height="1024" rx="26"/></clipPath>' \
-  && echo "$HAB" | grep -q '<g class="in-picture" clip-path="url(#in-frame-clip)">' && echo "$HAB" | grep -q '<image class="in-scene" href="/habitat/scene-lines.webp?v=1" x="0" y="0" width="1536" height="1024" preserveAspectRatio="none" aria-hidden="true"/>' \
+  && echo "$HAB" | grep -q '<g class="in-picture" clip-path="url(#in-frame-clip)">' && echo "$HAB" | grep -q '<image class="in-scene" data-href="/habitat/scene-lines.webp?v=1" x="0" y="0" width="1536" height="1024" preserveAspectRatio="none" aria-hidden="true"/>' \
   && ! echo "$HAB" | grep -q 'in-plain\|in-dome\|in-ink\|in-halo\|in-floor\|in-lamp\|inside\.svg\|ground\.jpg\|/habitat/rooms/\|in-glow\|in-lamp-light' \
   && echo "$HAB" | grep -q '<linearGradient id="in-sweep-light"' \
   && [ "$(echo "$HAB" | grep -o '<clipPath id="in-clip-[a-z]*"><rect x="[0-9]*" y="[0-9]*" width="[0-9]*" height="[0-9]*"/></clipPath>' | wc -l)" = "11" ] \
-  && [ "$(echo "$HAB" | grep -o '<image class="in-pic" data-hex="[a-z]*" href="/habitat/modules/[a-z]*.webp?v=2" x="[0-9]*" y="[0-9]*" width="[0-9]*" height="[0-9]*" preserveAspectRatio="none"/>' | wc -l)" = "11" ] \
-  && echo "$HAB" | grep -q '<image class="in-pic" data-hex="lounge" href="/habitat/modules/lounge.webp?v=2" x="578" y="493" width="335" height="187" preserveAspectRatio="none"/>' \
-  && echo "$HAB" | grep -q '<image class="in-pic" data-hex="kitchen" href="/habitat/modules/kitchen.webp?v=2" x="211" y="493" width="278" height="177" preserveAspectRatio="none"/>' \
-  && echo "$HAB" | grep -q '<image class="in-pic" data-hex="cycle" href="/habitat/modules/cycle.webp?v=2" x="904" y="680" width="191" height="155" preserveAspectRatio="none"/>' \
-  && echo "$HAB" | grep -q '<image class="in-pic" data-hex="hydroponics" href="/habitat/modules/hydroponics.webp?v=2" x="270" y="346" width="325" height="147" preserveAspectRatio="none"/>' \
+  && [ "$(echo "$HAB" | grep -o '<image class="in-pic" data-hex="[a-z]*" data-href="/habitat/modules/[a-z]*.webp?v=2" x="[0-9]*" y="[0-9]*" width="[0-9]*" height="[0-9]*" preserveAspectRatio="none"/>' | wc -l)" = "11" ] \
+  && echo "$HAB" | grep -q '<image class="in-pic" data-hex="lounge" data-href="/habitat/modules/lounge.webp?v=2" x="578" y="493" width="335" height="187" preserveAspectRatio="none"/>' \
+  && echo "$HAB" | grep -q '<image class="in-pic" data-hex="kitchen" data-href="/habitat/modules/kitchen.webp?v=2" x="211" y="493" width="278" height="177" preserveAspectRatio="none"/>' \
+  && echo "$HAB" | grep -q '<image class="in-pic" data-hex="cycle" data-href="/habitat/modules/cycle.webp?v=2" x="904" y="680" width="191" height="155" preserveAspectRatio="none"/>' \
+  && echo "$HAB" | grep -q '<image class="in-pic" data-hex="hydroponics" data-href="/habitat/modules/hydroponics.webp?v=2" x="270" y="346" width="325" height="147" preserveAspectRatio="none"/>' \
   && [ "$(echo "$HAB" | tr -d '\n' | grep -o '<image class="in-scene".*<g class="in-pics" aria-hidden="true">.*<g class="in-sweeps" aria-hidden="true">.*</g>          </g>' | wc -l)" = "1" ] \
   && [ "$(echo "$HAB" | grep -o '<g clip-path="url(#in-clip-[a-z]*)"><rect class="in-sweep" data-hex="[a-z]*" x="[-0-9]*" y="[-0-9]*" width="[0-9]*" height="[0-9]*"/></g>' | wc -l)" = "11" ] \
   && [ "$(echo "$HAB" | grep -o '<rect class="in-room" data-hex="[a-z]*" x="[0-9]*" y="[0-9]*" width="[0-9]*" height="[0-9]*" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="dome-[a-z]*"><title>[A-Za-z ()-]*</title></rect>' | wc -l)" = "11" ] \
@@ -2996,6 +2995,17 @@ MODS="hydroponics comms science airlock kitchen lounge quarters health recycling
 grep -qF "COLOUR = os.path.join(SVG, 'habitat_Final.svg')" tools/habitat-modules.py && grep -q "root = ET.parse(path).getroot()" tools/habitat-modules.py \
   && [ -s public/Svg_File/habitat_Final.svg ] && grep -q 'webp?v=2" x="' src/views/pages/inside.js \
   && ok "the habitat's coloured cut-outs are made from habitat_Final.svg, and browsers fetch them afresh" || bad "the habitat's cut-outs are not made from habitat_Final.svg"
+# the habitat's pictures come only when wanted (13 October: "do 1 and 2" — load the habitat only when someone scrolls to
+# it, and each room's colour only when it is first hovered or tapped): the page as sent fetches nothing under /habitat/ —
+# the drawing and the rooms carry their addresses in data-href; the drawing is asked for once the section nears the
+# screen, a room's colour the first time the room lights up; without a script, a plain picture of the drawing
+HABL=$(curl -s $B/about)
+! echo "$HABL" | grep -q ' href="/habitat/' && echo "$HABL" | grep -q '<image class="in-scene" data-href="/habitat/scene-lines.webp?v=1"' \
+  && echo "$HABL" | grep -qF "function want(n) { var u = n && n.getAttribute('data-href'); if (u && !n.getAttribute('href')) n.setAttribute('href', u); }" \
+  && echo "$HABL" | grep -qF "{ rootMargin: '800px 0px' });" && echo "$HABL" | grep -qF "if (on) want(root.querySelector('.in-pic[data-hex=\"' + id + '\"]'));" \
+  && echo "$HABL" | grep -q '<noscript><style>body.landing .is-inside .dome-svg { display: none; }</style><img class="in-noscript" src="/habitat/scene-lines.webp?v=1"' \
+  && grep -q 'body.landing .is-inside .in-noscript { display: block; width: 100%; height: auto; border-radius: 14px; }' public/sheet.css \
+  && ok "the habitat's pictures load only when wanted — the drawing as the section nears the screen, a room's colour the first time it lights up; without a script a plain picture" || bad "the habitat's pictures are fetched with the page, or not at all"
 [ "$(curl -s -o /dev/null -w '%{content_type}' $B/habitat/scene-lines.webp)" = "image/webp" ] && [ "$(curl -s -o /dev/null -w '%{size_download}' $B/habitat/scene-lines.webp)" -gt 150000 ] \
   && [ "$(for m in $MODS; do curl -s -o /dev/null -w '%{http_code} %{content_type}\n' $B/habitat/modules/$m.webp; done | sort -u)" = "200 image/webp" ] \
   && python3 -c '
@@ -4525,6 +4535,34 @@ HWOK=1; for P in "$HW3" "$HWF"; do
 done
 [ $HWOK = 1 ] && curl -s -b /tmp/a3.jar $B3/archive/export.json | grep -q '"value":37.4567891,"state":"37.4567891"' \
   && ok "every item of the habitat hardware in the PDF record carries three decimals at the most — low, high, mean, added today (1.234 kWh), every reading and its state as reported, in the day's record and the full record — the data keeps every digit" || bad "the PDF's habitat hardware figures are not cut to three decimals"
+# the hourly limits (13 October: "remove any limit on phones on one Wi-Fi — there should be nothing except the individual
+# callsign rate limit of 60 per hour and the KIOSK limit of 6000 per hour"): one callsign sends 60 an hour at the most —
+# the sixty-first is refused — while thousands of messages that hour stop nobody else; no address is kept with a message;
+# the writing screen counts its own messages (by its operator's name, never an address), 6,000 an hour
+LJ1=/tmp/lim1.jar; LJ2=/tmp/lim2.jar; rm -f $LJ1 $LJ2
+O1=$(curl -s -c $LJ1 -b $LJ1 $B3/ | grep -o 'name="callsign" value="[A-Z]*-[0-9]*"' | head -1 | grep -oE '[A-Z]+-[0-9]+')
+curl -s -c $LJ1 -b $LJ1 -X POST --data-urlencode "body=Limit check, the first." -d "tags=QUESTION" -d "callsign=$O1" -o /dev/null $B3/communicate
+DATA_DIR="$DATA3" node -e '
+const Database = require("better-sqlite3"); const db = new Database(require("path").join(process.env.DATA_DIR, "station.db"));
+const m = db.prepare("SELECT * FROM message WHERE callsign = ? ORDER BY id DESC LIMIT 1").get(process.argv[1]);
+db.prepare("UPDATE message SET state = ? WHERE id = ?").run("REJECTED", m.id);
+const ins = db.prepare("INSERT INTO message (visitor_id, callsign, body, tags, state, mission_day, submitted_at, arrival_at, light_seconds, distance_au, ip_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+const at = new Date(Date.now() - 60000).toISOString();
+const other = db.prepare("INSERT INTO visitor (callsign, token, created_at, last_seen) VALUES (?, ?, ?, ?)").run("CROWD-1000", "crowd-token-1000", at, at).lastInsertRowid;
+db.transaction(() => {
+  for (let i = 0; i < 59; i++) ins.run(m.visitor_id, m.callsign, "Limit check " + i, "QUESTION", "REJECTED", m.mission_day, at, at, m.light_seconds, m.distance_au, "");
+  for (let i = 0; i < 6100; i++) ins.run(other, "CROWD-1000", "The square writes " + i, "QUESTION", "REJECTED", m.mission_day, at, at, m.light_seconds, m.distance_au, "");
+})();' "$O1"
+L61=$(curl -s -c $LJ1 -b $LJ1 -X POST --data-urlencode "body=Limit check, the sixty-first." -d "tags=QUESTION" -d "callsign=$O1" -o /dev/null -w '%{redirect_url}' $B3/communicate)
+O2=$(curl -s -c $LJ2 -b $LJ2 $B3/ | grep -o 'name="callsign" value="[A-Z]*-[0-9]*"' | head -1 | grep -oE '[A-Z]+-[0-9]+')
+L2=$(curl -s -c $LJ2 -b $LJ2 -X POST --data-urlencode "body=Limit check, another person." -d "tags=QUESTION" -d "callsign=$O2" -o /dev/null -w '%{http_code} %{redirect_url}' $B3/communicate)
+IPK=$(DATA_DIR="$DATA3" node -e 'const Database = require("better-sqlite3"); const db = new Database(require("path").join(process.env.DATA_DIR, "station.db")); const r = db.prepare("SELECT ip_hash FROM message WHERE callsign = ? ORDER BY id DESC LIMIT 1").get(process.argv[1]); process.stdout.write(r ? "[" + r.ip_hash + "]" : "none");' "$O2")
+echo "$L61" | grep -q '/write?err=Too%20many%20transmissions%20from%20your%20position' && [ "$L2" = "302 $B3/write#write" ] && [ "$IPK" = "[]" ] \
+  && grep -qF "const PERSON_HOURLY_LIMIT = Number(process.env.PERSON_HOURLY_LIMIT || 60);" src/server.js && ! grep -q "process.env.HOURLY_LIMIT" src/server.js && ! grep -q "ip_hash = ?" src/server.js \
+  && grep -qF "const KIOSK_HOURLY_LIMIT = Number(process.env.KIOSK_HOURLY_LIMIT || 6000);" src/server.js && grep -qF "WHERE callsign = ? AND submitted_at > ?').get(SCREEN_OPERATOR, since).n;" src/server.js \
+  && grep -qx 'PERSON_HOURLY_LIMIT=60' .env.example && grep -qx 'KIOSK_HOURLY_LIMIT=6000' .env.example && ! grep -q '^HOURLY_LIMIT=' .env.example \
+  && grep -qF 'PERSON_HOURLY_LIMIT: "${PERSON_HOURLY_LIMIT:-60}"' docker-compose.yml && grep -qF 'KIOSK_HOURLY_LIMIT: "${KIOSK_HOURLY_LIMIT:-6000}"' docker-compose.yml && ! grep -q ' HOURLY_LIMIT:' docker-compose.yml \
+  && ok "a callsign sends 60 messages an hour at the most — the sixty-first is refused — while 6,000 more that hour stop nobody else: nothing is limited by address, and none is kept; the writing screen counts its own, 6,000 an hour" || bad "the limits are not 60 a callsign and 6,000 for the writing screen, with nothing by address"
 kill $SRV3 2>/dev/null; wait $SRV3 2>/dev/null
 kill $MOCK 2>/dev/null; wait $MOCK 2>/dev/null
 rm -rf "$DATA3" "$CONT3"

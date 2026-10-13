@@ -463,9 +463,16 @@ app.get(/^\/screen\/livestream\/(.+)$/, requireScreens, (req, res) => liveProxy(
    each message is still a new visitor's — a visitor row minted for it alone (lib/callsign.js, mint), no cookie set —
    so the next person at the screen is nobody's continuation: no transit lock across them. The checks are the
    composer's (the channel open, the words within bounds); the hourly limit is the screen's own, per address, since all
-   its messages come from one (KIOSK_HOURLY_LIMIT, 60 an hour). The fragment the screen's script asks for comes in the
+   its messages are one stream (KIOSK_HOURLY_LIMIT, 6,000 an hour since 13 October — the whole square writes at it),
+   counted by the operator's name, never by the address, so the phones on the venue's network never count towards it. The fragment the screen's script asks for comes in the
    screen's language (?lang=), which no cookie could carry. */
-const KIOSK_HOURLY_LIMIT = Number(process.env.KIOSK_HOURLY_LIMIT || 60);
+const KIOSK_HOURLY_LIMIT = Number(process.env.KIOSK_HOURLY_LIMIT || 6000);
+/* The only other limit (13 October: "remove any limit on phones on one Wi-Fi — there should be nothing except the
+   individual callsign rate limit of 60 per hour and the KIOSK limit of 6000 per hour"): one person — one callsign —
+   sends PERSON_HOURLY_LIMIT messages an hour at the most (60). Nothing is counted by address: phones on the same
+   Wi-Fi share one, and each keeps its own callsign and its own sixty. (HOURLY_LIMIT, the address's count until
+   then, is no longer read; no address, nor a hash of one, is stored with a message any more.) */
+const PERSON_HOURLY_LIMIT = Number(process.env.PERSON_HOURLY_LIMIT || 60);
 const SCREEN_OPERATOR = callsign.STATION;                                           // BODENSTATION (lib/callsign.js)
 const writeCtx = (req) => ({ ...screenCtx(req), callsign: SCREEN_OPERATOR });   // the screen's composer: the operator in its head
 app.get('/screen/write/composer', requireScreens, (req, res) => {
@@ -487,8 +494,8 @@ app.post('/screen/write', requireScreens, (req, res) => {
   const body = String(req.body.body || '').trim().replace(/\s+\n/g, '\n');
   if (body.length < 2) return answer({ error: 'Write something before transmitting.', draft: body });
   if (body.length > MAX_CHARS) return answer({ error: `${ctx.T('Messages are limited to')} ${MAX_CHARS} ${ctx.T('characters.')}`, draft: body.slice(0, MAX_CHARS) });
-  const since = new Date(Date.now() - 3600000).toISOString(), ip = hashIp(req.ip);
-  const sent = db.prepare('SELECT COUNT(*) n FROM message WHERE ip_hash = ? AND submitted_at > ?').get(ip, since).n;
+  const since = new Date(Date.now() - 3600000).toISOString();
+  const sent = db.prepare('SELECT COUNT(*) n FROM message WHERE callsign = ? AND submitted_at > ?').get(SCREEN_OPERATOR, since).n;
   if (sent >= KIOSK_HOURLY_LIMIT) return answer({ error: 'Too many transmissions from your position. Try again later.', draft: body });
   let tags = req.body.tags || [];
   if (!Array.isArray(tags)) tags = [tags];
@@ -501,7 +508,7 @@ app.post('/screen/write', requireScreens, (req, res) => {
      VALUES (?, ?, ?, ?, 'IN_TRANSIT', ?, ?, ?, ?, ?, ?)`
   ).run(visitor.id, SCREEN_OPERATOR, body, tags.join(','),
         ctx.mission.phase === 'PRE_LAUNCH' ? 0 : ctx.mission.clampedDay,
-        submitted.toISOString(), arrival.toISOString(), geo.lightSeconds, geo.distanceAu, ip);
+        submitted.toISOString(), arrival.toISOString(), geo.lightSeconds, geo.distanceAu, '');   // no address kept (13 October)
   answer({}, visitor);
 });
 
@@ -947,13 +954,10 @@ app.post('/communicate', (req, res) => {
     return composeView(req, res, { error: `${ctx.T('Messages are limited to')} ${MAX_CHARS} ${ctx.T('characters.')}`, draft: body.slice(0, MAX_CHARS) });
   }
 
-  // Rate limit by visitor and by IP hash: the cookie alone is trivially cleared.
+  // The person's limit (PERSON_HOURLY_LIMIT above): sixty an hour for one callsign — and nothing by address.
   const since = new Date(Date.now() - 3600000).toISOString();
-  const ip = hashIp(req.ip);
-  const recent = db.prepare(
-    'SELECT COUNT(*) n FROM message WHERE (visitor_id = ? OR ip_hash = ?) AND submitted_at > ?'
-  ).get(visitor.id, ip, since).n;
-  if (recent >= Number(process.env.HOURLY_LIMIT || 6)) {
+  const mine = db.prepare('SELECT COUNT(*) n FROM message WHERE visitor_id = ? AND submitted_at > ?').get(visitor.id, since).n;
+  if (mine >= PERSON_HOURLY_LIMIT) {
     return composeView(req, res, { error: 'Too many transmissions from your position. Try again later.', draft: body });
   }
 
@@ -971,7 +975,7 @@ app.post('/communicate', (req, res) => {
      VALUES (?, ?, ?, ?, 'IN_TRANSIT', ?, ?, ?, ?, ?, ?)`
   ).run(visitor.id, visitor.callsign, body, tags.join(','),
         ctx.mission.phase === 'PRE_LAUNCH' ? 0 : ctx.mission.clampedDay,
-        submitted.toISOString(), arrival.toISOString(), geo.lightSeconds, geo.distanceAu, ip);
+        submitted.toISOString(), arrival.toISOString(), geo.lightSeconds, geo.distanceAu, '');   // no address kept (13 October)
   // (out of the atmosphere it goes only once the crew have replied — routes/control.js hands it to the relay then)
 
   if (isLive(req)) return composerFragment(req, res);

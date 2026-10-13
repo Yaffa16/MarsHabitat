@@ -510,6 +510,9 @@ body.landing .is-inside .dome-screen { overflow: visible; }                     
 body.landing .is-inside .dome-stage { z-index: 2; }                                                  /* over the card's own rule */
 body.landing .is-inside .dome-svg.inside-svg { overflow: visible; }
 body.landing .is-inside .in-scene { pointer-events: none; }                                       /* clipped to the drawing's box by its clipPath (inside.js) */
+/* without a script the drawing is a plain picture (inside.js, noscript): the scene and the rooms' colours are fetched by the
+   script only when wanted — the scene near the screen, a room the first time it lights up (13 October) */
+body.landing .is-inside .in-noscript { display: block; width: 100%; height: auto; border-radius: 14px; }
 /* a module lit: the picture is there at once (the band sweeps over it); dark again, it goes as quickly */
 body.landing .is-inside .in-pic { opacity: 0; pointer-events: none; transition: opacity .22s ease-out; }
 body.landing .is-inside .in-pic.lit { opacity: 1; transition: opacity .12s ease-out; }
