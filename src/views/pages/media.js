@@ -339,7 +339,7 @@ function item(ctx, { item: m, date, prev, next, position }) {
     <p class="lede">${m.designation ? esc(officer.shown(m.designation)) : T('Habitat')} · ${esc(T(m.kind))} · ${fmtBytes(m.bytes)}${m.width && m.height ? ` · ${m.width}×${m.height}` : ''}${m.duration_s ? ` · ${fmtDur(m.duration_s)}` : ''}${m.taken_at ? ` · ${T('made')} ${esc(m.taken_at)}` : ''}</p>
     <div class="actions">
       <a class="btn" href="/media#day-${m.mission_day}">${T('All media')}</a>
-      <a class="btn" href="/logbook#day-${m.mission_day}">${T('That day’s log')}</a>
+      <a class="btn" href="/at-a-glance#${Number(m.mission_day) === 0 ? 'today' : `day-${m.mission_day}`}">${T('That day’s log')}</a>
       ${prev ? `<a class="btn" href="${media.pageUrl(prev)}">← ${T('Previous')}</a>` : ''}
       ${next ? `<a class="btn" href="${media.pageUrl(next)}">${T('Next')} →</a>` : ''}
     </div>

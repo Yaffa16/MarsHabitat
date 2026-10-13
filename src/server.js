@@ -22,7 +22,6 @@ const spacespeak = require('./lib/spacespeak');
 const homeAssistant = require('./lib/home-assistant');
 const AR = require('./views/pages/archive');
 const GL = require('./views/pages/glance');
-const LB = require('./views/pages/logbook');
 const mediaLib = require('./lib/media');
 const i18n = require('./lib/i18n');
 
@@ -639,18 +638,9 @@ app.get('/at-a-glance', (req, res) => {
 // The imprint, on the station: ZKM's legal details in German and English.
 app.get('/imprint', (req, res) => res.send(require('./views/pages/imprint').imprintPage(req.ctx())));
 
-app.get('/logbook', (req, res) => {
-  const ctx = req.ctx();
-  // All thirteen days, each with its three blogs: the written post, or the
-  // placeholder that shows where one will go.
-  const days = data.logSlotsPublic(ctx.mission.totalDays, missionLib.dateForDay);
-  // NOW, before the run: the rehearsal day heads the log once a blog is written under it — marked, apart from the days
-  // (never once the reset has retired NOW)
-  if (ctx.mission.nowPre) { const nowSlots = data.logSlotsFor(0, missionLib.dateForDay); if (nowSlots && nowSlots.written) days.unshift(nowSlots); }
-  const counts = { published: days.filter((d) => d.missionDay).reduce((n, d) => n + d.written, 0), days: days.filter((d) => d.missionDay && d.written).length,
-    slots: days.filter((d) => d.missionDay).reduce((n, d) => n + d.entries.length, 0) };
-  res.send(LB.logPage(ctx, { days, crew: data.crewWithMood(), counts, blogs: data.BLOGS, mediaLookup: mediaLib.get }));
-});
+// The crew log page is gone (13 October: "remove the /logbook page from the website, not needed"): the address lands on
+// the dashboard's blogs, and every day's entries stand in At a Glance
+app.get('/logbook', (req, res) => res.redirect(301, '/dashboard#blog-commander'));
 
 /**
  * The archive holds the whole record — every day, every crew state, every

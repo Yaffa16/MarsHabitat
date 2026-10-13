@@ -919,7 +919,7 @@ function transmissionsPanel(ctx, w, posts) {
         </article>`;
   return `
       <section class="dn-panel dn-tx" id="dn-transmissions">
-        <header class="dn-sec"><div><p class="dn-eye">${esc(w('Written in the habitat'))}</p><h2>${esc(w('Transmissions'))}</h2></div><div class="dn-sec-r"><a class="dn-ghost" href="/logbook">${esc(T('Crew log'))} ${arrow}</a></div></header>
+        <header class="dn-sec"><div><p class="dn-eye">${esc(w('Written in the habitat'))}</p><h2>${esc(w('Transmissions'))}</h2></div><div class="dn-sec-r"><a class="dn-ghost" href="/at-a-glance">${esc(T('At a Glance'))} ${arrow}</a></div></header>
         <div class="dn-posts">${posts.map(card).join('')}</div>
       </section>`;
 }

@@ -64,7 +64,7 @@ function postPage(ctx, { user, f, crew: c, day, date, entry, report = '', kind =
       <a class="post-back" href="${backHref}" title="Back">${ICONS.back}</a>
       <div class="post-title">${esc(heading)}</div>
       <div class="post-top-actions">
-        <a class="post-link" href="/logbook#day-${day}" target="_blank" rel="noopener">${ICONS.eye}<span>Preview</span></a>
+        <a class="post-link" href="/at-a-glance#${Number(day) === 0 ? 'today' : `day-${day}`}" target="_blank" rel="noopener">${ICONS.eye}<span>Preview</span></a>
         ${live ? `<button type="submit" name="action" value="clear" class="post-text" title="Take it down">Revert to draft</button>` : ''}
         <button type="submit" class="post-publish">${live ? 'Update' : 'Publish'}</button>
       </div>

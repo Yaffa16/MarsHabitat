@@ -60,9 +60,9 @@ process.exit(ok ? 0 : 1);' "$CS" && grep -q "return \`COMET-\${crypto.randomInt(
   && ok "every generated name is a space name — a star, a constellation, a moon, a telescope's find, a place on Mars, a probe, and a number ($CS); the station's old words are neither given nor taken back" || bad "the generated names are not all space names"
 
 echo "── writing: the composer is the Write page's pop-up, nowhere else"
-for u in / /write /dashboard /about /media /at-a-glance /logbook; do curl -s $B$u | grep -q 'id="composer"' && curl -s $B$u | grep -q '<section class="portal portal-pop" id="write"' && ! curl -s $B$u | grep -q 'class="write-fab\|write-float\|id="write-fab"' || bad "the composer's pop-up is missing on $u, or a floating Write key is back"; done
+for u in / /write /dashboard /about /media /at-a-glance; do curl -s $B$u | grep -q 'id="composer"' && curl -s $B$u | grep -q '<section class="portal portal-pop" id="write"' && ! curl -s $B$u | grep -q 'class="write-fab\|write-float\|id="write-fab"' || bad "the composer's pop-up is missing on $u, or a floating Write key is back"; done
 ! grep -q 'write-fab\|write-float' public/aura.css src/views/layout.js \
-  && ok "the composer's pop-up is on every public page — the mission page, the Write page, the dashboard, About, Media, At a Glance, the crew log — and no floating Write key with it (October: \"remove the floating Write to the crew button\"; again on 13 October, an hour after it came back: \"remove the floating Write to the Crew button\")" || bad "a floating Write key is still styled or drawn"
+  && ok "the composer's pop-up is on every public page — the mission page, the Write page, the dashboard, About, Media, At a Glance — and no floating Write key with it (October: \"remove the floating Write to the crew button\"; again on 13 October, an hour after it came back: \"remove the floating Write to the Crew button\")" || bad "a floating Write key is still styled or drawn"
 node -e '
 const h = require("child_process").execSync("curl -s http://localhost:8080/write").toString();
 const w = h.indexOf("<section class=\"wall-sec\""), p = h.indexOf("<section class=\"portal portal-pop\" id=\"write\""), foot = h.indexOf("<div class=\"foot\"");
@@ -334,9 +334,9 @@ curl -s -b $A -X POST -d "day=2" -d "designation=HEALTH OFFICER" \
 node -e '
 const d=require(process.env.CONTENT_DIR+"/logbook.json");
 process.exit(Object.values(d).some((v) => v && typeof v === "object" && ("HEALTH OFFICER" in v || "SCIENCE OFFICER" in v)) ? 1 : 0);' \
-  && ! curl -s $B/logbook | grep -q "must not exist" \
+  && ! curl -s $B/at-a-glance | grep -q "must not exist" \
   && ok "no other officer can file a blog of their own" || bad "a science or health officer blog was accepted"
-curl -s $B/logbook | grep -q "Blog written from mission control" && ok "and is live in the crew log" || bad "blog not live"
+curl -s $B/at-a-glance | grep -q "Blog written from mission control" && ok "and is live on the station (At a Glance)" || bad "blog not live"
 
 MOODID=$(curl -s -b $A $B/control | grep -oE 'action="/control/moods/[0-9]+"' | head -1 | grep -oE '[0-9]+')
 curl -s -b $A -X POST -d "calm_tense=75" -d "activity=Sample analysis" -o /dev/null $B/control/moods/$MOODID
@@ -471,7 +471,7 @@ echo "── crew entries are written from control"
 TODAY=$(curl -s $B/api/status | grep -oE '"missionDay":[0-9]+' | cut -d: -f2)
 curl -s -b $A -X POST -d "day=$TODAY" -d "designation=COMMUNICATION OFFICER" -d "back=comms" --data-urlencode \
   "body=The west wall condensation is worse than the model predicted." -o /dev/null $B/control/logbook
-curl -s $B/logbook | grep -q "west wall condensation" && ok "an entry reaches the public crew log" || bad "entry not published"
+curl -s $B/at-a-glance | grep -q "west wall condensation" && ok "an entry reaches the public station (At a Glance)" || bad "entry not published"
 panel blog-commander | grep -q "west wall condensation" && ok "the communication officer's Daily Blog is the Commander Log on the landing page" || bad "entry not in the Commander Log panel"
 panel blog-commander | grep -q "SOL $(printf '%03d' $TODAY)" && ok "and the panel names the day it shows" || bad "the Commander Log does not name its day"
 curl -s -b $A "$B/control?day=$TODAY" | grep -q "west wall condensation" && ok "and is back in its box on control" || bad "entry not shown in control"
@@ -510,7 +510,7 @@ curl -s $B/ | grep -q 'href="/archive' && bad "public page still links to the ar
 
 echo "── navigation"
 # The landing page has no top bar — its links live in the black footer.
-# Subpages keep the Mission / Messages / Crew log / About bar.
+# Subpages keep the Mission / Messages / At a Glance / About bar (no Crew log since 13 October: the page is gone).
 NAV2=$(curl -s -b $A $B/archive)
 echo "$NAV2" | grep -q '<a class="tk-brand" href="/"' && echo "$NAV2" | grep -q '<a class="tk-board" href="/write">' && echo "$NAV2" | grep -q '<a class="tk-dash" href="/dashboard">' && echo "$NAV2" | grep -q '<a class="tk-about" href="/about">' \
   && ok "the archive wears the site's header — the wordmark home, the Message Board, the dashboard, About" || bad "the archive's header lacks its keys"
@@ -533,16 +533,14 @@ done
 ok "every old public address redirects into the landing page"
 [ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' $B/what)" = "301 $B/about" ] && [ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' $B/who-we-are)" = "301 $B/about#who-we-are" ] \
   && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/about)" = "200" ] && ok "/about is a page of its own; /who-we-are lands on its section of it, /what on the page (its section is gone)" || bad "the About page's addresses are wrong"
-LOGPAGE=$(curl -s $B/logbook)
-[ "$(curl -s -o /dev/null -w '%{http_code}' $B/logbook)" = "200" ] || bad "/logbook is not a page"
-echo "$LOGPAGE" | grep -q "id=\"day-$TODAY\"" || bad "/logbook has no section for today (day $TODAY)"
-echo "$LOGPAGE" | grep -q "id=\"day-1\"" || bad "/logbook has no section for day 1"
-echo "$LOGPAGE" | grep -q "id=\"day-$((TODAY + 1))\"" || bad "/logbook does not show the days ahead as placeholder slots"
-[ "$(echo "$LOGPAGE" | grep -c 'class="log-day logpage-day"')" = "13" ] || bad "/logbook does not carry all thirteen days"
-echo "$LOGPAGE" | grep -q 'log-entry placeholder' || bad "/logbook shows no placeholder slots"
-echo "$LOGPAGE" | grep -q "Day three." || bad "/logbook is missing the day-3 entry filed from control"
+# the crew log page is gone (13 October: "remove the /logbook page from the website, not needed"): its address lands on
+# the dashboard's blogs, no page names it, and every day's entries stand in At a Glance
+[ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' $B/logbook)" = "301 $B/dashboard#blog-commander" ] || bad "/logbook does not lead to the dashboard's blogs"
+for u in / /write /dashboard /about /media /at-a-glance /imprint /nowhere; do curl -s $B$u | grep -q 'href="/logbook' && bad "$u still links to the crew log page"; done
+! grep -rq "require('./views/pages/logbook')\|href=\"/logbook" src || bad "the crew log page is still served or linked from the code"
+curl -s $B/at-a-glance | grep -q "Day three." || bad "At a Glance is missing the day-3 entry filed from control"
 echo "$FOOT" | grep -q 'href="/control"' && bad "the footer still offers mission control to visitors" || ok "no mission-control or crew-log buttons in the footer bar"
-ok "the crew log is a page of its own: all thirteen days, placeholders where nothing is written yet, reached from the panel"
+ok "the crew log page is gone — /logbook leads to the dashboard's blogs, no page links to it, and every day's entries stand in At a Glance"
 [ "$(echo "$FOOT" | grep -c 'id="write"')" = "1" ] && echo "$FOOT" | grep -q '<section class="portal portal-pop" id="write"' || bad "the mission page's #write is not the pop-up alone"
 for sec in write exchanges; do
   echo "$WRITE" | grep -q "id=\"$sec\"" || bad "the Write page has no #$sec section"
@@ -681,7 +679,7 @@ let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
   && grep -qF "body.landing #sensors.is-grouped .hw-slot .hw-charts { grid-template-columns: minmax(0, 1fr);" public/aura.css && grep -qF "body.landing #hbt-groups.is-live .hw-line" public/aura.css \
   && ok "the dashboard's Sensors tab in groups, all inside the one tab (no key of their own): Life support — the eight instruments and the sensor's notes — Resources (the stores' rings, under the group's heading), Energy (power consumed, power generated), Crew (the steps and Karlsruhe — no Astronauts tracked since 13 October), each heading with its sign and a line in the visitor's language, then the Trends; every tile keeps its id; four tracks a group; the screens keep the bento" || bad "the Sensors tab is not in its groups as it should be"
 # the Commander Blog is the Commander Log (8 October), on every page and in the three languages; the posts' data keep their keys
-for u in /dashboard /logbook /at-a-glance; do curl -s $B$u | grep -q 'Commander Blog\|Commander-Blog\|Blog du commandement' && bad "$u still says Commander Blog"; done
+for u in /dashboard /at-a-glance; do curl -s $B$u | grep -q 'Commander Blog\|Commander-Blog\|Blog du commandement' && bad "$u still says Commander Blog"; done
 curl -s -b $A $B/control | grep -q 'Commander Blog\|COMMANDER BLOG' && bad "mission control still says Commander Blog"
 curl -s -H "Cookie: mcs_lang=en" $B/dashboard | grep -q '<span class="ftab-l">Commander Log</span>' && curl -s -H "Cookie: mcs_lang=de" $B/dashboard | grep -q 'Commander-Logbuch' && curl -s -H "Cookie: mcs_lang=fr" $B/dashboard | grep -q 'Journal du commandement' \
   && ! grep -rq 'Commander Blog' src/views src/routes src/lib/archive.js src/lib/record-pdf.js src/lib/data.js && grep -q "'Commander Log': \['Commander-Logbuch', 'Journal du commandement'\]" src/lib/i18n.js \
@@ -1010,7 +1008,7 @@ curl -s -c $V5 -b $V5 -o /dev/null $B/
   && ok "a plain post lands on the Write page with the pop-up open, where the message is crossing and stands on the board" || bad "a plain post is not followed on the Write page"
 [ "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' -e "$B/write" -X POST -d "body=x" $B/communicate)" = "302 $B/write?err=Write%20something%20before%20transmitting.#write" ] \
   && ok "a refused post from the Write page goes back there with its word" || bad "a refused post from the Write page does not go back there"
-echo "$FOOT" | grep -q 'id="crewlog"' && bad "the crew log panel is still on the landing page" || ok "no crew log panel on the landing page — the log lives at /logbook and in At a Glance"
+echo "$FOOT" | grep -q 'id="crewlog"' && bad "the crew log panel is still on the landing page" || ok "no crew log panel on the landing page — the blogs live on the dashboard and in At a Glance"
 echo "$FOOT" | grep -q 'id="media"' && bad "the media panel is still on the landing page" || ok "no media panel — the media lives at /media and in At a Glance"
 echo "$FOOT" | grep -q 'id="whole"' && bad "the whole-mission panel is still on the landing page" || ok "no whole-mission panel — the run day by day lives in At a Glance"
 echo "$FOOT" | grep -q 'class="ticker"' && echo "$FOOT" | grep -q 'id="tk-track"' && ! echo "$FOOT" | grep -q 'tk-clock\|HABITAT TIME' && ok "a ticker runs across the top: the current activity on its running line; no clock in the bar any more" || bad "no ticker on the landing page, or the clock is still in it"
@@ -1235,10 +1233,8 @@ echo "$FR" | grep -q '<html lang="fr"' && echo "$FR" | grep -q "Tableau des mess
 curl -s -b $LJ -c $LJ -X POST -d "to=xx" -o /dev/null $B/lang
 curl -s -b $LJ $B/ | grep -q '<html lang="en"' && ok "an unknown language falls back to English" || bad "unknown language did not fall back"
 curl -s -b $LJ -c $LJ -X POST -d "to=de" -o /dev/null $B/lang
-LOG=$(curl -s -b $LJ $B/logbook)
-echo "$LOG" | grep -q '<html lang="de"' && ok "the crew log page is in German" || bad "crew log page not German"
-echo "$LOG" | grep -q "to be written at the end of this day" && ok "the crew's placeholder text stays untranslated" || bad "logbook content was translated or lost"
-echo "$LOG" | grep -q "Commander-Logbuch" && echo "$LOG" | grep -q "Gesundheitsbericht" && ok "the three blogs are named in German" || bad "blog titles not translated"
+LOG=$(curl -s -b $LJ $B/dashboard)
+echo "$LOG" | grep -q '<html lang="de"' && echo "$LOG" | grep -q "Commander-Logbuch" && echo "$LOG" | grep -q "Gesundheitsbericht" && ok "the dashboard's three blogs are named in German" || bad "blog titles not translated"
 GL=$(curl -s -b $LJ $B/at-a-glance)
 echo "$GL" | grep -q '<html lang="de"' && echo "$GL" | grep -q "Tagesplan" && ok "At a Glance chrome is in German" || bad "At a Glance not German"
 echo "$GL" | grep -q 'Die Crew ist gerade bei:' && ok "the running line reads in German" || bad "the running line is not translated"
@@ -1258,7 +1254,7 @@ API=$(curl -s -b $LJ $B/api/board)
 echo "$API" | grep -q "Antwort der Crew" && ! echo "$API" | grep -q "Crew answer" && ok "/api/board renders the card chrome in the visitor's language" || bad "/api/board cards not German"
 echo "$API" | grep -q "Rain. Not the idea of it\|Do you still dream in colour\|In colour, and always outdoors" \
   && ok "what was written stays as written on the board" || bad "board content changed"
-for u in / /logbook /at-a-glance /media /control/login /nowhere; do
+for u in / /at-a-glance /media /control/login /nowhere; do
   curl -s -b $LJ $B$u | grep -qi "gtranslate" && bad "gtranslate still referenced on $u"
 done
 grep -rqi "gtranslate\|notranslate\|gt-wrap" src public && bad "gtranslate remnants in src/ or public/" || ok "no gtranslate anywhere"
@@ -1741,8 +1737,7 @@ sleep 2
 curl -s $B/at-a-glance | grep -q "Vegane Bolognese" && bad "a day taken out of meals.json kept its meals" || ok "a day taken out of the file loses its meals"
 curl -s $B/dashboard | grep -q "PLACEHOLDER\|Cue:" && bad "the placeholder marker or a writer's cue reached the public station" || ok "placeholder slots are shown publicly by their first line only; the marker and the cues stay inside"
 curl -s -b $A -X POST -d "day=$((TODAY + 1))" -d "designation=COMMUNICATION OFFICER" -d "back=comms" --data-urlencode "body=Written ahead of its day." -o /dev/null $B/control/logbook
-curl -s $B/logbook | grep -q "Written ahead of its day." && ok "an entry written for a day ahead is public at once — the log does not wait for the clock" || bad "an entry written ahead is not public"
-curl -s $B/at-a-glance | grep -q "Written ahead of its day." && ok "and its day in At a Glance shows it too" || bad "entry written ahead missing from At a Glance"
+curl -s $B/at-a-glance | grep -q "Written ahead of its day." && ok "an entry written for a day ahead is public at once, on its day in At a Glance — the log does not wait for the clock" || bad "an entry written ahead is not public"
 for d in 1 7 13; do curl -s -b $A "$B/control?tab=health&day=$d" | grep -q "day $(printf %03d $d)" || bad "the Daily Blog cannot be opened for day $d"; done
 CTRLPAGE=$(curl -s -b $A "$B/control?tab=comms")
 echo "$CTRLPAGE" | grep -q 'daypick-dates' && [ "$(echo "$CTRLPAGE" | grep -o 'title="Mission day 0[0-9][0-9]"' | sort -u | wc -l)" = "13" ] \
@@ -1753,9 +1748,9 @@ echo "$CTRLPAGE" | grep -q 'class="blog-box"' && grep -q "textarea.blog-box { mi
 [ "$(echo "$CTRLPAGE" | grep -o 'data-day="[1-9][0-9]*"' | sort -u | wc -l)" = "13" ] \
   && ok "every officer tab offers all thirteen days of the run (and NOW, the rehearsal day, before them)" || bad "the day picker does not offer thirteen days"
 curl -s -b $A -X POST -d "day=2" -d "designation=COMMUNICATION OFFICER" -d "back=comms" --data-urlencode "body=First full sleep period logged." -o /dev/null $B/control/logbook
-curl -s $B/logbook | grep -q "First full sleep period logged." && ok "writing over a placeholder publishes the entry for its day" || bad "written entry not public"
+curl -s $B/at-a-glance | grep -q "First full sleep period logged." && ok "writing over a placeholder publishes the entry for its day" || bad "written entry not public"
 curl -s -b $A -X POST -d "day=2" -d "designation=COMMUNICATION OFFICER" -d "back=comms" -d "action=clear" -d "body=ignored" -o /dev/null $B/control/logbook
-curl -s $B/logbook | grep -q "First full sleep period logged." && bad "cleared entry still public" || ok "clearing puts the placeholder back and takes the entry down"
+curl -s $B/at-a-glance | grep -q "First full sleep period logged." && bad "cleared entry still public" || ok "clearing puts the placeholder back and takes the entry down"
 grep -q "PLACEHOLDER" "$CONTENT_DIR/logbook.json" && ok "the placeholder is written back into logbook.json" || bad "placeholder not restored in the file"
 
 echo "── media out of the habitat"
@@ -1777,8 +1772,7 @@ curl -s -b $A -F "day=$TODAY" -F "file=@/tmp/e2e-clip.mp4" -F "file=@/tmp/e2e-ph
 curl -s -b $A -H "X-Requested-With: fetch" -F "day=$TODAY" -F "file=@/tmp/e2e-bad.exe" $B/control/media/upload | grep -q '"ok":false' \
   && ok "a file type the archive does not keep is refused" || bad "an .exe was accepted"
 curl -s $B/media | grep -q "West wall at dawn" && bad "the crew's media leak onto /media — that page is the cloud gallery only" || ok "the crew's photograph is not on /media (that page is the cloud gallery only)"
-curl -s $B/at-a-glance | grep -q "West wall at dawn" && bad "a photograph carried by no blog is on At a Glance — the Also sent out block is back" || ok "a photograph carried by no blog is not on At a Glance (no Also sent out block) — it is on the crew log"
-curl -s $B/logbook | grep -q "West wall at dawn" && ok "and under its day on the crew log" || bad "not on /logbook"
+curl -s $B/at-a-glance | grep -q "West wall at dawn" && bad "a photograph carried by no blog is on At a Glance — the Also sent out block is back" || ok "a photograph carried by no blog is not on At a Glance (no Also sent out block)"
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/media/$MID)" = "200" ] && ok "each item has a page of its own" || bad "item page missing"
 curl -s -o /tmp/e2e-dl.png "$B/media/file/$MID/e2e-photo.png?download" && cmp -s /tmp/e2e-dl.png /tmp/e2e-photo.png \
   && ok "the download is the original, byte for byte" || bad "downloaded file differs from the original"
@@ -1811,8 +1805,8 @@ pdftext /tmp/record2.pdf | grep -q "$PSHA" && ok "and lists it with its full has
 # an entry with media attached, through the plain form (no script)
 curl -s -b $A -F "day=$((TODAY - 1))" -F "designation=COMMUNICATION OFFICER" -F "back=comms" -F "body=Entry with a photograph." -F "media_caption=Attached to the entry" -F "file=@/tmp/e2e-photo.png" -o /dev/null -w '%{redirect_url}' $B/control/logbook | grep -q "tab=comms" \
   && ok "an officer can send media with a blog entry" || bad "blog post with a file failed"
-LOGX=$(curl -s $B/logbook)
-echo "$LOGX" | grep -q "Entry with a photograph." && echo "$LOGX" | grep -q "Attached to the entry" && ok "the entry and its media are public together" || bad "entry or its media missing from /logbook"
+LOGX=$(curl -s $B/at-a-glance)
+echo "$LOGX" | grep -q "Entry with a photograph." && echo "$LOGX" | grep -q "Attached to the entry" && ok "the entry and its media are public together (At a Glance)" || bad "entry or its media missing from At a Glance"
 echo "$LOGX" | grep -A12 "Entry with a photograph." | grep -q 'class="entry-figure' && ok "and the media is set into the entry as a figure" || bad "media not attached to the entry on the page"
 # the blogs under the trend graph are read in place: they scroll, and nothing in them is a link
 curl -s -b $A -F "day=$((TODAY + 1))" -F "designation=COMMUNICATION OFFICER" -F "back=comms" -F "body=Commander post written for tomorrow." -o /dev/null $B/control/logbook
@@ -1823,7 +1817,7 @@ echo "$CB" | grep -q "Commander post with a photograph." && echo "$CB" | grep -q
 echo "$CB" | grep -q "Commander post written for tomorrow" && bad "a post for another day is in the Commander Log" || ok "the Commander Log shows the current day's post only"
 echo "$CB" | grep -q 'class="blog-scroll"' && [ "$(echo "$CB" | grep -o 'class="card log-entry"' | wc -l)" = "1" ] && ok "one post, in a scroller inside the panel" || bad "the Commander Log is not one post in a scroller"
 for P in blog-science blog-health blog-commander; do panel $P | grep -q '<a ' && bad "$P has a link that leads off the page"; done; ok "nothing in the three blog panels is a link — they are read in place, not clicked out of"
-curl -s $B/logbook | grep -q "Commander post written for tomorrow" && ok "the other days' posts are on the crew log, where they were" || bad "tomorrow's post missing from the crew log"
+curl -s $B/at-a-glance | grep -q "Commander post written for tomorrow" && ok "the other days' posts are on their days in At a Glance" || bad "tomorrow's post missing from At a Glance"
 curl -s -b $A -X POST -d "day=$TODAY" -d "designation=COMMUNICATION OFFICER" -d "action=clear" -d "body=x" -o /dev/null $B/control/logbook
 curl -s -b $A -X POST -d "day=$((TODAY + 1))" -d "designation=COMMUNICATION OFFICER" -d "action=clear" -d "body=x" -o /dev/null $B/control/logbook
 curl -s -b $A $B/archive/export.pdf -o /tmp/record3.pdf
@@ -2071,9 +2065,9 @@ tr -d '\000' < .gitignore | cmp -s - .gitignore && grep -qx '.env' .gitignore &&
   && ok "git ignores .env, the station's data and node_modules (a plain-text .gitignore), and the cloud helpers read their account from .env — no password in the repository" || bad "the repository is not ready to push: .env or a password would go with it"
 curl -s -c $CJ -b $CJ -d choice=yes -d "callsign=$OFFER" -d back=/ -o /dev/null $B/consent
 curl -s -b $CJ $B/ | grep -q "$OFFER" && ok "agreeing keeps the greeted callsign" || bad "agreeing gave a different callsign"
-LB3=$(curl -s $B/logbook)
-for t in "Commander Log" "Daily Mission Report" "Health Report"; do echo "$LB3" | grep -q "$t" || bad "the crew log is missing $t"; done
-echo "$LB3" | grep -q 'class="cs">SCIENCE OFFICER\|class="cs">HEALTH OFFICER' && bad "an officer blog is still on the crew log" || ok "the crew log carries the three blogs and nothing else"
+LB3=$(curl -s $B/dashboard)
+for t in "Commander Log" "Daily Mission Report" "Health Report"; do echo "$LB3" | grep -q "$t" || bad "the dashboard's blogs are missing $t"; done
+curl -s $B/at-a-glance | grep -q 'class="cs">SCIENCE OFFICER\|class="cs">HEALTH OFFICER' && bad "an officer blog is still on the station" || ok "the station carries the three blogs and nothing else"
 
 echo "── the hardware readings endpoint"
 curl -s "$B/api/hardware/readings" | grep -q '"sensors":\[' && ok "/api/hardware/readings hands out the devices' readings as JSON" || bad "no hardware readings endpoint"
@@ -3675,8 +3669,8 @@ curl -s -b $A $B/control/messages/export.csv | grep -q '0,NOW · before the run,
   && curl -s -b $A "$B/control?show=all" | grep -q '· NOW · <b class="msg-sent">' \
   && ok "a message before the run is NOW's — mission day 0, marked in the CSV, the JSON and on the desk" || bad "messages before the run are not marked NOW"
 curl -s -b $A $B/control/messages/export.pdf -o /tmp/now-msgs.pdf && pdftext /tmp/now-msgs.pdf | grep -q 'NOW · before the run · rehearsal, not the record' && ok "and the messages PDF heads them NOW · before the run" || bad "the messages PDF does not head the rehearsal messages"
-curl -s $B/logbook | grep -q 'href="#day-0"' && curl -s $B/logbook | grep -q 'NOW words for the rehearsal' && curl -s $B/at-a-glance | grep -q 'NOW words for the rehearsal' \
-  && ok "the public crew log heads with NOW once it is written, and the booklet's NOW page is built from it" || bad "NOW is not on the public log or the booklet"
+curl -s $B/at-a-glance | grep -q 'NOW words for the rehearsal' \
+  && ok "the booklet's NOW page carries NOW's blog once it is written" || bad "NOW is not on the booklet"
 curl -s -b $SK "$B/screen/blogs?lang=en" | grep -q 'NOW words for the rehearsal' && curl -s -b $SK "$B/screen/blogs?lang=en" | grep -q 'NOW · ' && ok "the blogs screen shows NOW's blogs before the run, headed NOW" || bad "the blogs screen does not show NOW"
 curl -s "$B/dashboard?lang=en" | grep -q 'NOW words for the rehearsal' && curl -s "$B/dashboard?lang=en" | grep -q 'NOW findings for the rehearsal' \
   && ok "and so do the dashboard's blog panels — /dashboard is handed NOW as the screens are (9 October)" || bad "the dashboard's blog panels do not show NOW"
@@ -3697,7 +3691,7 @@ process.exit(fs.existsSync(path.join(dir, f)) ? 0 : 1);
 # for 15 October. content/plan/ is a snapshot kept as a backup.
 [ "$(ls "$CONTENT_DIR/plan" 2>/dev/null | wc -l)" -ge 9 ] && ok "a snapshot of the files was saved at boot" || bad "no content/plan/ after boot"
 curl -s -b $A -F "designation=COMMUNICATION OFFICER" -F "day=3" -F "body=Rehearsal words that must not survive" -F "back=comms" -o /dev/null $B/control/logbook
-curl -s $B/logbook | grep -q "Rehearsal words" && ok "a rehearsal entry is live before the reset" || bad "rehearsal entry not written"
+curl -s $B/at-a-glance | grep -q "Rehearsal words" && ok "a rehearsal entry is live before the reset" || bad "rehearsal entry not written"
 # the inventory file as edited now is what the reset reloads — not a stale copy
 node -e '
 const fs = require("fs"), p = process.env.CONTENT_DIR + "/inventory-levels.json", d = process.argv[1];
@@ -3798,7 +3792,7 @@ curl -s -b $A -d "confirm=nope" -o /dev/null $B/control/reset
 [ "$(curl -s -b $A $B/control/counts | grep -o '"total":[0-9]*' | head -1)" = "$BEFORE" ] && ok "reset without the word RESET does nothing" || bad "reset ran without confirmation"
 curl -s -b $A -d "confirm=RESET" -o /dev/null $B/control/reset
 curl -s -b $A $B/control/counts | grep -q '"total":0' && ok "reset clears every message from Earth" || bad "messages survived the reset"
-curl -s $B/logbook | grep -q "Rehearsal words" && bad "the rehearsal entry survived the reset" || ok "the rehearsal entry is gone from the crew log"
+curl -s $B/at-a-glance | grep -q "Rehearsal words" && bad "the rehearsal entry survived the reset" || ok "the rehearsal entry is gone from the station"
 grep -q "Rehearsal words" "$CONTENT_DIR/logbook.json" && bad "the rehearsal entry survived in logbook.json" || ok "logbook.json holds no entry"
 node -e '
 const fs = require("fs"), d = process.env.CONTENT_DIR, r = (f) => JSON.parse(fs.readFileSync(d + "/" + f, "utf8"));
@@ -3812,8 +3806,8 @@ CTL0=$(curl -s -b $A "$B/control?tab=habitat")
 ! echo "$CTL0" | grep -q 'class="daypick-now' && ! echo "$CTL0" | grep -q 'NOW, [0-9]* [A-Z][a-z]*, at hand\|rehearsing as NOW' \
   && curl -s -b $A "$B/control?tab=habitat&day=0" | grep -q 'Schedule · day 001' && ! curl -s -b $A "$B/control?tab=habitat&day=0" | grep -q 'Schedule · NOW' \
   && ! curl -s -b $A $B/archive | grep -q '<td class="n">NOW</td>' && [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/archive/now)" = "404" ] \
-  && ! curl -s $B/logbook | grep -q 'class="[^"]*rehearsal' && ! curl -s $B/at-a-glance | grep -q 'data-day="0"' \
-  && ok "after the reset NOW is gone from everywhere — the desk's day picker and its head, the archive and /archive/now, the crew log, At a Glance; ?day=0 opens SOL 01" || bad "NOW survived the reset somewhere"
+  && ! curl -s $B/at-a-glance | grep -q 'data-day="0"' \
+  && ok "after the reset NOW is gone from everywhere — the desk's day picker and its head, the archive and /archive/now, At a Glance; ?day=0 opens SOL 01" || bad "NOW survived the reset somewhere"
 curl -s -b $A -X POST -d "day=0" -d "time=08:00" -d "label=Should never land" -d "back=habitat" -o /dev/null $B/control/schedule
 curl -s -b $A "$B/control?tab=habitat" | grep -q 'Nothing was saved — NOW has gone' && ! curl -s -b $A "$B/control?tab=habitat&day=1" | grep -q 'Should never land' \
   && ok "and a form still open on NOW saves nothing — it does not land on SOL 01 — and says why" || bad "a form for NOW was saved after the reset"
@@ -3900,7 +3894,7 @@ curl -s $B2/ | grep -q "Mission complete" && curl -s $B2/ | grep -q 'the record 
   && ok "after the run the landing page is the closed record — its running line says the mission is complete and the record stays, nothing of the crew's day, and its script asks for nothing (data-over)" || bad "the landing page still carries the live ticker after the close"
 grep -q "data-over" src/views/pages/public.js && grep -q "d.phase === 'COMPLETE'" src/views/pages/public.js \
   && ok "a page left open across the last midnight stops its own timers when the run ends under it" || bad "an open ticker would keep fetching forever after the run"
-[ "$(curl -s -o /dev/null -w '%{http_code}' $B2/logbook)" = "200" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' $B2/at-a-glance)" = "200" ] \
+[ "$(curl -s -o /dev/null -w '%{http_code}' $B2/)" = "200" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' $B2/at-a-glance)" = "200" ] \
   && ok "reading never stops — the pages keep serving the record" || bad "the record stopped serving"
 # the channel and the desk closed at the end of the day after the run (src/lib/mission.js, open)
 curl -s $B2/api/ticker | grep -q '"open":false' && curl -s $B2/write | grep -q 'CHANNEL CLOSED' && curl -s $B2/write | grep -q 'the channel closed at the end of' \

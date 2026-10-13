@@ -74,7 +74,7 @@ directions, concurrent-edit refusal, CSV import and export round-trip, archive e
 record (that it downloads, has a page per day, is bookmarked, carries the reply, the message,
 a filed state, the photograph and its hash, and is control-only), the reset (the typed word, the
 lock from 15 October, empty blog slots, cleared messages, states and readings, the inventory
-read from the file, the floor on the node's readings), the drift chart, a check that no raw mood value ever reaches a public page, the crew logbook
+read from the file, the floor on the node's readings), the drift chart, a check that no raw mood value ever reaches a public page, the crew's blogs
 end to end (sign-in, filing, same-day editing, hold and release, and that mission control has
 no way to rewrite crew text), and phase and T-clock exactness across the 25 October DST
 change, that the composer precedes the habitat data in the page order, that the day record
@@ -96,13 +96,13 @@ sits behind the same login.
 
 | Page | Route | Holds |
 |---|---|---|
-| The mission page | `/` | **The header** across the top — the wordmark, the run's badge, the three keys (Message Board → `/write`, Live Mission Dashboard → `/dashboard`, About) and a running line of the current activity, the next one, the habitat sensor's reading and the daily communication window · **three pages**: the way to the habitat with its sky; the note with the two calls under it (Send a message to the crew — approved messages are beamed into space; Follow what the crew is doing live); the world's slowest chat (see *The landing page: three pages in the glass dress*) · **the composer's window**, as on every public page (see *The composer's window*): the note's door and the slowest chat's door open the window here (`#write`); a phone's doors lead to the Write page's dock. Nothing of the board or the dashboard is on this page. The crew log, the media, the whole mission day by day and the reading matter live on their own pages (`/logbook`, `/media`, `/at-a-glance`, `/about`) |
+| The mission page | `/` | **The header** across the top — the wordmark, the run's badge, the three keys (Message Board → `/write`, Live Mission Dashboard → `/dashboard`, About) and a running line of the current activity, the next one, the habitat sensor's reading and the daily communication window · **three pages**: the way to the habitat with its sky; the note with the two calls under it (Send a message to the crew — approved messages are beamed into space; Follow what the crew is doing live); the world's slowest chat (see *The landing page: three pages in the glass dress*) · **the composer's window**, as on every public page (see *The composer's window*): the note's door and the slowest chat's door open the window here (`#write`); a phone's doors lead to the Write page's dock. Nothing of the board or the dashboard is on this page. The media, the whole mission day by day and the reading matter live on their own pages (`/media`, `/at-a-glance`, `/about`); the crew's blogs on the dashboard and in At a Glance |
 | Message Board | `/write` | **The message board, nothing else — under the header alone, no masthead** (the page is named *Message Board* since 13 October, *Write to the crew* until then). The board is **a wall of notes** — the exchanges as flat cards on the page's ground, after the reference handed over: three across on a wide screen, two on a narrower one, one on a phone, every row starting level; the newest first; **never in a box: the wall flows with the page, and as the reader nears its end the page of exchanges before it is fetched and laid on** (`/api/board?before=`), until *The beginning of the correspondence*. A bar over the wall stays under the header all the way down: the board's name with its LIVE mark and the count, the chips that narrow the wall (ALL, MY MESSAGES, a tag), and at its right end the board's own **Write to the Crew** key, the chips' height (13 October). The composer is **the window every page carries** (see *The composer's window*), opened by that key; `/write#write` opens the page with it open, and on this page the window folds away by itself once a message has arrived, so the note just sent is in view at the head of the wall. Each note: a disc with the writer's initials in a colour of the callsign's own, the callsign, the reference number; the message as the note's title with its tags right after it (*#question #humour*, keys that narrow the wall, in the message's own colour); the crew's answer as a quoted card of its own (the officer, *Crew answer · Mars habitat*, when), or the message's state; a foot with the distance the message has travelled (ticking) and the moment it was sent. See *The board*. Drawn for a phone first: the notes one under the other, the composer a dock at the foot of the screen, which lowers itself once a message has crossed; the phone's bar of keys leads here with **Messages** (its middle key, 13 October), and so do the header's **Message Board** key and the sky's notes. `/messages`, `/board` and `/communicate` redirect here (`writePage`, `boardWall`, `noteCard` in `src/views/pages/public.js`; `public/board.js`) |
 | About | `/about` | The reading matter, one page: **About** (headed by the project's name, *MARS! – Mobilizing Awareness for Resilient Societies!*, in the words of October's text sheet `ABOUT_WEBSITE_TEXTS_FOR_YASHA`: what MARS! is and how it came to the Marktplatz in four paragraphs — the five prototype workshops and the concept exhibition linked to their pages at zkm.de — then *Why are we doing this?* with its line *Playacting Mars in the middle of the city*, *The Habitat – Red Dust City* and *The Insight*; the distance to Mars in the first of these is the station's own figure for the day the crew go in — `lib/orbital`, some 233 million km — not the sheet's 26 million, which is a close approach's; then the station's own *Messages sent to space* — two paragraphs on how a replied message goes out by radio through SpaceSpeak, after spacespeak.com/Learn/Science: the transmitters, the 2.4–5 GHz band, the directional antenna, the speed of light, then where the signal gets to and that it never stops (*More than Human* and *The readings* stood here until October asked for them to go). Beside the prose the mission's facts: the run, start and end at 17:00, the duration, the crew, eleven scientific missions — the sheet's figures — and no timezone), **What's inside the habitat** (the cutaway picture of the habitat handed over as two SVG files, eleven of its thirteen modules lighting up in colour under the hand or a finger, each with its card of what is in it (12 October: the crew's room is *Living*, the living quarters the *Nap pods* — "replace Crew with Living, rename Living Quarters to Nap pods" — and *Storage* and the *Equipment Lockers* are lines in the drawing only, no keys: "remove Equipment Lockers, remove Storage") — see *The habitat in section*; the line *AI generated image* under the picture), **Current Crew** and **A sol on MARS!platz** are no longer on the page (12 October): *A sol on MARS!platz* — the day's activities on a rail, each once and without its hours, with the officer and the person on shift, there from 7 October — went first ("from About remove A sol on MARS!platz"; `solFold()` stays in `src/views/pages/sol.js`, unused; the schedule still feeds the dashboard and At a Glance), and *Current Crew* — the three roles with the photographs of the day's crew, added that morning, at the top of the page, then above *A sol on MARS!platz*, then between the habitat and *Who we are* — went the same day ("remove Current Crew from About"; `crewBox()` and `crewWhen()` stay in `sol.js`, unused, and its styles in `aura.css`); the day's crew is shown over the landing page's two calls — see *The landing page: three pages in the glass dress*; and **Who we are** (the panel of the three officers of the day — their briefs, their portraits on shift, their states — that stood first here is gone: 8 October, "from the About page, under Who we are, remove the Crew tab with all the text"; the dashboard's Crew Moods keeps them, and *Current Crew* the day's crew from `content/shifts.json`; then the crew's thirteen portraits, each with its name as the photograph's file gives it — *Firstname_Lastname.jpg* (an umlaut in a surname is spelled out in the picture's file: Klöck → kloeck.jpg) — in the order of the surnames; and the producer — ZKM | Center for Art and Media Karlsruhe, *Department for Artistic Research & Development, ZKM | Hertzlab* (linked to zkm.de/en/hertzlab) — with the partners' logos — *In cooperation with* the Badisches Staatstheater and the Naturkundemuseum Karlsruhe, *Supporters* E.ON Foundation, LBBW Stiftung and the Innovationsfonds Kunst — small, each on a white tile), one after another under a row of three pills that jump to them (*What this is* — how the station behaves, with the path of a message in six steps — was the second section until October asked for it to go; `/what` and `/#what` land on the page) (`src/views/pages/info.js`; the pictures and `public/crew/crew.json` by `tools/crew-pictures.py`). The reading matter runs the whole width of its section; the mission's facts and the path of a message stand under it in rows. A phone's **About** key opens it; on a desk the header's *About* link does |
 | Dashboard | `/dashboard` | **The mission dashboard, nothing else — under the header alone, no masthead**: the head, the live images, the two doors, the strip of sols and the panels behind their index — the keys stacked vertically, on a desk as a rail at the left of the folder, on a phone over it: *Sensors*; *Daily Life* — **Today's Mission** first, then Today's Schedule, Today's Meal, Crew Moods; *Blogs* — the three daily blogs (see *The mission page*). The header's *Live Mission Dashboard* link, the phone's **Dashboard** key, the mission page's *Mission dashboard* door and every door of the habitat's modules lead here; `/crew`, `/day`, `/day/:n`, `/schedule` and `/habitat` redirect to their section of it. A phone leaves the strip of live images out (the newest pictures rise over the habitat on the mission page instead, and fill the Media page) |
 | Mission control | `/control` | Five tabs: **Messages** (the reply queue) first, then one per officer, and the habitat — which ends with the plan and the reset. The Science officer's tab opens with the day's **science mission**: one dropdown for the open day with the thirteen sheets, the plan's selected — as shipped in sequence, 00 on 15 October — and Save writes that day's entry of the plan (see *The mission is a folder of files*) |
 | At a Glance | `/at-a-glance` | **A booklet: one day per page, turned by scrolling or swiping sideways** — arrows either side, ← → on a keyboard, a day strip to jump, a `#day-n` link opens on that day. Each page: each day's crew log with its photographs, the schedule as run, the meals and their cost, the resources (every store at the close of the day), the power, the habitat's sensors as they last read that day (one tile per channel, the last reading large — no charts, no means or ranges), the crew's condition as sentences and the mission notes. No exchanges with Earth and no Also sent out block. Days ahead show the plan, and each page scrolls on its own like a page being read. Opened from the button under the mission dashboard, and from the navigation |
-| Crew log | `/logbook` | All thirteen days in order, each officer's entry where written and its placeholder where not — a day strip to jump by, a chip per voice. Opened from the Crew log panel on the dashboard, and from the nav |
+| Crew log | `/logbook` | **Gone** (13 October: "remove the /logbook page from the website, not needed"): the address leads to the dashboard's blogs (`/dashboard#blog-commander`), no page links to it, and every day's entries stand in At a Glance, whose `#day-n` the desk's *Preview* and a media item's *That day's log* open. `src/views/pages/logbook.js` is no longer required by anything and can be deleted |
 | Media | `/media` | Everything the crew send out — photographs and video — by day, with filters; `/media/:id` one item; `/media/export.zip` everything as one ZIP; `/media/manifest.json` every file with its SHA-256 |
 | Archive | `/archive` | **Mission control only.** Day-by-day permanent record — no messages, every reading; `/archive/day/:n`, **`/archive/export.pdf`** (the whole mission as one document), `/archive/export.md`, `/archive/export.json`, **`/archive/readings.zip`** (every reading ever pulled), `/archive/moods.csv` (every state filed for every officer). `/archive/messages` is a separate, unlinked search over the message queue and is not part of the record |
 | Screens | `/screens` | **The installation's screens** — open to anyone, unless `.env` sets `SCREENS_USER` and `SCREENS_PASSWORD`, which puts a sign-in of their own on them (`/screens/login`; mission control's session does not open them) — one piece of the station a page, full screen, the whole of it in one glance, nothing to scroll: `/screen/landing`, `/screen/habitat`, `/screen/board`, `/screen/mission`, `/screen/blogs`, `/screen/day`, `/screen/trends`, `/screen/media` (see *The installation's screens*). `/screens` lists them |
@@ -111,7 +111,7 @@ Every address the public subpages used to have redirects to where the thing is n
 `/board` and `/communicate` to the Write page, `/crew`, `/day`, `/day/:n`, `/schedule` and
 `/habitat` to their section of the Dashboard page (the static files are served without a folder's
 trailing-slash redirect, so `/crew` — also the portraits' folder — gets there too), `/who-we-are`
-to its section of the About page and `/what` to the page itself (its section is gone), so old
+to its section of the About page, `/what` to the page itself (its section is gone) and `/logbook` to the dashboard's blogs (the crew log page is gone), so old
 links and printed material still land somewhere; the mission page's own old `#about`, `#what` and `#who-we-are` (when the reading
 matter was three pop-ups over it) lead to the About page too, its `#inside` to the habitat's
 section there, its `#exchanges` to the Write page, and its `#mission` and the dashboard's panels
@@ -581,7 +581,7 @@ post of an earlier day**: the crew write at night, so through the day the panel 
 otherwise be empty; instead the day before's post (or the last day's that has one) stands there
 under today's date, with no note, until today's replaces it — a visitor never meets an empty
 blog. The placeholder (*No mission report yet for SOL 005*) stands only while no post at all
-has been written. Earlier days stay day by day on the crew log (`/logbook`) and in At a Glance.
+has been written. Earlier days stay day by day in At a Glance.
 The same rule as everywhere else decides what is public: a post is on the station the moment it
 is saved; a placeholder never is, and a post cleared in mission control leaves its panel at once
 (the earlier day's stands in again). Like the schedule and the meal, a panel is drawn when the
@@ -636,7 +636,7 @@ dates the station runs on** (`mission.nowEnds`; a rehearsal can move that day on
 with `MISSION_OVERRIDE` only — the test suite keeps NOW at hand so): from then on the day picker and the desk's head
 carry no NOW (*before the run · … · reset — ready for the run*), the desk opens on SOL 01, `?day=0` opens SOL 01, a
 form still open on NOW saves nothing and says so (*Nothing was saved — NOW has gone …*) rather than landing on SOL 01,
-the public pages (the dashboard's blog panels and Today's Meal, the crew log, At a Glance, the screens) show no NOW
+the public pages (the dashboard's blog panels and Today's Meal, At a Glance, the screens) show no NOW
 (`mission.nowPre`), the archive lists no NOW row and `/archive/now` answers 404 (`/archive/today` leads to the
 archive's contents before the run), and what is left of day 0 — a message that came in before the run — is called
 *before the run* (`mission.zeroName`), in the desk's lists and in the exports, with its media in a `before-the-run/`
@@ -647,7 +647,7 @@ as a `rehearsal` block beside the thirteen days, the readings log as a `daily` r
 `missionDay: 0, rehearsal: true`, the media archive in a `now-rehearsal/` folder (and
 `/media/day/0/export.zip` alone), the messages exports with `when: NOW · before the run` /
 `rehearsal: true` and a heading of their own in the PDF. On the public station, once a blog is
-written under NOW the three blog panels, the blogs screen and the crew log show it headed
+written under NOW the three blog panels and the blogs screen show it headed
 **NOW** (until then they keep the opening day's empty slots), and At a Glance opens on it —
 before the run only: in a rehearsal against made-up dates the public pages show the sols, and
 NOW is the desk's and the record's. (To see the whole station as it will run — schedule,
@@ -713,11 +713,10 @@ reports the file and line number — in the console, on the mission control scre
 
 **Every diary slot ships as a placeholder.** `logbook.json` carries one entry per day per
 officer, each beginning with `[PLACEHOLDER]`, a first line naming the slot, and a `Cue:` line
-for the writer. The public crew log — the panel on the station and the `/logbook` page — shows
-all thirteen days from the first day, with each unwritten slot as its greyed first line, so the
-shape of the whole log is visible and fills in as the crew write; the cue is shown only in
+for the writer. The public station never shows a placeholder or its cue (the crew log page that showed every unwritten
+slot greyed is gone since 13 October); the cue is shown only in
 mission control. Write over it — in the officer's **Daily Blog** on their tab, with the day picker set to the
-day, or in the file — and it is live on the crew log for that day the moment it is saved. Save it empty (or press **Clear**) and the placeholder comes back. **Any day can be
+day, or in the file — and it is live for that day (At a Glance, and the dashboard's Commander Log on its day) the moment it is saved. Save it empty (or press **Clear**) and the placeholder comes back. **Any day can be
 written at any time** — before the mission opens, days ahead, days past — and it is public the
 moment it is saved; the log does not wait for the clock. **An entry is a post**, and it is
 written as one: every blog box in mission control is a composer laid out like a classic
@@ -835,8 +834,8 @@ panel always showed — nothing estimated — and the head of the panel keeps it
 
 ## Three blogs, and only three
 
-The station carries exactly three blogs, everywhere — the dashboard's Blogs row, the crew log
-(`/logbook`), At a Glance, the archive and the PDF record:
+The station carries exactly three blogs, everywhere — the dashboard's Blogs row, At a Glance,
+the archive and the PDF record:
 
 | Blog | Who writes it | Where it is stored |
 |---|---|---|
@@ -846,7 +845,7 @@ The station carries exactly three blogs, everywhere — the dashboard's Blogs ro
 
 The science and health officers have no other blog: their old per-officer "Daily Blog" is gone
 from mission control, and any entry for them in `logbook.json` (or left in the database) is
-dropped on load. The crew log page shows each day's three blogs, filterable by blog.
+dropped on load.
 
 The foot of every public page links **Privacy policy**, **ZKM** and **Imprint** — the imprint is the
 station's own page, `/imprint` (`src/views/pages/imprint.js`), with ZKM's details in German and English.
@@ -870,7 +869,7 @@ matching tab of mission control, which writes into the same files.
 **Written daily, in the crew's voice.** The commanding, science and health officers each
 have a daily blog entry and a state (mood and energy, two sliders). Both are filed from their
 tab in mission control — there is no separate terminal inside the habitat, and no second
-login. Entries go straight to the public crew log on the landing page, and the latest one
+login. Entries go straight to the public station (the dashboard's blogs and At a Glance), and the latest one
 appears under each officer in the Crew section. The slider numbers are never published; only
 the sentence each one maps to.
 
@@ -890,10 +889,10 @@ the browser makes a small preview first — a downscaled JPEG for a photograph, 
 for a video — so the gallery has thumbnails without the server ever touching the original.
 Without JavaScript the same form still works as a plain upload.
 
-Everything is public the moment it is saved: the **Media** page (`/media`) shows it all by day
-with filters by kind and by officer, every item has a page of its own with the original
-playing in it, the station's Media panel carries the newest, and each day on the crew log
-shows what was sent that day. ✕ on a picture in an entry withdraws it from view everywhere;
+Everything is public the moment it is saved: a picture stands in the post that carries it (the dashboard's blogs and
+At a Glance), and every item has a page of its own with the original playing in it; the **Media** page (`/media`) is
+the cloud folder's gallery alone, and a file sent with no post is listed nowhere public since the crew log page went
+(13 October) — it stays in the record and the archive. ✕ on a picture in an entry withdraws it from view everywhere;
 the file is kept.
 
 **Built as an archive first.** The rules that make it safe to keep for a long time:
@@ -2509,7 +2508,7 @@ and the station's readings as a row of pills on the right; there is no photograp
 rail. (`public/hero.jpg` is no longer referenced and can be deleted.) About · What's inside the
 habitat · Who we are are a page of their own, `/about`, which the header's *About* link leads to. The landing page
 carries no top bar; its navigation lives in the dark footer slab. Subpages keep the status rail
-and **Mission · Messages · Crew log · About**.
+and **Mission · Messages · At a Glance · About**.
 
 Across the very top runs **the ticker**: the header's row, then a continuously running line — the SOL, **what the crew are currently doing**
 (the schedule task whose time it is, with its detail — "14:00 · Maintenance — West panel seal,
@@ -2809,7 +2808,7 @@ content, the reply sits beneath it on an orange wash, and the foot carries the r
 the real light-time it crossed, the distance in au, and a `Ref 00042` permalink (in the archive; on the boards the
 card carries no `Ref` and no `NEW`, 8 October). (The public
 board and the closing page dress the same data as quoted posts instead — see *The board*.) The
-same card is used in the archive and in the crew logbook, so one component defines
+same card is used in the archive, so one component defines
 what an exchange looks like everywhere.
 
 ## The logo
@@ -2839,7 +2838,7 @@ the files of the same names and bump the `?v=`.
 
 The public station reads in **German, English and French**, switched by the small
 **DE · EN · FR** control beside the theme switch — in the masthead on the landing page,
-the crew log and the media page, and in the rail on At a Glance. **It opens in German** —
+the media page, and in the rail on At a Glance. **It opens in German** —
 every visitor who has not chosen yet reads it in German, whatever their browser is set to
 (October: the site opens in German, and dark; `DEFAULT_LANG=en` or `fr` in the environment
 names another default for a run — the test suite reads the station in English so). The
@@ -2882,7 +2881,7 @@ while the station runs, rather than the 80 kB written into every page as it was 
 lighter pages); English needs no table and has its `t()` in the page.
 
 What is translated is the station's own interface: the chrome, the ticker, the composer,
-the board's stamps and filters, the dashboard, At a Glance, the crew log and media
+the board's stamps and filters, the dashboard, At a Glance and the media
 pages, the About texts, the crew's condition sentences from `src/lib/mood.js`. What is
 **not** translated is the work itself: what the crew write, what visitors send and the
 replies, captions, and the day content authored in `content/` — task labels, meal names,

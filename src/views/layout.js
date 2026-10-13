@@ -53,7 +53,6 @@ const NAV = [
   ['/', 'Mission'],
   ['/#exchanges', 'Messages'],
   ['/at-a-glance', 'At a Glance'],
-  ['/logbook', 'Crew log'],
   ['/about', 'About'],
 ];
 
