@@ -1,17 +1,22 @@
 #!/usr/bin/env python3
 """The crew's portraits and the partners' logos for the About page (Who we are — src/views/pages/info.js).
 
-The portraits come from public/Astronaut_Pictures — the photographs as they were handed over, 3644 × 5466, one per
-person, each named Firstname_Lastname.jpg (a hyphen in a surname stays: Matthieu_Vlaminck-Maurer.jpg) — and go to
-public/crew/<lastname>.jpg at 800 × 1200 (the same 2:3, fitted, a little above the middle so a face is never cut),
-JPEG at quality 80, 70–90 kB each. A member of the crew with one name only — the habitat's robot dog, Robodog.jpg
-(8 October: "add the robot dog in the astronaut pictures") — is named by that one name and stands after the people.
+The portraits come from public/Astronaut_Pictures, one per person, each named Firstname_Lastname.png (a hyphen in a
+surname stays: Matthieu_Vlaminck-Maurer.png; a .jpg or .jpeg is taken as well). Since 13 October they are the photographs
+made small — 300 × 450 PNGs of some 50–75 kB each (13 October: "I have replaced the original Astronaut images with the
+reduced size") — in place of the photographs as they were handed over, 3644 × 5466 JPEGs of 3 to 8 MB. They go to
+public/crew/<lastname>.jpg at the photograph's own size, 800 × 1200 at the most (the same 2:3, fitted, a little above
+the middle so a face is never cut — never blown up), JPEG at quality 85: some 20 kB each from 300 × 450. Two pictures of
+one person (Yasha_Jain.png and Yasha_Jain.jpg) are one: the larger is taken, the other left out and said so. A member of
+the crew with one name only — the habitat's robot dog, Robodog.png (8 October: "add the robot dog in the astronaut
+pictures") — is named by that one name and stands after the people.
 With them public/crew/crew.json: the people in the order of their surnames, then those with one name, each with the
 picture's file and the names as the file name gives them — the page reads that list, so a photograph added to the
 folder needs only this script run again. A file named any other way is left out and said so.
 
 The round pictures — Current Crew on the About page and over the landing page's two calls (src/views/pages/sol.js) —
-are close-ups of their own, public/crew/face/<lastname>.jpg at 400 × 400 (12 October: "when the images are shown as
+are close-ups of their own, public/crew/face/<lastname>.jpg, square — 400 × 400 at the most, at the square's own size
+from a smaller photograph (some 200–250 px from 300 × 450, never blown up; 12 October: "when the images are shown as
 icons, it scales weirdly"): one square cut of the photograph had put every face elsewhere — high, low, small — since each
 photograph frames its person at its own height. Each square is now cut round the face, so that every face is the same
 size, its eyes at the same height (40 % from the top), the head and the shoulders in: FACES below, found from the eyes
@@ -37,37 +42,63 @@ CREW = os.path.join(ROOT, 'public', 'crew')
 PARTNERS = os.path.join(ROOT, 'public', 'partners')
 LOGO_NAMES = {'1.jpeg': 'staatstheater-karlsruhe', '2.png': 'naturkundemuseum-karlsruhe', '3.png': 'eon-foundation', '4.jpg': 'lbbw-stiftung', '5.jpg': 'innovationsfonds-kunst'}
 FACE = os.path.join(CREW, 'face')
-FACE_SIZE = 400                       # the round pictures are 52–104 px across: 400 is sharp on a screen of three pixels to the point
+FACE_SIZE = 400                       # the round pictures are 52–104 px across: 400 at the most (sharp on a screen of three pixels to the point)
+PORTRAIT = (800, 1200)                # the portraits on the About page: 800 × 1200 at the most
+KINDS = r'(?:png|jpe?g)'              # the photographs' files: .png (since 13 October), .jpg or .jpeg
 
 # Where the round picture is cut from each photograph: the square's middle — across, down — and its side, as fractions of
-# the photograph's width, height and width. Found from the eyes (OpenCV's Haar cascades, 12 October): the side 5.8 times
-# the distance between the eyes, the eyes 40 % from the square's top, in the middle across. The robot dog by hand.
+# the photograph's width, height and width (so they hold at any size of the same photograph: found on the 3644 × 5466
+# ones, they cut the 300 × 450 ones of 13 October alike). Found from the eyes (OpenCV's Haar cascades, 12 October): the
+# side 5.8 times the distance between the eyes, the eyes 40 % from the square's top, in the middle across. The robot dog
+# by hand. Named by the photograph's name without its ending — .png, .jpg, either.
 FACES = {
-    'Bernd_Lintermann.jpg': (0.4262, 0.3110, 0.7513),
-    'Dan_Wilcox.jpg': (0.4487, 0.3188, 0.7704),
-    'Dominik_Kautz.jpg': (0.4056, 0.2933, 0.7608),
-    'Finn_Milbrandt.jpg': (0.4643, 0.3219, 0.7115),
-    'Franziska_Klöck.jpg': (0.4479, 0.2821, 0.6478),
-    'Götz_Dipper.jpg': (0.4616, 0.3124, 0.7258),
-    'Jan_Gerigk.jpg': (0.4665, 0.3657, 0.7576),
-    'Laura_Schmidt.jpg': (0.5071, 0.2670, 0.6876),
-    'Matthieu_Vlaminck-Maurer.jpg': (0.4514, 0.3237, 0.7194),
-    'Morgan_Stricot.jpg': (0.4234, 0.2766, 0.7624),
-    'Till_Bechtloff.jpg': (0.4742, 0.3433, 0.7306),
-    'Tina_Lorenz.jpg': (0.4780, 0.3824, 0.8452),
-    'Yasha_Jain.jpg': (0.4619, 0.3142, 0.7672),
-    'Robodog.jpg': (0.5200, 0.3400, 0.8000),        # its head, its crate and its dish
+    'Bernd_Lintermann': (0.4262, 0.3110, 0.7513),
+    'Dan_Wilcox': (0.4487, 0.3188, 0.7704),
+    'Dominik_Kautz': (0.4056, 0.2933, 0.7608),
+    'Finn_Milbrandt': (0.4643, 0.3219, 0.7115),
+    'Franziska_Klöck': (0.4479, 0.2821, 0.6478),
+    'Götz_Dipper': (0.4616, 0.3124, 0.7258),
+    'Jan_Gerigk': (0.4665, 0.3657, 0.7576),
+    'Laura_Schmidt': (0.5071, 0.2670, 0.6876),
+    'Matthieu_Vlaminck-Maurer': (0.4514, 0.3237, 0.7194),
+    'Morgan_Stricot': (0.4234, 0.2766, 0.7624),
+    'Till_Bechtloff': (0.4742, 0.3433, 0.7306),
+    'Tina_Lorenz': (0.4780, 0.3824, 0.8452),
+    'Yasha_Jain': (0.4619, 0.3142, 0.7672),
+    'Robodog': (0.5200, 0.3400, 0.8000),        # its head, its crate and its dish
 }
 EYES_SIDE, EYES_AT = 5.8, 0.40         # (how FACES was found, for a photograph it does not name yet)
 
 
 def person(filename):
-    """'Bernd_Lintermann.jpg' -> ('Bernd', 'Lintermann'); 'Matthieu_Vlaminck-Maurer.jpg' -> ('Matthieu', 'Vlaminck-Maurer');
-    one name alone — 'Robodog.jpg' — -> ('Robodog', ''); else None."""
-    m = re.match(r'^([^_]+)_([^_]+)\.jpe?g$', filename, re.I)
+    """'Bernd_Lintermann.png' -> ('Bernd', 'Lintermann'); 'Matthieu_Vlaminck-Maurer.png' -> ('Matthieu', 'Vlaminck-Maurer');
+    one name alone — 'Robodog.png' — -> ('Robodog', ''); a .jpg or .jpeg alike; else None. (The names as NFC, however
+    the disk spells an ö.)"""
+    filename = unicodedata.normalize('NFC', filename)
+    m = re.match(r'^([^_]+)_([^_]+)\.' + KINDS + '$', filename, re.I)
     if m: return (m.group(1), m.group(2))
-    m = re.match(r'^([^_.]+)\.jpe?g$', filename, re.I)
+    m = re.match(r'^([^_.]+)\.' + KINDS + '$', filename, re.I)
     return (m.group(1), '') if m else None
+
+
+def stem(filename):
+    """The photograph's name without its ending, as FACES names it: 'Franziska_Klöck.png' -> 'Franziska_Klöck'."""
+    return os.path.splitext(unicodedata.normalize('NFC', filename))[0]
+
+
+def photographs():
+    """The photographs in public/Astronaut_Pictures, one per person — [(file, (first, last))] in the folder's order; a
+    file named any other way left out and said so, and of two pictures of one person the larger taken."""
+    found = {}
+    for f in sorted(os.listdir(PICTURES)):
+        who = person(f)
+        if not who: print('left out (not Firstname_Lastname.png):', f); continue
+        size = Image.open(os.path.join(PICTURES, f)).size
+        had = found.get(stem(f))
+        if had and had[2][0] * had[2][1] >= size[0] * size[1]: print('left out (a second picture of the same person):', f); continue
+        if had: print('left out (a second picture of the same person):', had[0])
+        found[stem(f)] = (f, who, size)
+    return [(f, who) for f, who, _ in sorted(found.values(), key=lambda x: x[0])]
 
 
 def slug(name):
@@ -80,16 +111,14 @@ def slug(name):
 def portraits():
     os.makedirs(CREW, exist_ok=True)
     people = []
-    for f in sorted(os.listdir(PICTURES)):
-        who = person(f)
-        if not who: print('left out (not Firstname_Lastname.jpg):', f); continue
-        first, last = who
+    for f, (first, last) in photographs():
         im = ImageOps.exif_transpose(Image.open(os.path.join(PICTURES, f))).convert('RGB')
-        im = ImageOps.fit(im, (800, 1200), Image.LANCZOS, centering=(0.5, 0.4))
+        w = min(PORTRAIT[0], im.size[0], round(im.size[1] * 2 / 3))                   # the photograph's own size, never blown up
+        im = ImageOps.fit(im, (w, round(w * 3 / 2)), Image.LANCZOS, centering=(0.5, 0.4))
         name = slug(last or first) + '.jpg'
-        im.save(os.path.join(CREW, name), 'JPEG', quality=80, optimize=True, progressive=True)
+        im.save(os.path.join(CREW, name), 'JPEG', quality=85, optimize=True, progressive=True)
         people.append({'file': name, 'first': first, 'last': last})
-        print(os.path.join(CREW, name), os.path.getsize(os.path.join(CREW, name)) // 1024, 'kB')
+        print(os.path.join(CREW, name), im.size, os.path.getsize(os.path.join(CREW, name)) // 1024, 'kB')
     people.sort(key=lambda x: (0 if x['last'] else 1, locale_key(x['last'] or x['first']), locale_key(x['first'])))
     with open(os.path.join(CREW, 'crew.json'), 'w', encoding='utf-8') as out:
         json.dump(people, out, ensure_ascii=False, indent=2); out.write('\n')
@@ -97,14 +126,13 @@ def portraits():
 
 
 def faces():
-    """The round pictures: each photograph's square round the face (FACES; else found, else guessed), at 400 × 400."""
+    """The round pictures: each photograph's square round the face (FACES; else found, else guessed), 400 × 400 at the
+    most — the square's own size from a smaller photograph."""
     os.makedirs(FACE, exist_ok=True)
-    for f in sorted(os.listdir(PICTURES)):
-        who = person(f)
-        if not who: continue
+    for f, who in photographs():
         im = ImageOps.exif_transpose(Image.open(os.path.join(PICTURES, f))).convert('RGB')
         w, h = im.size
-        box, how = FACES.get(unicodedata.normalize('NFC', f)), 'from FACES'        # (Klöck: however the disk spells the ö)
+        box, how = FACES.get(stem(f)), 'from FACES'                                 # (Klöck: however the disk spells the ö)
         if box is None:
             box, how = find_face(im), 'found from the eyes'
         if box is None:
@@ -112,11 +140,12 @@ def faces():
         cx, cy, side = box
         s = min(side * w, w, h)                                      # the square, kept inside the photograph
         x = min(max(cx * w - s / 2, 0), w - s); y = min(max(cy * h - s / 2, 0), h - s)
-        sq = im.crop((round(x), round(y), round(x + s), round(y + s))).resize((FACE_SIZE, FACE_SIZE), Image.LANCZOS)
+        n = min(FACE_SIZE, round(s))                                 # never blown up: a smaller photograph, a smaller square
+        sq = im.crop((round(x), round(y), round(x + s), round(y + s))).resize((n, n), Image.LANCZOS)
         out = os.path.join(FACE, slug(who[1] or who[0]) + '.jpg')
-        sq.save(out, 'JPEG', quality=80, optimize=True, progressive=True)
-        print(out, os.path.getsize(out) // 1024, 'kB,', how)
-        if unicodedata.normalize('NFC', f) not in FACES: print("    for FACES:  %r: (%.4f, %.4f, %.4f)," % (f, cx, cy, side))
+        sq.save(out, 'JPEG', quality=85, optimize=True, progressive=True)
+        print(out, sq.size, os.path.getsize(out) // 1024, 'kB,', how)
+        if stem(f) not in FACES: print("    for FACES:  %r: (%.4f, %.4f, %.4f)," % (stem(f), cx, cy, side))
 
 
 def find_face(im):

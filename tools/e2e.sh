@@ -846,17 +846,25 @@ process.exit(JSON.stringify(names) === JSON.stringify(want) ? 0 : 1);
 ' "$ABOUT" && ok "the names are the files' (Firstname_Lastname), in the order of the surnames — Bechtloff to Wilcox, Klöck and Milbrandt in their places — and Robodog, one name, after them" || bad "the crew's names or their order are not the files'"
 for f in bechtloff dipper gerigk jain kautz kloeck lintermann lorenz milbrandt schmidt stricot vlaminck-maurer wilcox robodog; do [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/$f.jpg)" = "200" ] || bad "no portrait /crew/$f.jpg"; done; ok "every portrait is served"
 # the round pictures (12 October: "when the images are shown as icons, it scales weirdly"): close-ups of their own, one
-# for each of the crew, cut round the face — 400 × 400, the tool's FACES naming every photograph, so the cut is the same
-# whenever the pictures are made again
+# for each of the crew, cut round the face — square, 400 × 400 at the most, the tool's FACES naming every photograph, so
+# the cut is the same whenever the pictures are made again. 13 October: "I have replaced the original Astronaut images
+# with the reduced size" — the photographs are 300 × 450 PNGs now (some 50–75 kB, Firstname_Lastname.png), and the
+# pictures made from them are never blown up: the portraits at 300 × 450, some 20 kB each; the close-ups some 200–250 px
 for f in bechtloff dipper gerigk jain kautz kloeck lintermann lorenz milbrandt schmidt stricot vlaminck-maurer wilcox robodog; do [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/face/$f.jpg)" = "200" ] || bad "no close-up /crew/face/$f.jpg"; done
-python3 - <<'PY' && ok "every one of the crew has a close-up for the round pictures — 400 × 400, cut where tools/crew-pictures.py's FACES says, which names every photograph" || bad "a close-up is missing, not square, or not in FACES"
+python3 - <<'PY' && ok "every one of the crew has a close-up for the round pictures — square, cut where tools/crew-pictures.py's FACES says, which names every photograph; the photographs are the small PNGs, and nothing made from them is blown up" || bad "a close-up is missing, not square, or not in FACES — or a photograph is not the small PNG, or a picture is blown up"
 import json, os, sys, unicodedata
 from PIL import Image
 crew = json.load(open('public/crew/crew.json', encoding='utf-8'))
 tool = open('tools/crew-pictures.py', encoding='utf-8').read()
-photos = [unicodedata.normalize('NFC', f) for f in os.listdir('public/Astronaut_Pictures') if f.lower().endswith(('.jpg', '.jpeg'))]
-sys.exit(0 if len(crew) == 14 and all(Image.open('public/crew/face/' + c['file']).size == (400, 400) for c in crew)
-         and len(photos) == 14 and all(repr(p) + ': (' in tool for p in photos) else 1)
+photos = [unicodedata.normalize('NFC', f) for f in os.listdir('public/Astronaut_Pictures') if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+stems = [os.path.splitext(p)[0] for p in photos]
+big = max(Image.open('public/Astronaut_Pictures/' + p).size[0] for p in photos)
+faces = [Image.open('public/crew/face/' + c['file']).size for c in crew]
+portraits = [Image.open('public/crew/' + c['file']).size for c in crew]
+sys.exit(0 if len(crew) == 14 and all(w == h and 150 <= w <= 400 for w, h in faces)
+         and all(w * 3 == h * 2 and w <= min(800, big) for w, h in portraits)
+         and len(photos) == 14 and all(p.endswith('.png') and os.path.getsize('public/Astronaut_Pictures/' + p) < 120000 for p in photos)
+         and all(repr(s) + ': (' in tool for s in stems) else 1)
 PY
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/crew.json)" = "200" ] && grep -q "'../../../public/crew/crew.json'" src/views/pages/sol.js && ! grep -q "crew.json'" src/views/pages/info.js && grep -qF "const { CREW } = require('./sol');" src/views/pages/info.js && ok "the list is public/crew/crew.json, written by tools/crew-pictures.py and read once by the pages (sol.js — the About page's Who we are and the landing page's Current Crew)" || bad "the crew's list is not read from crew.json"
 node -e '
@@ -4265,6 +4273,38 @@ curl -s $B/ | tr -d '\n' | grep -q '<p class="run-dates">.*</p> *<p class="intro
 # own tap highlight is off on every page (the keys show their own pressed state)
 grep -qF 'html { -webkit-tap-highlight-color: transparent; }' public/station.css && grep -qF 'body.landing :is(.btn, .chip, .tags label, .call-key, .know-more, .masthead-btn, .tk-nav a, .about-jump a, .status button):active { box-shadow: var(--neu-in-sm) !important; }' public/neu.css \
   && ok "no blue square where a finger presses: the tap highlight is off on every page, and Know more shows its own pressed state" || bad "the browser's tap highlight is still drawn"
+# 13 October: "have some effect like all the other buttons on mobile": on a touch screen every key sinks a little and
+# goes a shade darker while pressed — Know more among them — the calls give with their keys, the bar of keys' signs dip;
+# an iPhone is let show it (a touch listener)
+grep -qF '@media (hover: none), (pointer: coarse) {' public/neu.css && grep -qF ':root body.landing .call:active .call-key { transform: scale(.96) !important; filter: brightness(.9) !important; }' public/neu.css \
+  && grep -q "  :root body.landing :is(.know-more, .call-key, .wall-write, .btn, .chip, .tags label, .sky-note-btn, .tk-nav a, .masthead-btn, .about-jump a):active," public/neu.css \
+  && grep -qF ':root body.landing .tabbar .tab:active .tab-ic { transform: scale(.88); }' public/neu.css && grep -qF "document.addEventListener('touchstart', function () {}, { passive: true });" public/switches.js \
+  && ok "on a touch screen every key answers a press — it sinks a little, a shade darker, Know more as the others — and an iPhone shows it too" || bad "a key gives no sign of a press on a phone"
+# 13 October: "on mobile, load only the newest picture and not 5; don't have the moving radar or dots on mobile — just
+# the static image; download the cards only when something is new"
+BV=$(curl -s "$B/api/board?limit=20&wall=1" | node -e 'let s="";process.stdin.on("data",(c)=>s+=c).on("end",()=>{try{process.stdout.write(JSON.parse(s).version||"")}catch(e){}})')
+BU=$(curl -s "$B/api/board?limit=20&wall=1&v=$BV"); BS=$(curl -s "$B/api/board?limit=20&wall=1&v=stale")
+[ -n "$BV" ] && echo "$BU" | grep -q '"unchanged":true' && ! echo "$BU" | grep -q '"cards"' && echo "$BU" | grep -q '"published":' && echo "$BS" | grep -q '"cards":"' \
+  && grep -qF "var ask = version ? url + (url.indexOf('?') < 0 ? '?' : '&') + 'v=' + encodeURIComponent(version) : url;" public/board.js \
+  && ok "the board asks with the version it has, and the station sends the cards only when something is new — the counts alone otherwise" || bad "the board still downloads every card on every poll"
+grep -q "the newest that has not failed" public/sky.js && grep -qF "if (solo()) im.onerror = function () { preload(); };" public/sky.js \
+  && grep -qF '@media (max-width: 760px), (max-height: 520px) { body.landing .dl-sweep { animation: none; } }' public/aura.css \
+  && grep -qF "function run() { if (running || document.hidden || onPhone()) return;" public/live.js \
+  && ok "a phone loads the newest picture alone for the landing visual, and its radar is a still picture — no sweep going round, no dots moving" || bad "a phone still loads five pictures, or its radar still moves"
+# 13 October: "do all the messages load at once or as you scroll down? Make it efficient" — twenty a time as the reader
+# scrolls (above); the notes' running distance moved on only while a note is on the screen, nothing while the page is
+# hidden; the count over the wall one query, the same figures as the page's
+BT=$(curl -s "$B/api/board?limit=20&wall=1"); WT=$(curl -s "$B/write")
+node -e '
+const d = JSON.parse(process.argv[1]), h = process.argv[2];
+const m = /<span class="wall-count" id="feed-counter">(\d+) [^<]*? · (\d+) /.exec(h);
+process.exit(m && Number(m[1]) === d.published && Number(m[2]) === d.total && d.total >= d.published ? 0 : 1);
+' "$BT" "$WT" && grep -qF "const counts = data.boardTally();" src/server.js && grep -qF "const counts = data.boardTally();" src/views/pages/public.js \
+  && grep -qF "SELECT COUNT(*) AS total, COALESCE(SUM(state = 'PUBLISHED'), 0) AS published FROM message" src/lib/data.js \
+  && grep -qF "for (var j = 0; j < boxes.length; j++) if (!watched.has(boxes[j])) { watched.add(boxes[j]); io.observe(boxes[j]); }" public/board.js \
+  && grep -qF "if (e.isIntersecting) { if (i < 0) inView.push(e.target); move(e.target, now); }" public/board.js \
+  && grep -qF "document.addEventListener('visibilitychange', tick);" public/board.js \
+  && ok "the wall loads twenty at a time as it is scrolled; the notes' distances move only on the screen, and the count over it is one query — the page's figures" || bad "the wall's figures are not one query, or every note's distance is still moved every second"
 # 13 October: "Transmit and Live feed should have the SAME height on mobile" — one row height, the taller card's, each
 # key at its card's foot
 grep -qF '  body.landing .calls { grid-auto-rows: 1fr; }' public/sheet.css && grep -qF '  body.landing .call-text { align-self: stretch; align-items: flex-start; text-align: left; min-width: 0; }' public/sheet.css \

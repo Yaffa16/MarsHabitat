@@ -2455,6 +2455,10 @@ body.landing .dl-sweep line { stroke: var(--cobalt); stroke-opacity: 1; stroke-w
 body.landing .dl-astro { fill: var(--mars); opacity: .85; }
 :root[data-theme="dark"] body.landing .dl-astro { filter: drop-shadow(0 0 3px rgba(255,106,46,.9)); }
 @keyframes dl-turn { to { transform: rotate(360deg); } }
+/* a phone: the radar a still picture — the sweep standing at twelve o'clock, the crew's dots where they are drawn (live.js
+   leaves them be) — nothing on it going round, nothing drawn sixty times a second (13 October: "don't have the moving
+   radar or dots on mobile, just the static image") */
+@media (max-width: 760px), (max-height: 520px) { body.landing .dl-sweep { animation: none; } }
 /* Karlsruhe as its fan (public.js, cityFan): the disc faintly tinted, the thirty-two rays and the rings in cobalt — the
    kilometre rings whole, the half-kilometres dashed, nothing written on them — a sweep of Mars going round once in
    twenty-four seconds; the Schloss a small square of ink at the centre, Red Dust City a dot of Mars with a ring pulsing

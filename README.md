@@ -1631,7 +1631,21 @@ window tall with its cards in the middle and air around them, a margin at both s
   it is pressed** (13 October: "why is there a blue square behind Know more when you click it on mobile — fix that"):
   that was the phone browser's own tap highlight, a rectangle laid over whatever a finger presses, whatever its shape;
   it is off on every page — the site, the screens, mission control (`html { -webkit-tap-highlight-color: transparent }`,
-  `station.css`) — and the keys show their own pressed state (sunk in, `neu.css`).
+  `station.css`) — and the keys show their own pressed state. **Every key answers a press on a touch screen** (13
+  October: "have some effect like all the other buttons on mobile"): pressed, it sinks a little (`scale(.96)`) and goes
+  a shade darker, and springs back as it is let go — Know more, the calls' keys, the board's Write to the Crew, the keys
+  and chips, the header's keys; a call, the whole card being its door, gives a little with its key; the signs in the bar
+  of keys dip. For touch screens alone (`@media (hover: none), (pointer: coarse)`, `neu.css`): a mouse on a desk keeps
+  what it had. An iPhone shows a pressed state only on a page that listens to touches, so `switches.js` listens.
+- **Lighter on a phone** (13 October: "on mobile, load only the newest picture and not 5; don't have the moving radar or
+  dots on mobile — just the static image; download the cards only when something is new"): the landing visual loads the
+  newest picture alone on a phone — the one it shows — and the next one only if that one will not load (`public/sky.js`,
+  `preload`); a desk still loads the five it takes turns through. The Live feed card's radar is a still picture on a
+  phone: the sweep stands at twelve o'clock (`aura.css`) and the crew's dots stand where they are drawn — the loop that
+  moved them sixty times a second never runs there (`public/live.js`). And the board asks with the version it has
+  (`/api/board?…&v=`, `public/board.js`, every five seconds as before): the station sends the cards only when something
+  is new, and otherwise the version and the counts alone — some 130 bytes in place of some 40 KB — the counts kept
+  current with them.
 - **The two calls**, the second page (`#note` — the section keeps its id; the nudge on the Earth
   and the phone's scroll lead to it): the doors to the composer and to the dashboard (*The two
   calls*, below), side by side in the middle of the page on a desk, one under the other on a
@@ -2705,7 +2719,15 @@ note as tall as what it holds — **never in a box**. The page draws the newest 
 the end of the wall the twenty before them are fetched and laid on** (`/api/board?before=<id>&at=<sent>`
 — the page of published exchanges sent before the oldest on the wall; an `IntersectionObserver`
 on the marker at the foot, which says *Loading older exchanges…* with a turning ring, then *The
-beginning of the correspondence*), and so on until there is nothing older. The live refresh
+beginning of the correspondence*), and so on until there is nothing older — the messages are never
+all loaded at once (13 October: "do all the messages load at once or as you scroll down? Make it
+efficient"). Kept light as the wall grows: each note's running distance into space (*… km from
+Earth*) is moved on a second at a time only while the note is on the screen — an
+`IntersectionObserver` in `public/board.js` keeps the list, a note is set right the moment it
+comes on, and nothing moves while the page is hidden (a wall scrolled far down holds a hundred
+notes and more, and every one of them was set every second until then); and the count over the
+wall is one query (`data.boardTally()`: the exchanges and the messages sent), where the board's
+poll ran mission control's ten tallies every five seconds for every open board. The live refresh
 (every few seconds, `/api/board?limit=20&wall=1`) lays the fresh set in **by id**: a new exchange
 goes in above the first note older than it, a changed one (a reply published) is replaced where it
 stands, a note the fresh set has left behind stays as the wall's older part, and the note at the
@@ -3135,11 +3157,19 @@ computed, 0.37272 au actual). The station keeps working if the venue loses its c
 2. Set `CONTROL_PASSWORD`, `SENSOR_TOKEN` and `IP_SALT`.
 3. Set `SECURE_COOKIES=true` if serving over HTTPS.
 4. Check Who we are on the About page (`/about#who-we-are`): the crew's portraits with their
-   names (`public/crew`, made from `public/Astronaut_Pictures` — one `Firstname_Lastname.jpg`
-   per person — by `tools/crew-pictures.py`, which also writes `public/crew/crew.json`, the
-   people by surname, that the page reads; a new photograph needs only the script run again).
+   names (`public/crew`, made from `public/Astronaut_Pictures` — one `Firstname_Lastname.png`
+   per person (a `.jpg` is taken as well) — by `tools/crew-pictures.py`, which also writes
+   `public/crew/crew.json`, the people by surname, that the page reads; a new photograph needs
+   only the script run again). Since 13 October the photographs are small — 300 × 450 PNGs of
+   some 50–75 kB each, in place of the 3644 × 5466 JPEGs of 3 to 8 MB as they were handed over
+   ("I have replaced the original Astronaut images with the reduced size") — and the script
+   makes nothing larger than its photograph: the portraits are 300 × 450, about 20 kB each (800 ×
+   1200 at the most, from a larger photograph), and the About page's fourteen weigh some 270 kB
+   in place of 1.2 MB. Their `width`/`height` in the page give the shape alone (2:3; the round
+   ones 1:1) — the page sets their size.
    The round pictures of Current Crew — over the landing page's two calls —
-   are close-ups of their own, `public/crew/face/<lastname>.jpg`, 400 × 400, about 20 kB each,
+   are close-ups of their own, `public/crew/face/<lastname>.jpg`, square — 400 × 400 at the most,
+   some 200–250 px and about 10 kB each from the 300 × 450 photographs —
    made by the same script (12 October: "when the images are shown as icons, it scales weirdly":
    a single square cut from every photograph had left each face somewhere else — high, low,
    small — as each photograph frames its person at its own height). Each is cut round the face,

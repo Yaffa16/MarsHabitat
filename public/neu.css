@@ -327,3 +327,21 @@ body.landing .dl-live, body.landing .call-livepill { background: var(--live-wash
 body.landing .board .live:not(.stale)::before, body.landing .cloud-live i, body.landing .dl-live i, body.landing .seq-live i, body.landing .call-livepill i,
 body.landing .live-dot, body.screen .live-badge i { background: var(--live) !important; box-shadow: 0 0 10px 2px var(--live-glow) !important; }
 body.screen .live-badge { border-color: rgba(255,59,48,.6) !important; }
+
+/* ------------------------------------------------------------------------- a press, on a touch screen */
+/* Every key answers a finger itself (13 October: "have some effect like all the other buttons on mobile" — the phone
+   browser's own tap highlight, a blue rectangle, is off: station.css): pressed, it sinks a little and goes a shade
+   darker, and springs back as it is let go — Know more, the calls' keys, the board's Write to the Crew, the keys and
+   chips, the header's keys; a door that is a whole card (the two calls) gives a little with its key; the bar of keys'
+   signs dip. A mouse on a desk keeps what it had: this is for touch screens alone (public/switches.js lets an iPhone
+   show the pressed state too). */
+@media (hover: none), (pointer: coarse) {
+  :root body.landing :is(.know-more, .call-key, .wall-write, .btn, .chip, .tags label, .sky-note-btn, .tk-nav a, .masthead-btn, .about-jump a) {
+    transition: transform .12s ease, filter .12s ease, box-shadow .12s ease !important; }
+  :root body.landing :is(.know-more, .call-key, .wall-write, .btn, .chip, .tags label, .sky-note-btn, .tk-nav a, .masthead-btn, .about-jump a):active,
+  :root body.landing .call:active .call-key { transform: scale(.96) !important; filter: brightness(.9) !important; }
+  :root body.landing .call { transition: transform .12s ease !important; }
+  :root body.landing .call:active { transform: scale(.985) !important; }
+  :root body.landing .tabbar .tab-ic { transition: transform .12s ease; }
+  :root body.landing .tabbar .tab:active .tab-ic { transform: scale(.88); }
+}

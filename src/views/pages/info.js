@@ -15,7 +15,8 @@ const { CREW } = require('./sol');
  */
 
 /* Who we are: the crew's portraits — public/crew, made by tools/crew-pictures.py from the photographs in
-   public/Astronaut_Pictures (Firstname_Lastname.jpg): one picture per person at 800 × 1200 and crew.json, the people in
+   public/Astronaut_Pictures (Firstname_Lastname.png — 300 × 450 since 13 October): one picture per person at the
+   photograph's size, 800 × 1200 at the most (the width and height below give its shape, 2:3), and crew.json, the people in
    the order of their surnames with the two names as the file names give them, then the crew with one name — the
    habitat's robot dog, Robodog (8 October) — read once at start (sol.js, CREW: the landing page shows them too) — and
    the partners (public/partners — the logos from public/PartnerLogo, in the order the folder gives them: 1 and 2 in

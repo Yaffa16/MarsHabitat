@@ -914,12 +914,17 @@ app.get('/api/board', (req, res) => {
   // under the station's name (everything the writing screen sends), not a cookie's (a screen has none) — the latest of
   // them all, as many as it asks for (nine: stationBoard)
   const recent = req.query.station === '1' ? stationBoard(limit) : data.board(limit, ctx.visitor ? ctx.visitor.id : null);
-  const counts = data.counts();
+  const counts = data.boardTally();                                          // the two figures the board shows, in one query
+  const version = P.boardVersion(recent);
+  // ?v=<version>: the board polling with the version it has (board.js, every five seconds) — the cards only when
+  // something is new; otherwise the version and the counts alone, a few dozen bytes for some 40 KB (13 October: "download
+  // the cards only when something is new")
+  const same = typeof req.query.v === 'string' && req.query.v !== '' && req.query.v === version;
   res.set('Cache-Control', 'no-store').json({
-    version: P.boardVersion(recent),
+    version,
     phase: ctx.mission.phase,
     open: ctx.mission.open,                                                    // false once the station has closed (board.js turns the page)
-    cards: P.boardCards(recent, T, { wall }),
+    ...(same ? { unchanged: true } : { cards: P.boardCards(recent, T, { wall }) }),
     count: recent.length,
     pendingMine: recent.filter((m) => m.mine && m.pending).length,
     total: counts.total,

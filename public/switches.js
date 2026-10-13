@@ -10,6 +10,9 @@
 (function () {
   'use strict';
   var root = document.documentElement;
+  // an iPhone shows a key's pressed state (:active, neu.css — a press, on a touch screen) only on a page that listens to
+  // touches; this listens, and does nothing else (13 October)
+  document.addEventListener('touchstart', function () {}, { passive: true });
   var here = function () { return location.pathname + location.search + location.hash; };
   var words = { en: { light: 'Light', dark: 'Dark', toLight: 'Switch to light mode', toDark: 'Switch to dark mode' },
                 de: { light: 'Hell', dark: 'Dunkel', toLight: 'Zum hellen Modus wechseln', toDark: 'Zum dunklen Modus wechseln' },

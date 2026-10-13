@@ -364,15 +364,18 @@
     // no fetch while the tab is hidden, or while the board itself is not shown (a phone held upright keeps the
     // landing page's portal off the screen — the messages page carries it; see aura.css)
     if (document.hidden || !url || !window.fetch || feed.offsetParent === null) { schedule(); return; }
-    fetch(url, { cache: 'no-store', credentials: 'same-origin' })
+    // the board asks with the version it has: the station sends the cards only when something is new, the counts alone
+    // otherwise (server.js, /api/board, ?v=; 13 October: "download the cards only when something is new")
+    var ask = version ? url + (url.indexOf('?') < 0 ? '?' : '&') + 'v=' + encodeURIComponent(version) : url;
+    fetch(ask, { cache: 'no-store', credentials: 'same-origin' })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (data) {
         // the station has closed under this open page (the end of the day after the run): it turns into the closed record
         if (data.open === false && feed.getAttribute('data-open') !== '0') { window.location.reload(); return; }
-        if (data.version !== version) {
+        if (data.version !== version && typeof data.cards === 'string') {
           swap(data);
           version = data.version;
-        }
+        } else counts(data);                                                 // nothing new on the board: its counts kept current
         wait = BASE_MS;
         window.MCSBoardAlive = Date.now();                                   // (a board screen alive: screen.js does not reload it)
         if (live) live.classList.remove('stale');
@@ -480,7 +483,14 @@
    /api/celestial in the page's language) — "Your message is 6.1 times
    farther away than Saturn", and under it the object's distance from
    Earth, said the way its kind of distance wants (how), and one line about
-   it. Nothing on the panel is a link. */
+   it. Nothing on the panel is a link.
+
+   Only the cards on the screen are moved on, and nothing while the page is
+   hidden (13 October: "make it efficient"): a wall scrolled far down holds a
+   hundred cards and more, and every one of them was set a second at a time.
+   An IntersectionObserver keeps the list of those in view (and a little
+   beyond), and a card is set right the moment it comes on, so no figure is
+   ever seen standing; a browser without one moves every card, as before. */
 (function () {
   'use strict';
   var t = window.t || function (s) { return s; };
@@ -515,15 +525,32 @@
     if (secs === null) return;
     set(box.querySelector('.sp-km'), big(secs * KM));
   }
+  var watched = typeof WeakSet === 'function' ? new WeakSet() : null, inView = [];
+  var io = watched && 'IntersectionObserver' in window ? new IntersectionObserver(function (entries) {
+    var now = Date.now();
+    entries.forEach(function (e) {
+      var i = inView.indexOf(e.target);
+      if (e.isIntersecting) { if (i < 0) inView.push(e.target); move(e.target, now); }   // set right as it comes on
+      else if (i >= 0) inView.splice(i, 1);
+    });
+  }, { rootMargin: '160px 0px' }) : null;
   function tick() {
+    if (document.hidden) return;
     var boxes = document.querySelectorAll('.card-space[data-launched]');
     if (!boxes.length) return;
     var now = Date.now();
-    for (var i = 0; i < boxes.length; i++) move(boxes[i], now);
+    if (!io) { for (var i = 0; i < boxes.length; i++) move(boxes[i], now); }
+    else {
+      // the cards the board has swapped in or laid on since are watched as they come; those gone are let go
+      for (var j = 0; j < boxes.length; j++) if (!watched.has(boxes[j])) { watched.add(boxes[j]); io.observe(boxes[j]); }
+      inView = inView.filter(function (b) { if (document.documentElement.contains(b)) return true; io.unobserve(b); return false; });
+      for (var k = 0; k < inView.length; k++) move(inView[k], now);
+    }
     if (box) refresh();
   }
   tick();
   setInterval(tick, 1000);
+  document.addEventListener('visibilitychange', tick);
 
   /* ------------------------------------------------- what it is closest to */
   // the objects from content/celestial.json, in the page's language, nearest first — fetched once, the first time a card

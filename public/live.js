@@ -10,7 +10,10 @@
  *  - the figures in the dashboard's head roll up from zero to their value when the page opens (the sol, the crew), as a
  *    readout settling — the values themselves are the page's, untouched.
  * Where the visitor asks for less motion the dots stand where they are, lit, and the figures stand as written — and so
- * on the installation's light screens (html.lite: a screen whose address says ?lite=1; 12 October).
+ * on the installation's light screens (html.lite: a screen whose address says ?lite=1; 12 October). On a phone the radar
+ * is a still picture (13 October: "don't have the moving radar or dots on mobile, just the static image"): the dots
+ * stand where they are drawn and the sweep stands (aura.css) — the loop that moved them never runs there, and stops if
+ * a window narrows to a phone's; a window widened from a phone's sets it going.
  * Nothing here is sent anywhere. */
 (function () {
   'use strict';
@@ -19,6 +22,8 @@
 
   /* ------------------------------------------------------------ the astronauts, wandering about the radar */
   var radar = document.querySelector('.dl-radar');
+  var phoneMq = window.matchMedia ? window.matchMedia('(max-width: 760px), (max-height: 520px)') : null;   // a phone: the radar stands still (aura.css)
+  var onPhone = function () { return !!(phoneMq && phoneMq.matches); };
   if (radar && !calm && window.requestAnimationFrame) {
     var TURN = 4000, LIM = 40, C = 60;                       // the sweep's period (aura.css); how far from the centre a dot may go; the centre
     var PACE = 1 / 3;                                        // the dots' own clock against the page's: a third of their first pace
@@ -67,10 +72,14 @@
           var bearing = (Math.atan2(d.x, -d.y) / (Math.PI * 2) + 1) % 1, since = (sweep - bearing + 1) % 1;
           d.el.style.opacity = (0.4 + 0.6 * (1 - since)).toFixed(3);
         });
-        if (!document.hidden) requestAnimationFrame(frame);
+        if (!document.hidden && !onPhone()) requestAnimationFrame(frame);
+        else { running = false; if (onPhone()) dots.forEach(function (d) { d.el.style.opacity = ''; }); }   // (stopped for a phone: the dots lit alike)
       }
-      requestAnimationFrame(frame);
-      document.addEventListener('visibilitychange', function () { if (!document.hidden) { last = null; requestAnimationFrame(frame); } });
+      var running = false;
+      function run() { if (running || document.hidden || onPhone()) return; running = true; last = null; requestAnimationFrame(frame); }
+      run();
+      document.addEventListener('visibilitychange', run);
+      if (phoneMq) { if (phoneMq.addEventListener) phoneMq.addEventListener('change', run); else if (phoneMq.addListener) phoneMq.addListener(run); }
     }
   }
 

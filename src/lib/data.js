@@ -373,6 +373,16 @@ function counts() {
 }
 
 /**
+ * The two figures the Message Board shows over its notes — the exchanges published and the messages sent (public.js,
+ * boardWall) — in one query: every open board asks for them every five seconds (server.js, /api/board), and counts()
+ * runs ten. Nothing to settle first: a message landing changes neither figure (13 October: "make it efficient").
+ */
+function boardTally() {
+  const r = db.prepare("SELECT COUNT(*) AS total, COALESCE(SUM(state = 'PUBLISHED'), 0) AS published FROM message").get();
+  return { total: r.total, published: r.published };
+}
+
+/**
  * The tally mission control keeps for itself (October: "a counter of the
  * messages sent on the website and of the visitors — only on the control
  * page, not publicly"): every message ever sent from Earth, whatever became
@@ -558,6 +568,6 @@ module.exports = {
   metrics, latest, history, evaluate, sensorPanels, dailyAverages,
   day, mealRow, mealsFor, FIXED_SLOTS, isExtraSlot, extraIndex, slotOrder, slotParts, slotLabel, crewWithMood, moodHistory, moodRecord, moodRecordAll, moodSeries,
   entriesForDay, entriesByCrew, entry, logbook, logSlotsPublic, logSlotsFor, BLOGS, entryCounts,
-  settleTransits, published, board, inFlightFor, messagesFor, counts, tally, tallyByDay, dailyActivity,
+  settleTransits, published, board, inFlightFor, messagesFor, counts, boardTally, tally, tallyByDay, dailyActivity,
   TAGS, STALE_SECONDS,
 };

@@ -41,7 +41,8 @@ const missionLib = require('../../lib/mission');
 const ROLES = ['COMMUNICATION OFFICER', 'HEALTH OFFICER', 'SCIENCE OFFICER'];   // the three, in the order of the text sheet
 
 /* The crew's portraits — public/crew, made by tools/crew-pictures.py from the photographs in public/Astronaut_Pictures
-   (Firstname_Lastname.jpg): one picture per person at 800 × 1200, and crew.json, the people in the order of their
+   (Firstname_Lastname.png — 300 × 450 since 13 October): one picture per person at the photograph's size, 800 × 1200 at
+   the most, and crew.json, the people in the order of their
    surnames with the two names as the file names give them, then the crew with one name (the habitat's robot dog,
    Robodog). Read here once at start: the About page (info.js — Who we are) and the landing page's second page
    (landing.js — Current Crew over the two calls) show them. */
@@ -189,7 +190,8 @@ function solFold(ctx, { today = null, crew = [] } = {}) {
  * other on a phone (aura.css, .crew-now) — unused now. The pictures load as they come near (loading="lazy"). They are the
  * round pictures' own close-ups, public/crew/face/<file> (12 October: "when the images are shown as icons, it scales
  * weirdly" — one square cut of every photograph had put each face elsewhere): each cut round its face, every face the
- * same size at the same height, 400 × 400 (tools/crew-pictures.py, FACES).
+ * same size at the same height, square — 400 × 400 at the most, some 200–250 px from the 300 × 450 photographs of 13
+ * October (tools/crew-pictures.py, FACES; the width and height below give the shape alone).
  */
 function crewList(ctx, { crew = [], onShift = {} } = {}) {
   const T = ctx.T;

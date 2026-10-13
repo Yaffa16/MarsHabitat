@@ -700,7 +700,7 @@ const WRITE_ICON = '<svg class="write-ic" viewBox="0 0 24 24" aria-hidden="true"
 function boardWall(ctx, { recent = [], more = false, poll = '/api/board?limit=20' } = {}) {
   const T = ctx.T;
   const pendingMine = recent.filter((m) => m.mine && m.pending).length;
-  const counts = data.counts();
+  const counts = data.boardTally();                                          // the exchanges and the messages sent: the two the bar shows
   return `<div class="feed-wrap wall-wrap"><div class="feed-scroll" id="feed" data-poll="${esc(poll)}" data-open="${ctx.mission.open ? 1 : 0}"
           data-version="${boardVersion(recent)}" data-more="${more ? 1 : 0}" data-wall="1">
         <div class="board wall">

@@ -318,13 +318,27 @@
   function picStamp(when, w) { when = when || ''; return w && w < 200 ? when.replace(/(\d{2})\.(\d{2})\.\d{4}/, '$1.$2') : when; }
   var clip = function (t) { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > CLIP ? t.slice(0, CLIP - 1).replace(/\s+$/, '') + '…' : t; };
 
-  /* ------------------------------------------------------------ the snapshots, loaded before they are shown */
+  /* ------------------------------------------------------------ the snapshots, loaded before they are shown
+     A desk loads the newest five, for its turns; a phone, which shows the newest alone, loads that one alone — the next
+     one only if it will not load (13 October: "on mobile, load only the newest picture and not 5"). */
   var loaded = {};
+  function fetchPic(p) {
+    var im = new Image(); im.decoding = 'async'; im.alt = '';
+    if (solo()) im.onerror = function () { preload(); };          // (a phone: the next one, in its place)
+    im.src = p.thumb; loaded[p.id] = im;
+  }
+  function broken(p) { var im = loaded[p.id]; return !!(im && im.complete && !im.naturalWidth); }
   function preload() {
-    model.pics.forEach(function (p) {
-      if (loaded[p.id] || !p.thumb) return;
-      var im = new Image(); im.decoding = 'async'; im.alt = ''; im.src = p.thumb; loaded[p.id] = im;
-    });
+    if (solo()) {                                                    // the newest that has not failed: loaded, loading, or asked for now
+      for (var i = 0; i < model.pics.length; i++) {
+        var p = model.pics[i];
+        if (!p.thumb || broken(p)) continue;
+        if (!loaded[p.id]) fetchPic(p);
+        return;
+      }
+      return;
+    }
+    model.pics.forEach(function (p) { if (!loaded[p.id] && p.thumb) fetchPic(p); });
   }
   function ready(p) { var im = loaded[p.id]; return !!(im && im.complete && im.naturalWidth); }
 
@@ -582,7 +596,7 @@
   function nextPicture() {
     var one = solo(), there = onIds('sky-pic'), p = null, i, ok, old = [];
     if (one) {                                                     // a phone: the newest picture alone — once it has loaded — until a newer one comes
-      p = model.pics.filter(function (q) { var im = loaded[q.id]; return !(im && im.complete && !im.naturalWidth); })[0];   // (one that would not load is passed over)
+      p = model.pics.filter(function (q) { return !broken(q); })[0];   // (one that would not load is passed over)
       old = standing('sky-pic');
       if (!p || !ready(p) || (old.length === 1 && old[0].getAttribute('data-id') === String(p.id))) return;
     } else {
@@ -709,7 +723,7 @@
   [upright, desk].forEach(function (mq) { if (!mq) return; if (mq.addEventListener) mq.addEventListener('change', check); else if (mq.addListener) mq.addListener(check); });
   // a window turned or resized across the phone's line: what stands goes, and the sky fills afresh the other way (a
   // phone's newest alone, a desk's turns)
-  function afresh() { [].forEach.call(sky.querySelectorAll('.sky-msg, .sky-pic'), retire); renew(); }
+  function afresh() { [].forEach.call(sky.querySelectorAll('.sky-msg, .sky-pic'), retire); preload(); renew(); }
   if (upright) { if (upright.addEventListener) upright.addEventListener('change', afresh); else if (upright.addListener) upright.addListener(afresh); }
   check();
 
