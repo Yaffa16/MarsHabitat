@@ -66,8 +66,10 @@ const fill = (T, key, vals) => Object.entries(vals).reduce((s, [k, v]) => s.spli
 /** The first page's words, at the left of the room on a wider screen and over it on a phone (October: "shift the
     Earth–habitat visual to the right and have this on the left"): the eyebrow — ZKM | Hertzlab • Durational
     performance — the station's name, MARS!platz, with Ground Station under it (the page's one heading), the paragraph
-    on what MARS! is for (the note's, moved up here), and the run — its dates, the sols, and how far off or along it is.
-    Drawn once; sheet.css lays it beside the room or over it. */
+    on what MARS! is for (the note's, moved up here), and the run — its dates, the sols, and how far off or along it is —
+    and under them Know more, the key to the About page, where the performance is told in full (13 October: "add a Know
+    more button after the landing page description of the performance; it should go to the About page"). Drawn once;
+    sheet.css lays it beside the room or over it. */
 function intro(ctx) {
   const T = ctx.T, m = ctx.mission;
   const pre = m.phase === 'PRE_LAUNCH', n = m.daysUntilStart;
@@ -79,6 +81,7 @@ function intro(ctx) {
       <h1 class="wordmark">MARS<span class="bang">!</span>platz<span class="wm-sep"> : </span><span class="wm-ground">${T('Ground Station')}</span></h1>
       <p class="intro-text">${T(INTRO_TEXT)}</p>
       <p class="run-dates"><b>${esc(m.runLabel)}</b> · ${m.totalDays} ${T('sols in the habitat')} · <span class="run-now">${now}</span></p>
+      <p class="intro-cta"><a class="know-more" href="/about">${T('Know more')} <span aria-hidden="true">→</span></a></p>
     </div>`;
 }
 /** What MARS! is for, in October's words: on the first page beside the room (intro), where the note had it. */
@@ -145,7 +148,7 @@ function space(ctx, { sky = null } = {}) {
       <div class="space-stars" aria-hidden="true"></div>
       <div class="space-dome" data-sky-solid aria-hidden="true">
         <img class="space-dome-img" src="/space/habitat.webp" alt="" width="${HABITAT.w}" height="${HABITAT.h}" decoding="async">
-        <span class="space-tag space-tag-dome" data-sky-solid>RED DUST CITY</span>
+        <span class="space-tag space-tag-dome" data-sky-solid><b>RED DUST CITY,</b> <span>KARLSRUHE MARKTPLATZ</span></span>
       </div>
       <i class="space-line" data-sky-solid aria-hidden="true"></i>
       ${groundDish()}
@@ -212,8 +215,9 @@ function trajectory() {
 
 /* ---------------------------------------------------------------- the second page */
 /** The second page: the crew in the habitat (crewNow, below) over the two calls (calls, below) — the page's doors to the
-    composer and to the dashboard — side by side on a desk, one under the other on a phone (`crew`: how many dots the live
-    card's radar carries). The note that stood beside them (MARS! – Mobilizing Awareness for
+    composer and to the dashboard — side by side on a desk, one under the other on a phone, the three in one screen on a
+    phone as on a desk (13 October: "the tabs with the Crew, Write to crew and Live should be laid out … all in 1 page —
+    redesign it for mobile"; sheet.css) (`crew`: how many dots the live card's radar carries). The note that stood beside them (MARS! – Mobilizing Awareness for
     Resilient Societies! – is a three-part project…) is gone: October asked for the box to go; the About page tells the
     project. The section keeps its id, `note`: the nudge on the Earth and the phone's scroll lead to it. */
 function note(ctx, { crew = 3 } = {}) {
@@ -267,7 +271,9 @@ function crewNow(ctx) {
  * drawing's lines went on 8 October.
  *
  * The whole card is the door (a phone's Write door leads to the Write page, tabbar.js). sheet.css lays them out and
- * moves what moves; asked for less motion, the drawings stand.
+ * moves what moves; asked for less motion, the drawings stand. Each drawing stands in a box of its own (call-pic): no box
+ * at all on a desk, where the drawing spans the card; on a phone a square at the card's left with the drawing cut to its
+ * heart in it — the dish sending, the radar — so that the crew and the two calls stand in one screen (13 October).
  */
 function calls(ctx, { crew = 3 } = {}) {
   const T = ctx.T;
@@ -338,7 +344,7 @@ function calls(ctx, { crew = 3 } = {}) {
   return `
     <div class="calls" id="calls">
       <a class="call call-write" href="#write">
-        ${transmit}
+        <span class="call-pic">${transmit}</span>
         <div class="call-text">
           <span class="call-k">01 · ${T('Transmit')}</span>
           <h2 class="call-title">${T('Send a message to the crew')}</h2>
@@ -348,7 +354,7 @@ function calls(ctx, { crew = 3 } = {}) {
         </div>
       </a>
       <a class="call call-live" href="/dashboard">
-        ${live}
+        <span class="call-pic">${live}</span>
         <div class="call-text">
           <span class="call-k">02 · ${T('Live feed')} <span class="call-livepill"><i aria-hidden="true"></i>${T('LIVE')}</span></span>
           <h2 class="call-title">${T('Follow what the crew is doing live')}</h2>

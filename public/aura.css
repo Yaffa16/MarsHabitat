@@ -439,8 +439,8 @@ body.landing .consent-astro .consent-blink { animation: consent-blink 1.6s steps
 body.landing .consent h2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 21px; letter-spacing: -.02em; text-transform: none; }
 body.landing .consent .consent-cs { font-size: 14px; letter-spacing: .12em; padding: 4px 10px; border-radius: 999px; background: rgba(255,90,31,.12); border: 1px solid rgba(255,90,31,.35); align-self: center; }
 body.landing .consent-keys .btn { display: inline-flex; align-items: center; justify-content: center; text-align: center; }
-body.landing .consent-more { display: block; width: fit-content; margin: 12px auto 0; padding: 0; border: 0; box-shadow: none; background: none; text-align: center; font-family: var(--display); font-size: var(--fs-label); letter-spacing: .1em; text-transform: uppercase; color: var(--dim); text-decoration: none; }
-body.landing .consent-more:hover { color: var(--cobalt); text-decoration: underline; }
+/* (the card's privacy link under the keys went on 13 October: "remove the Datenschutz button from cookies" — the foot
+   of every page links the privacy policy) */
 @keyframes consent-float { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-8px) rotate(4deg); } }
 @keyframes consent-drift { to { transform: translate(-40px, 20px); } }
 @keyframes consent-blink { 50% { opacity: .2; } }
@@ -2686,7 +2686,9 @@ body.landing .mc .mc-figs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
    their lines, its right edge on the page's own (the cards' edge). It opens the composer's window (public/write.js); on a
    phone it shares the bar's first line with the board's name and raises the Write page's dock (tabbar.js). (A floating
    Write to the Crew key stood at the foot of every page for an hour that day, and went: "remove the floating Write to
-   the Crew button".) */
+   the Crew button".) Then a size up (13 October: "on the Message Board, increase the size of the Write to the Crew
+   button"): 48 px high on a desk — the tabs' 34 px before — its words and its pen larger, its right edge still on the
+   cards' edge and its middle on the tabs' middle; 42 px on a phone. */
 body.landing .write-ic { flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 body.landing .wall-write {
   display: inline-flex; align-items: center; gap: 8px; box-sizing: border-box; text-decoration: none; white-space: nowrap;
@@ -2696,11 +2698,17 @@ body.landing .wall-write {
 body.landing .wall-write:hover { transform: translateY(-1px); filter: brightness(1.06); color: #1a0a02; text-decoration: none; }
 body.landing .wall-write:focus-visible { outline: 2px solid var(--cobalt-fill); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { body.landing .wall-write { transition: none; } }
-body.landing .wall-bar > .wall-write { flex: none; align-self: center; height: 34px; min-height: 0; margin-left: auto; padding: 0 16px 0 13px; border-radius: 999px; font-size: 14.5px; }   /* the filter tabs' height (34px): the same top and foot */
+body.landing .wall-bar > .wall-write { flex: none; align-self: center; height: 48px; min-height: 0; margin-left: auto; padding: 0 24px 0 19px; gap: 10px; border-radius: 999px; font-size: 17px; }   /* a size up from the filter tabs' 34 px, centred on them */
+body.landing .wall-bar > .wall-write .write-ic { width: 21px; height: 21px; }
 @media (max-width: 760px) and (min-height: 521px) {
-  body.landing.messages .wall-bar .board-head { flex: 1 1 0; width: auto; min-width: 0; }
-  body.landing.messages .wall-bar > .wall-write { order: 1; margin-left: 0; padding: 0 13px 0 11px; gap: 7px; font-size: 13.5px; }
-  body.landing.messages .wall-bar > .wall-write .write-ic { width: 16px; height: 16px; }
+  /* a phone: the board's name alone on the bar's first line, the whole width, in every language (Nachrichtenboard,
+     Tableau des messages — the key beside it ran into it once it grew); LIVE, the count where there is room, and the
+     key at the right end of the second; the tabs on the third — the bar no taller than it was */
+  body.landing.messages .wall-bar .board-head { display: contents; }
+  body.landing.messages .wall-bar .board-head h2 { flex: 1 0 100%; }
+  body.landing.messages .wall-bar .wall-count { margin-left: 0; }
+  body.landing.messages .wall-bar > .wall-write { order: 1; height: 42px; margin-left: auto; padding: 0 17px 0 14px; gap: 8px; font-size: 15px; }
+  body.landing.messages .wall-bar > .wall-write .write-ic { width: 18px; height: 18px; }
   body.landing.messages .wall-bar .feed-filter { order: 2; }
 }
-@media (max-width: 440px) { body.landing.messages .wall-bar .wall-count { display: none; } }   /* a narrow phone: the board's name, LIVE and the key on the bar's first line */
+@media (max-width: 440px) { body.landing.messages .wall-bar .wall-count { display: none; } }   /* a narrow phone: LIVE and the key on the bar's second line */

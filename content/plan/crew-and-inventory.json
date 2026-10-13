@@ -1,5 +1,5 @@
 {
-  "_note": "Crew designations and the resources the habitat tracks. Edit and save; the station picks the change up within a couple of seconds. Order here is the order shown on the site. Four stores are tracked — drinking water, food rations, medical kits and fire extinguishers. Their \"start\" (what is carried in) and \"warnBelow\" (the level a store turns orange at) ship as 0 — placeholders, nothing invented — but for the drinking water, carried in at 180 L, and the food rations, 35 days: until a real figure is written here or a count is filed on the Habitat tab of mission control, the site shows a store as a placeholder rather than as an empty store. Write the real figures here before the run, or file the day-1 count on the Habitat tab: the site draws every gauge against the day-1 figure and carries it forward.",
+  "_note": "Crew designations and the resources the habitat tracks. Edit and save; the station picks the change up within a couple of seconds. Order here is the order shown on the site. Four stores are tracked — drinking water, food rations, tampons and toilet paper (13 October: tampons and toilet paper took the places of the medical kits and the fire extinguishers). Their \"start\" is what is carried in — the drinking water 180 L, the food rations 35 days, the tampons 80 and the toilet paper 14 rolls — and every gauge is drawn against it; \"warnBelow\" (the level a store turns orange at) ships as 0 — a placeholder, nothing invented. A store whose \"start\" is 0 and that has no count filed on the Habitat tab of mission control is shown as a placeholder rather than as an empty store. Correct the figures here before the run, or file the day-1 count on the Habitat tab: the site draws every gauge against the day-1 figure and carries it forward.",
   "crew": [
     {
       "designation": "COMMUNICATION OFFICER",
@@ -34,21 +34,21 @@
       "warnBelow": 0
     },
     {
-      "key": "medical",
-      "label": "Medical kits",
-      "unit": "kits",
-      "category": "Medical",
+      "key": "tampons",
+      "label": "Tampons",
+      "unit": "pcs",
+      "category": "Hygiene",
       "critical": false,
-      "start": 0,
+      "start": 80,
       "warnBelow": 0
     },
     {
-      "key": "extinguishers",
-      "label": "Fire extinguishers",
-      "unit": "units",
-      "category": "Safety",
+      "key": "toilet_paper",
+      "label": "Toilet paper",
+      "unit": "rolls",
+      "category": "Hygiene",
       "critical": false,
-      "start": 0,
+      "start": 14,
       "warnBelow": 0
     }
   ]

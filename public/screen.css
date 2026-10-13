@@ -283,17 +283,19 @@ body.screen .screen-roll #habitat .hbt-trends-in .tchart-svg { width: 100%; heig
   --neu-in-sm: inset 3px 3px 7px rgba(0,0,0,.45), inset -2px -2px 5px rgba(255,255,255,.03);
 }
 :root[data-theme="dark"] body.screen.screen-habitat .screen-roll #habitat .hw-chart,
-:root[data-theme="dark"] body.screen.screen-habitat .screen-roll #habitat .hbt-trends-in .tchart { background: var(--neu-2) !important; box-shadow: var(--neu-out-sm) !important; }
-/* the air's instruments and the battery in the colour of the stores' cards (9 October: "in the screen/habitat page, the
-   colour behind the individual resource tabs — make that the colour of the battery, all the air measurements"): by night
-   the tiles of the habitat sensor — the oxygen, the carbon dioxide, the temperature, the humidity, the air pressure, the
-   air quality, the light and the volatile organic compounds — and the power generated with its battery, the lighter grey
-   of the drinking water's, the food's, the medical kits' and the fire extinguishers' cards in the stores (--neu-3,
-   #40444b), a step lighter than the other tiles (#34373e) — their quieter words (a scale, a verdict, a unit) a shade
-   lighter with them, to read as well as on the darker tiles (#b8b8be, 5 : 1). By day every tile and card is the same
-   colour already. */
-:root[data-theme="dark"] body.screen.screen-habitat .screen-roll #habitat .hbt .tile.t-sens,
-:root[data-theme="dark"] body.screen.screen-habitat .screen-roll #habitat .hbt .tile.t-bike { background: var(--neu-3) !important; --dim: #b8b8be; --neu-dim: #b8b8be; }
+:root[data-theme="dark"] body.screen.screen-habitat .screen-roll #habitat .hbt-trends-in .tchart { background: var(--neu-1) !important; box-shadow: var(--neu-out-sm) !important; }
+/* every tile the colour of the other screens' panels (13 October: "in the screens page for habitat, the colour of the
+   tabs should be the same as the colour for the tabs for the blogs and other tabs on other pages — currently it's too
+   light and grey"): by night the blogs screen's #26292e (--neu-1) for all of them — the air's instruments and the
+   battery, which stood a step lighter (#40444b, 9 October: "the colour of the battery, all the air measurements"),
+   and the hardware's charts and the trends (#34373e) with them; their quieter words the screens' own grey again. The
+   ground stays the deeper night (#0e0f11), so the tiles still stand clear of it. By day every tile and card is the
+   same colour already. */
+:root[data-theme="dark"] body.screen.screen-habitat .screen-roll #habitat .hbt .tile,
+:root[data-theme="dark"] body.screen.screen-habitat .screen-roll #habitat .hw-chart,
+:root[data-theme="dark"] body.screen.screen-habitat .hab-hud .hh-crew,
+:root[data-theme="dark"] body.screen.screen-habitat .screen-roll.hab-hud #habitat .hbt-trends-in.hh-item { background: var(--neu-1) !important; }
+:root[data-theme="dark"] body.screen.screen-habitat .hab-hud .hh-crew .crew-now-officer img { box-shadow: 0 0 0 5px var(--neu-1), 0 0 0 7px rgba(var(--cobalt-rgb, 91,109,255), .45); }
 /* upright: the instruments two to a row (Karlsruhe beside the light); the steps the panel's width, then the power
    generated and the stores; the
    volatile organic compounds beside the astronauts, then the power the panel's width, right over its chart; the charts one

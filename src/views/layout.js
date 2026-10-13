@@ -217,7 +217,8 @@ function tabbar(current, T = same) {
    Reject. A form, so it works without a script; the answer sends the visitor
    back to the page. (12 October: "from the cookies tab remove We don't track
    anything and Incoming transmission" — the strip of night at its head keeps
-   its stars and its orbit, with no word in it.) */
+   its stars and its orbit, with no word in it.) Nothing under the two keys: the privacy policy's link that stood there
+   went on 13 October ("remove the Datenschutz button from cookies") — the foot of every page keeps it. */
 function consent(current, T = same, callsign = '') {
   // The callsign the visitor has, or will get on agreeing: the one they were
   // given for this visit if they have written already, otherwise a free one
@@ -242,7 +243,6 @@ function consent(current, T = same, callsign = '') {
         <button type="submit" name="choice" value="yes" class="btn primary">${T('Agree and close')}</button>
         <button type="submit" name="choice" value="no" class="btn">${T('Reject')}</button>
       </div>
-      <a class="consent-more" href="https://zkm.de/en/privacy-policy" target="_blank" rel="noopener">${T('Privacy policy')}</a>
     </form>
   </aside>
   </div>`;

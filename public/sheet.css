@@ -147,6 +147,11 @@ body.landing .sheet-intro .wordmark .wm-sep { display: none; }
 body.landing .sheet-intro .wordmark .wm-ground { display: block; margin-top: 8px; font-size: .5em; line-height: 1.1; font-weight: 500; letter-spacing: -.02em; color: var(--ink); white-space: nowrap; }   /* Ground Station, smaller and lighter, under the name */
 body.landing .sheet-intro .intro-text { margin: 22px 0 0; max-width: 46ch; font-size: 17px; line-height: 1.55; color: var(--ink); text-wrap: pretty; }
 body.landing .sheet-intro .run-dates { margin: 22px 0 0; line-height: 1.6; }
+body.landing .sheet-intro .intro-cta { margin: 24px 0 0; }   /* Know more, the key to the About page (13 October): the cobalt pill under the run */
+@media (min-width: 761px) and (max-height: 720px) {           /* a short laptop window: the key a little closer, clear of the window's foot */
+  body.landing .sheet-intro .intro-cta { margin-top: 16px; }
+  body.landing .sheet-intro .know-more { min-height: 42px; }
+}
 
 /* ---- P01: the habitat */
 body.landing .sheet-p1 { display: flex; flex-direction: column; }
@@ -245,9 +250,19 @@ body.landing .space-dome::before { content: ""; position: absolute; z-index: -1;
   background: radial-gradient(ellipse 50% 58% at 50% 68%, rgba(255,106,46,.26) 0%, rgba(255,90,31,.1) 45%, rgba(255,90,31,0) 100%); }   /* Red Dust City: a Mars light behind the drawing */
 body.landing .space-dome-img { display: block; width: 100%; height: auto; }
 body.landing .space-tag { position: absolute; z-index: 1; margin: 0; white-space: nowrap; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-tag); line-height: 1; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.62); }
-body.landing .space-tag-dome { top: 100%; right: calc(50% + 14px); margin-top: 0; font-family: var(--display); font-size: 15px; font-weight: 600; letter-spacing: .2em; color: var(--hud-hot); text-shadow: 0 0 14px rgba(255,106,46,.55); }   /* the habitat's name, Red Dust City, in Mars orange */
+/* the habitat's name and where it stands, centred under the drawing (13 October: "the text next to the habitat should be
+   placed properly — it is placed incorrectly — either right of the dome or below it; and it should read Red Dust City,
+   Karlsruhe Marktplatz"; it stood under the drawing's left half, against the line, until then): RED DUST CITY, in Mars
+   orange over KARLSRUHE MARKTPLATZ in the night's white, the dashed line starting under the two (--tag-h, the room they
+   take under the drawing) — as the installation's habitat screen stands its name; the letters' spacing is evened out on
+   both sides, so each line is centred on the line under it */
+body.landing .space-room { --tag-h: 50px; }
+body.landing .space-tag-dome { top: 100%; left: 50%; right: auto; display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 4px; transform: translateX(-50%); text-align: center;
+  font-family: var(--display); font-size: 15px; font-weight: 600; letter-spacing: .2em; color: var(--hud-hot); text-shadow: 0 0 14px rgba(255,106,46,.55); }
+body.landing .space-tag-dome > b { font-weight: inherit; padding-left: .2em; }
+body.landing .space-tag-dome > span { padding-left: .24em; font-size: .7em; font-weight: 500; letter-spacing: .24em; color: rgba(255,255,255,.78); text-shadow: 0 1px 8px rgba(0,0,0,.6); }
 /* the line: dashed, from the habitat's front foot down onto the Earth's limb; a signal climbs it, and the answer comes down in Mars orange */
-body.landing .space-line { position: absolute; z-index: 2; left: 50%; width: 2px; margin-left: -1px; top: calc(var(--dome-top) + var(--dome-w) * 0.676); bottom: calc(var(--earth-arc) - 6px);   /* from the habitat's front foot, over the Earth's haze, down onto the limb */
+body.landing .space-line { position: absolute; z-index: 2; left: 50%; width: 2px; margin-left: -1px; top: calc(var(--dome-top) + var(--dome-w) * 0.696 + var(--tag-h)); bottom: calc(var(--earth-arc) - 6px);   /* from under the habitat's name (above), over the Earth's haze, down onto the limb */
   background: repeating-linear-gradient(180deg, rgba(255,255,255,.6) 0 6px, transparent 6px 12px); }
 body.landing .space-line::before, body.landing .space-line::after { content: ""; position: absolute; left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; opacity: 0; }
 body.landing .space-line::before { bottom: 0; background: #fff; box-shadow: 0 0 10px 2px rgba(120,170,255,.9); animation: space-up 13s linear infinite; }
@@ -838,6 +853,8 @@ body.landing .consent-orbit { width: 240px; height: 40px; margin: -20px 0 0 -120
   body.landing .sheet-intro .wordmark { font-size: 44px; }
   body.landing .sheet-intro .intro-text { margin-top: 16px; font-size: 16px; line-height: 1.5; }
   body.landing .sheet-intro .run-dates { margin-top: 16px; line-height: 1.6; }
+  body.landing .sheet-intro .intro-cta { margin-top: 18px; }
+  body.landing .sheet-intro .know-more { min-height: 44px; padding: 0 20px 0 22px; font-size: 15px; }
   body.landing .space-room { flex: none; height: max(440px, calc(100vh - 149px)); height: max(440px, calc(100svh - 149px - env(safe-area-inset-bottom, 0px)));
     --dome-w: 150px; --dome-top: 12px; --earth-k: 1.08; --earth-arc: min(74px, calc(var(--earth-k) * 18cqw)); border-radius: 0; }   /* the picture a little wider than the screen: its foot reaches the room's, the limb 74 px up */
   body.landing:not(.inner) .space-room { scroll-snap-align: start; scroll-snap-stop: always; }
@@ -848,7 +865,8 @@ body.landing .consent-orbit { width: 240px; height: 40px; margin: -20px 0 0 -120
   body.landing .space .sky-who { font-size: 10px; letter-spacing: .05em; }   /* the line in a narrow lane: the word and the callsign */
   body.landing .space .sky-msg { padding: 8px 10px 9px; }
   body.landing .space .dome-nudge { bottom: 8px; margin-left: -23px; }
-  body.landing .space-tag-dome { font-size: 12.5px; }
+  body.landing .space-room { --tag-h: 44px; }
+  body.landing .space-tag-dome { gap: 5px; font-size: 12.5px; }
   :root body.landing:not(.inner) .dome-panel { order: 1; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter) 56px; box-sizing: border-box; display: flex; flex-direction: column;
     height: max(440px, calc(100vh - 149px)); height: max(440px, calc(100svh - 149px - env(safe-area-inset-bottom, 0px))); }   /* the dome's ground clear of the bar of keys */
   body.landing:not(.inner) .dome-head { display: none; }
@@ -947,9 +965,12 @@ body.landing .land-crew .sol-officer-who .nb { white-space: nowrap; }           
   body.landing .land-crew .crew-now-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 28px; justify-self: stretch; }
   body.landing .land-crew .crew-now-officer { gap: 20px; }
   body.landing .land-crew .crew-now-officer img { width: clamp(72px, 13.5vh, 140px); height: clamp(72px, 13.5vh, 140px); box-shadow: 0 0 0 3px var(--neu-1, var(--paper)), 0 0 0 4px rgba(var(--cobalt-rgb), .35); }
-  body.landing .land-crew .sol-officer-who { gap: 5px; }
+  body.landing .land-crew .sol-officer-who { gap: 5px; flex: 1 1 0; container-type: inline-size; }
   body.landing .land-crew .sol-officer-who b { font-size: clamp(11px, 1.5vh, 13px); }
-  body.landing .land-crew .sol-officer-who span { font-size: clamp(17px, min(1.55vw, 2.9vh), 27px); }
+  /* the names as large as the window allows, and never wider than their column: the longest surname, kept whole
+     (Vlaminck-Maurer), ran past its column into the next photograph on a laptop's 1280 to 1536 (13 October) — the cap
+     is a share of the column's width (12.2cqi), the three names one size */
+  body.landing .land-crew .sol-officer-who span { font-size: min(clamp(17px, min(1.55vw, 2.9vh), 27px), 12.2cqi); }
 }
 @media (min-width: 761px) and (max-width: 1179px) and (min-height: 521px) {
   /* (a narrower desk, the words over the three and the card the taller for it: its photographs a size smaller, so that
@@ -992,7 +1013,8 @@ body.landing .call-beam { display: inline-block; max-width: 22ch; font-size: 30p
 @keyframes call-shimmer { 0%, 55% { background-position: 100% 0; } 85%, 100% { background-position: 0% 0; } }
 body.landing .call:hover { transform: translateY(-3px); border-color: rgba(var(--accent-rgb),.5); box-shadow: 0 30px 60px -30px rgba(var(--accent-rgb),.45), var(--glass-shadow); color: var(--ink); }
 body.landing .call:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-/* the drawing across the top */
+/* the drawing across the top (its box, call-pic, is no box at all here: a phone makes it a square, below) */
+body.landing .call-pic { display: contents; }
 body.landing .call-art { position: relative; z-index: 1; display: block; width: 100%; max-width: 100%; height: auto; aspect-ratio: 600 / 200; overflow: visible; margin: 0 0 14px; }
 body.landing .call-art text { font-family: var(--display); font-size: 15px; font-weight: 600; letter-spacing: .14em; text-anchor: middle; fill: var(--dim); }
 body.landing .call-grid line { stroke: var(--ink); stroke-opacity: .07; stroke-width: 1; }
@@ -1056,25 +1078,54 @@ body.landing .call:hover .call-key { filter: brightness(1.08); transform: transl
   body.landing .call-key { min-height: clamp(36px, 5.4vh, 50px); padding: 0 20px 0 22px; font-size: clamp(14px, 1.8vh, 16px); }
 }
 @media (max-width: 760px) and (min-height: 521px) {
-  /* the two calls on a phone, smaller and in the middle (8 October: "on mobile the two boxes … are too big: centre them
-     and make them smaller and better placed"): narrower than the page and centred in it, the drawing, the type and the
-     key a size down, so that the two stand together in the middle of the screen, between the header and the bar of
-     keys (the page centres them, above) — where a short screen cannot hold both, the scroll stops at each (sky.js) */
-  body.landing .sheet-p2 { padding: 20px 0 32px; }
-  body.landing .calls { gap: 16px; width: 100%; max-width: 340px; margin: 0 auto; }
-  body.landing .call { padding: 12px 18px 16px; }
-  body.landing .call-art { width: 76%; margin: 0 auto 4px; }
-  body.landing .call-k { font-size: 10.5px; }
-  body.landing .call-livepill { margin-left: 8px; padding: 2px 8px 2px 6px; font-size: 9.5px; }
-  body.landing .call-title { margin-top: 6px; font-size: 20px; }
-  body.landing .call-punch, body.landing .call-write .call-punch { margin-top: 7px; font-size: 15px; }
-  body.landing .call-beam { font-size: 16.5px; max-width: 24ch; }
-  body.landing .call-body { margin-top: 7px; max-width: 40ch; font-size: 13px; line-height: 1.45; }
-  body.landing .call-text > :nth-last-child(2) { margin-bottom: 12px; }
-  body.landing .call-key { gap: 10px; min-height: 38px; margin-top: 12px; padding: 0 16px 0 18px; font-size: 14px; }
-  body.landing .call-key span[aria-hidden] { font-size: 15px; }
-  /* the drawings are small here: their words a size up, in the drawing's units */
-  body.landing .call-art text { font-size: 18px; }
+  /* the second page on a phone, the three in one screen (13 October: "the tabs with the Crew, Write to crew and Live
+     should be laid out in design such that they are all in 1 page — redesign it for mobile"; until then the crew card
+     and the two cards, each with its drawing across it and its long sentence, made a page and a third, and the scroll
+     stopped at each): Current Crew a compact card — its title and the sol on one line, the three one under the other,
+     each a small round portrait with the role over the name — and under it the two calls as rows: the drawing cut to a
+     square at the left (the dish sending, its signal going out; the radar, its sweep going round and the crew's dots
+     wandering), the words at its right — the call's number and name, its title, APPROVED MESSAGES ARE BEAMED INTO SPACE
+     on the first — and its key under them. The cards' long sentences stay off here: the Write page and the dashboard
+     say it all. The sizes follow the screen's height, so a tall phone shows them larger and a small one (375 × 667)
+     still holds the three between the header and the bar of keys. */
+  body.landing .sheet-p2 { padding: 12px 0 28px; }
+  body.landing .sheet-p2.is-snug { padding: 6px 0 22px; }   /* a screen still too short for it (sky.js): the air round it the less */
+  body.landing .page2 { display: flex; flex-direction: column; gap: clamp(8px, 1.6vh, 16px); width: 100%; max-width: 440px; margin: 0 auto; }
+  body.landing .land-crew { max-width: none; margin: 0; padding: clamp(11px, 1.7vh, 16px) 16px clamp(12px, 1.9vh, 18px); gap: clamp(8px, 1.3vh, 12px); }
+  body.landing .land-crew-head { flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; text-align: left; }
+  body.landing .land-crew-title { order: -1; font-size: clamp(17px, 2.5vh, 21px); }
+  body.landing .land-crew-k { font-size: 10px; letter-spacing: .14em; }
+  body.landing .land-crew-when { flex-basis: 100%; font-size: 12.5px; }
+  body.landing .land-crew .crew-now-list { justify-self: stretch; gap: clamp(6px, 1vh, 10px); }
+  body.landing .land-crew .crew-now-officer { gap: 12px; }
+  body.landing .land-crew .crew-now-officer img { width: clamp(34px, 5.4vh, 46px); height: clamp(34px, 5.4vh, 46px); }
+  body.landing .land-crew .sol-officer-who { gap: 1px; }
+  body.landing .land-crew .sol-officer-who b { font-size: 9.5px; line-height: 1.3; }
+  body.landing .land-crew .sol-officer-who span { font-size: clamp(14px, 2vh, 16px); line-height: 1.15; }
+  body.landing .calls { gap: clamp(8px, 1.6vh, 16px); width: 100%; max-width: none; margin: 0; }
+  /* the two calls one height, the taller one's (13 October: "Transmit and Live feed should have the SAME height on
+     mobile"): each card's words run its whole height and its key stands at its foot, so the two keys stand alike */
+  body.landing .calls { grid-auto-rows: 1fr; }
+  body.landing .call { --pic: clamp(60px, 9.4vh, 84px); display: grid; grid-template-columns: var(--pic) minmax(0, 1fr); column-gap: 14px; align-items: start; padding: clamp(12px, 1.7vh, 16px) 16px; }
+  /* the drawing's box: a square, tinted in the call's colour, the drawing cut to its heart in it */
+  body.landing .call-pic { position: relative; display: block; width: var(--pic); height: var(--pic); overflow: hidden; border-radius: 16px;
+    background: rgba(var(--accent-rgb), .07); box-shadow: inset 0 0 0 1px rgba(var(--accent-rgb), .2); }
+  body.landing .call-pic .call-art { position: absolute; margin: 0; max-width: none; aspect-ratio: auto; }
+  body.landing .call-pic .call-art-tx { width: calc(var(--pic) * 600 / 150); height: calc(var(--pic) * 200 / 150); left: calc(var(--pic) * -33 / 150); top: calc(var(--pic) * -45 / 150); }   /* the dish and its waves in the middle: 150 × 150 of the drawing from (33, 45) */
+  body.landing .call-pic .call-art-live { width: calc(var(--pic) * 600 / 188); height: calc(var(--pic) * 200 / 188); left: calc(var(--pic) * -206 / 188); top: calc(var(--pic) * -6 / 188); }   /* the radar alone: 188 × 188 from (206, 6) */
+  body.landing .call-pic .call-grid { display: none; }
+  body.landing .call-text { align-self: stretch; align-items: flex-start; text-align: left; min-width: 0; }
+  body.landing .call-k { font-size: 10px; letter-spacing: .16em; }
+  body.landing .call-livepill { margin-left: 6px; padding: 1px 7px 1px 5px; font-size: 9px; }
+  body.landing .call-title { margin-top: 4px; font-size: clamp(16px, 2.3vh, 19px); line-height: 1.15; }
+  body.landing .call-punch, body.landing .call-write .call-punch { margin-top: 5px; }
+  body.landing .call-beam { max-width: none; font-size: clamp(12px, 1.75vh, 14px); line-height: 1.2; }
+  body.landing .call-body { display: none; }
+  body.landing .call-text > :nth-last-child(2) { margin-bottom: 0; }
+  body.landing .call-write .call-punch, body.landing .call-live .call-title { margin-bottom: clamp(8px, 1.3vh, 12px); }   /* the air over the key */
+  body.landing .call-text .call-key { margin-top: auto; }                                                                   /* the key at the card's foot */
+  body.landing .call-key { gap: 8px; min-height: clamp(30px, 4.4vh, 36px); padding: 0 14px 0 15px; font-size: 13.5px; }
+  body.landing .call-key span[aria-hidden] { font-size: 14px; }
 
   body.landing:not(.inner) [data-page].is-tall .call { scroll-snap-align: start; }
   body.landing:not(.inner) [data-page].is-tall .call.no-stop { scroll-snap-align: none; }

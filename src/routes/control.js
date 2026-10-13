@@ -74,6 +74,8 @@ router.use((req, res, next) => {
   setFlash(req, `Mission control closed at the end of ${m.closeLabel} — the record is read-only now. The archive and every download stay open.`, true);
   res.redirect('/control');
 });
+// NOW has gone: a form still open on it is turned away (nowGone, below)
+router.use((req, res, next) => (req.method === 'POST' && nowGone(req) ? refuseNow(req, res) : next()));
 
 /* ---------------------------------------------------------------- flashes */
 
@@ -122,6 +124,17 @@ const dayParam = (req, ctx) => {
   const low = ctx.mission.nowDay ? 0 : 1;
   return Math.min(Math.max(Number.isInteger(n) ? n : low, low), ctx.mission.totalDays);
 };
+/* A form still open on NOW after NOW has gone (the reset, or the run's first day: src/lib/mission.js) saves nothing —
+   rather than landing on SOL 01, the run's first day (13 October: NOW is gone from everywhere). The forms of one field
+   or a few are turned away here as they come in; the three that carry files (a blog, a report, an upload) once their
+   files have been read, their files deleted. */
+const nowGone = (req) => String((req.body || {}).day ?? '') === '0' && !req.ctx().mission.nowDay;
+const NOW_GONE = 'Nothing was saved — NOW has gone (the station has been reset, or the run has begun). Pick a day of the run and save it again.';
+function refuseNow(req, res) {
+  for (const f of req.files || []) { try { require('fs').unlinkSync(f.path); } catch { /* gone */ } }
+  setFlash(req, NOW_GONE, true);
+  return toTab(res, tabOf(req.body && req.body.back), 1);
+}
 // "NOW" or "day 6", for the desk's own messages
 const dayWord = (day) => (Number(day) === 0 ? 'NOW' : `day ${day}`);
 const DayWord = (day) => (Number(day) === 0 ? 'NOW' : `Day ${day}`);
@@ -294,6 +307,7 @@ router.post('/report', (req, res, next) => upload.array('file', 50)(req, res, (e
   setFlash(req, err.code === 'LIMIT_FILE_SIZE' ? `A file is over the ${media.MAX_BYTES / 1048576} MB limit (MEDIA_MAX_MB).` : err.message, true);
   toTab(res, tabOf(req.body && req.body.back), dayParam(req, req.ctx()));
 }), async (req, res) => {
+  if (nowGone(req)) return refuseNow(req, res);
   const ctx = req.ctx();
   const day = dayParam(req, ctx);
   const kindKey = REPORT_KINDS[req.body.kind] ? req.body.kind : 'science';
@@ -490,6 +504,7 @@ router.post('/logbook', (req, res, next) => upload.array('file', 50)(req, res, (
   setFlash(req, err.code === 'LIMIT_FILE_SIZE' ? `A file is over the ${media.MAX_BYTES / 1048576} MB limit (MEDIA_MAX_MB).` : err.message, true);
   toTab(res, tabOf(req.body && req.body.back), dayParam(req, req.ctx()));
 }), async (req, res) => {
+  if (nowGone(req)) return refuseNow(req, res);
   const ctx = req.ctx();
   const day = dayParam(req, ctx);
   const designation = String(req.body.designation || '');
@@ -576,6 +591,7 @@ router.post('/media/upload', (req, res) => {
       setFlash(req, msg, true); return toTab(res, req.body && req.body.back ? req.body.back : officerTab(Number(req.body && req.body.crew_id)), day);
     };
     if (err) return fail(err.code === 'LIMIT_FILE_SIZE' ? `That file is over the ${media.MAX_BYTES / 1048576} MB limit (MEDIA_MAX_MB).` : err.message);
+    if (nowGone(req)) return fail(NOW_GONE, 409);                 // a page still open on NOW after it has gone
     if (!req.files || !req.files.length) return fail('No file arrived — or its type is not one the archive keeps (' + media.ACCEPT.replace(/\./g, '') + ').');
     const crewId = Number(req.body.crew_id) || null;
     const saved = [];
@@ -1079,7 +1095,7 @@ router.post('/reset', (req, res) => {
     const r = content.reset(req.user.username);
     const gone = Object.entries(r.wiped).filter(([, n]) => n)
       .map(([t, n]) => `${n} ${t.replace(/_/g, ' ')}`).join(', ');
-    setFlash(req, `The station has been reset for 15 October: ${r.slots} blog slots emptied, the mission reloaded from the files in content/; cleared ${gone || 'nothing'}.`);
+    setFlash(req, `The station has been reset for 15 October: NOW is gone for good, ${r.slots} blog slots emptied, the mission reloaded from the files in content/; cleared ${gone || 'nothing'}.`);
   } catch (e) {
     setFlash(req, `Reset failed: ${e.message}`, true);
   }

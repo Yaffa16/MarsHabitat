@@ -83,8 +83,9 @@ router.get('/thumb/:id.jpg', (req, res, next) => {
 /* --------------------------------------------------------------- downloads */
 
 const dd = (n) => String(n).padStart(3, '0');
-// the folder of a day in the ZIP — NOW (day 0, before the run) is its own, named as the rehearsal it is
-const folder = (n) => (n < 1 ? 'now-rehearsal' : `day-${dd(n)}`);
+// the folder of a day in the ZIP — NOW (day 0, before the run) is its own, named as the rehearsal it is; once NOW has
+// gone (the reset, the run's first day: mission.js) what is left of day 0 is "before the run"
+const folder = (n) => (n < 1 ? (missionLib.state().nowDay ? 'now-rehearsal' : 'before-the-run') : `day-${dd(n)}`);
 
 /** Everything visible, one ZIP: day folders, original names (made unique),
  *  the manifest and a README. Stored, not deflated, streamed as it goes. */
@@ -114,9 +115,10 @@ async function sendZip(res, items, label) {
     'One folder per mission day. Files are the originals as they left the habitat:',
     'nothing has been re-encoded or resized. manifest.json lists every file with its',
     'mission day, who made it, its caption, and its SHA-256, so any copy of this',
-    'archive can be checked file by file. A now-rehearsal/ folder holds what was sent',
-    'out before the run under NOW, mission day 0: a rehearsal, not part of the record',
-    '(the manifest marks those files rehearsal: true).',
+    'archive can be checked file by file.',
+    ...(entries.some((e) => e.item.mission_day < 1) ? [st.nowDay
+      ? 'A now-rehearsal/ folder holds what was sent out before the run under NOW, mission day 0: a rehearsal, not part of the record (the manifest marks those files rehearsal: true).'
+      : 'A before-the-run/ folder holds what was sent out before the run: a rehearsal, not part of the record (the manifest marks those files rehearsal: true).'] : []),
     '',
     'ZKM | Hertzlab',
   ].join('\n') + '\n';

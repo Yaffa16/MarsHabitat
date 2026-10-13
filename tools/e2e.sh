@@ -18,6 +18,7 @@ export CLOUD_QUIET=off          # the cloud's night (22:00–08:00, src/lib/clou
 export MISSION_OVERRIDE=true    # a rehearsal: the real dates are fixed in src/lib/run.js
 export MISSION_START=${MISSION_START:-$(date -u -d '-4 days' +%F)}
 export MISSION_END=${MISSION_END:-$(date -u -d '+8 days' +%F)}
+export REHEARSAL_NOW_UNTIL=${REHEARSAL_NOW_UNTIL:-2099-12-31}   # NOW ends on the run's real first day (15 October 2026, src/lib/mission.js); the suite's rehearsal keeps it at hand after that day too
 export HOURLY_LIMIT=${HOURLY_LIMIT:-60}   # the suite posts many messages from one address; the station's own six an hour would saturate it
 export CONTROL_PASSWORD=${CONTROL_PASSWORD:-${ADMIN_PASSWORD:-control123}}
 export CONTROL_USER=${CONTROL_USER:-${ADMIN_USER:-control}}
@@ -884,8 +885,8 @@ echo "$FOOT" | grep -q '<a class="tab tab-board" data-tab="board" href="/write">
   && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '<span>Nachrichten</span></a>' && curl -s -H "Cookie: mcs_lang=fr" $B/ | grep -q 'data-tab="board" href="/write">.*<span>Messages</span></a>' \
   && grep -q '  body.landing .tab-board .tab-ic { width: 46px; height: 46px; padding: 12px;' public/aura.css && grep -q 'html\[lang="de"\] body.landing .tab-board span { font-size: 9.5px; letter-spacing: .01em; }' public/aura.css \
   && grep -qF "var writeKey = document.querySelector('.wall-write');" public/tabbar.js && ! grep -q "setOpen(!isOpen(), !isOpen())" public/tabbar.js \
-  && grep -qF "body.landing .wall-bar > .wall-write { flex: none; align-self: center; height: 34px;" public/aura.css \
-  && ok "a phone's middle key reads Messages (Nachrichten, Messages) and opens the Message Board, lit there; the board's own Write to the Crew key raises the composer, the filter tabs' height beside them" || bad "the phone's middle key is not Messages to the board, or the board's key is not as it should be"
+  && grep -qF "body.landing .wall-bar > .wall-write { flex: none; align-self: center; height: 48px;" public/aura.css && grep -qF "body.landing.messages .wall-bar > .wall-write { order: 1; height: 42px;" public/aura.css \
+  && ok "a phone's middle key reads Messages (Nachrichten, Messages) and opens the Message Board, lit there; the board's own Write to the Crew key raises the composer, a size up from the filter tabs beside them (48 px on a desk, 42 on a phone)" || bad "the phone's middle key is not Messages to the board, or the board's key is not as it should be"
 echo "$FOOT" | grep -q '<nav class="tk-nav" aria-label="The station, page by page"><a class="tk-board" href="/write"><svg class="tk-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.8h14a1.6 1.6 0 0 1 1.6 1.6v8.4a1.6 1.6 0 0 1-1.6 1.6h-8.6L6 19.8v-3.4H5a1.6 1.6 0 0 1-1.6-1.6V6.4A1.6 1.6 0 0 1 5 4.8z"/><path d="M8 9.2h8M8 12.4h5"/></svg><span>Message Board</span></a><a class="tk-dash" href="/dashboard"><svg class="tk-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/>' \
   && echo "$FOOT" | grep -q '<a class="tk-about" href="/about"><svg class="tk-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><path d="M12 7.5v.5"/></svg><span>About</span></a></nav>' \
   && echo "$ABOUT" | grep -q '<a class="tk-about" href="/about" aria-current="page">' && echo "$WRITE" | grep -q '<a class="tk-board" href="/write" aria-current="page">' && ! echo "$FOOT" | grep -q 'class="tk-write"' && echo "$DASH" | grep -q '<a class="tk-dash" href="/dashboard" aria-current="page">' && ! echo "$FOOT" | grep -q 'tk-menu\|tk-dropdown\|tk-row' \
@@ -1807,6 +1808,12 @@ curl -s -b $A $B/archive/export.pdf -o /tmp/record3.pdf
 grep -aq "/Subtype /Image" /tmp/record3.pdf && ok "the PDF record carries the photograph itself, set in its entry" || bad "no image in the PDF record"
 curl -s $B/dashboard | grep -q "PLACEHOLDER" && bad "a placeholder marker reached the station" || ok "placeholder markers never reach the station"
 curl -s $B/dashboard | grep -q "Drinking water" && ok "inventory names come from the file" || bad "inventory names missing"
+# the stores (13 October: "replace Medical Kit and Fire Extinguisher with Tampons, starting amount 80, and Toilet paper,
+# starting amount 14")
+DST=$(curl -s $B/dashboard)
+echo "$DST" | grep -q 'title="Tampons: 80 pcs of 80"' && echo "$DST" | grep -q 'title="Toilet paper: 14 rolls of 14"' \
+  && ! echo "$DST" | grep -q 'Medical kits\|Fire extinguishers' && grep -q '"key": "toilet_paper"' content/plan/crew-and-inventory.json && ! grep -q '"key": "medical"\|"key": "extinguishers"' content/crew-and-inventory.json content/plan/crew-and-inventory.json \
+  && ok "the Resources: drinking water, food rations, tampons (80 carried in) and toilet paper (14 rolls) — no medical kits or fire extinguishers, in the plan too" || bad "the stores are not water, rations, tampons and toilet paper"
 
 node -e '
 const fs=require("fs"),p=process.env.CONTENT_DIR+"/schedule.json";
@@ -2029,6 +2036,16 @@ echo "$CARD" | grep -q "consent-cs\">$OFFER<" && ok "the cookie card says Welcom
 # reject on right")
 echo "$CARD" | tr -d '\n' | grep -q '<div class="consent-keys"> *<button type="submit" name="choice" value="yes" class="btn primary">Agree and close</button> *<button type="submit" name="choice" value="no" class="btn">Reject</button> *</div>' \
   && ok "the cookie question's keys: Agree and close at the left, Reject at the right" || bad "the cookie question's keys are not Agree then Reject"
+# no privacy link on the card any more (13 October: "remove the Datenschutz button from cookies"); the foot keeps it
+CARDDE=$(curl -s -H "Cookie: mcs_lang=de" $B/)
+! echo "$CARD" | grep -q 'consent-more' && echo "$CARDDE" | grep -q '<aside class="consent"' && ! echo "$CARDDE" | tr -d '\n' | sed 's/.*<aside class="consent"//; s/<\/aside>.*//' | grep -q 'Datenschutz\|privacy-policy' \
+  && echo "$CARDDE" | grep -q '<a href="https://zkm.de/en/privacy-policy">Datenschutz</a>' && ! grep -q 'consent-more' public/aura.css \
+  && ok "the cookie card has no Datenschutz link under its keys; the foot still links the privacy policy" || bad "the cookie card still carries the privacy link, or the foot lost it"
+# ready to push (13 October): .env (the passwords and tokens) and what the station writes as it runs never go into git —
+# the ignore file plain text (it was UTF-16 once, which git cannot read) — and the cloud helpers carry no password
+tr -d '\000' < .gitignore | cmp -s - .gitignore && grep -qx '.env' .gitignore && grep -qx '!.env.example' .gitignore && grep -qx 'data/' .gitignore && grep -qx 'node_modules/' .gitignore \
+  && ! grep -qE "const (PASSWORD|USER|CLOUD_URL) = '[^']+'" zkm_cloud_test/*.js && grep -q "const PASSWORD = env.CLOUD_PASSWORD || '';" zkm_cloud_test/upload-to-cloud.js zkm_cloud_test/remove-from-cloud.js \
+  && ok "git ignores .env, the station's data and node_modules (a plain-text .gitignore), and the cloud helpers read their account from .env — no password in the repository" || bad "the repository is not ready to push: .env or a password would go with it"
 curl -s -c $CJ -b $CJ -d choice=yes -d "callsign=$OFFER" -d back=/ -o /dev/null $B/consent
 curl -s -b $CJ $B/ | grep -q "$OFFER" && ok "agreeing keeps the greeted callsign" || bad "agreeing gave a different callsign"
 LB3=$(curl -s $B/logbook)
@@ -2280,15 +2297,16 @@ grep -q "body.screen .screen-roll #habitat .hbt .tile h3, body.screen .screen-ro
 # hardware's charts and the trends with them — a clear step lighter, a hairline of light round its edge, a shade under it
 grep -qF ':root[data-theme="dark"] body.screen.screen-habitat {' public/screen.css && grep -qF "  --neu: #0e0f11; --neu-2: #34373e; --neu-3: #40444b; --neu-sunk: #1e2024;" public/screen.css \
   && grep -qF "  --neu-rim: inset 0 0 0 1px rgba(255,255,255,.09), inset 0 1px 0 rgba(255,255,255,.07);" public/screen.css \
-  && grep -qF ":root[data-theme=\"dark\"] body.screen.screen-habitat .screen-roll #habitat .hbt-trends-in .tchart { background: var(--neu-2) !important; box-shadow: var(--neu-out-sm) !important; }" public/screen.css \
+  && grep -qF ":root[data-theme=\"dark\"] body.screen.screen-habitat .screen-roll #habitat .hbt-trends-in .tchart { background: var(--neu-1) !important; box-shadow: var(--neu-out-sm) !important; }" public/screen.css \
   && grep -qF "body.screen .screen-roll #hbt-bento { gap: 24px; }" public/screen.css && grep -qF "body.screen .screen-roll #habitat .hbt .tile { padding: 20px 22px 22px; border-radius: 22px; gap: 5px; }" public/screen.css \
   && ok "the habitat screen's tiles a size smaller, and by night set clearly off a deeper ground — lighter, edged with a hairline of light, a shade under each, the charts and the trends raised like them" || bad "the habitat screen's tiles are not set off the ground by night"
-# 9 October: "the colour behind the individual resource tabs — make that the colour of the battery, all the air
-# measurements": by night the habitat sensor's tiles and the power generated, with its battery, in the stores' cards' grey
-grep -qF ':root[data-theme="dark"] body.screen.screen-habitat .screen-roll #habitat .hbt .tile.t-sens,' public/screen.css \
-  && grep -qF ':root[data-theme="dark"] body.screen.screen-habitat .screen-roll #habitat .hbt .tile.t-bike { background: var(--neu-3) !important; --dim: #b8b8be; --neu-dim: #b8b8be; }' public/screen.css \
-  && grep -qF 'body.landing .hbt .tile .gauge, :root[data-theme="dark"] body.landing .hbt .tile .gauge { background: var(--neu-3) !important; }' public/neu.css \
-  && ok "by night the habitat screen's air instruments and the battery stand in the grey of the stores' cards (--neu-3), their quieter words a shade lighter to read on it" || bad "the habitat screen's air instruments and battery are not in the stores' cards' grey"
+# 13 October: "in the screens page for habitat, the colour of the tabs should be the same as the colour for the tabs for
+# the blogs and other tabs on other pages — currently it's too light and grey": by night every tile the blogs screen's
+# #26292e (--neu-1) — the air's instruments and the battery no longer a step lighter (#40444b, 9 October)
+grep -qF ':root[data-theme="dark"] body.screen.screen-habitat .screen-roll #habitat .hbt .tile,' public/screen.css \
+  && grep -qF ':root[data-theme="dark"] body.screen.screen-habitat .screen-roll.hab-hud #habitat .hbt-trends-in.hh-item { background: var(--neu-1) !important; }' public/screen.css \
+  && ! grep -q 'tile.t-bike { background: var(--neu-3)\|tile.t-sens,$' public/screen.css \
+  && ok "by night every tile of the habitat screen is the blogs screen's colour (--neu-1, #26292e) — not the lighter grey" || bad "the habitat screen's tiles are not the other screens' colour"
 # 9 October: "make the header Sensoren as big as the Commander-Logbuch and sol 001 in the screen/blogs page"
 grep -qF 'body.screen .screen-roll #habitat .dpanel-title h3 { font-size: 46px; }' public/screen.css \
   && grep -qF 'body.screen .screen-roll #habitat .dpanel-meta { font-size: 18px; letter-spacing: .1em; }' public/screen.css \
@@ -3035,10 +3053,13 @@ echo "$DASH" | grep -q '<a class="glance-link mission-blog" href="#blog-science"
   && curl -s $B/dashboard | grep -q '<a class="glance-link mission-blog" href="#blog-science"' && curl -s -H "Cookie: mcs_lang=de" $B/dashboard | grep -q '<span class="glance-link-title">Missionsbericht</span>' \
   && grep -q 'body.screen .mission-blog { display: none; }' public/screen.css && grep -q 'body.landing .mission-blog { flex: none; align-self: flex-end; }' public/aura.css \
   && ok "under Today's Mission a key, Mission Report, leads to the science blog — in the doors' dress, at the foot of the mission, in German too; hidden on the mission screen" || bad "the key to the Science Blog is missing"
-# no call on the Earth any more (Send a message to space is gone, landing.js); the line starts at the habitat's front foot
+# no call on the Earth any more (Send a message to space is gone, landing.js); the line starts under the habitat's name,
+# which stands centred under the drawing (13 October: "the text … next to the habitat should be placed properly … and
+# read Red Dust City, Karlsruhe Marktplatz")
 ! echo "$LAND" | grep -q 'space-call\|Send a message to space' && ! grep -q 'space-call\|--call-h' public/sheet.css && ! grep -q 'Send a message to space' src/lib/i18n.js \
-  && grep -q 'top: calc(var(--dome-top) + var(--dome-w) \* 0.676); bottom: calc(var(--earth-arc) - 6px);' public/sheet.css \
-  && ok "no call under the habitat on the first page; the line to the Earth starts at the habitat's front foot" || bad "the call on the Earth is still there, or the line does not start at the habitat's foot"
+  && grep -q 'top: calc(var(--dome-top) + var(--dome-w) \* 0.696 + var(--tag-h)); bottom: calc(var(--earth-arc) - 6px);' public/sheet.css \
+  && grep -qF 'body.landing .space-tag-dome { top: 100%; left: 50%; right: auto; display: flex; flex-direction: column; align-items: center;' public/sheet.css \
+  && ok "no call under the habitat on the first page; the habitat's name centred under it, the line to the Earth starting under the name" || bad "the call on the Earth is still there, or the line does not start under the habitat's name"
 # the first page's words at the left of the room on a desk and over it on a phone (October: "shift the Earth–habitat visual
 # to the right and have this on the left"): the eyebrow ZKM | Hertzlab • Durational performance, MARS!platz with Ground
 # Station under it, the paragraph on what the site is for (the note's, moved up; Karlsruhe Marktplatz), the run — drawn
@@ -3085,7 +3106,7 @@ echo "$LAND" | grep -q '<section class="sheet sheet-p0 space" id="top" aria-labe
   && echo "$LAND" | grep -q '<svg class="space-halo is-phone" viewBox="0 0 1414 340" aria-hidden="true"><g fill="none" stroke="#fff" stroke-linecap="round" stroke-dasharray="0 4.4">' \
   && [ "$(echo "$LAND" | grep -o '<circle cx="674" cy="1079" r="[0-9]*" pathLength="720" opacity="0\.[0-9]*"/>' | wc -l)" = "20" ] && echo "$LAND" | grep -q '<circle cx="674" cy="1079" r="1005" pathLength="720"' \
   && echo "$LAND" | grep -q '<i class="space-globe" data-sky-round data-r="0.52" style="left:-22.84%;top:24.12%;width:141.02%"></i>' \
-  && echo "$LAND" | grep -q 'class="space-tag space-tag-dome" data-sky-solid>RED DUST CITY<' && ! echo "$LAND" | grep -q 'space-tag-earth' \
+  && echo "$LAND" | grep -q 'class="space-tag space-tag-dome" data-sky-solid><b>RED DUST CITY,</b> <span>KARLSRUHE MARKTPLATZ</span></span>' && ! echo "$LAND" | grep -q 'space-tag-earth' \
   && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q 'aria-label="Von der Erde zum Habitat"' \
   && [ "$(curl -s -o /dev/null -w '%{content_type}' $B/space/earth.webp)" = "image/webp" ] && [ "$(curl -s -o /dev/null -w '%{content_type}' $B/space/habitat.webp)" = "image/webp" ] \
   && grep -q "body.landing .space-line { position: absolute; z-index: 2; left: 50%; width: 2px;" public/sheet.css && grep -q "@keyframes space-up" public/sheet.css && grep -q "@keyframes space-down" public/sheet.css \
@@ -3117,11 +3138,16 @@ let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
   const r = s.indexOf("<div class=\"space-room\" id=\"space-room\">"), k = s.indexOf("id=\"dome-sky\""), e = s.indexOf("</section>", r);
   process.exit(r > -1 && k > r && e > k ? 0 : 1);
 });' && ok "the sky is in the room, over the Earth, the habitat and the line" || bad "the sky is not in the first page's room"
-grep -q "function spot(w, h)" public/sky.js && grep -q "function clash(a, b)" public/sky.js && grep -q "function inRound(a, c)" public/sky.js && grep -q "function lanes()" public/sky.js \
+grep -q "function spot(w, h, prefer)" public/sky.js && grep -q "function clash(a, b)" public/sky.js && grep -q "function inRound(a, c)" public/sky.js && grep -q "function lanes()" public/sky.js \
   && grep -q "querySelectorAll('\[data-sky-round\]')" public/sky.js && grep -q "querySelectorAll('\[data-sky-solid\]:not(.space-line)')" public/sky.js && ! grep -q "b.fading" public/sky.js \
   && grep -q "function band()" public/sky.js && grep -q "var NEAR = { phone: 6, desk: 44 };" public/sky.js && grep -q "for (y = bd.top; y + h <= bd.bottom; y += STEP)" public/sky.js \
   && grep -q "body.landing .sky-msg, body.landing .sky-pic { opacity: 0; animation: none !important; transition: opacity 1.2s ease-in-out; }" public/sheet.css \
   && ok "each line and snapshot comes somewhere else each time, close to the line on either side, between the habitat and the Earth, clear of one another — fading in and out; nothing is ever laid over anything else" || bad "the sky's items can crowd one another"
+# a phone: the newest exchange and the newest picture alone, standing until a newer one comes, either side of the line
+# (13 October: "on phone, only show the latest image and message on the landing visual")
+grep -q "var solo = phone;" public/sky.js && grep -q "m = model.ex\[0\]; old = standing('sky-msg');" public/sky.js && grep -q "if (one) hold(el, at); else show(el, at, vary(LIFE_MSG));" public/sky.js \
+  && grep -q "if (one) hold(a, at); else show(a, at, vary(LIFE_PIC));" public/sky.js && grep -q "one ? otherSide('sky-pic') : ''" public/sky.js && grep -q "function afresh()" public/sky.js \
+  && ok "on a phone the sky shows the newest exchange and the newest picture alone — either side of the line, standing until a newer one comes; a desk keeps its turns" || bad "the phone's sky still takes turns through older exchanges and pictures"
 PUB=$(curl -s $B/api/board)
 curl -s -b $V $B/ | PUB="$PUB" node -e '
 let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
@@ -3177,7 +3203,7 @@ echo "$LAND" | grep -q '<div class="calls" id="calls">' && ! echo "$LAND" | grep
   && echo "$LAND" | grep -q '<span class="call-k">01 · Transmit</span>' && ! echo "$LAND" | grep -qi 'uplink' && echo "$LAND" | grep -q '<span class="call-k">02 · Live feed <span class="call-livepill">' \
   && echo "$LAND" | grep -q '>WRITTEN</text>' && echo "$LAND" | grep -q '>APPROVED</text>' && echo "$LAND" | grep -q '>INTO SPACE</text>' && echo "$LAND" | grep -q '<span class="call-k">02 · Live feed <span class="call-livepill"><i aria-hidden="true"></i>LIVE</span></span>' \
   && echo "$LAND" | grep -q '<path id="call-way-path" d="M118 112 C 220 70, 400 52, 548 46"/>' && echo "$LAND" | grep -q '<circle class="call-sig" r="5"><animateMotion dur="4.2s" repeatCount="indefinite" calcMode="spline" keySplines=".3 0 .4 1" keyTimes="0;1"><mpath href="#call-way-path"/></animateMotion></circle>' \
-  && [ "$(echo "$LAND" | grep -o '<svg class="call-art call-art-[a-z]*" viewBox="0 0 600 200"' | wc -l)" = "2" ] && ! echo "$LAND" | grep -q 'call-officer\|call-ring\|call-trace\|call-mark' && echo "$LAND" | tr -d '\n' | grep -q '<a class="call call-live" href="/dashboard"> *<svg class="call-art call-art-live" viewBox="0 0 600 200"' \
+  && [ "$(echo "$LAND" | grep -o '<svg class="call-art call-art-[a-z]*" viewBox="0 0 600 200"' | wc -l)" = "2" ] && ! echo "$LAND" | grep -q 'call-officer\|call-ring\|call-trace\|call-mark' && echo "$LAND" | tr -d '\n' | grep -q '<a class="call call-live" href="/dashboard"> *<span class="call-pic"> *<svg class="call-art call-art-live" viewBox="0 0 600 200"' \
   && echo "$LAND" | grep -q '<path d="M57 64 Q 42 122 100 107" class="call-dish-cup"/>' && ! echo "$LAND" | grep -q 'call-hab-dome\|call-hab-ping\|url(#call-mars)' && echo "$LAND" | grep -q '<text x="598" y="24">INTO SPACE</text>' && [ "$(echo "$LAND" | grep -o '<line class="call-drop" ' | wc -l)" = "2" ] && [ "$(echo "$LAND" | grep -o '<g class="call-waves"><path d="[^"]*"/><path d="[^"]*"/><path d="[^"]*"/></g>' | wc -l)" = "1" ] \
   && ! echo "$LAND" | grep -q 'call-chips\|call-now\|call-fig' \
   && echo "$LAND" | grep -q '<span class="call-key is-write">Write to the crew <span aria-hidden="true">→</span></span>' && echo "$LAND" | grep -q '<span class="call-key is-dash">Live Mission Dashboard <span aria-hidden="true">→</span></span>' \
@@ -3187,7 +3213,7 @@ echo "$LAND" | grep -q '<div class="calls" id="calls">' && ! echo "$LAND" | grep
   && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '<h2 class="call-title">Schick der Crew eine Nachricht</h2>' && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '<strong class="call-beam">Freigegebene Nachrichten werden ins All gefunkt</strong>' && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '>GESCHRIEBEN</text>' \
   && curl -s -H "Cookie: mcs_lang=fr" $B/ | grep -q '<strong class="call-beam">Les messages approuvés sont émis dans l’espace</strong>' && curl -s -H "Cookie: mcs_lang=fr" $B/ | grep -q '<h2 class="call-title">Suivez en direct ce que fait l’équipage</h2>' \
   && grep -q "sentToSpace: g(\"SELECT COUNT(DISTINCT message_id) n FROM space_relay WHERE state = 'SENT'\")," src/lib/data.js && ! grep -q 'call-fig\|call-now' src/views/pages/landing.js \
-  && grep -q 'body.landing .calls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: stretch; margin: 14px 0 0; }' public/sheet.css && grep -q '  body.landing .page2 { width: 100%; max-width: 1600px; margin: 0 auto; }' public/sheet.css && grep -q '  body.landing .calls { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px; max-width: none; margin: 0; }' public/sheet.css && ! grep -q '@media (max-width: 1100px) and (min-width: 761px)' public/sheet.css && grep -q '  body.landing .call-beam { font-size: 16.5px; max-width: 24ch; }' public/sheet.css && grep -qF '  body.landing .call-title { margin-top: clamp(4px, .8vh, 10px); font-size: clamp(20px, 3.3vh, 34px); }' public/sheet.css && grep -qF '  body.landing .call-art { height: clamp(72px, 14.5vh, 190px); aspect-ratio: auto; margin: 0 0 clamp(8px, 1.6vh, 18px); }' public/sheet.css && ! grep -q 'max-height: 860px' public/sheet.css \
+  && grep -q 'body.landing .calls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: stretch; margin: 14px 0 0; }' public/sheet.css && grep -q '  body.landing .page2 { width: 100%; max-width: 1600px; margin: 0 auto; }' public/sheet.css && grep -q '  body.landing .calls { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px; max-width: none; margin: 0; }' public/sheet.css && ! grep -q '@media (max-width: 1100px) and (min-width: 761px)' public/sheet.css && grep -qF '  body.landing .call-beam { max-width: none; font-size: clamp(12px, 1.75vh, 14px); line-height: 1.2; }' public/sheet.css && grep -qF '  body.landing .call-title { margin-top: clamp(4px, .8vh, 10px); font-size: clamp(20px, 3.3vh, 34px); }' public/sheet.css && grep -qF '  body.landing .call-art { height: clamp(72px, 14.5vh, 190px); aspect-ratio: auto; margin: 0 0 clamp(8px, 1.6vh, 18px); }' public/sheet.css && ! grep -q 'max-height: 860px' public/sheet.css \
   && grep -q '  body.landing .call-sig { display: none; }' public/sheet.css && grep -q '  body.landing .call-beam { animation: none; }' public/sheet.css && ! grep -q 'call-write { --ink: #f5f5f7\|galaxy.jpg' public/sheet.css \
   && grep -q 'body.landing .call-text { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1 1 auto; }' public/sheet.css \
   && grep -q '  background: linear-gradient(100deg, #ffb27f 0%, #ff6a2e 32%, #ffd9c2 50%, #ff6a2e 68%, #ffb27f 100%); background-size: 240% 100%; background-position: 100% 0;' public/sheet.css && grep -q '@keyframes call-shimmer { 0%, 55% { background-position: 100% 0; } 85%, 100% { background-position: 0% 0; } }' public/sheet.css \
@@ -3229,8 +3255,8 @@ grep -q 'stepHead(.up., .01.' src/views/pages/landing.js && [ "$(echo "$LAND" | 
   && ok "the three steps carry their signs, each in its own colour" || bad "the steps have no signs"
 ! echo "$LAND" | grep -qi 'sealed\|do not leave\|isolation' && echo "$LAND" | grep -q 'Three astronauts are finding out, and you can help!' \
   && ! echo "$LAND" | grep -q 'a small outpost on a simulated Mars' && ! echo "$LAND" | grep -q 'Communicate with the crew.' \
-  && ! echo "$LAND" | grep -q 'class="know-more' && ! curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '<span>Mehr erfahren</span>' \
-  && ok "the note says three astronauts are finding out and you can help (never that they cannot leave), and carries no keys: the two calls under it are the page's doors" || bad "the note's words are wrong, or it still carries keys"
+  && [ "$(echo "$LAND" | grep -o 'class="know-more' | wc -l)" = "1" ] && echo "$LAND" | grep -q '<p class="intro-cta"><a class="know-more" href="/about">' && ! curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '<span>Mehr erfahren</span>' \
+  && ok "the note says three astronauts are finding out and you can help (never that they cannot leave), and carries no keys of its own: the two calls under it are the page's doors — the one Know more is the first page's, under its words (13 October)" || bad "the note's words are wrong, or it still carries keys"
 ! echo "$LAND" | grep -q '<p class="note-cta note-doors">' && echo "$LAND" | grep -q '<a class="call call-write" href="#write">' && echo "$LAND" | grep -q '<a class="call call-live" href="/dashboard">' \
   && grep -q 'if (/^\\/?#write$/.test(href)) a.setAttribute' public/tabbar.js \
   && ok "no keys under the description: the two calls under the note are the doors — Write to the crew (the composer's window) and the dashboard page" || bad "the note still has its keys, or the calls are not the doors"
@@ -3742,6 +3768,37 @@ process.exit(["schedule.json", "meals.json", "logbook.json", "notes.json", "inve
 ' && ok "the reset takes NOW with it — no \"0\" left in any content file" || bad "NOW survived the reset"
 [ "$(grep -c PLACEHOLDER "$CONTENT_DIR/logbook.json")" -ge 13 ] && ! grep -q "SCIENCE OFFICER\|HEALTH OFFICER" "$CONTENT_DIR/logbook.json" && ok "every Commander Log slot is empty — 13 placeholders, no other officer's" || bad "placeholders missing after reset"
 curl -s -b $A "$B/control?tab=habitat" | grep -q "The station has been reset for 15 October" && ok "mission control reports the reset" || bad "no reset report"
+# NOW goes for good with the reset (13 October: "when it is Oct 15th or I click the reset button, remove the NOW from
+# everywhere — control page, main page, everything"), a rehearsal against made-up dates included
+CTL0=$(curl -s -b $A "$B/control?tab=habitat")
+! echo "$CTL0" | grep -q 'class="daypick-now' && ! echo "$CTL0" | grep -q 'NOW, [0-9]* [A-Z][a-z]*, at hand\|rehearsing as NOW' \
+  && curl -s -b $A "$B/control?tab=habitat&day=0" | grep -q 'Schedule · day 001' && ! curl -s -b $A "$B/control?tab=habitat&day=0" | grep -q 'Schedule · NOW' \
+  && ! curl -s -b $A $B/archive | grep -q '<td class="n">NOW</td>' && [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/archive/now)" = "404" ] \
+  && ! curl -s $B/logbook | grep -q 'class="[^"]*rehearsal' && ! curl -s $B/at-a-glance | grep -q 'data-day="0"' \
+  && ok "after the reset NOW is gone from everywhere — the desk's day picker and its head, the archive and /archive/now, the crew log, At a Glance; ?day=0 opens SOL 01" || bad "NOW survived the reset somewhere"
+curl -s -b $A -X POST -d "day=0" -d "time=08:00" -d "label=Should never land" -d "back=habitat" -o /dev/null $B/control/schedule
+curl -s -b $A "$B/control?tab=habitat" | grep -q 'Nothing was saved — NOW has gone' && ! curl -s -b $A "$B/control?tab=habitat&day=1" | grep -q 'Should never land' \
+  && ok "and a form still open on NOW saves nothing — it does not land on SOL 01 — and says why" || bad "a form for NOW was saved after the reset"
+node -e '
+const m = require("./src/lib/mission").state();
+process.exit(m.nowDay === false && m.nowPre === false && !!m.nowRetired && m.workDay === m.clampedDay && require("./src/lib/mission").zeroName() === "before the run" ? 0 : 1);
+' && ok "mission.nowDay is off for good after the reset; the desk works on the current sol; day 0 is called before the run" || bad "nowDay still on after the reset"
+# the rule itself, on a station of its own: NOW before the run until the reset or the run's first day — whichever comes
+# first — and the desk on SOL 01 once it has gone
+NOWD=$(mktemp -d)
+DATA_DIR="$NOWD" MISSION_OVERRIDE=true MISSION_START=$(date -u -d '+5 days' +%F) MISSION_END=$(date -u -d '+17 days' +%F) node -e '
+const M = require("./src/lib/mission"); M.sync();
+process.env.REHEARSAL_NOW_UNTIL = "2099-12-31"; const a = M.state();
+process.env.REHEARSAL_NOW_UNTIL = "2000-01-01"; const b = M.state();
+process.env.REHEARSAL_NOW_UNTIL = "2099-12-31";
+const was = process.env.MISSION_OVERRIDE; delete process.env.MISSION_OVERRIDE; const real = M.nowEnds(); process.env.MISSION_OVERRIDE = was;
+M.retireNow(); const c = M.state();
+process.exit(a.phase === "PRE_LAUNCH" && a.nowDay && a.nowPre && a.workDay === 0 && !a.nowRetired
+  && !b.nowDay && !b.nowPre && b.workDay === 1
+  && real === "2026-10-15"
+  && !c.nowDay && !c.nowPre && c.workDay === 1 && !!c.nowRetired ? 0 : 1);
+' && ok "before the run NOW is there and the desk opens on it; from the run's first day (15 October, whatever dates a rehearsal runs on) or the reset it is gone and the desk opens on SOL 01" || bad "the NOW rule is wrong before the run"
+rm -rf "$NOWD"
 curl -s -b $A "$B/control?tab=habitat" | grep -q "Start again from 15 October" && ok "the reset panel is on the Habitat tab" || bad "no reset panel"
 curl -s -b $A -o /dev/null -w '%{http_code}' $B/control | grep -q 200 && ok "the sign-in survives the reset" || bad "signed out by the reset"
 curl -s $B/dashboard | grep -q 'class="gauges' && ok "the inventory is rebuilt" || bad "no gauges after reset"
@@ -4126,7 +4183,7 @@ grep -q '  const earth = \[92, 222\], mars = \[226, 102\];' src/views/pages/comm
   && ok "the crossing's dial is the Write box's picture: large at the left of the box on a desk, its readings beside it, the Earth and Mars well apart on the face, EARTH and MARS!platz in 15-unit type (8 before)" || bad "the crossing's dial is not as it should be"
 # the shadows: never square, never cut — the booklet's keys in the margin, the second page's gaps, the stores' rounds
 grep -q 'body.landing .bk-arrow.prev { left: -56px; }' public/neu.css && grep -q 'body.landing .bk-arrow.next { right: -56px; }' public/neu.css \
-  && grep -q '  body.landing .sheet-p2 { margin: 34px 0 0; padding: 28px 0 48px; }' public/sheet.css && grep -q '  body.landing .sheet-p2.is-snug { padding: 16px 0 46px; }' public/sheet.css && grep -q '  body.landing .calls { gap: 16px; width: 100%; max-width: 340px; margin: 0 auto; }' public/sheet.css \
+  && grep -q '  body.landing .sheet-p2 { margin: 34px 0 0; padding: 28px 0 48px; }' public/sheet.css && grep -q '  body.landing .sheet-p2.is-snug { padding: 16px 0 46px; }' public/sheet.css && grep -qF '  body.landing .calls { gap: clamp(8px, 1.6vh, 16px); width: 100%; max-width: none; margin: 0; }' public/sheet.css \
   && grep -qF '  body.landing .sheet-p2 { padding: clamp(10px, 2.2vh, 28px) 0 clamp(12px, 2.6vh, 32px); margin-top: 34px; }' public/sheet.css && grep -q 'body.landing #hbt-bento > .t-res { padding-bottom: 30px; }' public/aura.css \
   && grep -q 'body.screen .screen-roll #hbt-bento > .t-res { padding-bottom: 30px; }' public/screen.css \
   && ok "no shadow cut or square: At a Glance's keys stand in the page's margin, the second page keeps the room's foot behind the header where it stops, a phone's cards and the chat theirs, the stores' rounds have room at the tile's foot" || bad "a shadow is cut or square again"
@@ -4188,11 +4245,31 @@ grep -q '  body.landing.messages .composer .tags { flex: 1 1 auto; min-width: 0;
   && grep -q '  body.landing.messages .composer .tags label { flex: 0 0 auto; min-width: 0; justify-content: center; min-height: 34px; padding: 0 14px; font-size: 12px;' public/aura.css \
   && ! grep -q 'clamp(9px, 2.85cqw, 10px)' public/aura.css \
   && ok "the Write pop-up's hashtags are whole keys in two rows on a phone, their edges and names never cut" || bad "the pop-up's hashtags are squeezed into one clipped row again"
-# a phone's two calls: smaller, narrower than the page and centred, the two together in the middle of the screen (8 October)
-grep -q '  body.landing .sheet-p2 { padding: 20px 0 32px; }' public/sheet.css && grep -q '  body.landing .call-art { width: 76%; margin: 0 auto 4px; }' public/sheet.css \
-  && grep -q '  body.landing .call-title { margin-top: 6px; font-size: 20px; }' public/sheet.css && grep -q '  body.landing .call-beam { font-size: 16.5px; max-width: 24ch; }' public/sheet.css \
-  && grep -q '  body.landing .call-key { gap: 10px; min-height: 38px; margin-top: 12px; padding: 0 16px 0 18px; font-size: 14px; }' public/sheet.css \
-  && ok "a phone's two calls are smaller and centred, the pair in the middle of the screen between the header and the bar of keys" || bad "a phone's two calls are not the smaller, centred pair"
+# the second page on a phone, the three in one screen (13 October: "the tabs with the Crew, Write to crew and Live
+# should be laid out in design such that they are all in 1 page — redesign it for mobile"): Current Crew compact, the
+# two calls as rows — the drawing cut to a square at the left (the dish, the radar), the words and the key at its right,
+# the long sentences off — the sizes following the screen's height
+grep -qF '  body.landing .call { --pic: clamp(60px, 9.4vh, 84px); display: grid; grid-template-columns: var(--pic) minmax(0, 1fr); column-gap: 14px; align-items: start;' public/sheet.css \
+  && grep -qF '  body.landing .call-pic .call-art-live { width: calc(var(--pic) * 600 / 188); height: calc(var(--pic) * 200 / 188); left: calc(var(--pic) * -206 / 188); top: calc(var(--pic) * -6 / 188); }' public/sheet.css \
+  && grep -qF '  body.landing .call-body { display: none; }' public/sheet.css && grep -qF '  body.landing .land-crew-head { flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: space-between;' public/sheet.css \
+  && grep -qF 'body.landing .call-pic { display: contents; }' public/sheet.css \
+  && [ "$(curl -s $B/ | tr -d '\n' | grep -o '<span class="call-pic"> *<svg class="call-art call-art-' | wc -l)" = "2" ] \
+  && ok "a phone's second page holds the crew and both calls in one screen — the calls as rows, each drawing cut to a square at the left (no box at all on a desk)" || bad "a phone's crew and calls are not laid out for one screen"
+# 13 October: "on the landing page for mobile and desktop, add a Know more button after the landing page description of
+# the performance; it should go to the About page"
+curl -s $B/ | tr -d '\n' | grep -q '<p class="run-dates">.*</p> *<p class="intro-cta"><a class="know-more" href="/about">Know more <span aria-hidden="true">→</span></a></p> *</div>' \
+  && curl -s -H "Cookie: mcs_lang=de" $B/ | grep -q '<a class="know-more" href="/about">Mehr erfahren <span' && curl -s -H "Cookie: mcs_lang=fr" $B/ | grep -q '<a class="know-more" href="/about">En savoir plus <span' \
+  && grep -qF 'body.landing .sheet-intro .intro-cta { margin: 24px 0 0; }' public/sheet.css \
+  && ok "under the landing page's description of the performance a Know more key leads to the About page — Mehr erfahren, En savoir plus" || bad "no Know more key to the About page under the landing page's description"
+# 13 October: "why is there a blue square behind Know more when you click it on mobile — fix that": the phone browser's
+# own tap highlight is off on every page (the keys show their own pressed state)
+grep -qF 'html { -webkit-tap-highlight-color: transparent; }' public/station.css && grep -qF 'body.landing :is(.btn, .chip, .tags label, .call-key, .know-more, .masthead-btn, .tk-nav a, .about-jump a, .status button):active { box-shadow: var(--neu-in-sm) !important; }' public/neu.css \
+  && ok "no blue square where a finger presses: the tap highlight is off on every page, and Know more shows its own pressed state" || bad "the browser's tap highlight is still drawn"
+# 13 October: "Transmit and Live feed should have the SAME height on mobile" — one row height, the taller card's, each
+# key at its card's foot
+grep -qF '  body.landing .calls { grid-auto-rows: 1fr; }' public/sheet.css && grep -qF '  body.landing .call-text { align-self: stretch; align-items: flex-start; text-align: left; min-width: 0; }' public/sheet.css \
+  && grep -qF '  body.landing .call-text .call-key { margin-top: auto; }' public/sheet.css \
+  && ok "on a phone Transmit and Live feed stand the same height, each key at its card's foot" || bad "a phone's two calls are not the same height"
 # the charts: measured on their own drawing, drawn in once, not again every minute; the trends' day labels centred
 grep -qF "if (Date.now() - born > 4000) box.classList.add('is-live');" public/hardware.js && grep -q 'body.landing #hw-live.is-live .hw-line, body.landing #hw-live.is-live .hw-area, body.landing #hw-live.is-live .hw-tag { animation: none; }' public/aura.css \
   && grep -qF "querySelectorAll('.hw-chart > svg, .gauge.round svg')" public/habitat.js && grep -qF "var anchor = 'middle';" public/habitat.js \

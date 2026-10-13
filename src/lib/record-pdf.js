@@ -284,6 +284,11 @@ function gather() {
 const safe = (fn, fallback) => { try { return fn(); } catch { return fallback; } };
 
 const localHM = (iso, st) => (iso ? mission.localTime(new Date(iso), st.timezone).slice(0, 5) : '—');
+/* Day 0 in the lists of media and messages: NOW, the rehearsal, while it is there; once it has gone (mission.js — the
+   reset, the run's first day) "before the run" — a rehearsal's leftovers still marked as such, and what came in after
+   the reset (the reset clears the rest) as it is (13 October: "remove the NOW from everywhere"). */
+const zeroHead = (st) => (st.nowDay ? 'NOW · before the run · rehearsal, not the record' : st.nowRetired ? 'Before the run' : 'Before the run · rehearsal, not the record');
+const zeroShort = (st) => (st.nowDay ? 'NOW' : 'before the run');
 
 /* ============================================================== SECTIONS */
 
@@ -592,7 +597,7 @@ function mediaSection(L, G) {
   const sorted = [...media].sort((a, b) => a.mission_day - b.mission_day || a.sort_order - b.sort_order || a.id - b.id);
   let day = null;
   for (const m of sorted) {
-    if (m.mission_day !== day) { day = m.mission_day; L.h2(day < 1 ? 'NOW · before the run · rehearsal, not the record' : `Day ${ddd(day)}`, { keep: 70 }); }
+    if (m.mission_day !== day) { day = m.mission_day; L.h2(day < 1 ? zeroHead(st) : `Day ${ddd(day)}`, { keep: 70 }); }
     L.need(40);
     L.pdf.text(L.page, M.left, L.y, `${m.filename}${m.hidden ? '  (withdrawn from view)' : ''}`, { font: 'bold', size: 9 });
     L.pdf.text(L.page, M.left + CW, L.y, `${m.kind} · ${fmtBytes(m.bytes)}${m.width && m.height ? ` · ${m.width}×${m.height}` : ''}${m.duration_s ? ` · ${Math.round(m.duration_s)} s` : ''}`, { size: 8, color: GREY, align: 'right' });
@@ -708,11 +713,11 @@ function messagesPdf() {
   L.para(`Every message that reached the station, in the order it was sent: ${counts.total} from ${callsigns} callsigns — ${counts.published} published with a reply, ${counts.rejected} rejected, ${counts.pending + counts.awaitingResponse} still awaiting a reply, ${counts.inTransit} in transit. Messages sent before the habitat was occupied carry day 000. Generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC. The messages are not part of the mission record; this is mission control's own copy.`, { color: GREY, size: 8.5 });
   let day = null;
   for (const m of messages) {
-    if (m.mission_day !== day) { day = m.mission_day; L.h2(day < 1 ? 'NOW · before the run · rehearsal, not the record' : `Day ${ddd(day)}`, { keep: 90 }); }
+    if (m.mission_day !== day) { day = m.mission_day; L.h2(day < 1 ? zeroHead(st) : `Day ${ddd(day)}`, { keep: 90 }); }
     const tags = (m.tags || '').split(',').filter(Boolean).map((t) => '#' + t).join(' ');
     L.need(48);
     L.pdf.text(L.page, M.left, L.y, m.callsign, { font: 'bold', size: 9.5, color: ORANGE });
-    L.pdf.text(L.page, M.left + L.pdf.textWidth(m.callsign, 'bold', 9.5) + 6, L.y, `· Ref ${String(m.id).padStart(5, '0')} · ${m.mission_day < 1 ? 'NOW' : `day ${ddd(m.mission_day)}`} · ${mission.localDate(new Date(m.submitted_at), st.timezone)} ${localHM(m.submitted_at, st)}${tags ? ` · ${tags}` : ''} · ${STATE_WORD[m.state] || m.state.toLowerCase()}${m.flagged ? ' · flagged' : ''}`, { size: 8, color: GREY });
+    L.pdf.text(L.page, M.left + L.pdf.textWidth(m.callsign, 'bold', 9.5) + 6, L.y, `· Ref ${String(m.id).padStart(5, '0')} · ${m.mission_day < 1 ? zeroShort(st) : `day ${ddd(m.mission_day)}`} · ${mission.localDate(new Date(m.submitted_at), st.timezone)} ${localHM(m.submitted_at, st)}${tags ? ` · ${tags}` : ''} · ${STATE_WORD[m.state] || m.state.toLowerCase()}${m.flagged ? ' · flagged' : ''}`, { size: 8, color: GREY });
     L.y += 14;
     L.para(m.body, { size: 9.5, after: 4 });
     if (m.response_body) {
@@ -741,7 +746,8 @@ function messagesCsv() {
   const cell = (v) => { const t = v == null ? '' : String(v); return /[",\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
   const head = ['id', 'callsign', 'mission_day', 'when', 'submitted_at', 'arrived_at', 'state', 'flagged', 'tags', 'message',
     'reply', 'replied_by', 'reply_written_at', 'reply_published_at', 'reviewed_at', 'reviewed_by', 'reject_reason', 'light_seconds', 'distance_au'];
-  const rows = allMessages().map((m) => [m.id, m.callsign, m.mission_day, m.mission_day < 1 ? 'NOW · before the run' : 'the run', m.submitted_at, m.arrival_at, m.state, m.flagged ? 1 : 0, m.tags, m.body,
+  const st = mission.state();
+  const rows = allMessages().map((m) => [m.id, m.callsign, m.mission_day, m.mission_day < 1 ? (st.nowDay ? 'NOW · before the run' : 'before the run') : 'the run', m.submitted_at, m.arrival_at, m.state, m.flagged ? 1 : 0, m.tags, m.body,
     m.response_body, m.responder ? shown(m.responder) : '', m.response_written, m.response_at, m.reviewed_at, m.reviewed_by, m.reject_reason, m.light_seconds, m.distance_au]);
   return [head, ...rows].map((r) => r.map(cell).join(',')).join('\r\n') + '\r\n';
 }
@@ -752,9 +758,9 @@ function messagesJson() {
   return {
     mission: { name: st.name, start: st.start_date, end: st.end_date, timezone: st.timezone },
     exportedAt: new Date().toISOString(),
-    note: 'Every message that reached the station, in the order it was sent, whatever became of it. Not part of the mission record. A message with missionDay 0 came in before the run — NOW, the rehearsal.',
+    note: `Every message that reached the station, in the order it was sent, whatever became of it. Not part of the mission record. A message with missionDay 0 came in before the run${st.nowDay ? ' — NOW, the rehearsal' : st.nowRetired ? ', after the reset' : ' — the rehearsal'}.`,
     counts: data.counts(),
-    messages: allMessages().map((m) => ({ id: m.id, callsign: m.callsign, missionDay: m.mission_day, rehearsal: m.mission_day < 1, submittedAt: m.submitted_at, arrivedAt: m.arrival_at,
+    messages: allMessages().map((m) => ({ id: m.id, callsign: m.callsign, missionDay: m.mission_day, rehearsal: m.mission_day < 1 && !st.nowRetired, submittedAt: m.submitted_at, arrivedAt: m.arrival_at,
       state: m.state, flagged: !!m.flagged, tags: (m.tags || '').split(',').filter(Boolean), body: m.body,
       reply: m.response_body ? { body: m.response_body, by: m.responder ? shown(m.responder) : null, writtenAt: m.response_written, publishedAt: m.response_at } : null,
       reviewedAt: m.reviewed_at, reviewedBy: m.reviewed_by, rejectReason: m.reject_reason, lightSeconds: m.light_seconds, distanceAu: m.distance_au })),

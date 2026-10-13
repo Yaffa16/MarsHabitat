@@ -264,7 +264,7 @@ function crewOnShift(ctx, d) {
   const rows = d.crew || safe(() => data.crewWithMood(), []) || [];
   const figures = d.crewFigures || safe(() => content.crewFigures(), {}) || {};
   // the steps of the day shown: today's once filed, else the last day filed (the Steps taken tile, public.js figureTile)
-  const n0 = m.phase === 'PRE_LAUNCH' ? 0 : m.clampedDay;
+  const n0 = m.phase === 'PRE_LAUNCH' ? (m.nowDay ? 0 : null) : m.clampedDay;   // (before the run with NOW gone, nothing filed yet)
   const filed = (n) => { const f = figures[String(n)]; return !!f && (f.steps != null || Object.values(f.crew || {}).some((x) => x && x.steps != null)); };
   let stepsDay = filed(n0) ? n0 : null;
   if (stepsDay == null && n0 > 0) for (let n = n0 - 1; n >= 1; n--) if (filed(n)) { stepsDay = n; break; }
@@ -504,7 +504,7 @@ function nowCard(ctx, rows, w) {
     return `<div class="dn-now-k"><i></i>${esc(w('Countdown'))}</div>
       <div class="dn-now-t dn-count" data-dn-count>${c.days} d ${pad2(c.hours)}:${pad2(c.minutes)}:${pad2(c.seconds)}</div>
       <div class="dn-now-time">${esc(T('to occupation'))} · ${esc(opensOn)} · 00:00</div>
-      <div class="dn-now-next"><span>${esc(T('Today'))}</span>${esc(w('The rehearsal day — NOW'))}</div>`;
+      ${m.nowPre ? `<div class="dn-now-next"><span>${esc(T('Today'))}</span>${esc(w('The rehearsal day — NOW'))}</div>` : ''}`;
   }
   const i = rows.findIndex((r) => r.now);
   if (i < 0) {
@@ -946,7 +946,7 @@ function chatPanel(ctx, w) {
  *  just what the refreshed parts need. */
 function partsOf(ctx, d) {
   const m = ctx.mission;
-  const today = d.today || safe(() => data.day(m.clampedDay, { powerDay: m.phase === 'PRE_LAUNCH' ? 0 : null }));
+  const today = d.today || safe(() => data.day(m.clampedDay, { powerDay: m.nowPre ? 0 : null }));
   return {
     today,
     air: airNow(),

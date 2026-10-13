@@ -134,6 +134,11 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
+/* no blue square where a finger presses (13 October: "why is there a blue square behind Know more when you click it on
+   mobile — fix that"): the phone browser's own tap highlight, a rectangle laid over whatever is pressed whatever its
+   shape, is off on every page — the site, the screens, mission control; the keys show their own pressed state (inherited,
+   so one line does it) */
+html { -webkit-tap-highlight-color: transparent; }
 
 body {
   margin: 0;

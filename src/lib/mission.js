@@ -81,6 +81,31 @@ function venueTimeUtc(dateStr, hhmm, tz) {
   return t;
 }
 
+/* NOW, the rehearsal day, ends for good — on the desk, on the public pages, in the record — once the reset has been
+   pressed (content.js, reset: pressed in the days before the run, so the station opens clean) and once the run itself
+   has begun on 15 October, whatever dates this station runs on (13 October: "when it is Oct 15th or I click the reset
+   button, remove the NOW from everywhere — control page, main page, everything"). Until then it is there before the
+   run, and all through a rehearsal against made-up dates. The reset's mark is kept in the station's settings
+   (now_retired, the moment it was pressed); the run's first day is run.js's — a rehearsal may move it on
+   (REHEARSAL_NOW_UNTIL, with MISSION_OVERRIDE only: the test suite keeps NOW at hand with it after the real run has
+   begun). */
+db.exec('CREATE TABLE IF NOT EXISTS setting (key TEXT PRIMARY KEY, value TEXT NOT NULL)');
+const NOW_RETIRED = 'now_retired';
+/** When the reset retired NOW — an ISO instant — or null while it has not been pressed. */
+function nowRetired() {
+  try { const r = db.prepare('SELECT value FROM setting WHERE key = ?').get(NOW_RETIRED); return r ? r.value : null; } catch { return null; }
+}
+/** The reset's mark: NOW is gone from here on (content.js, reset). */
+function retireNow(at = new Date().toISOString()) {
+  db.prepare('INSERT OR REPLACE INTO setting (key, value) VALUES (?, ?)').run(NOW_RETIRED, at);
+  zeroMemo = { at: 0, word: 'before the run' };                  // (zeroName, below: asked afresh)
+}
+/** The first day without NOW: the run's own first day — or, in a rehearsal, the day REHEARSAL_NOW_UNTIL names. */
+function nowEnds() {
+  const later = process.env.REHEARSAL_NOW_UNTIL;
+  return run.dates().override && /^\d{4}-\d{2}-\d{2}$/.test(later || '') ? later : run.RUN.START;
+}
+
 function state(date = new Date()) {
   const m = config();
   const today = localDate(date, m.timezone);
@@ -123,6 +148,11 @@ function state(date = new Date()) {
   const closeDate = new Date(Date.parse(m.end_date + 'T00:00:00Z') + 86400000).toISOString().slice(0, 10);
   const closeMs = venueMidnightUtc(closeDate, m.timezone) + 86400000;
 
+  // NOW (above): before the run, or all through a rehearsal against made-up dates — never once the reset has been
+  // pressed, and never from the run's first day on
+  const retired = nowRetired();
+  const nowOn = !retired && localDate(date, run.RUN.TZ) < nowEnds() && (phase === 'PRE_LAUNCH' || run.dates().override);
+
   return {
     ...m,
     missionDay: day,
@@ -132,10 +162,13 @@ function state(date = new Date()) {
     // NOW — mission day 0 — is the rehearsal day: everything mission control files under NOW (blogs, reports, the
     // Habitat tab, media) stays apart from the run's days, and the record shows it marked as a rehearsal. It is there
     // before the run, and all through a rehearsal against made-up dates (MISSION_OVERRIDE, src/lib/run.js) — never
-    // during the real run. workDay is the day the desk opens on and the day today's content is filed under: NOW before
-    // the run, the current sol during it, the last sol after.
-    nowDay: phase === 'PRE_LAUNCH' || run.dates().override,
-    workDay: phase === 'PRE_LAUNCH' ? 0 : Math.min(Math.max(day, 1), total),
+    // during the real run, and never after the reset (nowRetired, above). nowPre: NOW on the public pages, which show
+    // it before the run only. workDay is the day the desk opens on and the day today's content is filed under: NOW
+    // before the run, the current sol during it, the last sol after — and SOL 01 before the run once NOW is gone.
+    nowDay: nowOn,
+    nowPre: nowOn && phase === 'PRE_LAUNCH',
+    nowRetired: retired,
+    workDay: phase === 'PRE_LAUNCH' && nowOn ? 0 : Math.min(Math.max(day, 1), total),
     today,
     venueTime: localTime(date, m.timezone),
     elapsed,
@@ -246,9 +279,18 @@ function dateForDay(missionDay) {
   return new Date(t).toISOString().slice(0, 10);
 }
 
-/** "NOW" for day 0, "day 006" otherwise — wherever a day is named on the desk or in the record. */
+/** "NOW" for day 0 — "before the run" once NOW is gone (a message that came in before the run is day 0 too) — and
+    "day 006" otherwise, wherever a day is named on the desk or in the record. */
 function dayName(missionDay, { pad = 3, word = 'day' } = {}) {
-  return Number(missionDay) === 0 ? 'NOW' : `${word} ${String(missionDay).padStart(pad, '0')}`;
+  return Number(missionDay) === 0 ? zeroName() : `${word} ${String(missionDay).padStart(pad, '0')}`;
+}
+/** What day 0 is called: NOW while the rehearsal day is there, "before the run" once it has gone (state().nowDay) —
+    asked once a second at most, since a list of messages asks it of every one. */
+let zeroMemo = { at: 0, word: 'NOW' };
+function zeroName() {
+  const t = Date.now();
+  if (t - zeroMemo.at > 1000) zeroMemo = { at: t, word: state().nowDay ? 'NOW' : 'before the run' };
+  return zeroMemo.word;
 }
 
 /**
@@ -269,5 +311,5 @@ function touchNow() {
   }
 }
 
-module.exports = { config, state, dateForDay, dayName, touchNow, localDate, localTime, daysBetween, runLabel, dayLabel, shortDay, sync,
-                   venueMidnightUtc, venueTimeUtc, zoneOffsetMs };
+module.exports = { config, state, dateForDay, dayName, zeroName, touchNow, localDate, localTime, daysBetween, runLabel, dayLabel, shortDay, sync,
+                   venueMidnightUtc, venueTimeUtc, zoneOffsetMs, nowRetired, retireNow, nowEnds };

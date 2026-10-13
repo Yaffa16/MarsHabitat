@@ -525,6 +525,10 @@ function resetLocked(state) {
  *     the run is stored or shown
  *   - the sealed daily records, task statuses and live notes go
  *   - the inventory, schedule, meals and notes are rebuilt from the files
+ *   - NOW, the rehearsal day, goes for good (mission.retireNow): the desk
+ *     opens on SOL 01, and no page, tab or record shows NOW again (13
+ *     October: "when it is Oct 15th or I click the reset button, remove the
+ *     NOW from everywhere")
  *
  * Kept: the account and its sessions, the audit trail (the reset is
  * written to it), and the readings log on disk — every reading ever pulled,
@@ -598,6 +602,7 @@ function reset(actor = 'control') {
     db.prepare("UPDATE day SET status = 'DRAFT', updated_at = ?, updated_by = 'reset'").run(now());
   });
   wipe();
+  mission.retireNow();                                           // NOW is gone from here on — the desk, the pages, the record
   try { mediaLib.writeManifest(); } catch { /* the manifest is a convenience */ }
   // The readings start on the first day of the run (or the pinned
   // READINGS_FROM date): nothing from before 15 October is kept or shown.

@@ -3,13 +3,32 @@
 //
 //   node upload-to-cloud.js 1.png 2.jpg
 //
-// Needs only Node (18 or newer) — nothing to install. Fill in the three
-// settings below once. Each file is sent over WebDAV into the folder; a file
-// with the same name already there is replaced.
+// Needs only Node (18 or newer) — nothing to install. The cloud's address and
+// account come from the station's .env (CLOUD_URL, CLOUD_USER, CLOUD_PASSWORD).
+// Each file is sent over WebDAV into the folder; a file with the same name
+// already there is replaced.
 
-const CLOUD_URL = 'https://cloud.zkm.de';
-const USER = 'system_displays';
-const PASSWORD = 'EW8D3-mQEHS-ekrj8-54b8w-essDZ';
+// The cloud's address and account — CLOUD_URL, CLOUD_USER and CLOUD_PASSWORD, as the station itself reads them — come
+// from the environment or else from the station's .env (the folder above this one), and are never written into this
+// file: it is in the repository, and a password in it would be pushed with it (13 October). Nothing of them is printed.
+const env = (() => {
+  const out = { ...process.env };
+  try {
+    const text = require('fs').readFileSync(require('path').join(__dirname, '..', '.env'), 'utf8');
+    for (const line of text.split(/\r?\n/)) {
+      const m = /^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/.exec(line);
+      if (m && out[m[1]] == null) out[m[1]] = m[2].replace(/^(['"])(.*)\1$/, '$2');
+    }
+  } catch (e) { /* no .env beside the station: the environment alone */ }
+  return out;
+})();
+const CLOUD_URL = env.CLOUD_URL || '';
+const USER = env.CLOUD_USER || '';
+const PASSWORD = env.CLOUD_PASSWORD || '';
+if (!CLOUD_URL || !USER || !PASSWORD) {
+  console.error('Set CLOUD_URL, CLOUD_USER and CLOUD_PASSWORD in the station\'s .env (or in the environment) — this script reads them from there.');
+  process.exit(1);
+}
 const FOLDER = 'marsplatz';
 
 const fs = require('fs');

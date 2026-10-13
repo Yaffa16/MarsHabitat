@@ -31,8 +31,9 @@ const TABS = [
 ];
 
 const tabUrl = (tab, day, extra = '') => `/control?tab=${tab}&day=${day}${extra}#work`;
-// "day 006" — or "NOW", the rehearsal day before the run (mission day 0), wherever a block names its day
-const dayN = (day) => (Number(day) === 0 ? 'NOW' : `day ${dd(day)}`);
+// "day 006" — or "NOW", the rehearsal day before the run (mission day 0), wherever a block names its day; once NOW has
+// gone (the reset, the run's first day: mission.js), day 0 is only ever a message that came in before the run
+const dayN = (day) => (Number(day) === 0 ? missionLib.zeroName() : `day ${dd(day)}`);
 
 const flash = (f) => f ? `<div class="flash ${f.err ? 'err' : ''}">${esc(f.msg)}</div>` : '';
 
@@ -705,7 +706,9 @@ function resetBlock(day, plan, locked) {
       readings and the trend graph start on 15 October, with nothing from before the run; clears the sealed
       daily records, task statuses and
       live notes; and reloads the schedule, meals, stores and sensors from the files
-      in <code>content/</code> exactly as they are at that moment. From the reset on, the trend graph carries
+      in <code>content/</code> exactly as they are at that moment. <b>NOW goes for good</b>: the rehearsal day leaves
+      the day picker, the public pages and the record, and the desk opens on SOL 01 (NOW goes by itself on 15 October
+      too). From the reset on, the trend graph carries
       no plan: every day ahead is empty and fills in as the crew file it. Nothing else is copied over the files. The
       sign-in, the audit trail and the readings log (every reading ever pulled, as JSON files on disk) are
       kept. It cannot be undone.</p>
@@ -821,7 +824,7 @@ function page(ctx, model) {
   const body = `
   <div style="padding:22px 0 4px">
     <div class="eyebrow">Mission control · ${esc(user.username)} ·
-      ${pre ? `before the run · ${esc(ctx.mission.startLabel)} opens in ${ctx.mission.daysUntilStart} ${ctx.mission.daysUntilStart === 1 ? 'day' : 'days'} · rehearsing as NOW, ${esc(dateLabel(0))}`
+      ${pre ? `before the run · ${esc(ctx.mission.startLabel)} opens in ${ctx.mission.daysUntilStart} ${ctx.mission.daysUntilStart === 1 ? 'day' : 'days'}${ctx.mission.nowDay ? ` · rehearsing as NOW, ${esc(dateLabel(0))}` : ' · reset — ready for the run'}`
         : `day ${dd(ctx.mission.clampedDay)}${ctx.mission.nowDay ? ` · a rehearsal against made-up dates · NOW, ${esc(dateLabel(0))}, at hand` : ''}`} · ${esc(ctx.mission.venueTime)} habitat time</div>
     <div class="actions" style="margin-bottom:8px">
       <h1 style="margin:0">Mission control</h1>
