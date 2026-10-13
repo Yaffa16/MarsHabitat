@@ -348,6 +348,7 @@ function start() {
 function clear() {
   const n = db.prepare('DELETE FROM ha_reading').run().changes;
   status.entities.clear();
+  forgetDaily();                                                     // the Trends' days were read from them
   return n;
 }
 
@@ -493,6 +494,28 @@ function daily(localDate, days = 40) {
       unit: s.kind === 'counter' ? `${s.unit || ''}/day` : (s.unit || ''), points };
   });
 }
+
+/* The Trends panel's hardware lines, worked out once a day, at its end (13 October: "the Trends should only be calculated
+   at the END of EACH day"): the days that are over — each a gauge's mean, a meter's added amount — read from the stored
+   readings once the venue's midnight has passed, and kept for the day, so no visitor waits on them (every page read the
+   whole history afresh until then: 0.4 s a time by the run's tenth day). Today's point joins its line at midnight.
+   `today` is the venue's date: the station works them out right after each midnight (server.js) and, started in the
+   course of a day, on the first ask; a reset forgets them (forgetDaily). */
+let closedDays = null;
+const hasReading = db.prepare('SELECT 1 FROM ha_reading WHERE entity = ? AND t >= ? AND value IS NOT NULL LIMIT 1');
+function dailyClosed(localDate, today) {
+  if (!closedDays || closedDays.today !== today) {
+    const series = daily(localDate).map((s) => ({ ...s, points: Object.fromEntries(Object.entries(s.points).filter(([d]) => d < today)) }));
+    closedDays = { today, at: Date.now(), series };
+  }
+  // `read`: the device has a reading — today's alone, say — so its line is named on the graph before its first point
+  // (asked each time, one look-up a device: a device whose first reading comes in the course of the day is named then)
+  const floor = floorMs();
+  return closedDays.series.map((s) => ({ ...s, read: Object.keys(s.points).length > 0 || !!hasReading.get(s.id, floor) }));
+}
+function forgetDaily() { closedDays = null; }
+/** When the Trends' days were last worked out, and for which day (nothing yet: null). */
+const dailyClosedAt = () => (closedDays ? { today: closedDays.today, at: closedDays.at } : null);
 
 /* Every device with readings stored inside a window, for the permanent record.
    The configured sensors come first, in the order of content/home-assistant.json;
@@ -664,5 +687,5 @@ function version(snap) {
     + (snap.down ? '|down' : '') + (snap.frozen ? '|frozen' : '');
 }
 
-module.exports = { start, poll, snapshot, readings, daily, daySummary, hourly, version, clear, sensors, sensorsFor, habitatMap, HABITAT_CHANNELS, fetchJson, configured, frozen, staleMs, counterDay, counterToday, counterBetween,
+module.exports = { start, poll, snapshot, readings, daily, dailyClosed, dailyClosedAt, forgetDaily, daySummary, hourly, version, clear, sensors, sensorsFor, habitatMap, HABITAT_CHANNELS, fetchJson, configured, frozen, staleMs, counterDay, counterToday, counterBetween,
                    mealsConfig, mealPower, parseWindow, parseTime, slotForTime, MEALS_DEFAULT, CFG };

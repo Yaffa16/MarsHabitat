@@ -1691,8 +1691,8 @@ let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
   const spec = JSON.parse(un(s.slice(i + 11, s.indexOf("\"", i + 11))));
   const at = (id) => ((spec.series.find((x) => x.id === id) || {}).points || {})[d[1]];
   const b = spec.series.find((x) => x.id === "bike-battery") || {};
-  process.exit(at("bike-rounds") === 2250 && at("bike-battery") === 50 && b.scaleMax === 100 && b.unit === "%" ? 0 : 1);
-});' && ok "and the trend graph carries the bike's day — 2,250 rounds pedalled, the battery at 50 % (on a scale to 100 %) — on today's date" || bad "the bike's day is not on the trend graph"
+  process.exit(at("bike-rounds") === undefined && at("bike-battery") === undefined && b.scaleMax === 100 && b.unit === "%" ? 0 : 1);
+});' && ok "and today's bike figures wait for the day's end before they join the trend graph (13 October: the Trends are worked out at the end of each day) — its battery line on a scale to 100 %" || bad "today's bike figures are already on the trend graph"
 curl -s -b $A -X POST -d "day=$TODAY" -d "rounds=2250" -d "battery=75" -o /dev/null $B/control/bike
 curl -s $B/dashboard | grep -q '<span class="bike-pc">75<em>%</em></span>' && ok "a battery figure typed by hand stands over the rounds' share" || bad "the battery typed by hand is not shown"
 curl -s -b $A -X POST -d "day=$TODAY" -d "rounds=" -d "battery=" -o /dev/null $B/control/bike
@@ -1701,6 +1701,16 @@ BK2=$(curl -s $B/dashboard)
 node -e 'const d = require(process.env.CONTENT_DIR + "/bike.json"); process.exit(d[process.argv[1]] === undefined ? 0 : 1);' "$TODAY" \
   && echo "$BK2" | grep -q "<span class=\"sub\">Last recorded · Day $(printf '%03d' $((TODAY - 1)))</span>" && echo "$BK2" | grep -q '<div class="batt is-full">' && echo "$BK2" | grep -q '<span class="bike-pc">100<em>%</em></span>' \
   && ok "a day cleared records nothing; the tile shows the last day filed — and never more than a full battery (4,600 rounds: 100 %)" || bad "the bike's cleared day or its last day is not right"
+echo "$BK2" | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
+  const un = (x) => x.replace(/&quot;/g, "\"").replace(/&#39;/g, "\x27").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+  const i = s.indexOf("data-spec=\""), d = s.match(/id="hbt-trends" data-date="([0-9-]+)"/);
+  if (i < 0 || !d) process.exit(2);
+  const spec = JSON.parse(un(s.slice(i + 11, s.indexOf("\"", i + 11))));
+  const prev = new Date(Date.parse(d[1] + "T12:00:00Z") - 864e5).toISOString().slice(0, 10);
+  const at = (id) => ((spec.series.find((x) => x.id === id) || {}).points || {})[prev];
+  process.exit(at("bike-rounds") === 4600 && at("bike-battery") === 100 ? 0 : 1);
+});' && ok "and a day that is over is on the trend graph — yesterday's 4,600 rounds, the battery full" || bad "yesterday's bike figures are not on the trend graph"
 curl -s -b $A -o /tmp/bike-day.pdf $B/archive/day/$((TODAY - 1))/export.pdf && BKPDF=$(pdftext /tmp/bike-day.pdf)
 echo "$BKPDF" | grep -q "Power generated" && echo "$BKPDF" | grep -q "Rounds pedalled" && echo "$BKPDF" | grep -q " 4600 " && echo "$BKPDF" | grep -q "100 %" && echo "$BKPDF" | grep -q "from the rounds" \
   && ok "the day's record carries the power generated as the Sensors tab shows it — the rounds pedalled and the battery charged, worked out from the rounds" || bad "the day's PDF lacks the power generated"
@@ -3572,8 +3582,9 @@ const ok = r("schedule.json")["0"][0].label === "NOW briefing" && r("meals.json"
   && r("logbook.json")["0"]["COMMUNICATION OFFICER"] === "NOW words for the rehearsal" && r("notes.json")["0"][0].body === "NOW findings for the rehearsal"
   && r("inventory-levels.json")["0"].water.quantity === 480 && r("power.json").days["0"].food === 1.4 && r("crew-figures.json")["0"].steps === 4200;
 process.exit(ok ? 0 : 1);' && ok "everything filed under NOW lands in the content files under \"0\" — schedule, meals, blog, report, count, power, figures" || bad "NOW is not filed under 0 in the content files"
-# 9 October ("add all things from the Sensor data here"): before the run the trend graph carries NOW on today's date, as
-# the Sensor Data download does — the dashboard and the screens alike
+# 9 October ("add all things from the Sensor data here"): before the run the trend graph carries NOW's lines, as the Sensor
+# Data download does — the dashboard and the screens alike; and since 13 October ("the Trends should only be calculated
+# at the END of EACH day") no point on today's date, NOW's included: a day's point joins its line once the day is over
 for U in /dashboard /screen/trends; do
 curl -s -b $SK "$B$U" | node -e '
 let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
@@ -3581,14 +3592,13 @@ let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
   const i = s.indexOf("data-spec=\""), d = s.match(/id="hbt-trends" data-date="([0-9-]+)"/);
   if (i < 0 || !d) process.exit(2);
   const spec = JSON.parse(un(s.slice(i + 11, s.indexOf("\"", i + 11))));
-  const at = (id) => ((spec.series.find((x) => x.id === id) || {}).points || {})[d[1]];
-  const ok = at("store-water") === 480 && at("use-water") === 22 && at("pwr-food") === 1.4 && at("pwr-total") >= 1.4 && at("steps") === 4200
-    && spec.series.some((x) => /^steps-/.test(x.id) && x.points[d[1]] === 4200) && at("meal-kcal") >= 400
-    && !spec.series.filter((x) => /^act-/.test(x.id)).some((x) => x.points[d[1]] != null);
+  const ids = ["store-water", "use-water", "pwr-food", "pwr-total", "steps", "meal-kcal"];
+  const ok = ids.every((id) => spec.series.some((x) => x.id === id)) && spec.series.some((x) => /^steps-/.test(x.id))
+    && !spec.series.some((x) => x.points && x.points[d[1]] != null);
   process.exit(ok ? 0 : 1);
-});' || { bad "NOW is not on the trend graph of $U before the run"; NOWTR=1; }
+});' || { bad "the trend graph of $U before the run lacks NOW's lines, or carries a point on today's date"; NOWTR=1; }
 done
-[ -z "${NOWTR:-}" ] && ok "before the run the trend graph carries NOW on today's date — the store and its use, the power, the steps (the crew's and the officer's) and the meals filed under NOW, on the dashboard and the Trends screen; the day's activity has no NOW point" || true
+[ -z "${NOWTR:-}" ] && ok "before the run the trend graph carries NOW's lines — the store and its use, the power, the steps (the crew's and the officer's), the meals — on the dashboard and the Trends screen, with no point on today's date: the Trends are worked out at the end of each day" || true
 [ "$(node -e 'console.log(require("./src/db").db.prepare("SELECT COUNT(*) n FROM task WHERE mission_day = 1").get().n)')" = "$DAY1_TASKS" ] \
   && [ "$(node -e 'console.log(JSON.stringify(require("./src/db").db.prepare("SELECT quantity, consumption FROM inventory_level il JOIN inventory_item i ON i.id = il.item_id WHERE i.key = ? AND il.mission_day = 1").get("water")))')" = "$DAY1_WATER" ] \
   && ! grep -q "NOW words\|NOW briefing" "$CONTENT_DIR/resource-log.csv" \
@@ -4305,6 +4315,38 @@ process.exit(m && Number(m[1]) === d.published && Number(m[2]) === d.total && d.
   && grep -qF "if (e.isIntersecting) { if (i < 0) inView.push(e.target); move(e.target, now); }" public/board.js \
   && grep -qF "document.addEventListener('visibilitychange', tick);" public/board.js \
   && ok "the wall loads twenty at a time as it is scrolled; the notes' distances move only on the screen, and the count over it is one query — the page's figures" || bad "the wall's figures are not one query, or every note's distance is still moved every second"
+# 13 October: "make the power change as recommended" — the meters' day figures read at most once a minute, however
+# many visitors ask; a figure filed by hand shows at once; a reset forgets them. And "the Trends should only be calculated
+# at the END of EACH day" — the hardware's lines worked out once a day after the venue's midnight and kept, every line of
+# the graph running to yesterday (the station's series and the browser's habitat lines alike)
+node -e '
+const c = require("./src/lib/content"), ha = require("./src/lib/home-assistant");
+const a = c.meterDays(), b = c.meterDays(), p = c.power(), fresh = JSON.parse(JSON.stringify(p));
+for (let n = 1; n <= a.total; n++) for (const k of p.categories.filter((x) => x.sensor)) {
+  const d = fresh.days[String(n)] || {}; if (d[k.key] != null) continue; const v = ha.counterDay(k.sensor, n); if (v != null) fresh.days[String(n)] = { ...d, [k.key]: v };
+}
+const live = c.powerLive(); c.forgetMeters();
+const today = "2026-10-20", lines = ha.dailyClosed((x) => x.toISOString().slice(0, 10), today), first = ha.dailyClosedAt();
+const again = ha.dailyClosed(() => "", today), kept = ha.dailyClosedAt();
+const allPast = lines.every((s) => Object.keys(s.points).every((x) => x < today));
+ha.forgetDaily();
+process.exit(a === b && c.meterDays() !== a && JSON.stringify(live) === JSON.stringify(fresh) && JSON.stringify(lines) === JSON.stringify(again)
+  && first && kept && first.at === kept.at && first.today === today && allPast && ha.dailyClosedAt() === null ? 0 : 1);
+' 2>/dev/null && grep -qF "if (meterMemo && meterMemo.key === key && Date.now() - meterMemo.at < METER_MS) return meterMemo;" src/lib/content.js && grep -qF "const METER_MS = 60000;" src/lib/content.js \
+  && grep -qF "forgetMeters();                                                // the meters' figures kept a minute (meterDays): their readings are gone" src/lib/content.js \
+  && ok "the power: the meters' figures read at most once a minute and kept — the same figures as read afresh; filed figures at once, a reset starts afresh" || bad "the power figures are still read afresh on every page, or the kept ones differ"
+TS=$(curl -s $B/dashboard)
+echo "$TS" | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
+  const un = (x) => x.replace(/&quot;/g, "\"").replace(/&#39;/g, "\x27").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+  const i = s.indexOf("data-spec=\""), d = s.match(/id="hbt-trends" data-date="([0-9-]+)"/);
+  if (i < 0 || !d) process.exit(2);
+  const spec = JSON.parse(un(s.slice(i + 11, s.indexOf("\"", i + 11))));
+  process.exit(spec.series.length > 20 && spec.series.every((x) => Object.keys(x.points || {}).every((k) => k < d[1])) ? 0 : 1);
+});' && grep -qF "hardwareDaily: homeAssistant.dailyClosed((d) => missionLib.localDate(d, ctx.mission.timezone), ctx.mission.today)," src/server.js \
+  && grep -qF "setTimeout(closeTrendsAtMidnight, Math.max(60000, missionLib.venueMidnightUtc(tomorrow, tz) - Date.now() + 5000)).unref();" src/server.js \
+  && grep -qF "var done = today > lastDay ? days.length : Math.max(0, todayIdx - 1);" public/habitat.js && grep -qF "if (i >= win.done) { values.push(null); held.push(null); return; }" public/habitat.js \
+  && ok "the Trends are worked out at the end of each day: every line runs to yesterday, the hardware's days read once after midnight and kept" || bad "the Trends still carry today, or the hardware's days are read on every page"
 # 13 October: "Transmit and Live feed should have the SAME height on mobile" — one row height, the taller card's, each
 # key at its card's foot
 grep -qF '  body.landing .calls { grid-auto-rows: 1fr; }' public/sheet.css && grep -qF '  body.landing .call-text { align-self: stretch; align-items: flex-start; text-align: left; min-width: 0; }' public/sheet.css \

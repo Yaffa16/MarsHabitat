@@ -1637,6 +1637,23 @@ window tall with its cards in the middle and air around them, a margin at both s
   and chips, the header's keys; a call, the whole card being its door, gives a little with its key; the signs in the bar
   of keys dip. For touch screens alone (`@media (hover: none), (pointer: coarse)`, `neu.css`): a mouse on a desk keeps
   what it had. An iPhone shows a pressed state only on a page that listens to touches, so `switches.js` listens.
+- **The power and the Trends, kept** (13 October: "make the power change as recommended"; "the Trends should only be
+  calculated at the END of EACH day"). By the run's tenth day the landing page took half a second to build and its
+  twenty-second refresh a fifth of one, for every visitor, and a hundred people at once kept the station busy all the
+  time: every page read the whole sensor history afresh, twice. Now **the meters' day figures** — what each metered
+  Power category's meter added on each day of the run — are read at most once a minute, however many ask
+  (`meterDays()` in `src/lib/content.js`; `powerLive()` and `powerDay()` take them from there); a figure filed by hand
+  shows at once (the power file is read on every call), and a reset starts afresh (`forgetMeters()`). **The Trends**
+  are worked out once a day, at its end: a few seconds after each midnight at the venue the hardware's daily lines are
+  read from the stored readings for the days that are over and kept for the day (`dailyClosed()` in
+  `src/lib/home-assistant.js`, `closeTrendsAtMidnight()` in `src/server.js`; a station started in the course of a day
+  works them out on the first ask), and **every line of the graph runs to yesterday** — the station's series
+  (`public.js`, the trend spec) and the habitat sensor's lines the browser draws (`public/habitat.js`, `done`) alike:
+  today's point joins its line at midnight (a device's line is named from its first reading, `read`; NOW's figures,
+  which stand on today's date, are no longer on the graph — NOW ends with the reset). Measured on a copy of the station at its tenth day (10,000 messages, 960
+  cloud pictures, 440,000 sensor readings): the landing page 0.08 s instead of 0.55 s, the dashboard 0.1 s instead of
+  0.6 s, the refresh 0.04 s instead of 0.2 s; a hundred visitors at once kept the station a third busy (it had been
+  flat out, pages taking four seconds and the slowest thirty), two hundred two thirds.
 - **Lighter on a phone** (13 October: "on mobile, load only the newest picture and not 5; don't have the moving radar or
   dots on mobile — just the static image; download the cards only when something is new"): the landing visual loads the
   newest picture alone on a phone — the one it shows — and the next one only if that one will not load (`public/sky.js`,

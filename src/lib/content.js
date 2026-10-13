@@ -603,6 +603,8 @@ function reset(actor = 'control') {
   });
   wipe();
   mission.retireNow();                                           // NOW is gone from here on — the desk, the pages, the record
+  forgetMeters();                                                // the meters' figures kept a minute (meterDays): their readings are gone
+  try { require('./home-assistant').forgetDaily(); } catch { /* no hardware */ }   // and the Trends' days, worked out at midnight
   try { mediaLib.writeManifest(); } catch { /* the manifest is a convenience */ }
   // The readings start on the first day of the run (or the pinned
   // READINGS_FROM date): nothing from before 15 October is kept or shown.
@@ -1014,21 +1016,45 @@ function powerSensorKwh(c, missionDay) {
   try { return require('./home-assistant').counterDay(c.sensor, Number(missionDay)); } catch { return null; }
 }
 
+/* The meters' figures, day by day: what each metered category's meter added on each day of the run, read from the
+   hardware's stored readings at most once a minute, however many visitors ask (13 October: "make the power change as
+   recommended" — every page, and every visitor's twenty-second refresh of the landing page, read every day of the
+   readings afresh: 0.16 s a time by the run's tenth day, and with a hundred people on the site that was all the station
+   did). Only the meters' readings are kept: a figure filed by hand, or a category tied to another meter, shows at once
+   (power() reads the file on every call), and a reset starts afresh (forgetMeters). */
+const METER_MS = 60000;
+let meterMemo = null;
+function meterDays() {
+  const metered = power().categories.filter((c) => c.sensor);
+  let total = 13;
+  try { total = require('./mission').state().totalDays || total; } catch { /* the run's usual length */ }
+  const key = `${total}|${metered.map((c) => `${c.key}=${c.sensor}`).join(',')}`;
+  if (meterMemo && meterMemo.key === key && Date.now() - meterMemo.at < METER_MS) return meterMemo;
+  const days = {};
+  for (let n = 1; n <= total; n++) {
+    for (const c of metered) {
+      const v = powerSensorKwh(c, n);
+      if (v != null) (days[n] = days[n] || {})[c.key] = v;
+    }
+  }
+  meterMemo = { key, at: Date.now(), total, days };
+  return meterMemo;
+}
+function forgetMeters() { meterMemo = null; }
+
 /* The power file as the station shows it: each day's figures, with a metered
-   category filled in from its meter wherever no figure was filed by hand. */
+   category filled in from its meter wherever no figure was filed by hand (the
+   meters' figures as meterDays keeps them, a minute at the most). */
 function powerLive() {
   const p = power();
   const metered = p.categories.filter((c) => c.sensor);
   if (!metered.length) return p;
-  let total = 13;
-  try { total = require('./mission').state().totalDays || total; } catch { /* the run's usual length */ }
-  for (let n = 1; n <= total; n++) {
+  const { days } = meterDays();
+  for (const [n, read] of Object.entries(days)) {
     for (const c of metered) {
       const d = p.days[String(n)] || {};
-      if (d[c.key] != null) continue;
-      const v = powerSensorKwh(c, n);
-      if (v == null) continue;
-      p.days[String(n)] = { ...d, [c.key]: v };
+      if (d[c.key] != null || read[c.key] == null) continue;
+      p.days[String(n)] = { ...d, [c.key]: read[c.key] };
     }
   }
   return p;
@@ -1036,10 +1062,12 @@ function powerLive() {
 
 function powerDay(missionDay, p = power()) {
   const d = p.days[String(missionDay)] || {};
+  // a day of the run reads its meters from meterDays (a minute at the most); NOW — the rehearsal day — reads them now
+  const n = Number(missionDay), memo = n >= 1 ? meterDays() : null, read = memo && n <= memo.total ? memo.days[n] || {} : null;
   // A figure filed by hand wins; a category tied to a meter otherwise reads the meter.
   const categories = p.categories.map((c) => {
     const manual = d[c.key] ?? null;
-    const metered = manual == null ? powerSensorKwh(c, missionDay) : null;
+    const metered = manual == null ? (read ? (c.sensor ? read[c.key] ?? null : null) : powerSensorKwh(c, missionDay)) : null;
     return { ...c, kwh: manual ?? metered, source: manual != null ? 'manual' : metered != null ? 'sensor' : null };
   });
   const filed = categories.some((c) => c.kwh != null);
@@ -1087,7 +1115,7 @@ function edit(name, mutate) {
   return { ok: result.ok, error: result.errors[0] || null };
 }
 
-module.exports = { load, watch, status, edit, templates, crewFigures, bike, bikeBattery, BIKE_FULL, power, powerDay, powerSensorKwh, powerLive, inventoryFiled, DIR,
+module.exports = { load, watch, status, edit, templates, crewFigures, bike, bikeBattery, BIKE_FULL, power, powerDay, powerSensorKwh, powerLive, meterDays, forgetMeters, inventoryFiled, DIR,
                    resourceLogRows, resourceLogCsv, LOG_FILE,
                    planStatus, savePlan, ensurePlan, reset, resetLocked, resetEpoch, inventoryStart, PLAN_DIR, PLAN_FILES,
                    PLACEHOLDER, BLOG_OFFICER, isPlaceholder, placeholderCue, placeholderPublic, placeholderFor,

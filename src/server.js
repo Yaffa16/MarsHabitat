@@ -303,8 +303,11 @@ function stationData(ctx) {
     // live by public/cloud.js on the frequency.
     cloud: (() => { const c = require('./lib/cloud'); return c.configured() ? { title: c.CFG.title, items: c.gallery().slice(0, 6), snapshot: c.snapshot(), limit: 6 } : null; })(),
     // And its daily series for the Trends panel: one value per device per
-    // venue day — a gauge's daily mean, a meter's daily added amount.
-    hardwareDaily: homeAssistant.daily((d) => missionLib.localDate(d, ctx.mission.timezone)),
+    // venue day — a gauge's daily mean, a meter's daily added amount — for the
+    // days that are over, worked out once a day at its end and kept (13 October:
+    // "the Trends should only be calculated at the END of EACH day";
+    // homeAssistant.dailyClosed, and closeTrendsAtMidnight below).
+    hardwareDaily: homeAssistant.dailyClosed((d) => missionLib.localDate(d, ctx.mission.timezone), ctx.mission.today),
   };
 }
 
@@ -1316,6 +1319,23 @@ if (process.env.CRITICAL_POLL !== 'false') critical.start(); else critical.apply
 /* Poll the habitat's own hardware through Home Assistant (src/lib/home-assistant.js).
    Off until HA_HOST and HA_API_TOKEN are set in .env; HA_POLL=false holds it off. */
 if (process.env.HA_POLL !== 'false') homeAssistant.start();
+/* The Trends' hardware lines are worked out once a day, at its end (13 October: "the Trends should only be calculated at
+   the END of EACH day"): a few seconds after each midnight at the venue the days that are over are read from the stored
+   readings and kept (homeAssistant.dailyClosed), so the first visitor of the day does not wait on them either; the
+   first ask works them out on a station started in the course of a day. */
+function closeTrendsAtMidnight() {
+  try {
+    const tz = missionLib.config().timezone || 'Europe/Berlin';
+    const today = missionLib.localDate(new Date(), tz);
+    homeAssistant.dailyClosed((d) => missionLib.localDate(d, tz), today);
+    const tomorrow = new Date(Date.parse(today + 'T12:00:00Z') + 86400000).toISOString().slice(0, 10);
+    setTimeout(closeTrendsAtMidnight, Math.max(60000, missionLib.venueMidnightUtc(tomorrow, tz) - Date.now() + 5000)).unref();
+  } catch (e) {
+    console.warn('[trends] the days not worked out:', e.message);
+    setTimeout(closeTrendsAtMidnight, 3600000).unref();                // tried again in an hour
+  }
+}
+setTimeout(closeTrendsAtMidnight, 15000).unref();                      // once the first readings are in after a start
 if (process.env.CLOUD_POLL !== 'false') require('./lib/cloud').start();
 spacespeak.start();                                        // the relay to space — on when the account is set
 

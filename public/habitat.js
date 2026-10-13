@@ -490,8 +490,11 @@
       d = e;
     }
     if (today > lastDay) todayIdx = days.length;   // the axis is behind us: everything on it has happened
+    // the days on the axis that are over — a day's point is worked out once it has ended (13 October: "the Trends should
+    // only be calculated at the END of EACH day"): the days before today, or every day of an axis behind us
+    var done = today > lastDay ? days.length : Math.max(0, todayIdx - 1);
     var anySol = days.some(function (x) { return x.sol > 0; });
-    return { days: days, today: todayIdx, total: days.length, first: days.length ? days[0].start : 0, run: anySol };
+    return { days: days, today: todayIdx, done: done, total: days.length, first: days.length ? days[0].start : 0, run: anySol };
   }
 
   /* Monotone cubic (Fritsch–Carlson): smooth, and never overshoots a level. */
@@ -580,7 +583,7 @@
       }
       days.forEach(function (d, i) {
         var v = d[ch.key];
-        if (i >= win.today) { values.push(null); held.push(null); return; }   // still ahead
+        if (i >= win.done) { values.push(null); held.push(null); return; }    // today, or still ahead: worked out once the day is over
         if (v === null || v === undefined) {
           values.push(last); held.push(last === null ? null : lastDay);
         } else {

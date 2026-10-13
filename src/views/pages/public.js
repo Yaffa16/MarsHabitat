@@ -1578,12 +1578,13 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, pow
       ...ingest.map((c) => ({ id: 'ingest-' + c.metric, name: T(c.label), unit: c.unit, group: T('Habitat'), domain: c.domain, points: c.points })),
       // The habitat's own hardware, through Home Assistant: one line per
       // device, one value per day — a gauge's daily mean, a meter's daily
-      // added amount. Appears from the first day a reading was stored. A
+      // added amount. Named from the first reading stored, its first point
+      // once that day is over (homeAssistant.dailyClosed, `read`). A
       // power draw (a gauge in watts — a channel's socket) is not a trend:
       // its day is on its meter's line, as energy; and a meter that a Power
       // category reads (content/power.json, `sensor`) is that category's
       // line in the Power group below, not a second one here.
-      ...hardwareDaily.filter((h) => Object.keys(h.points).length && !(h.kind === 'gauge' && /^k?w$/i.test(String(h.unit || '')))
+      ...hardwareDaily.filter((h) => (Object.keys(h.points).length || h.read) && !(h.kind === 'gauge' && /^k?w$/i.test(String(h.unit || '')))
           && !power.categories.some((c) => c.sensor === h.id)).map((h) => ({
         id: 'hw-' + h.id, name: h.label, unit: h.unit, group: T('Hardware'), points: h.points })),
       ...items.map((it) => ({ id: 'store-' + it.key, name: it.label, unit: it.unit, group: T('Resources'),
@@ -1622,6 +1623,10 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, pow
   // file it. Only a fresh build, before the reset, still shows the dashed
   // prepared lines — useful while the mission is being written.
   if (!fromBuild) for (const s of trendSpec.series) s.planned = {};
+  // A day's trend is worked out once the day is over (13 October: "the Trends should only be calculated at the END of
+  // EACH day"): every line runs to yesterday, and today's point joins it at midnight — the hardware's lines are worked
+  // out then and kept (homeAssistant.dailyClosed), the rest are what was filed or counted for the days that are over.
+  for (const s of trendSpec.series) s.points = Object.fromEntries(Object.entries(s.points || {}).filter(([d]) => d < m.today));
 
 
 
