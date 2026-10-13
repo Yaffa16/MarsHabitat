@@ -3,7 +3,9 @@
  * The habitat in section — a section of the About page (info.js, before Who we are; once the third page of the landing
  * page): the cutaway
  * drawing of the habitat handed over as two pictures (public/Svg_File/
- * mars-habitat-lineart-modules.svg and mars-habitat-colored-modules.svg —
+ * mars-habitat-lineart-modules.svg and habitat_Final.svg — the coloured one
+ * as handed over on 13 October, after mars-habitat-colored-modules.svg; the
+ * cut-outs below are made from it by tools/habitat-modules.py —
  * each a stack of pictures: the Mars plain, the geodesic dome, and the
  * thirteen modules under it, each in its own box): the dome on the plain
  * drawn in its white lines (public/habitat/scene-lines.webp, the line-art
@@ -117,7 +119,7 @@ const mark = (p) => `<svg class="dome-mark" viewBox="-30 -30 60 60" aria-hidden=
 /** A module's layers, bottom to top, each carrying the module's id: its picture in colour (over its lines; unseen until
  *  lit, when it comes in over them), the sweep that crosses it once when lit (a band clipped to the module), then its
  *  box itself as the key, and its name on a tag at its floor line (unseen until lit). */
-const picture = (r) => { const b = rectOf(r); return `<image class="in-pic" data-hex="${r.id}" href="${MODULE_PICS}${r.id}.webp?v=1" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" preserveAspectRatio="none"/>`; };
+const picture = (r) => { const b = rectOf(r); return `<image class="in-pic" data-hex="${r.id}" href="${MODULE_PICS}${r.id}.webp?v=2" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" preserveAspectRatio="none"/>`; };
 function sweep(r) {
   const b = rectOf(r), w = Math.round(b.w * 0.26);
   return `<g clip-path="url(#in-clip-${r.id})"><rect class="in-sweep" data-hex="${r.id}" x="${b.x}" y="${b.y - 20}" width="${w}" height="${b.h + 40}"/></g>`;

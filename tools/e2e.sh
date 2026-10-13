@@ -2952,11 +2952,11 @@ MODS="hydroponics comms science airlock kitchen lounge quarters health recycling
   && ! echo "$HAB" | grep -q 'in-plain\|in-dome\|in-ink\|in-halo\|in-floor\|in-lamp\|inside\.svg\|ground\.jpg\|/habitat/rooms/\|in-glow\|in-lamp-light' \
   && echo "$HAB" | grep -q '<linearGradient id="in-sweep-light"' \
   && [ "$(echo "$HAB" | grep -o '<clipPath id="in-clip-[a-z]*"><rect x="[0-9]*" y="[0-9]*" width="[0-9]*" height="[0-9]*"/></clipPath>' | wc -l)" = "11" ] \
-  && [ "$(echo "$HAB" | grep -o '<image class="in-pic" data-hex="[a-z]*" href="/habitat/modules/[a-z]*.webp?v=1" x="[0-9]*" y="[0-9]*" width="[0-9]*" height="[0-9]*" preserveAspectRatio="none"/>' | wc -l)" = "11" ] \
-  && echo "$HAB" | grep -q '<image class="in-pic" data-hex="lounge" href="/habitat/modules/lounge.webp?v=1" x="578" y="493" width="335" height="187" preserveAspectRatio="none"/>' \
-  && echo "$HAB" | grep -q '<image class="in-pic" data-hex="kitchen" href="/habitat/modules/kitchen.webp?v=1" x="211" y="493" width="278" height="177" preserveAspectRatio="none"/>' \
-  && echo "$HAB" | grep -q '<image class="in-pic" data-hex="cycle" href="/habitat/modules/cycle.webp?v=1" x="904" y="680" width="191" height="155" preserveAspectRatio="none"/>' \
-  && echo "$HAB" | grep -q '<image class="in-pic" data-hex="hydroponics" href="/habitat/modules/hydroponics.webp?v=1" x="270" y="346" width="325" height="147" preserveAspectRatio="none"/>' \
+  && [ "$(echo "$HAB" | grep -o '<image class="in-pic" data-hex="[a-z]*" href="/habitat/modules/[a-z]*.webp?v=2" x="[0-9]*" y="[0-9]*" width="[0-9]*" height="[0-9]*" preserveAspectRatio="none"/>' | wc -l)" = "11" ] \
+  && echo "$HAB" | grep -q '<image class="in-pic" data-hex="lounge" href="/habitat/modules/lounge.webp?v=2" x="578" y="493" width="335" height="187" preserveAspectRatio="none"/>' \
+  && echo "$HAB" | grep -q '<image class="in-pic" data-hex="kitchen" href="/habitat/modules/kitchen.webp?v=2" x="211" y="493" width="278" height="177" preserveAspectRatio="none"/>' \
+  && echo "$HAB" | grep -q '<image class="in-pic" data-hex="cycle" href="/habitat/modules/cycle.webp?v=2" x="904" y="680" width="191" height="155" preserveAspectRatio="none"/>' \
+  && echo "$HAB" | grep -q '<image class="in-pic" data-hex="hydroponics" href="/habitat/modules/hydroponics.webp?v=2" x="270" y="346" width="325" height="147" preserveAspectRatio="none"/>' \
   && [ "$(echo "$HAB" | tr -d '\n' | grep -o '<image class="in-scene".*<g class="in-pics" aria-hidden="true">.*<g class="in-sweeps" aria-hidden="true">.*</g>          </g>' | wc -l)" = "1" ] \
   && [ "$(echo "$HAB" | grep -o '<g clip-path="url(#in-clip-[a-z]*)"><rect class="in-sweep" data-hex="[a-z]*" x="[-0-9]*" y="[-0-9]*" width="[0-9]*" height="[0-9]*"/></g>' | wc -l)" = "11" ] \
   && [ "$(echo "$HAB" | grep -o '<rect class="in-room" data-hex="[a-z]*" x="[0-9]*" y="[0-9]*" width="[0-9]*" height="[0-9]*" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="dome-[a-z]*"><title>[A-Za-z ()-]*</title></rect>' | wc -l)" = "11" ] \
@@ -2991,6 +2991,11 @@ MODS="hydroponics comms science airlock kitchen lounge quarters health recycling
   && echo "$HAB" | grep -q "var h = Math.max(foot - SKY_MIN, Math.round(BASE\[2\] / ar)); v = \[BASE\[0\], foot - h, BASE\[2\], h\];" && echo "$HAB" | grep -q "var BASE = \[0, 0, 1536, 1024\], SKY_MIN = 120;" \
   && ! echo "$LAND" | grep -q 'id="cutaway"\|class="cut-svg"\|src="/cutaway.js\|cutaway-lines.webp\|class="cut-chips"\|data-at="[-0-9.,]*" transform="translate([-0-9. ]*) scale' \
   && ok "the habitat, a section of the About page before Who we are, under the page's head with the hint for its line, the line AI generated image under the picture: the cutaway picture handed over — the dome on the Mars plain in its lines (public/habitat/scene-lines.webp, the whole picture in a frame with rounded corners), its eleven modules as keys (12 October: Storage and the Equipment Lockers are lines only, the crew's room is Living, the living quarters the Nap pods), each its box from the line-art file's layer, each with its cut-out of the coloured picture (public/habitat/modules/<id>.webp) and a sweep for when it is lit, a tag at its floor line, each with a pop-up, their sentences the station's and their words the ones the keys carried before — and EVA and the Dashboard as round keys on the ground in front of the habitat; a phone's pop-up under the picture when there is no room over it" || bad "the habitat is not drawn as it should be (inside.js)"
+# the coloured picture is habitat_Final.svg (13 October: "replace the Habitat svg with the new svg called habitat_Final"):
+# the tool reads it — as XML, whatever prefixes it was written with — and the cut-outs it made are asked for afresh (?v=2)
+grep -qF "COLOUR = os.path.join(SVG, 'habitat_Final.svg')" tools/habitat-modules.py && grep -q "root = ET.parse(path).getroot()" tools/habitat-modules.py \
+  && [ -s public/Svg_File/habitat_Final.svg ] && grep -q 'webp?v=2" x="' src/views/pages/inside.js \
+  && ok "the habitat's coloured cut-outs are made from habitat_Final.svg, and browsers fetch them afresh" || bad "the habitat's cut-outs are not made from habitat_Final.svg"
 [ "$(curl -s -o /dev/null -w '%{content_type}' $B/habitat/scene-lines.webp)" = "image/webp" ] && [ "$(curl -s -o /dev/null -w '%{size_download}' $B/habitat/scene-lines.webp)" -gt 150000 ] \
   && [ "$(for m in $MODS; do curl -s -o /dev/null -w '%{http_code} %{content_type}\n' $B/habitat/modules/$m.webp; done | sort -u)" = "200 image/webp" ] \
   && python3 -c '

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """The habitat picture for the landing page's third page, from the two files handed over.
 
-public/Svg_File/mars-habitat-lineart-modules.svg (1536 x 1024) and mars-habitat-colored-modules.svg (3072 x 2048) are
-Inkscape stacks of pictures: a layer each for the Mars plain with the sky, the geodesic dome, and the thirteen modules
+public/Svg_File/mars-habitat-lineart-modules.svg (1536 x 1024) and habitat_Final.svg (3072 x 2048 — the coloured
+picture as handed over on 13 October, two of its modules set a few pixels right, after mars-habitat-colored-modules.svg,
+which it replaces) are Inkscape stacks of pictures: a layer each for the Mars plain with the sky, the geodesic dome, and the thirteen modules
 under it, every layer one PNG (embedded, base64) placed in its box. The page draws the line-art stack composed into one
 picture (public/habitat/scene-lines.webp) and, for every module, its cut-out of the coloured picture
 (public/habitat/modules/<id>.webp) at twice the picture's size — cut at the module's box as src/views/pages/inside.js
@@ -16,6 +17,7 @@ import io
 import os
 import re
 import sys
+import xml.etree.ElementTree as ET
 
 try:
     from PIL import Image
@@ -26,21 +28,27 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
 SVG = os.path.join(ROOT, 'public', 'Svg_File')
 OUT = os.path.join(ROOT, 'public', 'habitat')
 LINES = os.path.join(SVG, 'mars-habitat-lineart-modules.svg')
-COLOUR = os.path.join(SVG, 'mars-habitat-colored-modules.svg')
+COLOUR = os.path.join(SVG, 'habitat_Final.svg')        # 13 October: "replace the Habitat svg with the new svg called habitat_Final"
 INSIDE = os.path.join(ROOT, 'src', 'views', 'pages', 'inside.js')
 
 
+SVG_NS, XLINK_NS = 'http://www.w3.org/2000/svg', 'http://www.w3.org/1999/xlink'
+
+
 def compose(path):
-    """Every layer's picture placed in its box, bottom to top, as one RGB picture the size of the file's canvas."""
-    s = open(path, encoding='utf-8').read()
-    m = re.search(r'<svg[^>]*\bwidth="(\d+)"[^>]*\bheight="(\d+)"', s)
-    w, h = int(m.group(1)), int(m.group(2))
+    """Every layer's picture placed in its box, bottom to top, as one RGB picture the size of the file's canvas. Read as
+    XML, so a file however it was written — Inkscape's prefixes (svg:, xlink:) or a script's (ns0:, ns2:) — reads alike."""
+    root = ET.parse(path).getroot()
+    w, h = int(float(root.get('width'))), int(float(root.get('height')))
     canvas = Image.new('RGBA', (w, h), (0, 0, 0, 0))
     n = 0
-    for lm in re.finditer(r'<g id="([^"]*)"[^>]*>\s*<image ([^>]*?)xlink:href="data:image/\w+;base64,([^"]*)"', s):
-        a = dict(re.findall(r'(\w[\w-]*)="([^"]*)"', lm.group(2)))
-        x, y, bw, bh = int(float(a['x'])), int(float(a['y'])), int(float(a['width'])), int(float(a['height']))
-        im = Image.open(io.BytesIO(base64.b64decode(lm.group(3)))).convert('RGBA')
+    for img in root.iter(f'{{{SVG_NS}}}image'):
+        href = img.get(f'{{{XLINK_NS}}}href') or img.get('href') or ''
+        m = re.match(r'data:image/\w+;base64,(.*)', href, re.S)
+        if not m:
+            continue
+        x, y, bw, bh = (int(float(img.get(k))) for k in ('x', 'y', 'width', 'height'))
+        im = Image.open(io.BytesIO(base64.b64decode(m.group(1)))).convert('RGBA')
         if im.size != (bw, bh):
             im = im.resize((bw, bh), Image.LANCZOS)
         canvas.alpha_composite(im, (x, y))

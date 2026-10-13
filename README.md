@@ -1447,8 +1447,10 @@ window tall with its cards in the middle and air around them, a margin at both s
   on the Mars plain**, with the line **AI generated image** under the picture (`in-credit`, small
   capitals, translated):
   the cutaway picture that was handed over as two files in `public/Svg_File/` —
-  `mars-habitat-lineart-modules.svg` (1536 × 1024) and `mars-habitat-colored-modules.svg` (3072 ×
-  2048), each an Inkscape stack of pictures: the Mars plain with the sky, the geodesic dome, and
+  `mars-habitat-lineart-modules.svg` (1536 × 1024) and `habitat_Final.svg` (3072 × 2048; 13 October: "replace the
+  Habitat svg with the new svg called habitat_Final" — the coloured picture again, its Science and Communication
+  modules set a few pixels to the right so they sit on their lines; it replaces `mars-habitat-colored-modules.svg`,
+  which nothing reads any more and can be deleted), each an Inkscape stack of pictures: the Mars plain with the sky, the geodesic dome, and
   **the thirteen modules** under it, each a layer in its own box — the geodesic dome on the red plain
   and, under it, the modules floor by floor: the hydroponic plants, the communication station under its
   dish, the science station; the airlock, the kitchen, the storage, the relaxing area with its round
@@ -1458,8 +1460,8 @@ window tall with its cards in the middle and air around them, a margin at both s
   white lines, the whole picture in a frame with rounded corners on a desk, `VIEW` in `inside.js`), and
   **every module is a key** (all but two since 12 October: *Storage* and the *Equipment Lockers* are lines only — "remove
   Equipment Lockers, remove Storage" — eleven keys)**: under the hand it shows itself in colour** — its cut-out of the coloured
-  picture (`public/habitat/modules/<id>.webp`, cut at twice the picture's size for sharpness, 194 KB
-  the thirteen together) comes in over its lines, a bright band sweeps across it once, and its name
+  picture (`public/habitat/modules/<id>.webp?v=2`, cut at twice the picture's size for sharpness, 181 KB
+  the eleven together) comes in over its lines, a bright band sweeps across it once, and its name
   comes up on a tag at its floor line (unseen otherwise: the picture carries its own detail, and
   thirteen names would stand in it) — and gone as quickly when the module goes dark again (under *less
   motion* the sweep is left out, and the picture is simply there). The modules' boxes are the line-art
@@ -1480,10 +1482,11 @@ window tall with its cards in the middle and air around them, a margin at both s
   there is none; the crew's moods in the Living Quarters, the schedule in the Crew's room; the
   section's head asks *What's inside the habitat?* (`dome.js`, `figures()`). The scene
   and the cut-outs are made from the two files by **`tools/habitat-modules.py`** (Pillow: it composes
-  each stack's layers, cuts the coloured scene at the line-art boxes ×2 and writes the WebPs — run it
-  again after either file is replaced, then bump the `?v=` in `inside.js`); the files themselves stay
-  in `public/Svg_File/` and are not drawn by the page (8.8 MB and 3.5 MB of embedded PNG — the page
-  loads 270 KB for the scene and 194 KB for the thirteen cut-outs). **Nothing else is in the
+  each stack's layers — read as XML, so a file saved by Inkscape or rewritten by a script reads alike —, cuts the
+  coloured scene at the line-art boxes ×2 and writes the WebPs — run it again after either file is replaced, then bump
+  the `?v=` in `inside.js`: the cut-outs are at `?v=2` since `habitat_Final.svg`, the scene still `?v=1`, its lines
+  unchanged); the files themselves stay in `public/Svg_File/` and are not drawn by the page (8.8 MB and 3.5 MB of
+  embedded PNG — the page loads 270 KB for the scene and 181 KB for the eleven cut-outs). **Nothing else is in the
   section**: no card of glass (the picture stands on the page's ground, in its frame with rounded
   corners), no sheet under it (the grey sequencer's sheet stays in the code, `sky.js`,
   `habitatSheet`, unused), no sky of exchanges over it (the sky is on the mission page's first page),
