@@ -159,8 +159,9 @@ app.use((req, res, next) => {
     // interface string into it. Mission control and the archive ignore both.
     const lang = i18n.pick(req);
     cached = {
-      // light unless the visitor chose dark (8 October: "the project should open in light mode by default")
-      theme: req.cookies.mcs_theme === 'dark' ? 'dark' : 'light',
+      // dark unless the visitor chose light (13 October: "default should open in dark mode" — light by default from
+      // 8 October until then)
+      theme: req.cookies.mcs_theme === 'light' ? 'light' : 'dark',
       lang,
       T: i18n.of(lang),
       logo: logo(),
@@ -510,6 +511,23 @@ app.get('/dashboard', (req, res) => {
   res.send(P.dashboardPage(ctx, stationData(ctx)));
 });
 
+/* ── THE DASHBOARD REDESIGN, ON TRIAL ────────────────────────────────────────────────────────────────────────────────
+   (12 October: "I like the redesign. Keep the current design also, add a page to test the new design — easily
+   removable later if I don't like the design.") /dashboard/next: the mission dashboard after the redesign, drawn from
+   the same stationData as /dashboard (views/pages/dashboard-next.js); and /api/dashboard/next, the parts its script
+   swaps in every minute — the readings, what the crew are doing, the light time, the energy, the hardware. Unlisted and
+   not indexed; the current dashboard is untouched. To remove it: delete this block, src/views/pages/dashboard-next.js
+   and public/next/, the suite's block of the same name (tools/e2e.sh) and the README's section on it. */
+const DashNext = require('./views/pages/dashboard-next');
+app.get('/dashboard/next', (req, res) => {
+  const ctx = req.ctx();
+  if (!ctx.mission.open) return res.redirect('/');
+  res.set('X-Robots-Tag', 'noindex').send(DashNext.page(ctx, stationData(ctx)));
+});
+app.get('/api/dashboard/next', (req, res) => res.set('Cache-Control', 'no-store').json(DashNext.live(req.ctx())));
+app.get('/dashboard-next', (req, res) => res.redirect('/dashboard/next'));   // the cookie card's way back to it (/consent takes a path of one part)
+/* ── end of THE DASHBOARD REDESIGN, ON TRIAL ── */
+
 /* The Write page: the composer and the board, nothing else — the exchanges one under the other, flowing on the page,
    the newest BOARD_PAGE of them drawn here and the older ones fetched as the reader scrolls (/api/board?before=,
    public/board.js) (views/pages/public.js, writePage). The mission page's composer, the header's Write link and the
@@ -782,8 +800,9 @@ app.get('/archive/readings.json', requireControl, (req, res) => {
 
 app.get('/archive/export.json', requireControl, (req, res) => {
   archive.rollupPending();
+  // (the comment line naming everything tracked on the file's first line — archive.exportText)
   res.attachment(`mars-station-${new Date().toISOString().slice(0, 10)}.json`)
-     .json(archive.fullExport());
+     .type('application/json; charset=utf-8').send(archive.exportText());
 });
 
 /* The record of the crew's states as CSV — every state filed for every officer, oldest first — from the Archive's
@@ -1141,13 +1160,18 @@ app.get('/api/hardware', (req, res) => {
   const asked = Math.round(Number(req.query.w)), askedH = Math.round(Number(req.query.h));
   const width = Number.isFinite(asked) && asked >= 240 ? Math.min(1400, asked) : 720;
   const height = Number.isFinite(askedH) && askedH >= 120 ? Math.min(700, askedH) : 240;
+  // `groups=1`: the dashboard's grouped Sensors tab (13 October) — the charts each in its group (life, energy, mth,
+  // hardware) and the notes above them, in place of the one panel (views/pages/public.js, hardwareClubs)
+  const grouped = req.query.groups === '1', on = snap.configured && snap.sensors.length;
+  const groups = grouped && on ? P.hardwareClubs(snap, ctx.T, { width, height }) : null;
   res.set('Cache-Control', 'no-store').json({
     version: homeAssistant.version(snap),
     frozen: snap.frozen,
     pollMs: snap.pollMs,
     w: width,
     h: height,
-    html: snap.configured && snap.sensors.length ? P.hardwareInner(snap, ctx.T, { width, height }) : '',
+    ...(grouped ? { clubs: groups ? groups.clubs : {}, notes: groups ? groups.notes : '' }
+      : { html: on ? P.hardwareInner(snap, ctx.T, { width, height }) : '' }),
     // the power tile, whose metered category moves with the readings
     power: P.powerTileInner(ctx, content.powerLive()),
     // the oxygen tile, the first of the Sensors panel's instruments, read from the hardware (8 October)

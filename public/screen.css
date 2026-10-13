@@ -670,15 +670,15 @@ body.screen.screen-habitat .screen-roll #habitat .dpanel-title .cloud-live i { a
    12 October: "make the actual screens/habitat look like this" — the mock-up in the screens' own dress — "make all the
    tiles from the original screen show up one after another" (screens.js, habitatHud; public/screen-habitat-hud.js).
    Laid out 1920 wide (1080 upright) and zoomed to the screen's width, as the rolled screen was (screen.js, rollZoom); the
-   stage is the display's, edge to edge: over it the head — Habitat and LIVE at the left; the day of the run, the date,
-   the place and the clock at the right —, under it a column of tiles at each side, 470 wide, and the way from the Earth to
-   the habitat between them, and along the foot the running line. Upright: the head, the way to the habitat, and the two
-   columns side by side under it. ?roll=1 shows the rolled screen instead (above). */
+   stage is the display's, edge to edge: along its top the running line, under it the head — Habitat and LIVE at the
+   left; the day of the run, the date, the place and the clock at the right —, under that a column of tiles at each side,
+   470 wide, and the way from the Earth to the habitat between them, the Earth on the screen's foot. Upright: the head,
+   the way to the habitat, and the two columns side by side under it. ?roll=1 shows the rolled screen instead (above). */
 body.screen .stage.is-hud { padding: 0; grid-template-columns: minmax(0, 1fr); }   /* (the stage as wide as the screen, whatever the running line's length) */
 body.screen .stage.is-hud > .stage-body { min-width: 0; }
 body.screen .hab-hud { position: relative; height: 100%; display: flex; flex-direction: column; overflow: hidden; --hh-col: 470px; }
 body.screen .hab-hud > .hh-grid { flex: 1 1 auto; min-height: 0; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, var(--hh-col)) minmax(0, 1fr) minmax(0, var(--hh-col));
-  grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "head head head" "left centre right"; column-gap: 30px; row-gap: 22px; padding: 30px 72px 16px; }
+  grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "head head head" "left centre right"; column-gap: 30px; row-gap: 22px; padding: 26px 72px 24px; }
 /* the head: the name as large as the rolled screen's, LIVE beside it blinking, and the day, the date, the place and the
    clock in small capitals at the right */
 body.screen .hh-head { grid-area: head; display: flex; align-items: center; justify-content: space-between; gap: 24px; min-width: 0; }
@@ -695,7 +695,7 @@ body.screen .hh-right { grid-area: right; }
    the dome far up, Red Dust City under it, the dashed line down to the Earth's limb with the signal going up and the
    answer coming down, the Earth at the foot with its dawn and its rings of dots, the room's sides fading into the
    columns; by day a window of night (below) */
-body.screen .hh-centre { grid-area: centre; position: relative; min-width: 0; min-height: 0; margin-bottom: -16px; overflow: hidden; color: #fff;
+body.screen .hh-centre { grid-area: centre; position: relative; min-width: 0; min-height: 0; margin-bottom: -24px; overflow: hidden; color: #fff;
   --dome-w: 280px; --dome-top: 26px; --earth-w: 1180px; --earth-arc: 150px; --hud: #fff; --hud-rgb: 255,255,255; --hud-hot: #ff6a2e; --hud-hot-rgb: 255,106,46;
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 70px, #000 calc(100% - 70px), transparent 100%);
   mask-image: linear-gradient(90deg, transparent 0, #000 70px, #000 calc(100% - 70px), transparent 100%); }
@@ -735,9 +735,10 @@ body.screen .hh-note.is-new::before { animation: sky-sweep 1.1s ease-out .15s 1 
 body.screen .hh-centre .space-stars { display: none; }
 :root[data-theme="light"] body.screen .hh-centre { margin-bottom: 0; border-radius: 22px; background: #000; -webkit-mask-image: none; mask-image: none; }
 :root[data-theme="light"] body.screen .hh-centre .space-stars { display: block; }
-/* the running line along the foot: the ticker's line alone, in small capitals on a band of the ground */
-:root[data-theme] body.screen .hab-hud > .ticker { position: relative; z-index: 3; flex: none; background: rgba(14,15,17,.92) !important; border: 0 !important; box-shadow: 0 -1px 0 rgba(255,255,255,.08) !important; }
-:root[data-theme="light"] body.screen .hab-hud > .ticker { background: var(--neu, #eef0f5) !important; box-shadow: 0 -1px 0 rgba(15,21,64,.1) !important; }
+/* the running line along the top (12 October: "move the ticker to the top" — it ran along the foot for an hour): the
+   ticker's line alone, in small capitals on a band of the ground, a hairline under it */
+:root[data-theme] body.screen .hab-hud > .ticker { position: relative; z-index: 3; flex: none; background: rgba(14,15,17,.92) !important; border: 0 !important; box-shadow: 0 1px 0 rgba(255,255,255,.08) !important; }
+:root[data-theme="light"] body.screen .hab-hud > .ticker { background: var(--neu, #eef0f5) !important; box-shadow: 0 1px 0 rgba(15,21,64,.1) !important; }
 body.screen .hab-hud > .ticker .tk-bar { display: none; }
 body.screen .hab-hud > .ticker .tk-window { height: 44px; padding: 0 72px; border-top: 0; --tk-inset: 72px; }
 body.screen .hab-hud > .ticker .tk-cell { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; }
@@ -786,7 +787,7 @@ body.screen .screen-roll.hab-hud #habitat .tlegend i { width: 7px; height: 7px; 
 body.screen .screen-roll.hab-hud #habitat #hbt-notes .note, body.screen .screen-roll.hab-hud #habitat #hw-live > .note { font-size: 12.5px; line-height: 1.4; padding: 9px 12px; margin: 0; }
 /* upright: the head, the way to the habitat under it, then the two columns side by side; the notes beside the dome */
 @media (orientation: portrait) {
-  body.screen .hab-hud > .hh-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 700px minmax(0, 1fr); grid-template-areas: "head head" "centre centre" "left right"; padding: 28px 40px 16px; }
+  body.screen .hab-hud > .hh-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto 700px minmax(0, 1fr); grid-template-areas: "head head" "centre centre" "left right"; padding: 24px 40px 24px; }
   body.screen .hh-centre { margin-bottom: 0; }
   body.screen .hh-side { left: calc(50% + 172px); top: 40px; width: 300px; }
   body.screen .hh-signal { margin-left: 0; }

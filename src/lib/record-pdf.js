@@ -3,10 +3,11 @@
  * The complete mission record as one PDF: for every day that has happened,
  * what was entered on the station that day and what its sensors measured —
  * the schedule as it was run, the meals, the stores as they were counted,
- * the power and the crew's figures as they were filed, every mission note,
- * every blog entry with its photographs in place, every state filed for the
- * crew, what was sent out, the habitat's daily summary and every reading
- * behind it — then the crew log whole and the media index with hashes. The
+ * the power generated and consumed and the crew's figures as they were
+ * filed, every mission note, every blog entry with its photographs in place,
+ * every state filed for the crew, the habitat's daily summary and every
+ * reading behind it — then the crew log whole and the media index with
+ * hashes (12 October: a day's chapter no longer lists its media). The
  * messages from Earth and the crew's replies are not part of the record,
  * and neither is mission control's audit trail. Before the run, a marked
  * rehearsal chapter for today shows the shape of a day's record.
@@ -50,6 +51,10 @@ const fmtBytes = (b) => (b >= 1073741824 ? (b / 1073741824).toFixed(2) + ' GB' :
 const fmtNum = (v, d = 1) => (v == null || Number.isNaN(v) ? '—' : Number.isInteger(v) ? String(v) : Number(v).toFixed(d));
 /** A figure exactly as it was entered — no rounding, no formatting. */
 const asIs = (v) => (v == null || v === '' ? '—' : String(v));
+/** A reading of the habitat sensor to three decimals at the most (12 October: "for all numbers in the record in Habitat ·
+    the habitat sensor, only show up to 3 decimal points") — 1008.2800293 → 1008.28, 0.7999999821 → 0.8, 640 → 640;
+    anything not a number (the air quality's class) as it was stored. */
+const dec3 = (v) => { if (v == null || v === '') return '—'; const n = typeof v === 'number' ? v : (/^-?\d+(\.\d+)?$/.test(String(v).trim()) ? Number(v) : NaN); return Number.isFinite(n) ? String(+n.toFixed(3)) : String(v); };
 const cap = (s) => (s ? s.charAt(0) + s.slice(1).toLowerCase() : '');
 const longDate = (iso) => new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 
@@ -262,7 +267,6 @@ function gather() {
   const upTo = archive.recordedUpTo(st);
   const crew = db.prepare('SELECT * FROM crew ORDER BY sort_order, id').all();
   const items = db.prepare('SELECT * FROM inventory_item ORDER BY sort_order, label').all();
-  const channels = db.prepare('SELECT * FROM sensor_metric ORDER BY sort_order, metric').all();
   const days = Array.from({ length: upTo }, (_, i) => archive.dayRecord(i + 1));
   const media = mediaLib.list({ includeHidden: true });
   const moods = db.prepare("SELECT cm.*, c.designation FROM crew_mood cm JOIN crew c ON c.id = cm.crew_id WHERE cm.set_by != 'content' ORDER BY cm.effective_at").all();
@@ -274,7 +278,7 @@ function gather() {
   const readingsInRecord = days.reduce((n, r) => n + r.readings.count, 0);
   // before the run, and through a rehearsal against made-up dates: NOW, the rehearsal day, shown marked, never part of the record
   const rehearsal = st.nowDay ? archive.rehearsalRecord(st) : null;
-  return { st, log, total, pre, today, upTo, crew, items, channels, days, media, moods, rehearsal,
+  return { st, log, total, pre, today, upTo, crew, items, days, media, moods, rehearsal,
     readings, readingsInRecord, written, mediaCounts: mediaLib.counts(), carriedIn: content.inventoryStart() };
 }
 const safe = (fn, fallback) => { try { return fn(); } catch { return fallback; } };
@@ -299,12 +303,10 @@ function cover(L, G) {
   line('Days recorded', G.pre ? `none yet — the run opens ${st.startLabel}` : st.phase === 'COMPLETE' ? `all ${st.totalDays} days` : `${G.upTo} of ${st.totalDays} (day ${ddd(G.today)} in progress)`);
   line('Crew log', `${G.written.reduce((a, b) => a + b, 0)} entries written · ${G.moods.length} states filed`);
   line('Media sent out', `${G.mediaCounts.total} files · ${fmtBytes(G.mediaCounts.bytes)} · ${G.mediaCounts.images} photographs, ${G.mediaCounts.videos} video, ${G.mediaCounts.audio} sound, ${G.mediaCounts.documents} documents`);
-  line('Habitat readings', `${G.readingsInRecord.toLocaleString('en-GB')} in this record, every one printed · ${G.readings.n.toLocaleString('en-GB')} from the station's channels stored in all`);
+  line('Habitat readings', `${G.readingsInRecord.toLocaleString('en-GB')} in this record, every one printed`);
   line('Days sealed', `${G.days.filter((d) => d.sealed).length} of ${st.totalDays}`);
   line('Readings log', G.log.total ? `${G.log.total.toLocaleString('en-GB')} files · ${fmtBytes(G.log.bytes)} · every reading ever pulled, in /archive/readings.zip` : 'empty');
   line('This record', `generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC`);
-  y += 30;
-  for (const t of pdf.wrap('This record holds only what was entered on the station and what its sensors measured, day by day: the schedule as it was run, the meals, the stores as they were counted, the power and the crew\'s figures as they were filed, what the crew wrote and sent out, the states filed for them, and every reading of every day — the station\'s channels, the habitat sensor (or the external node) and the hardware, each as it was stored. Nothing in it is generated — no chart, no projection, no total, no figure carried from one day to the next, and no plan for a day that has not come. The messages from Earth and the crew\'s replies are not part of the record. The photographs are placed in the entries they were sent with; the originals, byte for byte, are in the media ZIP under the hashes printed here.', 'regular', 9.5, CW - 60)) { pdf.text(p, M.left, y, t, { size: 9.5, color: INK }); y += 13.5; }
   pdf.text(p, M.left, PAGE.h - 70, 'Mission control only. The archive is part of the work.', { size: 8, color: GREY });
 }
 
@@ -339,22 +341,49 @@ function fillContents(L, pages, entries) {
   }
 }
 
+/* What the Sensors tab of the dashboard monitors (12 October: "remove from all the data files what the website no longer
+   shows" — the channels of sensors.json, particulates and radiation among them, were an earlier panel's): the
+   instruments as the tab draws them (public.js, SENSOR_TILES and the oxygen; public/habitat.js, CHANNELS) — each with
+   its unit, the scale its tile reads against, its limit where it has one, and what it is read from — and the habitat's
+   hardware as content/home-assistant.json lists it. */
+const INSTRUMENTS = [
+  { k: 'o2', name: 'Oxygen', unit: '%', scale: '16 – 24', limit: 'normal 19.5 – 23.5' },
+  { k: 'co2', name: 'Carbon dioxide', unit: 'ppm', scale: '0 – 2000', limit: 'over 800' },
+  { k: 'temp', name: 'Temperature', unit: '°C', scale: '0 – 40', limit: '' },
+  { k: 'hum', name: 'Humidity', unit: '%RH', scale: '0 – 100', limit: '' },
+  { k: 'pres', name: 'Air pressure', unit: 'hPa', scale: '950 – 1050', limit: '' },
+  { k: 'iaq', name: 'Air quality', unit: 'IAQ', scale: '0 – 500, in bands', limit: 'over 150' },
+  { k: 'iaqc', name: 'Air quality class', unit: '', scale: 'as the sensor names it', limit: '' },
+  { k: 'light', name: 'Light', unit: 'lx', scale: '0 – 1000', limit: '' },
+  { k: 'voc', name: 'Volatile organic compounds', unit: 'ppm', scale: '0 – 10', limit: '' },
+];
 function missionSection(L, G) {
-  const { st, crew, items, channels, carriedIn } = G;
+  const { st, crew, items, carriedIn } = G;
   L.h1('The mission');
-  L.para(`${st.name}. ${st.runLabelLong}, ${st.totalDays} days, on ${st.timezone} time. Three people inside a sealed habitat, and a channel between them and everyone outside it.`);
+  L.para(`${st.name}. ${st.runLabelLong}, ${st.totalDays} days, on ${st.timezone} time.`);
   L.h2('Crew');
   L.table([{ label: 'Designation', w: 1.2, font: 'bold' }, { label: 'Role', w: 2 }], crew.map((c) => [shown(c.designation), c.role]));
   L.h2('The stores tracked');
-  L.para('What the habitat set out with, as written in crew-and-inventory.json. Each day\'s counts are in that day\'s record; a store not counted on a day has no figure for it.', { color: GREY, size: 8.5 });
   L.table([{ label: 'Store', w: 1.6, font: 'bold' }, { label: 'Category', w: 1 }, { label: 'Carried in', w: 0.8, align: 'right' }, { label: 'Unit', w: 0.5 }, { label: 'Warning below', w: 0.8, align: 'right' }, { label: 'Critical', w: 0.5 }],
     items.map((i) => [i.label, i.category, asIs(carriedIn[i.key]), i.unit, asIs(i.warn_below), i.critical ? 'yes' : '']));
   L.h2('Monitored channels');
-  L.para('The habitat\'s sensor channels as configured in sensors.json: the channel code, what it measures, its unit and the bands the station reads it against.', { color: GREY, size: 8.5 });
-  L.table([{ label: 'Channel', w: 0.6, font: 'mono' }, { label: 'Metric', w: 1.6 }, { label: 'Unit', w: 0.6 }, { label: 'Expected band', w: 1, align: 'right' }, { label: 'Hard limits', w: 1, align: 'right' }, { label: 'Shown', w: 0.5 }],
-    channels.map((c) => [c.channel || '—', c.label, c.unit, c.warn_min != null ? `${fmtNum(c.warn_min)} – ${fmtNum(c.warn_max)}` : '—', c.ok_min != null ? `${fmtNum(c.ok_min)} – ${fmtNum(c.ok_max)}` : '—', c.visible ? 'yes' : 'no']));
-  L.h2('How to read this record');
-  L.para('Days run in order, and only the days that have happened are here. Each holds the schedule with every task\'s status as it stands, the meals as entered, the stores counted that day with the figures as they were written, the power and the steps as they were filed, the mission notes, the crew log with its photographs in place, the states filed for the crew with the value chosen and the sentence the station shows for it, what was sent out, the day\'s sensor summary — each channel\'s lowest, highest and mean reading and how many readings that is — and then every reading of the day: the station\'s channels as one row per instant with a column per channel, the habitat sensor (or the external node) one row per reading, the hardware one table per device, every value as it was stored, times in habitat time to the second. No figure is totalled, projected or carried from one day to the next, and the messages from Earth and the crew\'s replies are not part of this record. "The crew log" gathers every blog entry in full, in order; "Media" lists every file with its SHA-256, which can be checked against the ZIP at /media/export.zip with sha256sum. The same readings, as the station received them — one JSON file per pull, with the stores and figures as they changed and each day\'s summary — are in the readings log, downloadable whole at /archive/readings.zip.', { size: 9 });
+  const ha = require('./home-assistant');
+  const devices = safe(() => ha.sensors(), []) || [];
+  const map = safe(() => ha.habitatMap(), {}) || {};
+  // the oxygen sensor as the Sensors tab finds it among the hardware (public.js, oxygenSensor); the habitat sensor's
+  // entity named only when it is read through Home Assistant, not from the external node
+  const o2 = devices.find((d) => /(^|[^a-z])o2([^a-z]|$)|oxygen/i.test(`${d.id} ${d.label}`));
+  const viaHa = critical.source() === 'home-assistant';
+  const from = (k) => (k === 'o2' ? (o2 ? `the hardware\nsensor.${o2.id}` : 'the hardware') : viaHa && map[k] ? `${habitatSource()}\nsensor.${map[k]}` : habitatSource());
+  L.h3('The instruments · as the Sensors tab shows them', { keep: 70 });
+  // the widths in points (the shares of the table's width add up to it): the longest entity id on one line
+  L.table([{ label: 'Instrument', w: 116, font: 'bold' }, { label: 'Unit', w: 30 }, { label: 'Scale', w: 70 }, { label: 'Limit', w: 78 }, { label: 'Read from', w: 197.28 }],
+    INSTRUMENTS.map((x) => [x.name, x.unit, x.scale, x.limit || '—', from(x.k)]), { size: 8 });
+  if (devices.length) {
+    L.h3('The habitat hardware', { keep: 70 });
+    L.table([{ label: 'Device', w: 1.6, font: 'bold' }, { label: 'Unit', w: 0.5 }, { label: 'Kind', w: 0.7 }, { label: 'Entity', w: 2.2, font: 'mono' }],
+      devices.map((d) => [d.label, d.unit || '', d.kind === 'counter' ? 'meter' : 'gauge', `sensor.${d.id}`]), { size: 8 });
+  }
 }
 
 /** One mission day, whole. */
@@ -364,10 +393,10 @@ function daySection(L, G, r, { asChapter = true } = {}) {
   const title = r.rehearsal ? `NOW · ${longDate(r.date)} · rehearsal, not the record` : `Day ${ddd(n)} · ${longDate(r.date)}`;
   if (asChapter) { L.section = title; L.newPage(); L.pdf.bookmark(title, L.pageIndex, 40, 1); L.pdf.rect(L.page, M.left, L.y, CW, 3, { fill: n === today || r.rehearsal ? ORANGE : INK }); L.y += 26; for (const line of L.pdf.wrap(title, 'bold', 22, CW)) { L.pdf.text(L.page, M.left, L.y, line, { font: 'bold', size: 22 }); L.y += 26; } L.y += 4; }
   else L.h1(title);
-  const status = r.rehearsal ? (st.phase === 'PRE_LAUNCH' ? 'before the run' : 'rehearsal') : n < today ? (r.sealed ? 'sealed' : 'past, not yet sealed') : 'today — in progress';
+  const status = r.rehearsal ? (st.phase === 'PRE_LAUNCH' ? 'before the run' : 'a rehearsal against made-up dates') : n < today ? (r.sealed ? 'sealed' : 'past, not yet sealed') : 'today — in progress';
   const written = r.officers.filter((o) => o.entry).length + r.officers.reduce((n, o) => n + (o.reports.length ? 1 : 0), 0);
-  L.para(`${r.rehearsal ? `NOW — today, ${st.today}${st.phase === 'PRE_LAUNCH' ? ', before the run' : ' — a rehearsal against made-up dates'}` : `Mission day ${ddd(n)} of ${ddd(st.totalDays)}`} · ${status} · ${written} daily ${written === 1 ? 'blog' : 'blogs'} · ${r.moods.length} ${r.moods.length === 1 ? 'state' : 'states'} filed · ${r.media.length} ${r.media.length === 1 ? 'file' : 'files'} sent out · ${r.readings.count.toLocaleString('en-GB')} ${r.readings.count === 1 ? 'reading' : 'readings'}`, { color: GREY, size: 8.5, after: 10 });
-  if (r.rehearsal) L.para(`REHEARSAL, NOT THE RECORD. A day's record built for today: today's readings from every source and the states filed today, and everything mission control has filed under NOW — its schedule and meals, the blogs and reports, the counts, figures, power and media — kept apart from the run's days. ${st.phase === 'PRE_LAUNCH' ? `This chapter disappears on ${st.startLabel}, when day 001 takes its place.` : 'This chapter exists only while the station rehearses against made-up dates.'}`, { font: 'italic', color: ORANGE, size: 8.5, after: 10 });
+  L.para(`${r.rehearsal ? `NOW — today, ${st.today}` : `Mission day ${ddd(n)} of ${ddd(st.totalDays)}`} · ${status} · ${written} daily ${written === 1 ? 'blog' : 'blogs'} · ${r.moods.length} ${r.moods.length === 1 ? 'state' : 'states'} filed · ${r.readings.count.toLocaleString('en-GB')} ${r.readings.count === 1 ? 'reading' : 'readings'}`, { color: GREY, size: 8.5, after: 10 });
+  if (r.rehearsal) L.para(`REHEARSAL, NOT THE RECORD. A day's record built for today: today's readings from every source and the states filed today, and everything mission control has filed under NOW — its schedule and meals, the blogs and reports, the counts, figures and power — kept apart from the run's days. ${st.phase === 'PRE_LAUNCH' ? `This chapter disappears on ${st.startLabel}, when day 001 takes its place.` : 'This chapter exists only while the station rehearses against made-up dates.'}`, { font: 'italic', color: ORANGE, size: 8.5, after: 10 });
   if (r.isEmpty) { L.para('Nothing was recorded on this day.', { font: 'italic', color: GREY }); return; }
   const day = r.day;
   const placed = new Set();
@@ -390,8 +419,8 @@ function daySection(L, G, r, { asChapter = true } = {}) {
     }
     L.h3('Crew state', { keep: 60 });
     if (o.states.length) {
-      L.table([{ label: 'Time', w: 0.55, font: 'mono' }, { label: 'Value (0 calm – 100 angry)', w: 1.2, align: 'right' }, { label: 'Condition', w: 0.8 }, { label: 'Shown on the station as', w: 2.3 }, { label: 'Activity', w: 1 }, { label: 'Filed by', w: 0.7 }],
-        o.states.map((m) => { const t = moodLib.translate(m); return [localHM(m.effective_at, st), asIs(m.calm_tense), t.condition, t.lines[0] || '', m.activity || '', m.set_by || '']; }), { size: 8 });
+      L.table([{ label: 'Time', w: 0.55, font: 'mono' }, { label: 'Value (0 thrilled – 100 angry)', w: 1.2, align: 'right' }, { label: 'Condition', w: 0.8 }, { label: 'Shown on the station as', w: 2.6 }, { label: 'Filed by', w: 0.8 }],
+        o.states.map((m) => { const t = moodLib.translate(m); return [localHM(m.effective_at, st), asIs(m.calm_tense), t.condition, t.lines[0] || '', m.set_by || '']; }), { size: 8 });
     } else L.para('No state filed for this day.', { font: 'italic', color: GREY, size: 9 });
   }
   if (r.reportsUnassigned.length) {
@@ -402,12 +431,10 @@ function daySection(L, G, r, { asChapter = true } = {}) {
     L.h2('Mission notes');
     for (const x of r.notesOther) { L.eyebrow(x.kind); entryBlock(L, G, x.body, [], { size: 9.5, used: placed }); }
   }
-  const loose = r.media.filter((m) => !placed.has(m.id));
-  if (loose.length) { L.h2('Also sent out that day'); for (const m of loose) { placeMedia(L, G, m); placed.add(m.id); } }
 
   /* ---- the Habitat tab, as it stands --------------------------------- */
   L.h2('Habitat', { keep: 100 });
-  L.para('The Habitat tab of mission control for this day, as it stands at the time of this record: the schedule, the meals, the steps, the inventory levels and the power. The same tab is written to the readings log automatically at the end of each day (the daily record, /archive/readings.zip).', { color: GREY, size: 8.5 });
+  L.para('The Habitat tab of mission control for this day, as it stands at the time of this record: the schedule, the meals, the steps, the power generated, the inventory levels and the power consumed. The same tab is written to the readings log automatically at the end of each day (the daily record, /archive/readings.zip).', { color: GREY, size: 8.5 });
   L.h3('Schedule', { keep: 70 });
   if (day && day.tasks.length) {
     L.table([{ label: 'Time', w: 0.5, font: 'mono' }, { label: 'Task', w: 3.5 }, { label: 'Status', w: 0.7 }],
@@ -425,6 +452,13 @@ function daySection(L, G, r, { asChapter = true } = {}) {
     if (r.figures.steps != null) rows.push(['Crew (as filed)', asIs(r.figures.steps)]);
     L.table([{ label: 'Officer', w: 1.6, font: 'bold' }, { label: 'Steps taken', w: 1, align: 'right' }], rows);
   } else L.para('Not filed for this day.', { font: 'italic', color: GREY, size: 9 });
+  // the power the bike generated (the Sensors tab's Power generated tile): the rounds pedalled and the battery charged —
+  // as filed, or else the rounds' share of a full charge, and said so
+  L.h3('Power generated', { keep: 60 });
+  if (r.bike) {
+    L.table([{ label: 'Rounds pedalled', w: 1, align: 'right' }, { label: 'Battery charged', w: 1, align: 'right' }, { label: 'Battery figure', w: 1.6 }],
+      [[asIs(r.bike.rounds), r.bike.batteryPercent == null ? '—' : `${+Number(r.bike.batteryPercent).toFixed(1)} %`, r.bike.batteryPercent == null ? '—' : r.bike.batteryFiled ? 'filed' : 'from the rounds']]);
+  } else L.para('Not filed for this day.', { font: 'italic', color: GREY, size: 9 });
   L.h3('Inventory levels', { keep: 90 });
   if (r.stores.length) {
     L.para('As the tab shows them: available at the start of the day, used today, left for the future. "counted" means the figure was filed for this day; "carried" means it follows from the day before at its draw.', { color: GREY, size: 8 });
@@ -440,11 +474,11 @@ function daySection(L, G, r, { asChapter = true } = {}) {
 
   /* ---- the sensors: names as on the dashboard ------------------------ */
   L.h2('Habitat sensors', { keep: 100 });
-  L.para(`Every channel as it is named on the dashboard: ${habitatSource()} (the Habitat panel), the station's own channels, and the habitat hardware (the Habitat hardware panel). First each channel's lowest, highest and mean reading over the day and how many readings that is; then every reading, as stored.`, { color: GREY, size: 8.5 });
+  L.para(`Every channel as the Sensors tab names it: ${habitatSource()}'s instruments, the habitat hardware (the oxygen among it) and any channel posted to the station itself. First each channel's lowest, highest and mean reading over the day and how many readings that is; then every reading, as stored — ${habitatSource()}'s to three decimals at the most.`, { color: GREY, size: 8.5 });
   if (r.external.length) {
     L.h3(`Habitat · ${habitatSource()}`, { keep: 70 });
     L.table([{ label: 'Channel', w: 2, font: 'bold' }, { label: 'Low', w: 0.7, align: 'right' }, { label: 'High', w: 0.7, align: 'right' }, { label: 'Mean', w: 0.7, align: 'right' }, { label: 'Unit', w: 0.6 }, { label: 'Readings', w: 0.7, align: 'right' }],
-      r.external.map((h) => [h.label, fmtNum(h.low, 2), fmtNum(h.high, 2), fmtNum(h.mean, 2), h.unit || '', h.samples]));
+      r.external.map((h) => [h.label, dec3(h.low), dec3(h.high), dec3(h.mean), h.unit || '', h.samples]));
   }
   if (r.habitat.length) {
     L.h3('Habitat · the station\'s channels', { keep: 70 });
@@ -458,13 +492,6 @@ function daySection(L, G, r, { asChapter = true } = {}) {
   }
   if (!r.external.length && !r.habitat.length && !(r.hardware || []).length) L.para('No reading was stored for this day.', { font: 'italic', color: GREY, size: 9 });
   readingsSection(L, r.readings);
-
-  /* ---- what was sent out ---------------------------------------------- */
-  if (r.media.length) {
-    L.h2('Media sent out');
-    L.table([{ label: 'File', w: 2, font: 'bold' }, { label: 'Kind', w: 0.6 }, { label: 'Size', w: 0.6, align: 'right' }, { label: 'Officer', w: 1.2 }, { label: 'Caption', w: 1.8 }, { label: 'SHA-256 (full hash in Media)', w: 1.2, font: 'mono' }],
-      r.media.map((m) => [m.filename, m.kind, fmtBytes(m.bytes), m.designation ? shown(m.designation) : '—', m.caption || '', m.sha256.slice(0, 16) + '…']), { size: 7.5 });
-  }
 }
 
 /**
@@ -492,7 +519,7 @@ function readingsSection(L, R) {
   if (R.external.rows.length) {
     L.h3(`Habitat · ${habitatSource()} · every reading · ${R.external.readings.toLocaleString('en-GB')} readings`, { keep: 70 });
     const cols = [{ label: 'Time', w: 0.9, font: 'mono' }, ...R.external.columns.map((c) => ({ label: `${c.label} ${c.unit}`.trim(), w: 1, align: 'right' }))];
-    L.table(cols, R.external.rows.map((row) => [row.at, ...R.external.columns.map((c) => asIs(row.values[c.key]))]), opts);
+    L.table(cols, R.external.rows.map((row) => [row.at, ...R.external.columns.map((c) => dec3(row.values[c.key]))]), opts);
   }
   for (const h of R.hardware) {
     L.h3(`Habitat hardware · ${h.label} · every reading · ${h.rows.length.toLocaleString('en-GB')} readings`, { keep: 70 });
@@ -599,16 +626,14 @@ function fullRecord() {
 
   missionSection(L, G); sec('The mission');
   L.h1('The days'); sec('The days');
-  L.para(G.upTo === 0
-    ? `The run opens ${st.startLabel}. No day has been recorded yet; the ${st.totalDays} days are listed below by date.${G.rehearsal ? ' Until then NOW — a rehearsal chapter for today, built from what mission control has filed under NOW and what the sensors sent today — follows the list, marked, and not part of the record.' : ''}`
-    : `${G.upTo} of ${st.totalDays} days recorded, each whole: the schedule as it was run, the meals, the stores counted that day, the power and the crew's figures as filed, the mission notes, the crew log with its photographs, the states filed, what was sent out, the day's sensor summary and every reading of the day. A day that has not happened has no chapter.${G.rehearsal ? ' This is a rehearsal against made-up dates: NOW — a chapter for today, built from what mission control has filed under NOW — follows the days, marked, and not part of the record.' : ''}`, { color: GREY, size: 8.5 });
   const rows = [];
   for (let n = 1; n <= st.totalDays; n++) {
     const r = G.days[n - 1];
-    if (r) rows.push([ddd(n), longDate(r.date), n < G.today ? (r.sealed ? 'sealed' : 'past') : 'today', G.written[n - 1], r.moods.length, r.media.length, r.habitat.length, r.readings.count.toLocaleString('en-GB')]);
-    else rows.push([ddd(n), longDate(mission.dateForDay(n)), 'not yet', '', '', '', '', '']);
+    // the channels: every one with a reading that day — the habitat sensor's, the hardware's, the station's own
+    if (r) rows.push([ddd(n), longDate(r.date), n < G.today ? (r.sealed ? 'sealed' : 'past') : 'today', G.written[n - 1], r.moods.length, r.external.length + (r.hardware || []).length + r.habitat.length, r.readings.count.toLocaleString('en-GB')]);
+    else rows.push([ddd(n), longDate(mission.dateForDay(n)), 'not yet', '', '', '', '']);
   }
-  L.table([{ label: 'Day', w: 0.5, font: 'mono' }, { label: 'Date', w: 1.6 }, { label: 'State', w: 1 }, { label: 'Entries', w: 0.6, align: 'right' }, { label: 'States filed', w: 0.7, align: 'right' }, { label: 'Files', w: 0.5, align: 'right' }, { label: 'Channels', w: 0.6, align: 'right' }, { label: 'Readings', w: 0.7, align: 'right' }], rows);
+  L.table([{ label: 'Day', w: 0.5, font: 'mono' }, { label: 'Date', w: 1.6 }, { label: 'State', w: 1 }, { label: 'Entries', w: 0.6, align: 'right' }, { label: 'States filed', w: 0.7, align: 'right' }, { label: 'Channels', w: 0.6, align: 'right' }, { label: 'Readings', w: 0.7, align: 'right' }], rows);
   for (const r of G.days) { const title = `Day ${ddd(r.missionDay)} · ${longDate(r.date)}`; daySection(L, G, r); sec(title, 1); }
   if (G.rehearsal) { daySection(L, G, G.rehearsal); sec(rehearsalTitle, 1); }
   crewLogSection(L, G); sec('The crew log');
@@ -717,7 +742,7 @@ function messagesCsv() {
   const head = ['id', 'callsign', 'mission_day', 'when', 'submitted_at', 'arrived_at', 'state', 'flagged', 'tags', 'message',
     'reply', 'replied_by', 'reply_written_at', 'reply_published_at', 'reviewed_at', 'reviewed_by', 'reject_reason', 'light_seconds', 'distance_au'];
   const rows = allMessages().map((m) => [m.id, m.callsign, m.mission_day, m.mission_day < 1 ? 'NOW · before the run' : 'the run', m.submitted_at, m.arrival_at, m.state, m.flagged ? 1 : 0, m.tags, m.body,
-    m.response_body, m.responder, m.response_written, m.response_at, m.reviewed_at, m.reviewed_by, m.reject_reason, m.light_seconds, m.distance_au]);
+    m.response_body, m.responder ? shown(m.responder) : '', m.response_written, m.response_at, m.reviewed_at, m.reviewed_by, m.reject_reason, m.light_seconds, m.distance_au]);
   return [head, ...rows].map((r) => r.map(cell).join(',')).join('\r\n') + '\r\n';
 }
 
@@ -731,7 +756,7 @@ function messagesJson() {
     counts: data.counts(),
     messages: allMessages().map((m) => ({ id: m.id, callsign: m.callsign, missionDay: m.mission_day, rehearsal: m.mission_day < 1, submittedAt: m.submitted_at, arrivedAt: m.arrival_at,
       state: m.state, flagged: !!m.flagged, tags: (m.tags || '').split(',').filter(Boolean), body: m.body,
-      reply: m.response_body ? { body: m.response_body, by: m.responder, writtenAt: m.response_written, publishedAt: m.response_at } : null,
+      reply: m.response_body ? { body: m.response_body, by: m.responder ? shown(m.responder) : null, writtenAt: m.response_written, publishedAt: m.response_at } : null,
       reviewedAt: m.reviewed_at, reviewedBy: m.reviewed_by, rejectReason: m.reject_reason, lightSeconds: m.light_seconds, distanceAu: m.distance_au })),
   };
 }

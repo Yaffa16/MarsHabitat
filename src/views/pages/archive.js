@@ -101,8 +101,7 @@ function contents(ctx, { days, counts, entryCounts, rehearsal = null, tally = { 
           ${d.media ? `<a href="/media/day/${d.missionDay}/export.zip" download>Media</a>` : ''}</span>`
           : '<span style="color:var(--faint)">not yet</span>'}</td>
       </tr>`).join('')}</tbody>
-    </table></div>
-    ${rehearsal ? `<p class="note" style="margin-top:10px"><b>NOW</b> is today${ctx.mission.phase === 'PRE_LAUNCH' ? ', before the run' : ' — this station rehearses against made-up dates'} — the rehearsal day, mission day 0. Its record is built the way a run day's is: today's readings from every source and the states filed today, the messages that came in before the run, and everything mission control files under <b>NOW</b> — the day picker's first stop on every tab — its schedule and meals, the Commander Log and the two reports, the counts, figures, power and media. Nothing of it touches the run's days. It is marked as a rehearsal wherever it appears — in the full record, the data, the sensor data and the messages — is not part of the record, and ${ctx.mission.phase === 'PRE_LAUNCH' ? 'disappears on the first day of the run' : 'is there only while the station rehearses against made-up dates'}.</p>` : ''}`)}
+    </table></div>`)}
 
   ${panel('THE TALLY', `
     ${eyebrow('Messages received and replied, and visitors — mission control’s figures')}
@@ -171,8 +170,7 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
       return `<div style="border-bottom:1px solid var(--rule);padding:10px 0">
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
           <span class="badge">${esc(t.condition)}</span>
-          <span class="note" style="font-size:11px">${esc(m.effective_at.slice(11, 16))} UTC
-            ${m.activity ? `· ${esc(m.activity)}` : ''} · filed by ${esc(m.set_by)}</span>
+          <span class="note" style="font-size:11px">${esc(m.effective_at.slice(11, 16))} UTC · filed by ${esc(m.set_by)}</span>
         </div>
         <ul style="margin:6px 0 0;padding-left:18px">
           ${t.axes.map((a) => `<li class="note">${esc(a.label)} · value filed ${esc(String(a.value))} (${esc(a.low.toLowerCase())} 0 … ${esc(a.high.toLowerCase())} 100) · shown as “${esc(a.text)}”</li>`).join('')}

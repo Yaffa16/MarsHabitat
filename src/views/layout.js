@@ -186,14 +186,17 @@ function pageNav(current, T = same) {
 
 /* The bottom bar a phone gets (public/aura.css shows it under 760 px in
    portrait and nowhere else): five keys under the thumb — Home (the landing
-   page), Dashboard (/dashboard), Write (the orange key, the station's one
-   action — the messages page, /messages, its composer open), Media, and
-   About, the page of the reading matter — About, What this is, Who we are
-   (/about, pages/info.js). */
+   page), Dashboard (/dashboard), Messages (the orange key in the middle, with
+   the paper plane it carried as Write — the Message Board, /write, whose own
+   Write to the Crew key raises the composer; it was Write, with the composer
+   open, until 13 October: "on mobile the Write logo should read something
+   else, and it should open the Message Board"),
+   Media, and About, the page of the reading matter — About, What this is, Who
+   we are (/about, pages/info.js). */
 const TAB_ICONS = {
   home: '<path d="M3.5 11.5L12 4l8.5 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-6h4v6"/>',                                    // a house
   dashboard: '<rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/>',
-  write: '<path d="M3 11l18-8-8 18-2-8z"/><path d="M11 13l10-10"/>',
+  board: '<path d="M3 11l18-8-8 18-2-8z"/><path d="M11 13l10-10"/>',   // the paper plane the key carried as Write (13 October: "keep the Messages text but have the previous logo")
   media: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
   more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
 };
@@ -203,7 +206,7 @@ function tabbar(current, T = same) {
   return `<nav class="tabbar" aria-label="${esc(T('The station, page by page'))}">
     ${tab('home', '/', 'Home', landing ? ' is-on' : '')}
     ${tab('dashboard', '/dashboard', 'Dashboard', current === '/dashboard' ? ' is-on' : '')}
-    ${tab('write', '/write#write', 'Write', current === '/write' ? ' is-on' : '')}
+    ${tab('board', '/write', 'Messages', current === '/write' ? ' is-on' : '')}
     ${tab('media', '/media', 'Media', current === '/media' ? ' is-on' : '')}
     ${tab('more', '/about', 'About', current === '/about' ? ' is-on' : '')}
   </nav>`;
@@ -234,9 +237,10 @@ function consent(current, T = same, callsign = '') {
       ${callsign ? `<input type="hidden" name="callsign" value="${esc(callsign)}">` : ''}
       <h2 id="consent-title">${T('Welcome')}${callsign ? ` <b class="consent-cs">${esc(callsign)}</b>` : ''}</h2>
       <p id="consent-text">${T('To make sure you talk to the Mars habitat under the same call sign every time, please accept. If you do not, you will be given a new name on each visit and cannot see your own messages.')}</p>
+      <!-- Agree at the left, Reject at the right (13 October: "put the Accept on the left and reject on right") -->
       <div class="consent-keys">
-        <button type="submit" name="choice" value="no" class="btn">${T('Reject')}</button>
         <button type="submit" name="choice" value="yes" class="btn primary">${T('Agree and close')}</button>
+        <button type="submit" name="choice" value="no" class="btn">${T('Reject')}</button>
       </div>
       <a class="consent-more" href="https://zkm.de/en/privacy-policy" target="_blank" rel="noopener">${T('Privacy policy')}</a>
     </form>
@@ -280,11 +284,12 @@ function clientTable(lang) {
 }
 
 /* The composer's pop-up (src/views/pages/public.js, portal), on every public page: a #write door on the page opens the
-   window over it (public/write.js) — the header's Write key opens it on the Write page —, a message crosses in it, and
-   its Message Board key leads to the wall. A phone keeps its bar's Write key, which leads to the Write page's dock
-   (tabbar.js). The Write key that floated at the foot of the window, at the right, is gone (October: "remove the
-   floating Write to the crew button"). What is crossing for this visitor is read here unless the page hands it over
-   (the Write page, with a refused post's word and draft). */
+   window over it (public/write.js) — on the Message Board its own Write to the Crew key (public.js, boardWall) —, a
+   message crosses in it, and its Message Board key leads to the wall. A phone has the window as the Write page's dock,
+   raised by the board's key (tabbar.js). No key floats at the foot of the window: one stood there until October ("remove
+   the floating Write to the crew button"), and again for an hour on 13 October ("add a floating Write to the Crew button
+   at the bottom", then "remove the floating Write to the Crew button"). What is crossing for this visitor is read here
+   unless the page hands it over (the Write page, with a refused post's word and draft). */
 function writeKit(ctx, { inFlight, error = null, draft = '' } = {}) {
   const T = ctx.T || same;
   if (inFlight === undefined) {

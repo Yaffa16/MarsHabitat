@@ -1,1 +1,126 @@
-{}
+{
+  "0": [
+    {
+      "slot": "BREAKFAST",
+      "name": "Bohnen Schwarz-Weiss Salat mit Mais",
+      "recipe": "bohnen-schwarz-weiss-salat-mit-mais",
+      "components": "",
+      "kcal": 543,
+      "water": 0,
+      "prep": 0,
+      "energy": 0,
+      "nutrients": {
+        "protein_g": 24.02,
+        "fat_g": 23.72,
+        "carb_g": 43.07,
+        "fiber_g": 26.52,
+        "sugar_g": 10.05,
+        "sodium_mg": 895.98
+      },
+      "co2e_kg": 0.5111,
+      "water_footprint_l": 1431.3
+    },
+    {
+      "slot": "LUNCH",
+      "name": "Daal – Rote Linsen Curry mit Kokosmilch",
+      "recipe": "daal-rote-linsen-curry-mit-kokosmilch",
+      "components": "",
+      "kcal": 622,
+      "water": 0,
+      "prep": 30,
+      "energy": 0,
+      "nutrients": {
+        "protein_g": 23.55,
+        "fat_g": 33.97,
+        "carb_g": 44.33,
+        "fiber_g": 13.88,
+        "sugar_g": 8.12,
+        "sodium_mg": 154.31
+      },
+      "co2e_kg": 0.268,
+      "water_footprint_l": 853.5
+    },
+    {
+      "slot": "DINNER",
+      "name": "Chili Non Carne",
+      "recipe": "chili-non-carne",
+      "components": "",
+      "kcal": 468,
+      "water": 0,
+      "prep": 20,
+      "energy": 0,
+      "nutrients": {
+        "protein_g": 22.85,
+        "fat_g": 16.55,
+        "carb_g": 37.88,
+        "fiber_g": 20,
+        "sugar_g": 18.41,
+        "sodium_mg": 1425.89
+      },
+      "co2e_kg": 0.5533,
+      "water_footprint_l": 979
+    }
+  ],
+  "1": [
+    {
+      "slot": "BREAKFAST",
+      "name": "Chili Non Carne",
+      "recipe": "chili-non-carne",
+      "components": "",
+      "kcal": 468,
+      "water": 0,
+      "prep": 20,
+      "energy": 0,
+      "nutrients": {
+        "protein_g": 22.85,
+        "fat_g": 16.55,
+        "carb_g": 37.88,
+        "fiber_g": 20,
+        "sugar_g": 18.41,
+        "sodium_mg": 1425.89
+      },
+      "co2e_kg": 0.5533,
+      "water_footprint_l": 979
+    },
+    {
+      "slot": "LUNCH",
+      "name": "Pfannenbrot",
+      "recipe": "pfannenbrot",
+      "components": "",
+      "kcal": 421,
+      "water": 0,
+      "prep": 0,
+      "energy": 0,
+      "nutrients": {
+        "protein_g": 11.76,
+        "fat_g": 12.27,
+        "carb_g": 63.09,
+        "fiber_g": 4.69,
+        "sugar_g": 3.37,
+        "sodium_mg": 408.31
+      },
+      "co2e_kg": 0.2566,
+      "water_footprint_l": 315.7
+    },
+    {
+      "slot": "DINNER",
+      "name": "Pfannenbrot",
+      "recipe": "pfannenbrot",
+      "components": "",
+      "kcal": 421,
+      "water": 0,
+      "prep": 0,
+      "energy": 0,
+      "nutrients": {
+        "protein_g": 11.76,
+        "fat_g": 12.27,
+        "carb_g": 63.09,
+        "fiber_g": 4.69,
+        "sugar_g": 3.37,
+        "sodium_mg": 408.31
+      },
+      "co2e_kg": 0.2566,
+      "water_footprint_l": 315.7
+    }
+  ]
+}

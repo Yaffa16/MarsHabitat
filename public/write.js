@@ -1,9 +1,9 @@
 /* MARS!platz — the composer's pop-up (src/views/layout.js, writeKit; src/views/pages/public.js, portal): the composer
  * in a box over the page, on every public page. On a wider screen (a phone has the box as the Write page's dock at the
  * foot of the screen, public/tabbar.js — nothing here runs there):
- *  - any #write door on the page opens it, with the hand in its box (the note's, the chat's); /write#write — the
- *    header's Write key — opens the Write page with it open, and on the Write page that key opens it in place (the
- *    Write key that floated at the foot of the window is gone, October: "remove the floating Write to the crew button");
+ *  - any #write door on the page opens it, with the hand in its box (the note's, the chat's, the Message Board's own
+ *    Write to the Crew key — public.js, boardWall, 13 October; no key floats at the foot of the window);
+ *    /write#write opens the Write page with it open, and on the Write page that address opens it in place;
  *  - its cross, Escape, and a click on the page beside it close it — the words written stay, the box only folds away;
  *  - a message sent from it crosses in it (composer.js swaps the dial in), with a Message Board key: on the Write page
  *    the key closes the box and brings the wall into view, where the note just sent stands at the head; elsewhere it

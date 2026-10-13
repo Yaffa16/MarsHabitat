@@ -2045,9 +2045,10 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
   body.landing .tab.is-on, body.landing .tab.is-open { color: var(--cobalt); }
   body.landing .tab span { white-space: nowrap; }
   html[lang="fr"] body.landing .tab span { font-size: 9.5px; letter-spacing: .02em; white-space: normal; text-align: center; line-height: 1.1; }                     /* "Tableau de bord" on one line */
-  body.landing .tab-write .tab-ic { width: 46px; height: 46px; padding: 12px; box-sizing: border-box; border-radius: 999px; background: linear-gradient(180deg, #ff8a3d, #ff5a1f); stroke: #0f1540; box-shadow: 0 14px 28px -12px rgba(255,70,0,.8); margin-top: -20px; }
-  body.landing .tab-write span { color: var(--mars-ink); }
-  body.landing .tab-write[aria-expanded="true"] .tab-ic { box-shadow: 0 0 0 4px rgba(255,90,31,.22), 0 14px 28px -12px rgba(255,70,0,.8); }   /* the pop-up is out */
+  body.landing .tab-board .tab-ic { width: 46px; height: 46px; padding: 12px; box-sizing: border-box; border-radius: 999px; background: linear-gradient(180deg, #ff8a3d, #ff5a1f); stroke: #0f1540; box-shadow: 0 14px 28px -12px rgba(255,70,0,.8); margin-top: -20px; }   /* the middle key, Messages: the Message Board (13 October; Write until then) */
+  body.landing .tab-board span { color: var(--mars-ink); }
+  html[lang="de"] body.landing .tab-board span { font-size: 9.5px; letter-spacing: .01em; }   /* "Nachrichten" within its key */
+  body.landing .tab-board.is-on .tab-ic { box-shadow: 0 0 0 4px rgba(255,90,31,.22), 0 14px 28px -12px rgba(255,70,0,.8); }   /* on the board */
 }
 /* narrower phones: the bar's first row keeps to one line with everything a little smaller; the narrowest do without the
    sol pill (the peek tile carries the sol) */
@@ -2112,7 +2113,7 @@ body.landing .dpanel-title { flex-wrap: wrap; row-gap: 8px; }
   body.landing .masthead-btn { box-shadow: 0 8px 20px -12px rgba(255,70,0,.7); }
   body.landing .masthead-btn.masthead-btn-live { box-shadow: none; background: #fff; }
   :root[data-theme="dark"] body.landing .masthead-btn.masthead-btn-live { background: var(--tile); }
-  body.landing .tab-write .tab-ic { box-shadow: 0 6px 14px -8px rgba(255,70,0,.8); }
+  body.landing .tab-board .tab-ic { box-shadow: 0 6px 14px -8px rgba(255,70,0,.8); }
   /* 3 · the habitat's keys: a stroke instead of a filtered shadow (an SVG filter is drawn on the processor, every time) */
   body.landing .dome-hex polygon, body.landing .dome-pod, :root[data-theme="dark"] body.landing .dome-pod { filter: none; }
   body.landing .dome-pod { stroke: rgba(var(--cobalt-rgb),.35); stroke-width: 1.5; }
@@ -2541,3 +2542,165 @@ body.landing .lightbox .lb-close:hover, body.landing .lightbox .lb-close:active,
   body.landing .popup-close, body.landing .sky-note-x, body.landing .lightbox .lb-close, html.js body.landing.messages .dev-close { width: 40px; height: 40px; min-width: 40px; min-height: 40px; max-width: 40px; max-height: 40px; }
   body.landing .lightbox .lb-close { top: -8px; right: -8px; }
 }
+
+/* ------------------------------------------------------------------ the Sensors tab in groups (13 October)
+   The dashboard's one Sensors tab, its instruments gathered under headings ("keep everything inside the Sensors tab, not
+   individual tabs; only inside make bigger groups like Energy, Life support, Resources to have a clarity of everything" —
+   public.js, dashboardPanels, grouped): Life support, Resources, Energy, Crew, More-than-human and Habitat hardware
+   (while they have a chart), Trends. A heading: its sign in a cobalt disc, its name, a line on what is under it; a
+   hairline between the groups. Each group's tiles on four tracks (two in a narrower panel, one on a phone), its charts
+   the group's width, one under the other (hardware.js draws them for that width). The rules name the panel by its id, so
+   they outrank the bento's (#hbt-bento, above) and the old dress's (station.css, .dpanel .hbt .t-…). The installation's
+   screens keep the bento. */
+body.landing #sensors.is-grouped .hbt-group { margin: 0; min-width: 0; }
+body.landing #sensors.is-grouped .hbt-group:not(:first-of-type) { margin-top: 30px; padding-top: 24px; border-top: 1px solid var(--hair); }
+body.landing #sensors.is-grouped .hbt-group-head { display: flex; align-items: center; gap: 14px; margin: 0 0 16px; }
+body.landing #sensors.is-grouped .hbt-group-ic { flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--cobalt-fill); color: #fff; box-shadow: 0 10px 20px -12px rgba(47,69,232,.7); }
+body.landing #sensors.is-grouped .hbt-group-ic svg { display: block; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
+body.landing #sensors.is-grouped .hbt-group-t { min-width: 0; }
+body.landing #sensors.is-grouped .hbt-group-t h3 { margin: 0; font-family: var(--display); font-size: 22px; font-weight: 600; letter-spacing: -.012em; line-height: 1.15; color: var(--ink); }
+body.landing #sensors.is-grouped .hbt-group-t p { margin: 3px 0 0; font-family: var(--display); font-size: 15px; line-height: 1.4; color: var(--dim); text-wrap: pretty; }
+body.landing #sensors.is-grouped .hbt-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: min(22px, calc(2.4 * var(--u))); }
+body.landing #sensors.is-grouped .hbt-grid > * { grid-column: span 1; grid-row: auto; min-width: 0; order: 0; }
+body.landing #sensors.is-grouped .hbt-grid > .t-fig, body.landing #sensors.is-grouped .hbt-grid > .t-bike, body.landing #sensors.is-grouped .hbt-grid > .t-pwr { grid-column: span 2; }
+body.landing #sensors.is-grouped .hbt-grid > .t-res, body.landing #sensors.is-grouped .hbt-grid > .hbt-notes, body.landing #sensors.is-grouped .hbt-grid > .hw-slot { grid-column: 1 / -1; }
+body.landing #sensors.is-grouped .hbt-grid > .t-viz-city { grid-column: span 2; }                 /* Crew: the steps and Karlsruhe, two tracks each (no Astronauts tracked since 13 October) */
+body.landing #sensors.is-grouped .hbt-notes:empty, body.landing #sensors.is-grouped .hw-slot:empty { display: none; }
+body.landing #sensors.is-grouped .hw-notes { margin: 0 0 18px; }
+body.landing #sensors.is-grouped .hw-slot .hw-charts { grid-template-columns: minmax(0, 1fr); gap: min(22px, calc(2.4 * var(--u))); }
+body.landing #sensors.is-grouped .hw-slot > .empty { margin: 0; }
+/* the stores: a ring a store across the group, as the bento has them */
+body.landing #sensors.is-grouped .t-res { padding-bottom: 30px; }
+body.landing #sensors.is-grouped .t-res .gauges.rounds { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px 20px; }
+body.landing #sensors.is-grouped .t-res .gauge.round { width: auto; min-width: 0; }
+/* the trends under their heading, the hairline above it the group's */
+body.landing #sensors.is-grouped .hbt-trends-in { margin: 0; padding: 0; border: 0; }
+body.landing #hbt-groups.is-live .hw-line, body.landing #hbt-groups.is-live .hw-area, body.landing #hbt-groups.is-live .hw-tag { animation: none; }   /* a reading swapped in later is simply there (hardware.js) */
+@container hbt (max-width: 739px) {
+  body.landing #sensors.is-grouped .hbt-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body.landing #sensors.is-grouped .hbt-grid > .t-fig, body.landing #sensors.is-grouped .hbt-grid > .t-bike, body.landing #sensors.is-grouped .hbt-grid > .t-pwr, body.landing #sensors.is-grouped .hbt-grid > .t-viz-city { grid-column: 1 / -1; }
+}
+@container hbt (max-width: 399px) {
+  body.landing #sensors.is-grouped .hbt-grid { grid-template-columns: minmax(0, 1fr); }
+  body.landing #sensors.is-grouped .hbt-grid > * { grid-column: 1 / -1; }
+}
+@media (max-width: 760px), (max-height: 520px) {
+  body.landing #sensors.is-grouped .hbt-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  body.landing #sensors.is-grouped .hbt-grid > * { grid-column: 1 / -1; }
+  body.landing #sensors.is-grouped .hbt-group:not(:first-of-type) { margin-top: 26px; padding-top: 20px; }
+  body.landing #sensors.is-grouped .hbt-group-head { gap: 12px; margin-bottom: 12px; }
+  body.landing #sensors.is-grouped .hbt-group-ic { width: 40px; height: 40px; }
+  body.landing #sensors.is-grouped .hbt-group-ic svg { width: 20px; height: 20px; }
+  body.landing #sensors.is-grouped .hbt-group-t h3 { font-size: 20px; }
+  body.landing #sensors.is-grouped .hbt-group-t p { font-size: 14px; }
+  body.landing #sensors.is-grouped .t-res .gauges.rounds { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; padding-right: 8px; }
+}
+
+/* ------------------------------------------------------------------ Today's Meal as cards (13 October)
+   The dashboard's Today's Meal (public.js, mealCardsBody — "for each meal, show a card with all the nutrients, energy,
+   protein etc."): the day's sum in a band at the head — the energy large, what one serving of each meal carries and what
+   the kitchen used, the day's nutrients — then a card a meal, three across where the folder is wide, one under the
+   other on a phone; the cards of a row keep their parts level (subgrid). A card: the slot and where the meal stands (a
+   chip — served, being served, next, later; planned before the run), the name, what one serving carries, the share of
+   its energy from protein (cobalt), fat (amber) and carbohydrate (Mars) as a bar, its six nutrients, then what it took
+   in the kitchen. In the tiles' dress. */
+body.landing { --mc-p: var(--cobalt-fill); --mc-f: #e8a317; --mc-c: var(--mars); --mc-ok: #1d8a55; --mc-ok-rgb: 43,182,115; }
+:root[data-theme="dark"] body.landing { --mc-f: #f5bf42; --mc-ok: #5fd69a; --mc-ok-rgb: 95,214,154; }
+body.landing #galley.is-cards .dpanel-body { container: mc / inline-size; }
+body.landing .mc-wrap { display: grid; gap: 22px; min-width: 0; }
+body.landing .mc-k { display: block; margin: 0 0 9px; font-family: var(--display); font-size: var(--fs-label); font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+/* the day */
+body.landing .mc-day { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1fr); gap: 18px 30px; padding: 20px 24px 22px; border-radius: 18px;
+  background: linear-gradient(180deg, var(--tile), rgba(var(--cobalt-rgb),.04)); border: 1px solid rgba(var(--cobalt-rgb),.14); }
+body.landing .mc-day-lead, body.landing .mc-day-part { min-width: 0; }
+body.landing .mc-day-part { padding-left: 24px; border-left: 1px solid var(--hair); }
+body.landing .mc-day-kcal { display: block; font-family: var(--display); font-size: 46px; font-weight: 600; letter-spacing: -.03em; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+body.landing .mc-day-kcal small, body.landing .mc-fig b small { margin-left: 4px; font-size: .5em; font-weight: 500; letter-spacing: 0; color: var(--dim); }
+body.landing .mc-day-sub { display: block; margin-top: 9px; font-size: 14px; line-height: 1.4; color: var(--dim); }
+body.landing .mc-day-part .mc-figs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+body.landing .mc-day-nutr { grid-column: 1 / -1; min-width: 0; padding-top: 16px; border-top: 1px solid var(--hair); }
+body.landing .mc-day-nutr .mc-energy { margin-top: 0; }
+body.landing .mc-day-nutr .mc-share-k { display: none; }                                          /* the band's own heading names it */
+body.landing .mc-day-nutr .mc-nutr { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 26px; }
+/* a figure: the value large, its name under it */
+body.landing .mc-figs { display: grid; gap: 12px 16px; }
+body.landing .mc-fig { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+body.landing .mc-fig b { font-family: var(--display); font-size: 22px; font-weight: 600; letter-spacing: -.01em; line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+body.landing .mc-fig span { font-size: 13px; line-height: 1.3; color: var(--dim); -webkit-hyphens: auto; hyphens: auto; overflow-wrap: break-word; }
+body.landing .mc-fig.is-lead b { color: var(--mars-ink); }
+/* the share of the energy: its name, a bar of three parts, the line naming them; then the nutrients — two to a line where
+   a card has room for them, else one */
+body.landing .mc-energy { margin-top: 14px; }
+body.landing .mc-bar { display: flex; gap: 2px; height: 10px; margin: 0 0 9px; border-radius: 999px; overflow: hidden; background: var(--meter-off); }
+body.landing .mc-bar i { display: block; flex: 1 1 0; min-width: 4px; }
+body.landing .mc-p { background: var(--mc-p); }
+body.landing .mc-f { background: var(--mc-f); }
+body.landing .mc-c { background: var(--mc-c); }
+body.landing .mc-share { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 14px; margin: 0; font-size: 13px; line-height: 1.35; color: var(--dim); }
+body.landing .mc-share-k { display: block; margin: 0 0 7px; font-family: var(--display); font-size: 11.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+body.landing .mc-share span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+body.landing .mc-share i { flex: none; width: 9px; height: 9px; border-radius: 50%; }
+body.landing .mc-share b { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+body.landing .mc-nutr { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); column-gap: 18px; margin: 12px 0 0; }
+body.landing .mc-nutr > div { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; min-width: 0; padding: 6px 0; border-bottom: 1px solid var(--hair); }
+body.landing .mc-nutr dt { min-width: 0; font-size: 14px; color: var(--dim); -webkit-hyphens: auto; hyphens: auto; overflow-wrap: break-word; }
+body.landing .mc-nutr dd { margin: 0; font-size: 14.5px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+body.landing .mc-none { margin: 12px 0 0; font-size: 14px; line-height: 1.45; color: var(--dim); }
+/* the cards */
+body.landing .mc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 22px; }
+body.landing .mc { position: relative; display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 18px 20px 20px; border-radius: 18px; background: var(--tile); border: 1px solid rgba(var(--cobalt-rgb),.12); }
+@supports (grid-template-rows: subgrid) {
+  body.landing .mc { display: grid; grid-row: span 4; grid-template-rows: subgrid; row-gap: 14px; align-content: start; }
+}
+body.landing .mc.is-now { border-color: rgba(255,90,31,.55); box-shadow: 0 0 0 1px rgba(255,90,31,.22), 0 22px 40px -30px rgba(255,90,31,.7); }
+body.landing .mc-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 10px; min-width: 0; }
+body.landing .mc-slot { font-family: var(--display); font-size: var(--fs-label); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--mars-ink); }
+body.landing .mc-state { display: inline-flex; align-items: center; gap: 7px; min-height: 26px; padding: 0 11px; border-radius: 999px; font-family: var(--display); font-size: 12.5px; font-weight: 600; letter-spacing: .02em; white-space: nowrap; color: var(--dim); background: rgba(var(--cobalt-rgb),.06); border: 1px solid rgba(var(--cobalt-rgb),.16); }
+body.landing .mc-state i { flex: none; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+body.landing .mc-state.is-served { color: var(--mc-ok); background: rgba(var(--mc-ok-rgb),.10); border-color: rgba(var(--mc-ok-rgb),.30); }
+body.landing .mc-state.is-now { color: #fff; background: var(--mars); border-color: transparent; box-shadow: 0 8px 18px -10px rgba(255,90,31,.8); }
+body.landing .mc-state.is-now i { animation: live 2s ease-in-out infinite; }
+body.landing .mc-state.is-next { color: #fff; background: var(--cobalt-fill); border-color: transparent; }
+body.landing .mc-name { margin: 0; font-family: var(--display); font-size: 20px; font-weight: 600; letter-spacing: -.01em; line-height: 1.22; color: var(--ink); text-wrap: balance; overflow-wrap: break-word; }
+body.landing .mc-sec { min-width: 0; padding-top: 14px; border-top: 1px solid var(--hair); }
+body.landing .mc .mc-figs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@container mc (max-width: 760px) {
+  body.landing .mc-day { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body.landing .mc-day-lead { grid-column: 1 / -1; }
+  body.landing .mc-day-part:nth-child(2) { padding-left: 0; border-left: 0; }
+}
+@container mc (max-width: 480px) {
+  body.landing .mc-day { grid-template-columns: minmax(0, 1fr); padding: 16px 18px 18px; gap: 16px; }
+  body.landing .mc-day-part { padding-left: 0; border-left: 0; padding-top: 14px; border-top: 1px solid var(--hair); }
+  body.landing .mc-day-kcal { font-size: 40px; }
+  body.landing .mc-day-nutr .mc-nutr { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); column-gap: 18px; }
+  body.landing .mc { padding: 16px 16px 18px; }
+  body.landing .mc-grid { gap: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { body.landing .mc-state.is-now i { animation: none; } }
+
+/* ------------------------------------------------------------------ the Message Board's Write to the Crew key
+   (13 October: "the message board should also have a Write to the Crew button"; "make it align with the border of the
+   tabs"): a pill in the Mars the header's first key wears, at the right end of the board's bar — which stays under the
+   header all the way down the wall (public.js, boardWall) — the height of the filter tabs beside it, so its edges run on
+   their lines, its right edge on the page's own (the cards' edge). It opens the composer's window (public/write.js); on a
+   phone it shares the bar's first line with the board's name and raises the Write page's dock (tabbar.js). (A floating
+   Write to the Crew key stood at the foot of every page for an hour that day, and went: "remove the floating Write to
+   the Crew button".) */
+body.landing .write-ic { flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+body.landing .wall-write {
+  display: inline-flex; align-items: center; gap: 8px; box-sizing: border-box; text-decoration: none; white-space: nowrap;
+  background: linear-gradient(180deg, #ff8a3d, #ff5a1f); color: #1a0a02; font-family: var(--display); font-weight: 700; letter-spacing: -.005em; text-transform: none;
+  box-shadow: 0 2px 4px rgba(255,70,0,.2), 0 12px 24px -12px rgba(255,70,0,.85), inset 0 1px 0 rgba(255,255,255,.5);
+  transition: transform .15s ease, filter .15s ease; }
+body.landing .wall-write:hover { transform: translateY(-1px); filter: brightness(1.06); color: #1a0a02; text-decoration: none; }
+body.landing .wall-write:focus-visible { outline: 2px solid var(--cobalt-fill); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { body.landing .wall-write { transition: none; } }
+body.landing .wall-bar > .wall-write { flex: none; align-self: center; height: 34px; min-height: 0; margin-left: auto; padding: 0 16px 0 13px; border-radius: 999px; font-size: 14.5px; }   /* the filter tabs' height (34px): the same top and foot */
+@media (max-width: 760px) and (min-height: 521px) {
+  body.landing.messages .wall-bar .board-head { flex: 1 1 0; width: auto; min-width: 0; }
+  body.landing.messages .wall-bar > .wall-write { order: 1; margin-left: 0; padding: 0 13px 0 11px; gap: 7px; font-size: 13.5px; }
+  body.landing.messages .wall-bar > .wall-write .write-ic { width: 16px; height: 16px; }
+  body.landing.messages .wall-bar .feed-filter { order: 2; }
+}
+@media (max-width: 440px) { body.landing.messages .wall-bar .wall-count { display: none; } }   /* a narrow phone: the board's name, LIVE and the key on the bar's first line */

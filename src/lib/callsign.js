@@ -3,15 +3,28 @@ const crypto = require('crypto');
 const { db, now } = require('../db');
 
 /**
- * Words are drawn from Martian surface geology, orbital mechanics and radio
- * operations -- the vocabulary the station itself would use. No sci-fi nouns.
+ * Every generated name is a space name (13 October: "make sure the generative names for all people are space
+ * themes"): a word from the sky — a star, a constellation, a planet's moon, a thing seen through a telescope, a place
+ * on Mars, a probe that went out there — and a number, NEBULA-417, as a callsign is written. The words are nine letters
+ * at the most, so a callsign fits wherever one is shown. (Until 13 October the words were the station's own vocabulary
+ * — the planet's geology, orbital mechanics, radio — DUST, IRON, RELAY; callsigns given before then stay as they are.)
  */
 const WORDS = [
-  'DUST', 'ORBIT', 'RED', 'BASALT', 'RELAY', 'VECTOR', 'REGOLITH', 'OLYMPUS',
-  'CRATER', 'SOLAR', 'DELTA', 'APOGEE', 'DRIFT', 'IRON', 'SILICA', 'AEOLIS',
-  'CARRIER', 'BEACON', 'TERMINAL', 'AZIMUTH', 'PERIGEE', 'OXIDE', 'PLAIN',
-  'SIGNAL', 'VALLES', 'ARCADIA', 'SHIELD', 'CANYON', 'ELYSIUM', 'DOWNLINK',
-  'HORIZON', 'LATITUDE', 'CIRRUS', 'FROST', 'ALBEDO', 'TRANSIT', 'ANCHOR',
+  // stars
+  'SIRIUS', 'VEGA', 'ALTAIR', 'RIGEL', 'POLARIS', 'ARCTURUS', 'ANTARES', 'DENEB', 'CAPELLA', 'ALDEBARAN', 'PROCYON',
+  'SPICA', 'CASTOR', 'POLLUX', 'REGULUS', 'MIRA',
+  // constellations
+  'ORION', 'LYRA', 'CYGNUS', 'DRACO', 'PERSEUS', 'ANDROMEDA', 'PEGASUS', 'AQUILA', 'CARINA', 'PHOENIX', 'CENTAURUS',
+  // moons and small worlds
+  'PHOBOS', 'DEIMOS', 'TITAN', 'EUROPA', 'GANYMEDE', 'CALLISTO', 'ENCELADUS', 'TRITON', 'CHARON', 'CERES', 'VESTA',
+  'OBERON', 'MIRANDA', 'LUNA',
+  // what the telescopes see
+  'NEBULA', 'QUASAR', 'PULSAR', 'COMET', 'METEOR', 'NOVA', 'SUPERNOVA', 'AURORA', 'ECLIPSE', 'ZENITH', 'PHOTON',
+  'STARDUST', 'MAGNETAR', 'COSMOS', 'ORBIT', 'APOGEE', 'PERIGEE', 'PARSEC', 'EQUINOX', 'BLAZAR',
+  // Mars
+  'OLYMPUS', 'THARSIS', 'ELYSIUM', 'ARCADIA', 'JEZERO',
+  // the probes
+  'VOYAGER', 'PIONEER', 'CASSINI', 'KEPLER', 'MARINER',
 ];
 
 function generate() {
@@ -22,8 +35,12 @@ function generate() {
     const taken = db.prepare('SELECT 1 FROM visitor WHERE callsign = ?').get(callsign);
     if (!taken) return callsign;
   }
-  // Vanishingly unlikely, but never hand back a duplicate.
-  return `RELAY-${crypto.randomInt(1000, 9999)}`;
+  // Vanishingly unlikely, but never hand back a duplicate (a four-figure number: no word with three figures was free).
+  for (let attempt = 0; attempt < 60; attempt++) {
+    const callsign = `${WORDS[crypto.randomInt(WORDS.length)]}-${crypto.randomInt(1000, 10000)}`;
+    if (!db.prepare('SELECT 1 FROM visitor WHERE callsign = ?').get(callsign)) return callsign;
+  }
+  return `COMET-${crypto.randomInt(1000, 10000)}`;
 }
 
 /**
@@ -38,7 +55,7 @@ function generate() {
 /** A callsign offered on the cookie card, if it is well formed and still free. */
 function usable(cs) {
   const m = /^([A-Z]+)-(\d{3,4})$/.exec(String(cs || ''));
-  if (!m || !WORDS.includes(m[1]) && m[1] !== 'RELAY') return null;
+  if (!m || !WORDS.includes(m[1])) return null;
   return db.prepare('SELECT 1 FROM visitor WHERE callsign = ?').get(cs) ? null : cs;
 }
 

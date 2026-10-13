@@ -12,7 +12,9 @@
 (function () {
   'use strict';
 
-  var HOST = document.getElementById('hbt-bento');
+  // the instruments' tiles: in the panel's bento, or in the dashboard's grouped Sensors tab (13 October — public.js,
+  // dashboardPanels, grouped); either way every tile is found by its id
+  var HOST = document.getElementById('hbt-bento') || document.getElementById('hbt-groups');
   if (!HOST) return;
   /* The visitor's language: the page head carries the dictionary for it
      (window.MCS_T, from src/lib/i18n.js); t() reads it, English otherwise. */

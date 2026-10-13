@@ -24,12 +24,19 @@
    card names every line's figure at that hour, the highest first — at the
    lines' ends, their latest. A finger: the same where it touches; a touch
    anywhere else puts it away. The chart brings its figures with it
-   (data-hw: public.js, hwChart). */
+   (data-hw: public.js, hwChart).
+
+   The dashboard's Sensors tab stands its charts in its groups (13 October: Life support, Energy, More-than-human,
+   Habitat hardware — public.js, dashboardPanels, grouped): there the box is the groups' wrapper (data-hw-groups), the
+   page asks for the charts group by group (?groups=1) and puts each group's into its place (data-hw-slot), the notes
+   above them all; a group that stands only while it has a chart (data-hw-optional) shows or hides with it. A chart is
+   the width of its group there, one under the other. */
 (function () {
   'use strict';
 
-  var box = document.getElementById('hw-live');
+  var box = document.getElementById('hw-live') || document.querySelector('[data-hw-groups]');
   if (!box) return;   // the bridge is not configured; no panel, nothing to do
+  var grouped = box.hasAttribute('data-hw-groups');
 
   var pollMs = Math.max(15000, Number(box.getAttribute('data-poll')) || 60000);
   var version = box.getAttribute('data-version') || '';
@@ -45,8 +52,21 @@
   function want() {
     var svg = box.querySelector('.hw-chart > svg');                         // the chart's own drawing, not the sign in its caption
     var w = svg ? svg.getBoundingClientRect().width : 0;
-    if (!w) { var r = box.getBoundingClientRect().width; if (r) w = (window.innerWidth > 760 ? (r - 16) / 2 : r) - 32; }
+    if (!w && grouped) {                                                     // the groups: what a group's place gives a chart
+      var slot = [].slice.call(box.querySelectorAll('.hw-slot[data-hw-slot]:not(.hw-notes)')).filter(function (el) { return el.getBoundingClientRect().width > 0; })[0];
+      if (slot) w = slot.getBoundingClientRect().width - 32;
+    } else if (!w) { var r = box.getBoundingClientRect().width; if (r) w = (window.innerWidth > 760 ? (r - 16) / 2 : r) - 32; }
     return w > 0 ? Math.max(240, Math.min(1400, Math.round(w / BIG))) : 0;   // within what the server draws for
+  }
+  // the groups: each its charts in its place, the notes above them all; a group shown only while it has a chart
+  function place(j) {
+    var clubs = j.clubs || {};
+    [].forEach.call(box.querySelectorAll('[data-hw-slot]'), function (slot) {
+      var k = slot.getAttribute('data-hw-slot'), html = k === 'notes' ? (j.notes || '') : (clubs[k] || '');
+      slot.innerHTML = html;
+      var group = slot.closest ? slot.closest('[data-hw-optional]') : null;
+      if (group) group.hidden = !html;
+    });
   }
   // the height: the usual 240; on the rolled Habitat screen half the chart's width (the roll gives it room); on the other
   // screens that show the panel a fifth of the screen's height, 130 at the least — a short screen has no room under the
@@ -62,7 +82,7 @@
     if (busy) { again = true; return; }
     busy = true;
     var w = want(), h = wantH();
-    fetch('/api/hardware?' + (w ? 'w=' + w + '&' : '') + 'h=' + h + (lang ? '&lang=' + encodeURIComponent(lang) : ''), { cache: 'no-store' })
+    fetch('/api/hardware?' + (w ? 'w=' + w + '&' : '') + 'h=' + h + (lang ? '&lang=' + encodeURIComponent(lang) : '') + (grouped ? '&groups=1' : ''), { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (j) {
         if (!j) return;
@@ -72,13 +92,13 @@
         var o2 = document.getElementById('o2-live');                         // and the oxygen tile, the panel's first instrument
         if (o2 && j.o2 && o2.innerHTML !== j.o2) o2.innerHTML = j.o2;
         var w2 = Number(j.w) || drawnW, h2 = Number(j.h) || drawnH;
-        if (j.html && j.version && (j.version !== version || w2 !== drawnW || h2 !== drawnH)) {
+        if ((grouped ? j.clubs : j.html) && j.version && (j.version !== version || w2 !== drawnW || h2 !== drawnH)) {
           version = j.version; drawnW = w2; drawnH = h2;
           // the lines draw themselves in when the panel first arrives (aura.css) — and when it is drawn again for its
           // width a moment after; a fresh reading swapped in later is simply there: the charts do not redraw
           // themselves every minute (is-live)
           if (Date.now() - born > 4000) box.classList.add('is-live');
-          box.innerHTML = j.html;
+          if (grouped) place(j); else box.innerHTML = j.html;
         }
       })
       .catch(function () { /* the panel stands as it is; the next tick tries again */ })

@@ -28,17 +28,14 @@ const { shown } = require('./officer');   // the first officer is shown as the C
 const FAKE_DEVICES = ['seed-01', 'sim-01'];
 const NOT_FAKE = `device_id NOT IN (${FAKE_DEVICES.map(() => '?').join(', ')})`;
 
-// The sensor node's channels, named as the dashboard's Habitat panel names
-// them (Carbon dioxide, Temperature, Humidity, Light) and, for the three the
-// panel does not show as tiles, as At a Glance does (Pressure, Node battery,
-// Signal).
-// The habitat's channels as stored in external_reading — the habitat
-// sensor's (co2, temp, hum, pres, voc, iaq) and the external node's own
-// (light, bat, rssi); a channel nothing reported is left out of a day.
+// The habitat's channels as stored in external_reading — the habitat sensor's (co2, temp, hum, pres, voc, iaq, light)
+// and the external node's own (bat, rssi), each named and in its unit as the Sensors tab of the dashboard names it
+// (12 October: "remove from all the data files what the website no longer shows" — Pressure, Air quality index and a
+// humidity in % were the names of an earlier panel); a channel nothing reported is left out of a day.
 const EXTERNAL_KEYS = [['co2', 'Carbon dioxide', 'ppm'], ['temp', 'Temperature', '°C'],
-  ['hum', 'Humidity', '%'], ['pres', 'Pressure', 'hPa'],
-  ['voc', 'Volatile organic compounds', 'ppm'], ['iaq', 'Air quality index', 'IAQ'],
-  ['light', 'Light', 'lx'], ['bat', 'Node battery', 'V'], ['rssi', 'Signal', 'dBm']];
+  ['hum', 'Humidity', '%RH'], ['pres', 'Air pressure', 'hPa'],
+  ['voc', 'Volatile organic compounds', 'ppm'], ['iaq', 'Air quality', 'IAQ'],
+  ['light', 'Light', 'lx'], ['bat', 'Node battery', 'V'], ['rssi', 'Node signal', 'dBm']];
 // The air quality index's classification, as the sensor names it — text,
 // beside the numbers in the day's every-reading table.
 const EXTERNAL_TEXT = [['iaqc', 'Air quality class', '']];
@@ -202,13 +199,15 @@ function dayRecord(missionDay) {
   // Power consumed that day, by category — from content/power.json, counted
   // daily by the crew like the steps.
   const power = content.powerDay(missionDay);
+  // And the power generated: the bike's rounds and the battery charged (content/bike.json, the Habitat tab).
+  const bike = powerGenerated(missionDay);
 
   // Every reading of the day, as it was stored.
   const readings = dayReadings(start, end);
 
   return dress({
     missionDay, date: mission.dateForDay(missionDay), day,
-    habitat, external, hardware, entries, moods, messages, traffic, media, power, figures, filed, readings, sealed: !!sealed,
+    habitat, external, hardware, entries, moods, messages, traffic, media, power, bike, figures, filed, readings, sealed: !!sealed,
     isEmpty: !day && !entries.length && !habitat.length && !hardware.length && !media.length && !readings.count,
   });
 }
@@ -282,6 +281,18 @@ function stepsOnly(f) {
   return Object.keys(out).length ? out : null;
 }
 
+/** The power the bike generated on a day (content/bike.json, filed on the Habitat tab of mission control — 8 October): the
+    rounds pedalled and the battery charged, the figure filed or else the rounds' share of a full charge (content.
+    bikeBattery), and whether the battery was filed; null for a day with neither. */
+function powerGenerated(missionDay) {
+  const content = require('./content');
+  const b = (content.bike() || {})[String(missionDay)] || null;
+  const filled = (v) => v != null && v !== '';
+  if (!b || (!filled(b.rounds) && !filled(b.battery))) return null;
+  const rounds = filled(b.rounds) ? Number(b.rounds) : null;
+  return { rounds: Number.isFinite(rounds) ? rounds : null, batteryPercent: content.bikeBattery(b), batteryFiled: filled(b.battery) };
+}
+
 /**
  * The Habitat tab of mission control for one day, as it stands: the
  * schedule, the meals, the steps, the inventory levels and the
@@ -302,6 +313,7 @@ function habitatTab(missionDay) {
     stores: storesTable(missionDay, day, filed),
     storesNote: filed.why || '',
     power: content.powerDay(missionDay).categories.map((c) => ({ key: c.key, label: c.label, kwh: c.kwh })),
+    powerGenerated: powerGenerated(missionDay),
   };
 }
 
@@ -355,7 +367,7 @@ function rehearsalRecord(st = mission.state()) {
   return dress({
     rehearsal: true, missionDay: 0, date: st.today, day,
     habitat, external, hardware, entries, moods, messages, traffic, media,
-    power: content.powerDay(0), figures: (content.crewFigures() || {})['0'] || null, filed: content.inventoryFiled(0),
+    power: content.powerDay(0), bike: powerGenerated(0), figures: (content.crewFigures() || {})['0'] || null, filed: content.inventoryFiled(0),
     readings, sealed: false,
     isEmpty: !(day && (day.tasks.length || day.meals.length || day.notes.length)) && !entries.length && !habitat.length && !hardware.length && !media.length && !readings.count && !moods.length,
   });
@@ -505,8 +517,13 @@ function index() {
 }
 
 /** One day's record shaped for the data copy: what the JSON export prints per day — and, from fullExport, what the
- *  Data download adds to it (`more`, see dayMore): everything the station holds for the day. */
+ *  Data download adds to it (`more`, see dayMore): everything the station holds for the day. Named as the website names
+ *  it now (12 October: "from all the data files remove what was shown on the website but has since been changed or
+ *  removed"): the officers as the station shows them (the Commanding Officer), the Commander Log, the habitat sensor,
+ *  a crew state as its one mood — no activity and none of the three scales of the earlier forms, no calories, and no
+ *  separate list of every officer's crew log entries (the Commander Log and the two reports stand under their officers). */
 function shapeDay(r, more = null) {
+  const moodOf = (m) => require('./mood').condition(m);
   return {
     missionDay: r.missionDay, date: r.date, recorded: true, sealed: r.sealed,
     schedule: r.day ? r.day.tasks.map((t) => ({
@@ -528,80 +545,109 @@ function shapeDay(r, more = null) {
     storesCounted: r.filed.items.map((v) => ({
       item: v.label, key: v.key, unit: v.unit, quantity: v.quantity, consumption: v.consumption })),
     storesNote: r.filed.why || null,
-    // by officer: the Commander Log (commanding officer), the Daily Science
-    // Findings / Health Report (science, health officer) and the states filed
-    officers: r.officers.map((o) => ({ crew: o.designation, role: o.role,
-      ...(o.hasBlog ? { commanderBlog: o.entry ? { body: o.entry.body, writtenAt: o.entry.written_at, updatedAt: o.entry.updated_at } : null } : {}),
+    // by officer: the Commander Log (the commanding officer), the Daily Mission Report (the science officer), the
+    // Health Report (the health officer) and the states filed for each — the mood, 0 thrilled … 100 angry
+    officers: r.officers.map((o) => ({ crew: shown(o.designation), role: o.role,
+      ...(o.hasBlog ? { commanderLog: o.entry ? { body: o.entry.body, writtenAt: o.entry.written_at, updatedAt: o.entry.updated_at } : null } : {}),
       report: o.reportKind ? { kind: o.reportKind, label: o.reportLabel, bodies: o.reports.map((x) => x.body) } : null,
-      states: o.states.map((m) => ({ effectiveAt: m.effective_at, value: m.calm_tense, condition: require('./mood').condition(m), activity: m.activity, filedBy: m.set_by })) })),
+      states: o.states.map((m) => ({ effectiveAt: m.effective_at, value: m.calm_tense, mood: moodOf(m), filedBy: m.set_by })) })),
     power: r.power.filed ? {
       categories: r.power.categories.map((c) => ({ key: c.key, label: c.label, kwh: c.kwh })) } : null,
+    // the power generated: the bike's rounds and the battery charged — the figure filed, or the rounds' share of a full
+    // charge (batteryFiled false)
+    powerGenerated: r.bike || null,
     crewFigures: r.figures ? {
       perOfficer: Object.entries(r.figures.crew || {}).map(([designation, f]) => ({
-        crew: designation, steps: f.steps ?? null })),
+        crew: shown(designation), steps: f.steps ?? null })),
       steps: r.figures.steps ?? null } : null,
     notes: r.day ? r.day.notes.filter((x) => x.published_at)
       .map((x) => ({ kind: x.kind, body: x.body, postedAt: x.posted_at })) : [],
-    crewEntries: r.entries.map((e) => ({
-      crew: e.designation, body: e.body, writtenAt: e.written_at })),
     crewStates: r.moods.map((m) => ({
-      crew: m.designation, effectiveAt: m.effective_at, activity: m.activity,
-      calmTense: m.calm_tense, energeticExhausted: m.energetic_exhausted,
-      optimisticUncertain: m.optimistic_uncertain, connectedIsolated: m.connected_isolated })),
-    habitat: r.habitat.map((h) => ({
-      metric: h.metric, unit: h.unit, min: h.min_value, max: h.max_value,
-      avg: h.avg_value, samples: h.samples })),
-    externalNode: r.external.map((h) => ({
-      channel: h.id.slice(4), unit: h.unit, min: h.low, max: h.high, avg: h.mean, samples: h.samples })),
+      crew: shown(m.designation), effectiveAt: m.effective_at, value: m.calm_tense, mood: moodOf(m), filedBy: m.set_by })),
+    // the habitat sensor — the Sensors tab's instruments — each channel's low, high and mean for the day
+    habitatSensor: r.external.map((h) => ({
+      channel: h.id.slice(4), name: h.label, unit: h.unit, min: h.low, max: h.high, avg: h.mean, samples: h.samples })),
+    // the habitat's own hardware through Home Assistant — the oxygen, the gases, the terrarium, the power
     hardware: r.hardware.map((h) => ({
       device: h.label, entity: `sensor.${h.id}`, kind: h.kind, unit: h.unit,
       min: h.low, max: h.high, avg: h.mean, addedToday: h.added, samples: h.samples })),
+    // the station's own channels, where anything posted to its ingest that day
+    habitat: r.habitat.map((h) => ({
+      metric: h.metric, unit: h.unit, min: h.min_value, max: h.max_value,
+      avg: h.avg_value, samples: h.samples })),
     // What the crew sent out that day: the files are in the media ZIP
     // and on the volume under media/<sha>; this is the list with hashes.
     media: r.media.map(mediaLib.describe),
-    // Every reading of the day, as stored: the station's channels (one
-    // entry per instant, a value per channel), the external node (one
-    // per reading) and the hardware (per device, one per state reported).
     ...(more ? dayMore(r.missionDay, r.date, more) : {}),
+    // Every reading of the day, as stored: the habitat sensor (one per reading), the hardware (per device, one per state
+    // reported) and the station's posted channels (one entry per instant, a value per channel), where there are any.
     readings: {
-      station: r.readings.station.rows.map((x) => ({ at: x.iso, ...x.values })),
-      stationChannels: r.readings.station.columns.map((c) => ({ metric: c.metric, label: c.label, unit: c.unit, channel: c.channel })),
-      externalNode: r.readings.external.rows.map((x) => ({ at: x.iso, ...Object.fromEntries(r.readings.external.columns.map((c) => [c.key, x.values[c.key]])) })),
+      habitatSensor: r.readings.external.rows.map((x) => ({ at: x.iso, ...Object.fromEntries(r.readings.external.columns.map((c) => [c.key, x.values[c.key]])) })),
       hardware: r.readings.hardware.map((h) => ({ entity: `sensor.${h.id}`, device: h.label, unit: h.unit,
         readings: h.rows.map((x) => ({ at: x.iso, value: x.value, state: x.state })) })),
+      station: r.readings.station.rows.map((x) => ({ at: x.iso, ...x.values })),
+      stationChannels: r.readings.station.columns.map((c) => ({ metric: c.metric, label: c.label, unit: c.unit, channel: c.channel })),
     },
   };
 }
 
 /**
  * What the Data download adds to a day (9 October: "rename the data copy as the data — it should have all the data from
- * all the performance days"): the power generated by the bike (rounds pedalled, battery charged — content/bike.json),
- * the day's scientific mission (content/missions.json) and who was on shift (content/shifts.json), the day's tally — the
- * messages received, the messages replied (by the day the reply went out) and the visitors counted — and every message
- * received that day, whatever became of it, with the crew's reply.
+ * all the performance days"): the day's scientific mission (content/missions.json) and who was on shift (content/
+ * shifts.json — by role, the person's name as the station shows it), the day's tally — the messages received, the
+ * messages replied (by the day the reply went out) and the visitors counted — and every message received that day,
+ * whatever became of it, with the crew's reply.
  */
 function dayMore(missionDay, date, more) {
   const content = require('./content');
-  const b = more.bike[String(missionDay)] || null;
   const m = missionDay >= 1 ? content.missionForDay(missionDay) : null;
   const t = more.tally.get(date) || { messages: 0, replied: 0, visitors: 0 };
   const msgs = db.prepare(
     `SELECT m.*, r.body AS response_body, r.published_at AS response_at, r.written_at AS response_written, c.designation AS responder
      FROM message m LEFT JOIN response r ON r.message_id = m.id LEFT JOIN crew c ON c.id = r.crew_id
      WHERE m.mission_day = ? ORDER BY m.submitted_at, m.id`).all(missionDay);
+  const SOL = require('../views/pages/sol');
+  const shift = more.shifts[String(missionDay)] || {};
   return {
-    powerGenerated: b && (b.rounds != null || b.battery != null) ? { rounds: b.rounds ?? null, batteryPercent: content.bikeBattery(b),
-      batteryFiled: b.battery != null && b.battery !== '' } : null,
     scienceMission: m ? { no: m.no, title: m.title, question: m.question, morning: m.morning, afternoon: m.afternoon, eva: m.eva,
       ...(m.evening.length ? { evening: m.evening } : {}), community: m.community, materials: m.materials,
       sheet: m.file ? `/missions/${m.file}` : null, ...(m.placeholder ? { placeholder: m.placeholder } : {}) } : null,
-    crewOnShift: more.shifts[String(missionDay)] || {},
+    crewOnShift: Object.fromEntries(Object.entries(shift).map(([role, who]) => [shown(role), (SOL.personOf(SOL.CREW, who) || { name: who }).name])),
     tally: { messagesReceived: t.messages, messagesReplied: t.replied, visitors: t.visitors },
     messages: msgs.map((x) => ({ id: x.id, callsign: x.callsign, submittedAt: x.submitted_at, arrivedAt: x.arrival_at, state: x.state,
       flagged: !!x.flagged, tags: (x.tags || '').split(',').filter(Boolean), body: x.body,
       reply: x.response_body ? { body: x.response_body, by: x.responder ? shown(x.responder) : 'Mars habitat', writtenAt: x.response_written, publishedAt: x.response_at } : null,
       reviewedAt: x.reviewed_at, reviewedBy: x.reviewed_by, rejectReason: x.reject_reason, lightSeconds: x.light_seconds, distanceAu: x.distance_au })),
   };
+}
+
+/** The comment line at the head of the Data download (12 October: "in the data json, add a commented line at the top
+ *  with the names of all the things that are tracked"): JSON has no comments, so it is the file's first key, "//" —
+ *  every kind of thing the file tracks, named as the website names it, the stores, the power's channels, the nutrients,
+ *  the habitat sensor's channels and the hardware's devices read from the station's own configuration. */
+function trackedLine() {
+  const content = require('./content');
+  const items = db.prepare('SELECT label FROM inventory_item ORDER BY sort_order, label').all().map((i) => i.label);
+  const power = content.power().categories.map((c) => c.label);
+  const nutrients = (content.NUTRIENTS || []).map((n) => n.label.toLowerCase());
+  const sensor = EXTERNAL_KEYS.filter(([k]) => k !== 'bat' && k !== 'rssi').map(([, l]) => l.toLowerCase()).concat('air quality class');
+  let hardware = [];
+  try { hardware = require('./home-assistant').sensors().map((x) => x.label); } catch { /* no hardware configured */ }
+  return 'Tracked, day by day: ' + [
+    'the schedule (each task\'s time and status)',
+    `the meals (kcal, water, preparation time, energy in Wh — filed or read from the food meter —, recipe${nutrients.length ? `, ${nutrients.join(', ')}` : ''}, CO2e, water footprint)`,
+    `the stores${items.length ? ` (${items.join(', ')})` : ''} — available, used and left`,
+    'the steps taken (each officer and the crew)',
+    'the power generated (rounds pedalled on the bike, battery charged)',
+    `the power consumed${power.length ? ` (${power.join(', ')})` : ''} in kWh`,
+    'the Commander Log, the Daily Mission Report and the Health Report',
+    'the crew states (the mood, 0 thrilled … 100 angry)',
+    `the habitat sensor (${sensor.join(', ')}; the node's battery and signal where a node reports them)`,
+    `the habitat hardware${hardware.length ? ` (${hardware.join(', ')})` : ''}`,
+    'each channel\'s and device\'s low, high and mean for the day, and every reading',
+    'the media sent out (with SHA-256)',
+    'the day\'s scientific mission, the crew on shift, the messages received with the crew\'s replies, and the tally (messages received, messages replied, visitors)',
+  ].join(' · ') + '.';
 }
 
 /** The complete mission as one object, for download. Days that have not
@@ -615,16 +661,17 @@ function fullExport() {
   const tallied = data.tallyByDay(st);
   let shifts = {};
   try { shifts = (JSON.parse(require('fs').readFileSync(require('path').join(content.DIR, 'shifts.json'), 'utf8')) || {}).days || {}; } catch { /* no plan */ }
-  const more = { bike: content.bike(), tally: new Map(tallied.days.map((d) => [d.date, d])), shifts };
+  const more = { tally: new Map(tallied.days.map((d) => [d.date, d])), shifts };
   return {
+    '//': trackedLine(),
     mission: {
       name: st.name, start: st.start_date, end: st.end_date, timezone: st.timezone,
       totalDays: st.totalDays, recordedDays: upTo,
     },
     exportedAt: now(),
-    note: 'Everything the station holds for each day of the run: what was entered on the station and what its sensors measured, every reading included — the schedule, the meals, the stores, the steps, the power generated and consumed, the Commander Log and the reports, every state filed, the habitat sensor, the hardware and their daily summaries, the media index — the day\'s scientific mission and who was on shift, and the messages received that day with the crew\'s replies and the day\'s tally. No figure is projected, carried forward or generated: a store not counted on a day has no figure for that day. A day that has not happened carries only its date.',
+    note: 'Everything the station holds for each day of the run, named as the website names it: what was entered on the station and what its sensors measured, every reading included. No figure is projected, carried forward or generated: a store not counted on a day has no figure for that day. A day that has not happened carries only its date.',
     tally: { messagesReceived: tallied.messages, messagesReplied: tallied.replied, visitors: tallied.visitors },
-    crew: db.prepare('SELECT id, designation, role FROM crew ORDER BY sort_order').all(),
+    crew: db.prepare('SELECT id, designation, role FROM crew ORDER BY sort_order').all().map((c) => ({ ...c, designation: shown(c.designation) })),
     days: Array.from({ length: st.totalDays }, (_, i) => {
       if (i + 1 > upTo) return { missionDay: i + 1, date: mission.dateForDay(i + 1), recorded: false };
       return shapeDay(dayRecord(i + 1), more);
@@ -638,7 +685,13 @@ function fullExport() {
   };
 }
 
-module.exports = { mealEcoLine, rollup, rollupPending, rehearsalRollup, dayRecord, shapeDay, index, fullExport, windowFor, recordedUpTo, FAKE_DEVICES, habitatTab };
+/** The Data download as text: the comment line ("//", trackedLine) on the file's first line under the brace, every other
+    top-level part on a line of its own after it — still one JSON document, read by anything that reads JSON. */
+function exportText(obj = fullExport()) {
+  return '{\n' + Object.entries(obj).map(([k, v]) => `${JSON.stringify(k)}: ${JSON.stringify(v === undefined ? null : v)}`).join(',\n') + '\n}\n';
+}
+
+module.exports = { mealEcoLine, rollup, rollupPending, rehearsalRollup, dayRecord, shapeDay, index, fullExport, exportText, trackedLine, windowFor, recordedUpTo, FAKE_DEVICES, habitatTab, powerGenerated };
 
 /* ==================================================================== PROSE */
 
@@ -668,8 +721,7 @@ function dayMarkdown(missionDay) {
 function rehearsalMarkdown() {
   const r = rehearsalRecord();
   if (!r) return null;
-  return recordMarkdown(r, `## NOW — today, before the run — ${r.date} — REHEARSAL, NOT THE RECORD`,
-    '_A day\'s record built for today, before the run: today\'s readings from every source and the states filed today, and everything mission control has filed under NOW — its schedule and meals, the blogs and reports, the counts, figures, power and media — kept apart from the run\'s days. Not part of the record; gone on the first day of the run._');
+  return recordMarkdown(r, `## NOW — today, before the run — ${r.date} — REHEARSAL, NOT THE RECORD`);
 }
 
 function recordMarkdown(r, heading, note = null) {
@@ -684,7 +736,7 @@ function recordMarkdown(r, heading, note = null) {
            `${r.readings.count} ${r.readings.count === 1 ? 'reading' : 'readings'}`, '');
   const stateLines = (states) => states.map((m) => {
     const t = moodLib.translate(m);
-    return `- ${m.effective_at.slice(11, 16)} UTC — value ${m.calm_tense} (calm 0 … angry 100) — ${t.condition} — “${t.lines[0] || ''}”${m.activity ? ` — ${m.activity}` : ''} — filed by ${m.set_by}`;
+    return `- ${m.effective_at.slice(11, 16)} UTC — value ${m.calm_tense} (thrilled 0 … angry 100) — ${t.condition} — “${t.lines[0] || ''}” — filed by ${m.set_by}`;
   });
 
   /* ---- the officers ---------------------------------------------------- */
@@ -717,7 +769,7 @@ function recordMarkdown(r, heading, note = null) {
 
   /* ---- the Habitat tab -------------------------------------------------- */
   out.push('### Habitat', '');
-  out.push('_The Habitat tab of mission control for this day, as it stands at the time of this record. The same tab is written to the readings log automatically at the end of each day._', '');
+  out.push('_The Habitat tab of mission control for this day, as it stands at the time of this record: the schedule, the meals, the steps, the power generated, the inventory levels and the power consumed. The same tab is written to the readings log automatically at the end of each day._', '');
   out.push('#### Schedule', '');
   if (r.day && r.day.tasks.length) {
     for (const t of r.day.tasks) out.push(`- **${t.time}** — ${t.label}${t.detail ? `. ${t.detail}` : ''} _(${String(t.status || 'PLANNED').toLowerCase()})_`);
@@ -742,6 +794,12 @@ function recordMarkdown(r, heading, note = null) {
     if (r.figures.steps != null) out.push(`| **Crew (as filed)** | **${fmtV(r.figures.steps)}** |`);
   } else out.push('_Not filed for this day._');
   out.push('');
+  out.push('#### Power generated', '');
+  if (r.bike) {
+    out.push('| Rounds pedalled | Battery charged |', '| --- | --- |');
+    out.push(`| ${fmtV(r.bike.rounds)} | ${r.bike.batteryPercent == null ? '—' : `${+Number(r.bike.batteryPercent).toFixed(1)} %${r.bike.batteryFiled ? '' : ' (from the rounds)'}`} |`);
+  } else out.push('_Not filed for this day._');
+  out.push('');
   out.push('#### Inventory levels', '');
   if (r.stores.length) {
     out.push('_As the tab shows them; "counted" means filed for this day, "carried" means from the day before at its draw._', '');
@@ -760,7 +818,7 @@ function recordMarkdown(r, heading, note = null) {
   /* ---- the sensors, named as on the dashboard --------------------------- */
   out.push('### Habitat sensors', '');
   if (r.external.length) {
-    out.push('#### Habitat · sensor node', '');
+    out.push('#### Habitat · the habitat sensor', '');
     out.push('| Channel | Low | High | Mean | Readings |', '| --- | --- | --- | --- | --- |');
     for (const h of r.external) {
       const f = (v) => (v == null ? '—' : String(Math.round(v * 100) / 100));
@@ -795,7 +853,7 @@ function recordMarkdown(r, heading, note = null) {
     out.push('Each as it was stored — times are habitat time, to the second.', '');
   }
   if (R.external.rows.length) {
-    out.push(`**Habitat · sensor node** (${R.external.readings} readings)`, '');
+    out.push(`**Habitat · the habitat sensor** (${R.external.readings} readings)`, '');
     out.push(`| Time | ${R.external.columns.map((c) => `${c.label} (${c.unit})`).join(' | ')} |`,
              `| --- | ${R.external.columns.map(() => '---').join(' | ')} |`);
     for (const row of R.external.rows) out.push(`| ${row.at} | ${R.external.columns.map((c) => fmtV(row.values[c.key])).join(' | ')} |`);
@@ -843,13 +901,6 @@ function fullMarkdown() {
   out.push(`- Crew: ${crew.map((c) => `${shown(c.designation)} (${c.role})`).join('; ')}`);
   out.push(`- Days recorded: ${upTo === 0 ? 'none yet — the run has not begun' : `${upTo} of ${st.totalDays}`}`);
   out.push(`- Exported: ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC`, '');
-  out.push('Every day below holds what was entered on the station that day and what its sensors',
-           'measured: the schedule as it was run, the meals, the stores as they were counted, the',
-           'power and the crew\'s figures as they were filed, what the crew wrote and sent out, the',
-           'states filed for them, and every reading of the day — the station\'s channels, the',
-           'external node and the hardware, each as it was stored. Nothing is projected, totalled',
-           'or carried forward; a day that has not happened has no record. The messages from Earth',
-           'and the crew\'s replies are not part of this record.', '');
   out.push('---', '');
 
   for (let n = 1; n <= upTo; n++) {

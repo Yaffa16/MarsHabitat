@@ -2,19 +2,20 @@
  * and the little a phone held upright needs besides.
  *
  * Five keys under the thumb: Home (the landing page), Dashboard (the
- * dashboard page), Write (the Write page — the composer and the board, the
- * wall of notes), Media and About (the page of the reading matter — the
- * same texts the header's About link leads to on a wider screen), which are
- * pages of their own — the landing page keeps the composer alone. The bar
+ * dashboard page), Messages (the orange key in the middle: the Message Board,
+ * the wall of notes, whose own Write to the Crew key raises the composer —
+ * 13 October; it was Write, the composer open, until then), Media and About
+ * (the page of the reading matter — the same texts the header's About link
+ * leads to on a wider screen), which are pages of their own. The bar
  * is drawn on every public page; the stylesheet shows it only on a phone
  * held upright, and what follows runs only there:
  *  - every door into the portal or the dashboard (the dome's keys, a link
  *    into #write or #habitat) leads to the Write page or the dashboard
  *    page instead, since the landing page shows neither;
  *  - on the Write page the composer is a pop-up over the foot of the
- *    screen: /write#write opens the page with it shown, the Write key
- *    shows and hides it, a touch on the page beside it (or Escape) hides
- *    it; its writing box grows with the text, while the keyboard is up the
+ *    screen: /write#write opens the page with it shown, the board's Write
+ *    to the Crew key shows it, a touch on the page beside it (or Escape)
+ *    hides it; its writing box grows with the text, while the keyboard is up the
  *    bar of keys steps aside and the pop-up rides the keyboard's edge, and a
  *    press on Transmit brings the board's head into view, where the message
  *    just sent appears while the pop-up, keeping its size, shows the crossing
@@ -50,7 +51,7 @@
   // the messages page's pop-up
   var dock = document.body.classList.contains('messages') && document.querySelector('.portal-main');
   if (dock) {
-    var writeKey = bar && bar.querySelector('.tab-write');
+    var writeKey = document.querySelector('.wall-write');                       // the board's own Write to the Crew key (public.js, boardWall)
     var isOpen = function () { return dock.classList.contains('is-open'); };
     // a phone's keyboard covers the lower part of the page without shrinking it, and only the visible part (the visual
     // viewport) says where the keyboard's edge is: the keyboard is up when the visible part is shorter than the window
@@ -67,7 +68,7 @@
     var setOpen = function (open, focus) {
       dock.classList.toggle('is-open', open);
       document.body.classList.toggle('dock-open', open);
-      if (writeKey) writeKey.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (writeKey) { if (phone()) writeKey.setAttribute('aria-expanded', open ? 'true' : 'false'); else writeKey.removeAttribute('aria-expanded'); }   // a wider screen's window is write.js's
       if (open) {
         room();
         var box = dock.querySelector('form.composer:not(.ghost) textarea');
@@ -80,15 +81,18 @@
       requestAnimationFrame(function () { requestAnimationFrame(function () { setOpen(true, true); }); });
     } else setOpen(!phone(), false);                                             // a wider screen simply has it
     window.addEventListener('hashchange', function () { if (phone() && location.hash === '#write') setOpen(true, true); });   // a door on this page
-    if (writeKey) writeKey.addEventListener('click', function (e) {
-      if (!phone()) return;                                                      // sideways the key is the link it says
-      e.preventDefault();
-      setOpen(!isOpen(), !isOpen());
-    });
     document.addEventListener('click', function (e) {                            // a touch beside the pop-up closes it
       if (!phone() || !isOpen()) return;
-      if (dock.contains(e.target) || (bar && bar.contains(e.target))) return;
+      if (dock.contains(e.target) || (bar && bar.contains(e.target)) || (e.target.closest && e.target.closest('[data-write-open]'))) return;
       setOpen(false, false);
+    });
+    // the board's own Write to the Crew key (public.js, boardWall — 13 October) raises the pop-up: the bar's middle key is
+    // the Message Board itself since that day, and the key on the board is the way to the pop-up
+    document.addEventListener('click', function (e) {
+      var door = e.target.closest ? e.target.closest('[data-write-open]') : null;
+      if (!door || !phone()) return;
+      e.preventDefault();
+      setOpen(true, true);
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && phone() && isOpen()) setOpen(false, false); });
     dock.addEventListener('click', function (e) {                                // the cross at its top right closes it

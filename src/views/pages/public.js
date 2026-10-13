@@ -478,14 +478,16 @@ function ticker(ctx, { today } = {}) {
   const line = cells.map((c) => `<span class="tk-cell">${c}</span>`).join('<span class="tk-sep">·</span>');
   /* The header of every public page, after the design handoff's reference sheet: a row with the wordmark (the way home),
      the run's badge — the countdown before it, the sol during it —, and in the middle of the row the station's three ways
-     on — Write to the crew (the Write page, /write), Live Mission Dashboard (/dashboard) and About (/about) —, then the
+     on — Message Board (the board, /write), Live Mission Dashboard (/dashboard) and About (/about) —, then the
      theme and language switches at its right end (no clock); under it the running line. The three links are
      a wider screen's: a phone held upright has its bar of keys at the foot for the same ways (sheet.css hides them there),
      and a screen in the square shows none of them (screen.css). No menu: the reading matter is one page, /about. */
-  // the three keys, each with its sign in the line-icon hand of the dome's keys: the pen, the four panels, the i — the
-  // Write key in Mars, the station's primary colour (the Write link opens the Write page's pop-up)
+  // the three keys, each with its sign in the line-icon hand of the dome's keys: a speech bubble, the four panels, the i —
+  // the first in Mars, the station's primary colour. It is the Message Board since 13 October ("on the top bar it should
+  // say Message Board and not Write to the crew"; it opened the composer's pop-up on the Write page until then): the
+  // writing is the board's own Write to the Crew key's (boardWall)
   const ways = [
-    ['/write#write', 'Write to the crew', 'tk-write', '<path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M13.5 6.5l3 3"/>'],
+    ['/write', 'Message Board', 'tk-board', '<path d="M5 4.8h14a1.6 1.6 0 0 1 1.6 1.6v8.4a1.6 1.6 0 0 1-1.6 1.6h-8.6L6 19.8v-3.4H5a1.6 1.6 0 0 1-1.6-1.6V6.4A1.6 1.6 0 0 1 5 4.8z"/><path d="M8 9.2h8M8 12.4h5"/>'],
     ['/dashboard', 'Live Mission Dashboard', 'tk-dash', '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>'],
     ['/about', 'About', 'tk-about', '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><path d="M12 7.5v.5"/>'],
   ];
@@ -681,14 +683,19 @@ function portal(ctx, { inFlight = null, error = null, draft = '' } = {}) {
   </section>`;
 }
 
+/* The pen, the sign of every key that opens the composer (the board's, the floating one: layout.js, writeKit). */
+const WRITE_ICON = '<svg class="write-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l4-1L19 8l-3-3L5 16z"/><path d="M13.5 6.5l3 3"/></svg>';
+
 /**
  * The board as a wall of notes (the Write page, under the composer): the exchanges as cards on the page's ground — three
  * across on a wide screen, two on a narrower one, one on a phone, each row starting level — the newest first, flowing with
  * the page and never in a box. The first BOARD_PAGE exchanges are drawn here; as the reader nears the end, board.js
  * fetches the page before them (/api/board?before=) and lays it on, until the beginning of the correspondence
  * (`more` says whether there is anything older than this first page). Over the cards a bar that stays under the header:
- * the board's name and its LIVE mark, the count, the chips that narrow the wall (ALL, MY MESSAGES, a tag). The
- * viewer's own messages stand among the rest, whatever their state.
+ * the board's name and its LIVE mark, the count, the board's own Write to the Crew key at its right (13 October: "the
+ * message board should also have a Write to the Crew button" — it opens the composer: write.js on a wider screen, the
+ * phone's dock, tabbar.js; not once the channel has closed), the chips that narrow the wall (ALL, MY MESSAGES, a tag).
+ * The viewer's own messages stand among the rest, whatever their state.
  */
 function boardWall(ctx, { recent = [], more = false, poll = '/api/board?limit=20' } = {}) {
   const T = ctx.T;
@@ -709,7 +716,8 @@ function boardWall(ctx, { recent = [], more = false, poll = '/api/board?limit=20
             <button type="button" class="chip mine" data-filter="mine">${T('MY MESSAGES')} <span
               class="chip-count" id="feed-mine-count"${pendingMine ? '' : ' hidden'}>${pendingMine}</span></button>
             ${TAGS.map((t) => `<button type="button" class="chip" data-filter="tag:${t}">#${T(t)}</button>`).join('')}
-            </div>
+            </div>${ctx.mission.open ? `
+            <a class="wall-write" href="#write" data-write-open>${WRITE_ICON}<span>${T('Write to the Crew')}</span></a>` : ''}
           </div>
           <div class="cards" id="feed-cards">${boardCards(recent, T, { wall: true })}
             <div class="empty" id="feed-empty"${recent.length ? ' style="display:none"' : ''}
@@ -736,7 +744,7 @@ function writePage(ctx, d) {
   const body = `
   <section class="wall-sec" id="exchanges" aria-label="${esc(ctx.T('Message Board'))}">${boardWall(ctx, { recent: d.recent, more: d.more, poll: d.poll })}</section>`;
   return L.page({
-    title: 'Write to the crew', ctx, body, hideNav: true, hideRail: true, bodyClass: 'landing inner messages write', masthead: false,
+    title: 'Message Board', ctx, body, hideNav: true, hideRail: true, bodyClass: 'landing inner messages write', masthead: false,
     composer: { inFlight: d.inFlight, error: d.error, draft: d.draft },
     current: '/write', scripts: ['/board.js', '/live.js'],
     styles: ['/aura.css'],
@@ -1222,12 +1230,26 @@ function hwChart(hw, group, members, tz, T = same, W = HW_W, H = HW_H) {
 </figure>`;
 }
 
+const HW_W = 720, HW_H = 240;                // the width and the height a chart is drawn for until the page says its own (hardware.js)
+/* Which group of the dashboard's Sensors tab a chart stands in (13 October: "inside the Sensors tab make bigger groups
+   like Energy, Life support, Resources"; public.js, dashboardPanels, grouped): the power draws with the Energy, the
+   cricket terrarium (and any plant or animal the habitat keeps) with More-than-human, the air's gases and climate with
+   Life support, anything else under Habitat hardware. */
+const HW_CLUBS = ['life', 'energy', 'mth', 'hardware'];
+function hwClubOf(group, members) {
+  if (group.key === 'power' || group.key.startsWith('energy')) return 'energy';
+  const text = `${group.title} ${members.map((m) => `${m.s.id} ${m.s.label}`).join(' ')}`;
+  if (/cricket|terrari|insect|hydropon|aeropon|plant|garden|algae|mushroom/i.test(text)) return 'mth';
+  if (group.key === 'temperature' || /air quality|oxygen|carbon|co₂|co2|no₂|no2|nitrogen|\bco\b|voc|humid|pressure|particul|ozone|radon/i.test(text)
+    || /^(ppm|ppb|%\s*rh|hpa|µg\/m³|ug\/m3)$/i.test(String(group.unit || '').trim())) return 'life';
+  return 'hardware';
+}
 /** The devices sorted onto their charts, in the order they first appear in
  *  content/home-assistant.json; a device keeps its colour by its position
  *  in that list, whichever chart it lands on. Energy meters are not drawn
- *  here: their day's kWh is on the Power panel (content/power.json). */
-const HW_W = 720, HW_H = 240;                // the width and the height a chart is drawn for until the page says its own (hardware.js)
-function hwCharts(hw, tz, T = same, W = HW_W, H = HW_H) {
+ *  here: their day's kWh is on the Power panel (content/power.json).
+ *  Each comes with the group of the grouped Sensors tab it belongs in (hwClubOf), in the order the panel reads them. */
+function hwChartList(hw, tz, T = same, W = HW_W, H = HW_H) {
   const groups = new Map();
   (hw.sensors || []).forEach((s, i) => {
     const g = hwGroupOf(s);
@@ -1242,8 +1264,11 @@ function hwCharts(hw, tz, T = same, W = HW_W, H = HW_H) {
   // in the order the panel reads them (8 October): the power, the cricket terrarium's temperature; the oxygen, the air
   // quality — two across, then anything else the file lists, in its order
   const rank = (g) => (g.key === 'power' ? 0 : g.key === 'temperature' ? 1 : /oxygen/i.test(g.title) ? 2 : /air quality/i.test(g.title) ? 3 : 9);
-  const charts = [...groups.values()].sort((a, b) => rank(a.group) - rank(b.group))
-    .map((e) => hwChart(hw, e.group, e.members, tz, T, W, H)).filter(Boolean);
+  return [...groups.values()].sort((a, b) => rank(a.group) - rank(b.group))
+    .map((e) => ({ club: hwClubOf(e.group, e.members), html: hwChart(hw, e.group, e.members, tz, T, W, H) })).filter((c) => c.html);
+}
+function hwCharts(hw, tz, T = same, W = HW_W, H = HW_H) {
+  const charts = hwChartList(hw, tz, T, W, H).map((c) => c.html);
   return charts.length ? `<div class="hw-charts">${charts.join('')}</div>` : '';
 }
 
@@ -1277,24 +1302,50 @@ function powerTileInner(ctx, power) {
  * here and by /api/hardware alike, so what the browser swaps in is exactly
  * what the server would have served.
  */
+const hwSize = (width, height) => ({
+  W: Math.max(240, Math.min(1400, Math.round(Number(width) || HW_W))),
+  H: Math.max(120, Math.min(700, Math.round(Number(height) || HW_H))),
+});
+/** What stands above the charts: Home Assistant not reached on the last poll, the record closed, a sensor not in the feed. */
+function hardwareNotes(hw, T = same, tz = hwTz()) {
+  const missing = (hw.sensors || []).filter((s) => s.missing);
+  return `${hw.down ? `<p class="note hw-down">${L.sym('warn')} ${T('Home Assistant could not be reached on the last poll')}${
+      hw.lastPollAt ? ` ${T('at')} ${hwClock(hw.lastPollAt, tz)}` : ''} — ${T('these are the last readings stored.')}</p>` : ''}
+    ${hw.frozen ? `<p class="note">${T('The record is closed — the hardware was last read before the end of 27 October 2026.')}</p>` : ''}
+    ${missing.length ? `<p class="note">${L.sym('warn')} ${T('Not in the feed:')} ${missing.map((s) => `sensor.${esc(s.id)}`).join(' · ')} — ${T('check the id in content/home-assistant.json.')}</p>` : ''}`;
+}
+/** In place of the charts while there are none: the hardware is still to send its first readings, or none is listed. */
+const hardwareEmpty = (hw, T = same) => `<div class="empty">${T((hw.sensors || []).length ? 'WAITING FOR THE FIRST READINGS FROM THE HARDWARE' : 'NO DEVICES CONFIGURED IN CONTENT/HOME-ASSISTANT.JSON')}</div>`;
 function hardwareInner(hw, T = same, { width = HW_W, height = HW_H } = {}) {
   const tz = hwTz();
-  const list = hw.sensors || [];
-  const W = Math.max(240, Math.min(1400, Math.round(Number(width) || HW_W)));
-  const H = Math.max(120, Math.min(700, Math.round(Number(height) || HW_H)));
+  const { W, H } = hwSize(width, height);
   // The charts are the panel: no tiles, one day chart per kind of quantity
   // (temperature, energy, …), each on a proper axis in its unit, every
   // device a line named at its end with the current reading. The
   // diagnostics the tiles used to carry (a sensor not in the feed) become a
   // note above them.
-  const missing = list.filter((s) => s.missing);
   const chart = hwCharts(hw, tz, T, W, H);
   return `
-    ${hw.down ? `<p class="note hw-down">${L.sym('warn')} ${T('Home Assistant could not be reached on the last poll')}${
-      hw.lastPollAt ? ` ${T('at')} ${hwClock(hw.lastPollAt, tz)}` : ''} — ${T('these are the last readings stored.')}</p>` : ''}
-    ${hw.frozen ? `<p class="note">${T('The record is closed — the hardware was last read before the end of 27 October 2026.')}</p>` : ''}
-    ${missing.length ? `<p class="note">${L.sym('warn')} ${T('Not in the feed:')} ${missing.map((s) => `sensor.${esc(s.id)}`).join(' · ')} — ${T('check the id in content/home-assistant.json.')}</p>` : ''}
-    ${chart || `<div class="empty">${T(list.length ? 'WAITING FOR THE FIRST READINGS FROM THE HARDWARE' : 'NO DEVICES CONFIGURED IN CONTENT/HOME-ASSISTANT.JSON')}</div>`}`;
+    ${hardwareNotes(hw, T, tz)}
+    ${chart || hardwareEmpty(hw, T)}`;
+}
+/**
+ * The same charts for the dashboard's grouped Sensors tab (13 October): each in the group it belongs in (hwClubOf) —
+ * `clubs` maps life, energy, mth and hardware to that group's charts ('' for a group with none; while there is no chart
+ * at all, the Habitat hardware group says why) — and `notes` what stands above them all. Rendered here and by
+ * /api/hardware?groups=1, which hardware.js polls on the hardware's cycle, so the page swaps in exactly this.
+ */
+function hardwareClubs(hw, T = same, { width = HW_W, height = HW_H } = {}) {
+  const tz = hwTz();
+  const { W, H } = hwSize(width, height);
+  const list = hwChartList(hw, tz, T, W, H);
+  const clubs = {};
+  for (const k of HW_CLUBS) {
+    const charts = list.filter((c) => c.club === k).map((c) => c.html);
+    clubs[k] = charts.length ? `<div class="hw-charts">${charts.join('')}</div>` : '';
+  }
+  if (!list.length) clubs.hardware = hardwareEmpty(hw, T);
+  return { notes: hardwareNotes(hw, T, tz).trim(), clubs };
 }
 
 /* =============================================================== DASHBOARD */
@@ -1349,6 +1400,14 @@ const TAB_ICONS = {
   'blog-science': LINE_ICONS.science,
 };
 const tabIcon = (id) => TAB_ICONS[id] ? `<svg class="ftab-ic" viewBox="0 0 24 24" aria-hidden="true">${TAB_ICONS[id]}</svg>` : '';
+/* The signs of the grouped Sensors tab's headings (dashboardPanels, grouped), in the same hand: a trace of vital signs for
+   Life support, a plug for Energy, a leaf for More-than-human; Resources has the stores' crate (SENSOR_ICON.res), Crew the
+   crew's sign, Habitat hardware the chip and Trends the rising line (TAB_ICONS). */
+const GROUP_ICONS = {
+  life: '<path d="M2.8 12.4h4.1l2.1-5.2 3.4 10.2 2.5-7.1 1.6 2.1h4.7"/>',
+  energy: '<path d="M9 3.2v4.6M15 3.2v4.6"/><path d="M6.4 7.8h11.2v3.4a5.6 5.6 0 0 1-11.2 0z"/><path d="M12 16.8v4"/>',
+  mth: '<path d="M5.2 19.2c-.4-7.6 4.6-12.8 14-13.6-.6 9.4-5.8 14.4-13.4 14"/><path d="M5.2 19.2c2.8-4.2 6-7 9.6-8.8"/>',
+};
 
 const folder = (T, rows, { id = 'day-folder', label = '', title = '' } = {}) => {
   rows = rows.map((row) => ({ label: row.label, tabs: row.tabs.filter(Boolean) })).filter((row) => row.tabs.length);
@@ -1387,7 +1446,7 @@ const folder = (T, rows, { id = 'day-folder', label = '', title = '' } = {}) => 
 /* The dashboard's pieces, each on its own, so the dashboard can assemble them and the installation's screens
    (screens.js) can show one at a time: the headline figures, the strip of sols, the live pictures, Today's Mission and
    the nine panels — with the day they stand under. */
-function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, power = { categories: [], days: {} }, allDays, logDays, entryCounts, ingest = [], media = [], mediaCounts = { total: 0, bytes: 0 }, mediaLookup = () => null, hardware = null, hardwareDaily = [], cloud = null, mission = null, nowLog = null, nowDay = null }, { trendsInside = false } = {}) {
+function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, power = { categories: [], days: {} }, allDays, logDays, entryCounts, ingest = [], media = [], mediaCounts = { total: 0, bytes: 0 }, mediaLookup = () => null, hardware = null, hardwareDaily = [], cloud = null, mission = null, nowLog = null, nowDay = null }, { trendsInside = false, grouped = false, mealCards = false } = {}) {
   const m = ctx.mission, g = ctx.geo, T = ctx.T;
   const pre = m.phase === 'PRE_LAUNCH';
   const day3 = String(m.clampedDay).padStart(3, '0');
@@ -1593,14 +1652,74 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, pow
      Rendered only when the bridge is configured in .env; /public/hardware.js
      keeps it live from /api/hardware (it looks for #hw-live, wherever that
      stands). */
-  const hardwareSection = hardware && hardware.configured && (hardware.sensors || []).length
+  const hardwareSection = !grouped && hardware && hardware.configured && (hardware.sensors || []).length   // (the grouped tab has its own: below)
     ? `<section class="hw-in-habitat" id="hardware" aria-label="${esc(T('Habitat hardware'))}">
         <div class="hbt hw"><div id="hw-live" data-poll="${hardware.pollMs}" data-version="${esc(require('../../lib/home-assistant').version(hardware))}" data-w="${HW_W}" data-h="${HW_H}">${hardwareInner(hardware, T)}</div></div>
       </section>`
     : '';
 
+  /* ---- the dashboard's Sensors tab in groups (13 October: "keep everything inside the Sensors tab, not individual tabs;
+     only inside make bigger groups like Energy, Life support, Resources to have a clarity of everything"): the same
+     instruments, the hardware's charts and the trends as the panel below, gathered in the one tab under headings —
+     Life support (the habitat's air, climate and light: the oxygen, the carbon dioxide, the temperature, the humidity,
+     the air pressure, the air quality, the volatile organic compounds, the light, and the hardware's air-quality chart);
+     Resources (the stores); Energy (the power consumed, the power generated on the bike, the power draws' chart); Crew
+     (the steps and Karlsruhe — no Astronauts tracked since 13 October: "remove the Astronauts tracked visual from the
+     Sensors"; the installation's screens keep it); More-than-human (the cricket terrarium's chart) and Habitat hardware (any
+     other chart — both stand only while they have one); Trends. Each heading has its sign and a line on what is under
+     it — the Trends their name alone, as since 9 October (aura.css, .hbt-group). Every tile keeps its id, so habitat.js,
+     hardware.js and every link into the tab (#stores, #power, #bike, #trends) find them where they are now; the
+     hardware's charts are kept live group by group (hardware.js, data-hw-groups; /api/hardware?groups=1). The
+     installation's screens keep the panel as it was. */
+  const hwOn = !!(hardware && hardware.configured && (hardware.sensors || []).length);
+  const hwGroups = grouped && hwOn ? hardwareClubs(hardware, T) : null;
+  const hwSlot = (k) => (hwGroups ? `
+          <div class="hw-slot" data-hw-slot="${k}">${hwGroups.clubs[k]}</div>` : '');
+  const sGroup = ({ id, icon, title, sub, inner, optional = false, empty = false }) => `
+        <section class="hbt-group" id="${id}" aria-labelledby="${id}-h"${optional ? ' data-hw-optional' : ''}${empty ? ' hidden' : ''}>
+          <header class="hbt-group-head">
+            <span class="hbt-group-ic" aria-hidden="true"><svg viewBox="0 0 24 24">${icon}</svg></span>
+            <div class="hbt-group-t"><h3 id="${id}-h">${title}</h3><p>${sub}</p></div>
+          </header>
+          <div class="hbt-grid">${inner}
+          </div>
+        </section>`;
+  const sensTile = (k) => SENSOR_TILES.filter((d) => d.k === k).map((d) => sensorTile(T, d)).join('');
+  const sensorsGrouped = grouped ? `
+    <div class="hbt is-grouped" id="sensors">
+      <div class="hbt-groups" id="hbt-groups"${hwOn ? ` data-hw-groups data-poll="${hardware.pollMs}" data-version="${esc(require('../../lib/home-assistant').version(hardware))}" data-w="${HW_W}" data-h="${HW_H}"` : ''}>${
+        hwGroups ? `
+        <div class="hw-slot hw-notes" data-hw-slot="notes">${hwGroups.notes}</div>` : ''}${
+        sGroup({ id: 'sensors-life', icon: GROUP_ICONS.life, title: T('Life support'), sub: T('The habitat’s air, climate and light, measured live'), inner: `
+          <section class="tile t-sens t-o2" id="o2-live">${oxygenTileInner(hardware, T)}</section>${['co2', 'temp', 'hum', 'pres', 'iaq', 'voc', 'light'].map(sensTile).join('')}
+          <div class="hbt-notes" id="hbt-notes"></div>${hwSlot('life')}` })}${
+        sGroup({ id: 'sensors-resources', icon: SENSOR_ICON.res, title: T('Resources'), sub: T('Carried in · never resupplied'), inner: `
+          <section class="tile t-res" id="stores">${inventoryGauges(inventory, { cells: true, T })}</section>` })}${
+        sGroup({ id: 'sensors-energy', icon: GROUP_ICONS.energy, title: T('Energy'), sub: T('Consumed, from the meters · generated on the bike'), inner: `
+          <section class="tile t-pwr" id="power">
+            ${sensorIcon('pwr')}
+            <h3>${T('Power consumed')}</h3>
+            <div id="pwr-live">${powerTileInner(ctx, power)}</div>
+          </section>
+          ${bikeTile(T, bike, m)}${hwSlot('energy')}` })}${
+        sGroup({ id: 'sensors-crew', icon: LINE_ICONS.crew, title: T('Crew'), sub: T('Their steps · the habitat in Karlsruhe'), inner: `
+          ${figureTile(crewFigures, m, { key: 'steps', label: 'Steps taken', unit: T('steps'), colour: 'var(--ink)', fmt: (v) => v.toLocaleString('en-GB'), T, crew, icon: 'steps' })}${vizTile(T, 'city')}` })}${
+        hwGroups ? sGroup({ id: 'sensors-mth', icon: GROUP_ICONS.mth, title: T('More-than-Human'), sub: T('Life aboard besides the crew'), inner: hwSlot('mth'), optional: true, empty: !hwGroups.clubs.mth }) : ''}${
+        hwGroups ? sGroup({ id: 'sensors-hardware', icon: TAB_ICONS.hardware, title: T('Habitat hardware'), sub: T('The habitat’s other devices, through Home Assistant'), inner: hwSlot('hardware'), optional: true, empty: !hwGroups.clubs.hardware }) : ''}
+        <section class="hbt-group is-trends" aria-labelledby="sensors-trends-h">
+          <div class="hbt-trends-in" id="trends">
+            <header class="hbt-group-head">
+              <span class="hbt-group-ic" aria-hidden="true"><svg viewBox="0 0 24 24">${TAB_ICONS.trends}</svg></span>
+              <div class="hbt-group-t"><h3 id="sensors-trends-h">${T('Trends')}</h3></div>
+            </header>
+            ${trendsBlock}
+          </div>
+        </section>
+      </div>
+    </div>` : '';
+
   const habitat = dpanel({ id: 'habitat', title: T('Sensors'), meta: T('Live sensors and Habitat measurements'), span: 12, cls: 'compact',
-    live: T('The readings refresh by themselves as the sensors report') }, `
+    live: T('The readings refresh by themselves as the sensors report') }, grouped ? sensorsGrouped : `
     <!-- The habitat's instruments. The station server polls the habitat sensor
          (through Home Assistant — or the external node, src/lib/critical.js)
          and stores every reading in its own database; /public/habitat.js draws
@@ -1703,8 +1822,10 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, pow
   const mealsWh = today && today.meals.some((x) => x.energy_source === 'meter') ? today.meals.reduce((s, x) => s + (x.energy_source === 'meter' ? x.power_wh : 0), 0) : null;
   const mealsRunning = !!(today && today.meals.some((x) => x.power_running));
   const galley = dpanel({ id: 'galley', title: T('Today’s Meal'), meta: today && today.meals.length
-      ? `${today.kcalPlanned} kcal${today.waterPlanned ? ` · ${today.waterPlanned.toFixed(1)} L` : ''}${mealsWh != null ? ` · ${mealsWh} Wh${mealsRunning ? ` ${T('so far')}` : ''}` : today.energyPlanned ? ` · ${today.energyPlanned} Wh` : ''}${today.co2ePlanned != null ? ` · ${+today.co2ePlanned.toFixed(2)} kg CO₂e` : ''}` : '', span: 4, cls: 'h-3 scroll' },
-    today && today.meals.length ? `<div class="meals">${today.meals.map((x) => `
+      ? `${today.kcalPlanned} kcal${today.waterPlanned ? ` · ${today.waterPlanned.toFixed(1)} L` : ''}${mealsWh != null ? ` · ${mealsWh} Wh${mealsRunning ? ` ${T('so far')}` : ''}` : today.energyPlanned ? ` · ${today.energyPlanned} Wh` : ''}${today.co2ePlanned != null ? ` · ${+today.co2ePlanned.toFixed(2)} kg CO₂e` : ''}` : '', span: 4, cls: `h-3 scroll${mealCards ? ' is-cards' : ''}` },
+    // the dashboard: a card a meal, the day's sum at their head (mealCardsBody, 13 October); the screens: the list
+    today && today.meals.length && mealCards ? mealCardsBody(T, m, today, { tasks, mealsWh, running: mealsRunning })
+    : today && today.meals.length ? `<div class="meals">${today.meals.map((x) => `
       <div class="meal">
         <span class="meal-slot">${esc(L.slotName(T, x.slot))}</span>
         <b>${esc(x.name)}</b>
@@ -1855,6 +1976,137 @@ function dashLive(T) {
       <div class="dash-live" aria-hidden="true"><span class="dl-live"><i></i>${T('LIVE')}</span></div>`;
 }
 
+/* ===================================================== TODAY'S MEAL, AS CARDS */
+
+/* The dashboard's Today's Meal, one card a meal (13 October: "for each meal, show a card with all the nutrients, energy,
+   protein etc."; dashboardPanels, mealCards): the day's sum at the head, then each meal — its slot and where it stands
+   now (served, being served, next, later; planned before the run), its name, what one serving carries (the energy, its
+   CO₂e and water footprint, the nutrients, and the share of the energy from protein, fat and carbohydrate as a bar) and
+   what it took in the kitchen (the water, the food meter between its hours, the preparation time). The figures are the
+   ones the panel always showed (data.mealsFor; the recipe book's per serving), nothing estimated. The installation's
+   screens keep the list (dashboardPanels without mealCards). Styled in aura.css (.mc-…). */
+
+/* the three nutrients a serving's energy comes from — 4, 9 and 4 kilocalories a gram — each with the colour of its part
+   of the bar (aura.css: .mc-p, .mc-f, .mc-c) */
+const MEAL_MACROS = [['protein_g', 'Protein', 4, 'p'], ['fat_g', 'Fat', 9, 'f'], ['carb_g', 'Carbohydrate', 4, 'c']];
+/* the nutrients as a label lists them, two to a line: protein and fat, carbohydrate and its sugar, fibre and sodium */
+const MEAL_TABLE = ['protein_g', 'fat_g', 'carb_g', 'sugar_g', 'fiber_g', 'sodium_mg'].map((k) => L.MEAL_NUTRIENTS.find((n) => n[0] === k));
+/** The share of the energy from protein, fat and carbohydrate, in whole per cent that add up to 100 (the largest
+ *  remainders rounded up); null without the figures. */
+function macroShares(n) {
+  if (!n) return null;
+  const e = MEAL_MACROS.map(([k, , kcal]) => Math.max(0, Number(n[k]) || 0) * kcal);
+  const sum = e.reduce((a, b) => a + b, 0);
+  if (!(sum > 0)) return null;
+  const raw = e.map((v) => (v / sum) * 100), out = raw.map(Math.floor);
+  let left = 100 - out.reduce((a, b) => a + b, 0);
+  raw.map((v, i) => [v - out[i], i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => { if (left > 0) { out[i] += 1; left -= 1; } });
+  return out;
+}
+/** A figure as the dashboard writes it (en-GB, as the rest of the panel): `dec` decimals; a dash where there is none. */
+const mcNum = (v, dec = 0) => (v == null || v === '' || !Number.isFinite(Number(v)) ? '—'
+  : Number(v).toLocaleString('en-GB', { minimumFractionDigits: dec, maximumFractionDigits: dec }));
+/** One figure of a card: the value large with its unit, its name under it (a note after the name: "so far"). */
+const mcFig = (value, unit, label, { cls = '', note = '' } = {}) => `<div class="mc-fig${cls ? ` ${cls}` : ''}"><b>${value}${value !== '—' && unit ? `<small>${esc(unit)}</small>` : ''}</b><span>${esc(label)}${note ? ` · ${esc(note)}` : ''}</span></div>`;
+/** The nutrients of a serving (or of the day): the share of the energy as a bar and a line, then the six figures. */
+function mcNutrients(T, n, { none = '' } = {}) {
+  if (!n) return none ? `<p class="mc-none">${esc(none)}</p>` : '';
+  const sh = macroShares(n);
+  const bar = sh ? `<div class="mc-energy">
+        <span class="mc-share-k">${T('Share of energy')}</span>
+        <div class="mc-bar" role="img" aria-label="${esc(`${T('Share of energy')}: ${MEAL_MACROS.map(([, l], i) => `${T(l)} ${sh[i]} %`).join(', ')}`)}">${
+          MEAL_MACROS.map(([, , , c], i) => (sh[i] > 0 ? `<i class="mc-${c}" style="flex-grow:${sh[i]}"></i>` : '')).join('')}</div>
+        <p class="mc-share">${MEAL_MACROS.map(([, l, , c], i) => `<span><i class="mc-${c}"></i>${T(l)} <b>${sh[i]}&nbsp;%</b></span>`).join('')}</p>
+      </div>` : '';
+  return `${bar}
+      <dl class="mc-nutr">${MEAL_TABLE.map(([k, label, unit]) => `<div><dt>${T(label)}</dt><dd>${mcNum(n[k], k === 'sodium_mg' ? 0 : 1)}${n[k] != null ? `&nbsp;${unit}` : ''}</dd></div>`).join('')}</dl>`;
+}
+/* Where each of the day's meals stands now: from its hour — an added meal's own (`served`), a named meal's from the day's
+   schedule, the first task named after it ("Breakfast / Communal Mission Planning", "Lunch", "Dinner / Washing Up"; not
+   "Lunch Prep") — it is being served from that hour until the task after it begins (an hour, where none follows), then
+   served; of those still to come the earliest is next, the others later. A meal the schedule has no hour for goes by the
+   food meter's hours for it (served once they are over). Before the run every meal is planned (the panel shows the first
+   day's plan), after it every one served. Drawn when the page is (the venue's clock, mission.venueTime). */
+const MEAL_TASK = { BREAKFAST: /^\s*(breakfast|frühstück)(?!\s*prep)/i, LUNCH: /^\s*(lunch|mittagessen)(?!\s*prep)/i, DINNER: /^\s*(dinner|abendessen)(?!\s*prep)/i };
+function mealStates(m, meals, tasks = []) {
+  const mins = (s) => { const r = /^\s*(\d{1,2}):(\d{2})/.exec(String(s || '')); return r && +r[1] <= 24 && +r[2] <= 59 ? +r[1] * 60 + +r[2] : null; };
+  const hhmm = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+  const times = tasks.map((t) => mins(t.time)).filter((t) => t != null).sort((a, b) => a - b);
+  const now = mins(m.venueTime);
+  const out = meals.map((x) => {
+    let at = null, till = null;
+    if (MEAL_TASK[x.slot]) { const t = tasks.find((k) => MEAL_TASK[x.slot].test(String(k.label || ''))); at = t ? mins(t.time) : null; }
+    else at = mins(x.served);
+    if (at != null) { const after = times.find((t) => t > at); till = after != null ? after : at + 60; }
+    else if (x.window) till = mins(x.window[1]);
+    const shown = at != null ? hhmm(at) : null;
+    if (m.phase === 'PRE_LAUNCH') return { k: 'planned', at: shown };
+    if (m.phase === 'COMPLETE') return { k: 'served', at: shown };
+    if (now == null || (at == null && till == null)) return null;
+    if (till != null && now >= till) return { k: 'served', at: shown };
+    if (at != null && now >= at) return { k: 'now', at: shown };
+    return { k: 'later', at: shown, t: at == null ? Infinity : at };
+  });
+  const ahead = out.filter((s) => s && s.k === 'later').sort((a, b) => a.t - b.t);
+  if (ahead.length) ahead[0].k = 'next';
+  return out;
+}
+const MEAL_STATE = { served: 'Served', now: 'Serving now', next: 'Next::meal', later: 'Later', planned: 'Planned' };
+/** One meal's card. */
+function mealCard(T, x, st) {
+  const id = `meal-${String(x.slot || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+  // the food meter between the meal's hours, as the list showed it (layout.js, mealFigs): its watt hours with the unit,
+  // 0 Wh where it has nothing yet; a figure the desk filed instead where the meter has none; an added meal the figure of
+  // the named meal it counts with
+  const wh = x.power_wh != null ? x.power_wh : x.energy_source === 'filed' && x.energy_wh ? x.energy_wh : 0;
+  const filed = x.power_wh == null && x.energy_source === 'filed' && x.energy_wh;
+  const meterNote = x.power_with ? `${T('with')} ${L.slotName(T, x.power_with)}` : x.power_running ? T('so far') : '';
+  const chip = st ? `<span class="mc-state is-${st.k}"><i aria-hidden="true"></i>${T(MEAL_STATE[st.k])}${st.at ? ` · ${st.at}` : ''}</span>` : '';
+  return `
+        <article class="mc${st ? ` is-${st.k}` : ''}" id="${id}" aria-labelledby="${id}-n">
+          <header class="mc-head"><span class="mc-slot">${esc(L.slotName(T, x.slot))}</span>${chip}</header>
+          <h4 class="mc-name" id="${id}-n">${esc(x.name)}</h4>
+          <div class="mc-sec">
+            <span class="mc-k">${T('Per serving')}</span>
+            <div class="mc-figs">${mcFig(mcNum(x.kcal || 0), 'kcal', T('Energy content'), { cls: 'is-lead' })}${mcFig(mcNum(x.co2e_kg, 2), 'kg', 'CO₂e')}${mcFig(mcNum(x.water_footprint_l), 'L', T('Water footprint'))}</div>
+            ${mcNutrients(T, x.nutrients, { none: T('No recipe figures for this meal') })}
+          </div>
+          <div class="mc-sec">
+            <span class="mc-k">${T('In the kitchen')}</span>
+            <div class="mc-figs">${mcFig(x.water_litres ? mcNum(x.water_litres, 1) : '—', 'L', T('Water'))}${mcFig(mcNum(wh), 'Wh', T(filed ? 'Energy used' : 'Food meter'), { note: meterNote })}${mcFig(x.prep_minutes ? mcNum(x.prep_minutes) : '—', 'min', T('Preparation'))}</div>
+          </div>
+        </article>`;
+}
+/** The panel's body: the day's sum, then a card a meal. `mealsWh` the day's metered watt hours (null while the meter has
+ *  none — the figures filed for the meals then), `running` that a meal's hours still run (so far). */
+function mealCardsBody(T, m, today, { tasks = [], mealsWh = null, running = false } = {}) {
+  const meals = today.meals, pre = m.phase === 'PRE_LAUNCH';
+  const states = mealStates(m, meals, tasks);
+  const dayWh = mealsWh != null ? mealsWh : today.energyPlanned || 0;
+  const n = meals.length;
+  return `
+      <div class="mc-wrap">
+        <div class="mc-day">
+          <div class="mc-day-lead">
+            <span class="mc-k">${pre ? T('Planned for day 01') : T('The day')}</span>
+            <b class="mc-day-kcal">${mcNum(today.kcalPlanned || 0)}<small>kcal</small></b>
+            <span class="mc-day-sub">${n} ${T(n === 1 ? 'meal' : 'meals')} · ${T('one serving of each meal')}</span>
+          </div>
+          <div class="mc-day-part">
+            <span class="mc-k">${T('Per serving')}</span>
+            <div class="mc-figs">${mcFig(mcNum(today.co2ePlanned, 2), 'kg', 'CO₂e')}${mcFig(mcNum(today.waterFootprintPlanned), 'L', T('Water footprint'))}</div>
+          </div>
+          <div class="mc-day-part">
+            <span class="mc-k">${T('In the kitchen')}</span>
+            <div class="mc-figs">${mcFig(today.waterPlanned ? mcNum(today.waterPlanned, 1) : '—', 'L', T('Water'))}${mcFig(mcNum(dayWh), 'Wh', T(mealsWh != null || !today.energyPlanned ? 'Food meter' : 'Energy used'), { note: running ? T('so far') : '' })}</div>
+          </div>
+          ${today.nutrientsPlanned ? `<div class="mc-day-nutr"><span class="mc-k">${T('Nutrients')} · ${T('one serving of each meal')}</span>${mcNutrients(T, today.nutrientsPlanned)}</div>` : ''}
+        </div>
+        <div class="mc-grid">${meals.map((x, i) => mealCard(T, x, states[i])).join('')}
+        </div>
+      </div>`;
+}
+
 /* Two instruments without a reading among the habitat's tiles — visual elements in the bento, each on a row of its own
    (aura.css draws them, public/live.js moves what moves in them): Astronauts tracked, at the end of the sensors' third
    row — a radar with a sweep going round, rings and a rim of ticks, and inside it one dot an astronaut (`n`, the crew's
@@ -1935,7 +2187,7 @@ function cityFan(T) {
 }
 
 function dashboard(ctx, args) {
-  const { m, T, day3, blogDate, kpis, strip, cloudStrip, missionPanel, habitat, schedule, galley, crewPanel, blogCommander, blogHealth, blogScience } = dashboardPanels(ctx, args, { trendsInside: true });
+  const { m, T, day3, blogDate, kpis, strip, cloudStrip, missionPanel, habitat, schedule, galley, crewPanel, blogCommander, blogHealth, blogScience } = dashboardPanels(ctx, args, { trendsInside: true, grouped: true, mealCards: true });
   return `
   <section class="dash" id="mission">
     <header class="dash-head" data-stop>
@@ -2213,7 +2465,7 @@ function archive(ctx, { messages, filters, stats }) {
       <label class="f"><span>Mission day</span>
         <input type="number" name="day" min="1" value="${esc(filters.day || '')}"></label>
       <label class="f"><span>Callsign</span>
-        <input type="text" name="callsign" value="${esc(filters.callsign || '')}" placeholder="DUST-417"></label>
+        <input type="text" name="callsign" value="${esc(filters.callsign || '')}" placeholder="NEBULA-417"></label>
       <label class="f"><span>&nbsp;</span><button type="submit">Filter archive</button></label>
     </div>
   </form>
@@ -2237,6 +2489,6 @@ function single(ctx, { message }) {
 
 module.exports = {
   mission, writePage, dashboardPage, complete, inventoryGauges, boardCards, boardVersion, archive, single, messageCard,
-  hardwareInner, powerTileInner, oxygenTileInner, ticker, habReading, dashboardPanels, boardScreen, habitatDome, composerDevice, portal,
+  hardwareInner, hardwareClubs, mealStates, macroShares, powerTileInner, oxygenTileInner, ticker, habReading, dashboardPanels, boardScreen, habitatDome, composerDevice, portal,
   SENSOR_ICON,
 };

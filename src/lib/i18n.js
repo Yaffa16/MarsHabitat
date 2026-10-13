@@ -214,7 +214,31 @@ const D = {
   'Fibre': ['Ballaststoffe', 'Fibres'],
   'Sugar': ['Zucker', 'Sucres'],
   'Sodium': ['Natrium', 'Sodium'],
-  'No schedule filed for this day': ['Für diesen Tag kein Plan erfasst', 'Aucun programme saisi pour ce jour'],
+  // ---- Today's Meal as cards on the dashboard (public.js, mealCardsBody — 13 October)
+  'Served': ['Serviert', 'Servi'],
+  'Serving now': ['Wird serviert', 'En cours'],
+  'Next::meal': ['Nächste', 'Ensuite'],
+  'Later': ['Später', 'Plus tard'],
+  'Per serving': ['Pro Portion', 'Par portion'],
+  'Energy content': ['Brennwert', 'Valeur énergétique'],
+  'In the kitchen': ['In der Küche', 'En cuisine'],
+  'Food meter': ['Food-Zähler', 'Compteur Food'],
+  'Energy used': ['Energieverbrauch', 'Énergie utilisée'],
+  'Preparation': ['Zubereitung', 'Préparation'],
+  'Nutrients': ['Nährwerte', 'Valeurs nutritionnelles'],
+  'Share of energy': ['Energieanteil', 'Part de l’énergie'],
+  'No recipe figures for this meal': ['Für diese Mahlzeit keine Rezeptwerte', 'Pas de valeurs de recette pour ce repas'],
+  'The day': ['Der Tag', 'La journée'],
+  'meal': ['Mahlzeit', 'repas'],
+  'one serving of each meal': ['eine Portion jeder Mahlzeit', 'une portion de chaque repas'],
+  // ---- the dashboard's Sensors tab in groups (public.js, dashboardPanels, grouped — 13 October)
+  'Life support': ['Lebenserhaltung', 'Support vie'],
+  'The habitat’s air, climate and light, measured live': ['Luft, Klima und Licht im Habitat, live gemessen', 'L’air, le climat et la lumière de l’habitat, mesurés en direct'],
+  'Consumed, from the meters · generated on the bike': ['Verbraucht, von den Zählern · erzeugt auf dem Fahrrad', 'Consommée, relevée aux compteurs · produite sur le vélo'],
+  'Their steps · the habitat in Karlsruhe': ['Ihre Schritte · das Habitat in Karlsruhe', 'Leurs pas · l’habitat à Karlsruhe'],
+  'Life aboard besides the crew': ['Leben an Bord außer der Crew', 'La vie à bord en dehors de l’équipage'],
+  'The habitat’s other devices, through Home Assistant': ['Die übrigen Geräte des Habitats, über Home Assistant', 'Les autres appareils de l’habitat, via Home Assistant'],
+  'No schedule filed for this day':['Für diesen Tag kein Plan erfasst', 'Aucun programme saisi pour ce jour'],
   'Filed by mission control · never quoted as numbers': ['Von der Missionskontrolle erfasst · nie als Zahlen zitiert', 'Saisi par le contrôle de mission · jamais cité en chiffres'],
   'Sensor node · measured live · figures and stores counted by the crew':
     ['Sensorknoten · live gemessen · Zahlen und Vorräte von der Crew gezählt', 'Capteur · mesuré en direct · chiffres et réserves comptés par l’équipage'],
@@ -540,6 +564,8 @@ const D = {
 
   // ---- the landing page's aura layout: the composer's heading, the blogs' heading, the menu, the lead
   'Write to the crew': ['Schreib der Crew', 'Écrivez à l’équipage'],
+  // the Message Board's own key (public.js, boardWall — 13 October)
+  'Write to the Crew': ['Schreib der Crew', 'Écrire à l’équipage'],
   'Live Mission Dashboard': ['Missions-Dashboard live', 'Suivi de mission en temps réel'],
   'Dashboard': ['Dashboard', 'Tableau de bord'],
   'More': ['Mehr', 'Plus'],
@@ -565,9 +591,9 @@ const D = {
     ['Live — das Habitat, wie es jetzt ist: seine Messwerte, die neuesten Bilder und die letzten Austausche', 'En direct — l’habitat tel qu’il est maintenant : ses mesures, les dernières images et les derniers échanges'],
   'Home': ['Start', 'Accueil'],
   'Cookies': ['Cookies', 'Cookies'],
-  'One cookie: your callsign (e.g. BASALT-625), so you find your messages when you come back. Theme and language are kept the same way. No account, no tracking, nothing passed on.':
-    ['Ein Cookie: dein Rufzeichen (z. B. BASALT-625), damit du deine Nachrichten wiederfindest, wenn du zurückkommst. Thema und Sprache werden genauso gemerkt. Kein Konto, kein Tracking, nichts wird weitergegeben.',
-     'Un cookie : votre indicatif (p. ex. BASALT-625), pour retrouver vos messages à votre retour. Thème et langue sont gardés de la même manière. Pas de compte, pas de pistage, rien n’est transmis.'],
+  'One cookie: your callsign (e.g. NEBULA-625), so you find your messages when you come back. Theme and language are kept the same way. No account, no tracking, nothing passed on.':
+    ['Ein Cookie: dein Rufzeichen (z. B. NEBULA-625), damit du deine Nachrichten wiederfindest, wenn du zurückkommst. Thema und Sprache werden genauso gemerkt. Kein Konto, kein Tracking, nichts wird weitergegeben.',
+     'Un cookie : votre indicatif (p. ex. NEBULA-625), pour retrouver vos messages à votre retour. Thème et langue sont gardés de la même manière. Pas de compte, pas de pistage, rien n’est transmis.'],
   'Learn more': ['Mehr erfahren', 'En savoir plus'],
   'Welcome': ['Willkommen', 'Bienvenue'],
   'To make sure you talk to the Mars habitat under the same call sign every time, please accept. If you do not, you will be given a new name on each visit and cannot see your own messages.':

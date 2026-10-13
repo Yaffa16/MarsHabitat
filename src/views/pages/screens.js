@@ -53,7 +53,7 @@ const V = L.ASSET_V;
    keeps its layout at) — the scale is capped so the screen's width, divided by the scale, stays at least this. */
 const SCREENS = [
   { name: 'landing', title: 'Landing page', fit: 'scale', minWidth: 1000, about: 'The first screen of the landing page — the name, the way to the habitat with the latest exchanges and pictures around the line — with the ticker' },
-  { name: 'habitat', title: 'Habitat', fit: 'roll', about: 'The habitat’s instruments, live, as a head-up display: over it Habitat and LIVE, the day, the date and the clock; in the middle the way from the Earth to the habitat, the latest exchange and the latest picture beside its line; at the left and at the right every tile of the Sensors panel — the readings and Karlsruhe, the stores, the steps, the astronauts, the current crew, the power and the bike, the hardware’s charts, the trends — a page at a time, the tiles coming one after another; the running line along the foot (the panel rolling by slowly from top to bottom, as it did: ?roll=1)' },
+  { name: 'habitat', title: 'Habitat', fit: 'roll', about: 'The habitat’s instruments, live, as a head-up display: over it Habitat and LIVE, the day, the date and the clock; in the middle the way from the Earth to the habitat, the latest exchange and the latest picture beside its line; at the left and at the right every tile of the Sensors panel — the readings and Karlsruhe, the stores, the steps, the astronauts, the current crew, the power and the bike, the hardware’s charts, the trends — a page at a time, the tiles coming one after another; the running line along the top (the panel rolling by slowly from top to bottom, as it did: ?roll=1)' },
   { name: 'board', title: 'Message Board', fit: 'clip', about: 'The ground station’s board, live: every message sent from the writing screen as it stands — in transit, awaiting a reply, answered — among the latest exchanges with the crew, the newest first — the latest that fit, nine at the most, never one cut' },
   { name: 'write', title: 'Write to the crew', fit: 'scale', minWidth: 640, about: 'The composer, full screen, for writing to the crew at the venue — every message from it as the ground station’s, under its one operator name' },
   { name: 'mission', title: 'Today’s Mission', fit: 'scale', minWidth: 760, about: 'The day’s scientific mission, typed: its question, Morning, Afternoon and EVA — ten seconds after it stands whole, the day (the schedule, the meal and the crew’s moods) for half a minute, then the mission again, round and round' },
@@ -146,7 +146,8 @@ function landing(ctx, d) {
     Sensors panel's own tiles, live — every one of them, a page of them at a time, the next page coming tile by tile,
     one after another, every few seconds (public/screen-habitat-hud.js): the instruments, the stores, Karlsruhe, the
     steps, the volatile organic compounds and the astronauts at the left; the current crew, the power, the bike, the
-    hardware's charts and the trends at the right; along the foot the running line (the ticker). Each tile is the
+    hardware's charts and the trends at the right; along the top the running line (the ticker — 12 October: "move the
+    ticker to the top"; it ran along the foot for an hour). Each tile is the
     dashboard's, drawn as the rolled screen drew it and shown smaller to fit its column, so it reads as it did; the
     tiles are kept live by the scripts that always kept them (habitat.js, hardware.js, live.js, screen-habitat-fx.js).
     The rolled screen (8 October: "a vertical layout with scrolling, to show all the content clearly and slowly" — the
@@ -172,8 +173,8 @@ function dayShort(iso, lang) {
   } catch { return String(iso); }
 }
 
-/** The head-up display's markup (habitat, above): the head, the two columns the tiles are shown in (empty — the script
-    stands the tiles over them), the way from the Earth to the habitat in the middle, the running line, and — unseen
+/** The head-up display's markup (habitat, above): the running line, the head, the two columns the tiles are shown in
+    (empty — the script stands the tiles over them), the way from the Earth to the habitat in the middle, and — unseen
     until the script has laid them out — the current crew's card and the Sensors panel, whose tiles they are. */
 function habitatHud(ctx, d, p) {
   const T = ctx.T, m = ctx.mission, lang = ctx.lang || 'de', tz = m.timezone, g = ctx.geo || {};
@@ -236,11 +237,11 @@ function habitatHud(ctx, d, p) {
   // the pictures' strip, unseen: cloud.js keeps it in line with the folder, and the latest picture follows it
   const strip = d.cloud ? `<div class="screen-hidden"><div class="cloud-latest" id="cloud-latest" data-version="${esc(d.cloud.snapshot.version || '')}" data-poll="${(Number(d.cloud.snapshot.checkSeconds) || 20) * 1000}">${M.cloudLatestInner(T, d.cloud, { tz })}</div></div>` : '';
   return `<div class="screen-roll hab-hud" id="hab-hud" data-hold="12000" data-tz="${esc(tz)}" data-lang="${esc(lang)}">
+    ${P.ticker(ctx, { today: d.today })}
     <div class="hh-grid">${head}
       <div class="hh-col hh-left" id="hh-left"></div>${centre}
       <div class="hh-col hh-right" id="hh-right"></div>
     </div>
-    ${P.ticker(ctx, { today: d.today })}
     <div class="hh-deck" id="hh-deck">${crew}
       ${p.habitat}
     </div>
