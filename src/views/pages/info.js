@@ -46,6 +46,7 @@ const out = (href, text) => `<a href="${href}" target="_blank" rel="noopener">${
    missions are eleven. (content/missions.json plans a mission for every day but the last, which is twelve; the sheet
    says eleven, and the sheet is what the page says.) */
 const START_END_TIME = '17:00';
+const ML = require('../../lib/mission');                     // (the days in the page's language, the hours with their zone: 13 October)
 const SCIENTIFIC_MISSIONS = 11;
 
 function aboutFold(ctx) {
@@ -94,9 +95,9 @@ function aboutFold(ctx) {
         ${eyebrow(T('This mission'))}
         <dl class="kv">
           <dt>${T('DESIGNATION')}</dt><dd>${esc(ctx.mission.name)}</dd>
-          <dt>${T('RUN')}</dt><dd>${esc(ctx.mission.runLabelLong)}</dd>
-          <dt>${T('START')}</dt><dd>${esc(ctx.mission.startLabel)} · ${START_END_TIME}</dd>
-          <dt>${T('END')}</dt><dd>${esc(ctx.mission.endLabel)} · ${START_END_TIME}</dd>
+          <dt>${T('RUN')}</dt><dd>${esc(ML.runLabel(ctx.mission.start_date, ctx.mission.end_date, { long: true, lang: ctx.lang }))}</dd>
+          <dt>${T('START')}</dt><dd>${esc(ML.dayLabel(ctx.mission.start_date, ctx.lang))} · ${START_END_TIME} ${ML.zoneOfWall(ctx.mission.start_date, START_END_TIME, ctx.mission.timezone)}</dd>
+          <dt>${T('END')}</dt><dd>${esc(ML.dayLabel(ctx.mission.end_date, ctx.lang))} · ${START_END_TIME} ${ML.zoneOfWall(ctx.mission.end_date, START_END_TIME, ctx.mission.timezone)}</dd>
           <dt>${T('DURATION')}</dt><dd>${n} ${T(n === 1 ? 'day' : 'days')}</dd>
           <dt>${T('CREW')}</dt><dd>3</dd>
           <dt>${T('SCIENTIFIC MISSIONS')}</dt><dd>${SCIENTIFIC_MISSIONS}</dd>

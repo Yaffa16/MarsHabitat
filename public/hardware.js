@@ -130,8 +130,20 @@
     }
     return fig.__hw;
   }
+  /* the zone the venue's clock keeps at a moment — CEST, or CET from 25 October 2026 at 03:00, when the clocks go back
+     (13 October: "for most places on the website where time is shown, intelligently add CEST and change to CET") */
+  function zoneAt(ms, zone) {
+    try {
+      var p = {};
+      new Intl.DateTimeFormat('en-GB', { timeZone: zone || 'Europe/Berlin', hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' })
+        .formatToParts(new Date(ms)).forEach(function (x) { p[x.type] = x.value; });
+      var off = Math.round((Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute) - Math.floor(ms / 60000) * 60000) / 60000);
+      return off === 120 ? 'CEST' : off === 60 ? 'CET' : '';
+    } catch (e) { return ''; }
+  }
   function clockOf(d, minutes) {
-    try { return new Date(d.since + minutes * 60000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: d.tz || 'Europe/Berlin' }); }
+    var ms = d.since + minutes * 60000, z = zoneAt(ms, d.tz);
+    try { return new Date(ms).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: d.tz || 'Europe/Berlin' }) + (z ? ' ' + z : ''); }
     catch (e) { return ''; }
   }
   function fmt(v, dec) { return v == null || isNaN(v) ? '\u2014' : Number(v).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: dec }); }

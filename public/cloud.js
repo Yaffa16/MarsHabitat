@@ -151,8 +151,11 @@
       var ts = tiles(); if (!ts.length) return;
       at = ((i % ts.length) + ts.length) % ts.length;
       var t = ts[at], w = t.querySelector('.mtile-when'), day = t.closest('.cloud-day'), head = day && day.querySelector('.cloud-day-date');
+      // the time with its zone: the day's, which its head names for all its pictures (data-zone) — on the day the clocks
+      // go back each picture's time carries its own (13 October)
+      var zone = day ? day.getAttribute('data-zone') || '' : '', hm = w ? w.textContent : '';
       img.src = t.getAttribute('href'); img.alt = t.getAttribute('title') || '';
-      when.textContent = [head ? head.textContent : '', w ? w.textContent : ''].filter(Boolean).join(' · ');
+      when.textContent = [head ? head.textContent : '', hm && zone ? hm + ' ' + zone : hm].filter(Boolean).join(' · ');
       lb.querySelector('.lb-prev').disabled = lb.querySelector('.lb-next').disabled = ts.length < 2;
       // the neighbours, fetched ahead
       [at + 1, at - 1].forEach(function (k) { var n = ts[((k % ts.length) + ts.length) % ts.length]; if (n) { var pre = new Image(); pre.src = n.getAttribute('href'); } });

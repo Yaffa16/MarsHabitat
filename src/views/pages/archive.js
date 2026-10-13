@@ -5,6 +5,7 @@ const mood = require('../../lib/mood');
 const MV = require('./media');
 const mediaLookup = require('../../lib/media').get;
 const officer = require('../../lib/officer');
+const ML = require('../../lib/mission');
 
 const dd = (n) => String(n).padStart(3, '0');
 /** A figure exactly as it was entered — no rounding, no formatting. */
@@ -130,6 +131,14 @@ function contents(ctx, { days, counts, entryCounts, rehearsal = null, tally = { 
 function dayRecord(ctx, { record, hasPrev, hasNext }) {
   const r = record;
   const slot = (x) => require('../../lib/data').slotLabel(x);
+  // every time on habitat time with the zone it keeps — CEST, CET from 25 October at 03:00 (13 October): a moment
+  // (a state filed, a note posted) by its instant, the schedule's and the meals' times by the day's date — the schedule's
+  // zone once in its head, after each time on the day that has both
+  const tz = ctx.mission.timezone;
+  const clock = (iso) => ML.clockAt(new Date(iso), tz);
+  const wall = (hhmm) => (hhmm && r.date ? `${hhmm} ${ML.zoneOfWall(r.date, hhmm, tz)}`.trim() : hhmm || '');
+  const tasksZ = r.day && r.date ? r.day.tasks.map((t) => ML.zoneOfWall(r.date, t.time, tz)) : [];
+  const zoneHead = tasksZ.length && tasksZ.every((z) => z === tasksZ[0]) ? tasksZ[0] : '';
 
   const base = r.rehearsal ? '/archive/now' : `/archive/day/${r.missionDay}`;
   const mediaDay = r.rehearsal ? 0 : r.missionDay;   // NOW's media hangs on day 0
@@ -170,7 +179,7 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
       return `<div style="border-bottom:1px solid var(--rule);padding:10px 0">
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
           <span class="badge">${esc(t.condition)}</span>
-          <span class="note" style="font-size:11px">${esc(m.effective_at.slice(11, 16))} UTC · filed by ${esc(m.set_by)}</span>
+          <span class="note" style="font-size:11px">${esc(clock(m.effective_at))} · filed by ${esc(m.set_by)}</span>
         </div>
         <ul style="margin:6px 0 0;padding-left:18px">
           ${t.axes.map((a) => `<li class="note">${esc(a.label)} · value filed ${esc(String(a.value))} (${esc(a.low.toLowerCase())} 0 … ${esc(a.high.toLowerCase())} 100) · shown as “${esc(a.text)}”</li>`).join('')}
@@ -181,14 +190,14 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
   ${r.reportsUnassigned.length ? panel('DAILY REPORTS', `
     ${eyebrow('Reports with no officer to hang on')}
     <div class="rows">${r.reportsUnassigned.map((n) => `
-      <div class="row"><div class="t">${esc(n.posted_at.slice(11, 16))}</div>
+      <div class="row"><div class="t">${esc(clock(n.posted_at))}</div>
       <div class="m entry-post">${MV.entryHtml(n.body, [], { lookup: mediaLookup })}</div>
       <span class="badge">${esc(n.kind)}</span></div>`).join('')}</div>`, 'mars-side') : ''}
 
   ${r.notesOther.length ? panel('NOTES', `
     ${eyebrow('Mission notes')}
     <div class="rows">${r.notesOther.map((n) => `
-      <div class="row"><div class="t">${esc(n.posted_at.slice(11, 16))}</div>
+      <div class="row"><div class="t">${esc(clock(n.posted_at))}</div>
       <div class="m entry-post">${MV.entryHtml(n.body, [], { lookup: mediaLookup })}</div>
       <span class="badge">${esc(n.kind)}</span></div>`).join('')}</div>`, 'mars-side') : ''}
 
@@ -201,10 +210,10 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
   <div style="padding:26px 0 8px"><div class="eyebrow">The Habitat tab of mission control · as it stands at the time of this record · the same tab is written to the readings log automatically at the end of each day</div></div>
   <div class="grid g2">
     ${panel('SCHEDULE', `
-      ${eyebrow('Schedule')}
-      ${r.day && r.day.tasks.length ? `<div class="rows">${r.day.tasks.map((t) => `
+      ${eyebrow(`Schedule${zoneHead ? ` · ${zoneHead}` : ''}`)}
+      ${r.day && r.day.tasks.length ? `<div class="rows">${r.day.tasks.map((t, i) => `
         <div class="row ${t.status === 'DONE' ? 'done' : ''}">
-          <div class="t">${esc(t.time)}</div>
+          <div class="t">${esc(t.time)}${!zoneHead && tasksZ[i] ? ` <small class="tz">${esc(tasksZ[i])}</small>` : ''}</div>
           <div class="m"><b>${esc(t.label)}</b>${t.detail ? `<span>${esc(t.detail)}</span>` : ''}</div>
           <span class="badge">${esc(t.status)}</span>
         </div>`).join('')}</div>` : '<p class="note">No schedule for this day.</p>'}`, 'mars-side')}
@@ -212,7 +221,7 @@ function dayRecord(ctx, { record, hasPrev, hasNext }) {
     ${panel('MEALS', `
       ${eyebrow('Meals')}
       ${r.day && r.day.meals.length ? r.day.meals.map((m) => `<div style="padding:8px 0;border-bottom:1px solid var(--rule)">
-        <div class="eyebrow">${esc(slot(m.slot))}${m.served_at ? ` · ${esc(m.served_at)}` : ''}</div>
+        <div class="eyebrow">${esc(slot(m.slot))}${m.served_at ? ` · ${esc(wall(m.served_at))}` : ''}</div>
         <h3>${esc(m.name)}</h3>
         ${m.components ? `<div class="note" style="white-space:pre-line;margin-bottom:6px">${esc(m.components)}</div>` : ''}
         <div class="note">${asIs(m.kcal)} kcal · ${asIs(m.water_litres)} L water · ${asIs(m.prep_minutes)} min · ${m.energy_source === 'with' ? `power with ${esc(slot(m.power_with))}${m.window ? ` (${m.window[0]}–${m.window[1]}${m.power_wh != null ? `, ${m.power_wh} Wh` : ''})` : ''}` : `${asIs(m.energy_wh)} Wh${m.energy_source === 'meter' ? ` (the food meter${m.window ? `, ${m.window[0]}–${m.window[1]}` : ''}${m.power_running ? ', so far' : ''})` : ''}`}</div>

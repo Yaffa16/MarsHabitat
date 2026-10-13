@@ -19,15 +19,28 @@ const officer = require('../../lib/officer');
 /* English through, for the places that have no visitor: the archive. */
 const same = require('../../lib/i18n').plain;                 // the English, where no T is given (a key's sense after '::' left out)
 const dayWord = (T, n) => `${n} ${T(n === 1 ? 'day' : 'days')}`;
-/** A moment as the room reads it: "Sat 24 Oct · 16:02", in the venue's time. */
-function whenLabel(iso, tz) {
+/** A moment as the room reads it: "Sat 24 Oct · 16:02 CEST", in the venue's time and with its zone — CEST, or CET
+    once the clocks have gone back (13 October), by the moment's own date — the day in the page's language (`lang`:
+    "Sa., 24. Okt.", "sam. 24 oct."); `weekday: false` leaves the weekday off ("24 Oct · 16:02 CEST"). */
+const DAY_LOCALE = { en: 'en-GB', de: 'de-DE', fr: 'fr-FR' };
+function whenLabel(iso, tz, { lang = 'en', weekday = true } = {}) {
   if (!iso) return '';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
   const zone = tz || 'Europe/Berlin';
-  const day = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: zone }).replace(',', '');
+  let day = d.toLocaleDateString(DAY_LOCALE[lang] || 'en-GB', { ...(weekday ? { weekday: 'short' } : {}), day: 'numeric', month: 'short', timeZone: zone });
+  if (!DAY_LOCALE[lang] || lang === 'en') day = day.replace(',', '');
   const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: zone });
-  return `${day} · ${time}`;
+  return `${day} · ${time} ${missionLib.zoneAbbr(d, zone)}`.trim();
+}
+/* The zone of a day's list of times (13 October: "intelligently add CEST and change to CET"): named once beside the
+   list's head when every time on it keeps the same zone — the day's schedule, its meals — and beside each time on the
+   day the clocks go back (25 October: 01:30 is CEST, 08:30 CET). `date` is the venue's date of the list. */
+function zonesOf(date, times, tz) {
+  const zs = times.map((t) => (t && date ? missionLib.zoneOfWall(date, t, tz) : ''));
+  const first = zs.find(Boolean) || '';
+  const one = zs.every((z) => !z || z === first);
+  return { head: one ? first : '', at: (i) => (one ? '' : zs[i] || '') };
 }
 
 /* ============================================================== COMPLETE */
@@ -39,7 +52,7 @@ function complete(ctx, { counts, recent }) {
   <div style="padding:34px 0 26px">
     <div class="eyebrow">${T('Mars Communication Station')} · ${T('mission complete')}</div>
     <h1>${T('The habitat is empty.')}<br>${T('What was said is still here.')}</h1>
-    <p class="lede">${T('The crew went in on')} ${esc(m.startLabel)} ${T('and came out on')} ${esc(m.endLabel)}.
+    <p class="lede">${T('The crew went in on')} ${esc(missionLib.dayLabel(m.start_date, T.lang))} ${T('and came out on')} ${esc(missionLib.dayLabel(m.end_date, T.lang))}.
     ${T('Over the course of')} ${dayWord(T, m.totalDays)}, ${counts.published} ${T('exchanges crossed the distance between an audience on Earth and three people who could not be reached any other way.')}</p>
     <p><a class="btn" href="/archive">${T('Read the archive')}</a><a class="btn" href="/about">${T('About the project')}</a></p>
   </div>
@@ -450,13 +463,21 @@ function habReading(ctx) {
   return bits.length ? bits.join(' · ') : T('no current reading');
 }
 
+/** The day's tasks for the running line, each with the zone its time keeps on the day — CEST, CET from 25 October at
+    03:00 (13 October) — for the page's first paint and for /api/ticker, whose answer an open page takes every five
+    minutes (src/server.js), so the zone stays when the schedule is fetched again and turns with the day. */
+function tickerTasks(m, today) {
+  return (today && today.tasks ? today.tasks : []).map((t) => ({ time: t.time, label: t.label, detail: t.detail || '',
+    zone: missionLib.zoneOfWall(today.date || m.today, t.time, m.timezone) }));
+}
+
 function ticker(ctx, { today } = {}) {
   const m = ctx.mission, T = ctx.T;
   const pre = m.phase === 'PRE_LAUNCH', over = m.phase === 'COMPLETE';
   // On the inner pages (layout.js draws the ticker there too) the day's
   // schedule is read here.
   if (today === undefined) today = m.phase === 'ACTIVE' ? data.day(m.clampedDay) : null;
-  const tasks = (today && today.tasks ? today.tasks : []).map((t) => ({ time: t.time, label: t.label, detail: t.detail || '' }));
+  const tasks = tickerTasks(m, today);
   const hm = m.venueTime.slice(0, 5);
   let nowTask = null, nextTask = null;
   for (const t of tasks) { if (t.time <= hm) nowTask = t; else if (!nextTask) nextTask = t; }
@@ -469,7 +490,7 @@ function ticker(ctx, { today } = {}) {
   else if (over) cells.push(`<b>${T('Mission complete')}</b> · ${T('the record stays')}`);
   else {
     cells.push(`<b>SOL ${String(m.clampedDay).padStart(2, '0')}/${String(m.totalDays).padStart(2, '0')}</b>`);
-    const say = (t) => `${esc(t.time)} · ${esc(t.label)}${t.detail ? ` — ${esc(t.detail)}` : ''}`;
+    const say = (t) => `${esc(t.time)}${t.zone ? ' ' + esc(t.zone) : ''} · ${esc(t.label)}${t.detail ? ` — ${esc(t.detail)}` : ''}`;
     cells.push(`${T('The crew are currently:')} <b id="tk-now">${nowTask ? say(nowTask) : T('off the schedule')}</b>`);
     cells.push(`${T('Next:')} <b id="tk-next">${nextTask ? say(nextTask) : T('nothing more today')}</b>`);
   }
@@ -560,7 +581,7 @@ function ticker(ctx, { today } = {}) {
     var all = function (sel) { return [].slice.call(el.querySelectorAll(sel)); };
     var tasks = [];
     try { tasks = JSON.parse(el.getAttribute('data-tasks') || '[]'); } catch (e) { /* none */ }
-    function say(t) { return t.time + ' \u00b7 ' + t.label + (t.detail ? ' \u2014 ' + t.detail : ''); }
+    function say(t) { return t.time + (t.zone ? ' ' + t.zone : '') + ' \u00b7 ' + t.label + (t.detail ? ' \u2014 ' + t.detail : ''); }
     function retask() {
       var at = fmt({ hour: '2-digit', minute: '2-digit' }), nowT = null, nextT = null;
       tasks.forEach(function (t) { if (t.time <= at) nowT = t; else if (!nextT) nextT = t; });
@@ -1026,10 +1047,6 @@ const HW_PALETTE = ['#ff6a1a', '#4f7bd9', '#8b6fd6', '#3aa66f', '#d94f7b', '#2aa
                    '#e0562e', '#3f5fbf', '#9c4dcc', '#2e8b57', '#b8336a', '#1f8fa3', '#a67c00', '#556677'];
 const hwColour = (i) => HW_PALETTE[i % HW_PALETTE.length];
 function hwTz() { try { return missionLib.config().timezone; } catch { return 'Europe/Berlin'; } }
-const hwClock = (t, tz) => {
-  try { return new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: tz }); }
-  catch { return new Date(t).toISOString().slice(11, 16); }
-};
 const hwNum = (v, dec = 1) => v == null ? '—'
   : v.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: dec });
 
@@ -1213,8 +1230,8 @@ function hwChart(hw, group, members, tz, T = same, W = HW_W, H = HW_H) {
     ${ticks.map(({ t, k }) => (k % (W < 400 ? 6 : 3) ? '' : `<text x="${sx(t).toFixed(1)}" y="${H - padB + 16}" text-anchor="${k === 0 ? 'start' : k === ticks.length - 1 ? 'end' : 'middle'}" class="hw-ax"${k % 6 ? ' opacity="0.55"' : ''}>${String(k).padStart(2, '0')}</text>`)).join('')}
     ${unit ? `<text x="${padL - 7}" y="${padT - 12}" text-anchor="end" class="hw-ax hw-ax-unit">${unit}</text>` : ''}
     ${now != null ? `<rect x="${now.toFixed(1)}" y="${padT}" width="${(W - padR - now).toFixed(1)}" height="${ih}" class="hw-ahead"/>
-      <line x1="${now.toFixed(1)}" y1="${padT}" x2="${now.toFixed(1)}" y2="${bottom}" class="hw-now"><title>${T('now')} · ${hwClock(hw.liveNow, tz)}</title></line>
-      <text x="${now.toFixed(1)}" y="${padT - 12}" text-anchor="middle" class="hw-ax hw-now-t">${hwClock(hw.liveNow, tz)}</text>` : ''}
+      <line x1="${now.toFixed(1)}" y1="${padT}" x2="${now.toFixed(1)}" y2="${bottom}" class="hw-now"><title>${T('now')} · ${missionLib.clockAt(hw.liveNow, tz)}</title></line>
+      <text x="${now.toFixed(1)}" y="${padT - 12}" text-anchor="middle" class="hw-ax hw-now-t">${missionLib.clockAt(hw.liveNow, tz)}</text>` : ''}
     ${series.map((r) => `<path d="${r.area}" fill="url(#${r.id})" class="hw-area"/>`).join('')}
     ${series.map((r) => `<path d="${r.d}" class="hw-line" stroke="${r.colour}" style="color:${r.colour}" pathLength="1"><title>${esc(r.s.label)}</title></path>
       ${r.pts.slice(0, -1).map(([x, y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.8" fill="${r.colour}" class="hw-dot"/>`).join('')}
@@ -1310,7 +1327,7 @@ const hwSize = (width, height) => ({
 function hardwareNotes(hw, T = same, tz = hwTz()) {
   const missing = (hw.sensors || []).filter((s) => s.missing);
   return `${hw.down ? `<p class="note hw-down">${L.sym('warn')} ${T('Home Assistant could not be reached on the last poll')}${
-      hw.lastPollAt ? ` ${T('at')} ${hwClock(hw.lastPollAt, tz)}` : ''} — ${T('these are the last readings stored.')}</p>` : ''}
+      hw.lastPollAt ? ` ${T('at')} ${missionLib.clockAt(hw.lastPollAt, tz)}` : ''} — ${T('these are the last readings stored.')}</p>` : ''}
     ${hw.frozen ? `<p class="note">${T('The record is closed — the hardware was last read before the end of 27 October 2026.')}</p>` : ''}
     ${missing.length ? `<p class="note">${L.sym('warn')} ${T('Not in the feed:')} ${missing.map((s) => `sensor.${esc(s.id)}`).join(' · ')} — ${T('check the id in content/home-assistant.json.')}</p>` : ''}`;
 }
@@ -1471,15 +1488,16 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, pow
       const cls = pre ? '' : n < m.clampedDay ? 'past' : n === m.clampedDay ? 'now' : '';
       const d = allDays.find((x) => x.missionDay === n);
       return `<div class="${cls}"><span class="run-n">SOL ${String(n).padStart(2, '0')}</span><i></i>
-        <span class="run-d">${d ? esc(shortDay(d.date)) : ''}</span></div>`;
+        <span class="run-d">${d ? esc(shortDay(d.date, T.lang)) : ''}</span></div>`;
     }).join('')}</div>`;
 
   /* ---- panels */
+  const tz0 = zonesOf((today && today.date) || m.today, tasks.map((t) => t.time), m.timezone);
   const schedule = dpanel({ id: 'schedule', title: T('Today’s Schedule'),
-    meta: `SOL ${day3} · ${done}/${tasks.length} ${T('done')}`, span: 4, cls: 'h-3 scroll' },
-    tasks.length ? `<div class="rows">${tasks.map((t) => `
+    meta: `SOL ${day3} · ${done}/${tasks.length} ${T('done')}${tz0.head ? ` · ${tz0.head}` : ''}`, span: 4, cls: 'h-3 scroll' },
+    tasks.length ? `<div class="rows">${tasks.map((t, i) => `
       <div class="row ${t.status === 'DONE' ? 'done' : ''} ${t.status === 'ACTIVE' ? 'active' : ''}">
-        <div class="t">${esc(t.time)}</div>
+        <div class="t">${esc(t.time)}${tz0.at(i) ? ` <small class="tz">${tz0.at(i)}</small>` : ''}</div>
         <div class="m"><b>${esc(t.label)}</b>${t.detail ? `<span>${esc(t.detail)}</span>` : ''}</div>
       </div>`).join('')}</div>` : `<div class="empty">${T('No schedule filed for today')}</div>`);
 
@@ -1807,11 +1825,11 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, pow
   // there (.h-4 and .blog-scroll in the stylesheet) — so with nothing written
   // yet the three make a low row rather than a wall of empty boxes.
   const blogPanel = ({ id, title, posts, empty }) => dpanel({ id, title, span: 4, cls: 'h-4 blogp',
-      meta: nowWritten ? `${T('NOW')} · ${esc(shortDay(m.today))}` : `SOL ${day3} · ${esc(shortDay(blogDate))}` },
+      meta: nowWritten ? `${T('NOW')} · ${esc(shortDay(m.today, T.lang))}` : `SOL ${day3} · ${esc(shortDay(blogDate, T.lang))}` },
     // No whitespace inside the card body: it renders with pre-line.
     posts.length ? `<div class="blog-scroll" tabindex="0" role="region" aria-label="${esc(title)}">${
       posts.map((html) => `<div class="card log-entry"><div class="card-body entry-post">${html}</div></div>`).join('')}</div>`
-    : `<div class="empty">${T(empty)} ${nowWritten ? T('today') : `SOL ${day3}`}${pre && !nowWritten ? ` — ${T('occupied from')} ${esc(m.startLabel)}` : ''}</div>`);
+    : `<div class="empty">${T(empty)} ${nowWritten ? T('today') : `SOL ${day3}`}${pre && !nowWritten ? ` — ${T('occupied from')} ${esc(missionLib.dayLabel(m.start_date, T.lang))}` : ''}</div>`);
   const blogScience = blogPanel({ id: 'blog-science', title: T('Daily Mission Report'),
     posts: reportToday('SCIENCE'), empty: 'No mission report yet for' });
   const blogHealth = blogPanel({ id: 'blog-health', title: T('Health Report'),
@@ -1865,10 +1883,10 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, pow
     meta: mediaCounts.total ? `${mediaCounts.total} ${T(mediaCounts.total === 1 ? 'item' : 'items')} · ${MV.fmtBytes(mediaCounts.bytes)} · ${T('originals, every one downloadable')}` : T('photographs, video and sound out of the habitat'), span: 12 },
     media.length ? `${MV.strip(media, mediaCounts.total > media.length ? { href: '/media', n: mediaCounts.total - media.length, label: T('See everything') } : null)}
       <div class="dpanel-more"><a class="btn" href="/media">${T('All media, day by day')} →</a><a class="btn" href="/media/export.zip">${T('Download everything')} · ZIP</a></div>`
-    : `<div class="empty">${T('Nothing has been sent out of the habitat yet')}${pre ? ` — ${T('occupied from')} ${esc(m.startLabel)}` : ''}</div>`);
+    : `<div class="empty">${T('Nothing has been sent out of the habitat yet')}${pre ? ` — ${T('occupied from')} ${esc(missionLib.dayLabel(m.start_date, T.lang))}` : ''}</div>`);
 
   const whole = dpanel({ id: 'whole', title: T('The whole mission'),
-    meta: `${esc(m.runLabel)} · ${dayWord(T, m.totalDays)}`, span: 12 },
+    meta: `${esc(missionLib.runLabel(m.start_date, m.end_date, { lang: T.lang }))} · ${dayWord(T, m.totalDays)}`, span: 12 },
     allDays.length ? `<div class="days-strip">${allDays.map((d) => {
       // Before the hatch closes every day is still ahead; after it opens,
       // every day is complete. Only during the run is one of them today.
@@ -1877,7 +1895,7 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, pow
       return `<details class="dcard ${state}">
         <summary>
           <span class="dcard-n">D${String(d.missionDay).padStart(3, '0')}</span>
-          <span class="dcard-date">${esc(shortDay(d.date))}</span>
+          <span class="dcard-date">${esc(shortDay(d.date, T.lang))}</span>
           <span class="dcard-state">${T(state === 'now' ? 'Today' : state === 'past' ? 'Complete' : 'Planned')}</span>
           <span class="dcard-count">${d.tasks.length} ${T('tasks')}${d.meals.length ? ` · ${d.meals.length} ${T('meals')}` : ''}</span>
         </summary>
@@ -1900,9 +1918,9 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, pow
   const missionPanel = (() => {
     const missionNo = (no) => String(no).padStart(2, '0');   // the number as the production counts them: 00 on the first day
     const head = `<header class="dpanel-head"><div class="dpanel-title"><h3>${T('Today’s Mission')}</h3></div>
-        <span class="dpanel-meta">SOL ${day3} · ${esc(shortDay(blogDate))}${mission ? ` · ${T('Mission No.')} ${missionNo(mission.no)}` : ''}</span></header>`;
+        <span class="dpanel-meta">SOL ${day3} · ${esc(shortDay(blogDate, T.lang))}${mission ? ` · ${T('Mission No.')} ${missionNo(mission.no)}` : ''}</span></header>`;
     if (!mission) return `<section class="dpanel span-12 mission-today" id="mission-today" aria-label="${esc(T('Today’s Mission'))}">${head}
-      <div class="dpanel-body"><div class="empty">${T('No mission filed for')} SOL ${day3}${pre ? ` — ${T('occupied from')} ${esc(m.startLabel)}` : ''}</div></div></section>`;
+      <div class="dpanel-body"><div class="empty">${T('No mission filed for')} SOL ${day3}${pre ? ` — ${T('occupied from')} ${esc(missionLib.dayLabel(m.start_date, T.lang))}` : ''}</div></div></section>`;
     // a part's lines: a line in capitals is a heading, bullets and numbered lines are lists, → a pointer, the rest paragraphs
     const lines = (arr) => {
       const out = []; let list = null, kind = '';
@@ -1956,7 +1974,7 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, pow
   const missionBig = (() => {
     const missionNo = (no) => String(no).padStart(2, '0');
     const head = `<header class="dpanel-head"><div class="dpanel-title"><h3>${T('Today’s Mission')}</h3></div>
-        <span class="dpanel-meta">SOL ${day3} · ${esc(shortDay(blogDate))}</span></header>`;
+        <span class="dpanel-meta">SOL ${day3} · ${esc(shortDay(blogDate, T.lang))}</span></header>`;
     if (!mission) return `<section class="dpanel span-12 mission-big" aria-label="${esc(T('Today’s Mission'))}">${head}
       <div class="dpanel-body"><p class="mb-q">${T('No mission filed for')} SOL ${day3}</p></div></section>`;
     const c = mission.community || {}, de = ctx.lang === 'de';
@@ -2044,7 +2062,7 @@ function mealStates(m, meals, tasks = []) {
     else at = mins(x.served);
     if (at != null) { const after = times.find((t) => t > at); till = after != null ? after : at + 60; }
     else if (x.window) till = mins(x.window[1]);
-    const shown = at != null ? hhmm(at) : null;
+    const shown = at != null ? `${hhmm(at)} ${missionLib.zoneOfWall(m.today, hhmm(at), m.timezone)}`.trim() : null;
     if (m.phase === 'PRE_LAUNCH') return { k: 'planned', at: shown };
     if (m.phase === 'COMPLETE') return { k: 'served', at: shown };
     if (now == null || (at == null && till == null)) return null;
@@ -2198,7 +2216,7 @@ function dashboard(ctx, args) {
     <header class="dash-head" data-stop>
       <div>
         <h2 class="bigsec">${T('Mission dashboard')}</h2>
-        <p class="dash-sub">${esc(m.name)} · ${esc(m.runLabel)} · ${dayWord(T, m.totalDays)}</p>
+        <p class="dash-sub">${esc(m.name)} · ${esc(missionLib.runLabel(m.start_date, m.end_date, { lang: T.lang }))} · ${dayWord(T, m.totalDays)}</p>
         <p class="dash-figs">${kpis}</p>
       </div>${dashLive(T)}
     </header>
@@ -2228,7 +2246,7 @@ function dashboard(ctx, args) {
           { id: 'blog-commander', label: T('Commander Log'), short: T('Commander::tab'), html: blogCommander },
           { id: 'blog-health', label: T('Health Report'), short: T('Health'), html: blogHealth },
           { id: 'blog-science', label: T('Daily Mission Report'), short: T('Report::tab'), html: blogScience } ] },
-      ], { label: `${T('Mission dashboard')} · SOL ${day3} · ${shortDay(blogDate)}`, title: T('Mission dashboard') })}
+      ], { label: `${T('Mission dashboard')} · SOL ${day3} · ${shortDay(blogDate, T.lang)}`, title: T('Mission dashboard') })}
     </div>
   </section>`;
 }
@@ -2324,8 +2342,9 @@ function messageCard(m, tz, T = same, { replyMeta = true, wall = false, board = 
   const fresh = m.response_at && (Date.now() - Date.parse(m.response_at)) < 6 * 3600000;
   const tags = (m.tags || '').split(',').filter(Boolean);
   const st = cardStatus(m);
-  const short = (label) => label.replace(/^[A-Za-z]{2,3} /, '');                    // the day and the time, without the weekday
-  const sent = short(whenLabel(m.submitted_at, tz)), replied = m.response_body ? short(whenLabel(m.response_at, tz)) : '';
+  // the day and the time, without the weekday, in the page's language and with the zone: "13 Oct · 17:54 CEST"
+  const when = (iso) => whenLabel(iso, tz, { lang: T.lang || 'en', weekday: false });
+  const sent = when(m.submitted_at), replied = m.response_body ? when(m.response_at) : '';
   const home = (() => { try { return missionLib.config().name; } catch { return ''; } })() || T('Mars habitat');
   if (wall) return noteCard(m, { fresh, tags, st, sent, replied, T });
   const meta = [`<span class="cs">${esc(m.callsign)}</span>`, T('Earth'), `<time datetime="${esc(m.submitted_at)}">${esc(sent)}</time>`].join(' · ');
@@ -2494,6 +2513,6 @@ function single(ctx, { message }) {
 
 module.exports = {
   mission, writePage, dashboardPage, complete, inventoryGauges, boardCards, boardVersion, archive, single, messageCard,
-  hardwareInner, hardwareClubs, mealStates, macroShares, powerTileInner, oxygenTileInner, ticker, habReading, dashboardPanels, boardScreen, habitatDome, composerDevice, portal,
+  hardwareInner, hardwareClubs, mealStates, macroShares, powerTileInner, oxygenTileInner, ticker, tickerTasks, habReading, dashboardPanels, boardScreen, habitatDome, composerDevice, portal,
   SENSOR_ICON,
 };

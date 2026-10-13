@@ -51,9 +51,10 @@ const fmtBytes = (b) => (b >= 1073741824 ? (b / 1073741824).toFixed(2) + ' GB' :
 const fmtNum = (v, d = 1) => (v == null || Number.isNaN(v) ? '—' : Number.isInteger(v) ? String(v) : Number(v).toFixed(d));
 /** A figure exactly as it was entered — no rounding, no formatting. */
 const asIs = (v) => (v == null || v === '' ? '—' : String(v));
-/** A reading of the habitat sensor to three decimals at the most (12 October: "for all numbers in the record in Habitat ·
-    the habitat sensor, only show up to 3 decimal points") — 1008.2800293 → 1008.28, 0.7999999821 → 0.8, 640 → 640;
-    anything not a number (the air quality's class) as it was stored. */
+/** A reading of the habitat sensor or the habitat hardware to three decimals at the most (12 October: "for all numbers
+    in the record in Habitat · the habitat sensor, only show up to 3 decimal points"; 13 October: "for all items in
+    Habitat Hardware in the full record, only save upto 3 decimal points") — 1008.2800293 → 1008.28, 0.7999999821 → 0.8,
+    640 → 640; anything not a number (the air quality's class, a device's "unavailable") as it was stored. */
 const dec3 = (v) => { if (v == null || v === '') return '—'; const n = typeof v === 'number' ? v : (/^-?\d+(\.\d+)?$/.test(String(v).trim()) ? Number(v) : NaN); return Number.isFinite(n) ? String(+n.toFixed(3)) : String(v); };
 const cap = (s) => (s ? s.charAt(0) + s.slice(1).toLowerCase() : '');
 const longDate = (iso) => new Date(iso + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
@@ -479,7 +480,7 @@ function daySection(L, G, r, { asChapter = true } = {}) {
 
   /* ---- the sensors: names as on the dashboard ------------------------ */
   L.h2('Habitat sensors', { keep: 100 });
-  L.para(`Every channel as the Sensors tab names it: ${habitatSource()}'s instruments, the habitat hardware (the oxygen among it) and any channel posted to the station itself. First each channel's lowest, highest and mean reading over the day and how many readings that is; then every reading, as stored — ${habitatSource()}'s to three decimals at the most.`, { color: GREY, size: 8.5 });
+  L.para(`Every channel as the Sensors tab names it: ${habitatSource()}'s instruments, the habitat hardware (the oxygen among it) and any channel posted to the station itself. First each channel's lowest, highest and mean reading over the day and how many readings that is; then every reading, as stored — ${habitatSource()}'s and the hardware's to three decimals at the most.`, { color: GREY, size: 8.5 });
   if (r.external.length) {
     L.h3(`Habitat · ${habitatSource()}`, { keep: 70 });
     L.table([{ label: 'Channel', w: 2, font: 'bold' }, { label: 'Low', w: 0.7, align: 'right' }, { label: 'High', w: 0.7, align: 'right' }, { label: 'Mean', w: 0.7, align: 'right' }, { label: 'Unit', w: 0.6 }, { label: 'Readings', w: 0.7, align: 'right' }],
@@ -493,7 +494,7 @@ function daySection(L, G, r, { asChapter = true } = {}) {
   if ((r.hardware || []).length) {
     L.h3('Habitat hardware', { keep: 70 });
     L.table([{ label: 'Device', w: 2, font: 'bold' }, { label: 'Low', w: 0.7, align: 'right' }, { label: 'High', w: 0.7, align: 'right' }, { label: 'Mean', w: 0.7, align: 'right' }, { label: 'Added today', w: 0.9, align: 'right' }, { label: 'Unit', w: 0.6 }, { label: 'Readings', w: 0.7, align: 'right' }],
-      r.hardware.map((h) => [h.label, fmtNum(h.low), fmtNum(h.high), fmtNum(h.mean), h.added == null ? '—' : fmtNum(h.added), h.unit || '', h.samples]));
+      r.hardware.map((h) => [h.label, dec3(h.low), dec3(h.high), dec3(h.mean), dec3(h.added), h.unit || '', h.samples]));
   }
   if (!r.external.length && !r.habitat.length && !(r.hardware || []).length) L.para('No reading was stored for this day.', { font: 'italic', color: GREY, size: 9 });
   readingsSection(L, r.readings);
@@ -502,7 +503,8 @@ function daySection(L, G, r, { asChapter = true } = {}) {
 /**
  * Every reading of the day, as stored: the station's channels as one row
  * per instant with a column per channel, the external node one row per
- * reading, the hardware one table per device. Values exactly as stored,
+ * reading, the hardware one table per device. Values as stored — the
+ * habitat sensor's and the hardware's to three decimals at the most —
  * times in habitat time to the second. Long tables run over the pages;
  * the header repeats.
  */
@@ -529,7 +531,7 @@ function readingsSection(L, R) {
   for (const h of R.hardware) {
     L.h3(`Habitat hardware · ${h.label} · every reading · ${h.rows.length.toLocaleString('en-GB')} readings`, { keep: 70 });
     L.table([{ label: 'Time', w: 0.9, font: 'mono' }, { label: `Value${h.unit ? ` (${h.unit})` : ''}`, w: 1, align: 'right' }, { label: 'As reported', w: 1.4 }],
-      h.rows.map((row) => [row.at, asIs(row.value), row.state]), opts);
+      h.rows.map((row) => [row.at, dec3(row.value), dec3(row.state)]), opts);
   }
 }
 

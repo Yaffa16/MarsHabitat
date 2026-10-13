@@ -304,13 +304,25 @@
     var n = Math.round((Date.parse(date + 'T12:00:00Z') - Date.parse(start + 'T12:00:00Z')) / 864e5) + 1;
     return n >= 1 && n <= days ? n : 0;
   }
-  // a line's time: the clock alone today; on an earlier day the sol before it (or the date, outside the run)
+  /* the zone the venue's clock keeps at a moment — CEST, or CET from 25 October 2026 at 03:00, when the clocks go back
+     (13 October: "for most places on the website where time is shown, intelligently add CEST and change to CET") */
+  function zoneAt(ms, zone) {
+    try {
+      var p = {};
+      new Intl.DateTimeFormat('en-GB', { timeZone: zone || 'Europe/Berlin', hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' })
+        .formatToParts(new Date(ms)).forEach(function (x) { p[x.type] = x.value; });
+      var off = Math.round((Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute) - Math.floor(ms / 60000) * 60000) / 60000);
+      return off === 120 ? 'CEST' : off === 60 ? 'CET' : '';
+    } catch (e) { return ''; }
+  }
+  // a line's time: the clock alone today; on an earlier day the sol before it (or the date, outside the run) — and the zone
   function lineStamp(iso) {
     var d = new Date(iso); if (isNaN(d.getTime())) return '';
     var p = parts(d), now = parts(new Date()); if (!p) return '';
-    if (now && p.date === now.date) return p.hm;
+    var z = zoneAt(d.getTime(), tz), hm = p.hm + (z ? ' ' + z : '');
+    if (now && p.date === now.date) return hm;
     var n = sol(p.date);
-    return (n ? 'SOL ' + pad(n) : p.date.slice(8, 10) + '.' + p.date.slice(5, 7)) + ' · ' + p.hm;
+    return (n ? 'SOL ' + pad(n) : p.date.slice(8, 10) + '.' + p.date.slice(5, 7)) + ' · ' + hm;
   }
   // a snapshot's time: the moment it was taken as the picture's own name writes it (greenhouse_2026_09_25-16-41.jpg →
   // "25.09.2026 · 16:41"), as the gallery shows it — without the year on a narrow snapshot (a phone's), where the plate

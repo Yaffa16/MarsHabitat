@@ -21,6 +21,7 @@
 const L = require('../layout');
 const { esc } = L;
 const moodLib = require('../../lib/mood');
+const missionLib = require('../../lib/mission');
 const { shown: shownTitle } = require('../../lib/officer');   // the crew's titles as the station shows them
 
 const same = (s) => s;
@@ -211,9 +212,7 @@ const HEXES = [
 ];
 
 /* --------------------------------------------------------------- figures */
-const venueClock = (tz) => {
-  try { return new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date()); } catch { return '00:00'; }
-};
+const venueClock = (tz) => require('../../lib/mission').clockAt(new Date(), tz) || '00:00';   // "17:26 CEST" (13 October)
 const titled = (s) => { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase(); };
 const qty = (v) => (Number.isInteger(v) ? String(v) : Number(v).toFixed(1));
 
@@ -226,16 +225,27 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
   const m = ctx.mission, T = ctx.T;
   const pre = m.phase === 'PRE_LAUNCH';
   const sol = String(m.clampedDay).padStart(3, '0');
-  const hhmm = venueClock(m.timezone);
-  const stamp = pre ? `${T('Opens')} ${m.startLabel}` : `SOL ${sol} · ${hhmm}`;
+  // the clock with its zone for the stamp ("17:26 CEST"); the bare hour and minute to compare with the schedule and count
+  // the minutes with (13 October)
+  const clock = venueClock(m.timezone), hhmm = clock.slice(0, 5);
+  const stamp = pre ? `${T('Opens')} ${m.startLabel}` : `SOL ${sol} · ${clock}`;
 
-  // The schedule: what the crew are doing at this minute, and what is next.
+  // The schedule: what the crew are doing at this minute, and what is next — each time with the zone it keeps on its day
+  // (CEST, CET from 25 October at 03:00); a list of times with the zone once after it, or after each on the day that has
+  // both (13 October)
   const tasks = today ? today.tasks : [];
+  const onDay = (today && today.date) || (pre ? m.start_date : m.today);
+  const zoneOf = (t) => missionLib.zoneOfWall(onDay, t.time, m.timezone);
+  const timeAt = (t) => `${t.time}${zoneOf(t) ? ' ' + zoneOf(t) : ''}`;
+  const timesOf = (list) => {
+    const zs = list.map(zoneOf), one = zs.every((z) => z === zs[0]);
+    return `${list.map((t, i) => `${t.time}${!one && zs[i] ? ' ' + zs[i] : ''} ${t.label}`).join(' · ')}${one && zs[0] ? ` (${zs[0]})` : ''}`;
+  };
   let nowT = null, nextT = null;
   for (const t of tasks) { if (t.time <= hhmm) nowT = t; else if (!nextT) nextT = t; }
   const doing = pre ? (tasks[0] ? `${T('Day 01 opens with')} ${tasks[0].label}.` : T('The run has not begun yet.'))
     : nowT ? `${T('Now')}: ${nowT.label}${nowT.detail ? ' — ' + nowT.detail : ''}.` : T('Off the schedule.');
-  const next = nextT ? ` ${T('Up next')} ${nextT.time}: ${nextT.label}.` : '';
+  const next = nextT ? ` ${T('Up next')} ${timeAt(nextT)}: ${nextT.label}.` : '';
 
   // Each officer's condition — as words, never as numbers.
   const cond = (c) => (c && c.mood ? titled(T(moodLib.translate(c.mood).condition)) : T('no state filed'));
@@ -281,10 +291,10 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
   let missionTitle = '';
   try { const ms0 = require('../../lib/content').missionForDay(pre ? 1 : m.clampedDay); if (ms0) missionTitle = ms0.title; } catch { /* no missions file */ }
   const evaOf = (t) => (missionTitle ? ` – ${missionTitle}` : `: ${t.label}`);
-  const evaLine = pre ? (evas[0] ? `${T('Day 01’s EVA is at')} ${evas[0].time}${evaOf(evas[0])}.` : T('The run has not begun yet.'))
+  const evaLine = pre ? (evas[0] ? `${T('Day 01’s EVA is at')} ${timeAt(evas[0])}${evaOf(evas[0])}.` : T('The run has not begun yet.'))
     : evaOn ? `${T('Now')}: ${evaOn.label}${missionTitle ? ' – ' + missionTitle : evaOn.detail ? ' — ' + evaOn.detail : ''}.`
-      : evaNext ? `${T('Today’s EVA is at')} ${evaNext.time}${evaOf(evaNext)}.`
-        : evaPast ? `${T('Today’s EVA was at')} ${evaPast.time}${evaOf(evaPast)}.` : T('No EVA on today’s schedule.');
+      : evaNext ? `${T('Today’s EVA is at')} ${timeAt(evaNext)}${evaOf(evaNext)}.`
+        : evaPast ? `${T('Today’s EVA was at')} ${timeAt(evaPast)}${evaOf(evaPast)}.` : T('No EVA on today’s schedule.');
 
   // The latest exchange with Earth.
   const ex = recent.find((r) => r.state === 'PUBLISHED' && r.response_body) || recent.find((r) => r.state === 'PUBLISHED');
@@ -296,7 +306,7 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
   const meals = today ? today.meals : [];
   const mealLine = meals.length ? `${pre ? T('Planned for day 01') : T('Today')}: ${meals.map((x) => `${L.slotName(T, x.slot)} — ${x.name}`).join(' · ')}${today.kcalPlanned ? ` · ${today.kcalPlanned} kcal` : ''}.` : T('No meals filed for today.');
   const rests = tasks.filter((t) => /\b(sleep|rest|nap|lights out|bed|wake|schlaf|ruhe)\b/i.test(t.label));
-  const restLine = rests.length ? `${pre ? T('On day 01’s schedule') : T('On today’s schedule')}: ${rests.map((t) => `${t.time} ${t.label}`).join(' · ')}.` : T('No rest is written on today’s schedule.');
+  const restLine = rests.length ? `${pre ? T('On day 01’s schedule') : T('On today’s schedule')}: ${timesOf(rests)}.` : T('No rest is written on today’s schedule.');
 
   // The habitat's sensors: the newest reading the station holds, while it is current (critical.js keeps the rows and says
   // how old a reading may be); else when the last one was.
@@ -306,7 +316,7 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
     const last = critical.rows(2).pop();
     if (last) {
       const snap = { staleMs: critical.staleMs() };                       // a quarter of an hour for the habitat sensor
-      const at = (() => { try { return new Intl.DateTimeFormat('en-GB', { timeZone: m.timezone, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(last.t)); } catch { return ''; } })();
+      const at = require('../../lib/mission').clockAt(new Date(last.t), m.timezone);   // "17:20 CEST" (13 October)
       if (Date.now() - last.t <= snap.staleMs) {
         const bits = [];                                                 // CO₂, temperature, humidity — and nothing else (October's text sheet)
         if (last.co2 != null) bits.push(`CO₂ ${Math.round(last.co2)} ppm`);
@@ -341,7 +351,7 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
   } catch { /* no missions file */ }
   // The meals' hours on the schedule (the text sheet's Water Recycling room: the dishes are done after each)
   const mealTasks = tasks.filter((t) => /\b(breakfast|lunch|dinner|supper|meal|cook|frühstück|mittag|abend|essen|kochen)/i.test(t.label));
-  const mealHours = mealTasks.length ? `${T('Meals today')}: ${mealTasks.map((t) => `${t.time} ${t.label}`).join(' · ')}.` : '';
+  const mealHours = mealTasks.length ? `${T('Meals today')}: ${timesOf(mealTasks)}.` : '';
   // The crickets' box (the text sheet's More-than-Human room): its temperature from the habitat's hardware, when read
   let cricketLine = '';
   try {
@@ -363,7 +373,7 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
     aeroponics: { text: cricketLine || storeLine('food', T('No inventory filed for today.')), more: cricketLine ? storeLine('food', '') : `${T('First harvest planned for SOL 10.')}` },
     power:      { text: powerLine, more: '' },
     generator:  { text: `${steps}.`, more: powerLine },
-    eva:        { text: evaLine, more: evaNext && evaOn ? `${T('Up next')} ${evaNext.time}: ${evaNext.label}.` : '' },
+    eva:        { text: evaLine, more: evaNext && evaOn ? `${T('Up next')} ${timeAt(evaNext)}: ${evaNext.label}.` : '' },
     dashboard:  { text: pre ? T('The run has not begun yet.') : `${T('Sol')} ${m.clampedDay} ${T('of')} ${m.totalDays} · ${tasks.filter((t) => t.status === 'DONE').length}/${tasks.length} ${T('tasks done today')} · ${counts.published} ${T('exchanges published')}.`, more: '' },
   };
 }

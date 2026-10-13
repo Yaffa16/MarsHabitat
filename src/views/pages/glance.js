@@ -90,7 +90,7 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
           <td class="n">${x.kcal}</td><td class="n">${x.water_litres || '—'}</td><td class="n">${x.energy_source === 'with' ? `${esc(T('with'))} ${esc(L.slotName(T, x.power_with))}` : x.power_wh != null ? `${x.power_wh}${x.power_running ? '*' : ''}` : x.energy_wh || '—'}</td>
           <td class="n">${x.co2e_kg != null ? +Number(x.co2e_kg).toFixed(3) : '—'}</td><td class="n">${x.water_footprint_l != null ? +Number(x.water_footprint_l).toFixed(1) : '—'}</td></tr>`; }).join('')}</tbody>
       </table></div>
-      <p class="note meal-hours">${esc(T('Power: the food meter, read'))} ${esc(L.mealHoursLine(T, (() => { try { return require('../../lib/home-assistant').mealsConfig().windows; } catch { return {}; } })()))}${day.meals.some((x) => x.power_with) ? ` · ${esc(T('an added meal counts with the meal whose hours cover the time it is served at'))}` : ''}${day.meals.some((x) => x.power_running) ? ` · * ${esc(T('so far'))}` : ''}</p>
+      <p class="note meal-hours">${esc(T('Power: the food meter, read'))} ${esc(L.mealHoursLine(T, (() => { try { return require('../../lib/home-assistant').mealsConfig().windows; } catch { return {}; } })(), day.date ? require('../../lib/mission').zoneOfWall(day.date, '12:00', m.timezone) : ''))}${day.meals.some((x) => x.power_with) ? ` · ${esc(T('an added meal counts with the meal whose hours cover the time it is served at'))}` : ''}${day.meals.some((x) => x.power_running) ? ` · * ${esc(T('so far'))}` : ''}</p>
     </div>` : '';
 
   // The stores at the close of the day, twice over: first as the rings the
@@ -159,11 +159,14 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
         </div>`; }).join('')}</div>
     </div>` : '';
 
+  const ML = require('../../lib/mission');
+  const zs = day && day.tasks.length && day.date ? day.tasks.map((t) => ML.zoneOfWall(day.date, t.time, m.timezone)) : [];
+  const z0 = zs.find(Boolean) || '', oneZone = zs.every((z) => !z || z === z0);
   const schedule = day && day.tasks.length ? `
     <div class="glance-block">
-      ${eyebrow(`${T('Schedule')}${state === 'planned' ? ` · ${T('planned')}` : ` · ${day.tasks.filter((t) => t.status === 'DONE').length}/${day.tasks.length} ${T('done')}`}`)}
-      <div class="rows">${day.tasks.map((t) => `
-        <div class="row ${t.status === 'DONE' ? 'done' : ''}"><div class="t">${esc(t.time)}</div>
+      ${eyebrow(`${T('Schedule')}${state === 'planned' ? ` · ${T('planned')}` : ` · ${day.tasks.filter((t) => t.status === 'DONE').length}/${day.tasks.length} ${T('done')}`}${oneZone && z0 ? ` · ${z0}` : ''}`)}
+      <div class="rows">${day.tasks.map((t, i) => `
+        <div class="row ${t.status === 'DONE' ? 'done' : ''}"><div class="t">${esc(t.time)}${!oneZone && zs[i] ? ` <small class="tz">${zs[i]}</small>` : ''}</div>
           <div class="m"><b>${esc(t.label)}</b>${t.detail ? `<span>${esc(t.detail)}</span>` : ''}</div>
           ${state !== 'planned' && t.status !== 'PLANNED' ? `<span class="badge">${esc(T(t.status))}</span>` : ''}
         </div>`).join('')}</div>

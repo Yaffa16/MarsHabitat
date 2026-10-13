@@ -533,8 +533,25 @@
   function fmtDate(ms) {
     return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' }).format(new Date(ms));
   }
+  /* A moment on the habitat's clock with the zone it keeps — 13 Oct, 18:42 CEST; CET from 25 October 2026 at 03:00, when
+     the clocks go back (13 October) — in the page's language (13. Okt., 18:42 CEST), wherever the visitor's own clock is.
+     The habitat's zone is the page's (the running line's data-tz, the habitat screen's), Berlin's otherwise. */
+  var TZ = (function () { var el = document.querySelector('[data-tz]'); return (el && el.getAttribute('data-tz')) || 'Europe/Berlin'; })();
+  var LOCALE = { de: 'de-DE', fr: 'fr-FR' }[(document.documentElement.getAttribute('lang') || '').slice(0, 2)] || 'en-GB';
+  function zoneAt(ms, zone) {
+    try {
+      var p = {};
+      new Intl.DateTimeFormat('en-GB', { timeZone: zone, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' })
+        .formatToParts(new Date(ms)).forEach(function (x) { p[x.type] = x.value; });
+      var off = Math.round((Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute) - Math.floor(ms / 60000) * 60000) / 60000);
+      return off === 120 ? 'CEST' : off === 60 ? 'CET' : '';
+    } catch (e) { return ''; }
+  }
   function fmtDateTime(ms) {
-    return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(ms));
+    try {
+      var z = zoneAt(ms, TZ);
+      return new Intl.DateTimeFormat(LOCALE, { timeZone: TZ, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(ms)) + (z ? ' ' + z : '');
+    } catch (e) { return new Date(ms).toISOString().slice(0, 16).replace('T', ' ') + ' UTC'; }
   }
 
   /* One series: real values per day, and where each sits on the line's own

@@ -108,13 +108,15 @@ function strip(items, opts) {
 
 /* ================================================================= GALLERY */
 
-/** A moment as a clock reading in the venue's time — "14:20" — for the head
- *  line that says when the folder was last read. */
+/** A moment as a clock reading in the venue's time, with the zone it keeps — "14:20 CEST", CET once the clocks have gone
+ *  back (13 October) — for the head line that says when the folder was last read. */
 function hm(iso, tz = 'Europe/Berlin') {
   const d = new Date(iso || NaN);
   if (Number.isNaN(d.getTime())) return '';
-  try { return new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d); }
-  catch { return d.toISOString().slice(11, 16); }
+  let t;
+  try { t = new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d); }
+  catch { t = d.toISOString().slice(11, 16); }
+  return `${t} ${require('../../lib/mission').zoneAbbr(d, tz)}`.trim();
 }
 /** The head line's tail: when the folder was last read, and — when the
  *  latest read failed — that the cloud could not be reached, with the time.
@@ -124,7 +126,11 @@ function checkedLine(T, s, tz) {
   // the night: nothing is read from the cloud between 22:00 and 08:00 (src/lib/cloud.js, QUIET) — the line says so,
   // and while it is the night, that the next read is at 08:00
   const q = s.quiet || null;
-  const night = q && !q.off ? ` · ${T('not between')} ${q.from} ${T('and')} ${q.to}${q.now ? ` (${T('next read at')} ${q.to})` : ''}` : '';
+  // the zone of the next 08:00 — today's before it, tomorrow's after it (on the night the clocks go back, CET: 13 October)
+  const ML = require('../../lib/mission'), now = new Date();
+  const toDay = q && !q.off ? (ML.localTime(now, tz).slice(0, 5) < q.to ? ML.localDate(now, tz) : ML.localDate(new Date(now.getTime() + 864e5), tz)) : '';
+  const z = toDay ? ML.zoneOfWall(toDay, q.to, tz) : '';
+  const night = q && !q.off ? ` · ${T('not between')} ${q.from} ${T('and')} ${q.to}${z ? ' ' + z : ''}${q.now ? ` (${T('next read at')} ${q.to}${z ? ' ' + z : ''})` : ''}` : '';
   const last = (s.lastPollAt ? ` · ${T('last at')} ${hm(s.lastPollAt, tz)}` : '') + night;
   const failed = s.lastError ? `<span class="count cloud-fail">${T('the cloud could not be reached')}${s.lastError.at ? ` (${hm(s.lastError.at, tz)})` : ''}</span>` : '';
   return { last, failed };
@@ -136,13 +142,15 @@ function checkedLine(T, s, tz) {
  *  venue's own clock, nothing to convert); a file named any other way shows
  *  its own date instead, in the venue's time. */
 function cloudWhen(x, tz = 'Europe/Berlin') {
-  if (x.taken) return { text: `${x.taken.date.slice(8, 10)}.${x.taken.date.slice(5, 7)}.${x.taken.date.slice(0, 4)} · ${x.taken.time}`, iso: x.taken.iso };
+  // (each with the zone its moment keeps — CEST, CET from 25 October at 03:00: 13 October)
+  const M = require('../../lib/mission');
+  if (x.taken) return { text: `${x.taken.date.slice(8, 10)}.${x.taken.date.slice(5, 7)}.${x.taken.date.slice(0, 4)} · ${x.taken.time}`, iso: x.taken.iso, zone: M.zoneOfWall(x.taken.date, x.taken.time, tz) };
   const d = new Date(x.modified || NaN);
   if (Number.isNaN(d.getTime())) return null;
   try {
     const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
       .formatToParts(d).filter((q) => q.type !== 'literal').map((q) => [q.type, q.value]));
-    return { text: `${p.day}.${p.month}.${p.year} · ${p.hour === '24' ? '00' : p.hour}:${p.minute}`, iso: d.toISOString() };
+    return { text: `${p.day}.${p.month}.${p.year} · ${p.hour === '24' ? '00' : p.hour}:${p.minute}`, iso: d.toISOString(), zone: M.zoneAbbr(d, tz) };
   } catch { return null; }
 }
 
@@ -153,9 +161,10 @@ function cloudWhen(x, tz = 'Europe/Berlin') {
  *  wider screen the larger one (srcset), so a phone loads a quarter of the
  *  bytes (8 October: lighter); the page's sky reads its picture off the tile's
  *  src, the small one. */
-function cloudTile(x, tz, { timeOnly = false } = {}) {
+function cloudTile(x, tz, { timeOnly = false, zone = true } = {}) {
   const when = cloudWhen(x, tz);
-  const text = when ? (timeOnly ? when.text.split(' · ').pop() : when.text) : '';
+  // the zone beside the time — left off where the gallery's day head names it for the day (`zone: false`)
+  const text = when ? `${timeOnly ? when.text.split(' · ').pop() : when.text}${zone && when.zone ? ' ' + when.zone : ''}` : '';
   return `<a class="mtile kind-image" href="${x.url}" data-id="${x.id}" title="${esc(x.name)}" target="_blank" rel="noopener">
       <span class="mtile-visual"><img src="${x.small || x.thumb}"${x.small ? ` srcset="${x.small} 480w, ${x.thumb} 960w" sizes="(max-width: 760px) 160px, 340px"` : ''} alt="${esc(x.name)}" loading="lazy" decoding="async"></span>${
       when ? `<span class="mtile-text mtile-stamp"><time class="mtile-when" datetime="${esc(when.iso)}">${esc(text)}</time></span>` : ''}</a>`;
@@ -175,7 +184,7 @@ const DAY_LOCALE = { en: 'en-GB', de: 'de-DE', fr: 'fr-FR' };
 /** A day's head in the gallery: the sol it was during the run, the day written
  *  out in the page's language ("Friday 25 September 2026"), today marked, and
  *  how many pictures it has. */
-function cloudDayHead(T, day, n, { mission = null, lang = 'en' } = {}) {
+function cloudDayHead(T, day, n, { mission = null, lang = 'en', zone = '' } = {}) {
   let date = day;
   try {
     date = new Date(day + 'T12:00:00Z').toLocaleDateString(DAY_LOCALE[lang] || 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
@@ -188,7 +197,7 @@ function cloudDayHead(T, day, n, { mission = null, lang = 'en' } = {}) {
   }
   const today = mission && mission.today === day;
   return `<header class="cloud-day-head">${sol ? `<span class="cs">SOL ${String(sol).padStart(2, '0')}</span>` : ''}<h3 class="cloud-day-date">${esc(date)}</h3>${
-    today ? `<span class="cloud-day-now">${T('Today')}</span>` : ''}<span class="count">${plural(T, n, 'photograph', 'photographs')}</span></header>`;
+    today ? `<span class="cloud-day-now">${T('Today')}</span>` : ''}<span class="count">${plural(T, n, 'photograph', 'photographs')}${zone ? ` · ${zone}` : ''}</span></header>`;
 }
 
 /** The pictures by the day they were taken — the newest day first (the oldest
@@ -203,11 +212,15 @@ function cloudDays(T, items, opts = {}) {
   }
   const asc = opts.sort === 'name';
   order.sort((a, b) => (asc ? a.localeCompare(b) : b.localeCompare(a)));
-  return `<div class="cloud-days">${order.map((d) => `
-      <section class="cloud-day" data-day="${esc(d)}">
-        ${cloudDayHead(T, d, by[d].length, opts)}
-        <div class="mgrid cloud-grid">${by[d].map((x) => cloudTile(x, tz, { timeOnly: true })).join('')}</div>
-      </section>`).join('')}
+  return `<div class="cloud-days">${order.map((d) => {
+    // the day's zone, once in its head — or each picture's own, on the day the clocks go back (13 October)
+    const zs = by[d].map((x) => (cloudWhen(x, tz) || {}).zone || ''), z0 = zs.find(Boolean) || '', one = zs.every((z) => !z || z === z0);
+    return `
+      <section class="cloud-day" data-day="${esc(d)}"${one && z0 ? ` data-zone="${esc(z0)}"` : ''}>
+        ${cloudDayHead(T, d, by[d].length, { ...opts, zone: one ? z0 : '' })}
+        <div class="mgrid cloud-grid">${by[d].map((x) => cloudTile(x, tz, { timeOnly: true, zone: !one })).join('')}</div>
+      </section>`;
+  }).join('')}
     </div>`;
 }
 

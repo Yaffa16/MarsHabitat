@@ -47,15 +47,16 @@ function dayMonth(iso, lang) {
   try { return new Date(iso + 'T12:00:00Z').toLocaleDateString(LOCALE[lang] || 'en-GB', { day: 'numeric', month: 'long', timeZone: 'UTC' }); }
   catch { return iso; }
 }
-/** The venue's zone, as the station names it everywhere and in every language: CET — never the summer-time
-    abbreviation (CEST, MESZ), whatever the day; the clock itself keeps the venue's own time (Europe/Berlin). */
-const ZONE = 'CET';
-function zoneName() { return ZONE; }
+/** The venue's zone beside a time, as the station names it in every language: CEST while summer time holds, CET from
+    25 October 2026 at 03:00, when the clocks go back — the zone the time keeps on its own day (13 October: "for most
+    places on the website where time is shown, intelligently add CEST and change to CET when daylight savings shifts";
+    until then the station wrote CET whatever the day). `iso` is the day, `hhmm` the time on it (noon if none). */
+function zoneName(iso, tz, lang, hhmm = '12:00') { return require('../../lib/mission').zoneOfWall(iso, hhmm, tz); }
 /** When the crew answer, as every page writes it — the hour and the venue's zone: "19:00 CET". The ticker (public.js)
     writes it too. */
 function windowWhen(ctx) {
   const m = ctx.mission;
-  const zone = zoneName(m.today || m.start_date, m.timezone, ctx.lang || 'en');
+  const zone = zoneName(m.today || m.start_date, m.timezone, ctx.lang || 'en', WINDOW_TIME);
   return `${WINDOW_TIME}${zone ? ' ' + zone : ''}`;
 }
 
@@ -80,7 +81,7 @@ function intro(ctx) {
       <p class="intro-eyebrow">ZKM | Hertzlab <span class="intro-dot" aria-hidden="true">•</span> ${T('Durational performance')}</p>
       <h1 class="wordmark">MARS<span class="bang">!</span>platz<span class="wm-sep"> : </span><span class="wm-ground">${T('Ground Station')}</span></h1>
       <p class="intro-text">${T(INTRO_TEXT)}</p>
-      <p class="run-dates"><b>${esc(m.runLabel)}</b> · ${m.totalDays} ${T('sols in the habitat')} · <span class="run-now">${now}</span></p>
+      <p class="run-dates"><b>${esc(require('../../lib/mission').runLabel(m.start_date, m.end_date, { lang: ctx.lang }))}</b> · ${m.totalDays} ${T('sols in the habitat')} · <span class="run-now">${now}</span></p>
       <p class="intro-cta"><a class="know-more" href="/about">${T('Know more')} <span aria-hidden="true">→</span></a></p>
     </div>`;
 }
@@ -458,7 +459,8 @@ function underLine(ctx, { recent = [], today = null } = {}) {
   const hm = String(m.venueTime || '').slice(0, 5);
   let task = null;
   for (const t of (today && today.tasks) || []) if (t.time <= hm) task = t;
-  const doing = task ? `${task.time} · ${task.label}${task.detail ? ` — ${task.detail}` : ''}` : T('off the schedule');
+  const zt = task ? require('../../lib/mission').zoneOfWall(m.today, task.time, tz) : '';     // (the zone the time keeps today)
+  const doing = task ? `${task.time}${zt ? ' ' + zt : ''} · ${task.label}${task.detail ? ` — ${task.detail}` : ''}` : T('off the schedule');
   const pub = recent.filter((x) => x.state === 'PUBLISHED');
   const answered = pub.filter((x) => x.response_body)
     .sort((a, b) => String(b.response_at || b.submitted_at).localeCompare(String(a.response_at || a.submitted_at))).slice(0, 3);
@@ -508,4 +510,4 @@ function scrollNudge(ctx) {
       </a>`;
 }
 
-module.exports = { intro, space, calls, note, slowChat, underLine, scrollNudge, trajectory, halo, EARTH, HABITAT, WINDOW_TIME, ZONE, windowWhen, dayMonth, zoneName };
+module.exports = { intro, space, calls, note, slowChat, underLine, scrollNudge, trajectory, halo, EARTH, HABITAT, WINDOW_TIME, windowWhen, dayMonth, zoneName };

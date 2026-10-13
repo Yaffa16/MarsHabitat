@@ -40,7 +40,8 @@ const CLIP = 90;         // a line in the sky is two lines at most; the rest is 
 
 const clip = (t) => { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > CLIP ? t.slice(0, CLIP - 1).trimEnd() + '…' : t; };
 
-/** "22.09 · 16:49", in the venue's clock (the line under the dome, landing.js, writes its exchanges' times so). */
+/** "22.09 · 16:49 CEST", in the venue's clock with its zone — CET once the clocks have gone back (13 October) — (the
+    line under the dome, landing.js, writes its exchanges' times so). */
 function stamp(iso, tz) {
   const d = new Date(iso);
   if (!iso || isNaN(d.getTime())) return '';
@@ -48,7 +49,7 @@ function stamp(iso, tz) {
     const o = {};
     new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour12: false, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
       .formatToParts(d).forEach((p) => { o[p.type] = p.value; });
-    return `${o.day}.${o.month} · ${o.hour === '24' ? '00' : o.hour}:${o.minute}`;
+    return `${o.day}.${o.month} · ${o.hour === '24' ? '00' : o.hour}:${o.minute} ${require('../../lib/mission').zoneAbbr(d, tz)}`.trim();
   } catch { return ''; }
 }
 
@@ -74,7 +75,9 @@ function pictures(cloud, tz) {
   const { cloudWhen } = require('./media');
   return cloud.items.slice(0, PICTURES).map((x) => {
     const when = cloudWhen(x, tz);
-    return { id: x.id, url: x.url, thumb: x.small || x.thumb, when: when ? when.text : '' };   // the small preview where there is one (8 October: lighter)
+    // the small preview where there is one (8 October: lighter); the moment with its zone, as the Habitat panel's strip
+    // writes it (media.js, cloudTile) — CEST, CET from 25 October at 03:00 (13 October)
+    return { id: x.id, url: x.url, thumb: x.small || x.thumb, when: when ? `${when.text}${when.zone ? ' ' + when.zone : ''}` : '' };
   });
 }
 

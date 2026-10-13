@@ -32,10 +32,21 @@
 
   /* the clock and the countdown */
   var turning = false;
+  /* the zone the venue's clock keeps at a moment — CEST, or CET from 25 October 2026 at 03:00, when the clocks go back
+     (13 October: "for most places on the website where time is shown, intelligently add CEST and change to CET") */
+  function zoneAt(ms, zone) {
+    try {
+      var p = {};
+      new Intl.DateTimeFormat('en-GB', { timeZone: zone || 'Europe/Berlin', hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' })
+        .formatToParts(new Date(ms)).forEach(function (x) { p[x.type] = x.value; });
+      var off = Math.round((Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute) - Math.floor(ms / 60000) * 60000) / 60000);
+      return off === 120 ? 'CEST' : off === 60 ? 'CET' : '';
+    } catch (e) { return ''; }
+  }
   function tick() {
-    var t = hms();
-    each('[data-dn-clock]', function (el) { el.textContent = t; });
-    each('[data-dn-clock-hm]', function (el) { el.textContent = t.slice(0, 5); });
+    var t = hms(), z = zoneAt(Date.now(), tz);
+    each('[data-dn-clock]', function (el) { el.textContent = t + (z ? ' ' + z : ''); });
+    each('[data-dn-clock-hm]', function (el) { el.textContent = t.slice(0, 5) + (z ? ' ' + z : ''); });
     if (phase === 'PRE_LAUNCH' && opens) {
       var left = opens - Date.now();
       if (left <= 0 && !turning) { turning = true; setTimeout(refresh, 1500); }           // the station says when the run has begun

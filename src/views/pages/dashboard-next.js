@@ -599,7 +599,7 @@ function heroHead(ctx, w, { name }) {
         <div class="dn-eyebrow">${livePill(T)}<span>${esc(T('Live Mission Dashboard'))} · ${esc(name)}</span></div>
         <div class="dn-sol${pre ? ' is-pre' : ''}">${sol}</div>
         <p class="dn-date">${esc(longDate(m.today, ctx.lang))}</p>
-        <p class="dn-meta">${esc(w('Habitat time'))} <b data-dn-clock>${esc(m.venueTime)}</b> · Karlsruhe, MARS!platz</p>
+        <p class="dn-meta">${esc(w('Habitat time'))} <b data-dn-clock>${esc(`${m.venueTime} ${missionLib.zoneAbbr(new Date(), m.timezone)}`.trim())}</b> · Karlsruhe, MARS!platz</p>
         <div class="dn-run">
           <div class="dn-run-bar">${run}</div>
           <div class="dn-run-lab"><span>${esc(shortDate(m.start_date, ctx.lang))}</span><span>${pre ? `<b>${m.totalDays}</b> sols` : `<b>${left}</b> ${esc(T(left === 1 ? 'sol remaining' : 'sols remaining'))}`}</span><span>${esc(shortDate(m.end_date, ctx.lang))}</span></div>
@@ -695,7 +695,7 @@ function dayPanel(ctx, w, rows) {
           <em>${esc(clock(r.start))}${r.done ? ' · ✓' : r.now ? ` · ${esc(T('NOW'))}` : ''}</em><b>${esc(r.head)}</b>${r.tail ? `<small>${esc(r.tail)}</small>` : ''}</span>`;
   }).join('');
   const nowMin = live ? mins(m.venueTime) : null;
-  const needle = nowMin != null && nowMin >= t0 && nowMin <= t1 ? `<span class="dn-needle-now" style="left:${X(nowMin).toFixed(2)}%" data-dn-needle="${t0},${t1}"><i></i><b data-dn-clock-hm>${esc(m.venueTime.slice(0, 5))}</b></span>` : '';
+  const needle = nowMin != null && nowMin >= t0 && nowMin <= t1 ? `<span class="dn-needle-now" style="left:${X(nowMin).toFixed(2)}%" data-dn-needle="${t0},${t1}"><i></i><b data-dn-clock-hm>${esc(`${m.venueTime.slice(0, 5)} ${missionLib.zoneAbbr(new Date(), m.timezone)}`.trim())}</b></span>` : '';
   const list = rows.map((r) => `
           <li class="dn-li${r.done ? ' is-done' : ''}${r.now ? ' is-now' : ''}"><span class="dn-li-t">${esc(clock(r.start))}</span><span class="dn-li-dot" aria-hidden="true"></span>
             <span class="dn-li-x"><b>${esc(r.head)}${r.now ? ` <span class="dn-nowtag">${esc(T('NOW'))}</span>` : ''}</b>${r.tail ? `<small>${esc(r.tail)}</small>` : ''}</span></li>`).join('');
@@ -768,7 +768,7 @@ function mealPanel(ctx, w, today) {
   const others = meals.filter((x) => x !== f);
   return `
       <section class="dn-panel dn-meal" id="dn-meal">
-        <header class="dn-sec"><div><p class="dn-eye">${esc(T('Today’s Meal'))} · ${esc(L.slotName(T, f.slot))}${f.served_at ? ` ${esc(f.served_at)}` : ''}</p><h2>${esc(f.name)}</h2></div></header>
+        <header class="dn-sec"><div><p class="dn-eye">${esc(T('Today’s Meal'))} · ${esc(L.slotName(T, f.slot))}${f.served_at ? ` ${esc(`${f.served_at} ${missionLib.zoneOfWall((today && today.date) || ctx.mission.today, f.served_at, ctx.mission.timezone)}`.trim())}` : ''}</p><h2>${esc(f.name)}</h2></div></header>
         ${figs.length ? `<div class="dn-figs">${figs.slice(0, 6).map(([v, u, k]) => `<div><b>${esc(v)}<small>${esc(u)}</small></b><span>${esc(k)}</span></div>`).join('')}</div>` : ''}
         ${macro.length ? `<div class="dn-macro">${macro.map(([k, label, max]) => `<div><span>${esc(T(label))}</span><i><s style="width:${Math.min(100, Number(n[k]) / max * 100).toFixed(0)}%"></s></i><b>${trimNum(n[k], 1)} g</b></div>`).join('')}</div>` : ''}
         ${others.length ? `<ul class="dn-meals">${others.map((x) => `<li><span><em>${esc(L.slotName(T, x.slot))}</em>${esc(x.name)}</span><b>${num(x.kcal) != null ? `${fint(x.kcal)} kcal` : ''}</b></li>`).join('')}</ul>` : ''}
@@ -915,7 +915,7 @@ function transmissionsPanel(ctx, w, posts) {
           <header>${p.who ? `<img src="/crew/face/${esc(p.who.file)}" alt="" width="400" height="400" loading="lazy">` : '<span class="dn-post-av" aria-hidden="true"></span>'}
             <div><p class="dn-post-k">${esc(T(p.title))}</p><p class="dn-post-n">${esc(p.who ? p.who.name : roleWord(T, p.role))}<small>${esc(roleWord(T, p.role))}</small></p></div></header>
           ${p.entry ? `${p.head ? `<h3>${esc(p.head)}</h3>` : ''}<p class="dn-post-x">${esc(p.text)}</p>` : `<p class="dn-post-x">${esc(w('Not written yet'))}${m.phase === 'PRE_LAUNCH' ? '' : ` — SOL ${pad2(m.clampedDay)}`}</p>`}
-          <footer><span>${p.day === 0 ? esc(T('NOW')) : p.day ? `SOL ${pad2(p.day)}` : ''}${p.at ? ` · ${esc(safe(() => missionLib.localTime(new Date(p.at), m.timezone).slice(0, 5), ''))}` : ''}</span>${p.entry ? `<a href="/at-a-glance${p.day ? `#day-${p.day}` : ''}">${esc(w('Read on'))} ${arrow}</a>` : ''}</footer>
+          <footer><span>${p.day === 0 ? esc(T('NOW')) : p.day ? `SOL ${pad2(p.day)}` : ''}${p.at ? ` · ${esc(safe(() => missionLib.clockAt(new Date(p.at), m.timezone), ''))}` : ''}</span>${p.entry ? `<a href="/at-a-glance${p.day ? `#day-${p.day}` : ''}">${esc(w('Read on'))} ${arrow}</a>` : ''}</footer>
         </article>`;
   return `
       <section class="dn-panel dn-tx" id="dn-transmissions">

@@ -1473,7 +1473,7 @@ window tall with its cards in the middle and air around them, a margin at both s
   `i18n.js` — *Wohnbereich*, *Schlafkapseln* in German, *Espace de vie*, *Capsules de sieste* in French) — to rename one,
   change its `label` in `ROOMS`. **The pop-ups' words are the text sheet's too, the explanation
   first and NOW second**, and NOW says what the sheet asks: the mission by its title and its question
-  (no number); the EVA with the day's science mission's title (*Day 01's EVA is at 16:00 – Care as a
+  (no number); the EVA with the day's science mission's title (*Day 01's EVA is at 16:00 CEST – Care as a
   Finite Resource*); the sensors as CO₂, temperature and humidity alone, with when they were read;
   the communication hour (when the next one is, and the day's question for it, the mission's
   community question); the water with the meals' hours on the schedule; the crickets' box
@@ -1679,7 +1679,7 @@ window tall with its cards in the middle and air around them, a margin at both s
   they go out on EVAs every day — the EVA key on the dome says so. The wording everywhere is
   that three crew members are always in it.)
 - **The world's slowest chat.** Its heading with the welcome under it — *Every
-  day at 19:00 CET, the Habitat opens its communication window…* — and no photograph; then what
+  day at 19:00 CEST, the Habitat opens its communication window…* — and no photograph; then what
   becomes of a message in three steps on one card of glass, each step's sign in a small tinted
   disc of its own colour — Earth's blue, the crossing's violet red, Mars orange — on a dashed
   thread: **01 Transmit** *Send a message* (the visitor's words in a bubble under their own
@@ -1694,10 +1694,10 @@ window tall with its cards in the middle and air around them, a margin at both s
   answer *Keeping track of all our supplies, from food and water to the energy we cook with. Nothing gets used
   without being counted.*; the CO₂ sensors' question and answer stood there before) —
   the crew answering from **19:00** — the communication hour — every day of the run (`WINDOW_TIME` in `landing.js`),
-  written with the venue's zone and nothing more — *19:00 CET*, in every language, all through
-  the run: the station never writes the summer-time abbreviation (CEST, MESZ), while the hour
-  itself stays the venue's own on either side of 25 October, when the clocks go back
-  (`ZONE` and `windowWhen()` in `landing.js`; the running line writes it the same way). The page ends in the orange key **Write to the crew →** (the Write page, `/write#write` —
+  written with the zone of its day — *19:00 CEST* until 24 October, *19:00 CET* from 25 October,
+  when the clocks go back — the same letters in every language, the hour itself the venue's own
+  on either side (`windowWhen()` in `landing.js`, `zoneOfWall()` in `src/lib/mission.js`; the
+  running line writes it the same way — see *Times and their zone*). The page ends in the orange key **Write to the crew →** (the Write page, `/write#write` —
   the composer open on a phone, in view on a desk).
 
 **On a wider screen** the first screen is the way to the habitat: the band across its top —
@@ -1796,9 +1796,12 @@ Air quality class), the habitat hardware and the station's own channels where an
 posted, first each channel's lowest, highest and mean reading over the day, then **every reading
 of the day** — the habitat sensor one row per reading, the station's channels one row per
 instant with a column per channel, the hardware one table per device, every value as stored
-except **the habitat sensor's, printed to three decimals at the most** (12 October: 1008.2800293
-is 1008.28, 0.7999999821 is 0.8 — the Data and the Sensor Data keep every digit), habitat time to
-the second; then **the crew log, whole** — every blog entry in full, day by day and officer by
+except **the habitat sensor's and the habitat hardware's, printed to three decimals at the most**
+(12 October: 1008.2800293 is 1008.28, 0.7999999821 is 0.8; 13 October, "for all items in Habitat
+Hardware in the full record, only save upto 3 decimal points": the hardware's day — low, high,
+mean and what a meter added, which is worked out to three decimals — and every reading with its
+state as reported, a word such as *unavailable* as it came; the Data and the Sensor Data keep
+every digit of the readings), habitat time to the second; then **the crew log, whole** — every blog entry in full, day by day and officer by
 officer, held entries included and marked; and the **media index** with every file's SHA-256,
 checkable against the ZIP with `sha256sum`. `/archive/day/:n/export.pdf` does one day. Nothing
 is drawn and nothing is derived: the record has no charts, no totals, no projections, no chapter
@@ -1927,7 +1930,7 @@ to the crew* (the composer, `/#write`), *Live Mission Dashboard* (`/#mission`) a
 (`/about`), the one for the page you are on filled —, the round theme key and the language (the
 current one filled, the others under it) — no clock; under it the **running line** —
 what the crew are doing, what is next, the habitat's latest reading, and *Communication window
-daily 19:00 CET* (`ticker()` in `src/views/pages/public.js`). There is no menu: the reading
+daily 19:00 CEST* (CET from 25 October; `ticker()` in `src/views/pages/public.js`). There is no menu: the reading
 matter is one page, `/about`. Anything a link brings into view lands under the header
 (`scroll-padding-top` on the root). It is a band of frosted glass, its keys round pills — the
 three links outlined, the theme key, the language in cobalt — and the page scrolls under it.
@@ -2389,7 +2392,7 @@ sends, how many sent, queued, failed, the last trouble — and a replied message
 its top line: *Beamed · No. 142920* (a link to it on SpaceSpeak), *Queued for space · try 1
 failed*, *Not beamed · why*, *Not beamed · no longer published when its turn came*; a message
 still awaiting its reply carries no mark. There is no key to send by hand. Every message's line
-also says when it was sent, in full, on the venue's clock — *sent 28 Sept 2026, 16:28:54 CET*
+also says when it was sent, in full, on the venue's clock — *sent 28 Sept 2026, 16:28:54 CEST*
 (the UTC stamp is in its tooltip). The rows are the `space_relay` table.
 
 **Two things to know.** SpaceSpeak's own terms are written for a person at a keyboard; a
@@ -2888,6 +2891,41 @@ wordmark and `ZKM | Hertzlab` stay as they are. **Mission control and the archiv
 never translated**, whatever the cookie says: English is the mission's working language
 and the record — the pages, the PDF, the Markdown, the exports, the readings log — is
 kept as written.
+
+## Times and their zone
+
+Every time the station shows carries the zone it keeps on its own day: **CEST** (summer time)
+until the clocks go back on **25 October 2026 at 03:00**, **CET** after — the run spans the
+change, so its first ten days read CEST and its last three CET (13 October: "for most places on
+the website where time is shown, intelligently add CEST and change to CET when daylight savings
+shifts"). The zone is worked out from the moment itself, not from today: a note sent on 24
+October at 18:00 says *18:00 CEST* on every later day too, one answered on 26 October *17:00
+CET* (`zoneAbbr()` for an instant, `zoneOfWall()` for a time on the habitat's clock on a given
+date, `clockAt()` for the time and its zone together — all in `src/lib/mission.js`; the page
+scripts that keep a clock ticking work it out the same way in the browser). The letters are the
+same in every language — CEST and CET, not MESZ or HAEC — as the zone was written before.
+
+Where a single time stands, its zone stands beside it: a note's *sent* and *answered*, the
+running line's task now and next (kept when an open page asks for the schedule again, every five
+minutes — `tickerTasks()` in `public.js`, `/api/ticker`) and the communication window, the sky's
+latest message and picture, the gallery's pop-up, the dome's clock, its next task and its EVA
+(*Up next 19:00 CEST: …*), the power chart's *now* and the hardware's last reading, the Sensors
+tab's note on a missing reading (*Its last reading was 13 Oct, 16:48 CEST*, on the habitat's
+clock wherever the visitor's own is), About's START and END (*Thu 15 Oct 2026 · 17:00 CEST*,
+*Tue 27 Oct 2026 · 17:00 CET*), the meal hours, the gallery's *not between 22:00 and 08:00 CEST*,
+the screens' clocks, mission control's head and times, and the archive's day page, whose states
+and notes are on habitat time now rather than UTC. Where times come as a list, the zone is said
+once — in its head for today's schedule (*SOL 004 · 0/16 done · CEST*), a gallery day's
+photographs, At a Glance's and the archive's schedule; after it in the dome's sentences
+(*Meals today: 08:30 Breakfast · 12:00 Lunch · 18:00 Dinner (CEST).*) — and on 25 October, the
+one day that has both, after each time instead. Before the run the running line counts down to
+the opening and names no time.
+
+Dates follow the page's language: *Thu 15 – Tue 27 Oct 2026* in English, *Do., 15. – Di., 27.
+Okt. 2026* in German, *jeu. 15 – mar. 27 oct. 2026* in French — the run's dates, the day under
+the dashboard, a note's day, the blogs' days, the current crew's sol on the landing page (`runLabel()`,
+`dayLabel()` and `shortDay()` in `src/lib/mission.js`, through the browser's own calendar,
+`Intl`). Mission control and the record stay in English, as everything there does.
 
 ## Light and dark
 

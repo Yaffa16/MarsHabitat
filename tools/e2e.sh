@@ -128,7 +128,8 @@ CTRL=$(curl -s -b $A $B/control)
 echo "$CTRL" | grep -q 'id="queue"' && ok "the message queue is on the page" || bad "no queue"
 echo "$CTRL" | grep -q 'class="filters"' && ok "message views filter in place" || bad "no filter bar"
 echo "$CTRL" | grep -q 'crossed ' && bad "the light-time is still on the queue cards" || ok "queue cards carry no light-time"
-echo "$CTRL" | grep -q 'Save draft' && bad "Save draft is still offered" || ok "no Save draft button"
+echo "$CTRL" | node -e 'let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const a = s.indexOf("id=\"queue\""), b = s.indexOf("data-pane=\"comms\""); process.exit(a > -1 && b > a && !s.slice(a, b).includes("Save draft") && s.slice(b).includes("Save draft") ? 0 : 1); });' \
+  && ok "no Save draft on the queue's replies (the blogs' editors keep theirs: a post kept on the desk unpublished)" || bad "Save draft is still offered on the queue"
 node -e '
 const h = require("child_process").execSync("curl -s -b /tmp/admin.jar http://localhost:8080/control").toString();
 const q = h.indexOf("id=\"queue\""), m = h.indexOf("data-pane=\"messages\""), c = h.indexOf("data-pane=\"comms\"");
@@ -345,7 +346,7 @@ echo "── the record is readable"
 # a second exchange that is not deleted, so the record has one to hold
 V2=/tmp/visitor2.jar; rm -f $V2
 curl -s -c $V2 -o /dev/null $B/
-curl -s -b $V2 -X POST --data-urlencode "body=Do you still dream in colour?" -d "tags=PERSONAL" -o /dev/null $B/communicate
+curl -s -b $V2 -c $V2 -X POST --data-urlencode "body=Do you still dream in colour?" -d "tags=PERSONAL" -o /dev/null $B/communicate
 sleep 4
 ID2=$(curl -s -b $A $B/control | grep -oE '/control/[0-9]+/reply' | head -1 | grep -oE '[0-9]+')
 curl -s -b $A -X POST --data-urlencode "body=In colour, and always outdoors." -d "action=publish" -o /dev/null $B/control/$ID2/reply
@@ -510,9 +511,9 @@ curl -s $B/ | grep -q 'href="/archive' && bad "public page still links to the ar
 echo "── navigation"
 # The landing page has no top bar — its links live in the black footer.
 # Subpages keep the Mission / Messages / Crew log / About bar.
-NAV2=$(curl -s -b $A $B/archive | grep -oP '(?<=class="nav">).*?(?=</nav>)' | grep -oP '(?<=>)[A-Za-z ]+(?=</a>)' | tr '\n' ' ')
-[ "$NAV2" = "Mission Messages At a Glance Crew log About " ] \
-  && ok "the archive's top bar points into the landing page" || bad "archive top bar is: $NAV2"
+NAV2=$(curl -s -b $A $B/archive)
+echo "$NAV2" | grep -q '<a class="tk-brand" href="/"' && echo "$NAV2" | grep -q '<a class="tk-board" href="/write">' && echo "$NAV2" | grep -q '<a class="tk-dash" href="/dashboard">' && echo "$NAV2" | grep -q '<a class="tk-about" href="/about">' \
+  && ok "the archive wears the site's header — the wordmark home, the Message Board, the dashboard, About" || bad "the archive's header lacks its keys"
 FOOT=$(curl -s $B/)
 WRITE=$(curl -s $B/write)
 DASH=$(curl -s $B/dashboard)
@@ -575,11 +576,11 @@ echo "$ABOUT" | grep -q '<p class="dash-sub">MARS! – Mobilizing Awareness for 
   && echo "$ABOUT" | grep -q '<h3>The Insight</h3>' && echo "$ABOUT" | grep -q 'a spaceship called Earth' \
   && ! echo "$ABOUT" | grep -q 'A durational performance on Karlsruhe\|Large space agencies\|Distance as the material\|The archive as the work\|Networked communication is built\|MARS!platz: Red Dust City</h3>' \
   && ! echo "$ABOUT" | grep -q 'id="more-than-human"\|<h3>More than Human</h3>\|<h3>The readings</h3>\|Three live crickets share it with them\|The sensors that produce the readings on this page' \
-  && echo "$ABOUT" | grep -qE '<dt>START</dt><dd>[A-Z][a-z]{2} [0-9]{1,2} [A-Z][a-z]{2} 20[0-9]{2} · 17:00</dd>' && echo "$ABOUT" | grep -qE '<dt>END</dt><dd>[A-Z][a-z]{2} [0-9]{1,2} [A-Z][a-z]{2} 20[0-9]{2} · 17:00</dd>' && echo "$ABOUT" | grep -q '<dt>CREW</dt><dd>3</dd>' \
+  && echo "$ABOUT" | grep -qE '<dt>START</dt><dd>[A-Z][a-z]{2} [0-9]{1,2} [A-Z][a-z]{2} 20[0-9]{2} · 17:00 (CEST|CET)</dd>' && echo "$ABOUT" | grep -qE '<dt>END</dt><dd>[A-Z][a-z]{2} [0-9]{1,2} [A-Z][a-z]{2} 20[0-9]{2} · 17:00 (CEST|CET)</dd>' && echo "$ABOUT" | grep -q '<dt>CREW</dt><dd>3</dd>' \
   && echo "$ABOUT" | grep -q '<dt>SCIENTIFIC MISSIONS</dt><dd>11</dd>' && ! echo "$ABOUT" | grep -q '<dt>TIMEZONE</dt>' \
   && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<h3>Warum tun wir das?</h3>' && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<dt>WISSENSCHAFTLICHE MISSIONEN</dt><dd>11</dd>' && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q 'Millionen Kilometer von der Erde entfernt' \
   && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q '<h3>L’Habitat – Red Dust City</h3>' && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q 'target="_blank" rel="noopener">Santé mentale</a>' \
-  && ok "About is in the words of October's text sheet — the project's name as the section's line, MARS! in four paragraphs with the workshops and the exhibition linked, Why are we doing this? with its line, The Habitat – Red Dust City, The Insight — the old paragraphs gone, More than Human and The readings gone too, Messages sent to space kept, the distance to Mars the station's own figure, the facts with 17:00 at each end, eleven scientific missions and no timezone, in three languages" || bad "the About page's texts are not the sheet's"
+  && ok "About is in the words of October's text sheet — the project's name as the section's line, MARS! in four paragraphs with the workshops and the exhibition linked, Why are we doing this? with its line, The Habitat – Red Dust City, The Insight — the old paragraphs gone, More than Human and The readings gone too, Messages sent to space kept, the distance to Mars the station's own figure, the facts with 17:00 at each end and the zone it keeps that day (13 October: CEST, CET from 25 October), eleven scientific missions and no timezone row, in three languages" || bad "the About page's texts are not the sheet's"
 # by day and by night the station's accent is Mars orange (8 October: "keep the orange for the light mode also"): the blue
 # light theme of 7 October (public/light.css, written by tools/light-theme.js, kept in the project) is laid aside — no public
 # page, screen or mission control loads it; in the light theme the soft UI's chosen things are orange, and its keys that act
@@ -1020,7 +1021,7 @@ echo "$TK" | grep -q '"tasks":\[' && echo "$TK" | grep -q '"label"' && echo "$TK
 echo "$FOOT" | grep -q 'id="tk-hab"' && ok "and the node's current reading, refreshed on its cycle" || bad "ticker has no habitat reading"
 
 echo "── one mood scale, thrilled to angry"
-[ "$(curl -s -b $A $B/control | grep -c 'class="mood-face"')" = "15" ] \
+[ "$(curl -s -b $A $B/control | grep -o 'class="mood-face[ "]' | wc -l)" = "15" ] \
   && ok "one scale of five faces per officer, thrilled to angry" || bad "wrong number of mood faces"
 curl -s -b $A $B/control | grep -q ">THRILLED<" && curl -s -b $A $B/control | grep -q ">ANGRY<" && ! curl -s -b $A $B/control | grep -q ">CALM<\|>SETTLED<\|>LEVEL<\|>TENSE<" \
   && curl -s -b $A $B/control | grep -q 'title="Thrilled — thrilled — on top of the world"' && curl -s -b $A $B/control | grep -q 'title="Happy — happy, in good spirits"' && curl -s -b $A $B/control | grep -q 'title="Neutral — neutral — neither up nor down"' \
@@ -1079,7 +1080,7 @@ curl -s $B/api/habitat/data | grep -q '"co2":640' \
   && ok "a stored reading reaches the browser API" || bad "stored reading not served"
 
 echo "── message timestamps"
-curl -s $B/write | grep -q "card-sent" && ok "each message carries its sent date and time" || bad "no timestamp on messages"
+curl -s $B/write | grep -q '<time class="note-when" datetime="' && ok "each message carries its sent date and time" || bad "no timestamp on messages"
 
 echo "── the crossing"
 curl -s $B/write | grep -q 'id="composer"' || true
@@ -1117,14 +1118,15 @@ echo "$PAGE" | grep -q 'data-filter="mine"' && ok "the board offers a my-message
 curl -s -b $V2 $B/write | grep -q 'data-mine="1"' \
   && ok "a visitor's own messages are marked as theirs" || bad "own messages not marked"
 echo "$DPAGE" | grep -q 'class="dash-grid"' && ok "the mission dashboard lays everything out in one grid" || bad "no dashboard grid"
-echo "$DPAGE" | grep -q 'class="kpis"' && ok "the dashboard leads with its headline figures" || bad "no headline figures"
+echo "$DPAGE" | grep -q 'id="ftab-habitat"' && echo "$DPAGE" | grep -q 'id="ftab-mission-today"' && echo "$DPAGE" | grep -q 'id="ftab-blog-commander"' \
+  && ok "the dashboard is one folder — Sensors, Daily Life, Blogs" || bad "the dashboard's folder is missing a group"
 echo "$DPAGE" | grep -q 'id="hbt-groups"' && ok "the habitat dashboard shell is on the page" || bad "no habitat dashboard"
 node -e '
 const h = require("child_process").execSync("curl -s http://localhost:8080/dashboard", { maxBuffer: 1 << 26 }).toString();
 const at = (id) => h.indexOf("id=\"" + id + "\"");
 const t = at("trends"), s = at("blog-science"), e = at("blog-health"), c = at("blog-commander");
-process.exit(t > -1 && s > t && e > s && c > e ? 0 : 1);
-' && ok "below the trend graph: Daily Mission Report, Health Report, Commander Log, in that order" || bad "the three blogs are not below the trend graph in order"
+process.exit(t > -1 && c > t && e > c && s > e ? 0 : 1);
+' && ok "after the trend graph: Commander Log, Health Report, Daily Mission Report — the Blogs folder's order" || bad "the three blogs are not after the trend graph in order"
 echo "$DPAGE" | grep -q "Daily Mission Report" && echo "$DPAGE" | grep -q "Health Report" && echo "$DPAGE" | grep -q "Commander Log" \
   && ok "the three blog panels are headed" || bad "a blog panel heading is missing"
 echo "$DPAGE" | grep -q '/habitat.js' && ! echo "$PAGE" | grep -q '/habitat.js\|/folder.js\|/hardware.js' && ok "the habitat renderer is loaded on the dashboard page, and not on the Write page" || bad "habitat.js not loaded"
@@ -1136,7 +1138,7 @@ echo "$PAGE" | grep -q 'chan">COMMS<' && bad "communication counts panel still p
   && ok "one composer on the mission page, at the top" || bad "wrong number of composers"
 echo "$DPAGE" | grep -q 'class="gauge ' && ok "inventory gauges on the dashboard page" || bad "no gauges"
 echo "$DPAGE" | grep -q 'class="badge' && ok "crew conditions on the dashboard page" || bad "no crew conditions"
-echo "$DPAGE" | grep -qE "Hatch seal|Wake and habitat check" && ok "daily schedule on the dashboard page" || bad "no daily schedule"
+echo "$DPAGE" | grep -qE "Science Block 1|Breakfast / Communal Mission Planning" && ok "daily schedule on the dashboard page" || bad "no daily schedule"
 
 echo "── crew and env"
 curl -s $B/dashboard | grep -q "COMMANDING OFFICER" && curl -s $B/dashboard | grep -q "HEALTH OFFICER" && ! curl -s $B/dashboard | grep -qi "communication officer" \
@@ -1239,8 +1241,8 @@ echo "$LOG" | grep -q "to be written at the end of this day" && ok "the crew's p
 echo "$LOG" | grep -q "Commander-Logbuch" && echo "$LOG" | grep -q "Gesundheitsbericht" && ok "the three blogs are named in German" || bad "blog titles not translated"
 GL=$(curl -s -b $LJ $B/at-a-glance)
 echo "$GL" | grep -q '<html lang="de"' && echo "$GL" | grep -q "Tagesplan" && ok "At a Glance chrome is in German" || bad "At a Glance not German"
-echo "$GL" | grep -qE '<span class="dot (ok|warn)"></span> VERBINDUNG (NOMINAL|GESTÖRT)' && ok "the rail's link state reads in German" || bad "rail not translated"
-echo "$GL" | grep -qE "Hatch seal and pressure hold|Systems handover" && ok "task labels from content/schedule.json stay untranslated" || bad "schedule content was translated or lost"
+echo "$GL" | grep -q 'Die Crew ist gerade bei:' && ok "the running line reads in German" || bad "the running line is not translated"
+echo "$GL" | grep -qE "Science Block 1|Breakfast / Communal Mission Planning" && ok "task labels from content/schedule.json stay untranslated" || bad "schedule content was translated or lost"
 CL=$(curl -s -b $LJ $B/control/login)
 echo "$CL" | grep -q '<html lang="en"' && ! echo "$CL" | grep -q "Missionskontrolle" && ! echo "$CL" | grep -q 'action="/lang"' \
   && ok "mission control stays English, with no language switch" || bad "mission control was translated"
@@ -1253,7 +1255,7 @@ curl -s -b $A $B/control | grep -q '<html lang="en"' && ! curl -s -b $A $B/contr
   && ok "mission control's rail stays English" || bad "control rail translated"
 curl -s -b $A -c $A -X POST -d "to=en" -o /dev/null $B/lang
 API=$(curl -s -b $LJ $B/api/board)
-echo "$API" | grep -qE "VERÖFFENTLICHT|BEANTWORTET" && ok "/api/board renders the card chrome in the visitor's language" || bad "/api/board cards not German"
+echo "$API" | grep -q "Antwort der Crew" && ! echo "$API" | grep -q "Crew answer" && ok "/api/board renders the card chrome in the visitor's language" || bad "/api/board cards not German"
 echo "$API" | grep -q "Rain. Not the idea of it\|Do you still dream in colour\|In colour, and always outdoors" \
   && ok "what was written stays as written on the board" || bad "board content changed"
 for u in / /logbook /at-a-glance /media /control/login /nowhere; do
@@ -1296,6 +1298,9 @@ curl -s -b $A "$B/control?tab=health" | grep -q "EDITED DEFAULT TEXT" \
   && ok "the default text is editable and applies at once" || bad "default text edit not picked up"
 
 echo "── crew figures are graphed"
+# (the content as shipped holds no figures — the reset empties them — so two days are filed first)
+curl -s -b $A -X POST -d "day=1" -d "steps=6400" -o /dev/null $B/control/crew-figures
+curl -s -b $A -X POST -d "day=2" -d "steps=7100" -o /dev/null $B/control/crew-figures
 LAND=$(curl -s $B/dashboard)
 [ "$(echo "$LAND" | grep -c 'class="fig-spark"')" = "1" ] \
   && ok "one plotted graph, the steps" || bad "the figures are not graphed"
@@ -1322,11 +1327,11 @@ const c = pane("comms"), s = pane("science"), he = pane("health"), hab = pane("h
 const fail = [];
 if (!hab.includes("chan\">DAILY MISSION<")) fail.push("schedule not on habitat");
 if (!hab.includes("chan\">DAILY FOOD PLAN<")) fail.push("food plan not on habitat");
-if (!he.includes("chan\">CREW FIGURES<")) fail.push("figures not on health");
+if (!hab.includes("chan\">STEPS TAKEN<")) fail.push("the steps not on habitat");
 if (!s.includes("chan\">SCIENCE<") || !he.includes("chan\">HEALTH<")) fail.push("report cards missing");
-if (/chan">DAILY MISSION<|chan">DAILY FOOD PLAN<|chan">CREW FIGURES</.test(s + c)) fail.push("editors leaked onto science or comms");
+if (/chan">DAILY MISSION<|chan">DAILY FOOD PLAN<|chan">STEPS TAKEN</.test(s + c + he)) fail.push("editors leaked onto science, health or comms");
 if (fail.length) { console.error(fail.join("; ")); process.exit(1); }' \
-  && ok "schedule and food plan on habitat, figures on health, reports on their officers, nothing leaks" || bad "editors are on the wrong panes"
+  && ok "schedule, food plan and the steps on habitat (the health officer files the steps there), reports on their officers, nothing leaks" || bad "editors are on the wrong panes"
 
 curl -s -b $A $B/control > /tmp/comms.html
 POS_SCHED=$(grep -bo 'chan">DAILY MISSION<' /tmp/comms.html | head -1 | cut -d: -f1)
@@ -1721,7 +1726,7 @@ curl -s $B/about | grep -q 'href="/dashboard#bike" data-close>Open the Power gen
 
 echo "── editable content"
 curl -s $B/api/content | grep -q '"ok":true' && ok "content files loaded cleanly" || bad "content failed to load"
-curl -s $B/at-a-glance | grep -q "Hatch seal and pressure hold" && ok "authored schedule is live" || bad "schedule missing"
+curl -s $B/at-a-glance | grep -q "Science Block 1" && ok "authored schedule is live" || bad "schedule missing"
 # (content/meals.json is the live food plan — the crew file days into it from the desk; it ships empty, every meal chosen on
 # the desk from the recipe book — 12 October)
 node -e '
@@ -2130,7 +2135,7 @@ grep -q "const QUIET = Object.freeze({ from: '22:00', to: '08:00' });" src/lib/c
 node -e '
 const M = require("./src/views/pages/media"); const T = (s) => s;
 const h = M.cloudGridInner(T, { title: "Gallery", items: [], snapshot: { checkSeconds: 900, lastPollAt: "2026-10-16T19:45:00Z", quiet: { from: "22:00", to: "08:00", now: true, off: false } }, sort: "newest" }, { tz: "Europe/Berlin", lang: "en" });
-process.exit(h.includes("not between 22:00 and 08:00 (next read at 08:00)") ? 0 : 1);
+process.exit(/not between 22:00 and 08:00 (CEST|CET) \(next read at 08:00 (CEST|CET)\)/.test(h) ? 0 : 1);
 ' && ok "the gallery's head says so — not between 22:00 and 08:00 — and, at night, when the next read is" || bad "the gallery's head does not name the night"
 grep -q 'data-version' src/views/pages/media.js && grep -q "fetch(api, " public/cloud.js && grep -q "getAttribute('data-api') || '/api/cloud'" public/cloud.js && grep -q "CLOUD_CHECK_SECONDS" docker-compose.yml \
   && ok "an open /media polls /api/cloud on that beat and swaps the grid in as the folder changes" || bad "live gallery wiring missing"
@@ -3200,10 +3205,18 @@ echo "$LAND" | grep -q 'For this simulation, the transmission takes <b>3 seconds
 grep -q "document.documentElement.classList.add('transit-js')" public/sky.js && grep -q "html.transit-js body.landing .steps .transit-track i { animation: none !important; }" public/sheet.css \
   && ok "the signal's dot is moved by the page itself, so a phone set to less motion still sees it cross" || bad "the signal in transit can stand still on a phone"
 echo "$LAND" | grep -Eq 'today it takes <b>[0-9]+ min</b>' && echo "$LAND" | grep -Eq 'class="transit-meta">[0-9]+ M km · [0-9]+ min<' && ! echo "$LAND" | grep -Eq '[0-9]+ min [0-9]{2} s' && ok "and today's distance and one-way light-time, in whole minutes" || bad "no live distance or light-time, or seconds are back"
-echo "$LAND" | grep -q 'Also, at <b>19:00 CET</b>, the daily communication window opens where people on MARS!platz can communicate directly with the crew.' && ! echo "$LAND" | grep -q 'Berlin time' && ! echo "$LAND" | grep -q 'CEST' && echo "$LAND" | grep -q 'come to our daily Communication Hour at 19:00 CET to speak to us directly.' \
-  && grep -q "const ZONE = 'CET';" src/views/pages/landing.js && grep -q "function zoneName() { return ZONE; }" src/views/pages/landing.js && grep -q "second: '2-digit' }) + ' CET'; }" src/views/control/index.js \
-  && ok "the crew answer from 19:00, the venue's zone always named CET — never CEST — on every page and the desk" || bad "the communication window is not 19:00 CET, or CEST is still written somewhere"
-echo "$LAND" | grep -q 'Communication window daily <b>19:00 CET</b>' && ok "and the running line says so" || bad "the running line does not name the window"
+# 13 October ("for most places on the website where time is shown, intelligently add CEST and change to CET when daylight
+# savings shifts"): every time with the zone it keeps on its own day — CEST, CET from 25 October 2026 at 03:00
+WZ=$(node -e 'const m = require("./src/lib/mission"); process.stdout.write(m.zoneOfWall(m.localDate(new Date(), "Europe/Berlin"), "19:00", "Europe/Berlin"))' 2>/dev/null)
+echo "$LAND" | grep -q "Also, at <b>19:00 $WZ</b>, the daily communication window opens where people on MARS!platz can communicate directly with the crew." && ! echo "$LAND" | grep -q 'Berlin time' && echo "$LAND" | grep -q "come to our daily Communication Hour at 19:00 $WZ to speak to us directly." \
+  && node -e '
+const m = require("./src/lib/mission"), z = "Europe/Berlin";
+process.exit(m.zoneAbbr("2026-10-24T16:00:00Z", z) === "CEST" && m.zoneAbbr("2026-10-25T00:59:00Z", z) === "CEST" && m.zoneAbbr("2026-10-25T01:00:00Z", z) === "CET" && m.zoneAbbr("2026-10-26T16:00:00Z", z) === "CET"
+  && m.zoneOfWall("2026-10-25", "01:30", z) === "CEST" && m.zoneOfWall("2026-10-25", "08:30", z) === "CET" && m.zoneOfWall("2026-10-15", "17:00", z) === "CEST" && m.zoneOfWall("2026-10-27", "17:00", z) === "CET"
+  && m.clockAt("2026-10-24T16:00:00Z", z) === "18:00 CEST" && m.clockAt("2026-10-26T16:00:00Z", z) === "17:00 CET" ? 0 : 1);' 2>/dev/null \
+  && [ "$(grep -c 'missionLib.zoneAbbr(iso, tz)' src/views/control/index.js)" = "2" ] && ! grep -q "const ZONE = 'CET';" src/views/pages/landing.js \
+  && ok "the crew answer from 19:00, the zone named as the day keeps it (19:00 $WZ today) — each time by its own moment: 18:00 CEST on 24 October, 02:59 CEST then 02:00 CET on the 25th, 17:00 CET on the 26th — on every page and the desk" || bad "the communication window is not 19:00 with the day's zone, or a zone is named wrongly across the change"
+echo "$LAND" | grep -q "Communication window daily <b>19:00 $WZ</b>" && ok "and the running line says so" || bad "the running line does not name the window"
 # the room by day: the night's (October: "the same image for day and night — the default night image"): the same Earth
 # strip, the same stars and drawing, no day room in the stylesheet, nothing swapped when the theme turns
 echo "$LAND" | grep -q '<img class="space-earth-img" src="/space/earth.webp" alt="" width="1414" height="340" decoding="async">' && ! echo "$LAND" | grep -q 'earth-day.jpg\|is-night\|is-day\|data-src="/space' \
@@ -3425,8 +3438,8 @@ grep -q '@media (hover: hover) and (pointer: fine) { .tk-window:hover .tk-track 
 
 echo "── power consumed by category, and the stores as rings"
 LAND=$(curl -s $B/dashboard)
-echo "$LAND" | grep -q "Power consumed" && echo "$LAND" | grep -q 'class="pwr-row' \
-  && ok "the Habitat panel carries the day's power, a bar per category" || bad "no power tile on the landing page"
+echo "$LAND" | grep -q '<section class="tile t-pwr" id="power">' && echo "$LAND" | grep -q "Power consumed" \
+  && ok "the Habitat panel carries the day's power tile (a bar per category once a figure is in — below)" || bad "no power tile on the landing page"
 echo "$LAND" | grep -q 'pwr-total' && ok "the trend spec carries a Power group — each category and the total, daily" || bad "power not in the trends"
 # this station has no meters (no Home Assistant) and nothing filed, so the tile says so and draws no rows; the desk's
 # form carries every category as power.json labels it (the rows are drawn on the dashboard once a figure is in — below)
@@ -3544,9 +3557,9 @@ let s = ""; process.stdin.on("data", (d) => s += d).on("end", () => {
   const a = s.indexOf("id=\"today\""), b = s.indexOf("id=\"day-1\"");
   if (a < 0 || b < a) process.exit(1);
   const page = s.slice(a, b);
-  const need = ["Schedule", "Meals", "Resources", "Power consumed", "gauges rounds", "Habitat"];
+  const need = ["REHEARSAL", "Before the run", "Resources", "gauges rounds"];
   process.exit(need.every((x) => page.includes(x)) ? 0 : 1);
-});' && ok "the rehearsal page is a complete day page — schedule, meals, consumption rings, power and habitat, the real feel of SOL 001" || bad "the rehearsal page is missing day blocks"
+});' && ok "the rehearsal page, before anything is filed under NOW: today's date, marked a rehearsal, with the stores as carried in (the rest joins as it is filed — below)" || bad "the rehearsal page is missing day blocks"
 
 # Current Crew before the run (12 October: "for now, show the faces of the first day's crew"): the first day's crew from the
 # shipped shift plan — Dan Wilcox, Morgan Stricot, Dominik Kautz — over the landing page's two calls (the About page has
@@ -3582,6 +3595,13 @@ const ok = r("schedule.json")["0"][0].label === "NOW briefing" && r("meals.json"
   && r("logbook.json")["0"]["COMMUNICATION OFFICER"] === "NOW words for the rehearsal" && r("notes.json")["0"][0].body === "NOW findings for the rehearsal"
   && r("inventory-levels.json")["0"].water.quantity === 480 && r("power.json").days["0"].food === 1.4 && r("crew-figures.json")["0"].steps === 4200;
 process.exit(ok ? 0 : 1);' && ok "everything filed under NOW lands in the content files under \"0\" — schedule, meals, blog, report, count, power, figures" || bad "NOW is not filed under 0 in the content files"
+curl -s $B/at-a-glance | node -e '
+let s = ""; process.stdin.on("data", (d) => s += d).on("end", () => {
+  const a = s.indexOf("id=\"today\""), b = s.indexOf("id=\"day-1\"");
+  if (a < 0 || b < a) process.exit(1);
+  const page = s.slice(a, b);
+  process.exit(["Schedule", "NOW briefing", "Meals", "NOW porridge", "Resources", "gauges rounds", "Power consumed"].every((x) => page.includes(x)) ? 0 : 1);
+});' && ok "and the rehearsal page carries it — the schedule, the meals, the stores and the power filed under NOW: the real feel of a run day" || bad "the rehearsal page does not carry what is filed under NOW"
 # 9 October ("add all things from the Sensor data here"): before the run the trend graph carries NOW's lines, as the Sensor
 # Data download does — the dashboard and the screens alike; and since 13 October ("the Trends should only be calculated
 # at the END of EACH day") no point on today's date, NOW's included: a day's point joins its line once the day is over
@@ -3876,8 +3896,8 @@ B2=http://localhost:8090
     -d '{"deviceId":"x","readings":[{"metric":"co2","value":500}]}' -o /dev/null -w '%{http_code}' $B2/api/sensors/ingest)" = "410" ] \
   && ok "a reading sent after the close is refused (410), token or not" || bad "ingest still stores after the record closed"
 curl -s $B2/api/habitat/data | grep -q '"frozen":true' && ok "the readings API says the record is frozen" || bad "no frozen flag after the close"
-curl -s $B2/ | grep -q "Mission complete" && ! curl -s $B2/ | grep -q 'class="ticker"' \
-  && ok "after the run the landing page is the closed record — no ticker, nothing fetching" || bad "the landing page still carries the live ticker after the close"
+curl -s $B2/ | grep -q "Mission complete" && curl -s $B2/ | grep -q 'the record stays' && ! curl -s $B2/ | grep -q '<b id="tk-now">\|<b id="tk-next">' && curl -s $B2/ | tr -d '\n' | grep -q '<header class="ticker"[^>]*data-over="1"' \
+  && ok "after the run the landing page is the closed record — its running line says the mission is complete and the record stays, nothing of the crew's day, and its script asks for nothing (data-over)" || bad "the landing page still carries the live ticker after the close"
 grep -q "data-over" src/views/pages/public.js && grep -q "d.phase === 'COMPLETE'" src/views/pages/public.js \
   && ok "a page left open across the last midnight stops its own timers when the run ends under it" || bad "an open ticker would keep fetching forever after the run"
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B2/logbook)" = "200" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' $B2/at-a-glance)" = "200" ] \
@@ -4159,7 +4179,7 @@ HUD=$(curl -s -b $SK "$B/screen/habitat?lang=en")
 echo "$HUD" | tr -d '\n' | grep -q '<main class="stage no-head is-hud"> *<div class="stage-body" id="stage-body"><div class="stage-fit" id="stage-fit"><div class="screen-roll hab-hud" id="hab-hud" data-hold="12000"' \
   && echo "$HUD" | tr -d '\n' | grep -q '<div class="screen-roll hab-hud" id="hab-hud"[^>]*> *<header class="ticker"' && grep -qF ':root[data-theme] body.screen .hab-hud > .ticker { position: relative; z-index: 3; flex: none; background: rgba(14,15,17,.92) !important; border: 0 !important; box-shadow: 0 1px 0 rgba(255,255,255,.08) !important; }' public/screen.css \
   && echo "$HUD" | grep -q '<h1 class="hh-title">Habitat<span class="cloud-live hh-live"><i></i>LIVE</span></h1>' \
-  && echo "$HUD" | grep -q 'Karlsruhe, MARS<b class="bang">!</b>platz <b class="hh-clock" id="hh-clock">[0-9][0-9]:[0-9][0-9]</b></p>' \
+  && echo "$HUD" | grep -q 'Karlsruhe, MARS<b class="bang">!</b>platz <b class="hh-clock" id="hh-clock">[0-9][0-9]:[0-9][0-9] \(CEST\|CET\)</b></p>' \
   && echo "$HUD" | grep -q '<div class="hh-col hh-left" id="hh-left"></div>' && echo "$HUD" | grep -q '<div class="hh-col hh-right" id="hh-right"></div>' \
   && echo "$HUD" | grep -q '<img class="space-dome-img" src="/space/habitat.webp"' && echo "$HUD" | grep -q '<span class="space-tag space-tag-dome">RED DUST CITY</span>' \
   && echo "$HUD" | grep -q '<i class="space-line"></i>' && echo "$HUD" | grep -q '<img class="space-earth-img" src="/space/earth.webp"' && echo "$HUD" | grep -q '<svg class="space-halo is-desk"' \
@@ -4347,6 +4367,59 @@ let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
   && grep -qF "setTimeout(closeTrendsAtMidnight, Math.max(60000, missionLib.venueMidnightUtc(tomorrow, tz) - Date.now() + 5000)).unref();" src/server.js \
   && grep -qF "var done = today > lastDay ? days.length : Math.max(0, todayIdx - 1);" public/habitat.js && grep -qF "if (i >= win.done) { values.push(null); held.push(null); return; }" public/habitat.js \
   && ok "the Trends are worked out at the end of each day: every line runs to yesterday, the hardware's days read once after midnight and kept" || bad "the Trends still carry today, or the hardware's days are read on every page"
+# 13 October: "for most places on the website where time is shown, intelligently add CEST and change to CET when
+# daylight savings shifts" — the notes, the running line, the schedule's head, the run's dates; and on a German or French
+# page the days in its own language (they were English: "Sat 10 – Thu 22 Oct 2026", "13 Oct · 17:54")
+node -e '
+const P = require("./src/views/pages/public"), i18n = require("./src/lib/i18n");
+const msg = (id, sub, resp) => ({ id, callsign: "VEGA-1", body: "Hello", tags: "", state: "PUBLISHED", submitted_at: sub, response_body: "Hi", response_at: resp, responder: "SCIENCE OFFICER", mine: false, pending: false });
+const two = [msg(1, "2026-10-24T16:00:00Z", "2026-10-24T17:30:00Z"), msg(2, "2026-10-26T16:00:00Z", "2026-10-26T17:30:00Z")];
+const de = P.boardCards(two, i18n.of("de"), { wall: true }), en = P.boardCards(two, i18n.of("en"), { wall: true }), fr = P.boardCards(two, i18n.of("fr"), { wall: true });
+process.exit(de.includes(">24. Okt. · 18:00 CEST<") && de.includes(">26. Okt. · 17:00 CET<") && en.includes(">24 Oct · 18:00 CEST<") && en.includes(">26 Oct · 18:30 CET<")
+  && fr.includes(">24 oct. · 18:00 CEST<") ? 0 : 1);
+' 2>/dev/null && ok "a note says when it was sent and answered with the zone of that moment — 24 October 18:00 CEST, 26 October 17:00 CET — its day in the page's language (24. Okt., 24 oct.)" || bad "a note's time has no zone, the wrong zone, or its day is not in the page's language"
+DZ=$(node -e 'const m = require("./src/lib/mission"); process.stdout.write(m.zoneOfWall(m.localDate(new Date(), "Europe/Berlin"), "12:00", "Europe/Berlin"))' 2>/dev/null)
+# (asked of the third station, whose run is on: the first is before the run by now — its ticker counts down to the
+# opening instead of naming the task now)
+LDE=$(curl -s -H "Cookie: mcs_lang=de" $B3/); DDE=$(curl -s -H "Cookie: mcs_lang=de" $B3/dashboard)
+echo "$LDE" | grep -qE 'class="run-dates"><b>[A-Z][a-z]\., [0-9]{1,2}\.( [A-ZÄÖÜ][a-zäöü]+\.?)? – [A-Z][a-z]\., [0-9]{1,2}\. [A-ZÄÖÜ][a-zäöü]+\.? 20[0-9]{2}</b>' \
+  && echo "$LDE" | grep -qE "<b id=\"tk-now\">([0-9]{2}:[0-9]{2} $DZ · |[^0-9<])" && echo "$LDE" | grep -q "Kommunikationsfenster täglich <b>19:00 $WZ</b>" \
+  && echo "$DDE" | grep -qE "<span class=\"dpanel-meta\">SOL [0-9]{3} · [0-9]+/[0-9]+ erledigt · $DZ</span>" \
+  && ok "the German pages: the run's dates in German (Do., 15. – Di., 27. Okt. 2026), the crew's task now with its zone, the window 19:00 $WZ, today's schedule with the zone in its head" || bad "the German pages' dates or zones are not as they should be"
+# the zone where a page fills a time in by itself: the running line asks for the schedule every five minutes and keeps
+# each task's zone (it turns with the day); the sky's pictures and the gallery's pop-up say the zone of the moment the
+# picture was taken; the Sensors tab's note on a missing reading gives the habitat's clock and its zone, in the page's
+# language, wherever the visitor's own clock is
+curl -s $B3/api/ticker | grep -qE '"tasks":\[\{"time":"[0-9]{2}:[0-9]{2}","label":"[^"]*","detail":"[^"]*","zone":"(CEST|CET)"\}' \
+  && node -e '
+const S = require("./src/views/pages/sky"), M = require("./src/views/pages/media"), T = (s) => s;
+const it = (id, date, time) => ({ id, name: `p_${date.replace(/-/g, "_")}-${time.replace(":", "-")}.jpg`, url: "/media/cloud/" + id, thumb: "/media/cloud/" + id + "/thumb", taken: { date, time, iso: date + "T" + time } });
+const items = [it("e5", "2026-10-26", "16:41"), it("d4", "2026-10-25", "08:30"), it("c3", "2026-10-25", "01:30"), it("b2", "2026-10-24", "16:41")];
+const pics = S.pictures({ items }, "Europe/Berlin").map((p) => p.when);
+const html = M.cloudGridInner(T, { title: "Gallery", items, snapshot: { checkSeconds: 20, version: "v" } }, { tz: "Europe/Berlin", mission: { start_date: "2026-10-15", totalDays: 13, today: "2026-10-26" }, lang: "en" });
+process.exit(pics[0] === "26.10.2026 · 16:41 CET" && pics[3] === "24.10.2026 · 16:41 CEST"
+  && html.includes("<section class=\"cloud-day\" data-day=\"2026-10-26\" data-zone=\"CET\">") && html.includes("<section class=\"cloud-day\" data-day=\"2026-10-24\" data-zone=\"CEST\">")
+  && html.includes("<section class=\"cloud-day\" data-day=\"2026-10-25\">") && html.includes(">08:30 CET<") && html.includes(">01:30 CEST<") && html.includes(">16:41<") ? 0 : 1);' \
+  && grep -qF "when.textContent = [head ? head.textContent : '', hm && zone ? hm + ' ' + zone : hm].filter(Boolean).join(' · ');" public/cloud.js \
+  && grep -qF "var TZ = (function () { var el = document.querySelector('[data-tz]'); return (el && el.getAttribute('data-tz')) || 'Europe/Berlin'; })();" public/habitat.js \
+  && grep -qF "return new Intl.DateTimeFormat(LOCALE, { timeZone: TZ, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(ms)) + (z ? ' ' + z : '');" public/habitat.js \
+  && ok "the zone stays where a page fills a time in itself: the running line's schedule asked again (each task with CEST or CET), the sky's pictures (24.10.2026 · 16:41 CEST, 26.10.2026 · 16:41 CET), the gallery's pop-up (the day's zone, each picture's own on 25 October), the Sensors tab's note on a missing reading" || bad "a time filled in by a page's script has lost its zone"
+# the habitat dome's sentences: its stamp with the clock's zone, the next task and the EVA with theirs, a list of times
+# with the zone once after it (each its own on 25 October) — and the minutes to the communication hour counted on the
+# bare clock (today's, on now, or tomorrow's, as the clock stands)
+HN=$(TZ=Europe/Berlin date +%H%M); DM=$(curl -s $B3/api/dome)
+if [ "$HN" -lt 1900 ]; then WH='Communication hour today at 19:00 (CEST|CET) — in [0-9]'; elif [ "$HN" -lt 2000 ]; then WH='The communication hour is on now \(19:00 (CEST|CET)\)'; else WH='The next communication hour is tomorrow at 19:00 (CEST|CET)'; fi
+echo "$DM" | grep -qE "$WH" && echo "$DM" | grep -qE '"stamp":"SOL [0-9]{3} · [0-9]{2}:[0-9]{2} (CEST|CET)"' && { ! echo "$DM" | grep -q 'Up next' || echo "$DM" | grep -qE 'Up next [0-9]{2}:[0-9]{2} (CEST|CET): '; } \
+  && node -e '
+const D = require("./src/views/pages/dome"), i18n = require("./src/lib/i18n"), M = require("./src/lib/mission");
+const mission = { ...M.state(), phase: "ACTIVE", clampedDay: 11, today: "2026-10-25" };
+const tasks = [{ time: "01:30", label: "Sleep" }, { time: "08:30", label: "Breakfast" }, { time: "13:00", label: "Lunch" }, { time: "16:00", label: "EVA (Extra Vehicular Activity)" }, { time: "18:00", label: "Dinner" }, { time: "22:30", label: "Lights out" }];
+const f = D.figures({ mission, T: i18n.of("en"), lang: "en" }, { today: { date: "2026-10-25", tasks, meals: [], inventory: [] }, crew: [] });
+const g = D.figures({ mission: { ...mission, today: "2026-10-20" }, T: i18n.of("en"), lang: "en" }, { today: { date: "2026-10-20", tasks, meals: [], inventory: [] }, crew: [] });
+process.exit(f.nap.text.includes("01:30 CEST Sleep · 22:30 CET Lights out.") && f.recycling.more.includes("08:30 Breakfast · 13:00 Lunch · 18:00 Dinner (CET).")
+  && /EVA (is|was) at 16:00 CET/.test(f.eva.text) && g.nap.text.includes("01:30 Sleep · 22:30 Lights out (CEST).") && /EVA (is|was) at 16:00 CEST/.test(g.eva.text) ? 0 : 1);' 2>/dev/null \
+  && ok "the habitat dome says its times with their zone — the stamp, the next task, the EVA, the meals' hours (CET) and the pods' (each its own on 25 October) — and counts the minutes to the communication hour on the bare clock" || bad "the dome's times have no zone, or it counts the communication hour wrongly"
+curl -s -b /tmp/a3.jar $B3/control | grep -qE ' · [0-9]{2}:[0-9]{2}:[0-9]{2} (CEST|CET) habitat time</div>' && ok "mission control's head gives the habitat time with its zone" || bad "mission control's habitat time has no zone"
 # 13 October: "Transmit and Live feed should have the SAME height on mobile" — one row height, the taller card's, each
 # key at its card's foot
 grep -qF '  body.landing .calls { grid-auto-rows: 1fr; }' public/sheet.css && grep -qF '  body.landing .call-text { align-self: stretch; align-items: flex-start; text-align: left; min-width: 0; }' public/sheet.css \
@@ -4435,6 +4508,24 @@ echo "$DEC3" | grep -q "652.713" && echo "$DEC3" | grep -q "21.457" && echo "$DE
   && ! echo "$DEC3" | grep -q "652.7134\|21.4567\|1008.2800\|0.79999\|320.9876\|42.3333" \
   && curl -s -b /tmp/a3.jar $B3/archive/export.json | grep -q '"pres":1008.2800293' \
   && ok "the habitat sensor's figures in the PDF record carry three decimals at the most — the data keeps every digit" || bad "the PDF's habitat sensor figures are not cut to three decimals"
+# every item of the habitat hardware in the PDF to three decimals at the most (13 October: "for all items in Habitat
+# Hardware in the full record, only save upto 3 decimal points") — a draw and a meter as Home Assistant hands them over,
+# stored as they came, and a state that is no number: the day's low, high and mean, what the meter added, every reading
+# and its state as reported — in the day's record and in the full record; the data keeps every digit
+DATA_DIR="$DATA3" node -e '
+const Database = require("better-sqlite3"); const db = new Database(require("path").join(process.env.DATA_DIR, "station.db"));
+const t = Date.now() - 4000, ins = db.prepare("INSERT OR IGNORE INTO ha_reading (entity, t, value, state, unit) VALUES (?, ?, ?, ?, ?)");
+[[0, 37.4567891], [1000, 41.9876543]].forEach(([d, v]) => ins.run("habitat_power_science_1_leistung", t + d, v, String(v), "W"));
+ins.run("habitat_power_science_1_leistung", t + 2000, null, "unavailable", "W");
+[[0, 12.3456789], [1000, 13.5793456]].forEach(([d, v]) => ins.run("habitat_power_science_1_energie", t + d, v, String(v), "kWh"));'
+curl -s -b /tmp/a3.jar -o /tmp/day3-hw.pdf $B3/archive/day/$D3/export.pdf && HW3=$(pdftext /tmp/day3-hw.pdf)
+curl -s -b /tmp/a3.jar -o /tmp/full3-hw.pdf $B3/archive/export.pdf && HWF=$(pdftext /tmp/full3-hw.pdf)
+HWOK=1; for P in "$HW3" "$HWF"; do
+  for v in 37.457 41.988 39.722 12.346 13.579 12.963 1.234 unavailable; do echo "$P" | grep -q " $v " || HWOK=0; done
+  echo "$P" | grep -q '37\.4567\|41\.9876\|39\.7222\|12\.3456\|13\.5793\|12\.9625\|1\.2336' && HWOK=0
+done
+[ $HWOK = 1 ] && curl -s -b /tmp/a3.jar $B3/archive/export.json | grep -q '"value":37.4567891,"state":"37.4567891"' \
+  && ok "every item of the habitat hardware in the PDF record carries three decimals at the most — low, high, mean, added today (1.234 kWh), every reading and its state as reported, in the day's record and the full record — the data keeps every digit" || bad "the PDF's habitat hardware figures are not cut to three decimals"
 kill $SRV3 2>/dev/null; wait $SRV3 2>/dev/null
 kill $MOCK 2>/dev/null; wait $MOCK 2>/dev/null
 rm -rf "$DATA3" "$CONT3"

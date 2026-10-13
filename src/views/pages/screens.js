@@ -185,7 +185,7 @@ function habitatHud(ctx, d, p) {
   const head = `
     <header class="hh-head">
       <h1 class="hh-title">${esc(T('Habitat'))}${m.phase === 'COMPLETE' ? '' : `<span class="cloud-live hh-live"><i></i>${T('LIVE')}</span>`}</h1>
-      <p class="hh-meta">${sol} · ${esc(dayShort(m.today, lang))} · Karlsruhe, MARS<b class="bang">!</b>platz <b class="hh-clock" id="hh-clock">${esc(String(m.venueTime || '').slice(0, 5))}</b></p>
+      <p class="hh-meta">${sol} · ${esc(dayShort(m.today, lang))} · Karlsruhe, MARS<b class="bang">!</b>platz <b class="hh-clock" id="hh-clock">${esc(`${String(m.venueTime || '').slice(0, 5)} ${require('../../lib/mission').zoneAbbr(new Date(), tz)}`.trim())}</b></p>
     </header>`;
   // the latest exchange, answered, and the latest picture — kept current by the script (the board's, the strip's)
   const ex = SKY.exchanges(d.recent || [], T), x = ex.find((e) => e.reply) || ex[0] || null;
@@ -377,7 +377,7 @@ function livestream(ctx) {
     </div>
     <div class="hud-tl"><div class="live-badge" id="live-badge" hidden><i aria-hidden="true"></i>${T('LIVE')}</div><span class="hud-name">MARS<b>!</b>platz ${esc(T('Habitat'))}</span></div>
     <div class="hud-tr hud-read"><span class="hud-v" id="hud-sol">${esc(m.phase === 'ACTIVE' ? `SOL ${String(m.clampedDay).padStart(2, '0')} / ${String(m.totalDays).padStart(2, '0')}` : m.phase === 'PRE_LAUNCH' ? `T−${m.countdown.days}D` : T('Mission complete'))}</span><span class="hud-k" id="hud-date"></span></div>
-    <div class="hud-bl hud-read"><span class="hud-k">${esc(T('Local time'))} · Karlsruhe, MARS<b>!</b>platz</span><span class="hud-v hud-clock" id="hud-clock">${esc(m.venueTime || '')}</span></div>${signal ? `
+    <div class="hud-bl hud-read"><span class="hud-k">${esc(T('Local time'))} · Karlsruhe, MARS<b>!</b>platz</span><span class="hud-v hud-clock" id="hud-clock">${esc(`${m.venueTime || ''} ${require('../../lib/mission').zoneAbbr(new Date(), m.timezone)}`.trim())}</span></div>${signal ? `
     <div class="hud-br hud-read"><span class="hud-k">${esc(T('Signal travel time'))} · ${esc(T('Earth'))} → Mars</span><span class="hud-v">${esc(signal)}</span></div>` : ''}`;
   const body = `<div class="screen-live" id="screen-live" data-src="/screen/livestream/stream.m3u8" data-tz="${esc(m.timezone)}" data-lang="${esc(ctx.lang || 'de')}"
       data-start="${esc(m.start_date)}" data-days="${esc(String(m.totalDays))}" data-opens="${esc(m.opensAt || '')}" data-over="${m.phase === 'COMPLETE' ? '1' : ''}">

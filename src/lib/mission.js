@@ -54,6 +54,35 @@ function zoneOffsetMs(instant, tz) {
 }
 
 /**
+ * The zone the venue's clock keeps at an instant, as the pages name it beside a time (13 October: "for most places on
+ * the website where time is shown, intelligently add CEST and change to CET when daylight savings shifts"): CEST while
+ * summer time holds, CET from the last Sunday of October at 03:00 — 25 October 2026, in the run — each time by its own
+ * moment, so a message sent on the 24th says CEST and one sent on the 26th CET, whatever the day it is read; the same
+ * letters in every language. A zone outside Central Europe keeps the clock's own short name.
+ */
+const CENTRAL = /^(Europe\/(Berlin|Amsterdam|Brussels|Paris|Luxembourg|Zurich|Vienna|Rome|Madrid|Prague|Copenhagen|Oslo|Stockholm|Warsaw|Budapest)|CET)$/;
+function zoneAbbr(instant, tz) {
+  const at = instant instanceof Date ? instant : new Date(instant);
+  if (Number.isNaN(at.getTime())) return '';
+  const zone = tz || (config() || {}).timezone || run.RUN.TZ;
+  if (CENTRAL.test(zone)) { const off = Math.round(zoneOffsetMs(at, zone) / 60000); return off === 120 ? 'CEST' : off === 60 ? 'CET' : ''; }
+  try { return (formatter('en-GB', { timeZone: zone, timeZoneName: 'short' }).formatToParts(at).find((x) => x.type === 'timeZoneName') || {}).value || ''; }
+  catch { return ''; }
+}
+/** The zone of a wall-clock time on a date at the venue: the schedule's 08:30 on 25 October is CET, its 01:30 CEST. */
+function zoneOfWall(dateStr, hhmm, tz) {
+  const zone = tz || (config() || {}).timezone || run.RUN.TZ;
+  try { return zoneAbbr(new Date(venueTimeUtc(dateStr, hhmm, zone)), zone); } catch { return ''; }
+}
+/** An instant as the venue's clock reads it, with the zone: "17:54 CEST". */
+function clockAt(instant, tz) {
+  const at = instant instanceof Date ? instant : new Date(instant);
+  if (Number.isNaN(at.getTime())) return '';
+  const zone = tz || (config() || {}).timezone || run.RUN.TZ;
+  return `${localTime(at, zone).slice(0, 5)} ${zoneAbbr(at, zone)}`.trim();
+}
+
+/**
  * The exact UTC instant of 00:00 venue-local on a given date. This is what the
  * T-clock counts from. Anchoring to UTC midnight instead would put the
  * countdown two hours out of step with the door opening -- and Berlin leaves
@@ -188,8 +217,20 @@ function state(date = new Date()) {
   };
 }
 
-/** The run, written the way it goes on a poster: "Thu 15 – Tue 27 Oct 2026". */
-function runLabel(start, end, { long = false } = {}) {
+/* The days in the page's language (13 October: the dates on a German or French page were written in English — "Sat 10 –
+   Thu 22 Oct 2026" on the landing page, "13 Oct · 17:54" on every note): German and French by their own calendars
+   ("Do., 15. – Di., 27. Okt. 2026", "jeu. 15 – mar. 27 oct. 2026"), English as it always was. */
+const DAY_LOCALE = { de: 'de-DE', fr: 'fr-FR' };
+const local = (iso, lang, opts) => formatter(DAY_LOCALE[lang], { timeZone: 'UTC', ...opts }).format(new Date(iso + 'T12:00:00Z'));
+
+/** The run, written the way it goes on a poster: "Thu 15 – Tue 27 Oct 2026" (`lang`: de, fr — in theirs). */
+function runLabel(start, end, { long = false, lang = 'en' } = {}) {
+  if (DAY_LOCALE[lang]) {
+    const a0 = new Date(start + 'T12:00:00Z'), b0 = new Date(end + 'T12:00:00Z');
+    const same = a0.getUTCMonth() === b0.getUTCMonth() && a0.getUTCFullYear() === b0.getUTCFullYear();
+    const wd = long ? 'long' : 'short', mo = long ? 'long' : 'short';
+    return `${local(start, lang, same ? { weekday: wd, day: 'numeric' } : { weekday: wd, day: 'numeric', month: mo })} – ${local(end, lang, { weekday: wd, day: 'numeric', month: mo, year: 'numeric' })}`;
+  }
   const fmt = (iso, withMonth) => {
     const d = new Date(iso + 'T12:00:00Z');
     const wd = d.toLocaleDateString('en-GB', { weekday: long ? 'long' : 'short', timeZone: 'UTC' });
@@ -200,14 +241,16 @@ function runLabel(start, end, { long = false } = {}) {
   return `${fmt(start, !sameMonth)} – ${fmt(end, true)} ${b.getUTCFullYear()}`;
 }
 
-/** One date the same way: "Thu 15 Oct 2026". */
-function dayLabel(iso) {
+/** One date the same way: "Thu 15 Oct 2026" (`lang`: de, fr — "Do., 15. Okt. 2026", "jeu. 15 oct. 2026"). */
+function dayLabel(iso, lang = 'en') {
+  if (DAY_LOCALE[lang]) return local(iso, lang, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
   const d = new Date(iso + 'T12:00:00Z');
   return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).replace(',', '');
 }
 
-/** The short form for rails and cards, no year: "Thu 15 Oct". */
-function shortDay(iso) {
+/** The short form for rails and cards, no year: "Thu 15 Oct" (`lang`: de, fr — "Do., 15. Okt.", "jeu. 15 oct."). */
+function shortDay(iso, lang = 'en') {
+  if (DAY_LOCALE[lang]) return local(iso, lang, { weekday: 'short', day: 'numeric', month: 'short' });
   const d = new Date(iso + 'T12:00:00Z');
   return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).replace(',', '');
 }
@@ -311,5 +354,5 @@ function touchNow() {
   }
 }
 
-module.exports = { config, state, dateForDay, dayName, zeroName, touchNow, localDate, localTime, daysBetween, runLabel, dayLabel, shortDay, sync,
+module.exports = { config, state, dateForDay, dayName, zeroName, touchNow, localDate, localTime, daysBetween, runLabel, dayLabel, shortDay, sync, zoneAbbr, zoneOfWall, clockAt,
                    venueMidnightUtc, venueTimeUtc, zoneOffsetMs, nowRetired, retireNow, nowEnds };

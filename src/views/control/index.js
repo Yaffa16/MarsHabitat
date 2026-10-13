@@ -44,13 +44,13 @@ const flash = (f) => f ? `<div class="flash ${f.err ? 'err' : ''}">${esc(f.msg)}
    was last saved. */
 const when = (iso) => {
   const tz = (missionLib.config() || {}).timezone || 'Europe/Berlin';
-  return new Date(iso).toLocaleString('en-GB', { timeZone: tz, day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return `${new Date(iso).toLocaleString('en-GB', { timeZone: tz, day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })} ${missionLib.zoneAbbr(iso, tz)}`.trim();
 };
-/** The moment a message was sent, in full: the day, the time and the zone, on the venue's clock — "28 Sept 2026, 16:28:54 CET"
-    (the zone is always named CET, as everywhere on the station; the clock is the venue's own). */
+/** The moment a message was sent, in full: the day, the time and the zone, on the venue's clock — "28 Sept 2026, 16:28:54 CEST"
+    (13 October: the zone the moment keeps, CEST or — from 25 October at 03:00 — CET; it said CET whatever the day). */
 const whenFull = (iso) => {
   const tz = (missionLib.config() || {}).timezone || 'Europe/Berlin';
-  try { return new Date(iso).toLocaleString('en-GB', { timeZone: tz, day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' CET'; }
+  try { return `${new Date(iso).toLocaleString('en-GB', { timeZone: tz, day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })} ${missionLib.zoneAbbr(iso, tz)}`.trim(); }
   catch { return when(iso); }
 };
 const mark = (e, key) => (e && e.keys && e.keys[key] ? ' was-edited' : '');
@@ -825,7 +825,7 @@ function page(ctx, model) {
   <div style="padding:22px 0 4px">
     <div class="eyebrow">Mission control · ${esc(user.username)} ·
       ${pre ? `before the run · ${esc(ctx.mission.startLabel)} opens in ${ctx.mission.daysUntilStart} ${ctx.mission.daysUntilStart === 1 ? 'day' : 'days'}${ctx.mission.nowDay ? ` · rehearsing as NOW, ${esc(dateLabel(0))}` : ' · reset — ready for the run'}`
-        : `day ${dd(ctx.mission.clampedDay)}${ctx.mission.nowDay ? ` · a rehearsal against made-up dates · NOW, ${esc(dateLabel(0))}, at hand` : ''}`} · ${esc(ctx.mission.venueTime)} habitat time</div>
+        : `day ${dd(ctx.mission.clampedDay)}${ctx.mission.nowDay ? ` · a rehearsal against made-up dates · NOW, ${esc(dateLabel(0))}, at hand` : ''}`} · ${esc(`${ctx.mission.venueTime} ${missionLib.zoneAbbr(new Date(), ctx.mission.timezone)}`.trim())} habitat time</div>
     <div class="actions" style="margin-bottom:8px">
       <h1 style="margin:0">Mission control</h1>
       <div class="spacer"></div>

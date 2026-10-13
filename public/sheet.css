@@ -394,7 +394,8 @@ body.landing .sky-when::before, body.landing .sky-head::before { content: ""; fl
 /* the heads (October): LATEST MESSAGE: over an exchange, inside its panel over the question's plate; LATEST IMAGE is the
    snapshot's plate (sky-when), and the moment the picture was taken stands at the foot of its frame, over the picture */
 body.landing .sky-head { display: flex; align-items: center; gap: 6px; margin: 0 0 7px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 10px; line-height: 16px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; color: rgba(255,255,255,.86); white-space: nowrap; }
-body.landing .sky-stamp { position: absolute; right: 5px; bottom: 4px; z-index: 1; margin: 0; padding: 1px 5px; border-radius: 3px; background: rgba(0,0,0,.55); font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 9px; line-height: 12px; letter-spacing: .1em; text-transform: uppercase; color: #fff; pointer-events: none; }
+/* (the moment on one line, its zone with it — 13.10 · 16:41 CEST — inside a desk's small frame: 13 October) */
+body.landing .sky-stamp { position: absolute; right: 5px; bottom: 4px; z-index: 1; margin: 0; padding: 1px 5px; border-radius: 3px; background: rgba(0,0,0,.55); font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 9px; line-height: 12px; letter-spacing: .06em; white-space: nowrap; text-transform: uppercase; color: #fff; pointer-events: none; }
 /* ---- an exchange: one panel — the question's plate at its top left corner, its words beneath; the crew's answer in a box
    of its own inside it, framed in Mars with a bar at its left */
 body.landing .sky-msg { box-sizing: border-box; max-width: none; gap: 0; padding: 0 0 9px; background-color: var(--hud-ground);

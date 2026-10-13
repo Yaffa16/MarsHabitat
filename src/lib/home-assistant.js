@@ -623,7 +623,8 @@ const dayLast = db.prepare(
  * low, high, mean and sample count of the readings inside the day's window,
  * its last reading of the day (`last`, at `lastAt`) with the decimals it is
  * printed to, and — for a counter — what the day added (last reading minus
- * first; a meter only rises). `window` is the archive's UTC window for the
+ * first; a meter only rises), to three decimals like every hardware figure
+ * in the record (record-pdf.js, dec3). `window` is the archive's UTC window for the
  * mission day ({ start, end } as ISO strings, archive.windowFor). Sensors
  * with no reading that day are left out.
  */
@@ -639,7 +640,7 @@ function daySummary(window) {
     if (s.kind === 'counter') {
       const first = dayFirst.get(s.id, a, b);
       if (first && last && first.value != null && last.value != null) {
-        added = Math.round(Math.max(0, last.value - first.value) * 100) / 100;
+        added = Math.round(Math.max(0, last.value - first.value) * 1000) / 1000;
       }
     }
     out.push({ id: s.id, label: s.label, unit: s.unit || '', kind: s.kind, decimals: s.decimals,

@@ -1057,7 +1057,7 @@ app.get('/api/ticker', (req, res) => {
   res.json({
     sol: st.clampedDay, totalDays: st.totalDays, phase: st.phase, open: st.open, venueTime: st.venueTime,
     opensAt: st.opensAt, epoch: content.resetEpoch(),
-    tasks: today ? today.tasks.map((t) => ({ time: t.time, label: t.label, detail: t.detail || '' })) : [],
+    tasks: P.tickerTasks(st, today),   // each with its zone (CEST, CET from 25 October) — the running line keeps it when it asks again
     hab: P.habReading(req.ctx()),   // the running line's habitat reading (public.js, habReading)
   });
 });

@@ -216,9 +216,21 @@
 
   /* ------------------------------------------------------------ the clock, on the venue's time */
   var clock = document.getElementById('hh-clock'), tz = hud.getAttribute('data-tz') || 'Europe/Berlin';
+  /* the zone the venue's clock keeps at a moment — CEST, or CET from 25 October 2026 at 03:00, when the clocks go back
+     (13 October: "for most places on the website where time is shown, intelligently add CEST and change to CET") */
+  function zoneAt(ms, zone) {
+    try {
+      var p = {};
+      new Intl.DateTimeFormat('en-GB', { timeZone: zone || 'Europe/Berlin', hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' })
+        .formatToParts(new Date(ms)).forEach(function (x) { p[x.type] = x.value; });
+      var off = Math.round((Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute) - Math.floor(ms / 60000) * 60000) / 60000);
+      return off === 120 ? 'CEST' : off === 60 ? 'CET' : '';
+    } catch (e) { return ''; }
+  }
   function tick() {
     if (!clock) return;
-    try { clock.textContent = new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date()); } catch (e) { /* as it stands */ }
+    var z = zoneAt(Date.now(), tz);
+    try { clock.textContent = new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date()) + (z ? ' ' + z : ''); } catch (e) { /* as it stands */ }
   }
   tick(); setInterval(tick, 15000);
 
@@ -231,7 +243,8 @@
     try {
       var o = {}; new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour12: false, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
         .formatToParts(d).forEach(function (p) { o[p.type] = p.value; });
-      return o.day + '.' + o.month + ' · ' + (o.hour === '24' ? '00' : o.hour) + ':' + o.minute;
+      var z = zoneAt(d.getTime(), tz);
+      return o.day + '.' + o.month + ' · ' + (o.hour === '24' ? '00' : o.hour) + ':' + o.minute + (z ? ' ' + z : '');
     } catch (e) { return ''; }
   }
   // (the board's notes, as the Write page's wall has them — public.js, noteCard: they name the officer who answered)

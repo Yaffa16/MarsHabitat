@@ -168,7 +168,7 @@ function masthead(ctx, { home = false, status = true, lead = '', cta = '' } = {}
     <div>
       <h1 class="wordmark">${home ? mark : `<a href="/" title="${esc(T('Back to the station'))}">${mark}</a>`}</h1>
       <p class="tagline"><b>ZKM | Hertzlab</b></p>
-      <p class="run-dates"><b>${esc(m.runLabel)}</b> · ${m.totalDays} ${T('sols in the habitat')}${pre
+      <p class="run-dates"><b>${esc(require('../lib/mission').runLabel(m.start_date, m.end_date, { lang: (T && T.lang) || ctx.lang }))}</b> · ${m.totalDays} ${T('sols in the habitat')}${pre
         ? ` · ${T('opens in')} ${n} ${T(n === 1 ? 'day' : 'days')}`
         : m.phase === 'ACTIVE' ? ` · SOL ${String(m.clampedDay).padStart(2, '0')} ${T('of')} ${m.totalDays}` : ''}</p>${
         lead ? `\n      <p class="lead">${lead}</p>` : ''}${cta ? `\n      <p class="masthead-cta">${cta}</p>` : ''}
@@ -583,8 +583,11 @@ function mealFigs(m, T = (x) => x) {
 }
 
 /** The hours the food meter is read for each named meal, as a line: "Breakfast 06:00–09:00 · Lunch 09:00–14:00 · …". */
-function mealHoursLine(T, windows = {}) {
-  return Object.entries(windows || {}).map(([slot, w]) => `${slotName(T, slot)}\u00a0${String(w).replace('-', '–')}`).join(' · ');
+/* The food meter's hours, one per meal — and the zone they keep on the day after them (`zone`, 13 October: CEST, CET
+   from 25 October), once for the line. */
+function mealHoursLine(T, windows = {}, zone = '') {
+  const line = Object.entries(windows || {}).map(([slot, w]) => `${slotName(T, slot)}\u00a0${String(w).replace('-', '–')}`).join(' · ');
+  return line && zone ? `${line} ${zone}` : line;
 }
 
 module.exports = {

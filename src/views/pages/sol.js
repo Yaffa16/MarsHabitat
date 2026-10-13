@@ -224,7 +224,7 @@ function crewBox(ctx, opts = {}) {
     The crew is not named yet). */
 function crewWhenParts(ctx, now) {
   if (!now || now.day == null) return { what: ctx.T('The crew is not named yet'), day: '' };
-  return { what: '', day: `SOL ${String(now.day).padStart(2, '0')} · ${shortDay(missionLib.dateForDay(now.day))}` };
+  return { what: '', day: `SOL ${String(now.day).padStart(2, '0')} · ${missionLib.shortDay(missionLib.dateForDay(now.day), ctx.lang || (ctx.T && ctx.T.lang) || 'en')}` };
 }
 function crewWhen(ctx, now) {
   const w = crewWhenParts(ctx, now);

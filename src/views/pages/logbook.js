@@ -30,7 +30,7 @@ function logPage(ctx, { days, crew, counts, blogs = [], mediaLookup = () => null
     <h1>${T('Crew log')}</h1>
     <p class="lede">${T('Three blogs come out of the habitat each day: the Commander Log, the Daily Mission Report and the Health Report. Nobody edits them on the way out.')} ${counts.published} ${T('of')} ${slots} ${T('entries written')}${
       pre ? ` — ${T('the habitat is occupied from')} ${esc(m.startLabel)}; ${T('the grey slots show where each day’s entries will go')}` : ''}.</p>
-    <div class="actions"><a class="btn" href="/#crewlog">${T('Back to the mission')}</a></div>
+    <div class="actions"><a class="btn" href="/dashboard#blog-commander">${T('Back to the mission')}</a></div>
   </div>
 
   <div class="logpage-strip" aria-label="${esc(T('Jump to a day'))}">

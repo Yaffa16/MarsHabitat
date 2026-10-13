@@ -33,7 +33,8 @@ function dayMonth(iso, lang) {
   catch { return iso; }
 }
 /** The venue's zone, as the station names it everywhere and in every language: CET (landing.js has the word). */
-function zoneName() { return require('./landing').ZONE; }
+/** The zone a time keeps on its day — CEST, or CET from 25 October at 03:00 (landing.js, zoneName; 13 October). */
+function zoneName(iso, tz, lang, hhmm) { return require('./landing').zoneName(iso, tz, lang, hhmm); }
 
 const ICON = {
   entry: '<path d="M2.5 19.5h19"/><path d="M4.5 19.5a7.5 7.5 0 0 1 15 0"/><path d="M10.4 19.5v-2.6a1.6 1.6 0 0 1 3.2 0v2.6"/><path d="M7.2 14.2a5 5 0 0 1 2.3-2.4" style="opacity:.55"/><circle cx="16" cy="15" r=".9" fill="currentColor" stroke="none"/>',
@@ -49,12 +50,12 @@ function slowestChat(ctx) {
   // a sentence of the dictionary with its live figures put in ({range}, {now}, {time})
   const say = (key, vals) => Object.entries(vals).reduce((s, [k, v]) => s.split(`{${k}}`).join(v), esc(T(key)));
 
-  const zone = zoneName(m.start_date, m.timezone, lang);
+  const zone = zoneName(m.start_date, m.timezone, lang, ENTRY_TIME);
   const entry = `${dayMonth(m.start_date, lang)} · ${ENTRY_TIME}${zone ? ' ' + zone : ''}`;
   const km = Math.round(ctx.geo.distanceKm / 1e6);
   const secs = Number(process.env.TRANSIT_SECONDS || 12);
   const crossing = `${secs} ${T(secs === 1 ? 'second' : 'seconds')}`;
-  const winZone = zoneName(m.today || m.start_date, m.timezone, lang);
+  const winZone = zoneName(m.today || m.start_date, m.timezone, lang, WINDOW_TIME);
   const me = ctx.callsign || ctx.offer || '';
 
   return `
