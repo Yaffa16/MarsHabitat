@@ -2364,7 +2364,7 @@ separate, paid product), so the station uses the site the way a person does
 opens the Send page, types the message into the box and presses the key. The sign-in is kept
 in a browser profile under `/data/spacespeak/`, so most sends need no signing in. A message is
 queued when its reply is published (`enqueue()` from `src/routes/control.js`); the relay runs
-behind, one message at a time with a pause between sends (`SPACESPEAK_GAP_SECONDS`, 20), and
+behind, one message at a time with a pause between sends (`SPACESPEAK_GAP_SECONDS`, 15 — at most 240 an hour; 20 until 13 October), and
 when the site does not answer it tries again later — after a minute, then four, sixteen, an
 hour, four hours — up to `SPACESPEAK_ATTEMPTS` (6). A message unpublished or rejected before its
 turn is skipped (and queued again if its reply is published again); a deleted one is gone with

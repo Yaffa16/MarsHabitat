@@ -45,7 +45,7 @@ const CFG = {
   site: (process.env.SPACESPEAK_URL || 'https://www.spacespeak.com').replace(/\/+$/, ''),
   loginPath: process.env.SPACESPEAK_LOGIN_PATH || '/Account/Login',
   sendPath: process.env.SPACESPEAK_SEND_PATH || '/Messages/Create',
-  gapMs: Math.max(2000, Number(process.env.SPACESPEAK_GAP_SECONDS || 20) * 1000),
+  gapMs: Math.max(2000, Number(process.env.SPACESPEAK_GAP_SECONDS || 15) * 1000),   // one message every 15 s at most (20 until 13 October)
   dryRun: String(process.env.SPACESPEAK_DRY_RUN || '').toLowerCase() === 'true',
   headless: String(process.env.SPACESPEAK_HEADLESS || '').toLowerCase() !== 'false',
   signature: process.env.SPACESPEAK_SIGNATURE || '',            // a line set under every message, e.g. "— MARS!platz, Karlsruhe"

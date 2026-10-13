@@ -2863,6 +2863,10 @@ process.exit(r && r.launched_at && r.launched_at > r.submitted_at ? 0 : 1);
     && ok "when the site fails the try is logged with the site's own words, and the relay waits a minute before the next" || bad "a failed send is not handled"
   curl -s -b $A4 "$B4/control?show=published" | grep -q 'Queued for space · try 1 failed' && ok "control shows it queued for another try" || bad "control does not show the queued try"
   ls "$DATA4"/spacespeak/failed-*.png > /dev/null 2>&1 && ok "a screenshot and the page are kept under DATA_DIR/spacespeak/ for reading what went wrong" || bad "no screenshot of the failure"
+# the relay's pace (13 October: "make it at most one message every 15 seconds"): 15 s between two sends unless .env says
+# otherwise — at most 240 an hour (the suite's own relay runs at 2 s)
+grep -qF "gapMs: Math.max(2000, Number(process.env.SPACESPEAK_GAP_SECONDS || 15) * 1000)," src/lib/spacespeak.js && grep -qF 'SPACESPEAK_GAP_SECONDS: "${SPACESPEAK_GAP_SECONDS:-15}"' docker-compose.yml \
+  && grep -qx "# SPACESPEAK_GAP_SECONDS=15" .env.example && ok "the relay beams one message every 15 seconds at most (240 an hour), unless .env says otherwise" || bad "the relay's pause is not 15 seconds"
   # unpublished while waiting: skipped, never sent
   curl -s -b $A4 -X POST -o /dev/null $B4/control/$M4/unpublish
   sleep 7
