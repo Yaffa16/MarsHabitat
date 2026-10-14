@@ -25,6 +25,13 @@ const RUN = Object.freeze({
   TZ: 'Europe/Berlin',
   NAME: 'MARS — RED DUST CITY',
   DAYS: 13,
+  // The hours at the venue that frame it (14 October: "the performance closes on the 27th at 10am"): the crew go in at
+  // 17:00 on the first day and come out at 10:00 on the last; that afternoon, from 15:00 to 17:00, the habitat is open
+  // to visitors, who see it from inside and talk to the astronauts. The last day has no mission, no blogs and no
+  // schedule, and at its midnight the station closes (src/lib/mission.js).
+  GO_IN: '17:00',
+  COME_OUT: '10:00',
+  OPEN_HOUSE: Object.freeze(['15:00', '17:00']),
 });
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;

@@ -27,6 +27,17 @@ const WORDS = [
   'VOYAGER', 'PIONEER', 'CASSINI', 'KEPLER', 'MARINER',
 ];
 
+/* Every callsign issued is counted on its day at the venue as it is issued (visitor_count, schema.sql), so the tally of
+   visitors keeps every one — a callsign that never wrote is dropped from the visitor table after a week (server.js,
+   pruneVisitors), its count stays (13 October: "make sure nothing is missed or no data point is lost"). */
+const countOne = db.prepare('INSERT INTO visitor_count (date, n) VALUES (?, 1) ON CONFLICT(date) DO UPDATE SET n = n + 1');
+function counted(stamp) {
+  try {
+    const mission = require('./mission');
+    countOne.run(mission.localDate(new Date(stamp), (mission.config() || {}).timezone || 'Europe/Berlin'));
+  } catch (e) { console.warn('[callsign] a visitor was not counted:', e.message); }
+}
+
 function generate() {
   for (let attempt = 0; attempt < 60; attempt++) {
     const word = WORDS[crypto.randomInt(WORDS.length)];
@@ -81,6 +92,7 @@ function identify(req, res, { create = true, persist = true, callsign: wanted = 
   const info = db.prepare(
     'INSERT INTO visitor (callsign, token, created_at, last_seen) VALUES (?, ?, ?, ?)'
   ).run(callsign, newToken, stamp, stamp);
+  counted(stamp);
 
   res.cookie('mcs_id', newToken, {
     httpOnly: true,
@@ -101,6 +113,7 @@ function mint() {
   const token = crypto.randomBytes(24).toString('hex');
   const cs = generate(), stamp = now();
   const info = db.prepare('INSERT INTO visitor (callsign, token, created_at, last_seen) VALUES (?, ?, ?, ?)').run(cs, token, stamp, stamp);
+  counted(stamp);
   return { id: info.lastInsertRowid, callsign: cs, token, created_at: stamp };
 }
 

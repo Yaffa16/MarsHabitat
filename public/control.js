@@ -368,8 +368,8 @@
 })();
 
 /* ---------------------------------------------------------------- closed */
-/* The desk closed with the channel, at the end of the day after the run
-   (body.closed, src/lib/mission.js open): every form on the page is put out
+/* The desk closed with the channel, at midnight at the end of the run's last
+   day (body.closed, src/lib/mission.js open): every form on the page is put out
    of action — its fields and keys disabled — but the sign-out. The server
    refuses every save anyway; this only says so at a glance. */
 (function () {

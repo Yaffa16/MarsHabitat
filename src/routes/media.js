@@ -88,15 +88,18 @@ const dd = (n) => String(n).padStart(3, '0');
 const folder = (n) => (n < 1 ? (missionLib.state().nowDay ? 'now-rehearsal' : 'before-the-run') : `day-${dd(n)}`);
 
 /** Everything visible, one ZIP: day folders, original names (made unique),
- *  the manifest and a README. Stored, not deflated, streamed as it goes. */
+ *  the manifest and a README. Stored, not deflated, streamed as it goes.
+ *  Handed withdrawn items too — the archive's copy of everything (server.js,
+ *  /archive/media.zip, 13 October) — it puts them under withdrawn/, by day. */
 async function sendZip(res, items, label) {
   const st = missionLib.state();
   const seen = new Set();
   const entries = items.map((m) => {
-    let name = `${folder(m.mission_day)}/${m.filename}`;
+    const dir = `${m.hidden ? 'withdrawn/' : ''}${folder(m.mission_day)}`;
+    let name = `${dir}/${m.filename}`;
     if (seen.has(name)) {
       const ext = path.extname(m.filename), base = m.filename.slice(0, -ext.length || undefined);
-      name = `${folder(m.mission_day)}/${base}-${m.sha256.slice(0, 8)}${ext}`;
+      name = `${dir}/${base}-${m.sha256.slice(0, 8)}${ext}`;
     }
     seen.add(name);
     return { name, path: media.pathOf(m), size: m.bytes, mtime: new Date(m.uploaded_at), item: m };
@@ -105,7 +108,7 @@ async function sendZip(res, items, label) {
     mission: { name: st.name, start: st.start_date, end: st.end_date, timezone: st.timezone },
     generatedAt: new Date().toISOString(),
     note: 'Files are stored uncompressed. Each file\'s SHA-256 is listed; `sha256sum` any file to check it.',
-    items: entries.map((e) => ({ path: e.name, ...media.describe(e.item) })),
+    items: entries.map((e) => ({ path: e.name, ...media.describe(e.item), ...(e.item.hidden ? { uploadedBy: e.item.uploaded_by } : {}) })),
   };
   const readme = [
     `MARS Communication Station — media archive (${label})`,
@@ -119,6 +122,7 @@ async function sendZip(res, items, label) {
     ...(entries.some((e) => e.item.mission_day < 1) ? [st.nowDay
       ? 'A now-rehearsal/ folder holds what was sent out before the run under NOW, mission day 0: a rehearsal, not part of the record (the manifest marks those files rehearsal: true).'
       : 'A before-the-run/ folder holds what was sent out before the run: a rehearsal, not part of the record (the manifest marks those files rehearsal: true).'] : []),
+    ...(entries.some((e) => e.item.hidden) ? ['A withdrawn/ folder holds what mission control took out of view on the station, by day — kept, as every file sent out is (the manifest marks those files hidden: true).'] : []),
     '',
     'ZKM | Hertzlab',
   ].join('\n') + '\n';
@@ -156,3 +160,4 @@ router.get('/:id(\\d+)', findVisible, (req, res) => {
 });
 
 module.exports = router;
+module.exports.sendZip = sendZip;          // the archive's copy of every file sent out, the withdrawn too (server.js)

@@ -98,10 +98,10 @@ sits behind the same login.
 |---|---|---|
 | The mission page | `/` | **The header** across the top — the wordmark, the run's badge, the three keys (Message Board → `/write`, Live Mission Dashboard → `/dashboard`, About) and a running line of the current activity, the next one, the habitat sensor's reading and the daily communication window · **three pages**: the way to the habitat with its sky; the note with the two calls under it (Send a message to the crew — approved messages are beamed into space; Follow what the crew is doing live); the world's slowest chat (see *The landing page: three pages in the glass dress*) · **the composer's window**, as on every public page (see *The composer's window*): the note's door and the slowest chat's door open the window here (`#write`); a phone's doors lead to the Write page's dock. Nothing of the board or the dashboard is on this page. The media, the whole mission day by day and the reading matter live on their own pages (`/media`, `/at-a-glance`, `/about`); the crew's blogs on the dashboard and in At a Glance |
 | Message Board | `/write` | **The message board, nothing else — under the header alone, no masthead** (the page is named *Message Board* since 13 October, *Write to the crew* until then). The board is **a wall of notes** — the exchanges as flat cards on the page's ground, after the reference handed over: three across on a wide screen, two on a narrower one, one on a phone, every row starting level; the newest first; **never in a box: the wall flows with the page, and as the reader nears its end the page of exchanges before it is fetched and laid on** (`/api/board?before=`), until *The beginning of the correspondence*. A bar over the wall stays under the header all the way down: the board's name with its LIVE mark and the count, the chips that narrow the wall (ALL, MY MESSAGES, a tag), and at its right end the board's own **Write to the Crew** key, the chips' height (13 October). The composer is **the window every page carries** (see *The composer's window*), opened by that key; `/write#write` opens the page with it open, and on this page the window folds away by itself once a message has arrived, so the note just sent is in view at the head of the wall. Each note: a disc with the writer's initials in a colour of the callsign's own, the callsign, the reference number; the message as the note's title with its tags right after it (*#question #humour*, keys that narrow the wall, in the message's own colour); the crew's answer as a quoted card of its own (the officer, *Crew answer · Mars habitat*, when), or the message's state; a foot with the distance the message has travelled (ticking) and the moment it was sent. See *The board*. Drawn for a phone first: the notes one under the other, the composer a dock at the foot of the screen, which lowers itself once a message has crossed; the phone's bar of keys leads here with **Messages** (its middle key, 13 October), and so do the header's **Message Board** key and the sky's notes. `/messages`, `/board` and `/communicate` redirect here (`writePage`, `boardWall`, `noteCard` in `src/views/pages/public.js`; `public/board.js`) |
-| About | `/about` | The reading matter, one page: **About** (headed by the project's name, *MARS! – Mobilizing Awareness for Resilient Societies!*, in the words of October's text sheet `ABOUT_WEBSITE_TEXTS_FOR_YASHA`: what MARS! is and how it came to the Marktplatz in four paragraphs — the five prototype workshops and the concept exhibition linked to their pages at zkm.de — then *Why are we doing this?* with its line *Playacting Mars in the middle of the city*, *The Habitat – Red Dust City* and *The Insight*; the distance to Mars in the first of these is the station's own figure for the day the crew go in — `lib/orbital`, some 233 million km — not the sheet's 26 million, which is a close approach's; then the station's own *Messages sent to space* — two paragraphs on how a replied message goes out by radio through SpaceSpeak, after spacespeak.com/Learn/Science: the transmitters, the 2.4–5 GHz band, the directional antenna, the speed of light, then where the signal gets to and that it never stops (*More than Human* and *The readings* stood here until October asked for them to go). Beside the prose the mission's facts: the run, start and end at 17:00, the duration, the crew, eleven scientific missions — the sheet's figures — and no timezone), **What's inside the habitat** (the cutaway picture of the habitat handed over as two SVG files, eleven of its thirteen modules lighting up in colour under the hand or a finger, each with its card of what is in it (12 October: the crew's room is *Living*, the living quarters the *Nap pods* — "replace Crew with Living, rename Living Quarters to Nap pods" — and *Storage* and the *Equipment Lockers* are lines in the drawing only, no keys: "remove Equipment Lockers, remove Storage") — see *The habitat in section*; the line *AI generated image* under the picture), **Current Crew** and **A sol on MARS!platz** are no longer on the page (12 October): *A sol on MARS!platz* — the day's activities on a rail, each once and without its hours, with the officer and the person on shift, there from 7 October — went first ("from About remove A sol on MARS!platz"; `solFold()` stays in `src/views/pages/sol.js`, unused; the schedule still feeds the dashboard and At a Glance), and *Current Crew* — the three roles with the photographs of the day's crew, added that morning, at the top of the page, then above *A sol on MARS!platz*, then between the habitat and *Who we are* — went the same day ("remove Current Crew from About"; `crewBox()` and `crewWhen()` stay in `sol.js`, unused, and its styles in `aura.css`); the day's crew is shown over the landing page's two calls — see *The landing page: three pages in the glass dress*; and **Who we are** (the panel of the three officers of the day — their briefs, their portraits on shift, their states — that stood first here is gone: 8 October, "from the About page, under Who we are, remove the Crew tab with all the text"; the dashboard's Crew Moods keeps them, and *Current Crew* the day's crew from `content/shifts.json`; then the crew's thirteen portraits, each with its name as the photograph's file gives it — *Firstname_Lastname.jpg* (an umlaut in a surname is spelled out in the picture's file: Klöck → kloeck.jpg) — in the order of the surnames; and the producer — ZKM | Center for Art and Media Karlsruhe, *Department for Artistic Research & Development, ZKM | Hertzlab* (linked to zkm.de/en/hertzlab) — with the partners' logos — *In cooperation with* the Badisches Staatstheater and the Naturkundemuseum Karlsruhe, *Supporters* E.ON Foundation, LBBW Stiftung and the Innovationsfonds Kunst — small, each on a white tile), one after another under a row of three pills that jump to them (*What this is* — how the station behaves, with the path of a message in six steps — was the second section until October asked for it to go; `/what` and `/#what` land on the page) (`src/views/pages/info.js`; the pictures and `public/crew/crew.json` by `tools/crew-pictures.py`). The reading matter runs the whole width of its section; the mission's facts and the path of a message stand under it in rows. A phone's **About** key opens it; on a desk the header's *About* link does |
+| About | `/about` | The reading matter, one page: **About** (headed by the project's name, *MARS! – Mobilizing Awareness for Resilient Societies!*, in the words of October's text sheet `ABOUT_WEBSITE_TEXTS_FOR_YASHA`: what MARS! is and how it came to the Marktplatz in four paragraphs — the five prototype workshops and the concept exhibition linked to their pages at zkm.de — then *Why are we doing this?* with its line *Playacting Mars in the middle of the city*, *The Habitat – Red Dust City* and *The Insight*; the distance to Mars in the first of these is the station's own figure for the day the crew go in — `lib/orbital`, some 233 million km — not the sheet's 26 million, which is a close approach's; then the station's own *Messages sent to space* — two paragraphs on how a replied message goes out by radio through SpaceSpeak, after spacespeak.com/Learn/Science: the transmitters, the 2.4–5 GHz band, the directional antenna, the speed of light, then where the signal gets to and that it never stops — the first *SpaceSpeak* in them a link to www.spacespeak.com (13 October: "link SpaceSpeak to this webpage") — and three short paragraphs more in the words October handed over the same day: SpaceSpeak Phase I's three transmitters (Tampa FL and Austin TX in North America, one in Brazil), each on a 15-inch parabolic dish; Phase II's 13 micro PCs / transmitters around the world; and that a radio signal fades as it spreads but has practically no limit to how far it travels, so the messages fly on through space for billions of years (*More than Human* and *The readings* stood here until October asked for them to go). Beside the prose the mission's facts: the run, start and end at 17:00, the duration, the crew, eleven scientific missions — the sheet's figures — and no timezone), **What's inside the habitat** (the cutaway picture of the habitat handed over as two SVG files, eleven of its thirteen modules lighting up in colour under the hand or a finger, each with its card of what is in it (12 October: the crew's room is *Living*, the living quarters the *Nap pods* — "replace Crew with Living, rename Living Quarters to Nap pods" — and *Storage* and the *Equipment Lockers* are lines in the drawing only, no keys: "remove Equipment Lockers, remove Storage") — see *The habitat in section*; the line *AI generated image* under the picture), **Current Crew** and **A sol on MARS!platz** are no longer on the page (12 October): *A sol on MARS!platz* — the day's activities on a rail, each once and without its hours, with the officer and the person on shift, there from 7 October — went first ("from About remove A sol on MARS!platz"; `solFold()` stays in `src/views/pages/sol.js`, unused; the schedule still feeds the dashboard and At a Glance), and *Current Crew* — the three roles with the photographs of the day's crew, added that morning, at the top of the page, then above *A sol on MARS!platz*, then between the habitat and *Who we are* — went the same day ("remove Current Crew from About"; `crewBox()` and `crewWhen()` stay in `sol.js`, unused, and its styles in `aura.css`); the day's crew is shown over the landing page's two calls — see *The landing page: three pages in the glass dress*; and **Who we are** (the panel of the three officers of the day — their briefs, their portraits on shift, their states — that stood first here is gone: 8 October, "from the About page, under Who we are, remove the Crew tab with all the text"; the dashboard's Crew Moods keeps them, and *Current Crew* the day's crew from `content/shifts.json`; then the crew's thirteen portraits, each with its name as the photograph's file gives it — *Firstname_Lastname.jpg* (an umlaut in a surname is spelled out in the picture's file: Klöck → kloeck.jpg) — in the order of the surnames; and the producer — ZKM | Center for Art and Media Karlsruhe, *Department for Artistic Research & Development, ZKM | Hertzlab* (linked to zkm.de/en/hertzlab) — with the partners' logos — *In cooperation with* the Badisches Staatstheater and the Naturkundemuseum Karlsruhe, *Supporters* E.ON Foundation, LBBW Stiftung and the Innovationsfonds Kunst — small, each on a white tile), one after another under a row of three pills that jump to them (*What this is* — how the station behaves, with the path of a message in six steps — was the second section until October asked for it to go; `/what` and `/#what` land on the page) (`src/views/pages/info.js`; the pictures and `public/crew/crew.json` by `tools/crew-pictures.py`). The reading matter runs the whole width of its section; the mission's facts and the path of a message stand under it in rows. A phone's **About** key opens it; on a desk the header's *About* link does |
 | Dashboard | `/dashboard` | **The mission dashboard, nothing else — under the header alone, no masthead**: the head, the live images, the two doors, the strip of sols and the panels behind their index — the keys stacked vertically, on a desk as a rail at the left of the folder, on a phone over it: *Sensors*; *Daily Life* — **Today's Mission** first, then Today's Schedule, Today's Meal, Crew Moods; *Blogs* — the three daily blogs (see *The mission page*). The header's *Live Mission Dashboard* link, the phone's **Dashboard** key, the mission page's *Mission dashboard* door and every door of the habitat's modules lead here; `/crew`, `/day`, `/day/:n`, `/schedule` and `/habitat` redirect to their section of it. A phone leaves the strip of live images out (the newest pictures rise over the habitat on the mission page instead, and fill the Media page) |
 | Mission control | `/control` | Five tabs: **Messages** (the reply queue) first, then one per officer, and the habitat — which ends with the plan and the reset. The Science officer's tab opens with the day's **science mission**: one dropdown for the open day with the thirteen sheets, the plan's selected — as shipped in sequence, 00 on 15 October — and Save writes that day's entry of the plan (see *The mission is a folder of files*) |
-| At a Glance | `/at-a-glance` | **A booklet: one day per page, turned by scrolling or swiping sideways** — arrows either side, ← → on a keyboard, a day strip to jump, a `#day-n` link opens on that day. Each page: each day's crew log with its photographs, the schedule as run, the meals and their cost, the resources (every store at the close of the day), the power, the habitat's sensors as they last read that day (one tile per channel, the last reading large — no charts, no means or ranges), the crew's condition as sentences and the mission notes. No exchanges with Earth and no Also sent out block. Days ahead show the plan, and each page scrolls on its own like a page being read. Opened from the button under the mission dashboard, and from the navigation |
+| At a Glance | `/at-a-glance` | **A booklet: one day per page, turned by scrolling or swiping sideways** — arrows either side, ← → on a keyboard, a day strip to jump, a `#day-n` link opens on that day. Each page: each day's crew log with its photographs, the schedule as run, the meals and their cost, the resources (every store at the close of the day), the power, the habitat's sensors as they last read that day (one tile per channel, the last reading large — no charts, no means or ranges), the crew's condition as sentences and the mission notes. No exchanges with Earth and no Also sent out block. Days ahead show the plan, and each page scrolls on its own like a page being read. After the run every day is marked *Complete* — none of them *Today*, on whatever day the record is read (13 October; the last day had stayed *Today* for good). Opened from the button under the mission dashboard, and from the navigation |
 | Crew log | `/logbook` | **Gone** (13 October: "remove the /logbook page from the website, not needed"): the address leads to the dashboard's blogs (`/dashboard#blog-commander`), no page links to it, and every day's entries stand in At a Glance, whose `#day-n` the desk's *Preview* and a media item's *That day's log* open. `src/views/pages/logbook.js` is no longer required by anything and can be deleted |
 | Media | `/media` | Everything the crew send out — photographs and video — by day, with filters; `/media/:id` one item; `/media/export.zip` everything as one ZIP; `/media/manifest.json` every file with its SHA-256 |
 | Archive | `/archive` | **Mission control only.** Day-by-day permanent record — no messages, every reading; `/archive/day/:n`, **`/archive/export.pdf`** (the whole mission as one document), `/archive/export.md`, `/archive/export.json`, **`/archive/readings.zip`** (every reading ever pulled), `/archive/moods.csv` (every state filed for every officer). `/archive/messages` is a separate, unlinked search over the message queue and is not part of the record |
@@ -357,11 +357,16 @@ went out that day (a message's published reply, on the day it was published) and
 first counted that day, with the mission day where the date is one of the run's — the figures
 alone, no note under them. A visitor is counted on the day they accept the cookie or first send
 a message, since a page view before that names nobody; a message from the writing screen counts
-a visitor each (`data.tallyByDay()` and `data.tally()` in `src/lib/data.js`; the panel in
+a visitor each. **Each is counted the moment its callsign is issued**, on its day at the venue, in a table of its own
+(`visitor_count` — 13 October: "make sure nothing is missed or no data point is lost"): a callsign that never wrote is
+still dropped from the visitors after a week, as before, and its count stays — until then the tally of visitors shrank
+as they went, and a day's figure a week later was smaller than on the day (`counted` in `src/lib/callsign.js`; a
+database from before is brought into line once from the callsigns it still holds; the reset empties the count with the
+visitors) (`data.tallyByDay()` and `data.tally()` in `src/lib/data.js`; the panel in
 `src/views/pages/archive.js`, `.tally`). The queue's counts and the tally are at
 `/control/counts` as well, behind the sign-in; nothing public carries them — `/api/status` says
-the day and the phase and counts nothing, the control page carries no figures, and the
-mission-complete page names the exchanges published and no more.
+the day and the phase and counts nothing, and the control page carries no figures (the closed record that stood on the
+start page after the run until 14 October named the exchanges published and no more).
 
 Messages come first: the queue is the first tab, because answering Earth is the job that
 cannot wait. Each message is a card: who wrote and what they wrote, large, with the state and
@@ -397,21 +402,27 @@ day, at any time.
 
 A save returns you to the tab and day you were on; a reply returns you to the Messages tab in
 the view you were looking at. Mission control is deliberately plain — flat white panels, black
-on white, one size of type, and orange kept for the button that publishes and the count of
-messages waiting — so it reads across a dark room and nothing on it competes with the work. `/control/science`, `/control/health` and `/control/habitat` still
+on white, one size of type, and **one colour, blue**, kept for the button that publishes, the open tab, the count of
+messages waiting and what has been edited (14 October: "in the Control page, replace the Orange theme with a blue button
+theme" — orange until then; `body.control` redefines the station's orange as the landing page's cobalt, `#2f45e8`, and
+a lighter `#4a5ef5` on the dark desk, so every rule that drew in orange draws in blue) — so it reads across a dark room
+and nothing on it competes with the work. **The desk is wider**: up to 1680 px across (1240 until 14 October —
+"increase the width of the Mission control area on screen"), the whole width of a laptop. `/control/science`, `/control/health` and `/control/habitat` still
 work as addresses — they open the page on that tab. The desk carries no rail across the
 top: its own header holds the **Dark** switch (the same switch and cookie as the public
 pages; every grey on the desk comes from one palette, `--c-*` in `public/station.css`, so
 nothing is left white), Archive, the record, Reset and Sign out. The tab names are bold and
-large, the open tab in orange. Every block's head — *Schedule · day 005*, *Daily Blog*,
+large, the open tab in blue (its name in blue over a blue line in the dark too — it stood in a light box there until
+14 October). Every block's head — *Schedule · day 005*, *Daily Blog*,
 *Messages from Earth* — folds its block on a click and unfolds it on the next, with an arrow
-beside the name; the desk remembers which blocks are folded (in that browser), so a save
+beside the name — **a large one**: a chevron 18 px across in a round 30 px place of its own, blue under the hand
+(14 October: "make the size of the arrow next to headings for collapse bigger"; a 12 px ▾ until then); the desk remembers which blocks are folded (in that browser), so a save
 brings the page back as it was arranged. In the schedule, a task whose name is emptied is
 removed when the day is saved.
 
 **What you have changed is marked, before and after it is saved.** Every field remembers
 what it held when the page was drawn (`public/control.js`): a field that now holds something
-else is marked in orange — the field itself, its row in the schedule, inventory or power
+else is marked in the desk's blue (orange until 14 October) — the field itself, its row in the schedule, inventory or power
 table, the caption over it, the face chosen on the mood scale, the composer's sheet (*Edited
 — not published*) — and beside the form's Publish or Save button a note says how many fields
 differ, *2 fields changed — not saved yet*. Put a value back and its mark goes. On the save
@@ -482,7 +493,7 @@ column — and fills in as the crew file the day's figures, levels and entries. 
 reset, after a fresh build, the dashed prepared lines still show, which is useful while the
 mission is being written.)
 
-Kept: the account and its sessions, and the audit trail (the reset is written to it). Rehearse as
+Kept: the account and its sessions. Rehearse as
 much as you like in the weeks before; one press leaves nothing behind.
 
 **From 15 October the button is locked.** The run is the record, and a stray press could not be
@@ -612,9 +623,9 @@ whichever suits the moment and it is live on the station within seconds:
 | Steps | `content/crew-figures.json`: per day, one entry per officer under `crew`, keyed by designation, and the crew's total as the sum — `"5": { "crew": { "COMMUNICATION OFFICER": { "steps": 2200 }, "SCIENCE OFFICER": { … }, "HEALTH OFFICER": { … } }, "steps": 6420 }`. A day written with the total alone still shows, as a total. The Habitat panel shows each officer's figure with the crew's total beneath; At a Glance carries the total and the record each officer's figure with the total as filed. **The calories consumed are no longer kept** (8 October: "remove the calories consumed entirely") — not on the desk, the dashboard, the Trends, At a Glance, the dome or the record; a save of the steps drops a calories figure left in the file from before, and a `calories` sent to `/control/crew-figures` is not written | **Habitat** → Steps taken, day picker on the day |
 | Power generated by the bike | `content/bike.json`: per day, the rounds pedalled and the battery charged in per cent — `"5": { "rounds": 2300, "battery": 51 }`. 4,500 rounds charge the battery full (`BIKE_FULL` in `src/lib/content.js`): a day without a battery figure shows the rounds' share of a full charge, never past 100 %. A day left out records nothing; the reset empties the file's days. The Sensors panel's **Power generated** tile shows the day (before the run NOW's, during it today's, else the last day filed): the rounds on a bicycle computer's odometer — five drums, every figure white (9 October: "make sure the Power generated, Rounds pedalled is all white numbers"; the zeros before the count were dim and the last drum Mars orange until then) — and the battery as a battery, ten cells lit cobalt to its charge, the next one pulsing while it charges, the per cent beside it; a bike for its sign, and no line under it (9 October: "remove the 4,500 rounds charge the battery full text") (`bikeTile()` in `public.js`; `aura.css` under *Power generated*). It stands beside the steps, the stores under them the panel's width; the About page's *Cycle (Power Generation)* leads to it (`/dashboard#bike`) | **Habitat** → Power generated by bike, with the day picker on the day |
 | Power consumed, by channel | `content/power.json`: eight categories as shipped — **Crickets, Science 1, Science 2, Living, Table, Food, Water, Hydroponics** — each naming its Home Assistant energy meter as `sensor` (`habitat_power_<channel>_energie`), so a day's figure is the meter's (the day's last reading less the day before's) unless one is filed by hand: `"5": { "food": 1.1, "living": 0.5 }` — kWh per day. The `categories` list above the days is editable too: rename a label, add one without a meter to count by hand, remove one; the key is the stable name in the record | **Habitat** → Power, day picker on the day; the name fields rename the categories everywhere. Every figure is locked behind an **Edit** key, which asks first — *These values are automated, are you sure you would like to edit?* |
-| Today's schedule | `content/schedule.json`: per day, `{ "time": "06:45", "label": "…", "detail": "…" }`; task status (done, active, skipped) is marked on the tab as the day runs | **Habitat** → Schedule |
+| Today's schedule | `content/schedule.json`: per day, `{ "time": "06:45", "label": "…", "detail": "…" }`; no task is marked done, active or skipped any more — nothing on the desk does it — so the pages say how many tasks a day has, not how many were done (13 October: they said *0/16 done* for every day the crew lived through) | **Habitat** → Schedule |
 | Meals | `content/meals.json`: per day, slots BREAKFAST / LUNCH / DINNER and the meals added on the desk, EXTRA1, EXTRA2, … (each with the time it is served at, `"served": "16:30"`), with `kcal`, `water`, `prep`, `energy`. The power a meal drew is not this file's: it is the food meter (the Food channel's energy meter) read between the meal's hours, an added meal counting with the named meal of its hour (see *The meals' power*) | **Habitat** → Food plan — Breakfast, Lunch, Dinner and **+ Add a meal** |
-| Mission notes | `content/notes.json`: per day, `{ "kind": "LOG" \| "ANOMALY", "body": "…" }` | `POST /control/updates` (the notes composer) |
+| Mission notes | `content/notes.json`: per day, `{ "kind": "LOG" \| "ANOMALY", "body": "…" }` — and, written by the desk with each note and report since 13 October, `"at"` (when it was posted), `"updated"` (its last change) and `"by"` (the sign-in), read back as the record's moments; a note written by hand without them takes the moment the station first read it | `POST /control/updates` (the notes composer) |
 | Blogs, findings, activities | written over the placeholders in `content/logbook.json` / `notes.json` | each officer's tab |
 
 **NOW — the rehearsal day.** Before the run, mission control opens on **NOW**: mission day 0,
@@ -675,7 +686,7 @@ the running station.
 | File | What it holds |
 |---|---|
 | `crew-and-inventory.json` | Crew designations and roles; the tracked resources and their starting amounts |
-| `schedule.json` | The daily task schedule — as shipped, the crew's typical day (08:30 Breakfast … 22:00 Lights Out, sixteen tasks; the shift changes that opened and closed it are gone — October, 7 October: not anywhere) written into every one of the thirteen days; change a day in mission control's **Habitat** → Schedule, or here |
+| `schedule.json` | The daily task schedule — as shipped, the crew's typical day (08:30 Breakfast … 22:00 Lights Out, sixteen tasks; the shift changes that opened and closed it are gone — October, 7 October: not anywhere) written into each of the first twelve days — the last, 27 October, has none (14 October: the performance closes at 10:00 that morning); change a day in mission control's **Habitat** → Schedule, or here |
 | `meals.json` | Meals per day, with energy, water and power cost — ships empty; filled from the Habitat tab, from the recipe book or by hand |
 | `inventory-levels.json` | What is left of each resource at the end of each day |
 | `power.json` | Power consumed per day in kWh, by editable category — as shipped the eight metered channels, crickets, science 1 and 2, living, table, food, water, hydroponics, each reading its energy meter (`sensor`) — drawn on the Habitat panel, in At a Glance, in the Trends and throughout the record |
@@ -684,8 +695,8 @@ the running station.
 | `sensors.json` | The station's own channels — what a device may post to `/api/sensors/ingest` — with units, channel codes and thresholds. Not the record's monitored channels: since 12 October those are the Sensors tab's instruments and the habitat hardware |
 | `templates.json` | The prefilled text of the daily health activities (the `Default` entry under `HEALTH`) |
 | `recipes.json` | The recipe book: the recipes' footprint export of 12 October as it came — thirteen recipes with their times and per-serving kcal, nutrients, CO₂e and water footprint — what the food plan's dropdowns offer, the prep time read off the times (see *The recipe book*) |
-| `shifts.json` | **The shift plan** — who is in each role each day of the run (12 October, from `MARS_Performance_Shiftplan_2`: the day shifts, 08:00–22:00): mission day → `COMMUNICATION OFFICER`, `HEALTH OFFICER`, `SCIENCE OFFICER` → the surname as `public/crew/crew.json` spells the picture's file (`wilcox`, `vlaminck-maurer`, `kloeck` …), or for someone without a picture their name as it is to be shown (`"Laura B."`, `"Ralf E."` — shown with the robot dog's picture). As shipped: days 1–12 (Thursday 15 to Monday 26 October); day 13, the teardown, names nobody. Read fresh; **Current Crew** over the landing page's two calls shows it, and the record carries it day by day (`crewOnShift`) |
-| `missions.json` | The scientific missions, one a day, **written by `tools/missions-json.py` from the PDFs in `missions/`** — each sheet's words (number and title from the file name, 00 to 12; central question, Morning / Afternoon / EVA, the question for the community hour in English and German, the material, the sheet's file; `sheetNo` where the sheet prints another number, `placeholder` on a sheet that is a copy of another's PDF for now) and the day → mission map (`days`, as shipped in sequence — 00 on day 1, 15 October — and written from the desk's Science tab, day by day); the sheets themselves are the PDFs in the `missions/` folder beside `content/`, served at `/missions/<file>` (see *Today's Mission* under *The mission page*) |
+| `shifts.json` | **The shift plan** — who is in each role each day of the run (12 October, from `MARS_Performance_Shiftplan_2`: the day shifts, 08:00–22:00): mission day → `COMMUNICATION OFFICER`, `HEALTH OFFICER`, `SCIENCE OFFICER` → the surname as `public/crew/crew.json` spells the picture's file (`wilcox`, `vlaminck-maurer`, `kloeck` …), or for someone without a picture their name as it is to be shown (`"Sam X."` — shown with the robot dog's picture); a first name with the surname or its first letter (`"Laura B."`, `"Ralf E."`) finds the person's picture as well. As shipped: days 1–12 (Thursday 15 to Monday 26 October), Laura Benetschik (`benetschik`) the Science Officer on day 4 and Ralf Eger (`eger`) on day 11 — each with their own picture since their photographs came on 14 October, where the robot dog stood in for them until then; day 13, the teardown, names nobody. Read fresh; **Current Crew** over the landing page's two calls shows it, and the record carries it day by day (`crewOnShift`) |
+| `missions.json` | The scientific missions, one a day, **written by `tools/missions-json.py` from the PDFs in `missions/`** — each sheet's words (number and title from the file name, 00 to 12; central question, Morning / Afternoon / EVA, the question for the community hour in English and German, the material, the sheet's file; `sheetNo` where the sheet prints another number, `placeholder` on a sheet that is a copy of another's PDF for now) and the day → mission map (`days`, as shipped in sequence — 00 on day 1, 15 October, to 11 on day 12; the last day has none, 14 October — and written from the desk's Science tab, day by day); the sheets themselves are the PDFs in the `missions/` folder beside `content/`, served at `/missions/<file>` (see *Today's Mission* under *The mission page*) |
 
 It ships with the plan and nothing invented: 13 Commander Log slots (one a day, commanding officer only)
 with a cue each for the crew to write into, the typical daily schedule on every day (16 tasks ×
@@ -695,7 +706,8 @@ paper, starting amount 14" — keys `tampons` and `toilet_paper`, units `pcs` an
 kits and fire extinguishers left the station with their history, and a count still filed for them in
 `inventory-levels.json` is passed over) — (the drinking water is carried in at **180 L** — `"start": 180` in
 `crew-and-inventory.json` — the food rations at **35 days** — `"start": 35` — the tampons at **80** and the toilet paper at
-**14 rolls**, and every gauge of them is drawn against that; every warning level ships as 0 — a placeholder to be written
+**20 rolls** (14 October: "Change the Default toilet paper rolls to 20" — 14 until then; in `content/plan/` too, so a
+reset keeps it), and every gauge of them is drawn against that; every warning level ships as 0 — a placeholder to be written
 into `crew-and-inventory.json` before the run; a store carried in at 0 with no day-1 count filed on the Habitat tab is
 shown dimmed with a dash, not as an empty store), and the sensor channels.
 The dailies — the stores' counts (`inventory-levels.json`), the steps
@@ -954,7 +966,15 @@ The browser only ever talks to the station — `/media/cloud/<id>` is the copy,
 `/media/cloud/<id>/thumb` the preview, `/media/cloud/<id>/small` the small one (or the preview,
 where Nextcloud has not rendered it) — so the grid stands with the cloud slow, the sign-in
 changed or the venue network unplugged, and the credentials never leave the server. It is **read-only**: nothing
-is ever written to the cloud. A file removed from the folder leaves the grid on the next read.
+is ever written to the cloud. A file removed from the folder leaves the grid on the next read — **and stays in the
+ledger** (13 October: "make sure nothing is missed or no data point or source is lost"): `/data/cloud/ledger.json`
+keeps every picture the folder has held while the station read it — its place in the folder, size, last change and tag
+as the cloud gave them, when it was taken (from its name), when the station first and last saw it, when it left the
+folder (`removedAt`), and its copy, which is never deleted; a copy on the volume the ledger did not know (a picture gone
+before the ledger was kept) is brought in with what the copy tells. The ledger is the station's own record of the
+gallery, kept beside the copies — the camera's pictures are no part of the archive's record or its downloads (13
+October: "there should be no camera pictures in the PDF record or the data file") — and `tools/backup.sh` copies the
+folder with it (`ledger`, `noteInLedger` in `src/lib/cloud.js`).
 
 **Nothing is pulled from the cloud at night.** Between **22:00 and 08:00, venue time, every
 day**, the folder is not listed and no picture is copied — not over WebDAV and not from a
@@ -1024,7 +1044,9 @@ for the hardware.) The external sensor node (`CRITICAL_POLL_MS=900000`) and the 
 (`CLOUD_CHECK_SECONDS=900`) are read every fifteen minutes. Open pages ask the station for new
 readings on the same beats. A value set in `.env` overrides its default — **a `HABITAT_POLL_MS`
 or `HA_POLL_MS` line left in an older `.env` keeps its old rhythm**: remove it, or set it to
-`300000`. The sensor node itself still transmits on its own cycle, so its new values arrive as
+`300000`. (Under Docker the same holds for `docker-compose.yml`'s own defaults: until 13 October they set the sensor
+to every minute and the hardware to every fifteen whenever `.env` named neither — both read every five minutes now.)
+The sensor node itself still transmits on its own cycle, so its new values arrive as
 it sends them; its readings count as current for half an hour.
 
 ## The habitat sensor
@@ -1078,15 +1100,22 @@ station keeps only what is stamped after its **readings floor**, and serves noth
 dashboard and the record never carry weeks of history from before anyone was in the habitat.
 The floor is set in one of two ways:
 
-- **From today**, by a build: every time the station starts from a newly built Docker image —
+- **From today**, by a build — **before the run**: every time the station starts from a newly built Docker image —
   the Dockerfile writes a build stamp into the image, and a station that sees a stamp it has
   not seen before starts its readings again from midnight at the venue on that day. A restart
-  of the *same* image leaves the floor where it is, so restarting during the run loses nothing;
-  rebuilding during the run would drop everything before that day, so don't. (`docker compose
+  of the *same* image leaves the floor where it is. (`docker compose
   up --build` only makes a new image when something changed; `--no-cache` forces one.) Outside
   Docker, `STATION_BUILD=…` in the environment does the same, and the first start of a
   database counts as a build. `READINGS_DAYS_BEFORE` reaches back that many days further
   (default 0).
+- **From the first day of the run nothing moves the floor past the run's first midnight** (13 October: "make sure
+  nothing is missed or no data point is lost"). A new build during the run moves nothing — a fix shipped on the fifth
+  day no longer drops the first four days' readings, as it did until then (the README said "so don't") —; a floor left
+  later than the run's first midnight, by a build before this rule, a pinned `READINGS_FROM` or anything else, is read
+  as the run's first midnight, and nothing of the run is ever deleted below it; a database started during the run (a
+  volume lost and begun again) starts its readings at the run's first midnight, so the next polls bring back what the
+  node (its last thirty days) and Home Assistant (its last ten) still hold (`runBegun`, `floorMs` and `applyBuild` in
+  `src/lib/critical.js`).
 - **From 15 October**, by **Reset to 15 October**: the floor goes to midnight at the venue on
   the first day of the run, whatever the date. Nothing from before the run is stored or shown.
   This is the state to open in.
@@ -1231,8 +1260,11 @@ Three things will change, and none of them is code:
   instead of a figure.
 
 The browser never talks to Home Assistant: the server polls, stores every state change in
-its own database (`ha_reading`), backfills the drawn day from HA's history endpoint after a
-restart, and serves the rendered panel at `/api/hardware` — so the history accumulates,
+its own database (`ha_reading`), backfills from HA's history endpoint after a restart, an outage or a quiet spell —
+**a day at a time from the newest reading it holds, as far back as Home Assistant keeps its history** (13 October:
+until then only the last day was asked for, and a longer outage lost what HA still held; `HA_HISTORY_DAYS`, ten by
+default — the recorder's `purge_keep_days` —, `HA_BACKFILL_MS` the size of one request, a day; the habitat sensor's
+feed the same, `src/lib/habitat-feed.js`) — and serves the rendered panel at `/api/hardware` — so the history accumulates,
 survives restarts, and keeps serving if Home Assistant goes quiet (the panel then says so
 rather than standing on stale numbers as if they were live). An entity that is not in the
 feed is named on its tile rather than silently blank, and `unavailable`/`unknown` states
@@ -1473,7 +1505,12 @@ window tall with its cards in the middle and air around them, a margin at both s
   *Health Station*, *Water Recycling*, *Cycle (Power Generation)*, *Electricity*; the EVA key *Going Outside*; translated in
   `i18n.js` — *Wohnbereich*, *Schlafkapseln* in German, *Espace de vie*, *Capsules de sieste* in French) — to rename one,
   change its `label` in `ROOMS`. **The pop-ups' words are the text sheet's too, the explanation
-  first and NOW second**, and NOW says what the sheet asks: the mission by its title and its question
+  first and NOW second** (after the run there is no NOW: once the station has closed — from 28 October — the pop-ups
+  carry the explanation alone, in the past — `past` in `ROOMS` and `KEYS`, 14 October; on the last day they speak as on
+  every day since that afternoon, from 10:00 until then — and the Kitchen and the Health Station, which had nothing but
+  their NOW, open nothing; their stamp reads *Mission complete* in place of the sol and the clock, and the keys that
+  would lead to the dashboard are left out, the dashboard's address leading to At a Glance; the Message Board's and the
+  Media Gallery's keys stay — 13 October), and NOW says what the sheet asks: the mission by its title and its question
   (no number); the EVA with the day's science mission's title (*Day 01's EVA is at 16:00 CEST – Care as a
   Finite Resource*); the sensors as CO₂, temperature and humidity alone, with when they were read;
   the communication hour (when the next one is, and the day's question for it, the mission's
@@ -1755,8 +1792,9 @@ permanent record shortly after it ends, holding:
 
 **The messages from Earth and the crew's replies are not part of the record** — not on the day
 pages, not in the PDF, the Markdown or the JSON. They live on the station and in mission
-control's queue only. Mission control's audit trail is not in the record either; it stays in
-the database.
+control's queue only. And the station keeps no log of mission control's doings at all (13 October: "remove the mission
+control's log" — until then every publish, save, upload and sign-in was written into a table nobody saw; the table is
+gone, with every line in it, and the last reset's moment, which tells an open page to drop its readings, is a setting).
 
 **The record holds only what was entered or measured.** Nothing in it is generated: no chart,
 no projection, no total, no figure carried from one day to the next, and no plan for a day that
@@ -1813,7 +1851,7 @@ every digit of the readings), habitat time to the second; then **the crew log, w
 officer, held entries included and marked; and the **media index** with every file's SHA-256,
 checkable against the ZIP with `sha256sum`. `/archive/day/:n/export.pdf` does one day. Nothing
 is drawn and nothing is derived: the record has no charts, no totals, no projections, no chapter
-for a day that has not come, no messages and no audit trail.
+for a day that has not come, and no messages.
 
 **Taken out on 12 October**, as asked: the cover's paragraph on what the record holds, the
 mission's second sentence ("Three people inside a sealed habitat…"), the lines over the stores
@@ -1869,7 +1907,9 @@ the figures as filed, `readings` every reading of the day by source, and a day a
 The archive's contents page opens with **four** downloads (9 October: "remove the readable copy button; rename the
 data copy as the data — it should have all the data from all the performance days; the readings log: rename it to
 Sensor Data — it should have all the data in the Sensors tab and all the data from Today's Meal for each day; remove
-crew's moods; remove the media archive"):
+crew's moods; remove the media archive"), each card its title and its key alone — the small line of its format over
+the title (*PDF · one document*, *JSON · every day of the run*, *ZIP · tables for a spreadsheet*, *PDF · n messages
+· not part of the record*) went on 14 October ("from all the buttons remove …"):
 
 - **The full record** — the PDF (above).
 - **Data** — `/archive/export.json`, everything the station holds for every day of the run as one structured file:
@@ -1889,23 +1929,93 @@ crew's moods; remove the media archive"):
   Commander Log as `commanderLog`, each state as its one mood (`value`, 0 thrilled … 100 angry, and `mood` — no
   activity, none of the earlier scales), the habitat sensor as `habitatSensor` under the Sensors tab's names
   (*Air pressure*, *Air quality*, *%RH*, *Node signal*), no separate list of entries beside the officers; the
-  messages exports sign a reply as the site does.
+  messages exports sign a reply as the site does. Since 13 October it carries as well where every reading came from
+  (`sources`, and each habitat sensor reading's `source`), every message's way to space (`space`), the files withdrawn
+  from view (`hidden`), who posted each note (`by`), the tally for every date (`tallyByDate`) and the messages from
+  before the run once NOW has gone (`beforeTheRun`) — see *Nothing the run takes in is lost*. It carries no camera
+  pictures and no log of the desk's doings (13 October).
 - **Sensor Data** — `/archive/sensor-data.zip` (and the old `/archive/readings.zip`): everything on the Sensors tab
   and in Today's Meal, **day by day**, as CSV tables for a spreadsheet (`src/lib/sensor-data.js`) — `sensor-data/`
   holds a folder for every day of the run that has happened (`day-01_2026-10-15/` …; before the run
   `day-00_NOW-rehearsal_<date>/`) and `all-days/` with each table across them: `habitat-sensor.csv` (every reading
-  of the habitat sensor — CO₂, temperature, humidity, pressure, VOC, air quality and its class, light),
+  of the habitat sensor — CO₂, temperature, humidity, pressure, VOC, air quality and its class, light — and, since 13
+  October, where it came from: `source`, `home-assistant` or `node:<id>`),
   `hardware.csv` (every state of the habitat's own hardware — the oxygen, CO and NO₂ sensors, the terrarium, every
-  power draw and meter), `posted-readings.csv` (where any were posted to the ingest), `daily-summary.csv` (each
+  power draw and meter), `posted-readings.csv` (where any were posted to the ingest, with the device that sent them), `daily-summary.csv` (each
   channel's low, high, mean, samples, what a meter added), `sensors-tab.csv` (steps taken, power generated, the
   resources — available, used, left, counted or carried — and the power consumed by category), `meals.csv` (every
   meal with all its figures) and `meals-totals.csv` — and, beside them in the same ZIP, the raw readings log as
   before (every reading ever pulled, one JSON file per pull, its CSV tables, `index.json` listing the sensor data
-  too). The README inside explains both.
-- **All the messages** — the PDF, CSV and JSON, as before.
+  too). The README inside explains both, and **`HOW-TO-READ-THESE-FILES.txt`** at the ZIP's root (14 October: "for
+  the ZIP folder, add an explainer file of how to understand and read the files inside") tells anyone who opens it
+  how: where to start (unzip, `sensor-data/all-days/`, open a CSV — and what to do when Excel puts everything in one
+  column), the days and their folders, each table and what its columns hold, the four columns the tables start with
+  (`day`, `date`, and in the tables of readings `time` and `utc`), the raw log and what can be left alone, and a few
+  things to try — in plain words, UTF-8 with its mark and Windows line ends so it opens anywhere (`howToRead` in
+  `src/lib/sensor-data.js`).
+- **All the messages** — the PDF, CSV and JSON, as before — each message with **its way to space** since 13 October:
+  the relay's state, SpaceSpeak's number and address for it, when SpaceSpeak took it, the tries and the last error
+  (`space` in the JSON; `space_state`, `space_number`, `space_url`, `space_launched_at`, `space_sent_at`,
+  `space_attempts`, `space_error` in the CSV; a line under each message in the PDF — *beamed into space by SpaceSpeak ·
+  SpaceSpeak No. 142920 · day 005 18:04 · …*).
 
 The readable copy (Markdown), the crew's moods (CSV) and the media archive (ZIP) are no cards any more; their
-addresses still answer, and each day's row keeps its PDF, Markdown and media links.
+addresses still answer, and each day's row keeps its PDF, Markdown and media links — and every file sent out, **the
+withdrawn ones too** (under `withdrawn/`, by day, marked `hidden` in the manifest), downloads as one ZIP at
+`/archive/media.zip`, behind the sign-in (the public `/media/export.zip` carries what is in view). The camera's pictures
+and the station's own log of the desk's doings are no part of the archive (13 October).
+
+### Nothing the run takes in is lost (13 October)
+
+"One of the most important parts of the website is the archive. Make sure nothing is missed or no data point or source
+is lost there from the run." Everything the station takes in during the run was traced from where it comes in to where
+the archive hands it over; what fell short was put right:
+
+- **The readings floor.** A new build during the run used to move the floor to that day and delete every habitat sensor
+  reading before it. From the first day of the run nothing moves the floor past the run's first midnight, and a database
+  begun during the run starts there (see *Where the readings start*).
+- **Outages.** Home Assistant's history is read back a day at a time from the newest reading the station holds, as far
+  as HA keeps it — ten days — for the habitat sensor and every device (it was one day: a longer outage lost what HA
+  still held). The node hands back its last thirty days on every poll, as before.
+- **The source of every reading.** Each habitat sensor reading names where it came from (`external_reading.src`:
+  `home-assistant`, or `node:<id>`), in the Data download (`readings.habitatSensor[].source`) and under the day's table
+  in the Markdown record; the hardware's readings carry their entity ids, the posted ones their device ids, as before.
+  The Data download opens with **`sources`** — the habitat sensor's entities channel by channel, the node's address,
+  every device by entity, the food meter and the meals' hours, the power meters, SpaceSpeak, the content files, the
+  readings log — never a password or a token.
+- **SpaceSpeak.** Each message's way to space — the relay's state, SpaceSpeak's number and address, when it took the
+  message — is in the messages' JSON, CSV and PDF and in the Data download (`messages[].space`); until then it lived in
+  the database alone.
+- **Deleted messages leave nothing** (13 October: "deleting a message should leave nothing"). *Delete* takes the
+  message, its reply, its place on the way to space and whatever the relay kept of a try at sending it (its pages are
+  named after it now, `failed-<id>-…`, `dry-run-<id>-…`, and go with it), and writes nothing about it — no line in the
+  station's log (an earlier build wrote its callsign there; those lines are gone too), nothing in the archive.
+- **Withdrawn media.** A file mission control takes out of view is kept, as it always was on the volume; now the Data
+  download lists it (`hidden: true`, with who uploaded it), the day's Markdown record lists it under *Withdrawn from
+  view*, and `/archive/media.zip` carries it under `withdrawn/` (the PDF marked it already).
+- **The camera's pictures.** A picture taken out of the cloud folder used to vanish from the station with it; the ledger
+  keeps every one with its copy (see *Photographs from the cloud*), on the station and in the backup — not in the
+  archive's record or downloads: the PDF record carries the blogs' own photographs, in the blogs, and no other picture.
+- **The visitors.** Counted the moment each callsign is issued (`visitor_count`), so a day's figure no longer shrinks
+  as the week-old callsigns that never wrote are dropped (see *The tally*).
+- **The moments of what was written.** A report or a note keeps the moment it was posted and who posted it: the desk
+  writes `at`, `updated` and `by` into `notes.json` with it, and the loader reads them back — until then every reload of
+  the files stamped every note anew, so the record's *postedAt* was the last restart. The Commander Log is touched only
+  when its words change, so its *updatedAt* is the last edit, and its *writtenAt* the moment the first words replaced
+  the day's placeholder.
+- **The content files.** Every version of `content/*.json` the station reads is kept on the station-data volume under
+  `content-history/<file>/<time>.json` — a day emptied by a slip, a file broken by hand, an edit regretted, and the
+  version before is there to go back to; a save is written whole or not at all (a file beside it, then put in its place;
+  a mount that refuses the rename is written in place, as before). From the first day of the run a crew member or a
+  store taken out of `crew-and-inventory.json` is kept, with every state, entry, reply and count filed for it, and the
+  load says so (before the run the file decides everything, as before — a rename is a delete and an insert).
+- **The messages before the run** — once NOW has gone — and **the tally for every date** are in the Data download
+  too (`beforeTheRun`, `tallyByDate`).
+- **The backup** (`tools/backup.sh`) copies the camera's pictures with their ledger, the content files as they stand and
+  every version of them, beside the database, the media and the readings log.
+
+What the station cannot keep is named here rather than passed over: the livestream (ZKM's radio server streams it; the
+station relays it and records nothing), and a reading a device never sent.
 
 **The archive belongs to mission control.** Everything under `/archive`, including the
 download, requires the control session; the public station carries no link to it. A visitor
@@ -2522,7 +2632,8 @@ and **Mission · Messages · At a Glance · About**.
 Across the very top runs **the ticker**: the header's row, then a continuously running line — the SOL, **what the crew are currently doing**
 (the schedule task whose time it is, with its detail — "14:00 · Maintenance — West panel seal,
 third attempt" — switching to the next as its time comes), what is next, the node's current
-reading (or *no current reading*). Every five minutes it fetches
+reading (or *no current reading*) — after the run only *Mission complete · the record stays*: the habitat is empty and
+its sensors are not read, so the line no longer says *Habitat: no current reading* for good (13 October). Every five minutes it fetches
 the day's schedule again from `/api/ticker`, so an edit made in mission control — or midnight
 turning to a new day — reaches every open phone without a reload. It scrolls like a wire
 ticker and holds while a mouse rests on it; under reduced motion it stands still on a desk and
@@ -2678,7 +2789,8 @@ below — or ask the crew something of your own* — in the Write page's pop-up,
 message crosses (`composerPrompt()` in `public.js`). The sheets are the
 **thirteen one-page PDFs in the `missions/` folder** beside `content/`, `MARS_Mission_NN_Title.pdf`,
 **numbered 00 to 12 as the production counts them — 00 is the first day's, 15 October, and they
-follow the days in sequence to 12 on 27 October** — served at `/missions/<file>` (not linked from
+follow the days in sequence to 11 on 26 October; the last day, 27 October, has none** (14 October: the performance
+closes at 10:00 that morning; 12 *Habitat Teardown* stays in the list, on no day) — served at `/missions/<file>` (not linked from
 the panel) — PDFs only, no listing; under Docker the folder is mounted like `content/`
 (`docker-compose.yml`) and copied into the image (`Dockerfile`), so the venue's baked image carries
 it. **`content/missions.json` is written from the sheets by `tools/missions-json.py`**
@@ -2719,7 +2831,7 @@ day without one), the plan's mission selected, and a Save key, no words over it 
 dashboard, the composer's prompt, the mission screen, the archive, the dome's science station
 (`content.missionForDay`, `content.missionPlan`);
 the older `chosen` entry beside the plan is gone — the plan itself is what the officer edits. The
-change is noted in the audit log and in the station's edit notices like the schedule's. The words
+change is noted in the station's edit notices like the schedule's. The words
 are shown as written, like the schedule's; the labels are in the visitor's language. Before the
 run the panel shows day 1's mission, after it the last day's (`missionPanel` in
 `src/views/pages/public.js`, `content.missionForDay`).
@@ -2923,7 +3035,7 @@ clock wherever the visitor's own is), About's START and END (*Thu 15 Oct 2026 ·
 *Tue 27 Oct 2026 · 17:00 CET*), the meal hours, the gallery's *not between 22:00 and 08:00 CEST*,
 the screens' clocks, mission control's head and times, and the archive's day page, whose states
 and notes are on habitat time now rather than UTC. Where times come as a list, the zone is said
-once — in its head for today's schedule (*SOL 004 · 0/16 done · CEST*), a gallery day's
+once — in its head for today's schedule (*SOL 004 · 16 tasks · CEST*), a gallery day's
 photographs, At a Glance's and the archive's schedule; after it in the dome's sentences
 (*Meals today: 08:30 Breakfast · 12:00 Lunch · 18:00 Dinner (CEST).*) — and on 25 October, the
 one day that has both, after each time instead. Before the run the running line counts down to
@@ -3045,7 +3157,9 @@ beside the project (*MARS!platz Soft UI* and *Soft UI Night*).
   hour on 13 October as *Write to the Crew* and went again.
 - **The Resources rings are larger** and carry the store's name under them and no count of days
   (*35 days*, *ample*, *no draw* are gone — and from the ring's hover title too): a ring a store with
-  its figure and unit in the middle, its name large beneath.
+  its figure and unit in the middle, its name large beneath. (The figure and its unit are smaller since 14 October —
+  "make the font of the counting resources in the resources tab smaller": 12 and 8 in the ring's 60 units, 15 and 10
+  until then, lifted a unit and a half so they stay in its middle — `aura.css`, `sheet.css`, `inventoryGauges`.)
 
 **8 October, the second pass** — after a racing car's dash for the instruments, and a screenshot of a square shadow:
 
@@ -3126,27 +3240,70 @@ composer closes, and the block is enforced server-side so the form cannot be pos
 
 **15–27 October — active.** The countdown becomes the mission day.
 
-**After 27 October — complete.** The mission is over, and the day after it is the last day
-of the station: **Wednesday 28 October** the channel is still open — the last messages come in
-and the crew's last replies go out — and mission control still takes edits. **From 29 October
-the station is read-only.** The landing page becomes the closed record and reports what the
-station carried: exchanges published, messages sent, callsigns issued. The channel closes:
-the composer says so (*CHANNEL CLOSED — the crew left the habitat on 2026-10-27; the channel
-closed at the end of 2026-10-28. Nothing sent now would reach anyone.*) and the block is
+**27 October — the last day** (14 October: "the performance closes on the 27th at 10am, no missions for that day, no
+blogs etc. … on the 27th, on the landing page, add in big: COME visit us and See the habitat from inside and talk to
+the Astronauts from 15:00 to 17:00 … stop everything from midnight on 27th instead of 28th"). **The performance closes
+at 10:00** (`src/lib/run.js`, `COME_OUT`; About says *END Tue 27 Oct 2026 · 10:00 CET*, *17:00* until then) and **from
+15:00 to 17:00 the habitat is open to visitors** (`OPEN_HOUSE`). The day has **no mission** (`content/missions.json`
+maps days 1–12 only, and `content.missionForDay` gives none for the last day whatever the map says; the desk shows
+the day has no mission and refuses one) and **no blogs** (no slots for it — `data.logSlotsPublic`; the desk shows the
+day has no blogs and refuses a Commander Log or a report for it; the record says *the last day has no blogs*).
+**Otherwise the day is as every other day of the run — the landing page's invitation apart** (14 October, 13:11: "on
+the 27th Oct, ONLY change should be: Come visit us at Karlsruhe MARS!platz, see the habitat from inside and talk to the
+astronauts from 15:00 to 17:00 CET. Everything else remains the same as ALL other days"): the schedule is the shipped
+sixteen entries (`content/schedule.json`'s day 13, as in the plan — mission control can change it on the desk); the
+dashboard's Today's Mission says *No mission filed for SOL 013*, its blog panels stand under the day's own sol (the
+latest earlier post, as before any day's posts are written); the running line has the crew's current and next task and
+the daily communication window; At a Glance says *No blog written by the crew on this day*; the landing page keeps
+Current Crew, the live feed, its paragraph and the chat's own words all day; the About page's habitat speaks in the
+present, its NOW line there. (From that morning until 13:11 the day spoke in words of its own — the dashboard, the
+screens and the running line saying the performance was closing or had closed and the habitat open in the afternoon,
+the chat's welcome likewise — and from 10:00 the landing page said *Last Crew* and *02 · The record*, its paragraph and
+the About page's habitat in the past.) **The landing page carries the invitation, large, under the station's name until
+17:00** — *Today · Tue 27 Oct · 15:00–17:00 CET* (*Open now · until 17:00 CET* during the open hours) over ***Come visit
+us** at Karlsruhe MARS!platz, see the habitat from inside and talk to the astronauts from 15:00 to 17:00 CET.* (its words
+since 14 October, 12:40 — *Besuch uns auf dem Karlsruher MARS!platz …*, *Venez nous rendre visite sur la MARS!platz de
+Karlsruhe …*; it read *Come visit us and see the habitat …* until then); an open page turns itself over at 15:00 and
+17:00 (`/api/ticker`'s `stage`, `layout.js` `lastDayStage`), so the invitation says *Open now* and then goes.
+**Nothing on the landing page says a message may go unanswered** (14 October: "DONT write anything on the landing page
+like this: message 'may not be answered now'" — from 10:00 the chat's first step said *it may not be answered now*, and
+its welcome before then *until then the Comms Officer answers your messages*, until that noon).
+
+**After 27 October — complete.** The mission is over and **the station closes at midnight at the end of the 27th**
+(until 14 October it stayed open through the day after, 28 October). **From 28 October the station is read-only.**
+**The dashboard's key becomes At a Glance** — *At a Glance* in the header where *Live Mission Dashboard* stood, and in
+a phone's bar of keys where *Dashboard* stood, with a calendar's sign — and `/dashboard` (and `/dashboard/next`) lead
+to At a Glance, where they sent everyone back to the start page until 14 October ("Dashboard should go to At a
+glance"). **The landing page stays the landing page, less what only the run had** (14 October, 13:10: "after the last
+day, Keep the Visual of Earth and Dome on the Landing page, and KEEP the Worlds slowest chat. Remove the Visual and
+message from the Landing page. The 2 buttons, Read the archive / About the project should be Archive, About. Remove the
+Box"; `public.js`, `mission`; `landing.js`, `intro`): the Earth, the line and the habitat, with no sky over them — no
+*Latest image*, no *Latest message* —; the station's name and its paragraph in the past (*MARS! turned the Karlsruhe
+Marktplatz into MARS!platz. … For 13 days three astronauts tried to find out, with your help. The performance closed on
+Tue 27 Oct 2026 at 10:00 CET; the messages, the answers and the blogs stay here to read.*) with two keys under it,
+**Archive** — to At a Glance (13 October: "Read the archive should go to the At a Glance page"; the archive itself is
+mission control's and would ask a visitor for its sign-in) — and **About**, where *Know more* stands during the run; no
+crew and no calls; and the world's slowest chat as on every day, the nudge on the Earth leading to it. (Until then the
+closed station had a page of its own, the closed record — the run in a paragraph under *Mars Communication Station ·
+mission complete*, *Read the archive* and *About the project*, the orbit, what the station carried and the last three
+exchanges.) The channel closes:
+the composer says so (*CHANNEL CLOSED — the crew left the habitat on Tue 27 Oct 2026 at 10:00 CET; the channel
+closed at midnight. Nothing sent now would reach anyone.*, the day written out in the page's language — it stood as
+2026-10-27 until 13 October, and the channel closed a day later until 14 October), its key *Read what was sent* opens the Message Board (it
+led to the archive's sign-in until then), and the block is
 enforced on the server — `POST /communicate` stores nothing, whatever is sent to it. Mission
 control closes too: every save — a schedule, a blog, a reading, a reply, a publish, a reset —
-is refused with a note under the header (*Mission control closed at the end of Wed 28 Oct
+is refused with a note under the header (*Mission control closed at the end of Tue 27 Oct
 2026 — the record is read-only now. The archive and every download stay open.*), the page
 carries `body.control.closed` and its forms stand greyed and inert (`public/control.js`);
 only signing out still works. The board and the archive stay exactly where they are, because
 they are the work: every page, export and download keeps serving. The close is the end of
-28 October **at the venue** — 23:00 UTC, the clocks having gone back on the 25th — computed in
-`src/lib/mission.js` (`open`, `closeDate`, `closeLabel`, `closedAt`); `/api/ticker` and
-`/api/board` carry `open`, and a board or a landing page left open across that midnight
-reloads itself into the closed state on its next poll. For a rehearsal against made-up dates
-the close is the day after the rehearsal's own last day. (The ingest freeze below is a
-different instant — the end of 27 October — because the readings are the crew's, and the
-crew have left.)
+27 October **at the venue** — 23:00 UTC, the clocks having gone back on the 25th — computed in
+`src/lib/mission.js` (`open`, `closeDate`, `closeLabel`, `closedAt`; the performance's own close, 10:00 that
+morning, is `endsAt` and `ended`); `/api/ticker` and `/api/board` carry `open`, and a board or a landing page left
+open across that midnight reloads itself into the closed state on its next poll. For a rehearsal against made-up
+dates the close is the end of the rehearsal's own last day. (The ingest freeze below falls at the same midnight, the
+end of 27 October.)
 
 **And nothing is updated by automation again.** The record closes at the end of 27 October
 2026 (Berlin time). From that moment: the external sensor node is not polled again
@@ -3223,12 +3380,15 @@ computed, 0.37272 au actual). The station keeps working if the venue loses its c
    names (`public/crew`, made from `public/Astronaut_Pictures` — one `Firstname_Lastname.png`
    per person (a `.jpg` is taken as well) — by `tools/crew-pictures.py`, which also writes
    `public/crew/crew.json`, the people by surname, that the page reads; a new photograph needs
-   only the script run again). Since 13 October the photographs are small — 300 × 450 PNGs of
+   only the script run again — so Laura Benetschik's and Ralf Eger's, `Laura_Benetschik.png` and `Ralf_Eger.png` of
+   14 October, made their portraits, their close-ups and their places in the list, Benetschik after Bechtloff, Eger
+   after Dipper). Since 13 October the photographs are small — 300 × 450 PNGs of
    some 50–75 kB each, in place of the 3644 × 5466 JPEGs of 3 to 8 MB as they were handed over
    ("I have replaced the original Astronaut images with the reduced size") — and the script
    makes nothing larger than its photograph: the portraits are 300 × 450, about 20 kB each (800 ×
-   1200 at the most, from a larger photograph), and the About page's fourteen weigh some 270 kB
-   in place of 1.2 MB. Their `width`/`height` in the page give the shape alone (2:3; the round
+   1200 at the most, from a larger photograph), and the About page's sixteen weigh some 310 kB
+   (the fourteen made from the large photographs weighed 1.2 MB) — in two rows of eight on a desk, four rows of four
+   on a tablet and on a phone. Their `width`/`height` in the page give the shape alone (2:3; the round
    ones 1:1) — the page sets their size.
    The round pictures of Current Crew — over the landing page's two calls —
    are close-ups of their own, `public/crew/face/<lastname>.jpg`, square — 400 × 400 at the most,
@@ -3244,7 +3404,12 @@ computed, 0.37272 au actual). The station keeps working if the venue loses its c
    cuts from a guess — it says which, and prints the line to add to `FACES`.
    and the partners' logos under Produced by (`public/partners`, from `public/PartnerLogo`:
    1 and 2 *In cooperation with*, 3 to 5 *Supporters* — `PARTNERS` in
-   `src/views/pages/info.js`).
+   `src/views/pages/info.js`). Between the crew and the production stand **the credits for the website and the
+   Panolab at ZKM** (14 October: "add a credits list to the website and Panolab at ZKM, in alphabetical order of their
+   last name") — `CREDITS` in `info.js`, sorted by the surnames with their accents folded: Götz Dipper, Jan Gerigk (the
+   list had *Gerick*; the crew list's spelling is kept), Yasha Jain, Johannes Jensen, Andy Koch, Andreas Kugel, Bernd
+   Lintermann, Tina Lorenz, Finn Milbrandt, Marc Schütze, Volker Sommerfeld, SpaceSpeak and Dan Wilcox — in
+   three columns on a desk, two on a phone; add a name there and it takes its place.
 5. Check all thirteen days on the landing page's **whole mission** fold — every day ships written
    in `content/`; change anything there or on the matching tab in mission control.
 6. Walk whoever will sit at mission control through `/control` once: the queue, Ctrl+Enter,
@@ -3252,10 +3417,10 @@ computed, 0.37272 au actual). The station keeps working if the venue loses its c
    during it.
 7. Rehearse the full loop: send a message from a phone, watch it appear at the head of the board,
    reply from control, watch it reach the board on every phone in the room without a reload.
-8. Nothing to do at the end. The channel and mission control close by themselves at the end
-   of Wednesday 28 October, the day after the crew come out — the last messages and the last
-   replies have that day — and from 29 October the station is read-only: no message is taken,
-   no edit saves, the archive and every download keep serving (*Three phases*, above).
+8. Nothing to do at the end. The performance closes at 10:00 on Tuesday 27 October, the habitat is open to
+   visitors from 15:00 to 17:00, and the channel and mission control close by themselves at midnight that day;
+   from 28 October the station is read-only: no message is taken, no edit saves, the archive and every download
+   keep serving (*Three phases*, above).
 
 ---
 
@@ -3285,7 +3450,8 @@ the station's own vocabulary, DUST, IRON, RELAY, until then — names given befo
 clears them with the rest) — and nothing else: no account, no name. The same browser gets the same callsign back for as long
 as the cookie lasts; a cleared browser, private window or second device is a new visitor.
 Unused callsigns are pruned after seven days. The station asks before setting it: on first
-contact every public page carries the **cookie question** (`consent()` in
+contact every public page carries the **cookie question** — until the station closes; from 28 October it is not asked at
+all, there being no callsign to keep and nothing to write (14 October: "after 28th, do not have a cookies pop up") — (`consent()` in
 `src/views/layout.js`, `POST /consent`), a small card at the foot of the window, at the right — on a phone a sheet above
 the bar of keys — with the page open and usable as it is behind it, nothing dimmed or blurred (12 October: "on opening
 the website do not have accept cookies in the centre; have a pop-up on the bottom right and open the website as is"; it
@@ -3314,11 +3480,18 @@ WAL database can produce a corrupt copy:
 bash tools/backup.sh --docker      # or: npm run backup
 ```
 
+It copies the database, the media the crew sent out, the readings log, the camera's pictures with their ledger
+(`/data/cloud`), the content files as they stand (`content/` — the Commander Log, the reports, the steps, the power and
+the counts are written there) and every version of them the station read (`/data/content-history`) — 13 October: until
+then the camera's pictures and the content files were left behind. Keep at least one copy off the venue machine.
+
 **Download all messages** — a card of its own on the archive contents page, beside the
 record's downloads, `/control/messages/export.pdf` — hands over every message that ever reached the
 station, in the order it was sent, whatever became of it: published with its reply and who
 gave it, rejected with the reason, still waiting, or in transit, each with its callsign,
-tags, day, time and the signal delay stored with it. The same set is beside it as a CSV
+tags, day and time and the time its reply was published (the signal delay stored with each message stood there too
+until 14 October — "remove the line: Signal delay stored with the message … from all the messages"; the CSV and the
+JSON keep it). The same set is beside it as a CSV
 (`/control/messages/export.csv`, one row per message, opens in a spreadsheet) and as JSON
 (`/control/messages/export.json`). The messages are not part of the mission record; this is
 mission control's own copy. Worth taking at the end of each performance week and keeping

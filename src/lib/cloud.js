@@ -105,8 +105,75 @@ function saveManifest() {
   fs.mkdirSync(DIR, { recursive: true });
   const out = { source: CFG.url, folder: status.folder, generatedAt: new Date().toISOString(), count: items.length,
     note: 'A read-only mirror of the cloud folder. Each item: its path on the cloud, size, last change, and the station\'s cached copy.', items };
-  fs.writeFileSync(MANIFEST, JSON.stringify(out, null, 2) + '\n');
+  writeWhole(MANIFEST, JSON.stringify(out, null, 2) + '\n');
 }
+/** Written whole or not at all: a station stopped mid-write leaves the last good file. */
+function writeWhole(file, text) {
+  fs.writeFileSync(file + '.part', text);
+  fs.renameSync(file + '.part', file);
+}
+
+/* ---------------------------------------------------------------- the ledger
+   Every picture the folder has ever held, for good (13 October: "make sure nothing is missed or no data point or
+   source is lost"). The gallery is the folder as it stands — a picture taken out of the folder leaves the page on the
+   next read — but not the record: the ledger keeps each one with where it was on the cloud, its size, its last change
+   and its tag, the moment it was taken (read from its name, takenFromName), when the station first and last saw it,
+   when it left the folder, and its copy on the volume (/data/cloud, never deleted). It is the station's own record of
+   the gallery, kept beside the copies — not part of the archive's record or its downloads (13 October: "there should be
+   no camera pictures in the PDF record or the data file") — and the backup copies the folder with it. */
+const LEDGER = path.join(DIR, 'ledger.json');
+let ledgerMap = null;
+function ledgerOf() {
+  if (!ledgerMap) {
+    ledgerMap = new Map();
+    try { for (const e of (JSON.parse(fs.readFileSync(LEDGER, 'utf8')).items || [])) if (e && e.id) ledgerMap.set(e.id, e); } catch { /* none yet */ }
+  }
+  return ledgerMap;
+}
+/** One read of the folder into the ledger: what it listed is present (and its copy noted), what it no longer lists left. */
+function noteInLedger(listed, at = Date.now()) {
+  const L = ledgerOf(), when = new Date(at).toISOString(), present = new Set();
+  for (const it of listed) {
+    present.add(it.id);
+    const prev = L.get(it.id) || { id: it.id, firstSeenAt: when };
+    let copy = prev.copy || null;
+    try { const st = fs.statSync(filePath(it)); copy = { file: path.basename(filePath(it)), bytes: st.size, etag: it.cachedEtag || (copy && copy.etag) || null }; } catch { /* not copied yet */ }
+    L.set(it.id, { ...prev, path: it.path, name: it.name, size: it.size, modified: it.modified, etag: it.etag, fileId: it.fileId || null,
+      mime: it.mime, ext: it.ext, added: it.added || null, taken: takenFromName(it.name), tooBig: !!it.tooBig, copy, lastSeenAt: when, removedAt: null });
+  }
+  for (const [id, e] of L) if (!present.has(id) && !e.removedAt) L.set(id, { ...e, removedAt: when });
+  // and once per start, any copy on the volume the ledger does not know — a picture copied, then taken out of the
+  // folder before the ledger existed: kept with what the copy itself tells (its file, size and time), so it too is
+  // in the record
+  if (!orphansNoted) {
+    orphansNoted = true;
+    try {
+      for (const f of fs.readdirSync(DIR)) {
+        const m = /^([0-9a-f]{16})\.([a-z0-9]+)$/.exec(f);
+        if (!m || L.has(m[1]) || !IMAGE[m[2]]) continue;
+        const st = fs.statSync(path.join(DIR, f));
+        L.set(m[1], { id: m[1], path: null, name: null, ext: m[2], mime: IMAGE[m[2]], size: st.size, modified: st.mtime.toUTCString(),
+          copy: { file: f, bytes: st.size, etag: null }, firstSeenAt: st.mtime.toISOString(), lastSeenAt: null, removedAt: when,
+          note: 'a copy on the volume whose picture had left the folder before the ledger was kept: where it was on the cloud was not recorded' });
+      }
+    } catch { /* no folder yet */ }
+  }
+  saveLedger();
+}
+let orphansNoted = false;
+function saveLedger() {
+  fs.mkdirSync(DIR, { recursive: true });
+  const all = ledger();
+  writeWhole(LEDGER, JSON.stringify({ source: fromDir() ? 'mounted folder' : CFG.url, folder: status.folder, updatedAt: new Date().toISOString(),
+    count: all.length, note: 'Every picture the cloud folder has held while the station read it, for good: where it was (path), its size, last change and tag on the cloud, when it was taken (from its name), when the station first and last saw it, when it left the folder (removedAt), and the station\'s copy (copy.file, under /data/cloud — never deleted).',
+    items: all }, null, 2) + '\n');
+}
+/** The ledger as a list, in the folder's order of names. */
+function ledger() {
+  return [...ledgerOf().values()].sort((a, b) => String(a.path).localeCompare(String(b.path), undefined, { numeric: true }));
+}
+/** The copy of a ledger entry on the volume, when there is one. */
+const copyPath = (e) => (e && e.copy && e.copy.file ? path.join(DIR, e.copy.file) : null);
 
 /* ----------------------------------------------------------------- WebDAV */
 
@@ -308,6 +375,7 @@ async function poll() {
         seenAt: prev.seenAt || Date.now() };
     });
     const when = (it) => Date.parse(it.modified) || 0;
+    const everything = next;                                                  // the whole listing, for the ledger (the cap below is the page's)
     next.sort(CFG.sort === 'name'
       ? (a, b) => a.path.localeCompare(b.path, undefined, { numeric: true })
       : (a, b) => (b.added - a.added) || (b.seenAt - a.seenAt) || (when(b) - when(a)) || b.path.localeCompare(a.path, undefined, { numeric: true }));
@@ -327,6 +395,7 @@ async function poll() {
     status.listed = listed.length; status.shown = next.length; status.cached = cached;
     status.lastPollAt = Date.now(); status.lastError = null;
     saveManifest();
+    try { noteInLedger(everything); } catch (e) { console.warn('[cloud] the ledger was not written:', e.message); }
     console.log(`[cloud] ${listed.length} image${listed.length === 1 ? '' : 's'} in ${fromDir() ? CFG.dir : `/${CFG.folder || ''} on ${CFG.url}`}${next.length < listed.length ? `, the newest ${next.length} kept` : ''}, ${cached} cached`);
   } catch (e) {
     if (seq !== pollSeq) return;
@@ -394,4 +463,5 @@ function snapshot() {
     tooBig: items.filter((i) => i.tooBig).map((i) => i.path) };
 }
 
-module.exports = { CFG, DIR, QUIET, configured, quiet, start, poll, gallery, get, filePath, thumbPath, smallPath, snapshot, takenFromName };
+module.exports = { CFG, DIR, QUIET, configured, quiet, start, poll, gallery, get, filePath, thumbPath, smallPath, snapshot, takenFromName,
+  ledger, copyPath, LEDGER };

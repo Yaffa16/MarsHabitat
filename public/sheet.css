@@ -146,8 +146,17 @@ body.landing .sheet-intro .wordmark { margin: 0; line-height: .95; letter-spacin
 body.landing .sheet-intro .wordmark .wm-sep { display: none; }
 body.landing .sheet-intro .wordmark .wm-ground { display: block; margin-top: 8px; font-size: .5em; line-height: 1.1; font-weight: 500; letter-spacing: -.02em; color: var(--ink); white-space: nowrap; }   /* Ground Station, smaller and lighter, under the name */
 body.landing .sheet-intro .intro-text { margin: 22px 0 0; max-width: 46ch; font-size: 17px; line-height: 1.55; color: var(--ink); text-wrap: pretty; }
+/* The run's last day (14 October: "on the 27th, on the landing page, add in big: COME visit us and See the habitat from
+   inside and talk to the Astronauts from 15:00 to 17:00"): the invitation under the station's name, large, in a Mars
+   frame — the day and the hours over it, Come visit us in Mars — until the habitat closes to visitors at 17:00
+   (landing.js, intro) */
+body.landing .sheet-intro .intro-invite { margin: 22px 0 0; max-width: 34rem; padding: 16px 20px 18px; border: 2px solid var(--mars); border-radius: 18px; box-sizing: border-box; }
+body.landing .sheet-intro .intro-invite .invite-k { margin: 0 0 8px; font-family: var(--display); font-size: var(--fs-label); font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--mars-ink); }
+body.landing .sheet-intro .intro-invite .invite-big { margin: 0; font-family: var(--display); font-size: clamp(22px, 1.8vw, 30px); line-height: 1.15; font-weight: 600; letter-spacing: -.02em; color: var(--ink); text-wrap: balance; }
+body.landing .sheet-intro .intro-invite .invite-big strong { display: block; color: var(--mars); font-size: 1.25em; font-weight: 700; }
 body.landing .sheet-intro .run-dates { margin: 22px 0 0; line-height: 1.6; }
 body.landing .sheet-intro .intro-cta { margin: 24px 0 0; }   /* Know more, the key to the About page (13 October): the cobalt pill under the run */
+body.landing .sheet-intro .intro-cta.is-two { display: flex; flex-wrap: wrap; gap: 12px; }   /* after the run, two keys there — Archive and About (14 October) */
 @media (min-width: 761px) and (max-height: 720px) {           /* a short laptop window: the key a little closer, clear of the window's foot */
   body.landing .sheet-intro .intro-cta { margin-top: 16px; }
   body.landing .sheet-intro .know-more { min-height: 42px; }
@@ -697,7 +706,7 @@ body.landing.inner :is(.card-top, .card-top .cs, .card-top .card-day, .eyebrow, 
   .gt-label, .gt-range, .gc-note, .gc-head span, .card-reply .who, .card-reply-meta, .log-day-head, .log-day-head span) { font-size: var(--fs-label); }
 body.landing.inner :is(.logpage-strip i, .logpage-strip span) { font-size: var(--fs-tag); }
 body.landing :is(.sky-when, .seq-fig) { font-size: var(--fs-tag); }
-body.landing .round-unit { font-size: 10px; }                                          /* drawn in a gauge's own units: 11 px and more on the page */
+body.landing .round-unit { font-size: 8px; }                                           /* drawn in a gauge's own units: 12 px and more on the page (10 until 14 October — aura.css, the count smaller) */
 body.landing.inner .gt-value em { font-size: var(--fs-tag); }
 @media (max-width: 760px), (max-height: 520px) {
   body.landing .run-n, body.landing .run-strip .run-n, body.landing .portal-head .dash-clock-label,

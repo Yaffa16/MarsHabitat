@@ -33,7 +33,8 @@
  * habitat's reading, a few older exchanges and the last answered ones — never
  * a message still waiting for mission control or one it turned down.
  */
-const { esc } = require('../layout');
+const L = require('../layout');
+const { esc } = L;
 const orbital = require('../../lib/orbital');
 const content = require('../../lib/content');
 const { stamp, responder } = require('./sky');
@@ -76,17 +77,45 @@ function intro(ctx) {
   const pre = m.phase === 'PRE_LAUNCH', n = m.daysUntilStart;
   const now = pre ? `${T('opens in')} ${n} ${T(n === 1 ? 'day' : 'days')}`
     : m.phase === 'ACTIVE' ? `SOL ${String(m.clampedDay).padStart(2, '0')} ${T('of')} ${m.totalDays}` : T('Mission complete');
+  // the run's last day (14 October: "on the 27th, on the landing page, add in big: COME visit us and See the habitat from
+  // inside and talk to the Astronauts from 15:00 to 17:00"): the invitation, large, under the station's name, all that
+  // day until the habitat closes to visitors at 17:00 — and from 10:00, when the performance closes, the paragraph on
+  // what MARS! is for in the past (INTRO_AFTER). Its words since 14 October, 12:40: "Come visit us at Karslruhe
+  // Marsplatz, see the habitat from inside and talk to the astronauts from 15:00 to 17:00 CET." (Karlsruhe, and the
+  // place written MARS!platz as everywhere on the site; the zone follows the day, as every time here)
+  const house = L.openHouse(m), lt = L.lastDayTimes(m);
+  const invite = house && house !== 'over' ? `
+      <div class="intro-invite" role="note">
+        <p class="invite-k">${house === 'open' ? `${esc(T('Open now'))} · ${esc(T('until'))} ${esc(lt.to)}` : `${esc(T('Today'))} · ${esc(require('../../lib/mission').shortDay(m.end_date, ctx.lang))} · ${esc(lt.from)}–${esc(lt.to)}`}</p>
+        <p class="invite-big"><strong>${esc(T('Come visit us'))}</strong> ${fill(T, 'at Karlsruhe MARS!platz, see the habitat from inside and talk to the astronauts from {from} to {to}.', { from: esc(lt.from), to: esc(lt.to) })}</p>
+      </div>` : '';
+  // the paragraph is the run's on every day of it, the last included (14 October, 13:11: "on the 27th Oct, ONLY change
+  // should be: Come visit us at Karlsruhe MARS!platz … Everything else remains the same as ALL other days" — it went
+  // into the past at 10:00 that day from 14 October until then); after the run, from the close at midnight at the end of
+  // the last day, it is in the past (INTRO_CLOSED), and the key under it is two: Archive, to At a Glance, and About
+  // (14 October, 13:10: "The 2 buttons, Read the archive / About the project should be Archive, About" — the closed
+  // record's two keys, on the landing page now; Know more, to the About page, until the close)
+  const closed = m.open === false;
+  const text = closed
+    ? fill(T, INTRO_CLOSED, { n: String(m.totalDays), date: esc(require('../../lib/mission').dayLabel(m.end_date, ctx.lang)), time: esc(lt.out) })
+    : T(INTRO_TEXT);
+  const cta = closed
+    ? `<p class="intro-cta is-two"><a class="know-more" href="/at-a-glance">${T('Archive')} <span aria-hidden="true">→</span></a><a class="know-more" href="/about">${T('About')} <span aria-hidden="true">→</span></a></p>`
+    : `<p class="intro-cta"><a class="know-more" href="/about">${T('Know more')} <span aria-hidden="true">→</span></a></p>`;
   return `
     <div class="sheet-intro">
       <p class="intro-eyebrow">ZKM | Hertzlab <span class="intro-dot" aria-hidden="true">•</span> ${T('Durational performance')}</p>
-      <h1 class="wordmark">MARS<span class="bang">!</span>platz<span class="wm-sep"> : </span><span class="wm-ground">${T('Ground Station')}</span></h1>
-      <p class="intro-text">${T(INTRO_TEXT)}</p>
+      <h1 class="wordmark">MARS<span class="bang">!</span>platz<span class="wm-sep"> : </span><span class="wm-ground">${T('Ground Station')}</span></h1>${invite}
+      <p class="intro-text">${text}</p>
       <p class="run-dates"><b>${esc(require('../../lib/mission').runLabel(m.start_date, m.end_date, { lang: ctx.lang }))}</b> · ${m.totalDays} ${T('sols in the habitat')} · <span class="run-now">${now}</span></p>
-      <p class="intro-cta"><a class="know-more" href="/about">${T('Know more')} <span aria-hidden="true">→</span></a></p>
+      ${cta}
     </div>`;
 }
 /** What MARS! is for, in October's words: on the first page beside the room (intro), where the note had it. */
 const INTRO_TEXT = 'MARS! turns the Karlsruhe Marktplatz into MARS!platz. Can we go to Mars to save the Earth? Three astronauts are finding out, and you can help! Write them a message, have a look on the mission dashboard to find out if their food supply is running low or see what they’re currently researching.';
+/** The same after the run, once the station has closed (14 October): {n} the days, {date} the last day, {time} the hour
+    the performance closed. (From 14 October until that afternoon it stood from 10:00 on the last day, "closed today".) */
+const INTRO_CLOSED = 'MARS! turned the Karlsruhe Marktplatz into MARS!platz. Can we go to Mars to save the Earth? For {n} days three astronauts tried to find out, with your help. The performance closed on {date} at {time}; the messages, the answers and the blogs stay here to read.';
 
 /* ---------------------------------------------------------------- the first page: Earth to the habitat */
 /**
@@ -243,11 +272,14 @@ function note(ctx, { crew = 3 } = {}) {
     three one under the other on a phone (sheet.css, .land-crew). */
 function crewNow(ctx) {
   const T = ctx.T, now = content.crewNow(ctx.mission), w = crewWhenParts(ctx, now);
+  // (Current Crew on the last day too — 14 October, "everything else remains the same as all other days"; it said Last
+  // Crew from 10:00 that day until then — and after the run the landing page has no crew, public.js, mission)
+  const title = 'Current Crew';
   return `
       <div class="land-crew" role="group" aria-labelledby="land-crew-title">
         <header class="land-crew-head">${w.day ? `
           <span class="land-crew-k">${esc(w.day)}</span>` : ''}
-          <h2 class="land-crew-title" id="land-crew-title">${esc(T('Current Crew'))}</h2>${w.what ? `
+          <h2 class="land-crew-title" id="land-crew-title">${esc(T(title))}</h2>${w.what ? `
           <p class="land-crew-when">${esc(w.what)}</p>` : ''}
         </header>${crewList(ctx, { crew: CREW, onShift: now.crew })}
       </div>`;
@@ -399,10 +431,17 @@ function slowChat(ctx) {
   const crossing = `${secs} ${T(secs === 1 ? 'second' : 'seconds')}`;
   const when = windowWhen(ctx);                                            // "19:00 CET"
   const me = ctx.callsign || ctx.offer || '';
+  // The chat's words are the run's on every day, the last one included and after the run (14 October, 13:10–13:11:
+  // "on the 27th Oct, ONLY change should be: Come visit us at Karlsruhe MARS!platz … Everything else remains the same as
+  // ALL other days" and "after the last day … KEEP the Worlds slowest chat"; the last day had words of its own — the
+  // performance closing at 10:00, no communication hour, the open habitat in the afternoon — from 14 October until then).
+  // Nothing on the page says a message may go unanswered (14 October: "DONT write anything on the landing page like
+  // this: message 'may not be answered now'").
+  const lead = fill(T, 'As our ground station personnel, you can discuss the question of the day with us, send us messages about things we should know or find out for you or send a message to space via our habitat. The Comms Officer will answer your messages personally. You can also drop us a postcard on MARS!platz or come to our daily Communication Hour at {time} to speak to us directly.', { time: esc(when) });
+  const board = `<a class="step-link" href="/write#exchanges">${esc(T('message board'))}</a>`;
   return `
   <section class="sheet sheet-p4" id="slowest-chat" aria-labelledby="ch-03-title" data-page>
-    ${partHead(T, { title: 'Welcome to the World’s Slowest Chat (that also zips into space!)', id: 'ch-03-title',
-      lead: fill(T, 'As our ground station personnel, you can discuss the question of the day with us, send us messages about things we should know or find out for you or send a message to space via our habitat. The Comms Officer will answer your messages personally. You can also drop us a postcard on MARS!platz or come to our daily Communication Hour at {time} to speak to us directly.', { time: esc(when) }) })}
+    ${partHead(T, { title: 'Welcome to the World’s Slowest Chat (that also zips into space!)', id: 'ch-03-title', lead })}
     <p class="steps-how">${T('How it works:')}</p>
     <ol class="steps" aria-label="${esc(T('How a message reaches the crew'))}">
       <li class="step s-up">
@@ -431,7 +470,7 @@ function slowChat(ctx) {
           <h3>${T('Crew response')}</h3>
           <p class="step-flag">${T('Downlink received')}</p>
           <div class="step-card is-crew"><span class="step-who">${T('Crew answer')}</span>${T('Keeping track of all our supplies, from food and water to the energy we cook with. Nothing gets used without being counted.')}</div>
-          <p>${fill(T, 'Messages will be answered during the day and can be viewed on the {board}. Also, at {time}, the daily communication window opens where people on MARS!platz can communicate directly with the crew.', { board: `<a class="step-link" href="/write#exchanges">${esc(T('message board'))}</a>`, time: b(when) })}</p>
+          <p>${fill(T, 'Messages will be answered during the day and can be viewed on the {board}. Also, at {time}, the daily communication window opens where people on MARS!platz can communicate directly with the crew.', { board, time: b(when) })}</p>
         </div>
       </li>
     </ol>
@@ -504,8 +543,10 @@ function underLine(ctx, { recent = [], today = null } = {}) {
  */
 function scrollNudge(ctx) {
   const T = ctx.T;
+  // to the crew and the two calls; after the run, which has neither (public.js, mission), to the world's slowest chat
+  const to = ctx.mission && ctx.mission.open === false ? '#slowest-chat' : '#note';
   return `
-      <a class="dome-nudge" id="dome-nudge" href="#note" data-sky-solid aria-label="${esc(T('Scroll down'))}" title="${esc(T('Scroll down'))}">
+      <a class="dome-nudge" id="dome-nudge" href="${to}" data-sky-solid aria-label="${esc(T('Scroll down'))}" title="${esc(T('Scroll down'))}">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v15"/><path d="M5.5 12.5 12 19l6.5-6.5"/></svg>
       </a>`;
 }

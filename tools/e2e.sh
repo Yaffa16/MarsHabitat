@@ -77,7 +77,7 @@ echo "$DOME" | grep -q 'id="habitat-dome"' && [ "$(echo "$DOME" | grep -o '<rect
 curl -s $B/api/dome | node -e '
 let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
   const f = JSON.parse(s);
-  process.exit(["crew", "science", "recycling", "aeroponics", "comms", "power", "generator", "eva", "dashboard", "sensors", "mission"].every((k) => f[k] && typeof f[k].text === "string") && /EVA/.test(f.eva.text) && /tasks done today/.test(f.dashboard.text) && /mission: .+\.$/.test(f.mission.text) && !/Mission No\./.test(f.mission.text) ? 0 : 1);
+  process.exit(["crew", "science", "recycling", "aeroponics", "comms", "power", "generator", "eva", "dashboard", "sensors", "mission"].every((k) => f[k] && typeof f[k].text === "string") && /EVA/.test(f.eva.text) && / tasks? today| tasks done today/.test(f.dashboard.text) && /mission: .+\.$/.test(f.mission.text) && !/Mission No\./.test(f.mission.text) ? 0 : 1);
 });' && ok "/api/dome returns every room's figure — the day's EVA from the schedule, the dashboard's sol and tasks, the day's mission by its title (no number), the sensors' reading" || bad "/api/dome incomplete"
 curl -s $B/api/dome | node -e '
 let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { process.exit(/[0-9]/.test(JSON.parse(s).crew.text) ? 1 : 0); });
@@ -138,6 +138,21 @@ for t in comms science health habitat; do
   echo "$CTRL" | grep -q "data-pane=\"$t\"" || bad "tab $t missing from the page"
 done
 ok "all four tabs are in the one page"
+# the desk in blue (14 October: "in the Control page, replace the Orange theme with a blue button theme. Make the size of
+# the arrow next to headings for collapse bigger. Increase the width of the Mission control area on screen"): the
+# station's orange redefined on the desk as the landing page's cobalt — and a lighter blue on the dark desk —, so the
+# button that publishes, the open tab, the waiting count and the edited marks are blue; the open tab in blue in the dark
+# too; the fold's chevron 18 px in a 30 px round place (a 12 px ▾ until then); the desk up to 1680 px across (1240)
+CSSX=$(cat public/station.css)
+echo "$CSSX" | grep -qF -- "--orange: #2f45e8; --orange-deep: #2236c9; --orange-soft: rgba(47,69,232,.12); --orange-ink: #ffffff; --mars: var(--orange);" \
+  && echo "$CSSX" | grep -qF -- "--orange: #4a5ef5; --orange-deep: #3a4ee6; --orange-soft: rgba(110,128,255,.18); --c-accent-text: #a3adff;" \
+  && echo "$CSSX" | grep -qF 'body.control button.primary, body.control .btn.primary { background: var(--orange); border-color: var(--orange); color: #fff;' \
+  && echo "$CSSX" | grep -qF ':root[data-theme="dark"] body.control .tabs.officer-bar a.on { background: transparent; color: var(--c-accent-text); box-shadow: none; }' \
+  && echo "$CSSX" | grep -qF 'body.control form.has-edits button.primary { box-shadow: 0 0 0 3px rgba(47,69,232,.32); }' && ! echo "$CSSX" | grep -q 'body\.control[^{]*{[^}]*rgba(255, *106' \
+  && echo "$CSSX" | grep -qF 'body.control .fold-chev { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 30px; height: 30px;' \
+  && echo "$CSSX" | grep -qF 'body.control .fold-chev::before { content: ""; width: 18px; height: 18px; background: currentColor;' \
+  && echo "$CSSX" | grep -qF 'body.control .shell { max-width: 1680px; }' && ! echo "$CSSX" | grep -qF 'body.control .shell { max-width: 1240px; }' \
+  && ok "mission control is blue — the publishing button, the open tab (in the dark too), the waiting count, the edited marks —, its fold arrows large (18 px in a 30 px round), the desk up to 1680 px wide" || bad "mission control is still orange, its arrows small or its desk narrow"
 for tab in science health habitat; do
   [ "$(curl -s -b $A -o /dev/null -w '%{redirect_url}' $B/control/$tab)" = "$B/control?tab=$tab#work" ] \
     || bad "/control/$tab does not land on its tab"
@@ -415,6 +430,7 @@ for needle in "Contents" "The mission" "Day 001" "Day 00$TODAY" "The crew log" "
   echo "$PDFTXT" | grep -q "$needle" || bad "PDF record missing: $needle"
 done
 ok "the PDF holds the mission, every day that has happened, the whole crew log and the media"
+echo "$PDFTXT" | grep -q "The camera\|habitat's camera" && bad "the PDF record lists the camera's pictures" || ok "and no camera pictures — only the blogs' own images, in the blogs (13 October)"
 echo "$PDFTXT" | grep -qi "calories consumed" && bad "the PDF record still carries the calories consumed" || ok "no calories consumed in the PDF record"
 # 12 October: the cover's paragraph, the mission's sentence, the blurbs over the stores and the channels, How to read this
 # record and the days' paragraph are gone; the channels are the Sensors tab's instruments and the hardware, not sensors.json's
@@ -457,11 +473,22 @@ echo "$PDFTXT" | grep -q "upset, not having a good day" && ok "a filed state app
 curl -s -b $A $B/control | grep -q 'href="/archive/export.pdf"' && ok "mission control carries the download" || bad "no PDF button on control"
 echo "── all the messages, as a download of their own"
 curl -s -b $A $B/archive | grep -q 'href="/control/messages/export.pdf"' && ok "the archive page carries a Download all messages card" || bad "no all-messages card"
+# the cards carry no format line over their titles (14 October: "from all the buttons remove: PDF · one document, JSON ·
+# every day of the run, ZIP · tables for a spreadsheet, PDF · 15 messages · not part of the record")
+ARC=$(curl -s -b $A $B/archive)
+! echo "$ARC" | grep -q 'class="fmt"\|PDF · one document\|JSON · every day of the run\|ZIP · tables for a spreadsheet\|messages · not part of the record' \
+  && [ "$(echo "$ARC" | grep -c '<div class="dl-card">')" = "4" ] && ! grep -q '\.dl-card \.fmt' public/station.css \
+  && ok "the four download cards carry no format line over their titles — the title and the key alone" || bad "a download card still carries its format line"
 curl -s -b $A "$B/control?show=pending" | grep -q 'href="/control/messages/export.pdf"' && bad "the button is still on the Messages tab" || ok "and the Messages tab does not"
 curl -s -b $A -D /tmp/msgs.h $B/control/messages/export.pdf -o /tmp/messages.pdf
 grep -qi "content-type: application/pdf" /tmp/msgs.h && head -c 5 /tmp/messages.pdf | grep -q "%PDF-" && ok "all the messages download as a PDF" || bad "no messages PDF"
 MSGTXT=$(pdftext /tmp/messages.pdf)
 echo "$MSGTXT" | grep -q "Do you still dream in colour" && echo "$MSGTXT" | grep -q "In colour, and always outdoors." && ok "with the message and its reply" || bad "a message or its reply is missing from the messages PDF"
+# no signal delay printed with a message any more (14 October: "from the messages download remove the line: Signal delay
+# stored with the message … from all the messages"); the reply's time keeps a line of its own, and the CSV keeps the figures
+! echo "$MSGTXT" | grep -qi "Signal delay\|one way at" && echo "$MSGTXT" | grep -qE "Reply published day [0-9]{3} [0-9]{2}:[0-9]{2}" \
+  && curl -s -b $A $B/control/messages/export.csv | head -1 | grep -q "light_seconds,distance_au" \
+  && ok "the messages PDF prints no signal delay with a message — the reply's time stands on its own line; the CSV keeps the delay" || bad "the messages PDF still prints the signal delay, or lost the reply's time"
 curl -s -b $A $B/control/messages/export.csv | head -1 | grep -q "id,callsign,mission_day" && curl -s -b $A $B/control/messages/export.csv | grep -q "Do you still dream in colour" && ok "and as a CSV, one row per message (with a BOM so Excel reads the accents)" || bad "messages CSV wrong"
 curl -s -b $A $B/control/messages/export.json | grep -q '"messages":\[' && ok "and as JSON" || bad "messages JSON wrong"
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/control/messages/export.pdf)" = "302" ] && ok "the messages download is control-only" || bad "messages download is public"
@@ -573,7 +600,7 @@ echo "$ABOUT" | grep -q '<p class="dash-sub">MARS! – Mobilizing Awareness for 
   && echo "$ABOUT" | grep -q '<h3>The Insight</h3>' && echo "$ABOUT" | grep -q 'a spaceship called Earth' \
   && ! echo "$ABOUT" | grep -q 'A durational performance on Karlsruhe\|Large space agencies\|Distance as the material\|The archive as the work\|Networked communication is built\|MARS!platz: Red Dust City</h3>' \
   && ! echo "$ABOUT" | grep -q 'id="more-than-human"\|<h3>More than Human</h3>\|<h3>The readings</h3>\|Three live crickets share it with them\|The sensors that produce the readings on this page' \
-  && echo "$ABOUT" | grep -qE '<dt>START</dt><dd>[A-Z][a-z]{2} [0-9]{1,2} [A-Z][a-z]{2} 20[0-9]{2} · 17:00 (CEST|CET)</dd>' && echo "$ABOUT" | grep -qE '<dt>END</dt><dd>[A-Z][a-z]{2} [0-9]{1,2} [A-Z][a-z]{2} 20[0-9]{2} · 17:00 (CEST|CET)</dd>' && echo "$ABOUT" | grep -q '<dt>CREW</dt><dd>3</dd>' \
+  && echo "$ABOUT" | grep -qE '<dt>START</dt><dd>[A-Z][a-z]{2} [0-9]{1,2} [A-Z][a-z]{2} 20[0-9]{2} · 17:00 (CEST|CET)</dd>' && echo "$ABOUT" | grep -qE '<dt>END</dt><dd>[A-Z][a-z]{2} [0-9]{1,2} [A-Z][a-z]{2} 20[0-9]{2} · 10:00 (CEST|CET)</dd>' && echo "$ABOUT" | grep -q '<dt>CREW</dt><dd>3</dd>' \
   && echo "$ABOUT" | grep -q '<dt>SCIENTIFIC MISSIONS</dt><dd>11</dd>' && ! echo "$ABOUT" | grep -q '<dt>TIMEZONE</dt>' \
   && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<h3>Warum tun wir das?</h3>' && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<dt>WISSENSCHAFTLICHE MISSIONEN</dt><dd>11</dd>' && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q 'Millionen Kilometer von der Erde entfernt' \
   && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q '<h3>L’Habitat – Red Dust City</h3>' && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q 'target="_blank" rel="noopener">Santé mentale</a>' \
@@ -738,7 +765,7 @@ echo "$ABOUTFR" | grep -q '<p>Dans le cadre du projet MARS! – Mobilizing Aware
   && echo "$ABOUTFR" | grep -q '<h3>L’Habitat – Red Dust City</h3>' && echo "$ABOUTFR" | grep -q '<p>Le dôme, mis à notre disposition par le Staatstheater Karlsruhe' && echo "$ABOUTFR" | grep -q '<p>Répartis en trois fonctions – Commandant, Responsable de la santé et Responsable scientifique – nous simulons' \
   && echo "$ABOUTFR" | grep -q '<p>La population de Karlsruhe est invitée à jouer le rôle de notre centre de contrôle terrestre' && echo "$ABOUTFR" | grep -q '<p>Pendant onze jours, nous abordons quotidiennement une grande question' \
   && echo "$ABOUTFR" | grep -q '<h3>Le changement de perspective</h3>' && echo "$ABOUTFR" | grep -q '<p>À travers ce projet, nous adressons une invitation à la population de Karlsruhe' && echo "$ABOUTFR" | grep -q '<p>Pour rester habitable par une grande diversité d’êtres vivants' && echo "$ABOUTFR" | grep -q '<p>À travers les interactions avec nous – discuter, écrire, envoyer et recevoir des messages – nous espérons' \
-  && echo "$ABOUTFR" | grep -q '<h3>Messages envoyés dans l’espace</h3>' && echo "$ABOUTFR" | grep -q '<p>Chaque message auquel répond l’équipage est également envoyé dans l’espace par radio grâce à SpaceSpeak' && echo "$ABOUTFR" | grep -q '<p>Dès que notre réponse est publiée, le centre de contrôle transmet le message à SpaceSpeak.' && echo "$ABOUTFR" | grep -q '<p>Les ondes radio sont une forme de lumière' \
+  && echo "$ABOUTFR" | grep -q '<h3>Messages envoyés dans l’espace</h3>' && echo "$ABOUTFR" | grep -qF '<p>Chaque message auquel répond l’équipage est également envoyé dans l’espace par radio grâce à <a href="https://www.spacespeak.com/" target="_blank" rel="noopener">SpaceSpeak</a>' && echo "$ABOUTFR" | grep -q '<p>Dès que notre réponse est publiée, le centre de contrôle transmet le message à SpaceSpeak.' && echo "$ABOUTFR" | grep -q '<p>Les ondes radio sont une forme de lumière' \
   && echo "$ABOUTFR" | grep -q '<p>À partir de cet instant, le message poursuit définitivement son voyage.' && echo "$ABOUTFR" | grep -q '<p>Le signal s’affaiblit à chaque kilomètre parcouru' && echo "$ABOUTFR" | grep -q '<p>Le tableau des messages indique en permanence la distance parcourue par chaque message depuis son émission. Il suffit de toucher un message pour découvrir l’objet céleste qu’il vient de dépasser.</p>' \
   && echo "$ABOUTFR" | grep -q 'Qui sommes-nous ?' && ! echo "$ABOUTFR" | grep -q 'Qui nous sommes\|L’enseignement\|exposition-concept' \
   && [ "$(echo "$ABOUT" | grep -c '<p>In the project MARS!')" = "1" ] && echo "$ABOUT" | grep -q '<p>The five prototype workshops <a href=' \
@@ -749,15 +776,33 @@ echo "$ABOUTFR" | grep -q '<p>Dans le cadre du projet MARS! – Mobilizing Aware
 ! echo "$ABOUT" | grep -q 'At this moment</div>' && ! echo "$ABOUT" | grep -q 'What is kept' && ! echo "$ABOUT" | grep -q 'Message states as shown in the interface' && ! echo "$ABOUT" | grep -q 'class="pipe' \
   && ! echo "$ABOUT" | grep -q 'Inside the habitat' && ! echo "$ABOUT" | grep -q 'addressed by designation' && ! echo "$ABOUT" | grep -q 'Outside the habitat' && ! echo "$ABOUT" | grep -q 'Reach the production' && ! echo "$ABOUT" | grep -q 'Replace these entries' \
   && ok "the About page no longer carries At this moment, What is kept, the row of states, Inside/Outside the habitat, the crew's note or Reach the production" || bad "a removed About panel is still on the page"
-# Who we are: no credits any more; the crew's fourteen portraits (public/crew, from public/Astronaut_Pictures — October added
-# Franziska Klöck and Finn Milbrandt to the eleven, and 8 October the habitat's robot dog, Robodog, after the people) and, under
+# Who we are: no credits any more; the crew's sixteen portraits (public/crew, from public/Astronaut_Pictures — October added
+# Franziska Klöck and Finn Milbrandt to the eleven, 8 October the habitat's robot dog, Robodog, after the people, and 14 October
+# Laura Benetschik and Ralf Eger: "in the Astronaut pictures I have added Laura Benetschik", "… Ralf Eger") and, under
 # Produced by, the partners' logos (public/partners, from public/PartnerLogo) — 1 and 2 in cooperation with, 3 to 5 supporters
 ! echo "$ABOUT" | grep -q 'To be credited' && ! echo "$ABOUT" | grep -q 'Technical direction' && ! echo "$ABOUT" | grep -q 'Supported by the Innovationsfonds' \
-  && [ "$(echo "$ABOUT" | grep -o '<figure class="crew-pic"><img src="/crew/[a-z-]*\.jpg" alt="" width="800" height="1200" loading="lazy" decoding="async"><figcaption>[^<]*</figcaption></figure>' | wc -l)" = "14" ] \
+  && [ "$(echo "$ABOUT" | grep -o '<figure class="crew-pic"><img src="/crew/[a-z-]*\.jpg" alt="" width="800" height="1200" loading="lazy" decoding="async"><figcaption>[^<]*</figcaption></figure>' | wc -l)" = "16" ] \
   && echo "$ABOUT" | grep -q '<figure class="crew-pic"><img src="/crew/robodog.jpg" alt="" width="800" height="1200" loading="lazy" decoding="async"><figcaption>Robodog</figcaption></figure>' && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/robodog.jpg)" = "200" ] \
   && echo "$ABOUT" | grep -q '<img src="/crew/kloeck.jpg"' && echo "$ABOUT" | grep -q '<figcaption>Franziska Klöck</figcaption>' && echo "$ABOUT" | grep -q '<img src="/crew/milbrandt.jpg"' && echo "$ABOUT" | grep -q '<figcaption>Finn Milbrandt</figcaption>' \
   && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/kloeck.jpg)" = "200" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/milbrandt.jpg)" = "200" ] \
-  && ok "Who we are carries no credits, and the crew's fourteen portraits, each with a name — Franziska Klöck (kloeck.jpg) and Finn Milbrandt among them, and the robot dog, Robodog, after the people" || bad "the credits are still there, or the portraits are not, or they carry no names"
+  && echo "$ABOUT" | grep -q '<img src="/crew/benetschik.jpg"' && echo "$ABOUT" | grep -q '<figcaption>Laura Benetschik</figcaption>' && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/benetschik.jpg)" = "200" ] \
+  && echo "$ABOUT" | grep -q '<img src="/crew/eger.jpg"' && echo "$ABOUT" | grep -q '<figcaption>Ralf Eger</figcaption>' && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/eger.jpg)" = "200" ] \
+  && ok "Who we are carries none of the old placeholder credits, and the crew's sixteen portraits, each with a name — Franziska Klöck (kloeck.jpg), Finn Milbrandt, Laura Benetschik and Ralf Eger (14 October) among them, and the robot dog, Robodog, after the people" || bad "the old credits are still there, or the portraits are not, or they carry no names"
+# the credits for the website and the Panolab at ZKM (14 October: "in the About page, add a credits list to the website and
+# Panolab at ZKM, in alphabetical order of their last name"): under Who we are, between the crew and the production — the
+# names in the order of the surnames (Schütze among the S, Gerigk as the crew list spells him), SpaceSpeak among them (linked
+# once on the page, in About)
+node -e '
+const h = process.argv[1];
+const i = h.indexOf("<ul class=\"credits-list\">"), j = h.indexOf("</ul>", i);
+const names = [...h.slice(i, j).matchAll(/<li>([\s\S]*?)<\/li>/g)].map((m) => m[1].replace(/<[^>]+>/g, ""));
+const want = ["Götz Dipper", "Jan Gerigk", "Yasha Jain", "Johannes Jensen", "Andy Koch", "Andreas Kugel", "Bernd Lintermann", "Tina Lorenz", "Finn Milbrandt", "Marc Schütze", "Volker Sommerfeld", "SpaceSpeak", "Dan Wilcox"];
+const crew = h.indexOf("class=\"crew-wall\""), prod = h.indexOf("<div class=\"eyebrow\">Produced by</div>");
+process.exit(i > -1 && JSON.stringify(names) === JSON.stringify(want) && crew > -1 && crew < i && i < prod
+  && h.includes("<li><b>SpaceSpeak</b></li>") && h.includes("<div class=\"eyebrow\">Website and Panolab at ZKM</div>") ? 0 : 1);
+' "$ABOUT" && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<div class="eyebrow">Website und Panolab am ZKM</div>' && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q '<div class="eyebrow">Site web et Panolab au ZKM</div>' \
+  && grep -qF '.credits-list { margin: 0; padding: 0; list-style: none; columns: 3 12em; column-gap: 32px; }' public/station.css \
+  && ok "About credits the website and the Panolab at ZKM under Who we are — thirteen names in the order of the surnames, Dipper to Wilcox, SpaceSpeak among them — the heading in the three languages" || bad "the credits for the website and the Panolab are not on the About page as they should be"
 # Who we are without its CREW panel (8 October: "from the About page, under Who we are, remove the Crew tab with all the
 # text") — the three officers of the day, their briefs, portraits and states, stood first there; the crew's portraits and
 # the producer stay, and the dashboard's Crew Moods keeps the officers' role lines; the producer's line names the department
@@ -774,8 +819,8 @@ ABOUT_S=$(curl -s $B/about)
 grep -q "const day = Number(mission.clampedDay) - (Number.isFinite(hour) && hour < 8 ? 1 : 0);" src/lib/content.js && grep -q 'if (!mission || mission.phase !== '"'"'ACTIVE'"'"') return {};' src/lib/content.js \
   && grep -q '"_example": {' content/shifts.json && node -e 'const d = JSON.parse(require("fs").readFileSync("content/shifts.json", "utf8")).days;
 process.exit(Object.keys(d).length === 12 && !d["13"] && d["1"]["COMMUNICATION OFFICER"] === "wilcox" && d["1"]["HEALTH OFFICER"] === "stricot" && d["1"]["SCIENCE OFFICER"] === "kautz"
-  && d["4"]["SCIENCE OFFICER"] === "Laura B." && d["11"]["SCIENCE OFFICER"] === "Ralf E." && d["12"]["COMMUNICATION OFFICER"] === "kloeck" && d["12"]["SCIENCE OFFICER"] === "jain" ? 0 : 1);' \
-  && ok "the shift plan, content/shifts.json (surnames as crew.json spells the files, in any case), is read the day's from 08:00 at the venue, the day before's until then (A sol on MARS!platz, which named them on their activities, went on 12 October); the shipped file carries the shift plan (12 October, MARS_Performance_Shiftplan_2): twelve days, Wilcox, Stricot and Kautz on the first, Laura B. and Ralf E. by their names, nobody on the teardown day" || bad "the shift plan is not read as it should be"
+  && d["4"]["SCIENCE OFFICER"] === "benetschik" && d["11"]["SCIENCE OFFICER"] === "eger" && d["12"]["COMMUNICATION OFFICER"] === "kloeck" && d["12"]["SCIENCE OFFICER"] === "jain" ? 0 : 1);' \
+  && ok "the shift plan, content/shifts.json (surnames as crew.json spells the files, in any case), is read the day's from 08:00 at the venue, the day before's until then (A sol on MARS!platz, which named them on their activities, went on 12 October); the shipped file carries the shift plan (12 October, MARS_Performance_Shiftplan_2): twelve days, Wilcox, Stricot and Kautz on the first, Laura Benetschik on the fourth and Ralf Eger on the eleventh by their surnames since their photographs came (14 October), nobody on the teardown day" || bad "the shift plan is not read as it should be"
 # Current Crew is gone from the About page (12 October: "remove Current Crew from About" — it stood there that day, at the
 # top, then above A sol on MARS!platz, then between What's inside the habitat and Who we are); the landing page keeps it
 # over its two calls (below): no section, no pill, in no language — the pills About, What's inside the habitat?, Who we are
@@ -814,41 +859,63 @@ process.exit(ok ? 0 : 1);' "$LAND_C" "$SHIFT_DAY" \
   && ok "the landing page shows Current Crew on its second page, over the two calls — the crew on shift (Yasha Jain, Tina Lorenz, Götz Dipper), each with their photograph and name under the role, SOL and the date over the title and nothing under it — a card as wide as the two calls, three across on a desk — its photographs and air two sizes up (12 October: "increase the height of the Current Crew tab", then "a bit bigger") — one under the other on a phone — in German and French too" || bad "Current Crew is not over the two calls on the landing page as it should be"
 # A sol on MARS!platz is gone from the About page (12 October: "from About remove A sol on MARS!platz"; it stood under
 # What's inside the habitat from 7 October — the day's activities on a rail): no section, no pill, in no language; no
-# shift change anywhere, and the shipped schedule keeps its sixteen entries, 08:30 to 22:00 Lights Out
+# shift change anywhere, and the shipped schedule keeps its sixteen entries, 08:30 to 22:00 Lights Out, on every day — the
+# last one too since 14 October, 13:11 ("everything else remains the same as ALL other days"; it had none from that
+# morning's "no missions for that day, no blogs etc." until then) — and so does the plan a reset puts back
 ! echo "$ABOUT_S" | grep -q 'id="sol"\|href="#sol"\|A sol on MARS!platz\|class="sol"\|class="sol-item\|class="sol-rail' \
   && ! curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q 'Ein Sol auf dem MARS!platz' && ! curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q 'Un sol sur la MARS!platz' \
   && ! grep -q "solFold(ctx" src/views/pages/info.js && ! grep -qF "['sol', 'A sol on MARS!platz'" src/views/pages/info.js \
-  && ! echo "$ABOUT_S" | grep -qi 'shift change' && ! curl -s $B/dashboard | grep -qi 'shift change' && ! curl -s $B/ | grep -qi 'shift change' && [ "$(node -e 'const j = require("./content/schedule.json"); console.log(Object.keys(j).filter((k) => /^\d+$/.test(k)).every((k) => j[k].length === 16 && !j[k].some((t) => /shift change/i.test(t.label)) && j[k][0].time === "08:30" && j[k][15].label === "Lights Out"))')" = "true" ] \
-  && ok "A sol on MARS!platz is gone from the About page — no section, no pill, in German and French neither; no shift change anywhere; the shipped schedule keeps its sixteen entries" || bad "A sol on MARS!platz is still on the About page"
-# someone without a portrait (the plan's Laura B.) and a role the plan names nobody in stand with the robot dog's picture
-# in Current Crew, over the landing page's calls; a day the plan names nobody on keeps the crew of the day before
-node -e 'require("fs").writeFileSync(process.argv[1], JSON.stringify({ days: { [process.argv[2]]: { "COMMUNICATION OFFICER": "Wilcox", "SCIENCE OFFICER": "Laura B." } } }))' "$CONTENT_DIR/shifts.json" "$SHIFT_DAY"
+  && ! echo "$ABOUT_S" | grep -qi 'shift change' && ! curl -s $B/dashboard | grep -qi 'shift change' && ! curl -s $B/ | grep -qi 'shift change' && [ "$(node -e 'const j = require("./content/schedule.json"); console.log(Object.keys(j).filter((k) => /^\d+$/.test(k)).every((k) => j[k].length === 16 && !j[k].some((t) => /shift change/i.test(t.label)) && j[k][0].time === "08:30" && j[k][15].label === "Lights Out") && Object.keys(j).filter((k) => /^\d+$/.test(k)).length === 13)')" = "true" ] \
+  && cmp -s content/schedule.json content/plan/schedule.json \
+  && ok "A sol on MARS!platz is gone from the About page — no section, no pill, in German and French neither; no shift change anywhere; the shipped schedule keeps its sixteen entries on every day, the last one too, as the plan does" || bad "A sol on MARS!platz is still on the About page, or the schedule is not the shipped one"
+# someone without a portrait (Sam X., a name made up for the check: every name in the shipped plan has its portrait since
+# 14 October) and a role the plan names nobody in stand with the robot dog's picture
+# in Current Crew, over the landing page's calls; a day the plan names nobody on keeps the crew of the day before — and a
+# first name with the surname's first letter finds that person's picture: Laura B., with the robot dog's until her
+# photograph came (14 October: "make sure she is displayed on the day of her shift instead of the Robotdog")
+node -e 'require("fs").writeFileSync(process.argv[1], JSON.stringify({ days: { [process.argv[2]]: { "COMMUNICATION OFFICER": "Wilcox", "SCIENCE OFFICER": "Sam X." } } }))' "$CONTENT_DIR/shifts.json" "$SHIFT_DAY"
 LAND_R=$(curl -s $B/)
-node -e 'require("fs").writeFileSync(process.argv[1], JSON.stringify({ days: { [String(Number(process.argv[2]) - 1)]: { "COMMUNICATION OFFICER": "kloeck", "HEALTH OFFICER": "stricot", "SCIENCE OFFICER": "milbrandt" } } }))' "$CONTENT_DIR/shifts.json" "$SHIFT_DAY"
+node -e 'require("fs").writeFileSync(process.argv[1], JSON.stringify({ days: { [String(Number(process.argv[2]) - 1)]: { "COMMUNICATION OFFICER": "kloeck", "HEALTH OFFICER": "stricot", "SCIENCE OFFICER": "Laura B." } } }))' "$CONTENT_DIR/shifts.json" "$SHIFT_DAY"
 LAND_F=$(curl -s $B/)
 node -e '
 const h = process.argv[1], f = process.argv[2], day = Number(process.argv[3]);
 const cut = (s, a) => { const i = s.indexOf(a); return i < 0 ? "" : s.slice(i, s.indexOf("</ul>", i)); };
 const people = (s) => [...cut(s, "<ul class=\"crew-now-list\">").matchAll(/<li class="crew-now-officer([^"]*)">\s*<img src="\/crew\/face\/([a-z-]+)\.jpg"[^>]*>\s*<span class="sol-officer-who"><b>[^<]*<\/b><span>([\s\S]*?)<\/span><\/span>\s*<\/li>/g)].map((m) => [m[1].trim(), m[2], m[3].replace(/<[^>]+>/g, "")]);
-const ok = JSON.stringify(people(h)) === JSON.stringify([["", "wilcox", "Dan Wilcox"], ["is-robodog is-open", "robodog", "to be named"], ["is-robodog", "robodog", "Laura B."]])
-  && JSON.stringify(people(f)) === JSON.stringify([["", "kloeck", "Franziska Klöck"], ["", "stricot", "Morgan Stricot"], ["", "milbrandt", "Finn Milbrandt"]])
+const ok = JSON.stringify(people(h)) === JSON.stringify([["", "wilcox", "Dan Wilcox"], ["is-robodog is-open", "robodog", "to be named"], ["is-robodog", "robodog", "Sam X."]])
+  && JSON.stringify(people(f)) === JSON.stringify([["", "kloeck", "Franziska Klöck"], ["", "stricot", "Morgan Stricot"], ["", "benetschik", "Laura Benetschik"]])
   && f.includes("<span class=\"land-crew-k\">SOL " + String(day - 1).padStart(2, "0") + " · ");
 process.exit(ok ? 0 : 1);' "$LAND_R" "$LAND_F" "$SHIFT_DAY" \
   && ! grep -q 'is-robodog img\|object-position: 50% 18%' public/aura.css public/sheet.css \
-  && ok "someone without a portrait (Laura B.) and a role nobody is named in stand with the robot dog's picture in Current Crew; a day the plan names nobody on keeps the day before's crew there (Klöck, Stricot, Milbrandt), under that day's sol" || bad "the robot dog, or the day before's crew, is not in Current Crew as it should be"
+  && ok "someone without a portrait (Sam X.) and a role nobody is named in stand with the robot dog's picture in Current Crew; a day the plan names nobody on keeps the day before's crew there (Klöck, Stricot, and Laura B. with her own picture as Laura Benetschik), under that day's sol" || bad "the robot dog, or the day before's crew, is not in Current Crew as it should be"
 cp content/shifts.json "$CONTENT_DIR/shifts.json"
+# who a name in the plan is (sol.js, personOf): the surname or the picture's file, the one first name, or the first name
+# with the surname or its first letter — in any case, the accents folded — as long as it names one of the crew alone;
+# anyone else stands with the robot dog by their name as written. Laura Benetschik on her shift (14 October): the shipped
+# plan's fourth day has her as its Science Officer, with her own picture where the robot dog stood until then
+node -e '
+const S = require("./src/views/pages/sol.js"), c = require("./src/lib/content");
+const p = (w) => { const x = S.personOf(S.CREW, w); return x && [x.name, x.file, x.photo]; };
+const L = ["Laura Benetschik", "benetschik.jpg", true], dog = (n) => [n, "robodog.jpg", false];
+const R = ["Ralf Eger", "eger.jpg", true];
+const got = ["benetschik", "Benetschik", "Laura B.", "laura b", "Laura Benetschik", "Laura S.", "Franziska Klock", "Matthieu V.", "Ralf E.", "eger", "Sam X.", "Laura"].map(p);
+const want = [L, L, L, L, L, ["Laura Schmidt", "schmidt.jpg", true], ["Franziska Klöck", "kloeck.jpg", true], ["Matthieu Vlaminck-Maurer", "vlaminck-maurer.jpg", true], R, R, dog("Sam X."), dog("Laura")];
+const day4 = c.crewForDay(4), sci = S.personOf(S.CREW, day4["SCIENCE OFFICER"]), day11 = c.crewForDay(11), sci11 = S.personOf(S.CREW, day11["SCIENCE OFFICER"]);
+process.exit(JSON.stringify(got) === JSON.stringify(want) && day4["SCIENCE OFFICER"] === "benetschik" && sci.file === "benetschik.jpg" && sci.photo
+  && day11["SCIENCE OFFICER"] === "eger" && sci11.file === "eger.jpg" && sci11.photo && sci11.name === "Ralf Eger" && p("") === null ? 0 : 1);
+' && ok "a name in the shift plan finds its picture by the surname, the file, the one first name, or the first name with the surname or its first letter (Laura B., Matthieu V.), in any case, the accents folded; a first name two share (Laura) or someone without a portrait (Sam X.) stands with the robot dog — and the fourth day's Science Officer is Laura Benetschik, the eleventh day's Ralf Eger, each with their own picture (14 October)" || bad "the shift plan's names do not find their pictures as they should"
 node -e '
 const h = process.argv[1]; const names = [...h.matchAll(/<figure class="crew-pic">.*?<figcaption>([^<]*)<\/figcaption>/g)].map((m) => m[1]);
-const want = ["Till Bechtloff", "Götz Dipper", "Jan Gerigk", "Yasha Jain", "Dominik Kautz", "Franziska Klöck", "Bernd Lintermann", "Tina Lorenz", "Finn Milbrandt", "Laura Schmidt", "Morgan Stricot", "Matthieu Vlaminck-Maurer", "Dan Wilcox", "Robodog"];
+const want = ["Till Bechtloff", "Laura Benetschik", "Götz Dipper", "Ralf Eger", "Jan Gerigk", "Yasha Jain", "Dominik Kautz", "Franziska Klöck", "Bernd Lintermann", "Tina Lorenz", "Finn Milbrandt", "Laura Schmidt", "Morgan Stricot", "Matthieu Vlaminck-Maurer", "Dan Wilcox", "Robodog"];
 process.exit(JSON.stringify(names) === JSON.stringify(want) ? 0 : 1);
-' "$ABOUT" && ok "the names are the files' (Firstname_Lastname), in the order of the surnames — Bechtloff to Wilcox, Klöck and Milbrandt in their places — and Robodog, one name, after them" || bad "the crew's names or their order are not the files'"
-for f in bechtloff dipper gerigk jain kautz kloeck lintermann lorenz milbrandt schmidt stricot vlaminck-maurer wilcox robodog; do [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/$f.jpg)" = "200" ] || bad "no portrait /crew/$f.jpg"; done; ok "every portrait is served"
+' "$ABOUT" && ok "the names are the files' (Firstname_Lastname), in the order of the surnames — Bechtloff to Wilcox, Benetschik, Eger, Klöck and Milbrandt in their places — and Robodog, one name, after them" || bad "the crew's names or their order are not the files'"
+for f in bechtloff benetschik dipper eger gerigk jain kautz kloeck lintermann lorenz milbrandt schmidt stricot vlaminck-maurer wilcox robodog; do [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/$f.jpg)" = "200" ] || bad "no portrait /crew/$f.jpg"; done; ok "every portrait is served"
 # the round pictures (12 October: "when the images are shown as icons, it scales weirdly"): close-ups of their own, one
 # for each of the crew, cut round the face — square, 400 × 400 at the most, the tool's FACES naming every photograph, so
 # the cut is the same whenever the pictures are made again. 13 October: "I have replaced the original Astronaut images
-# with the reduced size" — the photographs are 300 × 450 PNGs now (some 50–75 kB, Firstname_Lastname.png), and the
-# pictures made from them are never blown up: the portraits at 300 × 450, some 20 kB each; the close-ups some 200–250 px
-for f in bechtloff dipper gerigk jain kautz kloeck lintermann lorenz milbrandt schmidt stricot vlaminck-maurer wilcox robodog; do [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/face/$f.jpg)" = "200" ] || bad "no close-up /crew/face/$f.jpg"; done
+# with the reduced size" — the photographs are 300 × 450 PNGs now (some 50–75 kB, Firstname_Lastname.png; Laura Benetschik's
+# and Ralf Eger's of 14 October some 160 kB at the same size), and the pictures made from them are never blown up: the portraits at
+# 300 × 450, some 20 kB each; the close-ups some 200–250 px
+for f in bechtloff benetschik dipper eger gerigk jain kautz kloeck lintermann lorenz milbrandt schmidt stricot vlaminck-maurer wilcox robodog; do [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/face/$f.jpg)" = "200" ] || bad "no close-up /crew/face/$f.jpg"; done
 python3 - <<'PY' && ok "every one of the crew has a close-up for the round pictures — square, cut where tools/crew-pictures.py's FACES says, which names every photograph; the photographs are the small PNGs, and nothing made from them is blown up" || bad "a close-up is missing, not square, or not in FACES — or a photograph is not the small PNG, or a picture is blown up"
 import json, os, sys, unicodedata
 from PIL import Image
@@ -859,9 +926,10 @@ stems = [os.path.splitext(p)[0] for p in photos]
 big = max(Image.open('public/Astronaut_Pictures/' + p).size[0] for p in photos)
 faces = [Image.open('public/crew/face/' + c['file']).size for c in crew]
 portraits = [Image.open('public/crew/' + c['file']).size for c in crew]
-sys.exit(0 if len(crew) == 14 and all(w == h and 150 <= w <= 400 for w, h in faces)
+small = lambda p: all(a <= b for a, b in zip(Image.open('public/Astronaut_Pictures/' + p).size, (300, 450)))
+sys.exit(0 if len(crew) == 16 and all(w == h and 150 <= w <= 400 for w, h in faces)
          and all(w * 3 == h * 2 and w <= min(800, big) for w, h in portraits)
-         and len(photos) == 14 and all(p.endswith('.png') and os.path.getsize('public/Astronaut_Pictures/' + p) < 120000 for p in photos)
+         and len(photos) == 16 and all(p.endswith('.png') and os.path.getsize('public/Astronaut_Pictures/' + p) < 200000 and small(p) for p in photos)
          and all(repr(s) + ': (' in tool for s in stems) else 1)
 PY
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/crew.json)" = "200" ] && grep -q "'../../../public/crew/crew.json'" src/views/pages/sol.js && ! grep -q "crew.json'" src/views/pages/info.js && grep -qF "const { CREW } = require('./sol');" src/views/pages/info.js && ok "the list is public/crew/crew.json, written by tools/crew-pictures.py and read once by the pages (sol.js — the About page's Who we are and the landing page's Current Crew)" || bad "the crew's list is not read from crew.json"
@@ -872,13 +940,23 @@ const c = row("In cooperation with"), s = row("Supporters");
 process.exit(JSON.stringify(c) === JSON.stringify(["staatstheater-karlsruhe", "naturkundemuseum-karlsruhe"]) && JSON.stringify(s) === JSON.stringify(["eon-foundation", "lbbw-stiftung", "innovationsfonds-kunst"]) ? 0 : 1);
 ' "$ABOUT" && ok "under Produced by: In cooperation with — the Staatstheater and the Naturkundemuseum; Supporters — E.ON Foundation, LBBW Stiftung, Innovationsfonds Kunst" || bad "the partners' logos are not in their two rows"
 for f in staatstheater-karlsruhe naturkundemuseum-karlsruhe eon-foundation lbbw-stiftung innovationsfonds-kunst; do [ "$(curl -s -o /dev/null -w '%{http_code}' $B/partners/$f.png)" = "200" ] || bad "no logo /partners/$f.png"; done; ok "every logo is served"
-grep -q '.logos .logo { display: inline-flex; align-items: center; justify-content: center; height: 48px;' public/station.css && grep -q '.crew-wall { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 14px 10px; }' public/station.css \
-  && grep -q '.crew-pic figcaption { margin-top: 8px;' public/station.css && ok "the logos are small, each on a white tile; the portraits seven to a row (two rows of seven with the robot dog), the name under each" || bad "the logo or portrait rules are missing"
+grep -q '.logos .logo { display: inline-flex; align-items: center; justify-content: center; height: 48px;' public/station.css && grep -q '.crew-wall { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 14px 10px; }' public/station.css && grep -qF '@media (max-width: 560px) { .crew-wall { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 6px; }' public/station.css \
+  && grep -q '.crew-pic figcaption { margin-top: 8px;' public/station.css && ok "the logos are small, each on a white tile; the portraits eight to a row on a desk (sixteen with the robot dog since Laura Benetschik's and Ralf Eger's photographs came, 14 October: two rows of eight; four rows of four on a phone), the name under each" || bad "the logo or portrait rules are missing"
 curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<div class="eyebrow">In Kooperation mit</div>' && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q '<div class="eyebrow">Soutiens</div>' && ok "the partners' rows are named in German and French" || bad "the partners' rows are not translated"
-echo "$ABOUT" | grep -q '<h3>Messages sent to space</h3>' && echo "$ABOUT" | grep -q 'through SpaceSpeak — a small network of transmitters around the world' && echo "$ABOUT" | grep -q 'between 2.4 and 5 gigahertz' \
+echo "$ABOUT" | grep -q '<h3>Messages sent to space</h3>' && echo "$ABOUT" | grep -qF 'through <a href="https://www.spacespeak.com/" target="_blank" rel="noopener">SpaceSpeak</a> — a small network of transmitters around the world' && echo "$ABOUT" | grep -q 'between 2.4 and 5 gigahertz' \
   && echo "$ABOUT" | grep -q 'From then on the message is on its way for good' && echo "$ABOUT" | grep -q 'nearly halfway to Proxima Centauri' \
-  && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<h3>Nachrichten ins All</h3>' && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q 'grâce à SpaceSpeak' \
+  && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<h3>Nachrichten ins All</h3>' && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -qF 'grâce à <a href="https://www.spacespeak.com/" target="_blank" rel="noopener">SpaceSpeak</a>' \
   && ok "About tells how a message goes to space — SpaceSpeak's transmitters, the band, the antenna, the speed of light, then where it gets to and that it never stops — in two paragraphs, in the three languages" || bad "the About page has no Messages sent to space section"
+# SpaceSpeak named as a link to its site, and its transmitters (13 October: "link SpaceSpeak to https://www.spacespeak.com/";
+# "SpaceSpeak Phase I had two transmitters …"), in the three languages
+ABDE=$(curl -s -H "Cookie: mcs_lang=de" $B/about); ABFR=$(curl -s -H "Cookie: mcs_lang=fr" $B/about)
+echo "$ABOUT" | grep -qF '<p>SpaceSpeak Phase I had two transmitters located in North America (Tampa FL, and Austin TX) as well as one transmitter in South America (Brazil). Each was attached to a 15 inch parabolic dish.</p>' \
+  && echo "$ABOUT" | grep -qF '<p>SpaceSpeak Phase II currently has 13 micro PC / transmitters located around the world.</p>' \
+  && echo "$ABOUT" | grep -qF 'there is practically no theoretical limit to how far a radio signal can travel. Your messages will continue to fly through space for billions of years.</p>' \
+  && echo "$ABDE" | grep -qF 'über <a href="https://www.spacespeak.com/" target="_blank" rel="noopener">SpaceSpeak</a>, ein kleines Netz' && echo "$ABDE" | grep -qF '<p>SpaceSpeak Phase II verfügt derzeit über 13 Mikro-PCs / Sender an Standorten rund um die Welt.</p>' && echo "$ABDE" | grep -qF 'Deine Nachrichten werden noch Milliarden von Jahren durch das All fliegen.</p>' \
+  && echo "$ABFR" | grep -qF '<p>La phase I de SpaceSpeak comptait deux émetteurs en Amérique du Nord' && echo "$ABFR" | grep -qF 'Vos messages continueront de voyager dans l’espace pendant des milliards d’années.</p>' \
+  && [ "$(echo "$ABOUT" | grep -o 'href="https://www.spacespeak.com/"' | wc -l)" = "1" ] \
+  && ok "About links SpaceSpeak to its site and tells of its transmitters — Phase I's three with their dishes, Phase II's thirteen, a signal with no limit to how far it goes — in the three languages" || bad "SpaceSpeak is not linked, or its transmitters are not told, on the About page"
 echo "$FOOT" | grep -q '<dialog class="popup" id="what"' && bad "the reading matter is still a pop-up on the landing page" || ok "no pop-ups for the reading matter on the landing page"
 echo "$FOOT" | grep -q '<a class="tab tab-more" data-tab="more" href="/about">' && echo "$ABOUT" | grep -q '<a class="tab tab-more is-on" data-tab="more" href="/about">' \
   && ok "a phone's About key opens the page, and is lit there" || bad "the About key does not lead to the page"
@@ -1631,19 +1709,19 @@ echo "$SC" | grep -q '<div class="eyebrow">Science mission · day 003</div>' && 
   && ok "the Science officer's tab opens with the day's science mission: one dropdown for the open day — the thirteen sheets with two-figure numbers, the plan's selected, a sheet still to come marked, none to choose — the day and its date over it, no words, a Save key; on the run's days, not on NOW" || bad "the science mission's block is not on the desk as it should be"
 # today's set to 07 Mars Myths: that day's entry of the plan changes, the others stand
 curl -s -b $A -X POST -d "day=$TODAY" -d "mission=7" -o /dev/null $B/control/mission
-node -e 'const d = require(process.env.CONTENT_DIR + "/missions.json"); process.exit(!d.chosen && d.days[String(process.argv[1])] === 7 && d.days["1"] === 0 && d.days["3"] === 2 && Object.keys(d.days).length === 13 ? 0 : 1);' "$TODAY" \
+node -e 'const d = require(process.env.CONTENT_DIR + "/missions.json"); process.exit(!d.chosen && d.days[String(process.argv[1])] === 7 && d.days["1"] === 0 && d.days["3"] === 2 && Object.keys(d.days).length === 12 ? 0 : 1);' "$TODAY" \
   && curl -s -b $A "$B/control?tab=science&day=$TODAY" | grep -q '<option value="7" selected>Mission No. 07 · Mars Myths</option>' \
   && curl -s $B/dashboard | grep -q '<span class="mission-no">Mission No. 07</span>' && curl -s $B/dashboard | grep -q 'id="mission-today-title">Mars Myths<' \
   && curl -s $B/api/dome | grep -q 'mission: Mars Myths.' && ! curl -s $B/api/dome | grep -q 'Mission No. 07 · Mars Myths' \
   && ok "another mission set for today is written to the plan (days — no chosen beside it; the other days stand) and shows on the dashboard's Today's Mission, with its two-figure number, and in the habitat's sentences" || bad "the mission set for today is not written or not shown"
 # none for today: the day has no mission
 curl -s -b $A -X POST -d "day=$TODAY" -d "mission=" -o /dev/null $B/control/mission
-node -e 'const d = require(process.env.CONTENT_DIR + "/missions.json"); process.exit(d.days[String(process.argv[1])] === undefined && d.days["2"] === 1 && Object.keys(d.days).length === 12 ? 0 : 1);' "$TODAY" \
+node -e 'const d = require(process.env.CONTENT_DIR + "/missions.json"); process.exit(d.days[String(process.argv[1])] === undefined && d.days["2"] === 1 && Object.keys(d.days).length === 11 ? 0 : 1);' "$TODAY" \
   && curl -s $B/dashboard | grep -q 'No mission filed for' \
   && ok "— none — takes the day's mission away: the day is not in the map, and the dashboard says no mission is filed" || bad "a day set to none still has a mission"
 # the sequence back, and a mission the file does not have is refused
 curl -s -b $A -X POST -d "day=$TODAY" -d "mission=$((TODAY - 1))" -o /dev/null $B/control/mission
-curl -s -b $A -X POST -d "day=3" -d "mission=99" -o /dev/null -w '%{redirect_url}' $B/control/mission | grep -q 'tab=science&day=3' && node -e 'const d = require(process.env.CONTENT_DIR + "/missions.json"); process.exit(d.days["3"] === 2 && d.days[String(process.argv[1])] === Number(process.argv[1]) - 1 && Object.keys(d.days).length === 13 ? 0 : 1);' "$TODAY" \
+curl -s -b $A -X POST -d "day=3" -d "mission=99" -o /dev/null -w '%{redirect_url}' $B/control/mission | grep -q 'tab=science&day=3' && node -e 'const d = require(process.env.CONTENT_DIR + "/missions.json"); process.exit(d.days["3"] === 2 && d.days[String(process.argv[1])] === Number(process.argv[1]) - 1 && Object.keys(d.days).length === 12 ? 0 : 1);' "$TODAY" \
   && ok "the sequence is back, and a mission the file does not have is refused — nothing written" || bad "an unknown mission was written, or the sequence is not back"
 
 echo "── crew figures"
@@ -1792,6 +1870,23 @@ curl -s -b $A $B/control/media/verify | grep -q '"ok":true' && ok "the archive v
 curl -s -b $A -X POST -o /dev/null $B/control/media/$MID/hide
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/media/$MID)" = "404" ] && ok "a withdrawn item leaves public view" || bad "withdrawn item still public"
 ls "$DATA_DIR"/media/*/ | grep -q "$PSHA" && ok "but its file is kept — nothing is ever deleted" || bad "file removed on withdraw"
+# the archive keeps the withdrawn too (13 October: "make sure nothing is missed or no data point or source is lost"): its
+# every-file ZIP carries it under withdrawn/, the Data download lists it marked hidden with who sent it, and the day's
+# readable record under Withdrawn from view — the public ZIP leaves it out
+curl -s -b $A -o /tmp/e2e-all-media.zip $B/archive/media.zip && curl -s -o /tmp/e2e-pub-media.zip $B/media/export.zip && python3 -c "
+import zipfile, json
+z = zipfile.ZipFile('/tmp/e2e-all-media.zip'); assert z.testzip() is None
+m = json.loads(z.read('manifest.json')); w = [i for i in m['items'] if i['id'] == $MID]
+assert w and w[0]['hidden'] and w[0]['path'].startswith('withdrawn/') and w[0].get('uploadedBy') and z.read(w[0]['path']) == open('/tmp/e2e-photo.png', 'rb').read()
+p = json.loads(zipfile.ZipFile('/tmp/e2e-pub-media.zip').read('manifest.json'))
+assert not [i for i in p['items'] if i['id'] == $MID]
+" && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/archive/media.zip)" = "302" ] \
+  && curl -s -b $A $B/archive/export.json | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const d = JSON.parse(s);
+  const it = d.days.flatMap((x) => x.media || []).find((x) => x.id === Number(process.argv[1]));
+  process.exit(it && it.hidden === true && it.uploadedBy && d.media.withdrawn >= 1 ? 0 : 1); });' "$MID" \
+  && curl -s -b $A $B/archive/day/$TODAY/export.md | grep -q "### Withdrawn from view" \
+  && ok "a withdrawn item stays in the archive — under withdrawn/ in its every-file ZIP (behind the sign-in), marked hidden in the Data download with who sent it, under Withdrawn from view in the day's record — while the public ZIP leaves it out" || bad "a withdrawn item is missing from the archive"
 curl -s -b $A -X POST -o /dev/null $B/control/media/$MID/restore
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B/media/$MID)" = "200" ] && ok "and it can be restored" || bad "restore failed"
 curl -s -b $A $B/archive/export.json | grep -q "$PSHA" && ok "the full record lists the media with hashes" || bad "media missing from the archive export"
@@ -1825,11 +1920,12 @@ grep -aq "/Subtype /Image" /tmp/record3.pdf && ok "the PDF record carries the ph
 curl -s $B/dashboard | grep -q "PLACEHOLDER" && bad "a placeholder marker reached the station" || ok "placeholder markers never reach the station"
 curl -s $B/dashboard | grep -q "Drinking water" && ok "inventory names come from the file" || bad "inventory names missing"
 # the stores (13 October: "replace Medical Kit and Fire Extinguisher with Tampons, starting amount 80, and Toilet paper,
-# starting amount 14")
+# starting amount 14"; 14 October: "Change the Default toilet paper rolls to 20")
 DST=$(curl -s $B/dashboard)
-echo "$DST" | grep -q 'title="Tampons: 80 pcs of 80"' && echo "$DST" | grep -q 'title="Toilet paper: 14 rolls of 14"' \
+echo "$DST" | grep -q 'title="Tampons: 80 pcs of 80"' && echo "$DST" | grep -q 'title="Toilet paper: 20 rolls of 20"' \
+  && node -e 'const f = (p) => require(p).inventory.find((x) => x.key === "toilet_paper").start; process.exit(f(process.argv[1]) === 20 && f(process.argv[2]) === 20 ? 0 : 1)' "$PWD/content/crew-and-inventory.json" "$PWD/content/plan/crew-and-inventory.json" \
   && ! echo "$DST" | grep -q 'Medical kits\|Fire extinguishers' && grep -q '"key": "toilet_paper"' content/plan/crew-and-inventory.json && ! grep -q '"key": "medical"\|"key": "extinguishers"' content/crew-and-inventory.json content/plan/crew-and-inventory.json \
-  && ok "the Resources: drinking water, food rations, tampons (80 carried in) and toilet paper (14 rolls) — no medical kits or fire extinguishers, in the plan too" || bad "the stores are not water, rations, tampons and toilet paper"
+  && ok "the Resources: drinking water, food rations, tampons (80 carried in) and toilet paper (20 rolls — 14 until 14 October) — no medical kits or fire extinguishers, in the plan too" || bad "the stores are not water, rations, tampons and toilet paper"
 
 node -e '
 const fs=require("fs"),p=process.env.CONTENT_DIR+"/schedule.json";
@@ -2007,6 +2103,123 @@ ok = ok and z.read("README.txt").decode().startswith("SENSOR DATA") and "THE REA
 sys.exit(0 if ok else 1)' && curl -s -b $A -D - -o /dev/null $B/archive/sensor-data.zip | grep -qi 'filename="mars-station-sensor-data-' \
   && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/archive/sensor-data.zip)" = "302" ] \
   && ok "Sensor Data downloads as one ZIP: a folder for every day and all-days/ — the habitat sensor, the hardware, the daily summary, the Sensors tab's figures, the meals and their totals — with the readings log beside them, behind the sign-in" || bad "the Sensor Data ZIP is not as it should be"
+# how to read it (14 October: "for the ZIP folder, add an explainer file of how to understand and read the files inside"):
+# HOW-TO-READ-THESE-FILES.txt at the ZIP's root — where to start, how to open a table, what each table and its columns
+# hold, the raw log, things to try — UTF-8 with its mark and Windows line ends; the technical README points to it
+python3 -c '
+import zipfile, sys
+z = zipfile.ZipFile("/tmp/sensor-data.zip"); names = z.namelist()
+raw = z.read("HOW-TO-READ-THESE-FILES.txt"); t = raw.decode("utf-8-sig")
+need = ["HOW TO READ THESE FILES", "START HERE", "THE DAYS", "THE TABLES", "habitat-sensor.csv", "hardware.csv", "daily-summary.csv", "sensors-tab.csv", "meals.csv", "meals-totals.csv",
+  "THE COLUMNS THE TABLES START WITH", "THE REST OF THE ZIP: THE RAW LOG", "THINGS TO TRY", "Extract All", "performance closes at 10:00"]
+ok = raw.startswith(b"\xef\xbb\xbf") and "\r\n" in t and all(n in t for n in need) and "HOW-TO-READ-THESE-FILES.txt" in names
+ok = ok and "Start with HOW-TO-READ-THESE-FILES.txt" in z.read("README.txt").decode()
+# every table it names is in the ZIP, and the columns it names are the tables own
+import csv, io
+cols = lambda n: next(csv.reader(io.StringIO(z.read("sensor-data/all-days/" + n).decode("utf-8-sig"))))
+ok = ok and {"channel", "high"} <= set(cols("daily-summary.csv")) and {"item", "figure"} <= set(cols("sensors-tab.csv")) and cols("habitat-sensor.csv")[:4] == ["day", "date", "time", "utc"] and "Carbon dioxide (ppm)" in cols("habitat-sensor.csv")
+sys.exit(0 if ok else 1)' && ok "the Sensor Data ZIP opens with HOW-TO-READ-THESE-FILES.txt — where to start, each table and its columns, the raw log, things to try — and the README points to it" || bad "the Sensor Data ZIP has no explainer, or it names what is not there"
+
+echo "── the archive keeps everything the run takes in, with its source (13 October)"
+grep -q 'docker compose cp "$SERVICE:/data/cloud"' tools/backup.sh && grep -q 'CONTENT="${CONTENT_DIR:-./content}"' tools/backup.sh && grep -q 'docker compose cp "$SERVICE:/data/content-history"' tools/backup.sh && bash -n tools/backup.sh \
+  && ok "the backup carries the camera's pictures with their ledger, the content files and every version of them, beside the database, the media and the readings log" || bad "the backup leaves the camera's pictures or the content files behind"
+# 13 October: "one of the most important parts of the website is the archive — make sure nothing is missed or no data
+# point or source is lost there from the run"
+# the Data download names where everything came from (no credential among it), the tally for every date, every
+# message's way to space and every habitat reading's source — and carries no camera pictures and no log of the desk's
+# doings (13 October: "there should be no camera pictures in the PDF record or the data file"; "what is mission
+# control's log? there is no such entry")
+curl -s -b $A $B/archive/export.json > /tmp/e2e-data.json
+node -e '
+const d = JSON.parse(require("fs").readFileSync("/tmp/e2e-data.json", "utf8")), days = d.days.filter((x) => x.recorded), txt = JSON.stringify(d);
+const ok = d.sources && d.sources.habitatSensor && d.sources.habitatSensor.homeAssistant && d.sources.habitatSensor.homeAssistant.co2 === "sensor.m5_env_pro_env_pro_co2_equivalent"
+  && Array.isArray(d.sources.hardware) && d.sources.hardware.length >= 10 && d.sources.hardware.every((h) => /^sensor\./.test(h.entity))
+  && d.sources.mealsEnergy && /^sensor\./.test(d.sources.mealsEnergy.meter) && Array.isArray(d.sources.powerConsumed) && d.sources.spaceSpeak
+  && !/HA_API_TOKEN|SPACESPEAK_PASSWORD|CLOUD_PASSWORD|"password"|"token"/.test(txt) && !txt.includes(process.env.CONTROL_PASSWORD)
+  && Array.isArray(d.tallyByDate) && d.tallyByDate.length >= 1 && d.tallyByDate.every((t) => /^\d{4}-\d{2}-\d{2}$/.test(t.date) && "visitors" in t)
+  && days.every((x) => x.messages.every((m) => "space" in m) && x.readings.habitatSensor.every((r) => "source" in r) && x.notes.every((n) => n.postedAt))
+  && /SpaceSpeak/.test(d["//"]) && !("log" in d) && !("cameraPictures" in d) && !("cameraPictures" in d.sources) && !/camera|the log/.test(d["//"]);
+process.exit(ok ? 0 : 1);' \
+  && ok "the Data download names every source — the habitat sensor's entities, every device, the food meter, the power meters, SpaceSpeak — and never a credential; it carries the tally for every date, every message's way to space and every reading's source — and no camera pictures, no log of the desk" || bad "the Data download lacks a source, the tally by date or a message's way to space — or carries camera pictures or a log"
+# no log of mission control's doings is kept at all (13 October: "remove the mission control's log"): the table an
+# earlier build wrote a line into for every publish, save, upload and sign-in is gone, and nothing writes one; the last
+# reset's moment — which tells an open page to drop its readings — is a setting
+DATA_DIR="$DATA_DIR" node -e '
+const db = require("./src/db").db;
+process.exit(!db.prepare("SELECT 1 FROM sqlite_master WHERE name = ?").get("audit") && !("audit" in require("./src/db")) ? 0 : 1);' \
+  && ! grep -rq "audit(" src/routes src/lib src/server.js && ! grep -q "CREATE TABLE IF NOT EXISTS audit" src/db/schema.sql \
+  && grep -qF "SELECT value FROM setting WHERE key = 'reset.epoch'" src/lib/content.js \
+  && ok "the station keeps no log of mission control's doings — no table, no line written; the last reset's moment is a setting" || bad "a log of the desk is still kept"
+# no gallery ZIP and no log sheet: the archive's Take a copy is its four cards, as asked on 9 October
+ARK=$(curl -s -b $A $B/archive)
+[ "$(echo "$ARK" | grep -o '<div class="dl-card">' | wc -l)" = "4" ] && ! echo "$ARK" | grep -q 'href="/archive/gallery.zip"\|href="/archive/log.csv"' \
+  && [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/archive/gallery.zip)" = "404" ] && [ "$(curl -s -b $A -o /dev/null -w '%{http_code}' $B/archive/log.csv)" = "404" ] \
+  && ok "the archive offers no camera pictures and no log — its four cards stay four" || bad "a camera ZIP or a log sheet is on the archive"
+# a report keeps its moment and its author: the desk writes them into notes.json, and a reload of the files moves neither
+curl -s -b $A -X POST -d "day=1" -d "kind=science" -d "crew_id=2" -d "back=science" --data-urlencode "body=Moments kept for the record." -o /dev/null $B/control/report
+sleep 1
+node -e '
+const d = JSON.parse(require("fs").readFileSync(process.env.CONTENT_DIR + "/notes.json", "utf8"));
+const n = (d["1"] || []).find((x) => x.kind === "SCIENCE");
+process.exit(n && /Moments kept/.test(n.body) && !Number.isNaN(Date.parse(n.at)) && n.by === process.env.CONTROL_USER ? 0 : 1);' \
+  && P1=$(DATA_DIR="$DATA_DIR" node -e 'const db = require("./src/db").db; const r = db.prepare("SELECT posted_at, posted_by FROM day_note WHERE mission_day = 1 AND kind = ?").get("SCIENCE"); process.stdout.write(r ? r.posted_at + "|" + r.posted_by : "")') \
+  && node -e '
+const fs = require("fs"), p = process.env.CONTENT_DIR + "/notes.json", d = JSON.parse(fs.readFileSync(p, "utf8"));
+d["2"] = (d["2"] || []).concat([{ kind: "LOG", body: "A note by hand, to make the files load again" }]); fs.writeFileSync(p, JSON.stringify(d, null, 2));' \
+  && sleep 3 \
+  && P2=$(DATA_DIR="$DATA_DIR" node -e 'const db = require("./src/db").db; const r = db.prepare("SELECT posted_at, posted_by FROM day_note WHERE mission_day = 1 AND kind = ?").get("SCIENCE"); process.stdout.write(r ? r.posted_at + "|" + r.posted_by : "")') \
+  && [ -n "$P1" ] && [ "$P1" = "$P2" ] && echo "$P1" | grep -q "|$CONTROL_USER$" \
+  && node -e 'const d = JSON.parse(require("fs").readFileSync("/tmp/e2e-data.json", "utf8")); process.exit(d.days.flatMap((x) => x.notes || []).every((n) => n.postedAt) ? 0 : 1);' \
+  && ok "a report keeps the moment it was posted and who posted it — written into notes.json with it, read back as they are, unmoved by a reload of the files (until 13 October every reload stamped every note anew)" || bad "a report's moment moved with a reload, or its author is not kept"
+# every version of the content files the station read is kept on the volume, and a save leaves no half file behind
+[ "$(ls "$DATA_DIR/content-history/notes" 2>/dev/null | grep -c '\.json$')" -ge 2 ] && ls "$DATA_DIR/content-history/schedule" > /dev/null 2>&1 \
+  && ! ls -a "$CONTENT_DIR" | grep -q '\.saving$' && grep -q "fs.renameSync(tmp, file);" src/lib/content.js \
+  && ok "every version of the content files the station has read is kept under DATA_DIR/content-history/ — a day emptied by a slip can be brought back — and a file is written whole or not at all" || bad "the content files' versions are not kept"
+# the Commander Log's moments: a reload of the files does not touch an entry that did not change
+curl -s -b $A -F "designation=COMMUNICATION OFFICER" -F "day=1" -F "body=Words for day one that keep their moment" -F "back=comms" -o /dev/null $B/control/logbook
+sleep 1
+E1=$(DATA_DIR="$DATA_DIR" node -e 'const db = require("./src/db").db; const r = db.prepare("SELECT e.written_at, e.updated_at FROM crew_entry e JOIN crew c ON c.id = e.crew_id WHERE e.mission_day = 1 AND c.designation = ?").get("COMMUNICATION OFFICER"); process.stdout.write(r ? r.written_at + "|" + r.updated_at : "")')
+node -e '
+const fs = require("fs"), p = process.env.CONTENT_DIR + "/notes.json", d = JSON.parse(fs.readFileSync(p, "utf8"));
+d["2"] = (d["2"] || []).filter((n) => !/to make the files load again/.test(n.body)); fs.writeFileSync(p, JSON.stringify(d, null, 2));'
+sleep 3
+E2=$(DATA_DIR="$DATA_DIR" node -e 'const db = require("./src/db").db; const r = db.prepare("SELECT e.written_at, e.updated_at FROM crew_entry e JOIN crew c ON c.id = e.crew_id WHERE e.mission_day = 1 AND c.designation = ?").get("COMMUNICATION OFFICER"); process.stdout.write(r ? r.written_at + "|" + r.updated_at : "")')
+[ -n "$E1" ] && [ "$E1" = "$E2" ] \
+  && ok "the Commander Log keeps when it was written and last changed — a reload of the files leaves an entry that did not change as it was" || bad "a reload moved the Commander Log's moments"
+curl -s -b $A -X POST -d "day=1" -d "kind=science" -d "crew_id=2" -d "back=science" -d "action=clear" -o /dev/null $B/control/report
+curl -s -b $A -F "designation=COMMUNICATION OFFICER" -F "day=1" -F "action=clear" -F "back=comms" -o /dev/null $B/control/logbook
+# the visitors counted: a callsign that never wrote is dropped after a week, its count stays (visitor_count)
+node -e '
+const cs = require("./src/lib/callsign"), data = require("./src/lib/data"), db = require("./src/db").db, mission = require("./src/lib/mission");
+const before = data.tally().visitors, day = mission.localDate(new Date(), mission.config().timezone);
+const today = () => (data.tallyByDay(mission.state()).days.find((d) => d.date === day) || { visitors: 0 }).visitors;
+const t0 = today(), v = cs.mint();
+db.prepare("UPDATE visitor SET last_seen = ? WHERE id = ?").run(new Date(Date.now() - 9 * 86400000).toISOString(), v.id);
+db.prepare("DELETE FROM visitor WHERE last_seen < ? AND id NOT IN (SELECT DISTINCT visitor_id FROM message)").run(new Date(Date.now() - 7 * 86400000).toISOString());
+const gone = !db.prepare("SELECT 1 FROM visitor WHERE id = ?").get(v.id);
+process.exit(gone && data.tally().visitors === before + 1 && today() === t0 + 1 ? 0 : 1);' \
+  && grep -q "'visitor', 'visitor_count'" src/lib/content.js \
+  && ok "every callsign issued is counted on its day the moment it is issued — one that never wrote is still dropped after a week, and still counted (until 13 October the tally of visitors shrank as they went)" || bad "a dropped callsign leaves the tally"
+# from the first day of the run a file edit takes nothing the run recorded out of the station: a store no longer listed
+# is kept, with its counts, and the load says so — the file put back, all is as it was
+cp "$CONTENT_DIR/crew-and-inventory.json" /tmp/e2e-cai.json
+node -e '
+const fs = require("fs"), p = process.env.CONTENT_DIR + "/crew-and-inventory.json", d = JSON.parse(fs.readFileSync(p, "utf8"));
+d.gone = d.inventory.pop().key; fs.writeFileSync(p, JSON.stringify(d, null, 2));'
+sleep 3
+GONE=$(node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync(process.env.CONTENT_DIR + "/crew-and-inventory.json", "utf8")).gone)')
+DATA_DIR="$DATA_DIR" node -e '
+const db = require("./src/db").db; process.exit(db.prepare("SELECT 1 FROM inventory_item WHERE key = ?").get(process.argv[1]) && db.prepare("SELECT COUNT(*) n FROM inventory_level il JOIN inventory_item i ON i.id = il.item_id WHERE i.key = ?").get(process.argv[1]).n > 0 ? 0 : 1);' "$GONE" \
+  && curl -s $B/api/content | grep -q "no longer listed — kept" && curl -s -b $A $B/control | grep -q "no longer listed — kept" \
+  && ok "during the run a store taken out of the file stays in the station with every count filed for it, and mission control is told why" || bad "a store taken out of the file during the run was deleted with its history"
+cp /tmp/e2e-cai.json "$CONTENT_DIR/crew-and-inventory.json"; sleep 3
+# the schedule's done count (13 October, "find any other such anomalies"): nothing on the desk marks a task done any more,
+# so no page says "0/16 done" for a day the crew lived through — the schedule says how many tasks it had
+GLT=$(curl -s $B/at-a-glance); DBT=$(curl -s $B/dashboard)
+! echo "$GLT" | grep -qE 'Schedule · 0/[0-9]+ done' && echo "$GLT" | grep -qE 'Schedule · [0-9]+ tasks' \
+  && ! echo "$DBT" | grep -qE 'SOL [0-9]{3} · 0/[0-9]+ done' && echo "$DBT" | grep -qE 'SOL [0-9]{3} · [0-9]+ tasks' \
+  && curl -s $B/api/dome | grep -qE '[0-9]+ tasks today' \
+  && ok "no page claims 0 of the day's tasks done — nothing marks a task done — the schedule says how many tasks it had (At a Glance, the dashboard, the habitat's pop-up)" || bad "a page still says 0/N tasks done"
 
 echo "── notes mirror the file"
 node -e '
@@ -2101,6 +2314,26 @@ c.poll().then(() => { const g = c.gallery(); const s = c.snapshot();
   process.exit(s.mode === "dir" && g.length === 2 && g.every((x) => /^\/media\/cloud\/[0-9a-f]{16}$/.test(x.url)) && require("fs").existsSync(c.filePath(c.get(g[0].id))) ? 0 : 1); });
 ' && ok "a mounted folder (CLOUD_DIR) is read like the cloud — images copied, subfolders followed, other files skipped" || bad "CLOUD_DIR mode broken"
 grep -q "CLOUD_DIR" docker-compose.yml && ok "and CLOUD_DIR reaches the container" || bad "CLOUD_DIR not passed through"
+# the ledger (13 October: "make sure nothing is missed or no data point or source is lost"): a picture taken out of the
+# folder leaves the grid on the next read — and stays in the ledger, with where it was and when it left, and its copy
+# on the volume; a copy the ledger did not know is brought in; the archive's Gallery ZIP carries every copy with it
+rm -rf /tmp/e2e-cloud2 && mkdir -p /tmp/e2e-cloud2 && cp /tmp/e2e-photo.png /tmp/e2e-cloud2/2026_10_16-09-15.png && cp /tmp/e2e-photo.png /tmp/e2e-cloud2/2026_10_16-10-30.png
+CLD=$(mktemp -d)
+CLOUD_POLL=true CLOUD_DIR=/tmp/e2e-cloud2 DATA_DIR="$CLD" node -e '
+const c = require("./src/lib/cloud"), fs = require("fs");
+c.poll().then(() => {
+  const first = c.ledger().length === 2 && c.gallery().length === 2;
+  fs.unlinkSync("/tmp/e2e-cloud2/2026_10_16-09-15.png");
+  return c.poll().then(() => {
+    const L = c.ledger(), gone = L.find((e) => e.name === "2026_10_16-09-15.png"), here = L.find((e) => e.name === "2026_10_16-10-30.png");
+    const ok = first && c.gallery().length === 1 && L.length === 2 && gone && gone.removedAt && gone.taken && gone.taken.time === "09:15" && gone.path === "2026_10_16-09-15.png"
+      && gone.copy && fs.existsSync(c.copyPath(gone)) && here && !here.removedAt && here.firstSeenAt && here.lastSeenAt
+      && JSON.parse(fs.readFileSync(c.LEDGER, "utf8")).items.length === 2;
+    process.exit(ok ? 0 : 1);
+  });
+});' 2>/dev/null \
+  && ok "a picture taken out of the cloud folder leaves the grid but not the ledger — kept with where it was, when it was taken, when it left, and its copy on the volume" || bad "a picture that left the folder is forgotten"
+rm -rf /tmp/e2e-cloud2 "$CLD"
 CLOUD_POLL=true CLOUD_DIR=/tmp/e2e-cloud CLOUD_CHECK_SECONDS=7 DATA_DIR=$(mktemp -d) node -e '
 const c = require("./src/lib/cloud"); const s = c.snapshot();
 process.exit(s.checkSeconds === 7 && typeof s.version === "string" ? 0 : 1);
@@ -2220,8 +2453,8 @@ curl -s $B/write | grep -q "<p class=\"dev-prompt-q\">$MQ</p>" && curl -s $B/ | 
   && curl -s -H "Cookie: mcs_lang=de" $B/write | grep -q 'Die Frage der Crew heute' && curl -s -H "Cookie: mcs_lang=de" $B/write | grep -q 'Was ist eine Sache die zu Hause / in Karlsruhe grade passiert' \
   && ok "the day's question for the community hour stands over the writing box as a prompt — in the window, on every page, in German where the sheet has it" || bad "the composer carries no prompt, or the wrong one"
 [ "$(curl -s -o /dev/null -w '%{http_code}' "$B/missions/")" = "404" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' "$B/missions/nothing.txt")" = "404" ] && ok "and nothing but PDFs is served from it" || bad "the missions folder serves more than its PDFs"
-node -e 'const d=require(process.env.CONTENT_DIR+"/missions.json"); const nos=d.missions.map((m)=>m.no); process.exit(nos.length===13 && nos.every((n, i) => n === i) && Object.keys(d.days).length===13 && Object.entries(d.days).every(([k, n]) => n === Number(k) - 1) && d.missions.filter((m) => m.placeholder).map((m) => m.no).join() === "12" && d.missions.every((m) => m.placeholder ? !m.question && !m.morning.length : (m.morning.length && m.afternoon.length && m.eva.length && !m.evening) || (m.no === 0 && m.evening && m.evening.length && !m.morning.length && !m.afternoon.length && !m.eva.length)) && /tools\/missions-json\.py/.test(d._note) ? 0 : 1);' \
-  && ok "thirteen sheets, 00 to 12, thirteen days mapped to them in sequence in missions.json — written by tools/missions-json.py from the PDFs; 12, a copy of another sheet for now, carries its title and no words — 00 written since 9 October" || bad "missions.json is inconsistent"
+node -e 'const d=require(process.env.CONTENT_DIR+"/missions.json"); const nos=d.missions.map((m)=>m.no); process.exit(nos.length===13 && nos.every((n, i) => n === i) && Object.keys(d.days).length===12 && !d.days["13"] && Object.entries(d.days).every(([k, n]) => n === Number(k) - 1) && d.missions.filter((m) => m.placeholder).map((m) => m.no).join() === "12" && d.missions.every((m) => m.placeholder ? !m.question && !m.morning.length : (m.morning.length && m.afternoon.length && m.eva.length && !m.evening) || (m.no === 0 && m.evening && m.evening.length && !m.morning.length && !m.afternoon.length && !m.eva.length)) && /tools\/missions-json\.py/.test(d._note) ? 0 : 1);' \
+  && ok "thirteen sheets, 00 to 12, the first twelve days mapped to them in sequence in missions.json (the last day none: 14 October) — written by tools/missions-json.py from the PDFs; 12, a copy of another sheet for now, carries its title and no words — 00 written since 9 October" || bad "missions.json is inconsistent"
 # the words are the sheets' own: tools/missions-json.py reads every PDF in missions/ by position — the three columns as
 # lines (a heading alone, a bullet with its wrapped words), the community hour's question parted into English and German
 if python3 -c "import pdfplumber" 2>/dev/null; then
@@ -2822,7 +3055,7 @@ if DATA_DIR="$DATA4" SPACESPEAK_URL=http://localhost:$MOCKP SPACESPEAK_USER=stat
   curl -s -c $V4 -b $V4 -o /dev/null $B4/
   curl -s -c $V4 -b $V4 -X POST -d "body=Is the sky really butterscotch up there?" -o /dev/null $B4/communicate
   sleep 9
-  [ "$(curl -s http://localhost:$MOCKP/_mock/messages | grep -c butterscotch)" = "0" ] && curl -s -b $V4 $B4/messages | grep -q 'class="card-space" data-launched="' \
+  [ "$(curl -s http://localhost:$MOCKP/_mock/messages | grep -c butterscotch)" = "0" ] && curl -s -b $V4 $B4/write | grep -q 'class="card-space card-space-compact" data-launched="' \
     && ok "a message just sent is NOT handed to the site — nothing goes out by itself — though its card starts counting the moment it was sent" || bad "a message was sent to the site before any reply, or its card does not count"
   A4=/tmp/admin4.jar; rm -f $A4
   curl -s -c $A4 -X POST -d "username=${CONTROL_USER}" -d "password=${CONTROL_PASSWORD}" -o /dev/null $B4/control/login
@@ -2852,6 +3085,30 @@ process.exit(r && r.launched_at && r.launched_at > r.submitted_at ? 0 : 1);
   C4=$(curl -s -b $A4 "$B4/control?show=published")
   ! echo "$C4" | grep -q 'id="space-status"\|A message is handed to' && echo "$C4" | grep -q 'Beamed · No. 1429' && echo "$C4" | grep -q 'href="http://localhost:'$MOCKP'/Messages/1429' \
     && ok "mission control shows the message beamed, with its number and a link to it on the site — and no Beamed into space block over the queue, relay on or off" || bad "control does not show the beamed message, or the relay block is back"
+  # the archive keeps each message's way to space (13 October: "make sure no data point or source is lost"): the messages'
+  # JSON, CSV and PDF and the Data download carry SpaceSpeak's number and address and when it took the message; and the
+  # message deleted above leaves nothing (13 October: "deleting a message should leave nothing") — no word of it in any
+  # export, no count of it, no line in the log
+  curl -s -b $A4 $B4/control/messages/export.json | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const d = JSON.parse(s);
+  const m = d.messages.find((x) => /butterscotch/.test(x.body));
+  process.exit(m && m.space && m.space.state === "SENT" && /^1429/.test(m.space.number) && /\/Messages\/1429/.test(m.space.url) && m.space.launchedAt ? 0 : 1); });' \
+    && curl -s -b $A4 $B4/control/messages/export.csv | head -1 | grep -q ',space_state,space_number,space_url,space_launched_at,space_sent_at,space_attempts,space_error' \
+    && curl -s -b $A4 $B4/control/messages/export.csv | grep 'butterscotch' | grep -q ',SENT,1429' \
+    && curl -s -b $A4 -o /tmp/msgs4.pdf $B4/control/messages/export.pdf && pdftext /tmp/msgs4.pdf | grep -q 'SpaceSpeak No. 1429' \
+    && curl -s -b $A4 $B4/archive/export.json | node -e '
+let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const d = JSON.parse(s), txt = JSON.stringify(d);
+  const all = d.days.filter((x) => x.recorded).flatMap((x) => x.messages), m = all.find((x) => /butterscotch/.test(x.body));
+  process.exit(m && m.space && /^1429/.test(m.space.number) && !txt.includes("One to delete") && !/messagesDeleted/.test(txt) && !("log" in d) ? 0 : 1); });' \
+    && ! curl -s -b $A4 $B4/control/messages/export.csv | grep -q 'One to delete' && ! pdftext /tmp/msgs4.pdf | grep -q 'One to delete' \
+    && [ "$(node -e 'const D = require("better-sqlite3"); const db = new D(process.argv[1], { readonly: true }); console.log(db.prepare("SELECT COUNT(*) n FROM sqlite_master WHERE name = ?").get("audit").n + db.prepare("SELECT COUNT(*) n FROM message WHERE body = ?").get("One to delete").n)' "$DATA4/station.db")" = "0" ] \
+    && ok "every message's way to space is in the archive — SpaceSpeak's number and address and when it took it, in the messages' JSON, CSV and PDF and in the Data download — and a deleted message leaves nothing: no word of it in any export, no count, no line in the log" || bad "a message's way to space is missing from the archive, or a deleted message left something behind"
+  # and what the relay kept of a try at sending it — the page as typed, a screenshot — goes with it, named after it
+  SSD=$(mktemp -d); mkdir -p "$SSD/spacespeak" && touch "$SSD/spacespeak/failed-999-a.png" "$SSD/spacespeak/failed-999-a.html" "$SSD/spacespeak/dry-run-999-b.png" "$SSD/spacespeak/failed-9990-c.png"
+  DATA_DIR="$SSD" node -e 'require("./src/lib/spacespeak").forget(999); const l = require("fs").readdirSync(process.argv[1] + "/spacespeak"); process.exit(l.join() === "failed-9990-c.png" ? 0 : 1);' "$SSD" \
+    && grep -qF 'keep(page, trying ? `failed-${trying}` : '"'failed'"')' src/lib/spacespeak.js \
+    && ok "what the relay kept of a try at sending a message is named after it, and deleting the message deletes it too" || bad "the relay's pages of a deleted message stay behind"
+  rm -rf "$SSD"
   # the site down: the try fails, is recorded, and the relay tries again by itself a minute later
   curl -s -X POST -d "on=1" -o /dev/null http://localhost:$MOCKP/_mock/fail
   curl -s -c $V4 -b $V4 -X POST -d "body=Sent while the site is down" -o /dev/null $B4/communicate
@@ -2866,7 +3123,7 @@ process.exit(r && r.launched_at && r.launched_at > r.submitted_at ? 0 : 1);
 # the relay's pace (13 October: "make it at most one message every 15 seconds"): 15 s between two sends unless .env says
 # otherwise — at most 240 an hour (the suite's own relay runs at 2 s)
 grep -qF "gapMs: Math.max(2000, Number(process.env.SPACESPEAK_GAP_SECONDS || 15) * 1000)," src/lib/spacespeak.js && grep -qF 'SPACESPEAK_GAP_SECONDS: "${SPACESPEAK_GAP_SECONDS:-15}"' docker-compose.yml \
-  && grep -qx "# SPACESPEAK_GAP_SECONDS=15" .env.example && ok "the relay beams one message every 15 seconds at most (240 an hour), unless .env says otherwise" || bad "the relay's pause is not 15 seconds"
+  && grep -qxE "# SPACESPEAK_GAP_SECONDS=[0-9]+" .env.example && ok "the relay beams one message every 15 seconds at most (240 an hour), unless .env says otherwise — .env.example names the setting (its figure is the example's own)" || bad "the relay's pause is not 15 seconds"
   # unpublished while waiting: skipped, never sent
   curl -s -b $A4 -X POST -o /dev/null $B4/control/$M4/unpublish
   sleep 7
@@ -3727,6 +3984,7 @@ curl -s $B/api/habitat/data | grep -q '"floor":' && ok "the readings API names t
 # a node that has gone quiet: everything it has is older than the floor, so the floor moves back and its last days are kept
 node -e '
 const c = require("./src/lib/critical"), db = require("./src/db").db;
+c.setFloor("test", "build");                         // a floor set by a build, as before the run
 const newest = c.floorMs() - 2 * 86400000;
 const rows = []; for (let i = 0; i < 30; i++) rows.push({ t: newest - i * 3600000, co2: 500, temp: 20, hum: 40, light: 1, pres: 1000, bat: 4, rssi: -70 });
 rows.sort((a, b) => a.t - b.t);
@@ -3760,7 +4018,8 @@ grep -qF "habitatPollMs: Math.max(15000, Number(process.env.HABITAT_POLL_MS || 5
   && grep -qF "const staleMs = () => Math.max(15 * 60 * 1000, 3 * CFG.pollMs);" src/lib/home-assistant.js \
   && grep -q "^# HABITAT_POLL_MS=300000$" .env.example && grep -q "^# HA_POLL_MS=300000$" .env.example \
   && grep -qF "const snap = { staleMs: critical.staleMs() };" src/views/pages/dome.js && ! grep -q "30 \* 60 \* 1000" src/views/pages/public.js \
-  && ok "Home Assistant — the habitat sensor and every device — is read every five minutes, and a reading is current for a quarter of an hour" || bad "the Home Assistant rhythm is not five minutes and fifteen"
+  && grep -qF 'HABITAT_POLL_MS: "${HABITAT_POLL_MS:-300000}"' docker-compose.yml && grep -qF 'HA_POLL_MS: "${HA_POLL_MS:-300000}"' docker-compose.yml \
+  && ok "Home Assistant — the habitat sensor and every device — is read every five minutes, and a reading is current for a quarter of an hour — under Docker too (compose's own defaults, 13 October: they said every minute and every fifteen)" || bad "the Home Assistant rhythm is not five minutes and fifteen"
 DATA_DIR=$(mktemp -d) node -e '
 const P = require("./src/views/pages/public"), ha = require("./src/lib/home-assistant");
 const now = Date.now(), day = now - (now % 86400000), hr = 3600000;
@@ -3782,8 +4041,11 @@ grep -q "var TILE_KEYS = \['co2', 'temp', 'hum', 'pres', 'iaq', 'light', 'voc'\]
   && ok "every instrument is drawn its own way by habitat.js (8 October: more than the horizontal filling line) — the carbon dioxide the day's curve under its limit, the temperature a thermometer, the humidity a vessel of water, the air pressure a barometer, the air quality its bands with a pointer, the light a sun, the compounds the day's hours as columns — red past a limit, drawn again only when what it shows changes" || bad "the instruments' drawings are not drawn by habitat.js"
 curl -s $B/dashboard | grep -q 'data-day-start="[0-9]' && ok "the page carries the venue's midnight, so today is the venue's today on every phone" || bad "no day start on the page"
 grep -q "CRITICAL_SENSOR_ID" docker-compose.yml && grep -q "READINGS_DAYS_BEFORE" docker-compose.yml && ok "the feed and readings settings in .env reach the container" || bad "compose does not pass the feed settings through"
-# a newly built image starts the readings from today (midnight at the venue); the same image again does not move them
-node -e '
+# before the run a newly built image starts the readings from today (midnight at the venue); the same image again does
+# not move them (a station whose run begins in five days)
+BFD=$(mktemp -d)
+DATA_DIR="$BFD" MISSION_START=$(date -u -d '+5 days' +%F) MISSION_END=$(date -u -d '+17 days' +%F) node src/db/seed.js > /dev/null 2>&1
+DATA_DIR="$BFD" MISSION_START=$(date -u -d '+5 days' +%F) MISSION_END=$(date -u -d '+17 days' +%F) node -e '
 const c = require("./src/lib/critical"), db = require("./src/db").db;
 const moved = c.applyBuild("test-build-A");
 const f1 = c.floorMs(), today = f1 === c.todayStartMs() - c.DAYS_BEFORE * 86400000;
@@ -3792,7 +4054,32 @@ db.prepare("INSERT OR IGNORE INTO external_reading (t, co2, sig) VALUES (?, 1, ?
 c.applyBuild("test-build-B");
 const dropped = db.prepare("SELECT COUNT(*) n FROM external_reading WHERE t < ?").get(c.floorMs()).n === 0;
 process.exit(moved && today && !again && dropped && c.floorMode() === "build" ? 0 : 1);
-' && ok "a new build starts the readings from today; the same build again leaves them; older readings go" || bad "build stamp did not move the readings floor as expected"
+' && ok "before the run a new build starts the readings from today; the same build again leaves them; older readings go" || bad "build stamp did not move the readings floor as expected"
+rm -rf "$BFD"
+# from the first day of the run nothing moves the floor past the run's first midnight (13 October: "make sure nothing is
+# missed or no data point is lost"): a new build keeps every reading the run took in — a fix shipped on the fifth day no
+# longer drops the first four —, a floor left later is read as the run's first midnight, and a database started during
+# the run starts its readings there, so a poll brings back what the node and Home Assistant still hold
+RND=$(mktemp -d)
+DATA_DIR="$RND" MISSION_START=$(date -u -d '-4 days' +%F) MISSION_END=$(date -u -d '+8 days' +%F) node src/db/seed.js > /dev/null 2>&1
+DATA_DIR="$RND" MISSION_START=$(date -u -d '-4 days' +%F) MISSION_END=$(date -u -d '+8 days' +%F) node -e '
+const c = require("./src/lib/critical"), db = require("./src/db").db;
+c.floorMs();                                          // the station as it stands: its floor set at its first start
+const start = c.runStartMs(), S = (k, v) => db.prepare("INSERT INTO setting (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(k, String(v));
+const was = db.prepare("SELECT value FROM setting WHERE key = ?").get("readings_floor");
+db.prepare("INSERT OR IGNORE INTO external_reading (t, co2, sig) VALUES (?, 1, ?)").run(start + 3600000, "run-day-one");
+const moved = c.applyBuild("test-build-during-the-run-" + Date.now());
+const kept = db.prepare("SELECT COUNT(*) n FROM external_reading WHERE sig = ?").get("run-day-one").n === 1;
+S("readings_floor", Date.now());
+const capped = c.floorMs() === start && c.persist([{ t: start + 7200000, co2: 2, temp: 1, hum: 1, light: 1, pres: 1, bat: 1, rssi: 1 }]).stored === 1;
+if (was) S("readings_floor", was.value);
+db.prepare("DELETE FROM external_reading WHERE sig = ? OR t = ?").run("run-day-one", start + 7200000);
+process.exit(Date.now() > start && !moved && kept && capped ? 0 : 1);
+' && FRD=$(mktemp -d) && DATA_DIR="$FRD" MISSION_START=$(date -u -d '-4 days' +%F) MISSION_END=$(date -u -d '+8 days' +%F) node src/db/seed.js > /dev/null 2>&1 \
+  && DATA_DIR="$FRD" MISSION_START=$(date -u -d '-4 days' +%F) MISSION_END=$(date -u -d '+8 days' +%F) node -e '
+const c = require("./src/lib/critical");
+process.exit(c.floorMs() === c.runStartMs() && c.floorMode() === "run" ? 0 : 1);' && rm -rf "$FRD" "$RND" \
+  && ok "during the run a new build moves nothing — every reading the run took in stays —, no floor passes the run's first midnight, and a database started during the run reads from the run's first day" || bad "a build or a floor during the run can still drop the run's readings"
 # the lock: from 15 October the reset is refused, unless this is a rehearsal
 node -e '
 const c = require("./src/lib/content");
@@ -3909,14 +4196,76 @@ B2=http://localhost:8090
     -d '{"deviceId":"x","readings":[{"metric":"co2","value":500}]}' -o /dev/null -w '%{http_code}' $B2/api/sensors/ingest)" = "410" ] \
   && ok "a reading sent after the close is refused (410), token or not" || bad "ingest still stores after the record closed"
 curl -s $B2/api/habitat/data | grep -q '"frozen":true' && ok "the readings API says the record is frozen" || bad "no frozen flag after the close"
-curl -s $B2/ | grep -q "Mission complete" && curl -s $B2/ | grep -q 'the record stays' && ! curl -s $B2/ | grep -q '<b id="tk-now">\|<b id="tk-next">' && curl -s $B2/ | tr -d '\n' | grep -q '<header class="ticker"[^>]*data-over="1"' \
-  && ok "after the run the landing page is the closed record — its running line says the mission is complete and the record stays, nothing of the crew's day, and its script asks for nothing (data-over)" || bad "the landing page still carries the live ticker after the close"
+curl -s $B2/ | grep -q "Mission complete" && curl -s $B2/ | grep -q 'the record stays' && ! curl -s $B2/ | grep -q '<b id="tk-now">\|<b id="tk-next">\|<b id="tk-hab">' && curl -s $B2/ | tr -d '\n' | grep -q '<header class="ticker"[^>]*data-over="1"' \
+  && ok "after the run the landing page's running line says the mission is complete and the record stays, nothing of the crew's day nor of the empty habitat's sensors, and its script asks for nothing (data-over)" || bad "the landing page still carries the live ticker after the close"
+# after the run the landing page is the landing page, less what only the run had (14 October, 13:10: "after the last day,
+# Keep the Visual of Earth and Dome on the Landing page, and KEEP the Worlds slowest chat. Remove the Visual and message
+# from the Landing page. The 2 buttons, Read the archive / About the project should be Archive, About. Remove the Box"):
+# the Earth, the line and the habitat with no sky over them — no LATEST IMAGE, no LATEST MESSAGE —, the paragraph in the
+# past with Archive (to At a Glance) and About under it, no crew and no calls, the world's slowest chat as on every day,
+# the nudge on the Earth leading to it — and nothing of the closed record that stood here until then (its orbit, what the
+# station carried, the last exchanges, Read the archive / About the project); nothing on it asks for a sign-in
+CL2=$(curl -s $B2/ | tr -s ' \n' ' ')
+echo "$CL2" | grep -q 'class="sheet sheet-p0 space"' && echo "$CL2" | grep -q 'class="space-dome"' && echo "$CL2" | grep -q 'class="space-earth"' \
+  && ! echo "$CL2" | grep -q 'id="dome-sky"\|dome-sky-data\|data-latest-msg' \
+  && echo "$CL2" | grep -q 'id="slowest-chat"' && echo "$CL2" | grep -q 'Welcome to the World’s Slowest Chat' && echo "$CL2" | grep -q 'The Comms Officer will answer your messages personally' \
+  && ! echo "$CL2" | grep -q 'id="note"\|class="land-crew"\|class="call call-write"\|class="call call-live"' \
+  && echo "$CL2" | grep -q '<a class="dome-nudge" id="dome-nudge" href="#slowest-chat"' \
+  && echo "$CL2" | grep -q '<p class="intro-cta is-two"><a class="know-more" href="/at-a-glance">Archive <span aria-hidden="true">→</span></a><a class="know-more" href="/about">About <span aria-hidden="true">→</span></a></p>' \
+  && echo "$CL2" | grep -Eq '<p class="intro-text">MARS! turned the Karlsruhe Marktplatz into MARS!platz\. Can we go to Mars to save the Earth\? For 13 days three astronauts tried to find out, with your help\. The performance closed on [A-Z][a-z]{2} [0-9]{1,2} [A-Z][a-z]{2} 20[0-9]{2} at 10:00 (CEST|CET); the messages, the answers and the blogs stay here to read\.</p>' \
+  && ! echo "$CL2" | grep -q 'Know more\|id="orbit"\|What the station carried\|LAST EXCHANGES\|Read the archive\|About the project\|NOTHING WAS PUBLISHED' && ! echo "$CL2" | grep -q 'href="/archive' \
+  && curl -s -H "Cookie: mcs_lang=de" $B2/ | grep -q '<a class="know-more" href="/at-a-glance">Archiv <span' && curl -s -H "Cookie: mcs_lang=fr" $B2/ | grep -q '<a class="know-more" href="/at-a-glance">Archives <span' \
+  && curl -s -H "Cookie: mcs_lang=de" $B2/ | grep -q 'Die Performance ist am .* um 10:00 [A-Z]* zu Ende gegangen' \
+  && ! grep -q "^function complete(" src/views/pages/public.js && ! grep -q "P.complete(" src/server.js \
+  && [ "$(curl -s -o /dev/null -w '%{http_code}' $B2/at-a-glance)" = "200" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' $B2/about)" = "200" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' $B2/write)" = "200" ] \
+  && ok "after the run the landing page keeps the Earth and the dome (no Latest image, no Latest message) and the world's slowest chat — the paragraph in the past, Archive and About under it, no crew, no calls, no closed record — in three languages" || bad "the landing page after the run is not the landing page less the run's live parts"
+# and no cookie question after the close (14 October: "after 28th, do not have a cookies pop up"): a first visit to any
+# public page gets none — the open station's first visit still does (above, the landing page's dress)
+! curl -s $B2/ | grep -q 'id="consent"\|consent-veil' && ! curl -s $B2/about | grep -q 'id="consent"\|consent-veil' && ! curl -s $B2/write | grep -q 'id="consent"\|consent-veil' && ! curl -s $B2/at-a-glance | grep -q 'id="consent"\|consent-veil' \
+  && curl -s $B/ | grep -q '<aside class="consent" id="consent"' \
+  && ok "after the close no page asks the cookie question — before it a first visit still gets it" || bad "the cookie question is still asked after the close, or no longer before it"
+# and none of the words the closed record had (14 October: "REMOVE: The habitat is empty. What was said is still here."),
+# in none of the three languages, and gone from the station's dictionary too
+CLD2=$(curl -s -H "Cookie: mcs_lang=de" $B2/); CLF2=$(curl -s -H "Cookie: mcs_lang=fr" $B2/)
+! echo "$CL2$CLD2$CLF2" | grep -q 'The habitat is empty\|What was said is still here\|Das Habitat ist leer\|Was gesagt wurde, ist noch da\|L’habitat est vide\|Ce qui a été dit est toujours là' \
+  && ! grep -qF "T('The habitat is empty.')" src/views/pages/public.js && ! grep -qF "'The habitat is empty.':" src/lib/i18n.js && ! grep -qF "'What was said is still here.':" src/lib/i18n.js \
+  && ok "after the run no page says The habitat is empty. What was said is still here., in any language" || bad "something still says The habitat is empty. What was said is still here."
+# nothing else after the close leads a visitor to the archive's sign-in or speaks as if the run went on (13 October: "find
+# any other such anomalies"): the composer's Read what was sent opens the Message Board, its days written out; At a Glance
+# calls no day Today; the habitat's pop-ups on About carry no NOW line (the crew have left), no key to the closed
+# dashboard, and their stamp says the mission is complete
+W2=$(curl -s $B2/write); AB2=$(curl -s $B2/about); GL2=$(curl -s $B2/at-a-glance)
+echo "$W2" | grep -q '<a class="btn" href="/write">Read what was sent</a>' && ! echo "$W2" | grep -q 'href="/archive' \
+  && echo "$W2" | tr -s ' \n' ' ' | grep -Eq 'The crew left the habitat on [A-Z][a-z]{2} [0-9]{1,2} [A-Z][a-z]{2} 20[0-9]{2} at 10:00 (CEST|CET); the channel closed at midnight\.' \
+  && ! echo "$GL2" | grep -q '<span class="badge mars">Today</span>' && echo "$GL2" | grep -q '<span class="badge ">Complete</span>' \
+  && ! echo "$AB2" | grep -q 'class="dome-now"' && ! echo "$AB2" | grep -q '<a class="btn" href="/dashboard[^"]*" data-close>' && echo "$AB2" | grep -q '<span data-field="stamp">Mission complete</span>' \
+  && echo "$AB2" | grep -q '<a class="btn" href="/write#exchanges" data-close>' \
+  && ok "after the close nothing sends a visitor to a sign-in or speaks as if the run went on — the closed composer's Read what was sent opens the Message Board, At a Glance calls no day Today, the habitat's pop-ups lose their NOW line and their keys to the closed dashboard" || bad "something after the close still leads to the archive's sign-in, or speaks as if the run went on"
+# the habitat's pop-ups after the run (14 October, "2 and 5: write after-the-run wording"): their explanations in the past
+# — the crew was reachable, the dashboard was the station's instrument panel —, in German and French too; the Kitchen and
+# the Health Station, whose pop-ups were their live sentences, open nothing (from the close: on the last day they speak
+# as on every day — 14 October, 13:11 —, below)
+AB2D=$(curl -s -H "Cookie: mcs_lang=de" $B2/about); AB2F=$(curl -s -H "Cookie: mcs_lang=fr" $B2/about)
+echo "$AB2" | grep -q '<p>The crew was reachable by online message through this ground station website, by postcard and by direct communication each day at 19:00. All messages written here were also literally sent into space!</p>' \
+  && echo "$AB2" | grep -q '<p>The Mission Dashboard was the station’s instrument panel' && echo "$AB2" | grep -q 'was the crew’s daily walk on the Mars landscape' \
+  && ! echo "$AB2" | grep -q '<p>The crew is reachable\|is the station’s instrument panel\|is the crew’s daily walk\|are now stationed in the Red Dust City Habitat' \
+  && ! echo "$AB2" | grep -q 'id="dome-kitchen"\|id="dome-health"\|aria-controls="dome-kitchen"\|aria-controls="dome-health"' && echo "$AB2" | grep -q 'id="dome-comms"' \
+  && echo "$AB2D" | grep -q 'Die Crew war per Online-Nachricht' && echo "$AB2F" | grep -q 'L’équipage était joignable' \
+  && ok "after the performance the habitat's pop-ups speak in the past — the crew was reachable, the EVA was their daily walk, the dashboard was the instrument panel — in the three languages; the Kitchen and the Health Station open nothing" || bad "the habitat's pop-ups still speak in the present after the performance"
+# once the station has closed the dashboard's key is At a Glance (14 October: "Dashboard should go to At a glance"): in the
+# header and in a phone's bar of keys, and the dashboard's own addresses lead there — the start page took them until then
+[ "$(curl -s -o /dev/null -w '%{redirect_url}' $B2/dashboard)" = "$B2/at-a-glance" ] && [ "$(curl -s -o /dev/null -w '%{redirect_url}' $B2/dashboard/next)" = "$B2/at-a-glance" ] \
+  && echo "$CL2" | grep -q '<a class="tk-dash" href="/at-a-glance"><svg class="tk-ic" viewBox="0 0 24 24" aria-hidden="true">.*</svg><span>At a Glance</span></a>' && ! echo "$CL2" | grep -q 'href="/dashboard"' \
+  && echo "$CL2" | grep -q '<a class="tab tab-dashboard" data-tab="dashboard" href="/at-a-glance"><svg class="tab-ic" viewBox="0 0 24 24" aria-hidden="true">[^§]*</svg><span>At a Glance</span></a>' \
+  && echo "$GL2" | grep -q '<a class="tk-dash" href="/at-a-glance" aria-current="page">' && echo "$GL2" | grep -q '<a class="tab tab-dashboard is-on" data-tab="dashboard" href="/at-a-glance">' \
+  && curl -s -H "Cookie: mcs_lang=de" $B2/ | grep -q '<span>Auf einen Blick</span></a>' \
+  && ok "after the close the dashboard's key is At a Glance, in the header and in a phone's bar, and /dashboard leads there too" || bad "after the close the dashboard's key still leads to the closed dashboard"
 grep -q "data-over" src/views/pages/public.js && grep -q "d.phase === 'COMPLETE'" src/views/pages/public.js \
   && ok "a page left open across the last midnight stops its own timers when the run ends under it" || bad "an open ticker would keep fetching forever after the run"
 [ "$(curl -s -o /dev/null -w '%{http_code}' $B2/)" = "200" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' $B2/at-a-glance)" = "200" ] \
   && ok "reading never stops — the pages keep serving the record" || bad "the record stopped serving"
-# the channel and the desk closed at the end of the day after the run (src/lib/mission.js, open)
-curl -s $B2/api/ticker | grep -q '"open":false' && curl -s $B2/write | grep -q 'CHANNEL CLOSED' && curl -s $B2/write | grep -q 'the channel closed at the end of' \
+# the channel and the desk closed at midnight at the end of the run's last day (src/lib/mission.js, open)
+curl -s $B2/api/ticker | grep -q '"open":false' && curl -s $B2/write | grep -q 'CHANNEL CLOSED' && curl -s $B2/write | grep -q 'the channel closed at midnight' \
   && ok "the station says it is closed: /api/ticker open:false, the composer CHANNEL CLOSED with the day it closed" || bad "the closed station does not say so"
 V2=/tmp/visitor2.jar; rm -f $V2
 curl -s -c $V2 -b $V2 -o /dev/null $B2/write
@@ -3942,39 +4291,121 @@ process.exit(!moved && after === before ? 0 : 1);
 ' && ok "a Docker image built after the close does not move the floor — the run's readings stay" || bad "a rebuild after the close touched the readings"
 rm -rf "$DATA2" "$CONT2"
 
-echo "── the day after the run: the last day the channel and the desk are open"
-# a station whose run ended yesterday: the crew are out, the channel still takes messages for their last replies and
-# the desk still takes edits — until the end of today
+echo "── the run's last day, and the close at its midnight"
+# 14 October: "the performance closes on the 27th at 10am, no missions for that day, no blogs etc. … don't have any
+# missions and stop everything from midnight on 27th instead of 28th" — the last day of the run has no mission and no
+# blogs; the performance closes at 10:00 (src/lib/run.js, COME_OUT), the habitat is open to visitors from 15:00 to 17:00
+# (OPEN_HOUSE), and the channel and the desk stay open until that day's midnight, no longer through the day after. And
+# otherwise the day is as every other (14 October, 13:11: "on the 27th Oct, ONLY change should be: Come visit us at
+# Karlsruhe MARS!platz … Everything else remains the same as ALL other days"): the landing page's invitation apart.
+# A station whose run ends today: whatever the hour the suite runs at, it is the last day, open
 DATA5=$(mktemp -d); CONT5=$(mktemp -d); cp content/*.json "$CONT5"/
 DATA_DIR="$DATA5" CONTENT_DIR="$CONT5" node src/db/seed.js > /dev/null 2>&1
 DATA_DIR="$DATA5" CONTENT_DIR="$CONT5" PORT=8097 CRITICAL_POLL=false \
-  MISSION_START=$(date -u -d '-13 days' +%F) MISSION_END=$(date -u -d '-1 days' +%F) \
+  MISSION_START=$(date -u -d '-12 days' +%F) MISSION_END=$(date -u +%F) \
   node src/server.js > /tmp/srv-grace.log 2>&1 &
 SRV5=$!
 sleep 3
 B5=http://localhost:8097
-curl -s $B5/api/ticker | grep -q '"phase":"COMPLETE"' && curl -s $B5/api/ticker | grep -q '"open":true' && curl -s $B5/write | grep -q 'id="composer"' && ! curl -s $B5/write | grep -q 'CHANNEL CLOSED' \
-  && ok "the day after the run the mission is complete but the station is open: the page keeps its composer" || bad "the day after the run the station is already closed"
+LT5=$(curl -s $B5/api/ticker)
+echo "$LT5" | grep -q '"phase":"ACTIVE"' && echo "$LT5" | grep -q '"open":true' && echo "$LT5" | grep -q '"sol":13' && echo "$LT5" | grep -qE '"stage":"last-(ahead|open|over)"' \
+  && curl -s $B5/write | grep -q 'id="composer"' && ! curl -s $B5/write | grep -q 'CHANNEL CLOSED' \
+  && ok "the run's last day is a day of the run, open until its midnight — the composer stands, and the running line knows the day's stage" || bad "the run's last day is not open as it should be"
 V5=/tmp/visitor5.jar; rm -f $V5
 curl -s -c $V5 -b $V5 -o /dev/null $B5/
 curl -s -c $V5 -b $V5 -X POST -d "body=A last word for the crew" -o /dev/null $B5/communicate
 [ "$(DATA_DIR="$DATA5" node -e 'console.log(require("./src/db").db.prepare("SELECT COUNT(*) n FROM message").get().n)')" = "1" ] \
-  && ok "a message sent the day after the run is taken" || bad "the day after the run no message is taken"
+  && ok "a message sent on the last day is taken" || bad "on the last day no message is taken"
+# no mission and no blogs — and the dashboard, the running line and At a Glance as on every day: Today's Mission says
+# no mission is filed for the sol, the day's schedule stands (the shipped sixteen entries), the blog panels are under the
+# day's own sol, the running line has the crew's current and next task and the daily communication window — nothing
+# says the day in words of its own (it did from 14 October, 10:00, until that afternoon)
+D5=$(curl -s $B5/dashboard); T5=$(echo "$D5" | tr -s ' \n' ' ')
+! echo "$D5" | grep -q 'class="last-day-note"\|The performance closes today at\|The performance closed at\|Open habitat today\|The habitat is open now\|come and talk to the astronauts' \
+  && echo "$D5" | grep -q 'No mission filed for SOL 013' && ! echo "$D5" | grep -q 'No schedule filed for today' && echo "$T5" | grep -q 'Breakfast / Communal Mission Planning' \
+  && echo "$D5" | grep -q '<span class="dpanel-meta">SOL 013 · ' && ! echo "$D5" | grep -q '<span class="dpanel-meta">SOL 012 · ' \
+  && echo "$D5" | grep -q 'Communication window daily' && echo "$D5" | grep -q 'The crew are currently:' \
+  && [ "$(DATA_DIR="$DATA5" CONTENT_DIR="$CONT5" MISSION_START=$(date -u -d '-12 days' +%F) MISSION_END=$(date -u +%F) node -e 'const c = require("./src/lib/content"), d = require("./src/lib/data"), m = require("./src/lib/mission");
+const slots = d.logSlotsPublic(13, m.dateForDay); console.log(c.missionForDay(13) === null && c.missionForDay(12) !== null && c.missionPlan(13).days["13"] === null && slots.length === 13 && slots[12].entries.length === 0 && slots[11].entries.length === 3 ? "yes" : "no")' 2>/dev/null)" = "yes" ] \
+  && ! grep -q "lastDayNote" src/views/layout.js src/views/pages/public.js src/views/pages/dashboard-next.js src/views/pages/screens.js \
+  && GL5=$(curl -s $B5/at-a-glance) && ! echo "$GL5" | grep -q 'No blogs on the last day' \
+  && ok "the last day has no mission and no blogs, and is otherwise as every day: No mission filed for SOL 013, the shipped schedule, the blog panels under SOL 013, the running line's tasks and communication window — no last-day notes anywhere" || bad "the last day still speaks in words of its own, or shows a mission or blogs"
+# the landing page: the invitation, large, until the habitat closes to visitors at 17:00 — and nothing else of its own:
+# Current Crew and the live feed all day, the run's paragraph, the chat's own welcome and steps with the daily
+# communication hour (until 14 October, 13:11, from 10:00 it said Last Crew, The record, the paragraph in the past and the
+# chat in the day's own words)
+H5=$(echo "$LT5" | grep -oE '"venueTime":"[0-9]{2}:[0-9]{2}' | grep -oE '[0-9]{2}:[0-9]{2}'); L5=$(curl -s $B5/ | tr -s ' \n' ' ')
+{ if [[ "$H5" < "17:00" ]]; then echo "$L5" | grep -Eq '<div class="intro-invite" role="note"> <p class="invite-k">[^<]*</p> <p class="invite-big"><strong>Come visit us</strong> at Karlsruhe MARS!platz, see the habitat from inside and talk to the astronauts from 15:00 to 17:00 (CEST|CET)\.</p>'; else ! echo "$L5" | grep -q 'intro-invite'; fi; } \
+  && echo "$L5" | grep -q '>Current Crew</h2>' && echo "$L5" | grep -q '02 · Live feed' && echo "$L5" | grep -q 'id="dome-sky"' \
+  && echo "$L5" | grep -q 'MARS! turns the Karlsruhe Marktplatz into MARS!platz' && echo "$L5" | grep -q '<a class="know-more" href="/about">Know more' \
+  && echo "$L5" | grep -q 'daily Communication Hour at' && echo "$L5" | grep -q 'the daily communication window opens' \
+  && ! echo "$L5" | grep -q 'Last Crew\|02 · The record\|See what the crew did\|MARS! turned the Karlsruhe\|closed today at\|You can still write until midnight\|Answers stand on the\|There is no communication window today' \
+  && ! curl -s -H "Cookie: mcs_lang=de" $B5/ | grep -q 'Du kannst noch bis Mitternacht schreiben\|Letzte Crew' && ! curl -s -H "Cookie: mcs_lang=fr" $B5/ | grep -q 'Vous pouvez encore écrire jusqu’à minuit\|Dernier équipage' \
+  && ok "on the last day the landing page invites visitors, large, until 17:00 — Come visit us at Karlsruhe MARS!platz, see the habitat from inside and talk to the astronauts from 15:00 to 17:00 — and is otherwise the landing page of every day: Current Crew, the live feed, the run's paragraph, the chat's own words, in the three languages" || bad "the landing page does not carry the last day as it should (at $H5)"
+# and the About page's habitat on the last day as on every day: the pop-ups in the present, the Kitchen and the Health
+# Station open, the NOW line there (they went into the past at 10:00 that day from 14 October until 13:11)
+AB5=$(curl -s $B5/about)
+echo "$AB5" | grep -q '<p>The crew is reachable by online message' && ! echo "$AB5" | grep -q '<p>The crew was reachable' \
+  && echo "$AB5" | grep -q 'id="dome-kitchen"' && echo "$AB5" | grep -q 'id="dome-health"' && echo "$AB5" | grep -q 'class="dome-now"' \
+  && ok "on the last day the About page's habitat speaks as on every day — the present, the Kitchen and the Health Station open, the NOW line in its pop-ups" || bad "the About page's habitat speaks in the past on the last day"
+# and nowhere on it that a message may go unanswered (14 October: "DONT write anything on the landing page like this:
+# message 'may not be answered now'"): not after 10:00, nor "until then the Comms Officer answers your messages" before
+# it — the first step keeps the run's own words all day, in the three languages
+LD5=$(curl -s -H "Cookie: mcs_lang=de" $B5/ | tr -s ' \n' ' '); LF5=$(curl -s -H "Cookie: mcs_lang=fr" $B5/ | tr -s ' \n' ' ')
+! echo "$L5$LD5$LF5" | grep -qi 'may not be answered\|not be answered now\|until then the Comms Officer\|nicht mehr beantwortet\|bis dahin beantwortet\|ne reçoive plus de réponse\|d’ici là, l’officier' \
+  && echo "$L5" | grep -q 'Your message from Earth will travel to Mars to reach the crew on MARS!platz, where it will be seen and answered accordingly.' \
+  && echo "$LD5" | grep -q 'Deine Nachricht von der Erde reist zum Mars und erreicht die Crew auf dem MARS!platz, wo sie gelesen und entsprechend beantwortet wird.' \
+  && echo "$LF5" | grep -q 'Votre message de la Terre voyagera vers Mars pour atteindre l’équipage sur la MARS!platz, où il sera lu et recevra une réponse.' \
+  && ! grep -q "^ *'[^']*\(may not be answered\|until then the Comms Officer answers\)[^']*':" src/lib/i18n.js && ! grep -v '^ *//' src/views/pages/landing.js | grep -q "'[^']*\(may not be answered\|until then the Comms Officer answers\)[^']*'" \
+  && ok "the landing page never says a message may go unanswered on the last day — before 10:00 or after — and its first step keeps the run's words, in the three languages" || bad "the landing page tells visitors a message may not be answered on the last day (at $H5)"
+# the invitation's words (14 October, 12:40: "Come visit us at Karslruhe Marsplatz, see the habitat from inside and talk
+# to the astronauts from 15:00 to 17:00 CET.") in German and French as well, until 17:00
+{ if [[ "$H5" < "17:00" ]]; then echo "$LD5" | grep -Eq '<p class="invite-big"><strong>Besuch uns</strong> auf dem Karlsruher MARS!platz, sieh dir das Habitat von innen an und sprich mit den Astronautinnen und Astronauten, von 15:00 bis 17:00 (CEST|CET)\.</p>' \
+    && echo "$LF5" | grep -Eq '<p class="invite-big"><strong>Venez nous rendre visite</strong> sur la MARS!platz de Karlsruhe, découvrez l’habitat de l’intérieur et parlez avec les astronautes, de 15:00 à 17:00 (CEST|CET)\.</p>'
+  else ! echo "$LD5$LF5" | grep -q 'intro-invite'; fi; } \
+  && ! grep -qF "'and see the habitat from inside and talk to the astronauts from {from} to {to}.':" src/lib/i18n.js \
+  && ok "the invitation names the place — Come visit us at Karlsruhe MARS!platz … —, in German (Besuch uns auf dem Karlsruher MARS!platz …) and French (Venez nous rendre visite sur la MARS!platz de Karlsruhe …) too" || bad "the invitation's words are not the ones of 14 October in every language (at $H5)"
+# the desk: the day takes edits — its schedule, its counts — but no blog and no mission
 A5=/tmp/admin5.jar; rm -f $A5
 curl -s -c $A5 -d "username=$CONTROL_USER" -d "password=$CONTROL_PASSWORD" -o /dev/null $B5/control/login
 curl -s -b $A5 -d day=13 -d n0_time=09:00 -d "n0_label=Last edit" -o /dev/null $B5/control/schedule
+curl -s -b $A5 -c $A5 -F day=13 -F kind=science -F crew_id=1 -F back=science -F "body=A report for the last day" -o /dev/null $B5/control/report
+curl -s -b $A5 -c $A5 -F day=13 -F designation="COMMUNICATION OFFICER" -F back=comms -F "body=A log for the last day" -o /dev/null $B5/control/logbook
+curl -s -b $A5 -c $A5 -d day=13 -d mission=3 -o /dev/null $B5/control/mission
+C5=$(curl -s -b $A5 "$B5/control?tab=science&day=13")
 grep -q "Last edit" "$CONT5/schedule.json" && ! curl -s -b $A5 $B5/control | grep -q 'body class="control closed"' \
-  && ok "and the desk still takes edits that day" || bad "the desk refused an edit the day after the run"
+  && ! grep -q 'A report for the last day' "$CONT5/notes.json" && ! grep -q 'A log for the last day' "$CONT5/logbook.json" && ! node -e 'process.exit(require(process.argv[1]).days["13"] === undefined ? 1 : 0)' "$CONT5/missions.json" \
+  && [ "$(echo "$C5" | grep -c 'is the last day: the performance closes at 10:00, and the day has no blogs.')" -ge 3 ] && echo "$C5" | grep -q 'is the last day: the performance closes at 10:00, and the day has no mission.' \
+  && ! echo "$C5" | grep -q 'action="/control/mission"\|action="/control/report"\|action="/control/logbook"' \
+  && ok "the desk takes the last day's edits — its schedule — but no blog and no mission: each refused, and its composers say the day has none" || bad "the desk refused an edit on the last day, or took a blog or a mission for it"
 kill $SRV5 2>/dev/null; wait $SRV5 2>/dev/null
 rm -rf "$DATA5" "$CONT5"
+# a station whose run ended yesterday is closed — there is no day after any more
+DATA6=$(mktemp -d); CONT6=$(mktemp -d); cp content/*.json "$CONT6"/
+DATA_DIR="$DATA6" CONTENT_DIR="$CONT6" node src/db/seed.js > /dev/null 2>&1
+DATA_DIR="$DATA6" CONTENT_DIR="$CONT6" PORT=8098 CRITICAL_POLL=false \
+  MISSION_START=$(date -u -d '-13 days' +%F) MISSION_END=$(date -u -d '-1 days' +%F) \
+  node src/server.js > /tmp/srv-after.log 2>&1 &
+SRV6=$!
+sleep 3
+curl -s http://localhost:8098/api/ticker | grep -q '"phase":"COMPLETE"' && curl -s http://localhost:8098/api/ticker | grep -q '"open":false' && curl -s http://localhost:8098/write | grep -q 'CHANNEL CLOSED' \
+  && ok "the day after the run the station is closed — the channel and the desk closed at the last day's midnight" || bad "the day after the run the station is still open"
+kill $SRV6 2>/dev/null; wait $SRV6 2>/dev/null
+rm -rf "$DATA6" "$CONT6"
 
-# the real run's close, from the dates fixed in src/lib/run.js: the end of 28 October 2026 at the venue
+# the real run, from the dates fixed in src/lib/run.js: the performance closes at 10:00 on 27 October 2026 (09:00 UTC,
+# the clocks having gone back on the 25th), the habitat open to visitors 15:00–17:00, and the station closes at that
+# day's midnight — 23:00 UTC
 UD=$(mktemp -d)
 DATA_DIR="$UD" MISSION_OVERRIDE=false node -e '
-const m = require("./src/lib/mission"); m.sync();
-const s = m.state(new Date("2026-10-28T22:59:00Z")), c = m.state(new Date("2026-10-28T23:00:00Z"));
-process.exit(s.open === true && c.open === false && s.closeDate === "2026-10-28" && c.closedAt === "2026-10-28T23:00:00.000Z" ? 0 : 1);
-' > /dev/null 2>&1 && ok "for the real run the close is the end of 28 October 2026 at the venue — 23:00 UTC, the clocks having gone back" || bad "the real run's close is wrong"
+const m = require("./src/lib/mission"), L = require("./src/views/layout"); m.sync();
+const at = (iso) => m.state(new Date(iso));
+const a = at("2026-10-27T08:59:00Z"), b = at("2026-10-27T09:00:00Z"), s = at("2026-10-27T22:59:00Z"), c = at("2026-10-27T23:00:00Z"), d12 = at("2026-10-26T11:00:00Z");
+const stages = ["2026-10-27T08:59:00Z", "2026-10-27T13:59:00Z", "2026-10-27T14:00:00Z", "2026-10-27T16:00:00Z"].map((x) => L.lastDayStage(at(x)));
+process.exit(a.lastDay && !a.ended && a.open && b.ended && b.open && b.phase === "ACTIVE" && s.open === true && c.open === false && c.phase === "COMPLETE"
+  && s.closeDate === "2026-10-27" && c.closedAt === "2026-10-27T23:00:00.000Z" && a.endsAt === "2026-10-27T09:00:00.000Z" && !d12.lastDay && !d12.ended && L.lastDayStage(d12) === ""
+  && JSON.stringify(stages) === JSON.stringify(["last-ahead", "last-ahead", "last-open", "last-over"]) && a.blogDays === 12 ? 0 : 1);
+' > /dev/null 2>&1 && ok "for the real run the performance closes at 10:00 on 27 October 2026 and the station at that day's midnight — 09:00 and 23:00 UTC, the clocks having gone back; the habitat open to visitors 15:00–17:00; 26 October an ordinary day" || bad "the real run's close is wrong"
 rm -rf "$UD"
 
 echo "── the habitat sensor through Home Assistant"
@@ -4005,6 +4436,29 @@ let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => {
   const ok = d.rows.length > 10 && ["co2", "temp", "hum", "pres", "light", "voc", "iaq"].every((k) => typeof r[k] === "number") && /polluted|Excellent|Good/.test(String(r.iaqc));
   process.exit(ok ? 0 : 1);
 });' && ok "every row carries CO₂, temperature, humidity, pressure, light in lux, VOC, the IAQ index and its classification as text" || bad "the sensor's rows are incomplete"
+# nothing Home Assistant still holds is lost to an outage (13 October: "make sure nothing is missed"): its history is
+# read a day at a time from the newest reading the station holds, as far back as HA keeps it (ten days) — this station,
+# started on the run's fifth day, filled the habitat sensor from the run's first midnight, and every row says where it
+# came from; and a device last heard three days ago is filled day by day up to now
+DATA_DIR="$DATA3" node -e '
+const db = require("./src/db").db, c = require("./src/lib/critical");
+const r = db.prepare("SELECT MIN(t) a, COUNT(*) n, SUM(src = ?) ha FROM external_reading").get("home-assistant");
+process.exit(r.n > 1440 && r.a <= c.runStartMs() + 3600000 && r.ha === r.n ? 0 : 1);' \
+  && grep -lq '"windows": [2-9]' "$DATA3"/readings/habitat/*/*.json \
+  && HAD=$(mktemp -d) && HAC=$(mktemp -d) && cp content/*.json "$HAC"/ && node -e '
+const fs = require("fs"), p = process.argv[1] + "/home-assistant.json", d = JSON.parse(fs.readFileSync(p, "utf8"));
+d.sensors = d.sensors.filter((x) => x.id === "environment_o2_oxygen"); fs.writeFileSync(p, JSON.stringify(d, null, 2));' "$HAC" \
+  && DATA_DIR="$HAD" CONTENT_DIR="$HAC" node src/db/seed.js > /dev/null 2>&1 \
+  && DATA_DIR="$HAD" CONTENT_DIR="$HAC" HA_HOST=localhost HA_PORT=8125 HA_API_TOKEN=test-token node -e '
+const db = require("./src/db").db, ha = require("./src/lib/home-assistant");
+const old = Date.now() - 3 * 86400000;
+db.prepare("INSERT INTO ha_reading (entity, t, value, state, unit) VALUES (?, ?, 20.8, ?, ?)").run("environment_o2_oxygen", old, "20.8", "%");
+ha.poll().then(() => {
+  const ts = db.prepare("SELECT t FROM ha_reading WHERE entity = ? ORDER BY t").all("environment_o2_oxygen").map((r) => r.t);
+  let gap = 0; for (let i = 1; i < ts.length; i++) gap = Math.max(gap, ts[i] - ts[i - 1]);
+  process.exit(ts.length > 3 * 2880 * 0.9 && ts[0] === old && Date.now() - ts[ts.length - 1] < 600000 && gap <= 120000 ? 0 : 1);
+});' 2>/dev/null && rm -rf "$HAD" "$HAC" \
+  && ok "an outage loses nothing Home Assistant still holds — its history is read a day at a time from the station's newest reading, up to ten days back: the habitat sensor from the run's first midnight (each row naming its source), a device quiet for three days filled to now without a gap" || bad "a gap longer than a day is not filled from Home Assistant's history"
 echo "$HAB" | grep -q '"bat":null' && echo "$HAB" | grep -q '"rssi":null' && ok "the node's own channels (battery, signal) are empty, not invented" || bad "battery or signal not null"
 echo "$HAB" | grep -q '"pollMs":15000' && echo "$HAB" | grep -q '"staleMs":900000' && ok "the station tells the page how often it reads and how fresh is fresh" || bad "cadence not served"
 echo "$HAB" | node -e '
@@ -4397,7 +4851,7 @@ DZ=$(node -e 'const m = require("./src/lib/mission"); process.stdout.write(m.zon
 LDE=$(curl -s -H "Cookie: mcs_lang=de" $B3/); DDE=$(curl -s -H "Cookie: mcs_lang=de" $B3/dashboard)
 echo "$LDE" | grep -qE 'class="run-dates"><b>[A-Z][a-z]\., [0-9]{1,2}\.( [A-ZÄÖÜ][a-zäöü]+\.?)? – [A-Z][a-z]\., [0-9]{1,2}\. [A-ZÄÖÜ][a-zäöü]+\.? 20[0-9]{2}</b>' \
   && echo "$LDE" | grep -qE "<b id=\"tk-now\">([0-9]{2}:[0-9]{2} $DZ · |[^0-9<])" && echo "$LDE" | grep -q "Kommunikationsfenster täglich <b>19:00 $WZ</b>" \
-  && echo "$DDE" | grep -qE "<span class=\"dpanel-meta\">SOL [0-9]{3} · [0-9]+/[0-9]+ erledigt · $DZ</span>" \
+  && echo "$DDE" | grep -qE "<span class=\"dpanel-meta\">SOL [0-9]{3} · ([0-9]+/[0-9]+ erledigt|[0-9]+ Aufgaben?) · $DZ</span>" \
   && ok "the German pages: the run's dates in German (Do., 15. – Di., 27. Okt. 2026), the crew's task now with its zone, the window 19:00 $WZ, today's schedule with the zone in its head" || bad "the German pages' dates or zones are not as they should be"
 # the zone where a page fills a time in by itself: the running line asks for the schedule every five minutes and keeps
 # each task's zone (it turns with the day); the sky's pictures and the gallery's pop-up say the zone of the moment the
@@ -4419,7 +4873,8 @@ process.exit(pics[0] === "26.10.2026 · 16:41 CET" && pics[3] === "24.10.2026 ·
   && ok "the zone stays where a page fills a time in itself: the running line's schedule asked again (each task with CEST or CET), the sky's pictures (24.10.2026 · 16:41 CEST, 26.10.2026 · 16:41 CET), the gallery's pop-up (the day's zone, each picture's own on 25 October), the Sensors tab's note on a missing reading" || bad "a time filled in by a page's script has lost its zone"
 # the habitat dome's sentences: its stamp with the clock's zone, the next task and the EVA with theirs, a list of times
 # with the zone once after it (each its own on 25 October) — and the minutes to the communication hour counted on the
-# bare clock (today's, on now, or tomorrow's, as the clock stands)
+# bare clock (today's, on now, or tomorrow's, as the clock stands); while the suite runs during the test's EVA (16:00, and
+# the hour after it) the line says Now: EVA … and names no time
 HN=$(TZ=Europe/Berlin date +%H%M); DM=$(curl -s $B3/api/dome)
 if [ "$HN" -lt 1900 ]; then WH='Communication hour today at 19:00 (CEST|CET) — in [0-9]'; elif [ "$HN" -lt 2000 ]; then WH='The communication hour is on now \(19:00 (CEST|CET)\)'; else WH='The next communication hour is tomorrow at 19:00 (CEST|CET)'; fi
 echo "$DM" | grep -qE "$WH" && echo "$DM" | grep -qE '"stamp":"SOL [0-9]{3} · [0-9]{2}:[0-9]{2} (CEST|CET)"' && { ! echo "$DM" | grep -q 'Up next' || echo "$DM" | grep -qE 'Up next [0-9]{2}:[0-9]{2} (CEST|CET): '; } \
@@ -4430,7 +4885,7 @@ const tasks = [{ time: "01:30", label: "Sleep" }, { time: "08:30", label: "Break
 const f = D.figures({ mission, T: i18n.of("en"), lang: "en" }, { today: { date: "2026-10-25", tasks, meals: [], inventory: [] }, crew: [] });
 const g = D.figures({ mission: { ...mission, today: "2026-10-20" }, T: i18n.of("en"), lang: "en" }, { today: { date: "2026-10-20", tasks, meals: [], inventory: [] }, crew: [] });
 process.exit(f.nap.text.includes("01:30 CEST Sleep · 22:30 CET Lights out.") && f.recycling.more.includes("08:30 Breakfast · 13:00 Lunch · 18:00 Dinner (CET).")
-  && /EVA (is|was) at 16:00 CET/.test(f.eva.text) && g.nap.text.includes("01:30 Sleep · 22:30 Lights out (CEST).") && /EVA (is|was) at 16:00 CEST/.test(g.eva.text) ? 0 : 1);' 2>/dev/null \
+  && /EVA (is|was) at 16:00 CET|^Now: EVA/.test(f.eva.text) && g.nap.text.includes("01:30 Sleep · 22:30 Lights out (CEST).") && /EVA (is|was) at 16:00 CEST|^Now: EVA/.test(g.eva.text) ? 0 : 1);' 2>/dev/null \
   && ok "the habitat dome says its times with their zone — the stamp, the next task, the EVA, the meals' hours (CET) and the pods' (each its own on 25 October) — and counts the minutes to the communication hour on the bare clock" || bad "the dome's times have no zone, or it counts the communication hour wrongly"
 curl -s -b /tmp/a3.jar $B3/control | grep -qE ' · [0-9]{2}:[0-9]{2}:[0-9]{2} (CEST|CET) habitat time</div>' && ok "mission control's head gives the habitat time with its zone" || bad "mission control's habitat time has no zone"
 # 13 October: "Transmit and Live feed should have the SAME height on mobile" — one row height, the taller card's, each

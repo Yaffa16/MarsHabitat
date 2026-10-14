@@ -149,6 +149,15 @@ CREATE TABLE IF NOT EXISTS visitor (
   last_seen  TEXT NOT NULL
 );
 
+-- The visitors counted, day by day (13 October: "make sure nothing is missed or no data point is lost"): one row per
+-- day at the venue with the callsigns issued that day, counted the moment each is issued — so a callsign that never
+-- wrote, dropped a week later (server.js, pruneVisitors), still counts on the day it was counted. The tally reads it
+-- (data.tally, data.tallyByDay); the reset empties it with the visitors.
+CREATE TABLE IF NOT EXISTS visitor_count (
+  date TEXT PRIMARY KEY,               -- YYYY-MM-DD, venue-local
+  n    INTEGER NOT NULL DEFAULT 0
+);
+
 -- ---------------------------------------------------------------- messages
 CREATE TABLE IF NOT EXISTS message (
   id             INTEGER PRIMARY KEY,
@@ -214,16 +223,6 @@ CREATE TABLE IF NOT EXISTS admin_session (
   expires_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS audit (
-  id         INTEGER PRIMARY KEY,
-  actor      TEXT NOT NULL,
-  entity     TEXT NOT NULL,
-  entity_id  TEXT NOT NULL,
-  action     TEXT NOT NULL,
-  detail     TEXT NOT NULL DEFAULT '',
-  created_at TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_audit ON audit(created_at DESC);
 
 -- What was changed on mission control's desk, and when: one row per field of
 -- a form and day that was edited through the page (the key '*' is the form's

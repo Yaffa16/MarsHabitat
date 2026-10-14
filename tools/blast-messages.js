@@ -7,11 +7,11 @@
      node tools/blast-messages.js                      # 5 devices, 1 message each
      node tools/blast-messages.js --devices 12 --each 2 --gap 800
 
-   NOTE on the rate limit: it counts by visitor OR ip hash, and from one
-   machine every device shares the ip hash — so after HOURLY_LIMIT messages
-   the rest are refused ("uplink is saturated"), which this script reports.
-   That refusal is itself worth seeing once. For a bigger blast, raise
-   HOURLY_LIMIT in .env and restart first.                                   */
+   NOTE on the rate limit: it counts by callsign alone (13 October) — each
+   device here is a visitor of its own, so each may send PERSON_HOURLY_LIMIT
+   messages an hour (60) before the station refuses it ("Too many
+   transmissions from your position"), which this script reports. Nothing is
+   counted by address, so the devices sharing this machine's never add up.  */
 
 'use strict';
 const http = require('http');
@@ -54,6 +54,7 @@ function request(method, path, { cookie, body } = {}) {
       res.on('data', (c) => chunks.push(c));
       res.on('end', () => resolve({
         status: res.statusCode,
+        location: res.headers.location || '',
         setCookie: res.headers['set-cookie'] || [],
         text: Buffer.concat(chunks).toString('utf8'),
       }));
@@ -71,17 +72,21 @@ async function device(n) {
   const callsign = (first.text.match(/YOU ARE\s*<[^>]*>([A-Z]+-\d+)/) || [])[1] || `device-${n}`;
 
   let sent = 0, refused = 0;
+  const reasons = {};
   for (let i = 0; i < EACH; i++) {
     const line = LINES[(n + i) % LINES.length] + ` [test ${n}.${i + 1}]`;
     const tag = TAGS[(n + i) % TAGS.length];
     const body = 'body=' + encodeURIComponent(line) + '&tags=' + encodeURIComponent(tag);
     const res = await request('POST', '/communicate', { cookie, body });
-    if (res.text.includes('saturated')) { refused++; }
+    // a refusal comes back as the composer again, its reason in ?err= (the rate limit's: "Too many transmissions
+    // from your position"; or the transit lock, while this visitor's last message is still on its way)
+    const err = (res.location.match(/[?&]err=([^&#]*)/) || [])[1];
+    if (err || res.text.includes('Too many transmissions')) { refused++; reasons[err ? decodeURIComponent(err.replace(/\+/g, ' ')) : 'Too many transmissions'] = true; }
     else if (res.status === 302 || res.status === 200) { sent++; }
     else { refused++; }
     await new Promise((r) => setTimeout(r, GAP));
   }
-  console.log(`  ${callsign.padEnd(12)} sent ${sent}, refused ${refused}`);
+  console.log(`  ${callsign.padEnd(12)} sent ${sent}, refused ${refused}${refused ? ` (${Object.keys(reasons).join('; ')})` : ''}`);
   return { sent, refused };
 }
 
@@ -93,6 +98,6 @@ async function device(n) {
   );
   const sent = results.reduce((a, r) => a + r.sent, 0);
   const refused = results.reduce((a, r) => a + r.refused, 0);
-  console.log(`Done: ${sent} sent, ${refused} refused by the rate limit.`);
+  console.log(`Done: ${sent} sent, ${refused} refused.`);
   console.log('Open /control — the queue should be full and the arrival banner up.');
 })();

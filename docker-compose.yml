@@ -58,7 +58,7 @@ services:
       # content/home-assistant.json maps the entities, the node otherwise),
       # "home-assistant", or "node"; and how often the sensor is read.
       HABITAT_SOURCE: "${HABITAT_SOURCE:-auto}"
-      HABITAT_POLL_MS: "${HABITAT_POLL_MS:-60000}"
+      HABITAT_POLL_MS: "${HABITAT_POLL_MS:-300000}"
       # The external node (critical-sensors.de) and where the readings start;
       # see README "Where the readings start". Set in .env.
       CRITICAL_POLL: "${CRITICAL_POLL:-true}"
@@ -112,7 +112,9 @@ services:
       HA_HOST: "${HA_HOST:-}"
       HA_PORT: "${HA_PORT:-80}"
       HA_API_TOKEN: "${HA_API_TOKEN:-}"
-      HA_POLL_MS: "${HA_POLL_MS:-900000}"
+      HA_POLL_MS: "${HA_POLL_MS:-300000}"
+      # how far back Home Assistant's history is read after an outage, in days (its recorder keeps ten by default)
+      HA_HISTORY_DAYS: "${HA_HISTORY_DAYS:-10}"
       HA_POLL: "${HA_POLL:-true}"
     volumes:
       - station-data:/data

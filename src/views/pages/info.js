@@ -25,6 +25,18 @@ const PARTNERS = {
   cooperation: [['staatstheater-karlsruhe', 'Badisches Staatstheater Karlsruhe'], ['naturkundemuseum-karlsruhe', 'Naturkundemuseum Karlsruhe']],
   supporters: [['eon-foundation', 'E.ON Foundation'], ['lbbw-stiftung', 'LBBW Stiftung'], ['innovationsfonds-kunst', 'Innovationsfonds Kunst Baden-Württemberg']],
 };
+/* The credits for the website and the Panolab at ZKM (14 October: "in the About page, add a credits list to the website
+   and Panolab at ZKM, in alphabetical order of their last name"): the people as the list was handed over — Jan Gerigk
+   as the crew list spells him (the list had Gerick) — and SpaceSpeak, which beams the messages into space, by its name
+   (linked once on the page, in About, where it is told). In the order of the surnames, accents folded (Schütze among
+   the S), SpaceSpeak by its name among them. */
+const CREDITS = [
+  ['Johannes', 'Jensen'], ['Jan', 'Gerigk'], ['Bernd', 'Lintermann'], ['Andreas', 'Kugel'], ['Volker', 'Sommerfeld'],
+  ['Marc', 'Schütze'], ['Yasha', 'Jain'], ['Finn', 'Milbrandt'], ['Dan', 'Wilcox'], ['Tina', 'Lorenz'], ['Andy', 'Koch'],
+  ['', 'SpaceSpeak'], ['Götz', 'Dipper'],
+];
+const folded = (s) => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const CREDITS_SORTED = CREDITS.slice().sort((a, b) => folded(a[1]).localeCompare(folded(b[1])) || folded(a[0]).localeCompare(folded(b[0])));
 /** A member's name as the file gives it: first and last, or the one name alone (Robodog). */
 const fullName = (c) => [c.first, c.last].filter(Boolean).join(' ');
 const logos = (list) => `<div class="logos">${list.map(([f, name]) => `<span class="logo"><img src="/partners/${f}.png" alt="${esc(name)}" title="${esc(name)}" loading="lazy" decoding="async"></span>`).join('')}</div>`;
@@ -40,12 +52,16 @@ const p = (T, text) => paras(T(text));
 const fill = (T, key, vals) => Object.entries(vals).reduce((s, [k, v]) => s.split(`{${k}}`).join(v), esc(T(key)));
 const pf = (T, key, vals) => paras(fill(T, key, vals));
 const out = (href, text) => `<a href="${href}" target="_blank" rel="noopener">${text}</a>`;
+/** The first SpaceSpeak of a paragraph as a link to the service (13 October: "link SpaceSpeak to https://www.spacespeak.com/")
+    — the name is the same in the three languages, so it is found in whichever the paragraph is in. */
+const spaceSpeak = (html) => html.replace('SpaceSpeak', out('https://www.spacespeak.com/', 'SpaceSpeak'));
 
 /* The run's two moments and the count of its scientific missions, as the About page states them (October's text
-   sheet, ABOUT_WEBSITE_TEXTS): the crew go in at 17:00 on the first day and come out at 17:00 on the last, and the
-   missions are eleven. (content/missions.json plans a mission for every day but the last, which is twelve; the sheet
-   says eleven, and the sheet is what the page says.) */
-const START_END_TIME = '17:00';
+   sheet, ABOUT_WEBSITE_TEXTS): the crew go in at 17:00 on the first day and come out at 10:00 on the last (14 October:
+   "the performance closes on the 27th at 10am" — 17:00 stood there for both until then; src/lib/run.js, GO_IN and
+   COME_OUT), and the missions are eleven. (content/missions.json plans a mission for every day but the last, which is
+   twelve; the sheet says eleven, and the sheet is what the page says.) */
+const { RUN } = require('../../lib/run');
 const ML = require('../../lib/mission');                     // (the days in the page's language, the hours with their zone: 13 October)
 const SCIENTIFIC_MISSIONS = 11;
 
@@ -87,8 +103,11 @@ function aboutFold(ctx) {
       ${p(T, 'What we are offering through this project is an invitation that we’re extending to the city society of Karlsruhe, to engage not only with the real possibility of space flight, but also to imagine themselves as beings in space already, on a spaceship called Earth. In order to remain viable for a broad range of living things, Earth needs care and stewardship as much as a space station would. Through the interaction with us – discussing, writing, receiving messages – we hope to encourage a change of perspective that leads us in turn closer to home.')}
 
       <h3>${T('Messages sent to space')}</h3>
-      ${p(T, 'Every message the crew answer is also beamed into space, by radio, through SpaceSpeak — a small network of transmitters around the world that sends short messages out of the atmosphere on request. The station hands the message over the moment its reply is published; SpaceSpeak encodes it and transmits it on a frequency between 2.4 and 5 gigahertz, a band chosen because it passes through the air and its water vapour almost untouched, from a directional antenna that gathers the transmitter’s power into a narrow cone pointed at the sky. Radio waves are light: they leave at the speed of light, 299,792 km every second.')}
+      ${spaceSpeak(p(T, 'Every message the crew answer is also beamed into space, by radio, through SpaceSpeak — a small network of transmitters around the world that sends short messages out of the atmosphere on request. The station hands the message over the moment its reply is published; SpaceSpeak encodes it and transmits it on a frequency between 2.4 and 5 gigahertz, a band chosen because it passes through the air and its water vapour almost untouched, from a directional antenna that gathers the transmitter’s power into a narrow cone pointed at the sky. Radio waves are light: they leave at the speed of light, 299,792 km every second.'))}
       ${p(T, 'From then on the message is on its way for good. It passes the Moon’s orbit within two seconds, the orbit of Mars within minutes and Jupiter’s within the hour, leaves the planets behind in a matter of hours, and after two years is nearly halfway to Proxima Centauri, the nearest star. The signal grows fainter with every kilometre, spreading out as it goes — but there is no distance at which it stops: what leaves Earth by radio keeps travelling outwards, long after everyone who wrote or read it. The Message Board counts each message’s distance from the moment it was sent, and a tap on it names the object in the sky it has just passed.')}
+      ${p(T, 'SpaceSpeak Phase I had two transmitters located in North America (Tampa FL, and Austin TX) as well as one transmitter in South America (Brazil). Each was attached to a 15 inch parabolic dish.')}
+      ${p(T, 'SpaceSpeak Phase II currently has 13 micro PC / transmitters located around the world.')}
+      ${p(T, 'Though a radio signal decreases in intensity as it spreads outward with time, there is practically no theoretical limit to how far a radio signal can travel. Your messages will continue to fly through space for billions of years.')}
     </div>
     <div>
       ${panel('MISSION', `
@@ -96,8 +115,8 @@ function aboutFold(ctx) {
         <dl class="kv">
           <dt>${T('DESIGNATION')}</dt><dd>${esc(ctx.mission.name)}</dd>
           <dt>${T('RUN')}</dt><dd>${esc(ML.runLabel(ctx.mission.start_date, ctx.mission.end_date, { long: true, lang: ctx.lang }))}</dd>
-          <dt>${T('START')}</dt><dd>${esc(ML.dayLabel(ctx.mission.start_date, ctx.lang))} · ${START_END_TIME} ${ML.zoneOfWall(ctx.mission.start_date, START_END_TIME, ctx.mission.timezone)}</dd>
-          <dt>${T('END')}</dt><dd>${esc(ML.dayLabel(ctx.mission.end_date, ctx.lang))} · ${START_END_TIME} ${ML.zoneOfWall(ctx.mission.end_date, START_END_TIME, ctx.mission.timezone)}</dd>
+          <dt>${T('START')}</dt><dd>${esc(ML.dayLabel(ctx.mission.start_date, ctx.lang))} · ${RUN.GO_IN} ${ML.zoneOfWall(ctx.mission.start_date, RUN.GO_IN, ctx.mission.timezone)}</dd>
+          <dt>${T('END')}</dt><dd>${esc(ML.dayLabel(ctx.mission.end_date, ctx.lang))} · ${RUN.COME_OUT} ${ML.zoneOfWall(ctx.mission.end_date, RUN.COME_OUT, ctx.mission.timezone)}</dd>
           <dt>${T('DURATION')}</dt><dd>${n} ${T(n === 1 ? 'day' : 'days')}</dd>
           <dt>${T('CREW')}</dt><dd>3</dd>
           <dt>${T('SCIENTIFIC MISSIONS')}</dt><dd>${SCIENTIFIC_MISSIONS}</dd>
@@ -115,6 +134,11 @@ function whoFold(crew, T, ctx) {
     <div class="crew-wall">
       ${CREW.map((c) => `<figure class="crew-pic"><img src="/crew/${esc(c.file)}" alt="" width="800" height="1200" loading="lazy" decoding="async"><figcaption>${esc(fullName(c))}</figcaption></figure>`).join('')}
     </div>`, 'mars-side') : ''}
+  ${panel('CREDITS', `
+    ${eyebrow(T('Website and Panolab at ZKM'))}
+    <ul class="credits-list">
+      ${CREDITS_SORTED.map(([first, last]) => `<li>${first ? `${esc(first)} ` : ''}<b>${esc(last)}</b></li>`).join('')}
+    </ul>`, 'mars-side credits')}
   ${panel('PRODUCTION', `
     ${eyebrow(T('Produced by'))}
     <p>ZKM | ${T('Center for Art and Media Karlsruhe')}<br>

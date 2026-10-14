@@ -3,6 +3,7 @@ const L = require('../layout');
 const { esc, panel, eyebrow, orbitPlot, pipeline } = L;
 const orbital = require('../../lib/orbital');
 const { TAGS } = require('../../lib/data');
+const missionLib = require('../../lib/mission');
 
 const MAX = require('../../lib/limits').MESSAGE_MAX;   // five hundred characters (src/lib/limits.js — 8 October)
 // The channel is open by default before the run so the station can be used and
@@ -93,22 +94,23 @@ function composerBlock(ctx, { inFlight, error, draft, idSuffix = '', kiosk = '' 
   const g = ctx.geo;
   const T = ctx.T || same;
 
-  // The channel closes at the end of the day after the run — 28 October 2026 (src/lib/mission.js, open): the day the
-  // crew come out still takes messages, for their last replies; from then on there is nobody left to read anything.
-  // Before the run, closing is optional.
+  // The channel closes at midnight at the end of the run's last day — 27 October 2026 (src/lib/mission.js, open; 14
+  // October: "stop everything from midnight on the 27th instead of the 28th"): the crew come out at 10:00 that morning,
+  // and the channel takes messages until midnight; from then on there is nobody left to read anything. Before the run,
+  // closing is optional.
   const closed = (!ctx.mission.open || (phase === 'PRE_LAUNCH' && HOLD_BEFORE_LAUNCH)) ? `
     <div class="transit closed" style="text-align:left">
       <div class="state">${T('CHANNEL CLOSED')}</div>
       ${phase === 'PRE_LAUNCH' ? `
         <div class="clock" id="countdown" data-opens="${esc(ctx.mission.opensAt)}">T−${String(ctx.mission.countdown.days).padStart(3, '0')}:${String(ctx.mission.countdown.hours).padStart(2, '0')}:${String(ctx.mission.countdown.minutes).padStart(2, '0')}:${String(ctx.mission.countdown.seconds).padStart(2, '0')}</div>
         <p class="note" style="margin-top:12px">${T('There is nobody in the habitat to read this yet.')}
-        ${T('The channel opens on')} ${esc(ctx.mission.start_date)} ${T('at')} 00:00 ${esc(ctx.mission.timezone)},
+        ${T('The channel opens on')} ${esc(missionLib.dayLabel(ctx.mission.start_date, T.lang))} ${T('at')} 00:00 ${esc(missionLib.zoneOfWall(ctx.mission.start_date, '00:00', ctx.mission.timezone))},
         ${T('and stays open for')} ${ctx.mission.totalDays} ${T(ctx.mission.totalDays === 1 ? 'day' : 'days')}.</p>
         <p><a class="btn" href="/about">${T('About the project')}</a></p>`
       : `
         <p class="note" style="margin-top:12px">${T('The crew left the habitat on')}
-        ${esc(ctx.mission.end_date)}; ${T('the channel closed at the end of')} ${esc(ctx.mission.closeDate)}. ${T('Nothing sent now would reach anyone.')}</p>
-        <p><a class="btn" href="/archive">${T('Read what was sent')}</a></p>`}
+        ${esc(missionLib.dayLabel(ctx.mission.end_date, T.lang))} ${T('at')} ${esc(missionLib.clockAt(ctx.mission.endsAt, ctx.mission.timezone))}; ${T('the channel closed at midnight.')} ${T('Nothing sent now would reach anyone.')}</p>
+        <p><a class="btn" href="/write">${T('Read what was sent')}</a></p>`}
       ${ctx.callsign && !kiosk ? `<div class="honesty">
         ${T('YOUR CALLSIGN')} <b>${esc(ctx.callsign)}</b> ${T('IS STILL RESERVED.')}<br>
         ${T('IT WILL BE WAITING IF YOU COME BACK.')}

@@ -198,13 +198,19 @@ const TAB_ICONS = {
   board: '<path d="M3 11l18-8-8 18-2-8z"/><path d="M11 13l10-10"/>',   // the paper plane the key carried as Write (13 October: "keep the Messages text but have the previous logo")
   media: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
   more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+  // At a Glance, the key the dashboard's becomes once the station has closed: the days of the run, a page of a calendar
+  glance: '<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/><path d="M7.5 13h2M11 13h2M14.5 13h2M7.5 16.5h2M11 16.5h2"/>',
 };
-function tabbar(current, T = same) {
+/* Once the station has closed (from 28 October — mission.open; 14 October: "Dashboard should go to At a glance"), the
+   dashboard's key — Dashboard here, Live Mission Dashboard in the header (public.js, ticker) — is At a Glance: it
+   opens the whole run, day by day, where the closed dashboard would only have sent a visitor back to the start page. */
+function tabbar(current, T = same, { closed = false } = {}) {
   const landing = current === '/';
-  const tab = (key, href, label, extra = '') => `<a class="tab tab-${key}${extra}" data-tab="${key}" href="${href}"><svg class="tab-ic" viewBox="0 0 24 24" aria-hidden="true">${TAB_ICONS[key]}</svg><span>${T(label)}</span></a>`;
+  const tab = (key, href, label, extra = '', icon = key) => `<a class="tab tab-${key}${extra}" data-tab="${key}" href="${href}"><svg class="tab-ic" viewBox="0 0 24 24" aria-hidden="true">${TAB_ICONS[icon]}</svg><span>${T(label)}</span></a>`;
   return `<nav class="tabbar" aria-label="${esc(T('The station, page by page'))}">
     ${tab('home', '/', 'Home', landing ? ' is-on' : '')}
-    ${tab('dashboard', '/dashboard', 'Dashboard', current === '/dashboard' ? ' is-on' : '')}
+    ${closed ? tab('dashboard', '/at-a-glance', 'At a Glance', current === '/at-a-glance' ? ' is-on' : '', 'glance')
+      : tab('dashboard', '/dashboard', 'Dashboard', current === '/dashboard' ? ' is-on' : '')}
     ${tab('board', '/write', 'Messages', current === '/write' ? ' is-on' : '')}
     ${tab('media', '/media', 'Media', current === '/media' ? ' is-on' : '')}
     ${tab('more', '/about', 'About', current === '/about' ? ' is-on' : '')}
@@ -217,7 +223,9 @@ function tabbar(current, T = same) {
    back to the page. (12 October: "from the cookies tab remove We don't track
    anything and Incoming transmission" — the strip of night at its head keeps
    its stars and its orbit, with no word in it.) Nothing under the two keys: the privacy policy's link that stood there
-   went on 13 October ("remove the Datenschutz button from cookies") — the foot of every page keeps it. */
+   went on 13 October ("remove the Datenschutz button from cookies") — the foot of every page keeps it. Once the station
+   has closed — from 28 October — the question is not asked at all (14 October: "after 28th, do not have a cookies pop
+   up"): there is no callsign to keep and nothing to write to the habitat any more (page, below). */
 function consent(current, T = same, callsign = '') {
   // The callsign the visitor has, or will get on agreeing: the one they were
   // given for this visit if they have written already, otherwise a free one
@@ -362,8 +370,8 @@ ${control || hideNav ? '' : nav(current, T)}
 <main class="shell">${body}</main>
 ${kit}
 ${control ? '' : foot(ctx, T, aura)}
-${aura && ctx.consent === null ? consent(current, T, ctx.offer || '') : ''}
-${control ? '' : tabbar(current, T)}
+${aura && ctx.consent === null && !(ctx.mission && ctx.mission.open === false) ? consent(current, T, ctx.offer || '') : ''}
+${control ? '' : tabbar(current, T, { closed: !!(ctx.mission && ctx.mission.open === false) })}
 ${scripts.concat(control ? [] : ['/tabbar.js'], ['/switches.js']).map((s) => `<script src="${s}?v=${ASSET_V}" defer></script>`).join('')}
 </body></html>`;
 }
@@ -589,7 +597,33 @@ function mealHoursLine(T, windows = {}, zone = '') {
   return line && zone ? `${line} ${zone}` : line;
 }
 
+/* ---------------------------------------------------------------- the last day */
+/* The run's last day — 27 October 2026 (src/lib/run.js, COME_OUT and OPEN_HOUSE): the performance closes at 10:00, the
+   day has no mission and no blogs (14 October: "the performance closes on the 27th at 10am, no missions for that day,
+   no blogs etc."), and from 15:00 to 17:00 the habitat is open to visitors — which the landing page's invitation says,
+   large, until 17:00. Otherwise the day reads as every other day of the run (14 October, 13:11: "on the 27th Oct, ONLY
+   change should be: Come visit us at Karlsruhe MARS!platz, see the habitat from inside and talk to the astronauts from
+   15:00 to 17:00 CET. Everything else remains the same as ALL other days" — until then the dashboard, the running line,
+   the screens, the chat and the About page said the day in their own words, and spoke in the past from 10:00).
+   `lastDayTimes` gives the hours with the day's zone (10:00 CET; 15:00, 17:00 CET); `openHouse` where the afternoon
+   stands on that day — 'ahead', 'open', 'over' — and null on any other; `lastDayStage` that as one word an open page
+   compares to turn itself over at 15:00 and 17:00 (the running line, /api/ticker). */
+function lastDayTimes(m) {
+  const { RUN } = require('../lib/run'), ML = require('../lib/mission');
+  const zone = (hhmm) => { try { return ML.zoneOfWall(m.end_date, hhmm, m.timezone); } catch { return ''; } };
+  const at = (hhmm) => `${hhmm}${zone(hhmm) ? ' ' + zone(hhmm) : ''}`;
+  return { out: at(RUN.COME_OUT), from: RUN.OPEN_HOUSE[0], to: at(RUN.OPEN_HOUSE[1]), fromAt: at(RUN.OPEN_HOUSE[0]) };
+}
+function openHouse(m) {
+  if (!m || !m.lastDay) return null;
+  const { RUN } = require('../lib/run');
+  const t = String(m.venueTime || '').slice(0, 5);
+  return t < RUN.OPEN_HOUSE[0] ? 'ahead' : t < RUN.OPEN_HOUSE[1] ? 'open' : 'over';
+}
+const lastDayStage = (m) => (m && m.lastDay ? `last-${openHouse(m)}` : '');
+
 module.exports = {
+  lastDayTimes, openHouse, lastDayStage,
   masthead, pageNav,
   page, panel, eyebrow, readout, orbitPlot, sparkline, pipeline, scaleStrip,
   statusStrip, langSwitch, themeSwitch, sym, legend, SYMBOL_KEY, esc, NAV, MESSAGE_STATES,

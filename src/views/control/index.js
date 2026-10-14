@@ -291,6 +291,15 @@ function blogBlock(c, tab, day, entry, n = 1, e = null, draft = null) {
     </form>`, 'mars-side officer-block');
 }
 
+/* The run's last day has no blogs (14 October: "the performance closes on the 27th at 10am, no missions for that day, no
+   blogs etc."): in place of a blog's composer, a line that says so (the routes refuse a post for that day as well). */
+function noBlogBlock(title, label, day) {
+  const date = new Date(missionLib.dateForDay(day) + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+  return panel(title, `
+    ${eyebrow(`${label} · day ${dd(day)}`)}
+    <p class="note mission-none">Day ${dd(day)}, ${esc(date)}, is the last day: the performance closes at 10:00, and the day has no blogs.</p>`, 'mars-side officer-block');
+}
+
 /** An officer's daily report — science findings, health activities — as the same composer. */
 function reportBlock(c, kindKey, label, hint, day, tpl, tab, n = 2, e = null, draft = null) {
   const live = !!(c.report && c.report.trim());
@@ -364,6 +373,10 @@ function missionBlock(day, plan, e = null) {
   const name = (m) => `Mission No. ${no2(m.no)} · ${m.title}${m.placeholder ? ' (sheet to come)' : ''}`;
   const dateLabel = (n) => new Date(missionLib.dateForDay(n) + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
   const cur = plan.days[String(day)] != null ? String(plan.days[String(day)]) : '';
+  // the last day has no mission (14 October: the performance closes at 10:00 that morning): said, nothing to choose
+  if (Number(day) === Object.keys(plan.days).length) return panel('SCIENCE MISSION', `
+    ${eyebrow(`Science mission · day ${dd(day)}`)}
+    <p class="note mission-none">Day ${dd(day)}, ${esc(dateLabel(day))}, is the last day: the performance closes at 10:00, and the day has no mission.</p>`, 'mars-side');
   // no words over it (October): the eyebrow, the day and its dropdown, Save
   return panel('SCIENCE MISSION', `
     ${eyebrow(`Science mission · day ${dd(day)}`)}
@@ -710,7 +723,7 @@ function resetBlock(day, plan, locked) {
       the day picker, the public pages and the record, and the desk opens on SOL 01 (NOW goes by itself on 15 October
       too). From the reset on, the trend graph carries
       no plan: every day ahead is empty and fills in as the crew file it. Nothing else is copied over the files. The
-      sign-in, the audit trail and the readings log (every reading ever pulled, as JSON files on disk) are
+      sign-in and the readings log (every reading ever pulled, as JSON files on disk) are
       kept. It cannot be undone.</p>
     <p class="note">${locked
       ? '<b>Locked.</b> The run has begun; the reset is for the weeks before 15 October.'
@@ -789,25 +802,26 @@ function page(ctx, model) {
     }).join('')}
   </nav>`;
 
+  const lastBlogDay = Number(day) >= 1 && Number(day) === Number(ctx.mission.totalDays);   // the last day: no blogs (14 October)
   const panes = {
     messages: queue({ list, crew, counts, show, space }),
     // Every officer's blocks in one column, full width, the blog first —
     // the writing gets the room, and nothing sits beside anything.
     comms: `
       <div class="officer-stack">
-        ${blogBlock(officers.comms, 'comms', day, officers.comms.entry, 1, edits[`blog:${officers.comms.id}`], drafts[`blog:${officers.comms.id}`])}
+        ${lastBlogDay ? noBlogBlock('COMMANDER LOG', 'Commander Log', day) : blogBlock(officers.comms, 'comms', day, officers.comms.entry, 1, edits[`blog:${officers.comms.id}`], drafts[`blog:${officers.comms.id}`])}
         ${moodBlock(officers.comms, 2, edits[`mood:${officers.comms.id}`])}
       </div>`,
     science: `
       <div class="officer-stack">
         ${missionBlock(day, missionPlan, edits.mission)}
-        ${reportBlock(officers.science, 'science', 'Daily Mission Report',
+        ${lastBlogDay ? noBlogBlock('SCIENCE', 'Daily Mission Report', day) : reportBlock(officers.science, 'science', 'Daily Mission Report',
           'Samples, measurements, the greenhouse, anything the habitat did that was worth recording.', day, tpl.SCIENCE, 'science', 1, edits['report:science'], drafts['report:science'])}
         ${moodBlock(officers.science, 2, edits[`mood:${officers.science.id}`])}
       </div>`,
     health: `
       <div class="officer-stack">
-        ${reportBlock(officers.health, 'health', 'Health Report', '', day, tpl.HEALTH, 'health', 1, edits['report:health'], drafts['report:health'])}
+        ${lastBlogDay ? noBlogBlock('HEALTH', 'Health Report', day) : reportBlock(officers.health, 'health', 'Health Report', '', day, tpl.HEALTH, 'health', 1, edits['report:health'], drafts['report:health'])}
         ${moodBlock(officers.health, 2, edits[`mood:${officers.health.id}`])}
       </div>`,
     habitat: `

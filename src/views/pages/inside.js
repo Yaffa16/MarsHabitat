@@ -55,30 +55,45 @@ const MODULE_PICS = '/habitat/modules/';      // the modules in colour, one cut-
    Equipment Lockers are keys no more — eleven modules. */
 const ROOMS = [
   { id: 'hydroponics', label: 'More-than-Human', href: '/dashboard#stores', btn: 'Open the Resources', fig: ['aeroponics-text', 'aeroponics-more'], rect: [270, 346, 325, 147],
-    about: ['The habitat’s other astronauts: live crickets performing as our alternate protein source, a robot dog as an astronaut’s best friend and helper for space walks and an emotional support robot assisting in our mental health — and the gardens and hydroponic shelves, where fresh food can grow without soil.'] },
+    about: ['The habitat’s other astronauts: live crickets performing as our alternate protein source, a robot dog as an astronaut’s best friend and helper for space walks and an emotional support robot assisting in our mental health — and the gardens and hydroponic shelves, where fresh food can grow without soil.'],
+    past: ['The habitat’s other astronauts: live crickets performing as our alternate protein source, a robot dog as an astronaut’s best friend and helper for space walks and an emotional support robot assisting in our mental health — and the gardens and hydroponic shelves, where fresh food grew without soil.'] },
   { id: 'comms', label: 'Communication', href: '/write#exchanges', btn: 'Open the Message Board', fig: ['comms-text', 'comms-more'], rect: [595, 314, 349, 179],
-    about: ['The crew is reachable by online message through this ground station website, by postcard and by direct communication each day at 19:00. All messages written here are also literally sent into space!'] },
+    about: ['The crew is reachable by online message through this ground station website, by postcard and by direct communication each day at 19:00. All messages written here are also literally sent into space!'],
+    past: ['The crew was reachable by online message through this ground station website, by postcard and by direct communication each day at 19:00. All messages written here were also literally sent into space!'] },
   { id: 'science', label: 'Science Mission', href: '/dashboard#mission-today', btn: 'Open Today’s Mission', fig: ['mission-text', 'mission-more', 'sensors-text', 'sensors-more'], rect: [944, 349, 306, 144],
     about: ['Each of our days has a specific research mission, centered around one of the five topics MARS! is composed of: Habitat, Mental Health, Food, Governance or Resource Management. We take a hard look at our society from the red planet looking down on Earth.',
-      'Sensors: everything is tracked inside the Red Dust City Habitat — CO₂, temperature, humidity, food rations, crew happiness. Keep in the loop and alert us if something seems amiss.'] },
+      'Sensors: everything is tracked inside the Red Dust City Habitat — CO₂, temperature, humidity, food rations, crew happiness. Keep in the loop and alert us if something seems amiss.'],
+    past: ['Each of our days had a specific research mission, centered around one of the five topics MARS! is composed of: Habitat, Mental Health, Food, Governance or Resource Management. We took a hard look at our society from the red planet looking down on Earth.',
+      'Sensors: everything was tracked inside the Red Dust City Habitat — CO₂, temperature, humidity, food rations, crew happiness. What they measured stays in the record.'] },
   { id: 'airlock', label: 'Airlock', href: '/dashboard#schedule', btn: 'Open the Daily Schedule', fig: ['eva-text', 'eva-more'], rect: [102, 493, 109, 177],
-    about: ['Going outside on Mars requires space suits and passing through an air lock. An EVA — extra-vehicular activity — is the crew’s daily walk on the Mars landscape of Karlsruhe’s Marktplatz at 16:00. Its mission is connected to the science mission of the day.'] },
+    about: ['Going outside on Mars requires space suits and passing through an air lock. An EVA — extra-vehicular activity — is the crew’s daily walk on the Mars landscape of Karlsruhe’s Marktplatz at 16:00. Its mission is connected to the science mission of the day.'],
+    past: ['Going outside on Mars requires space suits and passing through an air lock. An EVA — extra-vehicular activity — was the crew’s daily walk on the Mars landscape of Karlsruhe’s Marktplatz at 16:00. Its mission was connected to the science mission of the day.'] },
   { id: 'kitchen', label: 'Kitchen', href: '/dashboard#galley', fig: ['kitchen-text', 'kitchen-more'], rect: [211, 493, 278, 177], about: [] },
   // (Storage stood here, and Equipment Lockers on the ground floor, until 12 October: "remove Equipment Lockers, remove
   // Storage" — their lines stay in the drawing, but they are no keys and carry no name)
   { id: 'lounge', label: 'Living', href: '/media', btn: 'Open the Media Gallery', fig: ['crew-more'], rect: [578, 493, 335, 187],
-    about: ['Three astronauts from ZKM — Commander/Comms, Health Officer, and Science Officer — have volunteered to lead this experiment and are now stationed in the Red Dust City Habitat, each with their own role and responsibilities. You can check what they’re doing in the livestream gallery, see their moods and find out more about their daily duties.'] },
+    about: ['Three astronauts from ZKM — Commander/Comms, Health Officer, and Science Officer — have volunteered to lead this experiment and are now stationed in the Red Dust City Habitat, each with their own role and responsibilities. You can check what they’re doing in the livestream gallery, see their moods and find out more about their daily duties.'],
+    past: ['Three astronauts from ZKM — Commander/Comms, Health Officer, and Science Officer — volunteered to lead this experiment and were stationed in the Red Dust City Habitat, each with their own role and responsibilities. In the media gallery you can see what they did.'] },
   { id: 'quarters', label: 'Nap pods', href: '/dashboard#crew', btn: 'Open Crew Moods', fig: ['crew-text'], rect: [913, 493, 238, 178],
-    about: ['Each day has a strict schedule the astronauts adhere to and the Habitat is divided into specific zones for working, cooking, playing and sleeping — because going out for a stroll requires serious effort. Have a look in the media gallery or look inside our windows on the MARS!platz to see how we are using the space.'] },
+    about: ['Each day has a strict schedule the astronauts adhere to and the Habitat is divided into specific zones for working, cooking, playing and sleeping — because going out for a stroll requires serious effort. Have a look in the media gallery or look inside our windows on the MARS!platz to see how we are using the space.'],
+    past: ['Each day had a strict schedule the astronauts adhered to and the Habitat was divided into specific zones for working, cooking, playing and sleeping — because going out for a stroll requires serious effort. Have a look in the media gallery to see how we used the space.'] },
   { id: 'health', label: 'Health Station', href: '/dashboard#crew', fig: ['health-text', 'health-more'], rect: [1151, 493, 288, 178], about: [] },
   { id: 'recycling', label: 'Water Recycling', href: '/dashboard#stores', btn: 'Open the Resources', fig: ['recycling-text', 'recycling-more'], rect: [195, 670, 420, 165],
-    about: ['When every liter of water has to be carried up by space rocket, we become more mindful of our usage. Our water recycling system is one of the things we brought to reflect on resources and how we are currently treating them on Earth.'] },
+    about: ['When every liter of water has to be carried up by space rocket, we become more mindful of our usage. Our water recycling system is one of the things we brought to reflect on resources and how we are currently treating them on Earth.'],
+    past: ['When every liter of water has to be carried up by space rocket, we become more mindful of our usage. Our water recycling system was one of the things we brought to reflect on resources and how we are currently treating them on Earth.'] },
   { id: 'cycle', label: 'Cycle (Power Generation)', href: '/dashboard#bike', btn: 'Open the Power generated', fig: ['generator-text', 'generator-more'], rect: [904, 680, 191, 155],
-    about: ['A bicycle generator: pedalling charges the battery. The health officer’s workout is also the habitat’s power plant — the steps and the kilowatt-hours are the same effort.'] },
+    about: ['A bicycle generator: pedalling charges the battery. The health officer’s workout is also the habitat’s power plant — the steps and the kilowatt-hours are the same effort.'],
+    past: ['A bicycle generator: pedalling charged the battery. The health officer’s workout was also the habitat’s power plant — the steps and the kilowatt-hours were the same effort.'] },
   { id: 'power', label: 'Electricity', href: '/dashboard#power', btn: 'Open the Power Balance', fig: ['generator-text', 'power-text'], rect: [1095, 680, 122, 155],
-    about: ['We measure our energy expenditure: how much comes in, how much goes out: from calorie intake to taken steps, from power produced by muscle to electricity consumption. Check out our power balance in the dashboard!'] },
+    about: ['We measure our energy expenditure: how much comes in, how much goes out: from calorie intake to taken steps, from power produced by muscle to electricity consumption. Check out our power balance in the dashboard!'],
+    past: ['We measured our energy expenditure: how much came in, how much went out: from calorie intake to taken steps, from power produced by muscle to electricity consumption.'] },
 ];
-const hasPopup = (r) => !!(r.fig.length || r.about.length);
+/* After the performance — from 10:00 on the last day, 27 October (14 October: "write after-the-run wording"; the
+   explanations spoke of the crew as still inside after the run, 13 October) — each part says its words in the past
+   (`past`), and its live sentences, which spoke of the crew's day, are gone: a module with nothing left to say — the
+   Kitchen and the Health Station, whose pop-ups were their sentences — lights up and is named, and opens nothing. */
+const wordsOf = (r, ended) => (ended && r.past ? r.past : r.about);
+const hasPopup = (r, ended = false) => !!(wordsOf(r, ended).length || (!ended && r.fig.length));
 
 /* The two keys that are not modules — round keys with line icons, as the dome drew them, on the ground in front of the
    habitat, either side of its axis, drawn larger than the picture's units: on a desk a little (desk, DESK_KEY), with the
@@ -86,11 +101,13 @@ const hasPopup = (r) => !!(r.fig.length || r.about.length);
    the stylesheet hides there with the modules' tags). */
 const KEYS = [
   { id: 'dashboard', label: 'Dashboard', href: '/dashboard#mission', fig: ['dashboard-text'], at: [626, 940], desk: [626, 906], btn: 'Open the Mission Dashboard',
-    about: ['The Mission Dashboard is the station’s instrument panel: the live readings, today’s schedule and meal, the crew’s condition, the trends and the three daily blogs, on one page.'] },
+    about: ['The Mission Dashboard is the station’s instrument panel: the live readings, today’s schedule and meal, the crew’s condition, the trends and the three daily blogs, on one page.'],
+    past: ['The Mission Dashboard was the station’s instrument panel: the live readings, the day’s schedule and meal, the crew’s condition, the trends and the three daily blogs, on one page.'] },
   { id: 'eva', label: 'Going Outside', href: '/dashboard#schedule', btn: 'Open the Daily Schedule', fig: ['eva-text', 'eva-more'], at: [912, 940], desk: [912, 906],
-    about: ['Going outside on Mars requires space suits and passing through an air lock. An EVA — extra-vehicular activity — is the crew’s daily walk on the Mars landscape of Karlsruhe’s Marktplatz at 16:00. Its mission is connected to the science mission of the day.'] },
+    about: ['Going outside on Mars requires space suits and passing through an air lock. An EVA — extra-vehicular activity — is the crew’s daily walk on the Mars landscape of Karlsruhe’s Marktplatz at 16:00. Its mission is connected to the science mission of the day.'],
+    past: ['Going outside on Mars requires space suits and passing through an air lock. An EVA — extra-vehicular activity — was the crew’s daily walk on the Mars landscape of Karlsruhe’s Marktplatz at 16:00. Its mission was connected to the science mission of the day.'] },
 ];
-const PARTS = ROOMS.filter(hasPopup).concat(KEYS);
+const partsOf = (ended) => ROOMS.filter((r) => hasPopup(r, ended)).concat(KEYS);
 const DESK_KEY = 1.15, PHONE_KEY = 1.9;             // how much larger than the picture's units the two keys are drawn: on a desk, on a phone
 const KEY_TAG = 42 + 12 + 20;                        // how far from a key's centre its name's tag stands (over it on a phone, under it on a desk)
 
@@ -125,9 +142,9 @@ function sweep(r) {
   const b = rectOf(r), w = Math.round(b.w * 0.26);
   return `<g clip-path="url(#in-clip-${r.id})"><rect class="in-sweep" data-hex="${r.id}" x="${b.x}" y="${b.y - 20}" width="${w}" height="${b.h + 40}"/></g>`;
 }
-function roomSvg(r, T) {
+function roomSvg(r, T, ended = false) {
   const name = T(r.label), w = tagWidth(name), b = rectOf(r), tx = Math.round(b.x + b.w / 2), ty = b.y + b.h;
-  const popup = hasPopup(r);
+  const popup = hasPopup(r, ended);
   return `<g class="in-part" data-part="${r.id}">
         <rect class="in-room" data-hex="${r.id}" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" role="button" tabindex="0"${popup ? ` aria-haspopup="dialog" aria-controls="dome-${r.id}"` : ''}><title>${esc(name)}</title></rect>
         <g class="dome-tag in-tag" data-hex="${r.id}" data-x="${tx}" data-y="${ty}" aria-hidden="true"><rect x="${tx - w / 2}" y="${ty - 20}" width="${w}" height="40" rx="20"/><text x="${tx}" y="${ty + 6.5}" text-anchor="middle">${esc(name)}</text></g>
@@ -154,6 +171,12 @@ function keySvg(k, T) {
 function habitatInside(ctx, args) {
   const T = ctx.T;
   const f = figures(ctx, args);
+  // After the run — once the station has closed, at midnight at the end of the last day (13 October; from 10:00 on the
+  // last day from 14 October until that afternoon's "everything else remains the same as all other days"): no NOW
+  // line — the crew have left, and what it said would be the last sol's hour, its tasks and its meals — the
+  // explanations in the past (wordsOf, above), and no key to the dashboard, which is closed with it (its address leads
+  // to At a Glance); the keys to the board and the gallery stay
+  const closed = !ctx.mission.open, over = closed;
   const popup = (p) => `
     <dialog class="popup dome-popup" id="dome-${p.id}" aria-labelledby="dome-${p.id}-title">
       <div class="popup-head">
@@ -162,9 +185,9 @@ function habitatInside(ctx, args) {
         <button type="button" class="popup-close" data-close aria-label="${esc(T('Close'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </div>
       <div class="popup-body">
-        ${p.about.map((t) => `<p>${esc(T(t))}</p>`).join('')}
-        <p class="dome-now"><span class="dome-now-k">${T('Now')}</span> ${p.fig.map((k) => { const [id, part] = k.split('-'); return `<span data-field="${k}">${esc((f[id] || {})[part] || '')}</span>`; }).join(' ')}</p>
-        <p><a class="btn" href="${p.href}" data-close>${T(p.btn || 'Open its panel on the dashboard')} →</a></p>
+        ${wordsOf(p, over).map((t) => `<p>${esc(T(t))}</p>`).join('')}
+        ${over ? '' : `<p class="dome-now"><span class="dome-now-k">${T('Now')}</span> ${p.fig.map((k) => { const [id, part] = k.split('-'); return `<span data-field="${k}">${esc((f[id] || {})[part] || '')}</span>`; }).join(' ')}</p>`}
+        ${closed && /^\/dashboard/.test(p.href) ? '' : `<p><a class="btn" href="${p.href}" data-close>${T(p.btn || 'Open its panel on the dashboard')} →</a></p>`}
       </div>
     </dialog>`;
   // the hint: on a desk the hand alone opens a room, on a touch screen a tap (sheet.css shows the one that applies)
@@ -191,7 +214,7 @@ function habitatInside(ctx, args) {
             <g class="in-pics" aria-hidden="true">${ROOMS.map(picture).join('')}</g>
             <g class="in-sweeps" aria-hidden="true">${ROOMS.map(sweep).join('')}</g>
           </g>
-          <g class="in-rooms">${ROOMS.map((r) => roomSvg(r, T)).join('')}</g>
+          <g class="in-rooms">${ROOMS.map((r) => roomSvg(r, T, over)).join('')}</g>
           <g class="dome-hexes">${KEYS.map((k) => keySvg(k, T)).join('')}</g>
         </svg>
         <noscript><style>body.landing .is-inside .dome-svg { display: none; }</style><img class="in-noscript" src="${SCENE}" alt="${esc(T('The habitat in section: its rooms under the dome, on the Mars plain'))}" width="${PIC.w}" height="${PIC.h}"></noscript>
@@ -202,7 +225,7 @@ function habitatInside(ctx, args) {
     </div>
     <p class="in-credit">${T('AI generated image')}</p>
     <p class="dome-caption" aria-hidden="true"></p>
-    ${PARTS.map(popup).join('')}
+    ${partsOf(over).map(popup).join('')}
     <script>
     (function () {
       var root = document.getElementById('habitat-dome'); if (!root) return;

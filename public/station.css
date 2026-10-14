@@ -325,12 +325,18 @@ p { margin: 0 0 13px; max-width: 66ch; color: var(--ink); }
 /* Who we are (info.js, whoFold): the crew's portraits, six to a row, each with its name under it, in the order of their
    surnames (public/crew/crew.json) — and the partners' logos, small, each on a white tile so that it reads on the dark
    ground as on the light, under Produced by */
-.crew-wall { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 14px 10px; }   /* fourteen — the crew and the robot dog — in two rows of seven */
+.crew-wall { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 14px 10px; }   /* sixteen — the crew and the robot dog — in two rows of eight (fourteen in two rows of seven until Laura Benetschik's and Ralf Eger's photographs came, 14 October); four rows of four on a tablet, four rows of four on a phone */
 .crew-pic { margin: 0; min-width: 0; }
 .crew-pic img { display: block; width: 100%; height: auto; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 10px; background: #101012; }
 .crew-pic figcaption { margin-top: 8px; font-family: var(--display); font-size: 14px; font-weight: 600; line-height: 1.25; color: var(--ink); text-align: center; overflow-wrap: anywhere; }
 @media (max-width: 1024px) { .crew-wall { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-@media (max-width: 560px) { .crew-wall { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; } }
+@media (max-width: 560px) { .crew-wall { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 6px; } .crew-pic figcaption { margin-top: 6px; font-size: 11.5px; } }
+/* The credits for the website and the Panolab (14 October): the names in the order of the surnames, in columns that
+   fill down — three on a desk, two on a phone — each on its own rule, the surname in the heavier weight */
+.credits-list { margin: 0; padding: 0; list-style: none; columns: 3 12em; column-gap: 32px; }
+.credits-list li { break-inside: avoid; padding: 7px 0; border-bottom: 1px solid var(--rule); font-family: var(--display); font-size: 15px; line-height: 1.35; color: var(--ink); }
+.credits-list li b { font-weight: 600; }
+@media (max-width: 560px) { .credits-list { columns: 2; column-gap: 20px; } .credits-list li { font-size: 14px; } }
 .partners { display: grid; gap: 16px; margin-top: 20px; }
 .partner-row .eyebrow { margin-bottom: 10px; }
 .logos { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -1192,6 +1198,10 @@ body.landing .foot { margin-top: 44px; margin-bottom: 44px; }
 .dpanel .row:last-child { border-bottom: 0; }
 .dpanel .row.active { margin: 0 -8px; padding: 6px 8px; }
 .dpanel .empty { min-height: 90px; padding: 16px; font-size: 9px; }
+/* The run's last day where a day had its mission or its schedule (14 October: the performance closes at 10:00, the day
+   has no mission, no blogs, no schedule; the habitat open to visitors 15:00–17:00) — the day in two sentences, read as
+   a note rather than an empty slot (layout.js, lastDayNote) */
+.last-day-note { margin: 0; padding: 16px 18px; border: 1.5px solid var(--mars); border-radius: var(--r); font-size: 15px; line-height: 1.5; color: var(--ink); text-wrap: pretty; }
 
 /* Habitat, compact */
 .dpanel .hbt { margin: 0; }
@@ -1889,11 +1899,15 @@ a.chip { text-decoration: none; }
 /* ======================================================= mission control */
 /* Mission control is a desk, not a stage: flat white panels with a hairline
    border, black on white, one typeface size that reads across a room, and
-   orange kept for the one button that publishes and the count of messages
-   waiting. Everything else the station does in colour, control does in grey. */
+   one colour kept for the button that publishes, the open tab, the count of
+   messages waiting and what has been edited — blue since 14 October ("in the
+   Control page, replace the Orange theme with a blue button theme"; orange
+   until then: the station's orange is redefined here, so every rule below
+   that draws in it draws in blue). Everything else control does in grey. */
 body.control {
   --c-bg: #f3f3f2; --c-panel: #ffffff; --c-line: #d9d9d6; --c-line-soft: #ebebe8; --c-text: #161616; --c-muted: #666; --c-faint: #9a9a97;
-  --c-field: #ffffff; --c-quoted: #fafaf9; --c-bar: #f6f7f7; --c-hover: #f0f0ee; --c-face: #f3f1ee; --c-line-strong: #8c8f94; --c-on-text: #ffffff; --c-bad: #b00; --c-edit: #fff4ea;
+  --c-field: #ffffff; --c-quoted: #fafaf9; --c-bar: #f6f7f7; --c-hover: #f0f0ee; --c-face: #f3f1ee; --c-line-strong: #8c8f94; --c-on-text: #ffffff; --c-bad: #b00; --c-edit: #eef1ff;
+  --orange: #2f45e8; --orange-deep: #2236c9; --orange-soft: rgba(47,69,232,.12); --orange-ink: #ffffff; --mars: var(--orange);   /* the desk's blue, the landing page's cobalt */
   /* Every face on this page is Open Sans: the three font stacks are
      redefined here, so headings, labels, codes and reading matter all follow. */
   --display: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -1904,12 +1918,13 @@ body.control {
 /* the same desk in the dark: every grey drawn from these, so nothing on the page is left white */
 :root[data-theme="dark"] body.control {
   --c-bg: #141416; --c-panel: #1f1f22; --c-line: #35363c; --c-line-soft: #2a2b30; --c-text: #ececea; --c-muted: #a5a5ab; --c-faint: #6e6e75;
-  --c-field: #17171a; --c-quoted: #26262a; --c-bar: #26262a; --c-hover: #2d2d32; --c-face: #2d2d32; --c-line-strong: #6b6c74; --c-on-text: #141416; --c-bad: #ff7b6b; --c-edit: #2b2118;
+  --c-field: #17171a; --c-quoted: #26262a; --c-bar: #26262a; --c-hover: #2d2d32; --c-face: #2d2d32; --c-line-strong: #6b6c74; --c-on-text: #141416; --c-bad: #ff7b6b; --c-edit: #1b2042;
+  --orange: #4a5ef5; --orange-deep: #3a4ee6; --orange-soft: rgba(110,128,255,.18); --c-accent-text: #a3adff;   /* the dark desk's blue; a lighter one for words in it */
   color-scheme: dark;
 }
 body.control h1, body.control h2, body.control h3, body.control .bigsec, body.control .block-title, body.control .quoted, body.control .kv dd, body.control table, body.control .popup-head .fold-title { color: var(--c-text); }
 body.control input, body.control select, body.control textarea, body.control button { font-family: var(--sans); }
-body.control .shell { max-width: 1240px; }
+body.control .shell { max-width: 1680px; }   /* wider on a big screen (14 October: "increase the width of the Mission control area on screen"; 1240 until then) */
 /* surfaces: no gradients, no shadows */
 body.control .panel, body.control .slab, body.control .card, body.control .msg, body.control .quoted,
 body.control .ed-block-media, body.control .fold {
@@ -1941,7 +1956,7 @@ body.control .block-title { font-size: 22px; margin-bottom: 2px; }
 /* the Habitat tab: each block's head — Schedule, Meals, Steps taken, the stores, Power,
    the gallery, the reset — in bold and large, like the block titles on the officer tabs */
 body.control [data-pane="habitat"] .panel > .eyebrow { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; text-transform: none; color: var(--c-text); line-height: 1.25; margin-bottom: 16px; }
-body.control [data-pane="habitat"] .panel > .eyebrow .fold-chev { font-size: 14px; }
+body.control [data-pane="habitat"] .panel > .eyebrow .fold-chev { font-size: 0; }
 body.control .note, body.control .tab-note { font-size: 13.5px; color: var(--c-muted); }
 body.control .row .m b { font-size: 15px; }
 body.control .row .m span, body.control .row .t { font-size: 13px; }
@@ -1952,7 +1967,7 @@ body.control input[type=date], body.control textarea, body.control select, body.
 }
 body.control textarea:focus, body.control input:focus, body.control select:focus, body.control .ed-text:focus { outline: 2px solid var(--c-text); outline-offset: -1px; }
 body.control ::placeholder { color: var(--c-faint); font-style: normal; }
-/* buttons: grey outline; the one that publishes is orange */
+/* buttons: grey outline; the one that publishes is blue */
 body.control button, body.control .btn, body.control .filters a, body.control .daypick a, body.control .chip, body.control .ed-tools button, body.control .attach-pick {
   background: var(--c-panel); box-shadow: none; border: 1px solid var(--c-line); color: var(--c-text); font-family: var(--sans); font-size: 13px; letter-spacing: 0; text-transform: none; font-weight: 500; border-radius: 6px; transform: none;
 }
@@ -2040,7 +2055,7 @@ body.control .edits[hidden] { display: none; }
 /* a meal chosen from the dropdown and not saved yet: said, but not in orange — a choice is not an edit */
 body.control .edits.quiet { color: var(--c-muted); font-weight: 600; }
 body.control .edits.quiet::before { background: var(--c-muted); }
-body.control form.has-edits button.primary { box-shadow: 0 0 0 3px rgba(255,106,0,.32); }
+body.control form.has-edits button.primary { box-shadow: 0 0 0 3px rgba(47,69,232,.32); }
 /* an edit once saved stays marked (control_edit, routes/control.js): the same orange, without the unsaved tint */
 body.control input[type=text].was-edited, body.control input[type=number].was-edited, body.control input[type=time].was-edited,
 body.control textarea.was-edited, body.control select.was-edited { border-color: var(--orange); box-shadow: inset 3px 0 0 var(--orange); }
@@ -2057,12 +2072,21 @@ body.control form.was-edited .ed .ed-hint { display: none; }
 /* when the form was last saved, beside its button */
 body.control .saved-at { font-size: 12.5px; color: var(--c-muted); white-space: nowrap; }
 body.control .saved-at.saved-never { color: var(--c-faint); }
-/* the tab bar: bold, larger, the open tab in orange */
+/* the tab bar: bold, larger, the open tab in blue */
 body.control .tabs.officer-bar a { font-size: 17px; font-weight: 700; padding: 12px 18px; }
 body.control .tabs.officer-bar a.on { color: var(--orange); border-bottom-color: var(--orange); font-weight: 700; }
+/* in the dark the open tab is the same: its name in blue over a blue line — not the light box it stood in until 14 October */
+:root[data-theme="dark"] body.control .tabs.officer-bar a.on { background: transparent; color: var(--c-accent-text); box-shadow: none; }
 /* every block's head folds its block (control.js): a chevron at the right of the head, the block hidden while folded */
 body.control .panel > .eyebrow, body.control .block-head, body.control .sechead { cursor: pointer; user-select: none; }
-body.control .fold-chev { display: inline-block; flex: none; margin-left: 8px; font-size: 12px; line-height: 1; color: var(--c-muted); transition: transform .15s; }
+/* the chevron large and plain to see (14 October: "make the size of the arrow next to headings for collapse bigger" —
+   a 12 px ▾ until then): drawn as a chevron 18 px across in the text's colour, in a round 30 px place of its own */
+body.control .fold-chev { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 30px; height: 30px; margin-left: 10px; border-radius: 50%;
+  font-size: 0; line-height: 1; color: var(--c-text); background: var(--c-hover); vertical-align: middle; transition: transform .15s, background .15s; }
+body.control .fold-chev::before { content: ""; width: 18px; height: 18px; background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat; }
+body.control .fold-head:hover .fold-chev { background: var(--orange-soft); color: var(--orange); }
 body.control .is-folded > .fold-head .fold-chev { transform: rotate(-90deg); }
 body.control .panel.is-folded > :not(.chan):not(.fold-head), body.control .queue.is-folded > :not(.fold-head) { display: none; }
 body.control .fold-head:focus-visible { outline: 2px solid var(--c-text); outline-offset: 2px; }
@@ -2553,7 +2577,6 @@ textarea.ed-source:focus { outline: 0; }
   display: flex; flex-direction: column; gap: 8px; padding: 16px 16px 18px;
   border-radius: 14px; background: var(--well); box-shadow: var(--sh-inset); min-width: 0;
 }
-.dl-card .fmt { font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--orange); }
 .dl-card h3 { margin: 0; font-size: 15.5px; letter-spacing: -0.01em; }
 .dl-card p { margin: 0 0 4px; font-size: 12.5px; color: var(--dim); flex: 1 1 auto; }
 .dl-card .btn { align-self: flex-start; }

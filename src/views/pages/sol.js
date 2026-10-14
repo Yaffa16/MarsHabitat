@@ -89,17 +89,25 @@ const cap = (s) => { s = String(s || ''); return s.charAt(0).toUpperCase() + s.s
 const roleName = (T, role) => T(cap(officer.shown(role)));
 
 /* Who a name in the shift plan is (content/shifts.json): the member of the crew whose portrait it names — by the
-   picture's file (vlaminck-maurer, kloeck) or the surname, else the one first name, in any case — or someone the station
-   has no portrait of yet, by the name as written ("Laura B."), shown with the habitat's robot dog's picture (12 October:
-   "for any photos that do not exist, show the robot dog"). `{ name, file, photo }`; null for nobody. */
+   picture's file (vlaminck-maurer, kloeck) or the surname, else the one first name, else the first name and the surname
+   or its first letter ("Laura B.", "Laura Benetschik"), in any case and with the accents folded, as long as it names
+   one of them alone — or someone the station has no portrait of yet, by the name as written ("Sam X."), shown with the
+   habitat's robot dog's picture (12 October: "for any photos that do not exist, show the robot dog"). Laura B. and Ralf
+   E. stood with the robot dog until their photographs came (14 October: "in the Astronaut pictures I have added Laura
+   Benetschik, make sure she is displayed on the day of her shift instead of the Robotdog", then "I have added Ralf Eger
+   … on the current shift when it's his shift"). `{ name, file, photo }`; null for nobody. */
 const ROBODOG = 'robodog.jpg';
+const folded = (s) => String(s || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase();
 function personOf(crew, who) {
   const w = String(who || '').trim();
   if (!w) return null;
   const k = w.toLowerCase();
   const people = (crew || []).filter((c) => c && c.file && c.last);
+  const alone = (list) => (list.length === 1 ? list[0] : null);
+  const two = /^(\S+)\s+(\S+?)\.?$/u.exec(w);                                    // "Laura B.", "Laura Benetschik"
   const c = people.find((x) => String(x.file).replace(/\.jpg$/i, '').toLowerCase() === k || String(x.last).toLowerCase() === k)
-    || (() => { const f = people.filter((x) => String(x.first || '').toLowerCase() === k); return f.length === 1 ? f[0] : null; })();
+    || alone(people.filter((x) => String(x.first || '').toLowerCase() === k))
+    || (two ? alone(people.filter((x) => folded(x.first) === folded(two[1]) && folded(x.last).startsWith(folded(two[2])))) : null);
   return c ? { name: `${c.first} ${c.last}`.trim(), file: c.file, photo: true } : { name: w, file: ROBODOG, photo: false };
 }
 

@@ -34,13 +34,22 @@ if (!columns('crew_entry').includes('source')) {
   if (!have.includes('served')) db.exec("ALTER TABLE meal ADD COLUMN served TEXT NOT NULL DEFAULT ''");
 }
 
-const now = () => new Date().toISOString();
-
-function audit(actor, entity, entityId, action, detail = '') {
-  db.prepare(
-    `INSERT INTO audit (actor, entity, entity_id, action, detail, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)`
-  ).run(actor, entity, String(entityId), action, detail, now());
+// The station keeps no log of mission control's doings (13 October: "remove the mission control's log"): the table an
+// earlier build wrote a line into for every publish, save, upload, sign-in and deletion goes, with every line in it.
+// The one thing read back from it — when the last reset was, which tells an open page to drop the readings it holds —
+// is kept in the settings (content.js, resetEpoch).
+db.exec('CREATE TABLE IF NOT EXISTS setting (key TEXT PRIMARY KEY, value TEXT NOT NULL)');
+if (db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'audit'").get()) {
+  const last = db.prepare("SELECT MAX(created_at) t FROM audit WHERE action = 'reset'").get();
+  if (last && last.t) db.prepare("INSERT INTO setting (key, value) VALUES ('reset.epoch', ?) ON CONFLICT(key) DO NOTHING").run(last.t);
+  db.exec('DROP TABLE audit');
 }
 
-module.exports = { db, audit, now, DATA_DIR };
+// Who posted a note or a report (13 October): the desk's sign-in, written into notes.json with the note.
+if (!columns('day_note').includes('posted_by')) {
+  db.exec("ALTER TABLE day_note ADD COLUMN posted_by TEXT NOT NULL DEFAULT ''");
+}
+
+const now = () => new Date().toISOString();
+
+module.exports = { db, now, DATA_DIR };

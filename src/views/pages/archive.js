@@ -21,9 +21,11 @@ function contents(ctx, { days, counts, entryCounts, rehearsal = null, tally = { 
   const recorded = days.filter((d) => d.isPast || d.isToday);
 
   /* One download per card: what it is, what it is for, one button. */
-  const card = ({ fmt, title, blurb, href, label, primary, also = [] }) => `
+  // (each card's format stood over its title in small capitals — PDF · one document, JSON · every day of the run, ZIP ·
+  // tables for a spreadsheet, PDF · n messages · not part of the record — until 14 October: "from all the buttons remove"
+  // them; the key under the title names the format)
+  const card = ({ title, blurb, href, label, primary, also = [] }) => `
     <div class="dl-card">
-      <div class="fmt">${esc(fmt)}</div>
       <h3>${esc(title)}</h3>
       <a class="btn${primary ? ' primary' : ''}" href="${href}" download>${esc(label)}</a>
       ${also.length ? `<div class="day-links" style="margin-top:8px">${also.map((a) => `<a href="${a.href}" download title="${esc(a.title || '')}">${esc(a.label)}</a>`).join('')}</div>` : ''}
@@ -44,24 +46,24 @@ function contents(ctx, { days, counts, entryCounts, rehearsal = null, tally = { 
   ${panel('TAKE A COPY', `
     ${eyebrow('Download the record')}
     <div class="dl-grid">
-      ${card({ fmt: 'PDF · one document', title: 'The full record',
+      ${card({ title: 'The full record',
         blurb: 'The whole mission, bookmarked by section and by day: schedules, meals, '
           + 'the stores as counted, the crew log with its photographs in place, every '
           + 'state filed and every reading of every day.',
         href: '/archive/export.pdf', label: 'Download PDF', primary: true })}
-      ${card({ fmt: 'JSON · every day of the run', title: 'Data',
+      ${card({ title: 'Data',
         blurb: 'Everything the station holds for every day of the run, as one structured file: the schedule, '
           + 'the meals, the stores, the steps, the power generated and consumed, the Commander Log and the reports, '
-          + 'every state filed, every sensor reading, the day’s mission, the messages received with their replies, '
-          + 'and the media index with every file’s SHA-256.',
+          + 'every state filed, every sensor reading with where it came from, the day’s mission, the messages received '
+          + 'with their replies and their numbers on SpaceSpeak, and the media index with every file’s SHA-256.',
         href: '/archive/export.json', label: 'Download .json' })}
-      ${card({ fmt: 'ZIP · tables for a spreadsheet', title: 'Sensor Data',
+      ${card({ title: 'Sensor Data',
         blurb: 'Everything on the Sensors tab and in Today’s Meal, day by day: every reading of the habitat sensor '
           + 'and the hardware, each day’s low, high and mean, the steps, the power generated and consumed, the '
           + 'resources and every meal with its figures — a folder for each day and the same tables across them all. '
           + 'With the raw readings log beside them: every reading ever pulled, kept for good.',
         href: '/archive/sensor-data.zip', label: 'Download ZIP' })}
-      ${card({ fmt: `PDF · ${counts.total} ${counts.total === 1 ? 'message' : 'messages'} · not part of the record`, title: 'All the messages',
+      ${card({ title: 'All the messages',
         blurb: 'Every message that ever reached the station — published with its reply, rejected with '
           + 'the reason, still waiting or in transit — in the order it was sent.',
         href: '/control/messages/export.pdf', label: 'Download all messages',

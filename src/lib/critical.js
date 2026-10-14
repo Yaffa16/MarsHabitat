@@ -72,10 +72,13 @@ CREATE INDEX IF NOT EXISTS idx_external_t ON external_reading(t);`);
 // A database made before the habitat sensor gains its columns in place.
 {
   const have = new Set(db.prepare('PRAGMA table_info(external_reading)').all().map((c) => c.name));
-  for (const [col, type] of [['voc', 'REAL'], ['iaq', 'REAL'], ['iaqc', 'TEXT']]) {
+  for (const [col, type] of [['voc', 'REAL'], ['iaq', 'REAL'], ['iaqc', 'TEXT'], ['src', 'TEXT']]) {
     if (!have.has(col)) db.exec(`ALTER TABLE external_reading ADD COLUMN ${col} ${type}`);
   }
 }
+// `src`: where a row came from (13 October: "make sure no data point or source is lost") — "home-assistant" for the
+// habitat sensor read through Home Assistant (the entities named in content/home-assistant.json under `habitat`),
+// "node:<id>" for the critical-sensors.de node; rows stored before the column existed carry none.
 
 /**
  * Where the readings start. The node's own feed hands back its last thirty
@@ -134,7 +137,7 @@ function setFloor(reason, mode = 'build') {
   setSetting('readings_floor', t);
   setSetting('readings_anchor', t);
   setSetting('readings_mode', pinned != null ? 'pinned' : mode);
-  const gone = db.prepare('DELETE FROM external_reading WHERE t < ?').run(t).changes;
+  const gone = db.prepare('DELETE FROM external_reading WHERE t < ?').run(capped(t)).changes;   // never a reading of the run
   console.log(`[critical] readings start ${new Date(t).toISOString().slice(0, 16).replace('T', ' ')} UTC — ${mode === 'run' ? 'the first day of the run' : 'today'} (${reason})${gone ? `; ${gone} older readings dropped` : ''}`);
   return t;
 }
@@ -156,12 +159,22 @@ function anchorMs() {
   return Number.isFinite(w) && w > 0 ? w : todayStartMs();
 }
 
+/**
+ * Once the run has begun, no floor passes the run's first midnight — a pinned one, a build's or a first start's —
+ * so nothing the run measured is ever dropped or hidden, and a poll may still bring back what a station that was down,
+ * or rebuilt, did not hold (13 October: "make sure nothing is missed or no data point or source is lost"). Before the
+ * run the floor is where it was set.
+ */
+function runBegun() {
+  try { return Date.now() >= runStartMs(); } catch { return false; }
+}
+const capped = (t) => (runBegun() ? Math.min(t, runStartMs()) : t);
 function floorMs() {
   const pinned = pinnedFloor();
-  if (pinned != null) return pinned;
+  if (pinned != null) return capped(pinned);
   const v = Number(getSetting('readings_floor'));
-  if (Number.isFinite(v) && v > 0) return v;
-  return setFloor('first start of this database', 'build');
+  if (Number.isFinite(v) && v > 0) return capped(v);
+  return setFloor('first start of this database', runBegun() ? 'run' : 'build');
 }
 
 /**
@@ -177,6 +190,12 @@ function applyBuild(stamp) {
   if (frozen()) return false;
   if (getSetting('build_seen') === String(stamp)) return false;
   setSetting('build_seen', stamp);
+  // Nor once the run has begun: a fix shipped on the fifth day must not drop the first four (13 October). The floor
+  // stays where it is — at the run's first midnight, or earlier.
+  if (runBegun()) {
+    console.log(`[critical] new build ${stamp} during the run — the readings floor stays where it is: nothing the run measured is dropped`);
+    return false;
+  }
   setFloor(`new build ${stamp}`, 'build');
   return true;
 }
@@ -233,8 +252,8 @@ function shape(raw) {
 /* -------------------------------------------------------------- persisting */
 
 const insert = db.prepare(
-  `INSERT OR IGNORE INTO external_reading (t, ${KEYS.join(', ')}, ${TEXT_KEYS.join(', ')}, sig)
-   VALUES (?, ${KEYS.map(() => '?').join(', ')}, ${TEXT_KEYS.map(() => '?').join(', ')}, ?)`);
+  `INSERT OR IGNORE INTO external_reading (t, ${KEYS.join(', ')}, ${TEXT_KEYS.join(', ')}, sig, src)
+   VALUES (?, ${KEYS.map(() => '?').join(', ')}, ${TEXT_KEYS.map(() => '?').join(', ')}, ?, ?)`);
 const lastStored = db.prepare(
   `SELECT t, ${KEYS.join(', ')}, ${TEXT_KEYS.join(', ')} FROM external_reading ORDER BY t DESC LIMIT 1`);
 const sigOfAll = (row) => KEYS.concat(TEXT_KEYS).map((k) => row[k] == null ? '' : row[k]).join('|');
@@ -265,7 +284,7 @@ const persist = db.transaction((rows) => {
     if (nearTwin.get(sig, row.t - CFG.dedupeWindowMs, row.t + CFG.dedupeWindowMs)) {
       dropped++; continue;
     }
-    const r = insert.run(row.t, ...KEYS.map((k) => row[k]), ...TEXT_KEYS.map((k) => row[k] == null ? null : String(row[k])), sig);
+    const r = insert.run(row.t, ...KEYS.map((k) => row[k]), ...TEXT_KEYS.map((k) => row[k] == null ? null : String(row[k])), sig, `node:${CFG.sensorId}`);
     if (r.changes) { stored++; fresh.push(row); } else dropped++;
   }
   db.prepare('DELETE FROM external_reading WHERE t < ?')
@@ -291,7 +310,7 @@ const persistHabitat = db.transaction((rows) => {
     if (prev && row.t <= prev.t) { dropped++; continue; }
     const sig = sigOfAll(row);
     if (prev && sigOfAll(prev) === sig && row.t - prev.t < 5 * 60 * 1000) { dropped++; continue; }
-    const r = insert.run(row.t, ...KEYS.map((k) => row[k] == null ? null : row[k]), ...TEXT_KEYS.map((k) => row[k] == null ? null : String(row[k])), sig);
+    const r = insert.run(row.t, ...KEYS.map((k) => row[k] == null ? null : row[k]), ...TEXT_KEYS.map((k) => row[k] == null ? null : String(row[k])), sig, 'home-assistant');
     if (r.changes) { stored++; fresh.push(row); prev = row; } else dropped++;
   }
   db.prepare('DELETE FROM external_reading WHERE t < ?')
@@ -440,4 +459,4 @@ function snapshot(days = 30, opts = {}) {
   };
 }
 
-module.exports = { start, poll, rows, snapshot, staleMs, persist, persistHabitat, lastStored: () => lastStored.get() || null, source, floorMs, floorMode, anchorMs, runStartMs, todayStartMs, setFloor, applyBuild, buildStamp, DAYS_BEFORE, CFG, KEYS, TEXT_KEYS, frozen };
+module.exports = { start, poll, rows, snapshot, staleMs, persist, persistHabitat, lastStored: () => lastStored.get() || null, source, floorMs, floorMode, anchorMs, runStartMs, runBegun, todayStartMs, setFloor, applyBuild, buildStamp, DAYS_BEFORE, CFG, KEYS, TEXT_KEYS, frozen };

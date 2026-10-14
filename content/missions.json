@@ -1,5 +1,5 @@
 {
-  "_note": "The scientific missions of MARS! / Red Dust City, one a day, as the sheets in the missions/ folder give them (MARS_Mission_NN_….pdf, one page each) — written by tools/missions-json.py, which reads every sheet in the folder; run it again when a sheet changes. `days` says which mission the crew are on each day of the run (day → mission number): as shipped the sheets follow the days in sequence — 00 on day 1, 15 October, to 12 on day 13, 27 October — and the Science officer changes a day's mission from the desk's Science tab, which writes this map. `missions` carries each sheet's words: its number and title (the file's — the number printed on the sheet is kept as sheetNo where it is another), the central question, the Morning, Afternoon and EVA parts as lines (a line in capitals is a heading, one starting with • a bullet, one starting with → a pointer; `evening` too on a sheet whose third column is the evening's, as the first day's is — the crew go in at five in the evening), the question for the community hour in English and German as the sheet has them, the material it needs, and the sheet's file. A sheet that is a copy of another's PDF (standing in until it is written) keeps its title and carries no words — `placeholder` names the file it copies. The Today's Mission panel at the head of the mission dashboard shows the day's mission from here and links to its sheet at /missions/<file>.",
+  "_note": "The scientific missions of MARS! / Red Dust City, one a day, as the sheets in the missions/ folder give them (MARS_Mission_NN_….pdf, one page each) — written by tools/missions-json.py, which reads every sheet in the folder; run it again when a sheet changes. `days` says which mission the crew are on each day of the run (day → mission number): as shipped the sheets follow the days in sequence — 00 on day 1, 15 October, to 11 on day 12, 26 October; the last day, 27 October, has none, the performance closing at 10:00 that morning — and the Science officer changes a day's mission from the desk's Science tab, which writes this map. `missions` carries each sheet's words: its number and title (the file's — the number printed on the sheet is kept as sheetNo where it is another), the central question, the Morning, Afternoon and EVA parts as lines (a line in capitals is a heading, one starting with • a bullet, one starting with → a pointer; `evening` too on a sheet whose third column is the evening's, as the first day's is — the crew go in at five in the evening), the question for the community hour in English and German as the sheet has them, the material it needs, and the sheet's file. A sheet that is a copy of another's PDF (standing in until it is written) keeps its title and carries no words — `placeholder` names the file it copies. The Today's Mission panel at the head of the mission dashboard shows the day's mission from here and links to its sheet at /missions/<file>.",
   "days": {
     "1": 0,
     "2": 1,
@@ -12,8 +12,7 @@
     "9": 8,
     "10": 9,
     "11": 10,
-    "12": 11,
-    "13": 12
+    "12": 11
   },
   "missions": [
     {

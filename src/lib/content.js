@@ -2,8 +2,13 @@
 const fs = require('fs');
 const path = require('path');
 const { db, now } = require('../db');
+const crypto = require('crypto');
 const mission = require('./mission');
 const run = require('./run');
+
+/** From the first day of the run nothing it recorded is taken out of the station by a file edit (13 October): a crew
+ *  member or a store no longer listed is kept, with its history. Before the run the files decide everything. */
+const recordKept = () => { try { return mission.state().phase !== 'PRE_LAUNCH'; } catch { return false; } };
 
 /**
  * The files in content/ are the source of truth for everything the crew do not
@@ -92,11 +97,16 @@ function load({ quiet = false } = {}) {
       });
       // A crew member removed from the file leaves the station, along with the
       // states and entries attached to them. Renaming a role is a delete plus
-      // an insert, so this is what makes a rename take effect.
+      // an insert, so this is what makes a rename take effect — before the run.
+      // From its first day nothing the run recorded is removed (13 October: "make
+      // sure nothing is missed or no data point is lost"): a crew member no
+      // longer listed is kept, with every state, entry and reply filed for them.
       const names = defs.crew.map((c) => c.designation);
       const q = names.map(() => '?').join(',') || "''";
       const gone = db.prepare(`SELECT designation FROM crew WHERE designation NOT IN (${q})`).all(...names);
-      if (gone.length) {
+      if (gone.length && recordKept()) {
+        errors.push(`crew-and-inventory.json: ${gone.map((g) => g.designation).join(', ')} no longer listed — kept, with everything filed for them: the run has begun, and nothing it recorded is removed (list the name again to show it as before)`);
+      } else if (gone.length) {
         db.prepare(`DELETE FROM crew WHERE designation NOT IN (${q})`).run(...names);
         errors.push(`crew-and-inventory.json: removed ${gone.map((g) => g.designation).join(', ')} — no longer listed`);
       }
@@ -115,10 +125,17 @@ function load({ quiet = false } = {}) {
         }
         counts.items++;
       });
-      // Items removed from the file leave the site with their history.
+      // Items removed from the file leave the site with their history — before
+      // the run. From its first day an item no longer listed is kept, with every
+      // count filed for it (13 October), and the load says so.
       const keys = defs.inventory.map((i) => i.key);
       const placeholders = keys.map(() => '?').join(',') || "''";
-      db.prepare(`DELETE FROM inventory_item WHERE key NOT IN (${placeholders})`).run(...keys);
+      const goneItems = db.prepare(`SELECT key FROM inventory_item WHERE key NOT IN (${placeholders})`).all(...keys);
+      if (goneItems.length && recordKept()) {
+        errors.push(`crew-and-inventory.json: the store${goneItems.length === 1 ? '' : 's'} ${goneItems.map((g) => g.key).join(', ')} no longer listed — kept, with every count filed: the run has begun, and nothing it recorded is removed (list ${goneItems.length === 1 ? 'it' : 'them'} again to show ${goneItems.length === 1 ? 'it' : 'them'} as before)`);
+      } else if (goneItems.length) {
+        db.prepare(`DELETE FROM inventory_item WHERE key NOT IN (${placeholders})`).run(...keys);
+      }
     }
 
     /* --------------------------------------------------------- monitoring */
@@ -287,8 +304,14 @@ function load({ quiet = false } = {}) {
           // control, never published.
           const published = isPlaceholder(body) ? 0 : 1;
           if (existing) {
-            db.prepare("UPDATE crew_entry SET body = ?, updated_at = ?, published = ?, source = 'file' WHERE id = ?")
-              .run(String(body), now(), published, existing.id);
+            // Touched only when the words or their state changed, so updated_at is the
+            // last edit — not the last time the files were read (13 October); and the
+            // first words written over the day's placeholder are when it was written.
+            if (existing.body !== String(body) || existing.published !== published) {
+              const first = !existing.published && published;
+              db.prepare(`UPDATE crew_entry SET body = ?, updated_at = ?, published = ?, source = 'file'${first ? ', written_at = ?' : ''} WHERE id = ?`)
+                .run(String(body), now(), published, ...(first ? [now()] : []), existing.id);
+            }
           } else {
             db.prepare(`INSERT INTO crew_entry (crew_id, mission_day, body, written_at, updated_at, published, source)
               VALUES (?, ?, ?, ?, ?, ?, 'file')`).run(member.id, n, String(body), now(), now(), published);
@@ -304,12 +327,23 @@ function load({ quiet = false } = {}) {
       // The file is the notes: every day of the run is rewritten from it, a
       // day the file no longer mentions included — otherwise a note taken
       // out of the file (or left from an older one) would stay on the station.
+      // Each note keeps its moment (13 October: until then every reload stamped every
+      // note anew): the time the desk wrote into the file with it — `at`, when it was
+      // first published, `updated` for its last edit, `by` the sign-in (routes/control.js)
+      // — or, for a note written by hand without one, the moment the station first read it.
+      const iso = (v) => { const t = Date.parse(v); return v && Number.isFinite(t) ? new Date(t).toISOString() : null; };
       for (let n = 0; n <= total; n++) {
+        const had = new Map(db.prepare('SELECT kind, body, posted_at, published_at, posted_by FROM day_note WHERE mission_day = ?')
+          .all(n).map((r) => [`${r.kind}\u0000${r.body}`, r]));
         db.prepare("DELETE FROM day_note WHERE mission_day = ? AND posted_at LIKE '%'").run(n);
         (notes[String(n)] || []).forEach((note) => {
           if (!note.body) return;
-          db.prepare('INSERT INTO day_note (mission_day, body, kind, posted_at, published_at) VALUES (?, ?, ?, ?, ?)')
-            .run(n, note.body, String(note.kind || 'LOG').toUpperCase(), now(), now());
+          const kind = String(note.kind || 'LOG').toUpperCase();
+          const before = had.get(`${kind}\u0000${note.body}`) || null;
+          const at = iso(note.at) || (before && before.posted_at) || now();
+          const published = iso(note.updated) || iso(note.at) || (before && before.published_at) || at;
+          db.prepare('INSERT INTO day_note (mission_day, body, kind, posted_at, published_at, posted_by) VALUES (?, ?, ?, ?, ?, ?)')
+            .run(n, note.body, kind, at, published, String(note.by || (before && before.posted_by) || ''));
           counts.notes++;
         });
       }
@@ -340,6 +374,7 @@ function load({ quiet = false } = {}) {
     log.record('figures', { days }, { dedupe: true });
   } catch (e) { errors.push(`readings log: ${e.message}`); }
 
+  keepVersions();
   lastLoad = { at: now(), ok: errors.length === 0, errors, counts };
   if (!quiet) {
     const summary = `${counts.days} days · ${counts.tasks} tasks · ${counts.meals} meals · ` +
@@ -530,9 +565,9 @@ function resetLocked(state) {
  *     October: "when it is Oct 15th or I click the reset button, remove the
  *     NOW from everywhere")
  *
- * Kept: the account and its sessions, the audit trail (the reset is
- * written to it), and the readings log on disk — every reading ever pulled,
- * which nothing touches.
+ * Kept: the account and its sessions, and the readings log on disk — every
+ * reading ever pulled, which nothing touches. (No log is kept of the reset,
+ * nor of anything else done on the desk — 13 October.)
  */
 function reset(actor = 'control') {
   if (resetLocked()) throw new Error('the run has begun — the reset is locked from 15 October');
@@ -594,7 +629,7 @@ function reset(actor = 'control') {
   // 2. the database
   const wiped = {};
   const wipe = db.transaction(() => {
-    for (const t of ['response', 'message', 'visitor', 'crew_entry', 'crew_mood', 'media',
+    for (const t of ['response', 'message', 'visitor', 'visitor_count', 'crew_entry', 'crew_mood', 'media',
                      'sensor_reading', 'sensor_daily', 'day_seal', 'day_note', 'task', 'meal', 'inventory_level',
                      'external_reading', 'ha_reading', 'control_edit', 'control_draft']) {
       wiped[t] = db.prepare(`DELETE FROM ${t}`).run().changes;
@@ -627,8 +662,8 @@ function reset(actor = 'control') {
 
   // 3. the files back into the database
   const loaded = load();
-  db.prepare('INSERT INTO audit (actor, entity, entity_id, action, detail, created_at) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(actor, 'station', '1', 'reset', JSON.stringify({ slots: crew.length * st.totalDays, wiped }), now());
+  // when it happened — an open page drops the readings it holds when this moves (resetEpoch); no log is kept of it
+  db.prepare("INSERT INTO setting (key, value) VALUES ('reset.epoch', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(now());
   console.log(`[content] RESET by ${actor}: ${crew.length * st.totalDays} blog slots emptied; wiped ` +
     Object.entries(wiped).filter(([, n]) => n).map(([t, n]) => `${t} ${n}`).join(', ') + '; mission reloaded from content/');
   return { slots: crew.length * st.totalDays, wiped, loaded };
@@ -646,8 +681,8 @@ function inventoryStart() {
 }
 
 function resetEpoch() {
-  const r = db.prepare("SELECT MAX(created_at) t FROM audit WHERE action = 'reset'").get();
-  return r && r.t ? r.t : null;
+  const r = db.prepare("SELECT value FROM setting WHERE key = 'reset.epoch'").get();
+  return r && r.value ? r.value : null;
 }
 
 /**
@@ -848,7 +883,9 @@ const missionNo = (no) => String(Number(no)).padStart(2, '0');
  * entry or a run that has not begun is nobody on shift: A sol on MARS!platz
  * then names nobody on its activities (views/pages/sol.js). Someone the
  * station has no portrait of is written as their name is to be shown
- * ("Laura B.") and shown with the robot dog's picture (sol.js, personOf).
+ * ("Sam X.") and shown with the robot dog's picture (sol.js, personOf);
+ * a first name with the surname's first letter finds the portrait too
+ * ("Laura B.", "Ralf E." — whose photographs came on 14 October).
  * Each name comes back as written; the portrait is found in any case.
  */
 function crewOnShift(mission) {
@@ -895,19 +932,24 @@ function crewNow(mission) {
   return { day: null, crew: {} };
 }
 
+/** The run's last day — 27 October, the closing day: the performance closes at 10:00 and the day has no mission,
+ *  whatever the map says (14 October: "no missions for that day … don't have any missions"); null without a mission. */
+function closingDay() { try { const n = mission.state().totalDays; return Number.isFinite(n) && n > 1 ? n : null; } catch { return null; } }
 /** The plan as the desk edits it: the missions as a list (number, title, and the file a placeholder sheet copies) and
- *  the day → mission number map for every day of the run (null where a day has none). */
+ *  the day → mission number map for every day of the run (null where a day has none — the last day always). */
 function missionPlan(totalDays = 13) {
   const { days, missions } = missionsFile();
   const list = missions.filter((m) => m && m.no != null).map((m) => ({ no: Number(m.no), title: String(m.title || `Mission ${missionNo(m.no)}`),
     placeholder: m.placeholder ? String(m.placeholder) : null }));
   const has = (no) => list.some((m) => m.no === Number(no));
   const map = {};
-  for (let n = 1; n <= totalDays; n++) map[String(n)] = days[String(n)] != null && has(days[String(n)]) ? Number(days[String(n)]) : null;
+  for (let n = 1; n <= totalDays; n++) map[String(n)] = n !== totalDays && days[String(n)] != null && has(days[String(n)]) ? Number(days[String(n)]) : null;
   return { days: map, missions: list };
 }
-/** The mission the crew are on that day of the run, as the plan maps it — or null where it names none. */
+/** The mission the crew are on that day of the run, as the plan maps it — or null where it names none, and on the
+ *  last day (closingDay, above). */
 function missionForDay(missionDay) {
+  if (Number(missionDay) === closingDay()) return null;
   const { days, missions } = missionsFile();
   const no = days[String(missionDay)];
   if (no == null) return null;
@@ -1110,13 +1152,58 @@ function edit(name, mutate) {
   } catch (e) {
     return { ok: false, error: `could not apply the change: ${e.message}` };
   }
-  fs.writeFileSync(file, JSON.stringify(obj, null, 2) + '\n');
+  writeSafely(file, JSON.stringify(obj, null, 2) + '\n');
   const result = load({ quiet: true });
   return { ok: result.ok, error: result.errors[0] || null };
+}
+
+/** A content file written whole or not at all (13 October): the new text goes to a file beside it, which then takes
+ *  its place, so a station stopped mid-save never leaves half a file. A mount that will not rename over a file (Docker's
+ *  folder from Windows refused fs.copyFile before — see ensurePlan) is written in place, as before. */
+function writeSafely(file, text) {
+  const tmp = path.join(path.dirname(file), `.${path.basename(file)}.saving`);
+  try {
+    fs.writeFileSync(tmp, text);
+    fs.renameSync(tmp, file);
+  } catch (e) {
+    try { fs.unlinkSync(tmp); } catch { /* not there */ }
+    fs.writeFileSync(file, text);
+  }
+}
+
+/* Every version of the content files the station has read, kept for good (13 October: "make sure nothing is missed or
+   no data point or source is lost"). The files are where the schedule, the meals, the Commander Log, the reports, the
+   steps, the power and the counts are written — from mission control or by hand — and a save replaces the version
+   before. So each time a file is read changed, its text is copied as it stood to the station-data volume:
+   DATA_DIR/content-history/<file>/<time>.json — a day emptied by a slip, a file broken by hand, an edit regretted, and
+   the version before is there to go back to. Nothing reads it back; the reset leaves it, like the readings log. */
+const HISTORY_DIR = path.join(require('../db').DATA_DIR, 'content-history');
+const kept = new Map();   // file → hash of the version last kept
+function keepVersions() {
+  let names = [];
+  try { names = fs.readdirSync(DIR).filter((n) => n.endsWith('.json') && !n.startsWith('.')); } catch { return; }
+  for (const name of names) {
+    try {
+      const text = fs.readFileSync(path.join(DIR, name), 'utf8');
+      const h = crypto.createHash('sha256').update(text).digest('hex');
+      if (kept.get(name) === h) continue;
+      const dir = path.join(HISTORY_DIR, name.replace(/\.json$/, ''));
+      if (!kept.has(name) && fs.existsSync(dir)) {                 // first read since the start: the newest copy may be this one
+        const newest = fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort().pop();
+        if (newest && crypto.createHash('sha256').update(fs.readFileSync(path.join(dir, newest), 'utf8')).digest('hex') === h) { kept.set(name, h); continue; }
+      }
+      fs.mkdirSync(dir, { recursive: true });
+      const stamp = new Date().toISOString().replace(/:/g, '-');
+      let p = path.join(dir, `${stamp}.json`);
+      for (let i = 1; fs.existsSync(p); i++) p = path.join(dir, `${stamp}-${i}.json`);
+      fs.writeFileSync(p, text);
+      kept.set(name, h);
+    } catch (e) { console.warn(`[content] ${name} was not kept in the history: ${e.message}`); }
+  }
 }
 
 module.exports = { load, watch, status, edit, templates, crewFigures, bike, bikeBattery, BIKE_FULL, power, powerDay, powerSensorKwh, powerLive, meterDays, forgetMeters, inventoryFiled, DIR,
                    resourceLogRows, resourceLogCsv, LOG_FILE,
                    planStatus, savePlan, ensurePlan, reset, resetLocked, resetEpoch, inventoryStart, PLAN_DIR, PLAN_FILES,
                    PLACEHOLDER, BLOG_OFFICER, isPlaceholder, placeholderCue, placeholderPublic, placeholderFor,
-                   NUTRIENTS, mealNutrients, recipesFile, recipeBook, recipeMinutes, slugify, missionsFile, missionForDay, missionPlan, missionNo, crewOnShift, shiftDays, crewForDay, crewNow };
+                   NUTRIENTS, mealNutrients, recipesFile, recipeBook, recipeMinutes, slugify, missionsFile, missionForDay, missionPlan, missionNo, closingDay, crewOnShift, shiftDays, crewForDay, crewNow };

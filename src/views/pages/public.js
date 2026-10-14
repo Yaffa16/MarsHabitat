@@ -43,38 +43,9 @@ function zonesOf(date, times, tz) {
   return { head: one ? first : '', at: (i) => (one ? '' : zs[i] || '') };
 }
 
-/* ============================================================== COMPLETE */
-
-/** After the last day. The archive stays; nothing else pretends to be live. */
-function complete(ctx, { counts, recent }) {
-  const m = ctx.mission, T = ctx.T;
-  const body = `
-  <div style="padding:34px 0 26px">
-    <div class="eyebrow">${T('Mars Communication Station')} · ${T('mission complete')}</div>
-    <h1>${T('The habitat is empty.')}<br>${T('What was said is still here.')}</h1>
-    <p class="lede">${T('The crew went in on')} ${esc(missionLib.dayLabel(m.start_date, T.lang))} ${T('and came out on')} ${esc(missionLib.dayLabel(m.end_date, T.lang))}.
-    ${T('Over the course of')} ${dayWord(T, m.totalDays)}, ${counts.published} ${T('exchanges crossed the distance between an audience on Earth and three people who could not be reached any other way.')}</p>
-    <p><a class="btn" href="/archive">${T('Read the archive')}</a><a class="btn" href="/about">${T('About the project')}</a></p>
-  </div>
-
-  <div class="grid g-hero">
-    ${orbitPlot(ctx.geo, { T, light: false })}
-    ${panel('RECORD', `
-      ${eyebrow(T('What the station carried'))}
-      <dl class="kv">
-        <dt>${T('MISSION')}</dt><dd>${esc(m.name)}</dd>
-        <dt>${T('DURATION')}</dt><dd>${dayWord(T, m.totalDays)}</dd>
-        <dt>${T('EXCHANGES')}</dt><dd>${counts.published} ${T('published')}</dd>
-      </dl>
-      <p class="note" style="margin-top:16px">${T('The communication channel is closed. The archive is not — it stays readable, and it stays part of the work.')}</p>`, 'earth-side')}
-  </div>
-
-  ${panel('LAST EXCHANGES', recent.length
-    ? recent.slice(0, 3).map((x) => messageCard(x, undefined, T)).join('') + `<p style="margin:6px 0 0"><a href="/archive">${T('Full archive')} →</a></p>`
-    : `<div class="empty">${T('NOTHING WAS PUBLISHED DURING THIS MISSION')}</div>`)}`;
-
-  return L.page({ title: 'Mission complete', ctx, body, current: '/' });
-}
+/* (The closed record — the page the station showed after the run: the run told in a paragraph, Read the archive and About
+   the project under it, the orbit, what the station carried and the last exchanges — is gone: since 14 October, 13:10,
+   the landing page stands after the run too, less what only the run had — public.js, mission; landing.js, intro.) */
 
 /**
  * Resources as a row of gauges. The bar is what is left against what they
@@ -113,8 +84,8 @@ function inventoryGauges(inventory, { compact = false, strip = false, cells = fa
           <circle cx="30" cy="30" r="${R}" class="round-track"/>
           <circle cx="30" cy="30" r="${R}" class="round-arc" stroke-dasharray="${C.toFixed(1)}"
             stroke-dashoffset="${(C * (1 - pct / 100)).toFixed(1)}" transform="rotate(-90 30 30)"/>
-          <text x="30" y="33.5" class="round-num">${ph ? '—' : num}</text>
-          <text x="30" y="44" class="round-unit">${ph ? '' : esc(i.unit)}</text>
+          <text x="30" y="32.5" class="round-num">${ph ? '—' : num}</text>
+          <text x="30" y="41.5" class="round-unit">${ph ? '' : esc(i.unit)}</text>
         </svg>
         <span class="cell-name">${esc(i.label)}</span>
       </div>`;
@@ -489,13 +460,19 @@ function ticker(ctx, { today } = {}) {
   if (pre) cells.push(`<b id="tk-count">T−${m.countdown.days}d ${String(m.countdown.hours).padStart(2, '0')}:${String(m.countdown.minutes).padStart(2, '0')}:${String(m.countdown.seconds).padStart(2, '0')}</b> ${T('to occupation')} · ${T('opens')} ${esc(opensOn)}`);
   else if (over) cells.push(`<b>${T('Mission complete')}</b> · ${T('the record stays')}`);
   else {
+    // (the run's last day reads as every other day: 14 October, "on the 27th Oct, ONLY change should be: Come visit us at
+    // Karlsruhe MARS!platz … Everything else remains the same as ALL other days" — the line said when the performance
+    // closed and that the habitat was open in the afternoon, in place of the crew's tasks, until then)
     cells.push(`<b>SOL ${String(m.clampedDay).padStart(2, '0')}/${String(m.totalDays).padStart(2, '0')}</b>`);
     const say = (t) => `${esc(t.time)}${t.zone ? ' ' + esc(t.zone) : ''} · ${esc(t.label)}${t.detail ? ` — ${esc(t.detail)}` : ''}`;
     cells.push(`${T('The crew are currently:')} <b id="tk-now">${nowTask ? say(nowTask) : T('off the schedule')}</b>`);
     cells.push(`${T('Next:')} <b id="tk-next">${nextTask ? say(nextTask) : T('nothing more today')}</b>`);
   }
-  cells.push(`${T('Habitat:')} <b id="tk-hab">${esc(habReading(ctx))}</b>`);   // the one-way signal is read where a message is written, and nowhere else
-  if (!over) cells.push(`${T('Communication window daily')} <b>${esc(LP.windowWhen(ctx))}</b>`);   // when the crew answer — "19:00 CET" (landing.js)
+  // the habitat's reading — the one-way signal is read where a message is written, and nowhere else; after the run the
+  // habitat is empty and its sensors are not read, so the line says no more than that the mission is complete and the
+  // record stays (13 October, "find any other such anomalies": it said "Habitat: no current reading" for good)
+  if (!over) cells.push(`${T('Habitat:')} <b id="tk-hab">${esc(habReading(ctx))}</b>`);
+  if (!over) cells.push(`${T('Communication window daily')} <b>${esc(LP.windowWhen(ctx))}</b>`);   // when the crew answer — "19:00 CET" (landing.js); the last day too (14 October)
   const line = cells.map((c) => `<span class="tk-cell">${c}</span>`).join('<span class="tk-sep">·</span>');
   /* The header of every public page, after the design handoff's reference sheet: a row with the wordmark (the way home),
      the run's badge — the countdown before it, the sol during it —, and in the middle of the row the station's three ways
@@ -507,9 +484,12 @@ function ticker(ctx, { today } = {}) {
   // the first in Mars, the station's primary colour. It is the Message Board since 13 October ("on the top bar it should
   // say Message Board and not Write to the crew"; it opened the composer's pop-up on the Write page until then): the
   // writing is the board's own Write to the Crew key's (boardWall)
+  // once the station has closed the dashboard's key is At a Glance (14 October: "Dashboard should go to At a glance";
+  // layout.js, tabbar): the closed dashboard would only send a visitor back to the start page
   const ways = [
     ['/write', 'Message Board', 'tk-board', '<path d="M5 4.8h14a1.6 1.6 0 0 1 1.6 1.6v8.4a1.6 1.6 0 0 1-1.6 1.6h-8.6L6 19.8v-3.4H5a1.6 1.6 0 0 1-1.6-1.6V6.4A1.6 1.6 0 0 1 5 4.8z"/><path d="M8 9.2h8M8 12.4h5"/>'],
-    ['/dashboard', 'Live Mission Dashboard', 'tk-dash', '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>'],
+    m.open ? ['/dashboard', 'Live Mission Dashboard', 'tk-dash', '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>']
+      : ['/at-a-glance', 'At a Glance', 'tk-dash', '<rect x="4" y="5.5" width="16" height="14" rx="2"/><path d="M4 9.5h16M8.5 3.5v3.5M15.5 3.5v3.5"/><path d="M8 13h2M11 13h2M14 13h2M8 16.2h2M11 16.2h2"/>'],
     ['/about', 'About', 'tk-about', '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><path d="M12 7.5v.5"/>'],
   ];
   const here = ctx.current || '';
@@ -518,7 +498,7 @@ function ticker(ctx, { today } = {}) {
   return `
   <header class="ticker"
        data-tz="${esc(m.timezone)}" data-tasks="${esc(JSON.stringify(tasks))}"${over ? ' data-over="1"' : ''}
-       data-phase="${esc(m.phase)}" data-opens="${esc(m.opensAt)}" data-epoch="${esc(String(require('../../lib/content').resetEpoch() || ''))}">
+       data-phase="${esc(m.phase)}" data-opens="${esc(m.opensAt)}" data-epoch="${esc(String(require('../../lib/content').resetEpoch() || ''))}" data-stage="${esc(L.lastDayStage(m))}">
     <div class="tk-bar">
       <a class="tk-brand" href="/" aria-label="MARS!platz">MARS<span class="bang">!</span>platz</a>
       <span class="tk-sol"><i aria-hidden="true"></i>${pre ? `T−${m.countdown.days}d` : over ? T('Complete') : `SOL ${String(m.clampedDay).padStart(2, '0')}/${String(m.totalDays).padStart(2, '0')}`}</span>
@@ -599,6 +579,10 @@ function ticker(ctx, { today } = {}) {
     // midnight on 15 October turns into the run by itself.
     var phase = el.getAttribute('data-phase') || '';
     var epoch = el.getAttribute('data-epoch') || '';
+    // where the run's last day stands (layout.js, lastDayStage): the page turns over at 15:00 and 17:00, the open
+    // habitat's hours, so the landing page's invitation says Open now and then goes (14 October; it turned at 10:00 too,
+    // when the performance closed, until the last day became a day like the others that afternoon)
+    var stage = el.getAttribute('data-stage') || '';
     var opens = Date.parse(el.getAttribute('data-opens') || '') || 0;
     var reloading = false;
     function turn() { if (reloading) return; reloading = true; stop(); setTimeout(function () { window.location.reload(); }, 1500); }
@@ -625,6 +609,7 @@ function ticker(ctx, { today } = {}) {
       fetch('/api/ticker', { cache: 'no-store' }).finally(function () { fetching = false; }).then(function (r) { return r.json(); }).then(function (d) {
         if (d.phase === 'COMPLETE' && phase !== 'COMPLETE') { turn(); return; }   // the run has ended under this open page
         if ((d.phase && d.phase !== phase) || (d.epoch && epoch && String(d.epoch) !== epoch)) { turn(); return; }
+        if (typeof d.stage === 'string' && d.stage !== stage) { turn(); return; }
         if (d.opensAt) opens = Date.parse(d.opensAt) || opens;
         if (Array.isArray(d.tasks)) { tasks = d.tasks; retask(); }
         // the habitat's latest reading comes with the schedule (habReading)
@@ -648,6 +633,14 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
                         media = [], mediaCounts = { total: 0, bytes: 0 }, mediaLookup = () => null,
                         hardware = null, hardwareDaily = [], cloud = null, mission = null }) {
   const pre = ctx.mission.phase === 'PRE_LAUNCH', T = ctx.T;
+  /* After the run — from the close at midnight at the end of the last day — the page is the same landing page, less what
+     only the run had (14 October, 13:10: "after the last day, Keep the Visual of Earth and Dome on the Landing page, and
+     KEEP the Worlds slowest chat. Remove the Visual and message from the Landing page. The 2 buttons, Read the archive /
+     About the project should be Archive, About. Remove the Box"): the Earth, the line and the habitat with no sky — no
+     LATEST IMAGE, no LATEST MESSAGE —, the paragraph in the past with Archive and About under it (landing.js, intro), no
+     crew and no calls, and the world's slowest chat. Until then the closed station had a page of its own (the closed
+     record — the orbit, what the station carried and the last exchanges). */
+  const closed = ctx.mission.open === false;
   /* The header every public page shares (ticker): the wordmark, the run's badge, the habitat's clock, the switches, the
      running line. */
   const hero = ticker(ctx, { today });
@@ -675,8 +668,8 @@ function mission(ctx, { sensors, crew, today, counts, recent, latestEntries = []
     else if (h === '#exchanges') location.replace('/write' + h);
     else if (/^#(mission|mission-today|habitat|sensors|stores|power|hardware|trends|schedule|galley|crew|blog-commander|blog-health|blog-science)$/.test(h)) location.replace('/dashboard' + h); })();
   </script>
-  ${LP.space(ctx, { sky: habitatSky(ctx, { recent, cloud }) })}
-  ${LP.note(ctx, { crew: (crew || []).length || 3 })}
+  ${LP.space(ctx, { sky: closed ? null : habitatSky(ctx, { recent, cloud }) })}${closed ? '' : `
+  ${LP.note(ctx, { crew: (crew || []).length || 3 })}`}
   ${LP.slowChat(ctx)}
   `;
   return L.page({
@@ -1494,7 +1487,7 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, pow
   /* ---- panels */
   const tz0 = zonesOf((today && today.date) || m.today, tasks.map((t) => t.time), m.timezone);
   const schedule = dpanel({ id: 'schedule', title: T('Today’s Schedule'),
-    meta: `SOL ${day3} · ${done}/${tasks.length} ${T('done')}${tz0.head ? ` · ${tz0.head}` : ''}`, span: 4, cls: 'h-3 scroll' },
+    meta: `SOL ${day3} · ${tasks.some((t) => t.status && t.status !== 'PLANNED') ? `${done}/${tasks.length} ${T('done')}` : `${tasks.length} ${T(tasks.length === 1 ? 'task' : 'tasks')}`}${tz0.head ? ` · ${tz0.head}` : ''}`, span: 4, cls: 'h-3 scroll' },
     tasks.length ? `<div class="rows">${tasks.map((t, i) => `
       <div class="row ${t.status === 'DONE' ? 'done' : ''} ${t.status === 'ACTIVE' ? 'active' : ''}">
         <div class="t">${esc(t.time)}${tz0.at(i) ? ` <small class="tz">${tz0.at(i)}</small>` : ''}</div>
@@ -1571,7 +1564,9 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, pow
   // What happened each day: the schedule worked through, the traffic from
   // Earth, what the crew wrote and sent out.
   const act = data.dailyActivity();
-  const tasksDone = byDay((n) => { const d = allDays[n - 1]; return d && d.tasks.length ? d.tasks.filter((t) => t.status === 'DONE').length : null; });
+  // (a day's tasks done only where someone marked them: nothing on the desk does any more, and a line of zeros would say
+  // the crew did nothing — 13 October)
+  const tasksDone = byDay((n) => { const d = allDays[n - 1]; return d && d.tasks.some((t) => t.status && t.status !== 'PLANNED') ? d.tasks.filter((t) => t.status === 'DONE').length : null; });
   const written = byDay((n) => { const d = logDays[n - 1]; return d ? d.written : null; });
   const count = (k) => byDay((n) => (act[n] || {})[k] || 0);
   /* The axis of the trend graph: always a fortnight of the calendar (9 October: "the Trends graph should always show
@@ -1802,6 +1797,9 @@ function dashboardPanels(ctx, { crew, today, counts, crewFigures, bike = {}, pow
      so there is nothing to click into and back out of. */
   const blogDay = m.clampedDay;
   const blogDate = (allDays[blogDay - 1] || {}).date || m.today;
+  // (the run's last day has no blogs — 14 October — and its panels do as on any day before its posts are written: the
+  // latest earlier post, under the day's own sol and date; they stood under the day before's sol from 14 October until
+  // that afternoon's "everything else remains the same as all other days")
   // A post is its rendered body; one that comes out empty — a picture since
   // withdrawn and nothing else — is left out rather than shown as a blank card.
   const post = (body, attached) => MV.entryHtml(body, attached, { lookup: mediaLookup, T, link: false });
@@ -2512,7 +2510,7 @@ function single(ctx, { message }) {
 }
 
 module.exports = {
-  mission, writePage, dashboardPage, complete, inventoryGauges, boardCards, boardVersion, archive, single, messageCard,
+  mission, writePage, dashboardPage, inventoryGauges, boardCards, boardVersion, archive, single, messageCard,
   hardwareInner, hardwareClubs, mealStates, macroShares, powerTileInner, oxygenTileInner, ticker, tickerTasks, habReading, dashboardPanels, boardScreen, habitatDome, composerDevice, portal,
   SENSOR_ICON,
 };

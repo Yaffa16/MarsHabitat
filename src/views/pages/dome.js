@@ -228,7 +228,8 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
   // the clock with its zone for the stamp ("17:26 CEST"); the bare hour and minute to compare with the schedule and count
   // the minutes with (13 October)
   const clock = venueClock(m.timezone), hhmm = clock.slice(0, 5);
-  const stamp = pre ? `${T('Opens')} ${m.startLabel}` : `SOL ${sol} · ${clock}`;
+  // after the run the stamp says so, not the last sol's hour (13 October)
+  const stamp = pre ? `${T('Opens')} ${m.startLabel}` : m.phase === 'COMPLETE' ? T('Mission complete') : `SOL ${sol} · ${clock}`;
 
   // The schedule: what the crew are doing at this minute, and what is next — each time with the zone it keeps on its day
   // (CEST, CET from 25 October at 03:00); a list of times with the zone once after it, or after each on the day that has
@@ -374,7 +375,7 @@ function figures(ctx, { today, crew, recent = [], power = { categories: [], days
     power:      { text: powerLine, more: '' },
     generator:  { text: `${steps}.`, more: powerLine },
     eva:        { text: evaLine, more: evaNext && evaOn ? `${T('Up next')} ${timeAt(evaNext)}: ${evaNext.label}.` : '' },
-    dashboard:  { text: pre ? T('The run has not begun yet.') : `${T('Sol')} ${m.clampedDay} ${T('of')} ${m.totalDays} · ${tasks.filter((t) => t.status === 'DONE').length}/${tasks.length} ${T('tasks done today')} · ${counts.published} ${T('exchanges published')}.`, more: '' },
+    dashboard:  { text: pre ? T('The run has not begun yet.') : `${T('Sol')} ${m.clampedDay} ${T('of')} ${m.totalDays} · ${tasks.some((t) => t.status && t.status !== 'PLANNED') ? `${tasks.filter((t) => t.status === 'DONE').length}/${tasks.length} ${T('tasks done today')}` : `${tasks.length} ${T(tasks.length === 1 ? 'task today' : 'tasks today')}`} · ${counts.published} ${T('exchanges published')}.`, more: '' },
   };
 }
 

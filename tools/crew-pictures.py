@@ -49,8 +49,10 @@ KINDS = r'(?:png|jpe?g)'              # the photographs' files: .png (since 13 O
 # Where the round picture is cut from each photograph: the square's middle — across, down — and its side, as fractions of
 # the photograph's width, height and width (so they hold at any size of the same photograph: found on the 3644 × 5466
 # ones, they cut the 300 × 450 ones of 13 October alike). Found from the eyes (OpenCV's Haar cascades, 12 October): the
-# side 5.8 times the distance between the eyes, the eyes 40 % from the square's top, in the middle across. The robot dog
-# by hand. Named by the photograph's name without its ending — .png, .jpg, either.
+# side 5.8 times the distance between the eyes, the eyes 40 % from the square's top, in the middle across — Laura
+# Benetschik's and Ralf Eger's too, from their photographs of 14 October ("in the Astronaut pictures I have added Laura
+# Benetschik", then "Ralf Eger"). The robot dog by hand. Named by the photograph's name without its ending — .png, .jpg,
+# either.
 FACES = {
     'Bernd_Lintermann': (0.4262, 0.3110, 0.7513),
     'Dan_Wilcox': (0.4487, 0.3188, 0.7704),
@@ -59,9 +61,11 @@ FACES = {
     'Franziska_Klöck': (0.4479, 0.2821, 0.6478),
     'Götz_Dipper': (0.4616, 0.3124, 0.7258),
     'Jan_Gerigk': (0.4665, 0.3657, 0.7576),
+    'Laura_Benetschik': (0.4353, 0.2994, 0.8048),
     'Laura_Schmidt': (0.5071, 0.2670, 0.6876),
     'Matthieu_Vlaminck-Maurer': (0.4514, 0.3237, 0.7194),
     'Morgan_Stricot': (0.4234, 0.2766, 0.7624),
+    'Ralf_Eger': (0.4581, 0.3260, 0.8126),
     'Till_Bechtloff': (0.4742, 0.3433, 0.7306),
     'Tina_Lorenz': (0.4780, 0.3824, 0.8452),
     'Yasha_Jain': (0.4619, 0.3142, 0.7672),

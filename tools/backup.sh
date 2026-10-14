@@ -52,5 +52,28 @@ else
   if [ -d "$SRC" ]; then mkdir -p "$DEST/readings" && cp -R "$SRC/." "$DEST/readings/" && echo "synced $SRC → $DEST/readings/ (the readings log)"; fi
 fi
 
+# The pictures from the habitat's camera (13 October: "make sure nothing is missed"): every copy the station made of the
+# cloud folder's pictures, with the manifest and the ledger of every picture the folder ever held.
+if [ "${1:-}" = "--docker" ]; then
+  docker compose cp "$SERVICE:/data/cloud" "$DEST/cloud-$STAMP" 2>/dev/null \
+    && echo "wrote $DEST/cloud-$STAMP/ (the camera's pictures, with ledger.json)" || echo "no cloud copies yet"
+else
+  SRC="${DATA_DIR:-./data}/cloud"
+  if [ -d "$SRC" ]; then mkdir -p "$DEST/cloud" && cp -R "$SRC/." "$DEST/cloud/" && echo "synced $SRC → $DEST/cloud/ (the camera's pictures, with ledger.json)"; fi
+fi
+# The content files — where the schedule, the meals, the Commander Log, the reports, the steps, the power and the counts
+# are written (the database holds a copy of only some of them) — and every version of them the station read.
+CONTENT="${CONTENT_DIR:-./content}"
+if [ -d "$CONTENT" ]; then
+  mkdir -p "$DEST/content-$STAMP" && cp -R "$CONTENT/." "$DEST/content-$STAMP/" && echo "wrote $DEST/content-$STAMP/ (the content files as they stand)"
+fi
+if [ "${1:-}" = "--docker" ]; then
+  docker compose cp "$SERVICE:/data/content-history" "$DEST/content-history-$STAMP" 2>/dev/null \
+    && echo "wrote $DEST/content-history-$STAMP/ (every version of the content files)" || echo "no content history yet"
+else
+  SRC="${DATA_DIR:-./data}/content-history"
+  if [ -d "$SRC" ]; then mkdir -p "$DEST/content-history" && cp -R "$SRC/." "$DEST/content-history/" && echo "synced $SRC → $DEST/content-history/ (every version of the content files)"; fi
+fi
+
 echo "verify a copy any time:  node tools/verify-media.js $DEST/media"
 echo "keep at least one copy off the venue machine — the archive is the artwork."

@@ -1,4 +1,7 @@
 'use strict';
+/** Whether anyone marked a task of the day done (or active, or skipped): nothing on the desk does any more, so a
+ *  schedule says how many tasks it had, not "0/16 done" (13 October: "find any other such anomalies"). */
+const statusFiled = (tasks) => (tasks || []).some((t) => t.status && t.status !== 'PLANNED');
 /**
  * At a Glance — the whole mission, day by day, on one public page: everything
  * each day held, in day order. The crew's blog entries with their photographs,
@@ -40,7 +43,8 @@ const tile = (label, unit, v, dec, T = same) => `<div class="glance-tile">
 
 function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
   const n = r.missionDay;
-  const state = m.phase === 'PRE_LAUNCH' ? 'planned' : n < m.clampedDay ? 'past' : n === m.clampedDay ? 'today' : 'planned';
+  // (after the run every day is complete — the last is no longer today: 13 October)
+  const state = m.phase === 'PRE_LAUNCH' ? 'planned' : m.phase === 'COMPLETE' ? 'past' : n < m.clampedDay ? 'past' : n === m.clampedDay ? 'today' : 'planned';
   const written = r.entries.filter((e) => !content.isPlaceholder(e.body));
   const day = r.day;
   // The three blogs of the day, each a card of its own: the Commander Log
@@ -78,7 +82,7 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
         <div class="card-top"><span class="cs">${esc(T(p.title))}</span></div>
         <div class="card-body entry-post">${p.html}</div>
       </article>`).join('')}</div>
-    </div>` : (state !== 'planned' ? `<div class="glance-block">${eyebrow(T('Blogs'))}<div class="empty">${T('No blog written by the crew on this day')}</div></div>` : '');
+    </div>` : (state !== 'planned' ? `<div class="glance-block">${eyebrow(T('Blogs'))}<div class="empty">${T('No blog written by the crew on this day')}</div></div>` : '');   // the last day too, which has none (14 October: "everything else remains the same as all other days")
 
   const meals = day && day.meals.length ? `
     <div class="glance-block">
@@ -164,7 +168,7 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
   const z0 = zs.find(Boolean) || '', oneZone = zs.every((z) => !z || z === z0);
   const schedule = day && day.tasks.length ? `
     <div class="glance-block">
-      ${eyebrow(`${T('Schedule')}${state === 'planned' ? ` · ${T('planned')}` : ` · ${day.tasks.filter((t) => t.status === 'DONE').length}/${day.tasks.length} ${T('done')}`}${oneZone && z0 ? ` · ${z0}` : ''}`)}
+      ${eyebrow(`${T('Schedule')}${state === 'planned' ? ` · ${T('planned')}` : statusFiled(day.tasks) ? ` · ${day.tasks.filter((t) => t.status === 'DONE').length}/${day.tasks.length} ${T('done')}` : ` · ${day.tasks.length} ${T(day.tasks.length === 1 ? 'task' : 'tasks')}`}${oneZone && z0 ? ` · ${z0}` : ''}`)}
       <div class="rows">${day.tasks.map((t, i) => `
         <div class="row ${t.status === 'DONE' ? 'done' : ''}"><div class="t">${esc(t.time)}${!oneZone && zs[i] ? ` <small class="tz">${zs[i]}</small>` : ''}</div>
           <div class="m"><b>${esc(t.label)}</b>${t.detail ? `<span>${esc(t.detail)}</span>` : ''}</div>

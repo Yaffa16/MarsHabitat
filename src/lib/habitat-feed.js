@@ -98,33 +98,39 @@ async function poll() {
       }
     }
     // 2. Every change since the newest reading the station holds — one call
-    //    for all the entities — so the minutes between two polls are filled.
+    //    for all the entities, a day at a time — so the minutes between two polls
+    //    are filled, and after an outage every day Home Assistant still keeps
+    //    (HA_HISTORY_DAYS, ten by default; until 13 October only the last day).
     const last = critical.lastStored();
-    const from = Math.max(last ? last.t + 1 : 0, critical.floorMs(), readAt - 24 * 3600 * 1000);
+    const from = Math.max(last ? last.t + 1 : 0, critical.floorMs(), readAt - ha.CFG.historyMs);
     let history = null;
     if (Object.values(live).some((l) => !l.missing && !l.error)) {
+      const ids = channels.map((k) => `sensor.${map[k]}`).join(',');
+      let rows = 0, windows = 0, a = from;
       try {
-        const ids = channels.map((k) => `sensor.${map[k]}`).join(',');
-        const d = await ha.fetchJson(
-          `/api/history/period/${encodeURIComponent(new Date(from).toISOString())}?filter_entity_id=${encodeURIComponent(ids)}&minimal_response&no_attributes`,
-          ha.CFG.attemptTimeoutMs);
-        let rows = 0;
-        for (const list of Array.isArray(d) ? d : []) {
-          if (!Array.isArray(list) || !list.length) continue;
-          // minimal_response: only the first item of each list names its entity
-          const id = String(list[0].entity_id || '').replace(/^sensor\./, '');
-          const k = channels.find((c) => map[c] === id);
-          if (!k) continue;
-          for (const r of list) {
-            const t = Date.parse(r.last_updated || r.last_changed);
-            if (!Number.isFinite(t) || t < from) continue;
-            const v = valueOf(k, r.state);
-            if (v !== null) { note(t, k, v); rows++; }
+        while (a < readAt && windows < Math.ceil(ha.CFG.historyMs / ha.CFG.backfillMs) + 1) {
+          const b = Math.min(a + ha.CFG.backfillMs, readAt);
+          const d = await ha.fetchJson(
+            `/api/history/period/${encodeURIComponent(new Date(a).toISOString())}?end_time=${encodeURIComponent(new Date(b).toISOString())}&filter_entity_id=${encodeURIComponent(ids)}&minimal_response&no_attributes`,
+            ha.CFG.attemptTimeoutMs);
+          for (const list of Array.isArray(d) ? d : []) {
+            if (!Array.isArray(list) || !list.length) continue;
+            // minimal_response: only the first item of each list names its entity
+            const id = String(list[0].entity_id || '').replace(/^sensor\./, '');
+            const k = channels.find((c) => map[c] === id);
+            if (!k) continue;
+            for (const r of list) {
+              const t = Date.parse(r.last_updated || r.last_changed);
+              if (!Number.isFinite(t) || t < from) continue;
+              const v = valueOf(k, r.state);
+              if (v !== null) { note(t, k, v); rows++; }
+            }
           }
+          a = b; windows++;
         }
-        history = { from: new Date(from).toISOString(), rows };
+        history = { from: new Date(from).toISOString(), rows, windows };
       } catch (e) {
-        history = { from: new Date(from).toISOString(), error: e.message };   // the states are the feed; history is the filling-in
+        history = { from: new Date(from).toISOString(), rows, windows, error: e.message };   // the states are the feed; history is the filling-in
       }
     }
     // 3. The poll's own row, at this minute, so a steady sensor still leaves

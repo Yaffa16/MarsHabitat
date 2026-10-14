@@ -370,7 +370,7 @@
     fetch(ask, { cache: 'no-store', credentials: 'same-origin' })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (data) {
-        // the station has closed under this open page (the end of the day after the run): it turns into the closed record
+        // the station has closed under this open page (midnight at the end of the run's last day): it turns into the closed record
         if (data.open === false && feed.getAttribute('data-open') !== '0') { window.location.reload(); return; }
         if (data.version !== version && typeof data.cards === 'string') {
           swap(data);

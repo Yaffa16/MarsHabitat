@@ -366,32 +366,17 @@ const D = {
   // the path of a message, in six steps (the About page, What this is — info.js)
 
   // ---- after the run
-  'mission complete': ['Mission abgeschlossen', 'mission accomplie'],
-  'The habitat is empty.': ['Das Habitat ist leer.', 'L’habitat est vide.'],
-  'What was said is still here.': ['Was gesagt wurde, ist noch da.', 'Ce qui a été dit est toujours là.'],
-  'The crew went in on': ['Die Crew ging hinein am', 'L’équipage est entré le'],
-  'and came out on': ['und kam heraus am', 'et ressorti le'],
-  'Over the course of': ['Im Verlauf von', 'Au cours de'],
-  'exchanges crossed the distance between an audience on Earth and three people who could not be reached any other way.':
-    ['Nachrichtenwechsel haben die Distanz zwischen einem Publikum auf der Erde und drei Menschen überbrückt, die auf keinem anderen Weg erreichbar waren.',
-     'échanges ont franchi la distance entre un public sur Terre et trois personnes que l’on ne pouvait joindre d’aucune autre manière.'],
-  'Read the archive': ['Das Archiv lesen', 'Lire l’archive'],
   'About the project': ['Über das Projekt', 'À propos du projet'],
   'On this page': ['Auf dieser Seite', 'Sur cette page'],
   'There is no screen called': ['Es gibt keinen Screen namens', 'Il n’y a pas d’écran nommé'],
   'These are the screens:': ['Das sind die Screens:', 'Voici les écrans :'],
-  'What the station carried': ['Was die Station getragen hat', 'Ce que la station a porté'],
   'MISSION': ['MISSION', 'MISSION'],
   'DURATION': ['DAUER', 'DURÉE'],
   'EXCHANGES': ['NACHRICHTENWECHSEL', 'ÉCHANGES'],
   'published': ['veröffentlicht', 'publiés'],
   'MESSAGES SENT': ['GESENDETE NACHRICHTEN', 'MESSAGES ENVOYÉS'],
   'CALLSIGNS ISSUED': ['VERGEBENE RUFZEICHEN', 'INDICATIFS ATTRIBUÉS'],
-  'The communication channel is closed. The archive is not — it stays readable, and it stays part of the work.':
-    ['Der Kommunikationskanal ist geschlossen. Das Archiv nicht — es bleibt lesbar, und es bleibt Teil des Werks.',
-     'Le canal de communication est fermé. L’archive, non — elle reste lisible, et elle reste partie de l’œuvre.'],
   'Full archive': ['Ganzes Archiv', 'Archive complète'],
-  'NOTHING WAS PUBLISHED DURING THIS MISSION': ['WÄHREND DIESER MISSION WURDE NICHTS VERÖFFENTLICHT', 'RIEN N’A ÉTÉ PUBLIÉ PENDANT CETTE MISSION'],
 
   // ---- the portal
   'Communication Portal': ['Kommunikationsportal', 'Portail de communication'],
@@ -407,7 +392,7 @@ const D = {
   'The channel opens on': ['Der Kanal öffnet am', 'Le canal ouvre le'],
   'and stays open for': ['und bleibt offen für', 'et reste ouvert pendant'],
   'The crew left the habitat on': ['Die Crew hat das Habitat verlassen am', 'L’équipage a quitté l’habitat le'],
-  'the channel closed at the end of': ['der Kanal wurde geschlossen am Ende des', 'le canal a été fermé à la fin du'],
+  'the channel closed at midnight.': ['um Mitternacht wurde der Kanal geschlossen.', 'le canal a été fermé à minuit.'],
   'Nothing sent now would reach anyone.': ['Was jetzt gesendet würde, erreichte niemanden mehr.', 'Rien de ce qui serait envoyé maintenant n’atteindrait personne.'],
   'Read what was sent': ['Lesen, was gesendet wurde', 'Lire ce qui a été envoyé'],
   'YOUR CALLSIGN': ['DEIN RUFZEICHEN', 'VOTRE INDICATIF'],
@@ -450,6 +435,7 @@ const D = {
   'The sols of the run': ['Die Sols des Laufs', 'Les sols de la période'],
   'done': ['erledigt', 'faits'],
   'tasks': ['Aufgaben', 'tâches'],
+  'task': ['Aufgabe', 'tâche'],
   'meals': ['Mahlzeiten', 'repas'],
   'Breakfast': ['Frühstück', 'Petit-déjeuner'],
   'Lunch': ['Mittagessen', 'Déjeuner'],
@@ -683,6 +669,16 @@ const D = {
   'From then on the message is on its way for good. It passes the Moon’s orbit within two seconds, the orbit of Mars within minutes and Jupiter’s within the hour, leaves the planets behind in a matter of hours, and after two years is nearly halfway to Proxima Centauri, the nearest star. The signal grows fainter with every kilometre, spreading out as it goes — but there is no distance at which it stops: what leaves Earth by radio keeps travelling outwards, long after everyone who wrote or read it. The Message Board counts each message’s distance from the moment it was sent, and a tap on it names the object in the sky it has just passed.':
     ['Von da an ist die Nachricht für immer unterwegs. Nach knapp zwei Sekunden hat sie die Mondbahn hinter sich, nach Minuten die Bahn des Mars, innerhalb einer Stunde die des Jupiter; nach einigen Stunden lässt sie die Planeten hinter sich, und nach zwei Jahren ist sie fast auf halbem Weg zu Proxima Centauri, dem nächsten Stern. Mit jedem Kilometer wird das Signal schwächer, weil es sich unterwegs ausbreitet — aber es gibt keine Entfernung, in der es aufhört: Was die Erde per Funk verlässt, reist weiter nach außen, lange nachdem alle, die es geschrieben oder gelesen haben, nicht mehr sind. Das Nachrichtenboard zählt die Entfernung jeder Nachricht von dem Moment an, in dem sie gesendet wurde, und ein Tippen auf sie nennt das Objekt am Himmel, das sie gerade hinter sich gelassen hat.',
      'À partir de cet instant, le message poursuit définitivement son voyage. Il franchit l’orbite de la Lune en moins de deux secondes, celle de Mars en quelques minutes et celle de Jupiter en moins d’une heure. En quelques heures, il a dépassé les planètes et, deux ans plus tard, il se trouve presque à mi-chemin de Proxima du Centaure, l’étoile la plus proche du Soleil.\n\nLe signal s’affaiblit à chaque kilomètre parcouru en se dispersant toujours davantage, mais il n’existe aucune distance à laquelle il s’arrête. Ce qui quitte la Terre sous forme d’ondes radio continue de voyager vers l’extérieur, bien après la disparition de toutes les personnes qui l’ont écrit ou lu.\n\nLe tableau des messages indique en permanence la distance parcourue par chaque message depuis son émission. Il suffit de toucher un message pour découvrir l’objet céleste qu’il vient de dépasser.'],
+  // the transmitters (13 October, after spacespeak.com)
+  'SpaceSpeak Phase I had two transmitters located in North America (Tampa FL, and Austin TX) as well as one transmitter in South America (Brazil). Each was attached to a 15 inch parabolic dish.':
+    ['SpaceSpeak Phase I hatte zwei Sender in Nordamerika (Tampa, Florida, und Austin, Texas) sowie einen Sender in Südamerika (Brasilien). Jeder war mit einer 15-Zoll-Parabolantenne verbunden.',
+     'La phase I de SpaceSpeak comptait deux émetteurs en Amérique du Nord (Tampa, en Floride, et Austin, au Texas) ainsi qu’un émetteur en Amérique du Sud (Brésil). Chacun était relié à une antenne parabolique de 15 pouces.'],
+  'SpaceSpeak Phase II currently has 13 micro PC / transmitters located around the world.':
+    ['SpaceSpeak Phase II verfügt derzeit über 13 Mikro-PCs / Sender an Standorten rund um die Welt.',
+     'La phase II de SpaceSpeak compte actuellement 13 micro-PC / émetteurs répartis à travers le monde.'],
+  'Though a radio signal decreases in intensity as it spreads outward with time, there is practically no theoretical limit to how far a radio signal can travel. Your messages will continue to fly through space for billions of years.':
+    ['Auch wenn ein Funksignal schwächer wird, während es sich mit der Zeit nach außen ausbreitet, gibt es praktisch keine theoretische Grenze dafür, wie weit ein Funksignal reisen kann. Deine Nachrichten werden noch Milliarden von Jahren durch das All fliegen.',
+     'Même si un signal radio perd de son intensité en se propageant au fil du temps, il n’existe pratiquement aucune limite théorique à la distance qu’il peut parcourir. Vos messages continueront de voyager dans l’espace pendant des milliards d’années.'],
   'DESIGNATION': ['BEZEICHNUNG', 'DÉSIGNATION'],
   'RUN': ['LAUF', 'PÉRIODE'],
   'START': ['BEGINN', 'DÉBUT'],
@@ -695,6 +691,7 @@ const D = {
   'currently': ['gerade', 'actuellement'],
   'unlogged': ['nicht erfasst', 'non consigné'],
   'Produced by': ['Produziert von', 'Produit par'],
+  'Website and Panolab at ZKM': ['Website und Panolab am ZKM', 'Site web et Panolab au ZKM'],   // the credits on About (14 October)
   // the partners' logos under Produced by (info.js, PARTNERS): 1 and 2 in cooperation with, 3 to 5 supporters
   'In cooperation with': ['In Kooperation mit', 'En coopération avec'],
   'Supporters': ['Förderer', 'Soutiens'],
@@ -1074,6 +1071,8 @@ const D = {
      'Le tableau de bord de mission est le panneau d’instruments de la station : les mesures en direct de l’habitat, le programme et le repas du jour, l’état de l’équipage, les tendances sur la durée de la mission et les trois blogs quotidiens — tout ce que les capteurs mesurent et ce que l’équipage rapporte, sur une page, actualisée au fur et à mesure.'],
   'Open the Mission Dashboard': ['Das Missions-Dashboard öffnen', 'Ouvrir le tableau de bord de mission'],
   'tasks done today': ['Aufgaben heute erledigt', 'tâches faites aujourd’hui'],
+  'tasks today': ['Aufgaben heute', 'tâches aujourd’hui'],
+  'task today': ['Aufgabe heute', 'tâche aujourd’hui'],
 
   // ---- the habitat sensor (src/lib/habitat-feed.js, public/habitat.js)
   'Live sensors and Habitat measurements': ['Live-Sensoren und Habitat-Messwerte', 'Capteurs en direct et mesures de l’habitat'],
@@ -1214,6 +1213,53 @@ const D = {
   // now — is no longer said: 12 October)
   'Current Crew': ['Aktuelle Crew', 'Équipage actuel'],
   'The crew is not named yet': ['Die Crew ist noch nicht benannt', 'L’équipage n’est pas encore nommé'],
+  // The run's last day, 27 October (14 October: "the performance closes on the 27th at 10am … no missions for that day, no
+  // blogs etc. … on the landing page, add in big: COME visit us and See the habitat from inside and talk to the
+  // Astronauts from 15:00 to 17:00"; layout.js lastDayNote, the dashboard, the running line, the screens; landing.js)
+  'Open now': ['Jetzt geöffnet', 'Ouvert maintenant'],
+  'until': ['bis', 'jusqu’à'],
+  'Come visit us': ['Besuch uns', 'Venez nous rendre visite'],
+  'at Karlsruhe MARS!platz, see the habitat from inside and talk to the astronauts from {from} to {to}.':
+    ['auf dem Karlsruher MARS!platz, sieh dir das Habitat von innen an und sprich mit den Astronautinnen und Astronauten, von {from} bis {to}.',
+     'sur la MARS!platz de Karlsruhe, découvrez l’habitat de l’intérieur et parlez avec les astronautes, de {from} à {to}.'],
+  'MARS! turned the Karlsruhe Marktplatz into MARS!platz. Can we go to Mars to save the Earth? For {n} days three astronauts tried to find out, with your help. The performance closed on {date} at {time}; the messages, the answers and the blogs stay here to read.':
+    ['MARS! hat den Karlsruher Marktplatz zum MARS!platz gemacht. Können wir zum Mars fliegen, um die Erde zu retten? {n} Tage lang haben drei Astronautinnen und Astronauten versucht, es herauszufinden – mit deiner Hilfe. Die Performance ist am {date} um {time} zu Ende gegangen; die Nachrichten, die Antworten und die Blogs bleiben hier zum Nachlesen.',
+     'MARS! a transformé la Marktplatz de Karlsruhe en MARS!platz. Peut-on aller sur Mars pour sauver la Terre ? Pendant {n} jours, trois astronautes ont tenté de le découvrir, avec votre aide. La performance s’est terminée le {date} à {time} ; les messages, les réponses et les blogs restent ici à lire.'],
+  'Archive': ['Archiv', 'Archives'],                                       // the landing page's key to At a Glance after the run (14 October)
+  // the habitat's pop-ups after the performance, in the past (inside.js, `past`)
+  'The habitat’s other astronauts: live crickets performing as our alternate protein source, a robot dog as an astronaut’s best friend and helper for space walks and an emotional support robot assisting in our mental health — and the gardens and hydroponic shelves, where fresh food grew without soil.':
+    ['Die anderen Astronauten des Habitats: lebende Grillen als unsere alternative Proteinquelle, ein Roboterhund als bester Freund der Astronauten und Helfer bei Außeneinsätzen und ein Roboter zur emotionalen Unterstützung unserer psychischen Gesundheit — dazu die Gärten und Hydroponikregale, in denen frische Nahrung ohne Erde wuchs.',
+     'Les autres astronautes de l’habitat : des grillons vivants, notre source de protéines alternative, un chien robot, meilleur ami de l’astronaute et aide pour les sorties, et un robot de soutien émotionnel pour notre santé mentale — ainsi que les jardins et les étagères hydroponiques, où la nourriture fraîche poussait sans terre.'],
+  'The crew was reachable by online message through this ground station website, by postcard and by direct communication each day at 19:00. All messages written here were also literally sent into space!':
+    ['Die Crew war per Online-Nachricht über diese Bodenstations-Website, per Postkarte und täglich um 19:00 im direkten Gespräch erreichbar. Alle hier geschriebenen Nachrichten wurden außerdem buchstäblich ins All gesendet!',
+     'L’équipage était joignable par message en ligne via ce site du centre de contrôle terrestre, par carte postale et en communication directe chaque jour à 19:00. Tous les messages écrits ici ont aussi été, littéralement, envoyés dans l’espace !'],
+  'Each of our days had a specific research mission, centered around one of the five topics MARS! is composed of: Habitat, Mental Health, Food, Governance or Resource Management. We took a hard look at our society from the red planet looking down on Earth.':
+    ['Jeder unserer Tage hatte eine eigene Forschungsmission, rund um eines der fünf Themen, aus denen MARS! besteht: Habitat, psychische Gesundheit, Ernährung, Governance oder Ressourcenmanagement. Wir warfen vom roten Planeten aus einen genauen Blick auf unsere Gesellschaft auf der Erde.',
+     'Chacune de nos journées avait une mission de recherche précise, autour de l’un des cinq thèmes qui composent MARS! : habitat, santé mentale, alimentation, gouvernance ou gestion des ressources. Depuis la planète rouge, nous avons porté un regard sans concession sur notre société, là-bas sur Terre.'],
+  'Sensors: everything was tracked inside the Red Dust City Habitat — CO₂, temperature, humidity, food rations, crew happiness. What they measured stays in the record.':
+    ['Sensoren: Im Habitat Red Dust City wurde alles erfasst — CO₂, Temperatur, Luftfeuchtigkeit, Essensrationen, die Zufriedenheit der Crew. Was sie gemessen haben, bleibt in der Aufzeichnung.',
+     'Capteurs : tout était suivi dans l’habitat Red Dust City — CO₂, température, humidité, rations alimentaires, moral de l’équipage. Ce qu’ils ont mesuré reste dans l’archive.'],
+  'Going outside on Mars requires space suits and passing through an air lock. An EVA — extra-vehicular activity — was the crew’s daily walk on the Mars landscape of Karlsruhe’s Marktplatz at 16:00. Its mission was connected to the science mission of the day.':
+    ['Nach draußen gehen heißt auf dem Mars: Raumanzug anziehen und durch die Luftschleuse. Ein EVA — extra-vehicular activity, Außeneinsatz — war der tägliche Gang der Crew um 16:00 durch die Marslandschaft des Karlsruher Marktplatzes. Sein Auftrag hing mit der Wissenschaftsmission des Tages zusammen.',
+     'Sortir sur Mars exige une combinaison spatiale et le passage d’un sas. Une EVA — activité extravéhiculaire — était la marche quotidienne de l’équipage, à 16:00, dans le paysage martien de la Marktplatz de Karlsruhe. Sa mission était liée à la mission scientifique du jour.'],
+  'Three astronauts from ZKM — Commander/Comms, Health Officer, and Science Officer — volunteered to lead this experiment and were stationed in the Red Dust City Habitat, each with their own role and responsibilities. In the media gallery you can see what they did.':
+    ['Drei Astronautinnen und Astronauten des ZKM — Commander/Comms, Health Officer und Science Officer — haben sich freiwillig gemeldet, dieses Experiment zu leiten, und waren im Habitat Red Dust City stationiert, jede und jeder mit eigener Rolle und Verantwortung. In der Mediengalerie siehst du, was sie getan haben.',
+     'Trois astronautes du ZKM — Commander/Comms, Health Officer et Science Officer — se sont portés volontaires pour mener cette expérience et ont été en poste dans l’habitat Red Dust City, chacun avec son rôle et ses responsabilités. Dans la galerie médias, vous pouvez voir ce qu’ils ont fait.'],
+  'Each day had a strict schedule the astronauts adhered to and the Habitat was divided into specific zones for working, cooking, playing and sleeping — because going out for a stroll requires serious effort. Have a look in the media gallery to see how we used the space.':
+    ['Jeder Tag folgte einem strengen Zeitplan, an den sich die Astronauten hielten, und das Habitat war in Zonen zum Arbeiten, Kochen, Spielen und Schlafen eingeteilt — denn ein Spaziergang nach draußen ist ein ernsthafter Aufwand. Schau in die Mediengalerie, um zu sehen, wie wir den Raum genutzt haben.',
+     'Chaque jour suivait un programme strict que les astronautes respectaient, et l’habitat était divisé en zones pour travailler, cuisiner, jouer et dormir — car sortir faire un tour demande un sérieux effort. Jetez un œil à la galerie médias pour voir comment nous avons utilisé l’espace.'],
+  'When every liter of water has to be carried up by space rocket, we become more mindful of our usage. Our water recycling system was one of the things we brought to reflect on resources and how we are currently treating them on Earth.':
+    ['Wenn jeder Liter Wasser mit der Rakete hochgebracht werden muss, gehen wir bewusster damit um. Unser Wasserrecycling-System war eines der Dinge, die wir mitgebracht hatten, um über Ressourcen nachzudenken — und darüber, wie wir derzeit auf der Erde mit ihnen umgehen.',
+     'Quand chaque litre d’eau doit être monté par fusée, on devient plus attentif à sa consommation. Notre système de recyclage de l’eau était l’une des choses que nous avions apportées pour réfléchir aux ressources et à la manière dont nous les traitons aujourd’hui sur Terre.'],
+  'A bicycle generator: pedalling charged the battery. The health officer’s workout was also the habitat’s power plant — the steps and the kilowatt-hours were the same effort.':
+    ['Ein Fahrradgenerator: Treten lud die Batterie. Das Training des Gesundheitsoffiziers war zugleich das Kraftwerk des Habitats – die Schritte und die Kilowattstunden waren dieselbe Anstrengung.',
+     'Un générateur à vélo : pédaler chargeait la batterie. L’entraînement de l’officier de santé était aussi la centrale de l’habitat – les pas et les kilowattheures étaient le même effort.'],
+  'We measured our energy expenditure: how much came in, how much went out: from calorie intake to taken steps, from power produced by muscle to electricity consumption.':
+    ['Wir haben unseren Energiehaushalt gemessen: wie viel hereinkam, wie viel hinausging — von der Kalorienzufuhr bis zu den gegangenen Schritten, von der Muskelkraft bis zum Stromverbrauch.',
+     'Nous avons mesuré notre dépense énergétique : ce qui entrait, ce qui sortait — des calories ingérées aux pas effectués, de l’énergie produite par les muscles à la consommation d’électricité.'],
+  'The Mission Dashboard was the station’s instrument panel: the live readings, the day’s schedule and meal, the crew’s condition, the trends and the three daily blogs, on one page.':
+    ['Das Missions-Dashboard war das Instrumentenbrett der Station: die Live-Messwerte, der Zeitplan und die Mahlzeit des Tages, das Befinden der Crew, die Trends und die drei täglichen Blogs, auf einer Seite.',
+     'Le tableau de bord de mission était le panneau d’instruments de la station : les mesures en direct, l’horaire et le repas du jour, l’état de l’équipage, les tendances et les trois blogs quotidiens, sur une page.'],
   'Science': ['Wissenschaft', 'Science'],
   'EVA': ['EVA', 'EVA'],
   'Health': ['Gesundheit', 'Santé'],

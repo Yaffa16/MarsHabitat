@@ -50,8 +50,9 @@ CHECK = '--check' in sys.argv
 NOTE = ('The scientific missions of MARS! / Red Dust City, one a day, as the sheets in the missions/ folder give them '
         '(MARS_Mission_NN_….pdf, one page each) — written by tools/missions-json.py, which reads every sheet in the folder; '
         'run it again when a sheet changes. `days` says which mission the crew are on each day of the run (day → mission '
-        'number): as shipped the sheets follow the days in sequence — 00 on day 1, 15 October, to 12 on day 13, 27 October — '
-        'and the Science officer changes a day\'s mission from the desk\'s Science tab, which writes this map. `missions` '
+        'number): as shipped the sheets follow the days in sequence — 00 on day 1, 15 October, to 11 on day 12, 26 October; '
+        'the last day, 27 October, has none, the performance closing at 10:00 that morning — and the Science officer changes '
+        'a day\'s mission from the desk\'s Science tab, which writes this map. `missions` '
         'carries each sheet\'s words: its number and title (the file\'s — the number printed on the sheet is kept as sheetNo '
         'where it is another), the central question, the Morning, Afternoon and EVA parts as lines (a line in capitals is a '
         'heading, one starting with • a bullet, one starting with → a pointer; `evening` too on a sheet whose third column is the '
@@ -279,8 +280,9 @@ def main():
             entry['evening'] = p['evening']
         entry.update({k: p[k] for k in ('community', 'materials')})
         missions.append(entry)
-    # the days: the sheets in the file's order, 00 on day 1 — thirteen days, as many sheets as there are
-    days = {str(i + 1): m['no'] for i, m in enumerate(missions[:13])}
+    # the days: the sheets in the file's order, 00 on day 1 — twelve days: the thirteenth, 27 October, has no mission (14
+    # October: "the performance closes on the 27th at 10am, no missions for that day")
+    days = {str(i + 1): m['no'] for i, m in enumerate(missions[:12])}
     out = {'_note': NOTE, 'days': days, 'missions': missions}
     text = json.dumps(out, ensure_ascii=False, indent=2) + '\n'
     if CHECK:

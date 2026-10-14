@@ -8,8 +8,8 @@
  * every state filed for the crew, the habitat's daily summary and every
  * reading behind it — then the crew log whole and the media index with
  * hashes (12 October: a day's chapter no longer lists its media). The
- * messages from Earth and the crew's replies are not part of the record,
- * and neither is mission control's audit trail. Before the run, a marked
+ * messages from Earth and the crew's replies are not part of the record
+ * (the station keeps no log of mission control's doings). Before the run, a marked
  * rehearsal chapter for today shows the shape of a day's record.
  *
  * Nothing in it is generated: no chart, no projection, no total, no figure
@@ -409,16 +409,20 @@ function daySection(L, G, r, { asChapter = true } = {}) {
   const when = (iso) => (iso ? `${mission.localDate(new Date(iso), st.timezone)} ${localHM(iso, st)}` : '');
 
   /* ---- the officers: the three blogs, crew state ----------------------- */
+  // the run's last day has no blogs (14 October: "the performance closes on the 27th at 10am, no missions for that day,
+  // no blogs"): said once, where the blogs would stand, not as three blogs missing
+  const lastDay = !r.rehearsal && n === st.totalDays;
+  if (lastDay && !r.officers.some((o) => o.entry || o.reports.length)) L.para(`The last day has no blogs: the performance ${st.ended ? 'closed' : 'closes'} at 10:00 that morning.`, { font: 'italic', color: GREY, size: 9, after: 8 });
   for (const o of r.officers) {
     L.h2(`${cap(shown(o.designation))}${o.role ? ` · ${o.role}` : ''}`, { keep: 120 });
-    if (o.hasBlog) {
+    if (o.hasBlog && !(lastDay && !o.entry)) {
       L.h3('Commander Log', { keep: 80 });
       if (o.entry) {
         L.para(`Written ${when(o.entry.written_at)}${o.entry.updated_at && o.entry.updated_at !== o.entry.written_at ? ` · last edited ${when(o.entry.updated_at)}` : ''} habitat time`, { color: GREY, size: 7.5, after: 4 });
         entryBlock(L, G, o.entry.body, o.media, { used: placed });
       } else L.para('No Commander Log written for this day.', { font: 'italic', color: GREY, size: 9 });
     }
-    if (o.reportKind) {
+    if (o.reportKind && !(lastDay && !o.reports.length)) {
       L.h3(o.reportLabel, { keep: 80 });
       if (o.reports.length) for (const x of o.reports) entryBlock(L, G, x.body, [], { used: placed });
       else L.para(`No ${o.reportLabel} written for this day.`, { font: 'italic', color: GREY, size: 9 });
@@ -686,23 +690,37 @@ function todayRecord() {
  * control to keep: every message that ever reached the station, in the
  * order it was sent, whatever became of it — published with its reply,
  * rejected with the reason, still waiting, or in transit — with its
- * callsign, tags, day and time, and the signal delay stored with it.
+ * callsign, tags, day and time. (The signal delay stored with each stood
+ * under it until 14 October: "from the messages download remove the line
+ * Signal delay stored with the message … from all the messages"; the CSV
+ * and the JSON keep light_seconds and distance_au.)
  */
 const STATE_WORD = { PUBLISHED: 'published', REJECTED: 'rejected', PENDING_APPROVAL: 'awaiting reply', APPROVED: 'awaiting reply', IN_TRANSIT: 'in transit', TRANSMITTED: 'in transit', ARRIVED: 'arrived' };
 const WASH = [252, 240, 233];
-const fmtLight = (sec) => (sec == null ? '—' : `${Math.round(sec / 60)} min`);   // whole minutes, as the station writes it everywhere (the exact seconds are in the CSV and JSON)
 function dayOf(iso, st) {
   const date = mission.localDate(new Date(iso), st.timezone);
   return mission.daysBetween(st.start_date, date) + 1;
 }
 
-/** Every message with its reply, oldest first — the one query the PDF, the CSV and the JSON share. */
+/** Every message with its reply, oldest first — the one query the PDF, the CSV and the JSON share — and what became
+ *  of it on its way to space (13 October: "no data point or source is lost"): the relay's state, SpaceSpeak's number
+ *  and address for it, when SpaceSpeak took it, the tries and the last error. */
 function allMessages() {
   return db.prepare(
-    `SELECT m.*, r.body AS response_body, r.published_at AS response_at, r.written_at AS response_written, c.designation AS responder
+    `SELECT m.*, r.body AS response_body, r.published_at AS response_at, r.written_at AS response_written, c.designation AS responder,
+            s.state AS space_state, s.remote_id AS space_number, s.remote_url AS space_url, s.launched_at AS space_launched_at,
+            s.sent_at AS space_sent_at, s.queued_at AS space_queued_at, s.attempts AS space_attempts, s.error AS space_error
      FROM message m LEFT JOIN response r ON r.message_id = m.id LEFT JOIN crew c ON c.id = r.crew_id
+     LEFT JOIN space_relay s ON s.message_id = m.id
      ORDER BY m.submitted_at, m.id`).all();
 }
+/** A message's way to space, as the exports write it — null when it was never handed to SpaceSpeak. */
+function spaceOf(m) {
+  if (!m.space_state) return null;
+  return { state: m.space_state, number: m.space_number || null, url: m.space_url || null, launchedAt: m.space_launched_at || null,
+    sentAt: m.space_sent_at || null, queuedAt: m.space_queued_at || null, attempts: m.space_attempts || 0, ...(m.space_error ? { error: m.space_error } : {}) };
+}
+const SPACE_WORD = { QUEUED: 'queued for space', SENDING: 'on its way to SpaceSpeak', SENT: 'beamed into space by SpaceSpeak', DRY_RUN: 'a dry run — not beamed', FAILED: 'not beamed — SpaceSpeak did not take it', SKIPPED: 'not beamed — no longer published when its turn came' };
 
 function messagesPdf() {
   const st = mission.state();
@@ -726,7 +744,10 @@ function messagesPdf() {
       L.quote(`${m.responder ? shown(m.responder) : 'Mars habitat'} — ${m.response_body}${m.response_at ? '' : '  [draft, not published]'}`, { color: ORANGE, fill: WASH });
     } else if (m.state === 'REJECTED') L.para(`Rejected without a reply${m.reject_reason ? `: ${m.reject_reason}` : ''}${m.reviewed_by ? ` · by ${m.reviewed_by}` : ''}${m.reviewed_at ? ` · ${localHM(m.reviewed_at, st)}` : ''}.`, { font: 'italic', color: GREY, size: 8.5 });
     else L.para('No reply yet.', { font: 'italic', color: GREY, size: 8.5 });
-    L.para(`Signal delay stored with the message: ${fmtLight(m.light_seconds)} one way at ${m.distance_au != null ? m.distance_au.toFixed(3) : '—'} au${m.response_at ? ` · reply published day ${ddd(dayOf(m.response_at, st))} ${localHM(m.response_at, st)}` : ''}`, { size: 7.5, color: GREY, after: 12 });
+    // when the reply went out — the line that told it began with the signal delay until 14 October, which is gone
+    if (m.response_at) L.para(`Reply published day ${ddd(dayOf(m.response_at, st))} ${localHM(m.response_at, st)}`, { size: 7.5, color: GREY, after: m.space_state ? 2 : 12 });
+    else if (!m.space_state) L.y += 5;                                                  // the gap to the next message
+    if (m.space_state) L.para(`${SPACE_WORD[m.space_state] || m.space_state.toLowerCase()}${m.space_number ? ` · SpaceSpeak No. ${m.space_number}` : ''}${m.space_launched_at ? ` · day ${ddd(dayOf(m.space_launched_at, st))} ${localHM(m.space_launched_at, st)}` : ''}${m.space_url ? ` · ${m.space_url}` : ''}${m.space_state !== 'SENT' && m.space_attempts ? ` · ${m.space_attempts} ${m.space_attempts === 1 ? 'try' : 'tries'}` : ''}${m.space_state === 'FAILED' && m.space_error ? ` · ${m.space_error}` : ''}`, { size: 7.5, color: GREY, after: 12 });
   }
   if (!messages.length) L.para('No messages have been sent.', { font: 'italic', color: GREY });
   L.finish({ footerLeft: `ZKM | Hertzlab · ${st.runLabelLong} · all messages · generated ${new Date().toISOString().slice(0, 10)}` });
@@ -747,10 +768,12 @@ function moodsCsv() {
 function messagesCsv() {
   const cell = (v) => { const t = v == null ? '' : String(v); return /[",\n\r]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
   const head = ['id', 'callsign', 'mission_day', 'when', 'submitted_at', 'arrived_at', 'state', 'flagged', 'tags', 'message',
-    'reply', 'replied_by', 'reply_written_at', 'reply_published_at', 'reviewed_at', 'reviewed_by', 'reject_reason', 'light_seconds', 'distance_au'];
+    'reply', 'replied_by', 'reply_written_at', 'reply_published_at', 'reviewed_at', 'reviewed_by', 'reject_reason', 'light_seconds', 'distance_au',
+    'space_state', 'space_number', 'space_url', 'space_launched_at', 'space_sent_at', 'space_attempts', 'space_error'];
   const st = mission.state();
   const rows = allMessages().map((m) => [m.id, m.callsign, m.mission_day, m.mission_day < 1 ? (st.nowDay ? 'NOW · before the run' : 'before the run') : 'the run', m.submitted_at, m.arrival_at, m.state, m.flagged ? 1 : 0, m.tags, m.body,
-    m.response_body, m.responder ? shown(m.responder) : '', m.response_written, m.response_at, m.reviewed_at, m.reviewed_by, m.reject_reason, m.light_seconds, m.distance_au]);
+    m.response_body, m.responder ? shown(m.responder) : '', m.response_written, m.response_at, m.reviewed_at, m.reviewed_by, m.reject_reason, m.light_seconds, m.distance_au,
+    m.space_state, m.space_number, m.space_url, m.space_launched_at, m.space_sent_at, m.space_state ? m.space_attempts : '', m.space_error]);
   return [head, ...rows].map((r) => r.map(cell).join(',')).join('\r\n') + '\r\n';
 }
 
@@ -765,8 +788,9 @@ function messagesJson() {
     messages: allMessages().map((m) => ({ id: m.id, callsign: m.callsign, missionDay: m.mission_day, rehearsal: m.mission_day < 1 && !st.nowRetired, submittedAt: m.submitted_at, arrivedAt: m.arrival_at,
       state: m.state, flagged: !!m.flagged, tags: (m.tags || '').split(',').filter(Boolean), body: m.body,
       reply: m.response_body ? { body: m.response_body, by: m.responder ? shown(m.responder) : null, writtenAt: m.response_written, publishedAt: m.response_at } : null,
-      reviewedAt: m.reviewed_at, reviewedBy: m.reviewed_by, rejectReason: m.reject_reason, lightSeconds: m.light_seconds, distanceAu: m.distance_au })),
+      reviewedAt: m.reviewed_at, reviewedBy: m.reviewed_by, rejectReason: m.reject_reason, lightSeconds: m.light_seconds, distanceAu: m.distance_au,
+      space: spaceOf(m) })),
   };
 }
 
-module.exports = { fullRecord, dayRecord, todayRecord, gather, messagesPdf, messagesCsv, messagesJson, moodsCsv };
+module.exports = { fullRecord, dayRecord, todayRecord, gather, messagesPdf, messagesCsv, messagesJson, moodsCsv, spaceOf };

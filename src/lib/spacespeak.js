@@ -158,8 +158,9 @@ async function keep(page, name) {
   } catch { /* the page may be gone */ }
   return files;
 }
+let trying = null;   // the message being sent, so what is kept of a failed try is named after it (and forgotten with it)
 async function fail(page, why, steps) {
-  const files = await keep(page, 'failed');
+  const files = await keep(page, trying ? `failed-${trying}` : 'failed');
   const e = new Error(why + (files.length ? ` — see ${path.basename(files[0])} in ${CFG.dir}` : ''));
   e.steps = steps;
   return e;
@@ -255,6 +256,7 @@ async function deliver(m) {
   try { ({ chromium } = require('playwright')); } catch { throw new Error('Playwright is not installed — npm install, and npx playwright install chromium (the Docker image has it)'); }
   const text = (String(m.body || '').trim() + (CFG.signature ? `\n${CFG.signature}` : '')).trim();
   const steps = [];
+  trying = m.id;
   fs.mkdirSync(CFG.dir, { recursive: true });
   const context = await chromium.launchPersistentContext(path.join(CFG.dir, 'profile'), {
     headless: CFG.headless, viewport: { width: 1280, height: 900 }, locale: 'en-GB', timezoneId: 'Europe/Berlin',
@@ -307,4 +309,14 @@ async function deliver(m) {
   }
 }
 
-module.exports = { CFG, enqueue, statesOf, status, start, tick, deliver };
+/** A message deleted on the desk leaves nothing (13 October): the screenshots and pages kept of its tries
+ *  (failed-<id>-…, dry-run-<id>-…) go with it. */
+function forget(id) {
+  try {
+    for (const f of fs.existsSync(CFG.dir) ? fs.readdirSync(CFG.dir) : []) {
+      if (f.startsWith(`failed-${id}-`) || f.startsWith(`dry-run-${id}-`)) fs.unlinkSync(path.join(CFG.dir, f));
+    }
+  } catch { /* nothing kept */ }
+}
+
+module.exports = { CFG, enqueue, statesOf, status, start, tick, deliver, forget };

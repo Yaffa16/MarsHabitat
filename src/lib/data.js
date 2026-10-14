@@ -5,6 +5,30 @@ const mood = require('./mood');
 
 const STALE_SECONDS = Number(process.env.SENSOR_STALE_SECONDS || 300);
 
+/* The visitors are counted day by day in visitor_count from 13 October on (lib/callsign.js, counted). A database from
+   before is brought into line once, from the callsigns it still holds — after that the count only ever grows. */
+try {
+  db.exec('CREATE TABLE IF NOT EXISTS setting (key TEXT PRIMARY KEY, value TEXT NOT NULL)');
+  if (!db.prepare("SELECT 1 FROM setting WHERE key = 'visitor_count.seeded'").get()) {
+    db.transaction(() => {
+      if (!db.prepare('SELECT 1 FROM visitor_count LIMIT 1').get()) {
+        const tz = (mission.config() || {}).timezone || 'Europe/Berlin';
+        const byDate = new Map();
+        for (const r of db.prepare('SELECT created_at FROM visitor').all()) {
+          const d = new Date(r.created_at);
+          if (Number.isNaN(d.getTime())) continue;
+          const k = mission.localDate(d, tz);
+          byDate.set(k, (byDate.get(k) || 0) + 1);
+        }
+        const ins = db.prepare('INSERT INTO visitor_count (date, n) VALUES (?, ?)');
+        for (const [k, n] of byDate) ins.run(k, n);
+      }
+      db.prepare("INSERT INTO setting (key, value) VALUES ('visitor_count.seeded', ?)").run(new Date().toISOString());
+    })();
+  }
+} catch (e) { console.warn('[data] the visitors counted before 13 October were not brought over:', e.message); }
+const visitorsCounted = () => db.prepare('SELECT COALESCE(SUM(n), 0) n FROM visitor_count').get().n;
+
 /* ----------------------------------------------------------------- sensors */
 
 function metrics() {
@@ -366,7 +390,7 @@ function counts() {
     sentToSpace: g("SELECT COUNT(DISTINCT message_id) n FROM space_relay WHERE state = 'SENT'"),   // beamed out (SpaceSpeak)
     rejected: g("SELECT COUNT(*) n FROM message WHERE state = 'REJECTED'"),
     total: g('SELECT COUNT(*) n FROM message'),
-    visitors: g('SELECT COUNT(*) n FROM visitor'),
+    visitors: visitorsCounted(),                                              // every callsign issued, as counted (visitor_count)
     today: g('SELECT COUNT(*) n FROM message WHERE submitted_at >= ?',
       new Date(Date.now() - 86400000).toISOString()),
   };
@@ -398,7 +422,7 @@ function tally() {
   return {
     messages: g('SELECT COUNT(*) n FROM message'),
     messagesDay: g('SELECT COUNT(*) n FROM message WHERE submitted_at >= ?', new Date(Date.now() - 86400000).toISOString()),
-    visitors: g('SELECT COUNT(*) n FROM visitor'),
+    visitors: visitorsCounted(),
     writers: g('SELECT COUNT(DISTINCT visitor_id) n FROM message'),
   };
 }
@@ -423,7 +447,8 @@ function tallyByDay(mission) {
   for (const r of db.prepare('SELECT submitted_at FROM message').all()) { const d = day(r.submitted_at); if (d) at(d).messages++; }
   for (const r of db.prepare(`SELECT r.published_at FROM response r JOIN message m ON m.id = r.message_id
     WHERE m.state = 'PUBLISHED' AND r.published_at IS NOT NULL`).all()) { const d = day(r.published_at); if (d) at(d).replied++; }
-  for (const r of db.prepare('SELECT created_at FROM visitor').all()) { const d = day(r.created_at); if (d) at(d).visitors++; }
+  // the visitors as counted the moment each callsign was issued (visitor_count) — a callsign dropped since still counts
+  for (const r of db.prepare('SELECT date, n FROM visitor_count').all()) at(r.date).visitors += r.n;
   const byDate = new Map();
   if (mission && mission.totalDays) for (let n = 1; n <= mission.totalDays; n++) byDate.set(missionLib.dateForDay(n), n);
   const days = [...rows.values()].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
@@ -479,7 +504,7 @@ function logbook({ includeHeld = false, crewId = null, limit = 400 } = {}) {
 
 /**
  * The three blogs, as the public sees them now: every day of the run with
- * its three slots — the Commander Log (the commanding officer's entry),
+ * its three slots (but the last day, which has none: 14 October) — the Commander Log (the commanding officer's entry),
  * the Daily Mission Report and the Health Report (the science and
  * health officers' reports, SCIENCE and HEALTH notes) — the written post where
  * there is one and a placeholder where there is not, so the shape of the
@@ -495,6 +520,9 @@ const BLOGS = [
 function logSlotsPublic(totalDays, dateForDay, { from = 1 } = {}) {
   const content = require('./content');
   const mediaLib = require('./media');
+  // the run's last day — 27 October — has no blogs (14 October: "the performance closes on the 27th at 10am, no missions
+  // for that day, no blogs"): the day stands with no slots, nothing to be written
+  const closing = content.closingDay();
   const commander = db.prepare('SELECT * FROM crew WHERE designation = ?').get(content.BLOG_OFFICER)
     || db.prepare('SELECT * FROM crew ORDER BY sort_order, id').get();
   const rows = commander ? db.prepare('SELECT * FROM crew_entry WHERE crew_id = ?').all(commander.id) : [];
@@ -506,7 +534,7 @@ function logSlotsPublic(totalDays, dateForDay, { from = 1 } = {}) {
     const inNotes = new Set(notes.flatMap((r) => [...String(r.body).matchAll(/\[media:(\d+)\]/g)].map((m) => Number(m[1]))));
     const dd = n === 0 ? 'NOW' : `Day ${String(n).padStart(3, '0')}`;   // day 0 is NOW, the rehearsal day
     const entries = [];
-    for (const b of BLOGS) {
+    for (const b of (n >= 1 && n === closing ? [] : BLOGS)) {
       if (b.key === 'commander') {
         if (!commander) continue;
         const e = rows.find((r) => r.mission_day === n) || null;

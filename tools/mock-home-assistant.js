@@ -67,11 +67,13 @@ http.createServer((req, res) => {
   m = url.pathname.match(/^\/api\/history\/period\/([^/]+)$/);
   if (m) {
     const start = Date.parse(decodeURIComponent(m[1])) || Date.now() - 3600000;
+    // end_time, as Home Assistant takes it: the history up to that instant (the station asks a day at a time)
+    const end = Math.min(Date.parse(url.searchParams.get('end_time') || '') || Date.now(), Date.now());
     const ids = String(url.searchParams.get('filter_entity_id') || '').split(',').map((x) => x.replace(/^sensor\./, '')).filter(Boolean);
     const out = ids.map((id) => {
       const rows = [];
-      // one change every 30 seconds since `start`, up to now
-      for (let t = Math.ceil(start / 30000) * 30000; t < Date.now(); t += 30000) rows.push(stateOf(id, t, false));
+      // one change every 30 seconds since `start`, up to the end
+      for (let t = Math.ceil(start / 30000) * 30000; t < end; t += 30000) rows.push(stateOf(id, t, false));
       if (!rows.length) rows.push(stateOf(id, start, false));
       return rows.filter(Boolean).map((r, i) => (i ? { state: r.state, last_changed: r.last_changed, last_updated: r.last_updated } : r));
     }).filter((l) => l.length);

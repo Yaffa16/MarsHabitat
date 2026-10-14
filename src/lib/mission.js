@@ -170,12 +170,18 @@ function state(date = new Date()) {
   const mi = Math.floor(abs / 60000) % 60;
   const s = Math.floor(abs / 1000) % 60;
 
-  // The channel and the desk close at the end of the day after the run — 28 October 2026: the last messages come in
-  // and the crew's last replies go out on the day after they come out; from 29 October the station is read-only
-  // (no message is taken, mission control takes no edit; the archive and every download keep serving). A rehearsal
-  // against made-up dates closes the day after its own last day.
-  const closeDate = new Date(Date.parse(m.end_date + 'T00:00:00Z') + 86400000).toISOString().slice(0, 10);
-  const closeMs = venueMidnightUtc(closeDate, m.timezone) + 86400000;
+  // The performance closes at 10:00 on the run's last day — 27 October 2026 (14 October: "the performance closes on the
+  // 27th at 10am"): from then on the crew are out (`ended`). That afternoon the habitat is open to visitors, 15:00 to
+  // 17:00 (run.js, OPEN_HOUSE); the last day has no mission and no blogs (`lastDay`) — and otherwise reads as every
+  // other day, the landing page's invitation apart (14 October, 13:11).
+  const endsMs = venueTimeUtc(m.end_date, run.RUN.COME_OUT, m.timezone);
+  // The channel and the desk close at the end of that last day — at midnight on 27 October 2026 (14 October: "stop
+  // everything from midnight on the 27th instead of the 28th"; until then they stayed open through the day after the
+  // run): the last messages come in until midnight, and from 28 October the station is read-only (no message is taken,
+  // mission control takes no edit; the archive and every download keep serving). A rehearsal against made-up dates
+  // closes at the end of its own last day.
+  const closeDate = m.end_date;
+  const closeMs = venueMidnightUtc(new Date(Date.parse(m.end_date + 'T00:00:00Z') + 86400000).toISOString().slice(0, 10), m.timezone);
 
   // NOW (above): before the run, or all through a rehearsal against made-up dates — never once the reset has been
   // pressed, and never from the run's first day on
@@ -204,8 +210,13 @@ function state(date = new Date()) {
     // Everything the pre-launch and post-mission screens need
     countdown: { days: dd, hours: h, minutes: mi, seconds: s, ms: Math.abs(elapsedMs) },
     opensAt: new Date(launchMs).toISOString(),
-    closesAt: new Date(venueMidnightUtc(m.end_date, m.timezone) + 86399000).toISOString(),
-    // the channel and the desk: open until the end of the day after the run (closeDate), closed from then on
+    // the performance's close, 10:00 on the last day, and whether it is behind us (above); the last day itself, the
+    // closing day — 27 October: no mission, no blogs, no schedule, the habitat open to visitors in the afternoon
+    endsAt: new Date(endsMs).toISOString(), ended: date.getTime() >= endsMs,
+    lastDay: phase === 'ACTIVE' && day === total,
+    // the days with blogs: every day of the run but the last
+    blogDays: Math.max(1, total - 1),
+    // the channel and the desk: open until the end of the run's last day (closeDate), closed from then on
     open: date.getTime() < closeMs,
     closeDate, closeLabel: dayLabel(closeDate), closedAt: new Date(closeMs).toISOString(),
     daysUntilStart: elapsedMs < 0 ? dd + (h || mi || s ? 1 : 0) : 0,

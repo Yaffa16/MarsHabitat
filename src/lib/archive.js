@@ -445,15 +445,17 @@ function dayReadings(start, end) {
   let external = { columns: ALL_KEYS.map(([key, label, unit]) => ({ key, label, unit })), rows: [], readings: 0 };
   try {
     const rows = db.prepare(
-      `SELECT t, ${ALL_KEYS.map(([k]) => k).join(', ')} FROM external_reading
+      `SELECT t, ${ALL_KEYS.map(([k]) => k).join(', ')}, src FROM external_reading
        WHERE t >= ? AND t < ? AND (sig IS NULL OR sig NOT LIKE 'demo:%') ORDER BY t, id`
     ).all(a, b);
     const present = new Set();
     for (const r of rows) for (const [k] of ALL_KEYS) if (r[k] != null) present.add(k);
     external = {
       columns: external.columns.filter((c) => present.has(c.key)),
-      rows: rows.map((r) => ({ iso: new Date(r.t).toISOString(), at: hms(r.t), values: r })),
+      rows: rows.map((r) => ({ iso: new Date(r.t).toISOString(), at: hms(r.t), values: r, source: r.src || null })),
       readings: rows.length,
+      // where the day's readings came from (13 October): the habitat sensor through Home Assistant, or the node
+      sources: [...new Set(rows.map((r) => r.src).filter(Boolean))],
     };
   } catch { /* the node's table is created by critical.js on first use */ }
 
@@ -561,7 +563,8 @@ function shapeDay(r, more = null) {
         crew: shown(designation), steps: f.steps ?? null })),
       steps: r.figures.steps ?? null } : null,
     notes: r.day ? r.day.notes.filter((x) => x.published_at)
-      .map((x) => ({ kind: x.kind, body: x.body, postedAt: x.posted_at })) : [],
+      .map((x) => ({ kind: x.kind, body: x.body, postedAt: x.posted_at,
+        ...(x.published_at && x.published_at !== x.posted_at ? { updatedAt: x.published_at } : {}), ...(x.posted_by ? { by: x.posted_by } : {}) })) : [],
     crewStates: r.moods.map((m) => ({
       crew: shown(m.designation), effectiveAt: m.effective_at, value: m.calm_tense, mood: moodOf(m), filedBy: m.set_by })),
     // the habitat sensor — the Sensors tab's instruments — each channel's low, high and mean for the day
@@ -576,13 +579,16 @@ function shapeDay(r, more = null) {
       metric: h.metric, unit: h.unit, min: h.min_value, max: h.max_value,
       avg: h.avg_value, samples: h.samples })),
     // What the crew sent out that day: the files are in the media ZIP
-    // and on the volume under media/<sha>; this is the list with hashes.
-    media: r.media.map(mediaLib.describe),
+    // and on the volume under media/<sha>; this is the list with hashes —
+    // the files mission control withdrew from view too, marked hidden
+    // (13 October: kept, as every file sent out is), and who uploaded each.
+    media: (more ? mediaLib.list({ day: r.missionDay, includeHidden: true }) : r.media)
+      .map((m) => ({ ...mediaLib.describe(m), uploadedBy: m.uploaded_by || null })),
     ...(more ? dayMore(r.missionDay, r.date, more) : {}),
     // Every reading of the day, as stored: the habitat sensor (one per reading), the hardware (per device, one per state
     // reported) and the station's posted channels (one entry per instant, a value per channel), where there are any.
     readings: {
-      habitatSensor: r.readings.external.rows.map((x) => ({ at: x.iso, ...Object.fromEntries(r.readings.external.columns.map((c) => [c.key, x.values[c.key]])) })),
+      habitatSensor: r.readings.external.rows.map((x) => ({ at: x.iso, source: x.source || null, ...Object.fromEntries(r.readings.external.columns.map((c) => [c.key, x.values[c.key]])) })),
       hardware: r.readings.hardware.map((h) => ({ entity: `sensor.${h.id}`, device: h.label, unit: h.unit,
         readings: h.rows.map((x) => ({ at: x.iso, value: x.value, state: x.state })) })),
       station: r.readings.station.rows.map((x) => ({ at: x.iso, ...x.values })),
@@ -602,10 +608,6 @@ function dayMore(missionDay, date, more) {
   const content = require('./content');
   const m = missionDay >= 1 ? content.missionForDay(missionDay) : null;
   const t = more.tally.get(date) || { messages: 0, replied: 0, visitors: 0 };
-  const msgs = db.prepare(
-    `SELECT m.*, r.body AS response_body, r.published_at AS response_at, r.written_at AS response_written, c.designation AS responder
-     FROM message m LEFT JOIN response r ON r.message_id = m.id LEFT JOIN crew c ON c.id = r.crew_id
-     WHERE m.mission_day = ? ORDER BY m.submitted_at, m.id`).all(missionDay);
   const SOL = require('../views/pages/sol');
   const shift = more.shifts[String(missionDay)] || {};
   return {
@@ -614,11 +616,26 @@ function dayMore(missionDay, date, more) {
       sheet: m.file ? `/missions/${m.file}` : null, ...(m.placeholder ? { placeholder: m.placeholder } : {}) } : null,
     crewOnShift: Object.fromEntries(Object.entries(shift).map(([role, who]) => [shown(role), (SOL.personOf(SOL.CREW, who) || { name: who }).name])),
     tally: { messagesReceived: t.messages, messagesReplied: t.replied, visitors: t.visitors },
-    messages: msgs.map((x) => ({ id: x.id, callsign: x.callsign, submittedAt: x.submitted_at, arrivedAt: x.arrival_at, state: x.state,
-      flagged: !!x.flagged, tags: (x.tags || '').split(',').filter(Boolean), body: x.body,
-      reply: x.response_body ? { body: x.response_body, by: x.responder ? shown(x.responder) : 'Mars habitat', writtenAt: x.response_written, publishedAt: x.response_at } : null,
-      reviewedAt: x.reviewed_at, reviewedBy: x.reviewed_by, rejectReason: x.reject_reason, lightSeconds: x.light_seconds, distanceAu: x.distance_au })),
+    messages: messagesOfDay(missionDay),
   };
+}
+
+/** Every message of a mission day, whatever became of it, with the crew's reply and its way to space (SpaceSpeak's
+ *  number and address — 13 October: "no data point or source is lost"). */
+function messagesOfDay(missionDay) {
+  const { spaceOf } = require('./record-pdf');
+  return db.prepare(
+    `SELECT m.*, r.body AS response_body, r.published_at AS response_at, r.written_at AS response_written, c.designation AS responder,
+            s.state AS space_state, s.remote_id AS space_number, s.remote_url AS space_url, s.launched_at AS space_launched_at,
+            s.sent_at AS space_sent_at, s.queued_at AS space_queued_at, s.attempts AS space_attempts, s.error AS space_error
+     FROM message m LEFT JOIN response r ON r.message_id = m.id LEFT JOIN crew c ON c.id = r.crew_id
+     LEFT JOIN space_relay s ON s.message_id = m.id
+     WHERE m.mission_day = ? ORDER BY m.submitted_at, m.id`).all(missionDay).map((x) => ({
+    id: x.id, callsign: x.callsign, submittedAt: x.submitted_at, arrivedAt: x.arrival_at, state: x.state,
+    flagged: !!x.flagged, tags: (x.tags || '').split(',').filter(Boolean), body: x.body,
+    reply: x.response_body ? { body: x.response_body, by: x.responder ? shown(x.responder) : 'Mars habitat', writtenAt: x.response_written, publishedAt: x.response_at } : null,
+    reviewedAt: x.reviewed_at, reviewedBy: x.reviewed_by, rejectReason: x.reject_reason, lightSeconds: x.light_seconds, distanceAu: x.distance_au,
+    space: spaceOf(x) }));
 }
 
 /** The comment line at the head of the Data download (12 October: "in the data json, add a commented line at the top
@@ -645,8 +662,9 @@ function trackedLine() {
     `the habitat sensor (${sensor.join(', ')}; the node's battery and signal where a node reports them)`,
     `the habitat hardware${hardware.length ? ` (${hardware.join(', ')})` : ''}`,
     'each channel\'s and device\'s low, high and mean for the day, and every reading',
-    'the media sent out (with SHA-256)',
-    'the day\'s scientific mission, the crew on shift, the messages received with the crew\'s replies, and the tally (messages received, messages replied, visitors)',
+    'the media sent out (with SHA-256, the withdrawn too)',
+    'the day\'s scientific mission, the crew on shift, the messages received with the crew\'s replies and their way to space (SpaceSpeak\'s number and address), and the tally (messages received, messages replied, visitors)',
+    'where every reading came from (the sources)',
   ].join(' · ') + '.';
 }
 
@@ -654,6 +672,7 @@ function trackedLine() {
     happened carry nothing but their date; before the run, NOW — the
     rehearsal day — travels beside them, marked, never among them. */
 function fullExport() {
+  data.settleTransits();                                                   // a message whose crossing is over is written as arrived
   const st = mission.state();
   const upTo = recordedUpTo(st);
   const rehearsal = st.nowDay ? rehearsalRecord(st) : null;
@@ -662,6 +681,9 @@ function fullExport() {
   let shifts = {};
   try { shifts = (JSON.parse(require('fs').readFileSync(require('path').join(content.DIR, 'shifts.json'), 'utf8')) || {}).days || {}; } catch { /* no plan */ }
   const more = { tally: new Map(tallied.days.map((d) => [d.date, d])), shifts };
+  // the messages sent before the run, once NOW — the rehearsal day that carries them before the run — has gone: they
+  // are no day of the run, and still here (13 October: "make sure nothing is missed")
+  const before = rehearsal ? [] : messagesOfDay(0);
   return {
     '//': trackedLine(),
     mission: {
@@ -671,7 +693,10 @@ function fullExport() {
     exportedAt: now(),
     note: 'Everything the station holds for each day of the run, named as the website names it: what was entered on the station and what its sensors measured, every reading included. No figure is projected, carried forward or generated: a store not counted on a day has no figure for that day. A day that has not happened carries only its date.',
     tally: { messagesReceived: tallied.messages, messagesReplied: tallied.replied, visitors: tallied.visitors },
+    // the tally for every date at the venue that counted anything — the days of the run and any before or after it
+    tallyByDate: tallied.days.slice().reverse().map((d) => ({ date: d.date, missionDay: d.missionDay, messagesReceived: d.messages, messagesReplied: d.replied, visitors: d.visitors })),
     crew: db.prepare('SELECT id, designation, role FROM crew ORDER BY sort_order').all().map((c) => ({ ...c, designation: shown(c.designation) })),
+    sources: sourcesOf(),
     days: Array.from({ length: st.totalDays }, (_, i) => {
       if (i + 1 > upTo) return { missionDay: i + 1, date: mission.dateForDay(i + 1), recorded: false };
       return shapeDay(dayRecord(i + 1), more);
@@ -680,9 +705,33 @@ function fullExport() {
     // sent today — kept apart from the days above and gone on the first day of the run
     rehearsal: rehearsal ? { ...shapeDay(rehearsal, more), missionDay: 0, recorded: false, rehearsal: true,
       note: 'NOW — today, before the run. A rehearsal, not the record: what mission control filed under NOW (mission day 0) and what the sensors sent today. Disappears on the first day of the run.' } : null,
-    media: { note: 'Originals are downloadable at /media/export.zip (one ZIP, manifest inside) and singly at each item\'s url.',
-             counts: mediaLib.counts() },
+    ...(before.length ? { beforeTheRun: { note: 'The messages that came in before the first day of the run: no day of the run, and part of what the station holds.', messages: before } } : {}),
+    media: { note: 'Originals are downloadable at /media/export.zip (one ZIP, manifest inside) and singly at each item\'s url; every file, the withdrawn too, at /archive/media.zip (mission control).',
+             counts: mediaLib.counts(), withdrawn: db.prepare('SELECT COUNT(*) n FROM media WHERE hidden = 1').get().n },
   };
+}
+
+/** Where every kind of data in the Data download came from (13 October: "make sure no data point or source is lost") —
+ *  the instruments by their entity ids, the feeds by their addresses, never a password or a token. */
+function sourcesOf() {
+  const out = { note: 'Where each kind of data in this file came from. Credentials are never written here.' };
+  try {
+    const critical = require('./critical'), ha = require('./home-assistant');
+    out.habitatSensor = { feed: critical.source(), note: 'Each reading names its source: home-assistant (the entities below) or node:<sensor id> (the critical-sensors.de node).',
+      homeAssistant: Object.fromEntries(Object.entries(ha.habitatMap() || {}).map(([k, id]) => [k, `sensor.${id}`])),
+      node: { url: critical.CFG.base, sensorId: critical.CFG.sensorId } };
+    out.hardware = (ha.sensors() || []).map((x) => ({ entity: `sensor.${x.id}`, device: x.label, unit: x.unit || null, kind: x.kind || null }));
+    const mc = ha.mealsConfig() || {};
+    out.mealsEnergy = { meter: mc.meter ? `sensor.${mc.meter}` : null, hours: mc.windows || null };
+  } catch { /* no hardware configured */ }
+  try {
+    out.powerConsumed = require('./content').power().categories.map((c) => ({ key: c.key, label: c.label, meter: c.sensor ? `sensor.${c.sensor}` : null }));
+  } catch { /* no power file */ }
+  out.stationIngest = 'POST /api/sensors/ingest — each reading with the device id that sent it';
+  try { out.spaceSpeak = { site: require('./spacespeak').CFG.site, note: 'Each replied message carries its number and address on SpaceSpeak (messages[].space).' }; } catch { /* no relay */ }
+  out.contentFiles = 'content/*.json — the schedule, the meals, the Commander Log, the reports and notes, the steps, the power, the counts — written from mission control or by hand; every version the station read is kept on the station-data volume under content-history/';
+  out.readingsLog = 'Every pull of every source, exactly as it came back — the readings log, in the Sensor Data ZIP (/archive/sensor-data.zip)';
+  return out;
 }
 
 /** The Data download as text: the comment line ("//", trackedLine) on the file's first line under the brace, every other
@@ -728,7 +777,20 @@ function recordMarkdown(r, heading, note = null) {
   const out = [];
   out.push(heading, '');
   if (note) out.push(note, '');
-  if (r.isEmpty) { out.push('_Nothing was recorded on this day._', ''); return out.join('\n'); }
+  // what was sent out and then withdrawn from view (13 October: "make sure nothing is missed") — part of the day's
+  // record, listed at its end
+  const withdrawn = mediaLib.list({ day: r.missionDay, includeHidden: true }).filter((m) => m.hidden);
+  const tail = () => {
+    if (withdrawn.length) {
+      out.push('### Withdrawn from view', '', '_Sent out, then taken out of view on the station by mission control — kept, as every file sent out is._', '');
+      for (const m of withdrawn) {
+        out.push(`- **${m.filename}** — ${m.kind}, ${m.bytes.toLocaleString('en-GB')} bytes${m.designation ? `, ${shown(m.designation)}` : ''}${m.caption ? ` — ${m.caption}` : ''}  `);
+        out.push(`  SHA-256 \`${m.sha256}\``);
+      }
+      out.push('');
+    }
+  };
+  if (r.isEmpty && !withdrawn.length) { out.push('_Nothing was recorded on this day._', ''); return out.join('\n'); }
   const written = r.officers.filter((o) => o.entry).length + r.officers.reduce((n, o) => n + (o.reports.length ? 1 : 0), 0);
   out.push(`${written} daily ${written === 1 ? 'blog' : 'blogs'} · ` +
            `${r.moods.length} ${r.moods.length === 1 ? 'state' : 'states'} filed · ` +
@@ -858,6 +920,10 @@ function recordMarkdown(r, heading, note = null) {
              `| --- | ${R.external.columns.map(() => '---').join(' | ')} |`);
     for (const row of R.external.rows) out.push(`| ${row.at} | ${R.external.columns.map((c) => fmtV(row.values[c.key])).join(' | ')} |`);
     out.push('');
+    // where they came from (13 October)
+    const said = (R.external.sources || []).map((x) => (x === 'home-assistant' ? 'the habitat sensor, read through Home Assistant'
+      : /^node:/.test(x) ? `the critical-sensors.de node, sensor ${x.slice(5)}` : x));
+    if (said.length) out.push(`_Source: ${said.join('; ')}._`, '');
   }
   if (R.station.rows.length) {
     out.push(`**Habitat · the station's channels** (${R.station.readings} readings)`, '');
@@ -883,6 +949,7 @@ function recordMarkdown(r, heading, note = null) {
     }
     out.push('');
   }
+  tail();
 
   return out.join('\n');
 }

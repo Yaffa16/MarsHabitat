@@ -42,8 +42,12 @@ const CFG = {
   attemptTimeoutMs: Number(process.env.HA_TIMEOUT_MS || 10000),
   attempts: 2,
   // A restart or a quiet spell is backfilled from HA's history endpoint,
-  // which holds the recent past; one day is what the panel draws.
+  // which holds the recent past — a day at a time (HA_BACKFILL_MS), so no answer
+  // grows large, as far back as Home Assistant keeps its history: ten days by
+  // default (its recorder's purge_keep_days; HA_HISTORY_DAYS). Until 13 October
+  // only the last day was asked for, and a longer outage lost what HA still held.
   backfillMs: Number(process.env.HA_BACKFILL_MS || 24 * 3600 * 1000),
+  historyMs: Math.max(1, Number(process.env.HA_HISTORY_DAYS || 10)) * 86400000,
   // The record closes with the run — same instant as the external node,
   // and CRITICAL_FREEZE_AT moves both for a rehearsal.
   freezeAt: Date.parse(process.env.HA_FREEZE_AT || process.env.CRITICAL_FREEZE_AT
@@ -253,30 +257,38 @@ async function pollEntity(s) {
   }
 }
 
-/** Fill the drawn window after a restart or a gap: HA's history endpoint
- *  hands back the recent past; minimal_response keeps it small. */
+/** Fill a gap after a restart, an outage or a quiet spell: HA's history endpoint hands back the past it keeps —
+ *  asked for a day at a time from the newest reading the station holds (or from where the last fill reached, for a
+ *  device whose state stands still), back to HA_HISTORY_DAYS, never before the floor; minimal_response keeps each
+ *  answer small. */
+const reached = new Map();   // entity → the instant its history has been read up to, in this process
 async function backfill(s) {
   const id = s.id;
   const newest = newestOf.get(id).t || 0;
-  const from = Math.max(Date.now() - CFG.backfillMs, floorMs());
   if (newest >= Date.now() - 2 * CFG.pollMs) return null;   // nothing to fill
-  const start = new Date(Math.max(from, newest + 1)).toISOString();
+  let from = Math.max(Date.now() - CFG.historyMs, floorMs(), newest + 1, reached.get(id) || 0);
+  const start = new Date(from).toISOString();
+  let stored = 0, windows = 0;
+  const kept = [];
   try {
-    const d = await fetchJson(
-      `/api/history/period/${encodeURIComponent(start)}?filter_entity_id=sensor.${encodeURIComponent(id)}&minimal_response&no_attributes`,
-      CFG.attemptTimeoutMs);
-    const rows = Array.isArray(d) && Array.isArray(d[0]) ? d[0] : [];
-    let stored = 0;
-    const kept = [];
-    for (const r of rows) {
-      const t = Date.parse(r.last_updated || r.last_changed);
-      const n = store(id, t, r.state, s.unit || null);
-      stored += n;
-      kept.push({ entity: id, at: Number.isFinite(t) ? new Date(t).toISOString() : null,
-        state: String(r.state), stored: n });
+    while (from < Date.now() && windows < Math.ceil(CFG.historyMs / CFG.backfillMs) + 1) {
+      const to = Math.min(from + CFG.backfillMs, Date.now());
+      const d = await fetchJson(
+        `/api/history/period/${encodeURIComponent(new Date(from).toISOString())}?end_time=${encodeURIComponent(new Date(to).toISOString())}&filter_entity_id=sensor.${encodeURIComponent(id)}&minimal_response&no_attributes`,
+        CFG.attemptTimeoutMs);
+      const rows = Array.isArray(d) && Array.isArray(d[0]) ? d[0] : [];
+      for (const r of rows) {
+        const t = Date.parse(r.last_updated || r.last_changed);
+        const n = store(id, t, r.state, s.unit || null);
+        stored += n;
+        kept.push({ entity: id, at: Number.isFinite(t) ? new Date(t).toISOString() : null,
+          state: String(r.state), stored: n });
+      }
+      reached.set(id, Math.min(to, Date.now() - 60000));   // a minute short of now: HA may still be writing the last
+      from = to; windows++;
     }
-    return { stored, rows: kept, from: start };
-  } catch (e) { return { stored: 0, rows: [], error: e.message }; }   // history is a convenience; the states poll is the feed
+    return { stored, rows: kept, from: start, windows };
+  } catch (e) { return { stored, rows: kept, from: start, windows, error: e.message }; }   // history is the filling-in; the states poll is the feed
 }
 
 let timer = null;
@@ -348,6 +360,7 @@ function start() {
 function clear() {
   const n = db.prepare('DELETE FROM ha_reading').run().changes;
   status.entities.clear();
+  reached.clear();                                                   // and how far the history had been read
   forgetDaily();                                                     // the Trends' days were read from them
   return n;
 }

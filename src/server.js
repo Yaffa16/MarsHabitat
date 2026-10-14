@@ -312,11 +312,12 @@ function stationData(ctx) {
 
 app.get('/', (req, res) => {
   const ctx = req.ctx();
-  // The station closes at the end of the day after the run (mission.open — 28 October 2026): until then the page is
-  // the mission's, its channel taking messages for the crew's last replies; from then on it is the closed record.
-  if (!ctx.mission.open) {
-    return res.send(P.complete(ctx, { counts: data.counts(), recent: data.published(3) }));
-  }
+  // The station closes at midnight at the end of the run's last day (mission.open — 27 October 2026; until 14 October
+  // it stayed open through the day after): until then the page is the mission's, its channel taking messages; from then
+  // on it is the same page, less what only the run had — no sky over the habitat, no crew, no calls, the paragraph in
+  // the past with Archive and About under it, the world's slowest chat kept (public.js, mission; 14 October: "after the
+  // last day, Keep the Visual of Earth and Dome on the Landing page, and KEEP the Worlds slowest chat"). The closed
+  // record that stood here until then (public.js, complete) is no longer drawn.
   // Two public things exist: this page and mission control. Everything a
   // visitor can read — the board, the crew, the crew log, the whole schedule,
   // the about text — is a section of this page (a phone held upright gets the
@@ -462,7 +463,7 @@ app.get(/^\/screen\/livestream\/(.+)$/, requireScreens, (req, res) => liveProxy(
    board, in mission control and in the record, and the name the composer's head shows at the screen. Behind the name
    each message is still a new visitor's — a visitor row minted for it alone (lib/callsign.js, mint), no cookie set —
    so the next person at the screen is nobody's continuation: no transit lock across them. The checks are the
-   composer's (the channel open, the words within bounds); the hourly limit is the screen's own, per address, since all
+   composer's (the channel open, the words within bounds); the hourly limit is the screen's own, since all
    its messages are one stream (KIOSK_HOURLY_LIMIT, 6,000 an hour since 13 October — the whole square writes at it),
    counted by the operator's name, never by the address, so the phones on the venue's network never count towards it. The fragment the screen's script asks for comes in the
    screen's language (?lang=), which no cookie could carry. */
@@ -517,7 +518,9 @@ app.post('/screen/write', requireScreens, (req, res) => {
    (the bar's Dashboard key leads here). The same pieces as the mission page. */
 app.get('/dashboard', (req, res) => {
   const ctx = req.ctx();
-  if (!ctx.mission.open) return res.redirect('/');
+  // once the station has closed the dashboard is At a Glance (14 October: "Dashboard should go to At a glance"; it sent
+  // everyone back to the start page until then): the whole run, day by day
+  if (!ctx.mission.open) return res.redirect('/at-a-glance');
   res.send(P.dashboardPage(ctx, stationData(ctx)));
 });
 
@@ -531,7 +534,7 @@ app.get('/dashboard', (req, res) => {
 const DashNext = require('./views/pages/dashboard-next');
 app.get('/dashboard/next', (req, res) => {
   const ctx = req.ctx();
-  if (!ctx.mission.open) return res.redirect('/');
+  if (!ctx.mission.open) return res.redirect('/at-a-glance');
   res.set('X-Robots-Tag', 'noindex').send(DashNext.page(ctx, stationData(ctx)));
 });
 app.get('/api/dashboard/next', (req, res) => res.set('Cache-Control', 'no-store').json(DashNext.live(req.ctx())));
@@ -783,7 +786,13 @@ const sendSensorData = (req, res) => {
   archive.rollupPending();
   const sd = require('./lib/sensor-data');
   let extra = null;
-  try { const built = sd.entries(); extra = { ...built, readme: sd.README }; } catch (e) { console.error('[sensor-data]', e.message); }
+  try {
+    const built = sd.entries();
+    // how to read it all, for anyone who opens the ZIP (14 October: "for the ZIP folder, add an explainer file of how to
+    // understand and read the files inside"): HOW-TO-READ-THESE-FILES.txt at its root, beside the technical README
+    built.entries.unshift({ name: 'HOW-TO-READ-THESE-FILES.txt', data: Buffer.from(sd.howToRead(st)) });
+    extra = { ...built, readme: sd.README };
+  } catch (e) { console.error('[sensor-data]', e.message); }
   readingsLog.sendZip(res, { writeZip, mission: { name: st.name, start: st.start_date, end: st.end_date, timezone: st.timezone }, extra, filename: 'sensor-data' });
 };
 app.get('/archive/sensor-data.zip', requireControl, sendSensorData);
@@ -807,6 +816,13 @@ app.get('/archive/export.json', requireControl, (req, res) => {
   // (the comment line naming everything tracked on the file's first line — archive.exportText)
   res.attachment(`mars-station-${new Date().toISOString().slice(0, 10)}.json`)
      .type('application/json; charset=utf-8').send(archive.exportText());
+});
+
+/* Every file the crew sent out, as one ZIP — the withdrawn ones too, under withdrawn/ (13 October: "make sure nothing is
+   missed or no data point or source is lost"): the public /media/export.zip carries what is in view; this is the
+   archive's copy of all of it, with its manifest (routes/media.js, sendZip). */
+app.get('/archive/media.zip', requireControl, (req, res) => {
+  require('./routes/media').sendZip(res, mediaLib.list({ includeHidden: true }), `all-${new Date().toISOString().slice(0, 10)}`);
 });
 
 /* The record of the crew's states as CSV — every state filed for every officer, oldest first — from the Archive's
@@ -937,7 +953,7 @@ app.post('/communicate', (req, res) => {
   const visitor = req.writer();
 
   // Enforced server-side so a closed channel cannot be walked around by
-  // posting the form directly. The channel closes at the end of the day after the run — 28 October 2026
+  // posting the form directly. The channel closes at midnight at the end of the run's last day — 27 October 2026
   // (src/lib/mission.js, open) — and stays shut.
   const holdBefore = process.env.HOLD_CHANNEL_BEFORE_LAUNCH === 'true';
   if (!ctx.mission.open) return composeView(req, res);
@@ -1053,6 +1069,7 @@ app.get('/api/ticker', (req, res) => {
     opensAt: st.opensAt, epoch: content.resetEpoch(),
     tasks: P.tickerTasks(st, today),   // each with its zone (CEST, CET from 25 October) — the running line keeps it when it asks again
     hab: P.habReading(req.ctx()),   // the running line's habitat reading (public.js, habReading)
+    stage: require('./views/layout').lastDayStage(st),   // where the run's last day stands: an open page turns over as it moves (14 October)
   });
 });
 

@@ -62,8 +62,9 @@ function postedReadings(list) {
   for (const d of list) for (const c of d.record.readings.station.columns) if (!cols.has(c.metric)) cols.set(c.metric, c);
   const keys = [...cols.values()];
   const rows = [];
-  for (const d of list) for (const r of d.record.readings.station.rows) rows.push([...dayCols(d), r.at, r.iso, ...keys.map((c) => r.values[c.metric])]);
-  return table(['day', 'date', 'time', 'utc', ...keys.map((c) => `${c.label}${c.unit ? ` (${c.unit})` : ''}`)], rows);
+  // the device that posted each instant (13 October: "no data point or source is lost")
+  for (const d of list) for (const r of d.record.readings.station.rows) rows.push([...dayCols(d), r.at, r.iso, ...keys.map((c) => r.values[c.metric]), (r.devices || []).join(' ')]);
+  return table(['day', 'date', 'time', 'utc', ...keys.map((c) => `${c.label}${c.unit ? ` (${c.unit})` : ''}`), 'device'], rows);
 }
 
 function habitatSensor(list) {
@@ -71,8 +72,10 @@ function habitatSensor(list) {
   for (const d of list) for (const c of d.record.readings.external.columns) if (!cols.has(c.key)) cols.set(c.key, c);
   const keys = [...cols.values()];
   const rows = [];
-  for (const d of list) for (const r of d.record.readings.external.rows) rows.push([...dayCols(d), r.at, r.iso, ...keys.map((c) => r.values[c.key])]);
-  return table(['day', 'date', 'time', 'utc', ...keys.map((c) => `${c.label}${c.unit ? ` (${c.unit})` : ''}`)], rows);
+  // where each reading came from (13 October): home-assistant — the habitat sensor read through Home Assistant — or
+  // node:<id>, the critical-sensors.de node
+  for (const d of list) for (const r of d.record.readings.external.rows) rows.push([...dayCols(d), r.at, r.iso, ...keys.map((c) => r.values[c.key]), r.source || '']);
+  return table(['day', 'date', 'time', 'utc', ...keys.map((c) => `${c.label}${c.unit ? ` (${c.unit})` : ''}`), 'source'], rows);
 }
 
 function hardware(list) {
@@ -180,16 +183,19 @@ function entries() {
 const README = [
   'SENSOR DATA',
   '',
+  '(New to these files? Start with HOW-TO-READ-THESE-FILES.txt, beside this one.)',
+  '',
   'Everything on the Sensors tab and in Today\'s Meal, day by day, as tables that open in any spreadsheet:',
   'sensor-data/ holds a folder for every day of the run that has happened (day-01_2026-10-15 …) and, before the run,',
   'NOW (day-00_NOW-rehearsal_<date>: today, a rehearsal, not the record), and all-days/ with each table across every',
   'one of those days. In each:',
   '',
   '  habitat-sensor.csv   every reading of the habitat sensor — carbon dioxide, temperature, humidity, air pressure,',
-  '                       volatile organic compounds, air quality and its class, light',
+  '                       volatile organic compounds, air quality and its class, light — and where it came from',
+  '                       (source: home-assistant, the sensor read through Home Assistant; node:<id>, the node)',
   '  hardware.csv         every state the habitat\'s own hardware reported through Home Assistant — the oxygen,',
   '                       carbon monoxide and nitrogen dioxide sensors, the terrarium, every power draw and meter',
-  '  posted-readings.csv  readings posted to the station\'s ingest, where there are any',
+  '  posted-readings.csv  readings posted to the station\'s ingest, where there are any, with the device that sent them',
   '  daily-summary.csv    each channel\'s and device\'s low, high and mean for the day, its samples, what a meter added',
   '  sensors-tab.csv      the Sensors tab\'s figures: steps taken, power generated (rounds pedalled, battery charged),',
   '                       resources (available, used, left — counted or carried) and power consumed by category',
@@ -202,4 +208,126 @@ const README = [
   '',
 ].join('\n');
 
-module.exports = { days, entries, TABLES, README };
+/* How to read the ZIP, for anyone who opens it (14 October: "for the ZIP folder, add an explainer file of how to
+   understand and read the files inside"): HOW-TO-READ-THESE-FILES.txt at its root, beside the technical README — what
+   the folder is, where to start, how to open a table, what each table and its columns hold, what the raw log is, and a
+   few things to try. Written for Windows as much as anywhere: UTF-8 with its mark, lines ended CR LF. `st` is the
+   mission's state (the run's days and zone). */
+function howToRead(st) {
+  const ML = mission;
+  const day = (n) => { try { return ML.dayLabel(ML.dateForDay(n)); } catch { return ''; } };
+  const total = Number(st.totalDays) || 13;
+  const lines = [
+    'HOW TO READ THESE FILES',
+    `${st.name} — Mars Communication Station · ZKM | Hertzlab`,
+    `Sensor Data, taken from the station on ${new Date().toISOString().slice(0, 10)}`,
+    '',
+    '',
+    'WHAT THIS FOLDER IS',
+    '',
+    'Everything the station measured in the habitat during the performance, and everything the crew filed about their',
+    'days — steps, power, stores, meals — as plain files that open without any special software. Nothing in it is',
+    'estimated or filled in: an empty cell means nothing was measured or filed at that moment.',
+    '',
+    '',
+    'START HERE',
+    '',
+    '  1. Unzip the folder first (Windows: right-click it, Extract All; Mac: double-click it).',
+    '  2. Open the folder  sensor-data/all-days/  — each file in it is one table covering the whole run.',
+    '  3. Open a .csv file with Excel, Numbers, LibreOffice Calc or Google Sheets. The first row names the columns;',
+    '     every row after it is one reading, one meal or one figure of one day.',
+    '     (If Excel puts everything into one column: Data > From Text/CSV, File Origin "UTF-8", Delimiter "Comma".)',
+    '  4. For a single day, open its folder instead — for example  sensor-data/day-05_' + (ML.dateForDay ? ML.dateForDay(5) : '') + '/  —',
+    '     which holds the same tables for that day alone.',
+    '',
+    '',
+    'THE DAYS',
+    '',
+    `  Mission day 01 is ${day(1)}, day ${String(total).padStart(2, '0')} is ${day(total)} — the last day, when the`,
+    '  performance closes at 10:00. Each day folder is named after its day and date: day-01_' + (ML.dateForDay ? ML.dateForDay(1) : '') + ', and so on.',
+    '  A folder only exists for a day that has begun.',
+    '',
+    '',
+    'THE TABLES  (in sensor-data/all-days/ and in every day folder)',
+    '',
+    '  habitat-sensor.csv',
+    '      The air in the habitat, one row per reading (about every five minutes):',
+    '      Carbon dioxide (ppm) · Temperature (°C) · Humidity (%RH, relative humidity) · Air pressure (hPa) ·',
+    '      Volatile organic compounds (ppm) · Air quality (IAQ — an index: the lower, the better; 0–50 excellent,',
+    '      51–100 good) and its class in words · Light (lx).',
+    '      source says where the reading came from: home-assistant = the habitat sensor read through Home Assistant;',
+    '      node:<name> = the sensor node read directly.',
+    '',
+    '  hardware.csv',
+    '      Every value the habitat\'s own devices reported: the oxygen sensor (%), the carbon monoxide and nitrogen',
+    '      dioxide sensors, the cricket terrarium\'s temperature, every power socket (W, the power drawn at that moment)',
+    '      and every energy meter (kWh, counting up). device is its name, entity its address in Home Assistant, kind',
+    '      gauge (a value at a moment) or counter (a running total), value the number, state the value as reported.',
+    '',
+    '  daily-summary.csv',
+    '      One row per measured channel per day: its lowest, highest and average (mean) value, how many readings',
+    '      that was (samples) and, for a meter, how much it added that day.',
+    '',
+    '  sensors-tab.csv',
+    '      The figures from the dashboard\'s Sensors tab, day by day: Steps taken (per officer), Power generated (rounds',
+    '      pedalled on the bike, battery charged), Resources (each store — water, food … — available, used, left) and',
+    '      Power consumed by category. section and item say what a row is, figure and value what was counted, note',
+    '      whether it was filed by hand or read by a meter.',
+    '',
+    '  meals.csv',
+    '      Every meal (slot = breakfast, lunch, dinner or an added meal): its name, kcal, water, preparation time, the',
+    '      energy it took (Wh — from the food meter during the meal\'s hours, or as filed), CO2e (kg, carbon footprint),',
+    '      water footprint (L) and nutrients (g, sodium in mg), from the recipe book where the recipe is in it.',
+    '',
+    '  meals-totals.csv',
+    '      The day\'s meals added up.',
+    '',
+    '  posted-readings.csv  (only if there are any)',
+    '      Readings other devices sent to the station, with the device that sent them.',
+    '',
+    '',
+    'THE COLUMNS THE TABLES START WITH',
+    '',
+    '  day    the mission day (01, 02 …) — every table',
+    `  date   the date at the venue (${st.timezone || 'Europe/Berlin'}, Karlsruhe) — every table`,
+    '  time   the time at the venue — summer time (CEST) until 25 October 03:00, winter time (CET) from then on',
+    '  utc    the same moment in UTC: one clock for the whole run, the one to sort by or to join two tables on',
+    '         (time and utc only in the tables of readings: habitat-sensor, hardware and posted-readings)',
+    '',
+    '',
+    'THE REST OF THE ZIP: THE RAW LOG',
+    '',
+    '  Everything outside sensor-data/ is the log the tables are made from, kept exactly as it arrived, for checking.',
+    '  Most readers can leave it alone.',
+    '',
+    '  csv/           the raw log as tables: one row for every reading the station fetched, as it arrived',
+    '  habitat/, home-assistant/, node/, ingest/, resources/, figures/, daily/',
+    '                 one small JSON file for every time the station fetched or filed something, never changed since',
+    '  index.json     a list of every file in the ZIP',
+    '  README.txt     the technical notes on all of the above',
+    '',
+    '  A .json file is plain text in a structured form: open it in any text editor, or drop it on a web browser',
+    '  (Firefox shows it as a tree you can fold open).',
+    '',
+    '',
+    'THINGS TO TRY',
+    '',
+    '  The habitat\'s CO2 through the whole run: open sensor-data/all-days/habitat-sensor.csv, select the utc column and',
+    '  the Carbon dioxide (ppm) column, and insert a line chart.',
+    '',
+    '  The drinking water the crew used each day: open sensor-data/all-days/sensors-tab.csv, filter the item column for',
+    '  Drinking water and the figure column for used today.',
+    '',
+    '  What the crew ate on day 7: open the meals.csv in the day-07 folder.',
+    '',
+    '  The day the air was worst: open sensor-data/all-days/daily-summary.csv, filter the channel column for iaq and',
+    '  sort by high.',
+    '',
+    '',
+    'ZKM | Hertzlab — Department for Artistic Research & Development',
+    '',
+  ];
+  return '\ufeff' + lines.join('\r\n');
+}
+
+module.exports = { days, entries, TABLES, README, howToRead };

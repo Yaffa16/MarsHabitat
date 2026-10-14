@@ -1,7 +1,7 @@
 'use strict';
 const crypto = require('crypto');
 const express = require('express');
-const { db, audit, now } = require('../db');
+const { db, now } = require('../db');
 const data = require('../lib/data');
 const V = require('../views/control');
 const content = require('../lib/content');
@@ -50,7 +50,6 @@ router.post('/login', (req, res) => {
     .run(token, u.id, now(), new Date(Date.now() + 30 * 86400000).toISOString());
   res.cookie('mcs_admin', token, { httpOnly: true, sameSite: 'lax',
     maxAge: 30 * 86400000, secure: process.env.SECURE_COOKIES === 'true' });
-  audit(u.username, 'session', u.id, 'login');
   res.redirect(req.query.next === 'archive' ? '/archive' : '/control');
 });
 
@@ -64,7 +63,7 @@ router.post('/logout', (req, res) => {
 
 router.use((req, res, next) => { if (!req.user) return res.redirect('/control/login'); next(); });
 
-/* The desk closes with the channel, at the end of the day after the run — 28 October 2026 (src/lib/mission.js,
+/* The desk closes with the channel, at midnight at the end of the run's last day — 27 October 2026 (src/lib/mission.js,
    open): from then on mission control takes no edit — every form is refused here, whatever the page shows — while
    the archive and every download keep serving. Signing out still works. */
 router.use((req, res, next) => {
@@ -310,6 +309,11 @@ router.post('/report', (req, res, next) => upload.array('file', 50)(req, res, (e
   if (nowGone(req)) return refuseNow(req, res);
   const ctx = req.ctx();
   const day = dayParam(req, ctx);
+  if (day && day === (ctx.mission.totalDays || 13)) {   // the last day has no blogs (14 October)
+    for (const f of req.files || []) { try { require('fs').unlinkSync(f.path); } catch (e) { /* gone */ } }
+    setFlash(req, `${DayWord(day)} is the last day: the performance closes at 10:00, and the day has no blogs.`, true);
+    return toTab(res, tabOf(req.body.back), day);
+  }
   const kindKey = REPORT_KINDS[req.body.kind] ? req.body.kind : 'science';
   const kind = REPORT_KINDS[kindKey];
   const crewId = Number(req.body.crew_id) || null;
@@ -325,16 +329,22 @@ router.post('/report', (req, res, next) => upload.array('file', 50)(req, res, (e
   }
   if (req.body.action === 'draft') {                                         // kept on the desk; what is live stays live
     keepDraft(`report:${kindKey}`, day, text, req.user.username);
-    audit(req.user.username, 'DayNote', day, kind.toLowerCase() + ' draft');
     setFlash(req, `Draft saved for ${dayWord(day)} — not public until it is published.` + (attached ? ` ${attached} file${attached === 1 ? '' : 's'} added.` : '') + (mediaError ? ` One file was refused: ${mediaError}` : ''), !!mediaError);
     return toTab(res, tabOf(req.body.back) === 'messages' ? kindKey : req.body.back, day);
   }
   const wasReport = reportFor(day, kind);
   const r = content.edit('notes.json', (obj) => {
-    const rest = (Array.isArray(obj[String(day)]) ? obj[String(day)] : []).filter((n) => n.kind !== kind);
-    obj[String(day)] = text ? rest.concat([{ kind, body: text }]) : rest;
+    const list = Array.isArray(obj[String(day)]) ? obj[String(day)] : [];
+    const old = list.find((n) => n.kind === kind) || null;
+    const rest = list.filter((n) => n.kind !== kind);
+    // the report keeps its moments (13 October): `at` when it was first published, `updated` when it was last
+    // changed, `by` the sign-in that did it — the record's postedAt, read back by the content loader
+    const stamp = new Date().toISOString();
+    const first = (old && old.at) || ((old && notesFor(day).find((n) => n.kind === kind)) || {}).posted_at || stamp;   // a report from before keeps its first moment
+    const entry = old && old.body === text ? old
+      : { kind, body: text, at: first, ...(old ? { updated: stamp } : {}), by: req.user.username };
+    obj[String(day)] = text ? rest.concat([entry]) : rest;
   });
-  audit(req.user.username, 'DayNote', day, kind.toLowerCase() + (text ? '' : ' cleared'));
   noteEdits(`report:${kindKey}`, day, same(wasReport, text) ? [] : ['body'], req.user.username);
   dropDraft(`report:${kindKey}`, day);
   const label = kind === 'SCIENCE' ? 'Daily Mission Report' : 'Health Report';
@@ -411,7 +421,6 @@ router.post('/:id(\\d+)/reply', (req, res) => {
   }
   db.prepare('UPDATE message SET state = ?, reviewed_at = ?, reviewed_by = ? WHERE id = ?')
     .run(publish ? 'PUBLISHED' : 'RESPONSE', now(), req.user.username, id);
-  audit(req.user.username, 'Message', id, publish ? 'reply-publish' : 'reply-draft');
   // a replied message goes out of the atmosphere too: the relay hands it to SpaceSpeak (src/lib/spacespeak.js) — once
   const beamed = publish && spacespeak.enqueue(id);
   setFlash(req, publish ? `Exchange ${id} is live on the mission page${beamed ? ' and on its way to SpaceSpeak' : ''}.` : `Reply saved for ${id}, not published.`);
@@ -422,7 +431,6 @@ router.post('/:id(\\d+)/reject', (req, res) => {
   const id = Number(req.params.id);
   db.prepare("UPDATE message SET state = 'REJECTED', reviewed_at = ?, reviewed_by = ? WHERE id = ?")
     .run(now(), req.user.username, id);
-  audit(req.user.username, 'Message', id, 'reject');
   setFlash(req, `Message ${id} rejected. It stays out of the public record.`);
   toQueue(req, res);
 });
@@ -430,7 +438,6 @@ router.post('/:id(\\d+)/reject', (req, res) => {
 router.post('/:id(\\d+)/restore', (req, res) => {
   const id = Number(req.params.id);
   db.prepare("UPDATE message SET state = 'PENDING_APPROVAL', reviewed_at = NULL WHERE id = ?").run(id);
-  audit(req.user.username, 'Message', id, 'restore');
   setFlash(req, `Message ${id} is back in the queue.`);
   toQueue(req, res);
 });
@@ -439,17 +446,18 @@ router.post('/:id(\\d+)/unpublish', (req, res) => {
   const id = Number(req.params.id);
   db.prepare('UPDATE response SET published_at = NULL WHERE message_id = ?').run(id);
   db.prepare("UPDATE message SET state = 'RESPONSE' WHERE id = ?").run(id);
-  audit(req.user.username, 'Response', id, 'unpublish');
   setFlash(req, `Exchange ${id} pulled from the mission page. The reply is kept as a draft.`);
   toQueue(req, res);
 });
 
 router.post('/:id(\\d+)/delete', (req, res) => {
   const id = Number(req.params.id);
-  const m = db.prepare('SELECT callsign FROM message WHERE id = ?').get(id);
+  // Deleting leaves nothing (13 October: "deleting a message should leave nothing"): the message, its reply, its place
+  // on the way to space (space_relay, with it) and the pages the relay kept of a try at sending it go, and nothing is
+  // written about it — no line in the log, nothing in the archive or its downloads.
+  spacespeak.forget(id);
   db.prepare('DELETE FROM response WHERE message_id = ?').run(id);
   db.prepare('DELETE FROM message WHERE id = ?').run(id);
-  audit(req.user.username, 'Message', id, 'delete', m ? m.callsign : '');
   setFlash(req, `Message ${id} deleted.`);
   toQueue(req, res);
 });
@@ -474,7 +482,6 @@ router.post('/moods/:id', (req, res) => {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(id, v('calm_tense'), v('energetic_exhausted'), 50, 50,
         activity, member.status, now(), req.user.username);
-  audit(req.user.username, 'CrewMood', id, 'file');
   noteEdits(`mood:${id}`, -1, before && same(before.calm_tense, v('calm_tense')) ? [] : ['calm_tense'], req.user.username);
   setFlash(req, `State filed for ${officer.shown(member.designation)}. The mission page has been updated.`);
   toTab(res, TAB_OF_OFFICER[member.designation] || 'comms', dayParam(req, ctx));
@@ -507,6 +514,11 @@ router.post('/logbook', (req, res, next) => upload.array('file', 50)(req, res, (
   if (nowGone(req)) return refuseNow(req, res);
   const ctx = req.ctx();
   const day = dayParam(req, ctx);
+  if (day && day === (ctx.mission.totalDays || 13)) {   // the last day has no blogs (14 October)
+    for (const f of req.files || []) { try { require('fs').unlinkSync(f.path); } catch (e) { /* gone */ } }
+    setFlash(req, `${DayWord(day)} is the last day: the performance closes at 10:00, and the day has no blogs.`, true);
+    return toTab(res, tabOf(req.body.back), day);
+  }
   const designation = String(req.body.designation || '');
   const body = req.body.action === 'clear' ? '' : String(req.body.body || '').trim();
   const member = db.prepare('SELECT * FROM crew WHERE designation = ?').get(designation);
@@ -538,7 +550,6 @@ router.post('/logbook', (req, res, next) => upload.array('file', 50)(req, res, (
 
   if (draft) {                                                               // kept on the desk; what is live stays live
     keepDraft(`blog:${member.id}`, day, text, req.user.username);
-    audit(req.user.username, 'CrewEntry', `${designation} ${dayWord(day)}`, 'draft');
     setFlash(req, `Draft saved for ${officer.shown(designation)}, ${dayWord(day)} — not public until it is published.`
       + (attached ? ` ${attached} file${attached === 1 ? '' : 's'} added to the archive with it.` : '') + (mediaError ? ` One file was refused: ${mediaError}` : ''), !!mediaError);
     return toTab(res, tab, day);
@@ -558,7 +569,6 @@ router.post('/logbook', (req, res, next) => upload.array('file', 50)(req, res, (
     wasText = String(obj[String(day)][designation] || '');
     obj[String(day)][designation] = finalText;
   });
-  audit(req.user.username, 'CrewEntry', `${designation} ${dayWord(day)}`, body ? 'write' : 'clear');
   noteEdits(`blog:${member.id}`, day, same(wasText, finalText) ? [] : ['body'], req.user.username);
   dropDraft(`blog:${member.id}`, day);
   const what = (!body ? `Entry cleared for ${designation}, ${dayWord(day)} — the slot is a placeholder again.`
@@ -656,9 +666,8 @@ router.post('/updates', (req, res) => {
   if (body.length < 2) { setFlash(req, 'An update needs text.', true); return toTab(res, tab, day); }
   const r = content.edit('notes.json', (obj) => {
     obj[String(day)] = obj[String(day)] || [];
-    obj[String(day)].push({ kind, body });
+    obj[String(day)].push({ kind, body, at: new Date().toISOString(), by: req.user.username });   // its moment and its author (13 October)
   });
-  audit(req.user.username, 'DayNote', day, kind.toLowerCase());
   setFlash(req, r.ok ? `${kind} filed for ${dayWord(day)}.` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, tab, day);
 });
@@ -672,7 +681,6 @@ router.post('/updates/delete', (req, res) => {
       obj[String(day)] = obj[String(day)].filter((n) => n.body !== body);
     }
   });
-  audit(req.user.username, 'DayNote', day, 'remove');
   setFlash(req, r.ok ? 'Update removed.' : `Removed, but: ${r.error}`, !r.ok);
   toTab(res, tabOf(req.body.back), day);
 });
@@ -714,7 +722,6 @@ router.post('/schedule', (req, res) => {
     if (rows.length) obj[String(day)] = rows;
     else delete obj[String(day)];
   });
-  audit(req.user.username, 'Schedule', day, 'edit', `${rows.length} tasks`);
   // a row is remembered by what it says: one not in the day before this save is an edited row
   const rowKey = (t) => `row:${t.time}|${t.label}|${t.detail || ''}`;
   const had = new Set(existing.map(rowKey));
@@ -765,7 +772,6 @@ router.post('/crew-figures', (req, res) => {
     if (!Object.keys(entry).length) delete obj[String(day)];
     else obj[String(day)] = entry;
   });
-  audit(req.user.username, 'CrewFigures', day, 'edit');
   noteEdits('steps', day, changed, req.user.username);
   setFlash(req, r.ok ? `${DayWord(day)} steps taken saved.` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, 'habitat', day);
@@ -797,7 +803,6 @@ router.post('/bike', (req, res) => {
     if (!same(cur.battery, next.battery)) changed.push('battery');
     if (Object.keys(next).length) obj[String(day)] = next; else delete obj[String(day)];
   });
-  audit(req.user.username, 'Bike', day, 'edit');
   noteEdits('bike', day, changed, req.user.username);
   setFlash(req, r.ok ? `${DayWord(day)} power generated by bike saved.` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, 'habitat', day);
@@ -807,13 +812,15 @@ router.post('/bike', (req, res) => {
 
 /* The day's science mission, set on the Science officer's tab: the plan in content/missions.json (`days`, day → mission
    number) names the mission the crew are on each day of the run — as shipped the sheets in sequence, 00 on 15 October
-   to 12 on 27 October — and the desk carries one dropdown, for the day open on the desk. Saving writes that day's entry
-   of the map (none takes it out), which stands wherever the day's mission is shown (content.missionForDay) — Today's
-   Mission on the dashboard, the habitat's Science Station, the mission screen, the record. */
+   to 11 on 26 October; the last day, 27 October, has none (14 October: the performance closes at 10:00 that morning)
+   — and the desk carries one dropdown, for the day open on the desk. Saving writes that day's entry of the map (none
+   takes it out), which stands wherever the day's mission is shown (content.missionForDay) — Today's Mission on the
+   dashboard, the habitat's Science Station, the mission screen, the record. The last day takes no mission. */
 router.post('/mission', (req, res) => {
   const ctx = req.ctx();
   const day = dayParam(req, ctx);
   if (!day) { setFlash(req, 'NOW has no mission of its own — pick a day of the run.', true); return toTab(res, 'science', day); }
+  if (day === (ctx.mission.totalDays || 13)) { setFlash(req, `${DayWord(day)} is the last day: the performance closes at 10:00, and the day has no mission.`, true); return toTab(res, 'science', day); }
   const missions = content.missionsFile().missions.filter((m) => m && m.no != null).map((m) => Number(m.no));
   const raw = String(req.body.mission ?? '').trim();
   const no = raw === '' ? null : Number(raw);
@@ -824,7 +831,6 @@ router.post('/mission', (req, res) => {
     if (no == null) delete obj.days[String(day)]; else obj.days[String(day)] = no;
     delete obj.chosen;                                           // the choice over the plan, from before the plan was edited here
   });
-  audit(req.user.username, 'Mission', day, no == null ? 'none' : `mission ${content.missionNo(no)}`);
   noteEdits('mission', day, before === no ? [] : ['mission'], req.user.username);
   setFlash(req, r.ok ? `${DayWord(day)} science mission saved.` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, 'science', day);
@@ -902,7 +908,6 @@ router.post('/meals', (req, res) => {
     if (rows.length) obj[String(day)] = rows;
     else delete obj[String(day)];
   });
-  audit(req.user.username, 'Meals', day, 'edit', `${rows.length} slots`);
   // What counts as changed, and is marked in orange: a field that differs
   // from what the slot held — or, when a recipe (or Empty) was chosen from
   // the dropdown, from what that choice filled in. Choosing is not a change;
@@ -993,7 +998,6 @@ router.post('/inventory', (req, res) => {
     if (Object.keys(entry).filter((k) => !k.startsWith('_')).length) obj[String(day)] = entry;
     else delete obj[String(day)];
   });
-  audit(req.user.username, 'Inventory', day, 'update');
   noteEdits('inventory', day, changed, req.user.username);
   setFlash(req, r.ok ? `Inventory saved for ${dayWord(day)}.${day ? ' Later days recalculated.' : ''}` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, 'habitat', day);
@@ -1003,7 +1007,6 @@ router.post('/inventory/clear', (req, res) => {
   const ctx = req.ctx();
   const day = dayParam(req, ctx);
   const r = content.edit('inventory-levels.json', (obj) => { delete obj[String(day)]; });
-  audit(req.user.username, 'Inventory', day, 'clear');
   setFlash(req, r.ok ? `${DayWord(day)} now carries forward automatically.` : `Cleared, but: ${r.error}`, !r.ok);
   toTab(res, 'habitat', day);
 });
@@ -1055,7 +1058,6 @@ router.post('/power', (req, res) => {
     if (Object.keys(entry).length) obj.days[String(day)] = entry;
     else delete obj.days[String(day)];
   });
-  audit(req.user.username, 'Power', day, 'update');
   noteEdits('power', day, changed, req.user.username);
   setFlash(req, r.ok ? `${DayWord(day)} power figures saved.` : `Saved, but: ${r.error}`, !r.ok);
   toTab(res, 'habitat', day);
@@ -1067,7 +1069,6 @@ router.post('/power', (req, res) => {
    editing the files; reset to it after a rehearsal. */
 router.post('/plan/save', (req, res) => {
   const n = content.savePlan();
-  audit(req.user.username, 'plan', '1', 'save', `${n} files`);
   // no flash: the block itself says when the snapshot was last saved, and how many files it holds
   toTab(res, 'habitat', dayParam(req, req.ctx()));
 });
