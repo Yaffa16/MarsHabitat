@@ -1223,6 +1223,11 @@ body.landing .hw-chart svg { overflow: visible; }
 body.landing .hw-grid { stroke: rgba(var(--cobalt-rgb),.10); stroke-width: 1; stroke-dasharray: 2 4; }
 body.landing .hw-night { fill: rgba(var(--cobalt-rgb),.055); }
 body.landing .hw-ahead { fill: rgba(var(--cobalt-rgb),.03); }
+/* a device's range of normal readings (public.js, hwChart, ok — the cricket terrarium's 25–35 °C, 15 October): the band
+   in the cobalt of a normal range, its upper limit a fine red line; what lies above it red, the high in the legend too */
+body.landing .hw-ok { fill: rgba(var(--cobalt-rgb),.09); }
+body.landing .hw-limit { stroke: #e0322b; stroke-width: 1.2; stroke-dasharray: 5 4; opacity: .8; }
+body.landing .hw-over-t { color: #e0322b; font-weight: 600; }
 body.landing .hw-now { stroke: #ff6a1a; stroke-width: 1.2; stroke-dasharray: 3 3; }
 body.landing .hw-now-t { fill: #ff6a1a; font-weight: 600; }
 body.landing .hw-ax-unit { font-weight: 600; }
@@ -1259,6 +1264,9 @@ body.landing .hw-legend .hw-val { font-weight: 600; font-size: 15px; }
 body.landing .hw-range { grid-column: 2; margin-left: 0; font-family: var(--display); font-size: var(--fs-label); letter-spacing: .06em; text-transform: uppercase; color: var(--dim); }
 :root[data-theme="dark"] body.landing .hw-end { stroke: #1d1d22; }
 :root[data-theme="dark"] body.landing .hw-night { fill: rgba(255,255,255,.035); }
+:root[data-theme="dark"] body.landing .hw-ok { fill: rgba(var(--cobalt-rgb),.12); }
+:root[data-theme="dark"] body.landing .hw-limit { stroke: #ff5a52; }
+:root[data-theme="dark"] body.landing .hw-over-t { color: #ff5a52; }
 :root[data-theme="dark"] body.landing .hw-grid { stroke: rgba(255,255,255,.10); }
 @keyframes hw-draw { from { stroke-dashoffset: 1; } }
 @keyframes hw-fade { from { opacity: 0; } }

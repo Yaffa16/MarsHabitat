@@ -161,6 +161,11 @@ function config() {
         // 0–30, energy charts to 0–300 (src/views/pages/public.js).
         range: Array.isArray(s.range) && s.range.length === 2 && s.range.every((n) => Number.isFinite(Number(n)))
           && Number(s.range[1]) > Number(s.range[0]) ? [Number(s.range[0]), Number(s.range[1])] : null,
+        // An optional range of normal readings, [lo, hi] (15 October: "the cricket temp range of ok should be 25-35,
+        // above that show red"): the chart shades it, and what lies above it is drawn red — the line, its points and
+        // the figure in its pill (src/views/pages/public.js, hwChart); At a Glance's tile turns red too.
+        ok: Array.isArray(s.ok) && s.ok.length === 2 && s.ok.every((n) => Number.isFinite(Number(n)))
+          && Number(s.ok[1]) > Number(s.ok[0]) ? [Number(s.ok[0]), Number(s.ok[1])] : null,
         // An optional chart name: devices sharing one are drawn on the same
         // chart under that title (e.g. "Air quality"), whatever their unit.
         chart: s.chart ? String(s.chart) : null,
@@ -452,7 +457,7 @@ function snapshot(hours = 24) {
       if (cur && cur.value != null && base != null && cur.value >= base) today = cur.value - base;
     }
     return {
-      id: s.id, label: s.label, kind: s.kind, decimals: s.decimals, range: s.range || null, chart: s.chart || null, span: s.span || null,
+      id: s.id, label: s.label, kind: s.kind, decimals: s.decimals, range: s.range || null, ok: s.ok || null, chart: s.chart || null, span: s.span || null,
       unit: (cur && cur.unit) || s.unit || '',
       value: cur ? cur.value : null,
       state: cur ? cur.state : null,

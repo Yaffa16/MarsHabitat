@@ -396,7 +396,9 @@ const BUILD = { landing, habitat, board, write, mission, blogs, day, trends, med
 
 /** The screen by its name, or null for a name that is not one. */
 function render(name, ctx, d) {
-  return BUILD[name] ? BUILD[name](ctx, d) : null;
+  // a screen's own name only — never what every object carries (/screen/constructor answered with the page's context
+  // as JSON, /screen/__proto__ with a 500)
+  return Object.prototype.hasOwnProperty.call(BUILD, name) ? BUILD[name](ctx, d) : null;
 }
 
 /** The list of the screens, for setting up: each with its address and what it shows, and the two switches in the address.

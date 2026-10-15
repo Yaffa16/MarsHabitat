@@ -222,7 +222,9 @@
         swap(html);
         if (window.MCSBoard) window.MCSBoard.refresh('');
       })
-      .catch(function () { window.location.reload(); });
+      // the station out of reach just then (restarting, or the proxy answering 502): asked again in ten seconds — a
+      // reload here could leave the writing screen on the browser's error page, with nothing to bring it back
+      .catch(function () { setTimeout(refresh, 10000); });
   }
 
   /* --------------------------------------------------------- launch countdown */
@@ -291,7 +293,8 @@
     }
     function arrived() {
       if (clock) { clock.textContent = t('ARRIVED'); clock.classList.add('is-word'); fitWord(clock); }
-      window.addEventListener('resize', function () { if (block.isConnected) fitWord(clock); });
+      var refit = function () { if (block.isConnected) fitWord(clock); else window.removeEventListener('resize', refit); };
+      window.addEventListener('resize', refit);
       if (bar) bar.style.width = '100%';
       if (pct) pct.textContent = '100%';
       place(1);

@@ -331,12 +331,6 @@ p { margin: 0 0 13px; max-width: 66ch; color: var(--ink); }
 .crew-pic figcaption { margin-top: 8px; font-family: var(--display); font-size: 14px; font-weight: 600; line-height: 1.25; color: var(--ink); text-align: center; overflow-wrap: anywhere; }
 @media (max-width: 1024px) { .crew-wall { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .crew-wall { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 6px; } .crew-pic figcaption { margin-top: 6px; font-size: 11.5px; } }
-/* The credits for the website and the Panolab (14 October): the names in the order of the surnames, in columns that
-   fill down — three on a desk, two on a phone — each on its own rule, the surname in the heavier weight */
-.credits-list { margin: 0; padding: 0; list-style: none; columns: 3 12em; column-gap: 32px; }
-.credits-list li { break-inside: avoid; padding: 7px 0; border-bottom: 1px solid var(--rule); font-family: var(--display); font-size: 15px; line-height: 1.35; color: var(--ink); }
-.credits-list li b { font-weight: 600; }
-@media (max-width: 560px) { .credits-list { columns: 2; column-gap: 20px; } .credits-list li { font-size: 14px; } }
 .partners { display: grid; gap: 16px; margin-top: 20px; }
 .partner-row .eyebrow { margin-bottom: 10px; }
 .logos { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -2530,6 +2524,8 @@ textarea.ed-source:focus { outline: 0; }
 /* At a Glance: the day's habitat as tiles, like the dashboard. */
 .glance-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .glance-tile { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 12px; background: var(--well); box-shadow: var(--sh-inset); }
+.glance-tile.is-over .gt-value { color: #e0322b; }   /* above its device's range of normal readings (glance.js; 15 October) */
+:root[data-theme="dark"] .glance-tile.is-over .gt-value { color: #ff5a52; }
 .gt-label { font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
 .gt-value { font-family: var(--display); font-weight: 700; font-size: 26px; letter-spacing: -0.02em; }
 .gt-value em { font-family: var(--mono); font-style: normal; font-size: 10px; margin-left: 4px; color: var(--dim); }

@@ -339,7 +339,9 @@ function board(limit = 9, visitorId = null, { callsign = null, before = null } =
      LEFT JOIN crew c ON c.id = r.crew_id
      LEFT JOIN space_relay s ON s.message_id = m.id AND s.state = 'SENT'`;
   if (callsign) {
-    const mine = db.prepare(`${SELECT} WHERE m.callsign = ? ORDER BY m.submitted_at DESC LIMIT 100`).all(callsign);
+    // (a message mission control has rejected leaves the square's board: it stood there marked ABGELEHNT until
+    // 14 October, and only Delete took it away)
+    const mine = db.prepare(`${SELECT} WHERE m.callsign = ? AND m.state != 'REJECTED' ORDER BY m.submitted_at DESC LIMIT 100`).all(callsign);
     const rest = db.prepare(`${SELECT} WHERE m.state = 'PUBLISHED' AND m.callsign != ? ORDER BY m.submitted_at DESC LIMIT ?`).all(callsign, limit);
     return mine.concat(rest).map((m) => ({ ...m, mine: m.callsign === callsign, pending: m.state !== 'PUBLISHED' }));
   }

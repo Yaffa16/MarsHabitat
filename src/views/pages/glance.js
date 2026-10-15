@@ -36,7 +36,8 @@ const same = require('../../lib/i18n').plain;
    page: one tile per sensor channel — the node's channels labelled — with
    the day's last reading large, in its unit. */
 const NODE_LABELS = { co2: ['CO₂', 'ppm', 0], temp: ['Temperature', '°C', 1], hum: ['Humidity', '%', 0], light: ['Light::sensor', 'lx', 0], pres: ['Pressure', 'hPa', 0], bat: ['Node battery', 'V', 2], rssi: ['Signal', 'dBm', 0], voc: ['VOC', 'ppm', 2], iaq: ['Air quality index', '', 0] };
-const tile = (label, unit, v, dec, T = same) => `<div class="glance-tile">
+// (`over`: the reading above its device's range of normal readings — the cricket terrarium above 35 °C, 15 October — in red)
+const tile = (label, unit, v, dec, T = same, over = false) => `<div class="glance-tile${over ? ' is-over' : ''}">
     <span class="gt-label">${esc(T(label))}</span>
     <span class="gt-value">${v == null ? '—' : Number(v).toFixed(dec)}<em>${esc(unit)}</em></span>
   </div>`;
@@ -137,7 +138,10 @@ function daySection(r, m, { rehearsal = false, T = same, lang = 'en' } = {}) {
   // the day's readings (the record has them all, reading by reading).
   const nodeTiles = (r.node || []).map((x) => { const [label, unit, dec] = NODE_LABELS[x.key] || [x.key, '', 1]; return tile(label, unit, x.last, dec, T); });
   const ingestTiles = (r.ingest || []).map((h) => tile(h.label || h.key, h.unit || '', h.last, 1, T));
-  const hardwareTiles = (r.hardware || []).filter((h) => h.last != null && !h.retired).map((h) => tile(h.label, h.unit || '', h.last, Number.isFinite(Number(h.decimals)) ? Number(h.decimals) : 1, T));
+  // (a device's range of normal readings, from content/home-assistant.json: its day's last reading above it is red)
+  const okOf = (() => { try { const m = new Map(require('../../lib/home-assistant').sensors().map((x) => [x.id, x.ok])); return (id) => m.get(id) || null; } catch { return () => null; } })();
+  const hardwareTiles = (r.hardware || []).filter((h) => h.last != null && !h.retired).map((h) => { const ok = okOf(h.id);
+    return tile(h.label, h.unit || '', h.last, Number.isFinite(Number(h.decimals)) ? Number(h.decimals) : 1, T, !!(ok && Number(h.last) > ok[1])); });
   // The crew's counted figure for the day — the steps taken, as the Habitat
   // dashboard carries them — drawn as a tile of the same bank (the calories
   // consumed are no longer kept, October).

@@ -691,7 +691,6 @@ const D = {
   'currently': ['gerade', 'actuellement'],
   'unlogged': ['nicht erfasst', 'non consigné'],
   'Produced by': ['Produziert von', 'Produit par'],
-  'Website and Panolab at ZKM': ['Website und Panolab am ZKM', 'Site web et Panolab au ZKM'],   // the credits on About (14 October)
   // the partners' logos under Produced by (info.js, PARTNERS): 1 and 2 in cooperation with, 3 to 5 supporters
   'In cooperation with': ['In Kooperation mit', 'En coopération avec'],
   'Supporters': ['Förderer', 'Soutiens'],

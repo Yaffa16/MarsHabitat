@@ -79,9 +79,14 @@
   var text = document.getElementById('queue-new-text');
   if (!queue || !banner) return;
   var known = Number(queue.getAttribute('data-waiting') || 0);
-  var wait = 8000;
+  var wait = 8000, timer = 0, asking = false;
+  // one chain of asking, however often the tab is left and come back to (each return started another chain once,
+  // and a desk open all day asked many times every eight seconds)
+  function later() { clearTimeout(timer); timer = setTimeout(poll, wait); }
   function poll() {
-    if (document.hidden || !window.fetch) { setTimeout(poll, wait); return; }
+    if (asking) return;
+    if (document.hidden || !window.fetch) { later(); return; }
+    asking = true; clearTimeout(timer);
     fetch('/control/api/queue', { cache: 'no-store', credentials: 'same-origin' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
@@ -93,9 +98,9 @@
         wait = 8000;
       })
       .catch(function () { wait = Math.min(60000, wait * 2); })
-      .then(function () { setTimeout(poll, wait); });
+      .then(function () { asking = false; later(); });
   }
-  setTimeout(poll, wait);
+  later();
   document.addEventListener('visibilitychange', function () { if (!document.hidden) poll(); });
 })();
 

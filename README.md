@@ -152,7 +152,7 @@ answers with the list and a word, never with the site's 404 page and its cookie 
   its tags, the crew's answer as a card of its own, the distance into space and the time sent at
   the foot — set a fifth larger for a room, nothing to tap. Every message sent from
   the writing screen stands on it at once, under **BODENSTATION**, whatever its state — in
-  transit, awaiting a reply, answered — headed by that name, before everyone's answered
+  transit, awaiting a reply, answered; one mission control rejects leaves it (14 October) — headed by that name, before everyone's answered
   exchanges: the board is the station's own, as a visitor's board on the site is theirs, never
   the computer's cookie's. The screen polls `/api/board?…&station=1&wall=1` for the same; the public
   board shows a station message only once it is published, like any other
@@ -706,8 +706,8 @@ paper, starting amount 14" — keys `tampons` and `toilet_paper`, units `pcs` an
 kits and fire extinguishers left the station with their history, and a count still filed for them in
 `inventory-levels.json` is passed over) — (the drinking water is carried in at **180 L** — `"start": 180` in
 `crew-and-inventory.json` — the food rations at **35 days** — `"start": 35` — the tampons at **80** and the toilet paper at
-**20 rolls** (14 October: "Change the Default toilet paper rolls to 20" — 14 until then; in `content/plan/` too, so a
-reset keeps it), and every gauge of them is drawn against that; every warning level ships as 0 — a placeholder to be written
+**60 rolls** (15 October: "The toilet paper roll should be 60 to start with" — 14 until 14 October, then 20; in
+`content/plan/` too, so a reset keeps it), and every gauge of them is drawn against that; every warning level ships as 0 — a placeholder to be written
 into `crew-and-inventory.json` before the run; a store carried in at 0 with no day-1 count filed on the Habitat tab is
 shown dimmed with a dash, not as an empty store), and the sensor channels.
 The dailies — the stores' counts (`inventory-levels.json`), the steps
@@ -1186,7 +1186,12 @@ keeps the station on the server's localhost:8080 for the reverse proxy, exactly 
 port mapping put it. Neither the tunnel nor Home Assistant changes.
 
 The real devices inside the habitat — as configured now: the cricket terrarium's temperature
-(`m5_temperatur_cricket_temperature`), NO₂, O₂ and CO from the environment sensor, and **the
+(`m5_temperatur_cricket_temperature` — **OK from 25 to 35 °C, red above**: 15 October, "The cricket temp range of ok
+should be 25-35, above that show red". Its entry carries `"ok": [25, 35]`, a range of normal readings any device can be
+given, and `"range": [0, 40]` for its chart's axis: the chart shades the band and draws its upper limit as a fine red line;
+whatever rises above it is red — the stretch of the line, the hours' points, the end and the figure's pill while the
+current reading is above 35, the day's high in the legend — and so is the day's last reading on At a Glance and the
+terrarium's figure on `/dashboard/next`. Below 25 nothing turns red.), NO₂, O₂ and CO from the environment sensor, and **the
 habitat's power on eight channels** — crickets, science 1, science 2, living, table, food, water,
 hydroponics — each a pair of entities, `habitat_power_<channel>_leistung` (the **draw in watts**, a
 gauge) and `habitat_power_<channel>_energie` (the **energy used in kWh**, a counter that only
@@ -1599,7 +1604,8 @@ window tall with its cards in the middle and air around them, a margin at both s
   the drawing without them — a module is tapped, and its pop-up names it — with the two outside keys
   standing in front of the habitat on the ground, drawn larger under the thumb.
 - **The sky — on the first page.** In the room between the Earth and the habitat the newest exchanges with Earth come
-  and go one after another, and the **newest pictures from the cloud folder** appear as small
+  and go one after another — one answered while the page stands open joins them within a minute, the sky asking the
+  board once a minute with the version it has (`public/sky.js`, 14 October) — and the **newest pictures from the cloud folder** appear as small
   snapshots. **On the first page each wears a minimal white frame** — a hairline and a bracket
   at each corner: an exchange's line (*QUESTION · callsign · time*) in small white capitals over
   its words, and the crew's answer under them with an orange rule at its left and *ANSWER* in
@@ -3374,8 +3380,12 @@ computed, 0.37272 au actual). The station keeps working if the venue loses its c
    habitat's name — **MARS — RED DUST CITY** — is fixed there too, and `MISSION_NAME` in `.env`
    is read only for a rehearsal (with `MISSION_OVERRIDE`). Content
    written for days beyond the run is left out with a warning rather than refused.
-2. Set `CONTROL_PASSWORD`, `SENSOR_TOKEN` and `IP_SALT`.
-3. Set `SECURE_COOKIES=true` if serving over HTTPS.
+2. Set `CONTROL_PASSWORD`, `SENSOR_TOKEN` and `IP_SALT` — the password one of your own, not `.env.example`'s
+   `change-this-before-opening` (the container's log warns about it, and about `change-this-passphrase`).
+3. Set `SECURE_COOKIES=true` if serving over HTTPS. And set `SCREENS_USER` and `SCREENS_PASSWORD` for a station on the
+   open internet, and sign each screen's browser in once (it stays signed in for a year): without them the screens
+   open to anyone — and so does the writing screen's post, whose messages stand on the square's board at once, before
+   mission control has seen them (Reject takes one off the board, Delete out of the record).
 4. Check Who we are on the About page (`/about#who-we-are`): the crew's portraits with their
    names (`public/crew`, made from `public/Astronaut_Pictures` — one `Firstname_Lastname.png`
    per person (a `.jpg` is taken as well) — by `tools/crew-pictures.py`, which also writes
@@ -3404,12 +3414,10 @@ computed, 0.37272 au actual). The station keeps working if the venue loses its c
    cuts from a guess — it says which, and prints the line to add to `FACES`.
    and the partners' logos under Produced by (`public/partners`, from `public/PartnerLogo`:
    1 and 2 *In cooperation with*, 3 to 5 *Supporters* — `PARTNERS` in
-   `src/views/pages/info.js`). Between the crew and the production stand **the credits for the website and the
-   Panolab at ZKM** (14 October: "add a credits list to the website and Panolab at ZKM, in alphabetical order of their
-   last name") — `CREDITS` in `info.js`, sorted by the surnames with their accents folded: Götz Dipper, Jan Gerigk (the
-   list had *Gerick*; the crew list's spelling is kept), Yasha Jain, Johannes Jensen, Andy Koch, Andreas Kugel, Bernd
-   Lintermann, Tina Lorenz, Finn Milbrandt, Marc Schütze, Volker Sommerfeld, SpaceSpeak and Dan Wilcox — in
-   three columns on a desk, two on a phone; add a name there and it takes its place.
+   `src/views/pages/info.js`). **No credits on the website**: the list for the website and the Panolab at ZKM that
+   stood between the crew and the production from 14 October ("add a credits list to the website and Panolab at ZKM")
+   came off again on 15 October ("Remove credits from the website") — the list, its heading in the three languages and
+   its styles. (The line *AI generated image* under the habitat's picture is the picture's own label, and stays.)
 5. Check all thirteen days on the landing page's **whole mission** fold — every day ships written
    in `content/`; change anything there or on the matching tab in mission control.
 6. Walk whoever will sit at mission control through `/control` once: the queue, Ctrl+Enter,
@@ -3421,6 +3429,47 @@ computed, 0.37272 au actual). The station keeps working if the venue loses its c
    visitors from 15:00 to 17:00, and the channel and mission control close by themselves at midnight that day;
    from 28 October the station is read-only: no message is taken, no edit saves, the archive and every download
    keep serving (*Three phases*, above).
+
+### What the test of the whole build found (14 October)
+
+The day before the run the PC's own files were put through the suite, a browser on every page, a fake clock across
+the run's dates (14 October to 28 October, the clock change on the 25th included) and three readers of the code
+("test the entire code for any issues as a final build before deployment"). Put right, each with its check in
+`tools/e2e.sh` (*before the doors open*):
+
+- **The livestream could end the station.** The radio server cutting a playlist off half-way, or stalling past the
+  fifteen seconds, refused a read nobody caught, and Node ends the process on that — every page, the relay's browser
+  and an upload with it. The read is caught now (`server.js`, `liveProxy`: 502), and a refusal that nothing catches
+  anywhere is written to the log instead of ending the process (`process.on('unhandledRejection')`); mission
+  control's handlers that wait hand their errors to Express (`routes/control.js`, `caught`), which answers 500.
+- **One malformed cookie broke the site for that browser** — `x=50%`, which another site on the same domain may set,
+  made every address answer 500. It is taken as it stands (`lib/cookies.js`).
+- **`/screen/constructor`** answered with the page's context as JSON and `/screen/__proto__` with a 500: a screen is
+  found by its own name only (`views/pages/screens.js`, `render`). **`?hours=abc`** on `/api/sensors/history` and
+  `/api/hardware/readings` answered 500: a number of hours that is none is the default.
+- **Wrong passwords at the desk were never held back**, and each costs some 50 ms of hashing that holds up every page.
+  After twenty within a minute — counted for the whole station, since an address can be made up — the sign-in answers
+  429 for the rest of that minute without working the password out. An operator already signed in is not touched.
+- **A rejected message stayed on the square's board**, marked ABGELEHNT; it leaves the board now (`lib/data.js`, `board`).
+- **Every open page asked the station every ten seconds all run long** — the running line's quick asking was meant for
+  the minute before the opening and never stopped. It asks every ten seconds only in the minute either side of the
+  opening, every five minutes otherwise (`public.js`, the ticker).
+- **The desk's poll multiplied** with every return to its tab (`public/control.js`: one chain). **A screen could reload
+  itself onto an error page** — at midnight, or the writing screen fetching its fresh composer while the station
+  restarted: both wait now until the station answers (`public/screen.js`, `public/composer.js`).
+- **The first page's sky never learnt a new exchange** — it waited for the dome's communication room to tell it, and the
+  dome is gone from the first page and the landing screen. Where there is no such room the sky asks the board once a
+  minute, with the version it has (`public/sky.js`), so an answer given in the evening reaches the sky that evening.
+- **After the close the first page still offered Write to the crew** under the slowest chat on a phone, into a closed
+  channel; the key goes with the channel. A post to the closed channel no longer mints a visitor either, so the
+  record's count of visitors stops with the run.
+
+Left as they are, to know about: a visitor can post without a cookie, and so without the sixty-an-hour limit of a
+callsign (a limit by address needs the address the reverse proxy sees: its own rate limit is the place for one); a
+page open across an ordinary midnight keeps the sol it was opened on until it is reloaded (the screens reload at
+midnight); the hardware chart draws 25 October, the day of 25 hours, an hour to the right from 02:00; a very large
+cloud folder — thousands of pictures — makes `/media` and `/api/cloud` heavy, as each lists every picture; the venue's
+PCs should keep their clocks set by the network, since the crossing's countdown is counted on the screen's clock.
 
 ---
 

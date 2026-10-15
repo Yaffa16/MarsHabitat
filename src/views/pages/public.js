@@ -616,10 +616,11 @@ function ticker(ctx, { today } = {}) {
         if (typeof d.hab === 'string' && d.hab) all('[id="tk-hab"]').forEach(function (n) { n.textContent = d.hab; });
       }).catch(function () { /* next time */ });
     }
-    // every five minutes; every ten seconds in the last minute before the run
+    // every five minutes; every ten seconds in the last minute before the run and the first after it began (only then:
+    // until 14 October the ten-second asking went on all through the run, from every open page)
     timers.push(setInterval(function () {
       var left = opens ? opens - Date.now() : Infinity;
-      if (left < 60000) refetch();
+      if (left < 60000 && left > -60000) refetch();
     }, 10000));
     timers.push(setInterval(refetch, 5 * 60 * 1000));
   })();
@@ -1125,7 +1126,8 @@ function hwChart(hw, group, members, tz, T = same, W = HW_W, H = HW_H) {
   const all = drawn.flatMap((m) => m.s.points.map((p) => val(m.s, p[1])));
   // The axis: the fixed range of the group (widened by any device's own
   // range from the file), or, with no range set, round bounds round the data.
-  const ranges = members.map((m) => m.s.range).filter(Boolean).concat(group.range ? [group.range] : []);
+  // (a device's range of normal readings, its `ok`, stays on the axis whole, so its band and its limit are drawn)
+  const ranges = members.map((m) => m.s.range).filter(Boolean).concat(members.map((m) => m.s.ok).filter(Boolean), group.range ? [group.range] : []);
   const rlo = ranges.length ? Math.min(...ranges.map((r) => r[0])) : null, rhi = ranges.length ? Math.max(...ranges.map((r) => r[1])) : null;
   let dlo = Math.min(...all), dhi = Math.max(...all);
   // A device's `span` is the least height the axis keeps round its readings,
@@ -1159,7 +1161,11 @@ function hwChart(hw, group, members, tz, T = same, W = HW_W, H = HW_H) {
     const raw = s.points.map((p) => p[1]);
     const lo = Math.min(...raw), hi = Math.max(...raw);
     const [ex, ey] = pts[pts.length - 1];
-    return { s, colour, d, area, pts, ex, ey, lo, hi, id: `${gid}-${i}` };
+    // above the device's range of normal readings (its ok): red — an hour's point above it, and the line's end and the
+    // figure's pill while the current reading is (the end stands for now, though its hour's point is the hour's mean)
+    const ok = s.ok || null, over = s.points.map((p) => !!(ok && val(s, p[1]) > ok[1]));
+    const hot = !!(ok && hwCurrent(hw, s) && val(s, Number(s.value)) > ok[1]);
+    return { s, colour, d, area, pts, ex, ey, lo, hi, id: `${gid}-${i}`, ok, over, hot };
   });
   const ticks = Array.from({ length: 25 }, (_, k) => ({ t: hw.since + k * 3600000, k }));
   const unit = group.unit ? esc(group.unit) : '';
@@ -1167,6 +1173,14 @@ function hwChart(hw, group, members, tz, T = same, W = HW_W, H = HW_H) {
   // The night, 22:00 to 06:00 at the venue, a darker band either side of the day.
   const band = (h0, h1) => `<rect x="${sx(hw.since + h0 * 3600000).toFixed(1)}" y="${padT}" width="${(sx(hw.since + h1 * 3600000) - sx(hw.since + h0 * 3600000)).toFixed(1)}" height="${ih}" class="hw-night"/>`;
   const now = hw.liveNow && hw.liveNow > hw.since && hw.liveNow < hw.now ? sx(hw.liveNow) : null;
+  // A device's range of normal readings (`ok` in content/home-assistant.json — 15 October: "the cricket temp range of ok
+  // should be 25-35, above that show red"): the band shaded across the day, its upper limit a fine red line, and what rises
+  // above it red — the stretch of the line, the hours' points, the end and the figure in the pill.
+  const okMarks = series.filter((r) => r.ok).map((r) => {
+    const yHi = sy(r.ok[1]), yLo = sy(r.ok[0]);
+    return `<rect x="${padL}" y="${yHi.toFixed(1)}" width="${iw.toFixed(1)}" height="${Math.max(0, yLo - yHi).toFixed(1)}" class="hw-ok"><title>OK ${r.ok[0]}–${r.ok[1]}${unit ? ' ' + unit : ''}</title></rect>
+    <line x1="${padL}" y1="${yHi.toFixed(1)}" x2="${W - padR}" y2="${yHi.toFixed(1)}" class="hw-limit"/>`;
+  }).join('');
   // The legend names each line. Where every line's label ends in the same
   // " · quantity" (the eight power channels, "Crickets · power draw",
   // "Science 1 · power draw", …), the legend drops it: the chart's title
@@ -1197,7 +1211,8 @@ function hwChart(hw, group, members, tz, T = same, W = HW_W, H = HW_H) {
     // a pill wide and tall enough to hold the figure (the type is larger than the plot's own: aura.css, .hw-tag), over
     // the line's end, or under it where the line runs near the top of the plot (the clock of the moment stands there)
     const tagW = 20 + text.length * 8.4;
-    return { r, text, w: tagW, x: Math.min(W - padR - tagW, Math.max(padL, r.ex - tagW / 2)), y: r.ey - 38 >= padT + 2 ? r.ey - 38 : r.ey + 12 };
+    const hot = r.hot;                                                     // the figure above its normal range: red
+    return { r, text, hot, c: hot ? HW_HOT : r.colour, w: tagW, x: Math.min(W - padR - tagW, Math.max(padL, r.ex - tagW / 2)), y: r.ey - 38 >= padT + 2 ? r.ey - 38 : r.ey + 12 };
   }).sort((a, b) => a.y - b.y);
   for (let i = 1; i < pills.length; i++) {
     for (let j = 0; j < i; j++) {
@@ -1215,9 +1230,10 @@ function hwChart(hw, group, members, tz, T = same, W = HW_W, H = HW_H) {
   <figcaption class="hw-title">${sensorIcon(group.key === 'power' || group.key.startsWith('energy') ? 'pwr' : group.key === 'temperature' ? 'temp' : /oxygen/i.test(group.title) ? 'o2' : /air quality/i.test(group.title) ? 'iaq' : 'pres', 'hw-ic')}<b>${esc(T(group.title))}</b>${unit ? ` <span class="hw-unit">${unit}${group.key === 'power' ? ` · ${T('hourly average')}` : ''}</span>` : ''}</figcaption>
   <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(T(group.title))} — ${esc(T('today, midnight to midnight venue time, one line per device, on one scale in'))} ${unit || '—'}">
     <defs>${series.map((r) => `
-      <linearGradient id="${r.id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${r.colour}" stop-opacity="${series.length > 1 ? 0.16 : 0.3}"/><stop offset="1" stop-color="${r.colour}" stop-opacity="0"/></linearGradient>`).join('')}
+      <linearGradient id="${r.id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${r.colour}" stop-opacity="${series.length > 1 ? 0.16 : 0.3}"/><stop offset="1" stop-color="${r.colour}" stop-opacity="0"/></linearGradient>${
+        r.ok ? `<clipPath id="${r.id}-over"><rect x="0" y="0" width="${W}" height="${sy(r.ok[1]).toFixed(1)}"/></clipPath>` : ''}`).join('')}
     </defs>
-    ${band(0, 6)}${band(22, 24)}
+    ${band(0, 6)}${band(22, 24)}${okMarks}
     ${ax.ticks.map((v) => `<line x1="${padL}" y1="${sy(v).toFixed(1)}" x2="${W - padR}" y2="${sy(v).toFixed(1)}" class="hw-grid"/>
       <text x="${padL - 7}" y="${(sy(v) + 3.5).toFixed(1)}" text-anchor="end" class="hw-ax">${yLabel(v)}</text>`).join('')}
     ${ticks.map(({ t, k }) => (k % (W < 400 ? 6 : 3) ? '' : `<text x="${sx(t).toFixed(1)}" y="${H - padB + 16}" text-anchor="${k === 0 ? 'start' : k === ticks.length - 1 ? 'end' : 'middle'}" class="hw-ax"${k % 6 ? ' opacity="0.55"' : ''}>${String(k).padStart(2, '0')}</text>`)).join('')}
@@ -1226,21 +1242,26 @@ function hwChart(hw, group, members, tz, T = same, W = HW_W, H = HW_H) {
       <line x1="${now.toFixed(1)}" y1="${padT}" x2="${now.toFixed(1)}" y2="${bottom}" class="hw-now"><title>${T('now')} · ${missionLib.clockAt(hw.liveNow, tz)}</title></line>
       <text x="${now.toFixed(1)}" y="${padT - 12}" text-anchor="middle" class="hw-ax hw-now-t">${missionLib.clockAt(hw.liveNow, tz)}</text>` : ''}
     ${series.map((r) => `<path d="${r.area}" fill="url(#${r.id})" class="hw-area"/>`).join('')}
-    ${series.map((r) => `<path d="${r.d}" class="hw-line" stroke="${r.colour}" style="color:${r.colour}" pathLength="1"><title>${esc(r.s.label)}</title></path>
-      ${r.pts.slice(0, -1).map(([x, y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.8" fill="${r.colour}" class="hw-dot"/>`).join('')}
-      <circle cx="${r.ex.toFixed(1)}" cy="${r.ey.toFixed(1)}" r="9" fill="${r.colour}" class="hw-pulse"/>
-      <circle cx="${r.ex.toFixed(1)}" cy="${r.ey.toFixed(1)}" r="4.2" fill="${r.colour}" class="hw-end"/>`).join('')}
-    ${pills.map((t) => `<g class="hw-tag"><rect x="${t.x.toFixed(1)}" y="${t.y.toFixed(1)}" width="${t.w.toFixed(1)}" height="${tagH}" rx="${tagH / 2}" fill="${t.r.colour}"/>
+    ${series.map((r) => { const endC = r.hot || r.over[r.over.length - 1] ? HW_HOT : r.colour; return `<path d="${r.d}" class="hw-line" stroke="${r.colour}" style="color:${r.colour}" pathLength="1"><title>${esc(r.s.label)}</title></path>${
+      r.ok ? `
+      <path d="${r.d}" class="hw-line hw-over" stroke="${HW_HOT}" style="color:${HW_HOT}" pathLength="1" clip-path="url(#${r.id}-over)"/>` : ''}
+      ${r.pts.slice(0, -1).map(([x, y], k) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1.8" fill="${r.over[k] ? HW_HOT : r.colour}" class="hw-dot"/>`).join('')}
+      <circle cx="${r.ex.toFixed(1)}" cy="${r.ey.toFixed(1)}" r="9" fill="${endC}" class="hw-pulse"/>
+      <circle cx="${r.ex.toFixed(1)}" cy="${r.ey.toFixed(1)}" r="4.2" fill="${endC}" class="hw-end"/>`; }).join('')}
+    ${pills.map((t) => `<g class="hw-tag${t.hot ? ' is-over' : ''}"><rect x="${t.x.toFixed(1)}" y="${t.y.toFixed(1)}" width="${t.w.toFixed(1)}" height="${tagH}" rx="${tagH / 2}" fill="${t.c}"/>
       <text x="${(t.x + t.w / 2).toFixed(1)}" y="${(t.y + tagH / 2).toFixed(1)}" text-anchor="middle" dominant-baseline="central">${esc(t.text)}</text></g>`).join('')}
   </svg>
   <ul class="hw-legend">${series.map((r) => `
     <li><i style="background:${r.colour}"></i><span class="hw-name">${esc(legendName(r.s.label))}</span>${
-      r.s.kind === 'counter' || group.key === 'power' ? '' : `<span class="hw-range">${T('low')} ${hwNum(r.lo, r.s.decimals)} · ${T('high')} ${hwNum(r.hi, r.s.decimals)}</span>`}</li>`).join('')}
+      r.s.kind === 'counter' || group.key === 'power' ? '' : `<span class="hw-range">${T('low')} ${hwNum(r.lo, r.s.decimals)} · ${
+        r.ok && r.hi > r.ok[1] ? `<span class="hw-over-t">${T('high')} ${hwNum(r.hi, r.s.decimals)}</span>` : `${T('high')} ${hwNum(r.hi, r.s.decimals)}`}${
+        r.ok ? ` · OK ${r.ok[0]}–${r.ok[1]}${unit ? ' ' + unit : ''}` : ''}</span>`}</li>`).join('')}
   </ul>
 </figure>`;
 }
 
 const HW_W = 720, HW_H = 240;                // the width and the height a chart is drawn for until the page says its own (hardware.js)
+const HW_HOT = '#e0322b';                    // a reading above its normal range (the habitat's tiles' red past a limit, aura.css)
 /* Which group of the dashboard's Sensors tab a chart stands in (13 October: "inside the Sensors tab make bigger groups
    like Energy, Life support, Resources"; public.js, dashboardPanels, grouped): the power draws with the Energy, the
    cricket terrarium (and any plant or animal the habitat keeps) with More-than-human, the air's gases and climate with

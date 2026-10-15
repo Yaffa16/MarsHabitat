@@ -13,6 +13,11 @@ const multer = require('multer');
 
 const router = express.Router();
 
+/* A handler that waits on something (a file written, the archive hashed, the cloud asked) hands whatever goes wrong
+   in it to Express, which answers 500 — Express 4 does not look at what an async handler returns, so the error went
+   uncaught, the request hung and, before the station's own catch-all (server.js), the process ended (14 October). */
+const caught = (fn) => (req, res, next) => Promise.resolve().then(() => fn(req, res, next)).catch(next);
+
 /* ------------------------------------------------------------------- auth */
 
 const hash = (pw, salt) => salt + ':' + crypto.scryptSync(pw, salt, 32).toString('hex');
@@ -39,10 +44,22 @@ router.use((req, res, next) => { req.user = currentUser(req); next(); });
 
 router.get('/login', (req, res) => res.send(V.login(req.ctx(), null)));
 
+/* Wrong passwords are counted for the whole station, not by address (an address can be made up behind the proxy):
+   after twenty wrong tries within a minute the sign-in answers 429 for the rest of that minute without working the
+   password out. Each try costs some 50 ms of hashing that holds up every other page, so a flood of guesses would stall
+   the site and could go on guessing for ever (14 October). An operator already signed in is not touched by it. */
+const WRONG_MAX = 20, WRONG_WINDOW_MS = 60 * 1000;
+let wrongTries = [];
 router.post('/login', (req, res) => {
+  const t = Date.now();
+  wrongTries = wrongTries.filter((x) => t - x < WRONG_WINDOW_MS);
+  if (wrongTries.length >= WRONG_MAX) {
+    return res.status(429).send(V.login(req.ctx(), 'Too many wrong tries just now. Wait a minute and try again.'));
+  }
   const u = db.prepare('SELECT * FROM admin_user WHERE username = ?')
     .get(String(req.body.username || '').trim());
   if (!u || !verify(String(req.body.password || ''), u.password_hash)) {
+    wrongTries.push(t);
     return res.status(401).send(V.login(req.ctx(), 'Those credentials were not accepted.'));
   }
   const token = crypto.randomBytes(24).toString('hex');
@@ -305,7 +322,7 @@ router.post('/report', (req, res, next) => upload.array('file', 50)(req, res, (e
   if (!err) return next();
   setFlash(req, err.code === 'LIMIT_FILE_SIZE' ? `A file is over the ${media.MAX_BYTES / 1048576} MB limit (MEDIA_MAX_MB).` : err.message, true);
   toTab(res, tabOf(req.body && req.body.back), dayParam(req, req.ctx()));
-}), async (req, res) => {
+}), caught(async (req, res) => {
   if (nowGone(req)) return refuseNow(req, res);
   const ctx = req.ctx();
   const day = dayParam(req, ctx);
@@ -351,7 +368,7 @@ router.post('/report', (req, res, next) => upload.array('file', 50)(req, res, (e
   setFlash(req, r.ok ? `${label} ${text ? 'published' : 'cleared'} for ${dayWord(day)}.` + (attached ? ` ${attached} file${attached === 1 ? '' : 's'} added.` : '') + (mediaError ? ` One file was refused: ${mediaError}` : '')
     : `Saved, but: ${r.error}`, !r.ok || !!mediaError);
   toTab(res, tabOf(req.body.back) === 'messages' ? kindKey : req.body.back, day);
-});
+}));
 
 /* The old per-officer addresses land on their tab of the one page. */
 for (const t of ['science', 'health', 'habitat']) {
@@ -510,7 +527,7 @@ router.post('/logbook', (req, res, next) => upload.array('file', 50)(req, res, (
   if (!err) return next();
   setFlash(req, err.code === 'LIMIT_FILE_SIZE' ? `A file is over the ${media.MAX_BYTES / 1048576} MB limit (MEDIA_MAX_MB).` : err.message, true);
   toTab(res, tabOf(req.body && req.body.back), dayParam(req, req.ctx()));
-}), async (req, res) => {
+}), caught(async (req, res) => {
   if (nowGone(req)) return refuseNow(req, res);
   const ctx = req.ctx();
   const day = dayParam(req, ctx);
@@ -578,7 +595,7 @@ router.post('/logbook', (req, res, next) => upload.array('file', 50)(req, res, (
     + (mediaError ? ` One file was refused: ${mediaError}` : '');
   setFlash(req, r.ok ? what : `Saved, but: ${r.error}`, !r.ok || !!mediaError);
   toTab(res, tab, day);
-});
+}));
 
 /* ==================================================================== MEDIA */
 
@@ -650,10 +667,10 @@ router.post('/media/:id(\\d+)/restore', (req, res) => {
 });
 
 /** The archive's own check: every file against its hash. */
-router.get('/media/verify', async (req, res) => {
+router.get('/media/verify', caught(async (req, res) => {
   const problems = await media.verify();
   res.set('Cache-Control', 'no-store').json({ ok: !problems.length, checked: media.list({ includeHidden: true }).length, problems });
-});
+}));
 
 /* ================================================================== UPDATES */
 
@@ -1076,11 +1093,11 @@ router.post('/plan/save', (req, res) => {
 /* Destructive, so it takes the word RESET typed into the form, checked here
    and not only in the browser. */
 /* The cloud gallery: read the folder again now, rather than on the next cycle. */
-router.post('/cloud/refresh', async (req, res) => {
+router.post('/cloud/refresh', caught(async (req, res) => {
   await require('../lib/cloud').poll().catch(() => {});
   if (req.get('x-requested-with') === 'fetch') return res.json(require('../lib/cloud').snapshot());
   res.redirect('/control?tab=habitat#cloud');
-});
+}));
 
 router.post('/reset', (req, res) => {
   const ctx = req.ctx();

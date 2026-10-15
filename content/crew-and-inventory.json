@@ -48,7 +48,7 @@
       "unit": "rolls",
       "category": "Hygiene",
       "critical": false,
-      "start": 20,
+      "start": 60,
       "warnBelow": 0
     }
   ]

@@ -278,6 +278,14 @@
       .then(function (j) { if (j && j.v && String(j.v) !== built) reloadWhenFree(); })
       .catch(function () { /* the station out of reach: the screen stands as it is, and asks again */ });
   }
-  setInterval(function () { if (due) reloadWhenFree(); else newer(); }, 60000 + Math.floor(Math.random() * 15000));
-  setInterval(function () { if (venueDate() !== day0) reloadWhenFree(); }, 30000);
+  // the midnight reload, too, only once the station answers: a station restarting at that moment (or the proxy in front
+  // of it answering 502) would otherwise leave the screen on an error page with no script to bring it back
+  function reloadIfUp() {
+    if (!window.fetch) { reloadWhenFree(); return; }
+    fetch('/api/screens/version', { cache: 'no-store', credentials: 'same-origin' })
+      .then(function (r) { if (r.ok) reloadWhenFree(); })
+      .catch(function () { /* out of reach: asked again in half a minute */ });
+  }
+  setInterval(function () { if (due) reloadIfUp(); else newer(); }, 60000 + Math.floor(Math.random() * 15000));
+  setInterval(function () { if (venueDate() !== day0) reloadIfUp(); }, 30000);
 })();

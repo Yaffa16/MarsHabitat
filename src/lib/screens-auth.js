@@ -59,7 +59,13 @@ function throttled(ip) {
   tries.set(ip, recent);
   return recent.length >= TRIES;
 }
-function failed(ip) { tries.set(ip, (tries.get(ip) || []).concat(Date.now())); }
+function failed(ip) {
+  const now = Date.now();
+  // addresses whose last wrong try has left the window are forgotten once there are many (a made-up address per try
+  // grew the map for as long as the station ran)
+  if (tries.size > 1000) for (const [k, v] of tries) if (!v.length || now - v[v.length - 1] >= WINDOW_MS) tries.delete(k);
+  tries.set(ip, (tries.get(ip) || []).concat(now));
+}
 function cleared(ip) { tries.delete(ip); }
 
 /** The addresses the door guards: /screens, /screen/<name> and what the writing screen posts and fetches. Only an address

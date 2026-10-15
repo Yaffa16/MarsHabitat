@@ -443,19 +443,27 @@ async function liveProxy(res, upstream) {
   try { r = await fetch(upstream, { signal: AbortSignal.timeout(15000), headers: { 'User-Agent': 'MARSplatz-station' } }); }
   catch { return res.status(502).type('text').send('The livestream could not be reached.'); }
   if (!r.ok) return res.status(r.status === 404 ? 404 : 502).type('text').send('The livestream is not on air.');
-  const type = r.headers.get('content-type') || '';
-  if (/mpegurl/i.test(type) || /\.m3u8$/i.test(upstream.pathname)) {
-    return res.type('application/vnd.apple.mpegurl').send(livePlaylist(await r.text(), upstream));
-  }
-  if (type) res.type(type);
-  const len = r.headers.get('content-length'); if (len) res.set('Content-Length', len);
-  require('stream').Readable.fromWeb(r.body).on('error', () => res.destroy()).pipe(res);
+  // (the body is read inside the try as well: the radio server cutting a playlist off half-way, or stalling past the
+  // fifteen seconds, refused the read — once outside it, and that refusal, caught by nobody, ended the station's process)
+  try {
+    const type = r.headers.get('content-type') || '';
+    if (/mpegurl/i.test(type) || /\.m3u8$/i.test(upstream.pathname)) {
+      return res.type('application/vnd.apple.mpegurl').send(livePlaylist(await r.text(), upstream));
+    }
+    if (type) res.type(type);
+    const len = r.headers.get('content-length'); if (len) res.set('Content-Length', len);
+    require('stream').Readable.fromWeb(r.body).on('error', () => res.destroy()).pipe(res);
+  } catch { liveGone(res); }
+}
+function liveGone(res) {
+  if (res.headersSent) res.destroy();
+  else res.status(502).type('text').send('The livestream could not be reached.');
 }
 app.get('/screen/livestream/stream.m3u8', requireScreens, (req, res) => {
   let u = null; try { u = new URL(LIVESTREAM_URL); } catch { /* none set */ }
-  liveProxy(res, u);
+  liveProxy(res, u).catch(() => liveGone(res));
 });
-app.get(/^\/screen\/livestream\/(.+)$/, requireScreens, (req, res) => liveProxy(res, liveUpstream(req.originalUrl.slice('/screen/livestream/'.length))));
+app.get(/^\/screen\/livestream\/(.+)$/, requireScreens, (req, res) => liveProxy(res, liveUpstream(req.originalUrl.slice('/screen/livestream/'.length))).catch(() => liveGone(res)));
 
 /* The writing screen (views/pages/screens.js, write): the composer full screen, for writing to the crew at the venue.
    Its operator is the ground station itself: every message sent from it goes out under ONE name — BODENSTATION (the
@@ -950,14 +958,15 @@ app.get('/api/board', (req, res) => {
 
 app.post('/communicate', (req, res) => {
   const ctx = req.ctx();
-  const visitor = req.writer();
 
   // Enforced server-side so a closed channel cannot be walked around by
   // posting the form directly. The channel closes at midnight at the end of the run's last day — 27 October 2026
-  // (src/lib/mission.js, open) — and stays shut.
+  // (src/lib/mission.js, open) — and stays shut. (Asked before the writer is named: a post to a closed channel mints
+  // no visitor, so the record's count of visitors stops with the run.)
   const holdBefore = process.env.HOLD_CHANNEL_BEFORE_LAUNCH === 'true';
   if (!ctx.mission.open) return composeView(req, res);
   if (ctx.mission.phase === 'PRE_LAUNCH' && holdBefore) return composeView(req, res);
+  const visitor = req.writer();
 
   // The transit lock is enforced here, not in the browser.
   if (data.inFlightFor(visitor.id)) return composeView(req, res);
@@ -1054,9 +1063,12 @@ app.get('/api/sensors/latest', (req, res) => {
   })));
 });
 
+/* ?hours= as a number of hours within reach: anything that is not one (?hours=abc, ?hours=1e300) is the default, never
+   a date out of range and a 500 */
+const hoursAsked = (q, max, dflt = 24) => { const h = Number(q); return Number.isFinite(h) && h > 0 ? Math.min(max, Math.max(1, h)) : dflt; };
 app.get('/api/sensors/history', (req, res) => {
   const metric = String(req.query.metric || '');
-  res.json(data.history(metric, Number(req.query.hours || 24), 500));
+  res.json(data.history(metric, hoursAsked(req.query.hours, 24 * 31), 500));
 });
 
 /* What the crew are currently doing: today's schedule, for the ticker's
@@ -1234,7 +1246,7 @@ app.get('/api/cloud', (req, res) => {
    numbers rather than the panel. `?hours=` reaches back
    further, up to a week. */
 app.get('/api/hardware/readings', (req, res) => {
-  const hours = Math.min(168, Math.max(1, Number(req.query.hours || 24)));
+  const hours = hoursAsked(req.query.hours, 168);
   res.set('Cache-Control', 'no-store').json(homeAssistant.readings(hours));
 });
 
@@ -1370,3 +1382,7 @@ const server = app.listen(PORT, LISTEN_HOST, () => {
 server.requestTimeout = 0;
 server.headersTimeout = 65000;
 server.timeout = 0;
+// A refusal nobody catches — an await gone wrong in a handler, a feed's answer cut off half-way — is written to the
+// log and the station carries on. Node's own way is to end the process there, and with it every visitor's page, the
+// relay's browser and an operator's upload in progress (Docker starts it again, but the run should not blink for it).
+process.on('unhandledRejection', (e) => console.error('[MCS] unhandled refusal:', (e && e.stack) || e));

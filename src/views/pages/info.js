@@ -6,7 +6,7 @@ const { habitatInside } = require('./inside');
 const { CREW } = require('./sol');
 
 /**
- * The project, the habitat in section and the credits — About, What's inside
+ * The project, the habitat in section and the people — About, What's inside
  * the habitat and Who we are — as one page of their own, /about (aboutPage,
  * below): the About key on a phone's bar of keys and the rows of the ticker's
  * menu lead there, each row to its section. (What this is — how the station
@@ -25,18 +25,8 @@ const PARTNERS = {
   cooperation: [['staatstheater-karlsruhe', 'Badisches Staatstheater Karlsruhe'], ['naturkundemuseum-karlsruhe', 'Naturkundemuseum Karlsruhe']],
   supporters: [['eon-foundation', 'E.ON Foundation'], ['lbbw-stiftung', 'LBBW Stiftung'], ['innovationsfonds-kunst', 'Innovationsfonds Kunst Baden-Württemberg']],
 };
-/* The credits for the website and the Panolab at ZKM (14 October: "in the About page, add a credits list to the website
-   and Panolab at ZKM, in alphabetical order of their last name"): the people as the list was handed over — Jan Gerigk
-   as the crew list spells him (the list had Gerick) — and SpaceSpeak, which beams the messages into space, by its name
-   (linked once on the page, in About, where it is told). In the order of the surnames, accents folded (Schütze among
-   the S), SpaceSpeak by its name among them. */
-const CREDITS = [
-  ['Johannes', 'Jensen'], ['Jan', 'Gerigk'], ['Bernd', 'Lintermann'], ['Andreas', 'Kugel'], ['Volker', 'Sommerfeld'],
-  ['Marc', 'Schütze'], ['Yasha', 'Jain'], ['Finn', 'Milbrandt'], ['Dan', 'Wilcox'], ['Tina', 'Lorenz'], ['Andy', 'Koch'],
-  ['', 'SpaceSpeak'], ['Götz', 'Dipper'],
-];
-const folded = (s) => String(s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-const CREDITS_SORTED = CREDITS.slice().sort((a, b) => folded(a[1]).localeCompare(folded(b[1])) || folded(a[0]).localeCompare(folded(b[0])));
+/* (The credits for the website and the Panolab at ZKM — thirteen names in the order of the surnames, under Who we are —
+   stood here from 14 October until 15 October: "Remove credits from the website".) */
 /** A member's name as the file gives it: first and last, or the one name alone (Robodog). */
 const fullName = (c) => [c.first, c.last].filter(Boolean).join(' ');
 const logos = (list) => `<div class="logos">${list.map(([f, name]) => `<span class="logo"><img src="/partners/${f}.png" alt="${esc(name)}" title="${esc(name)}" loading="lazy" decoding="async"></span>`).join('')}</div>`;
@@ -134,11 +124,6 @@ function whoFold(crew, T, ctx) {
     <div class="crew-wall">
       ${CREW.map((c) => `<figure class="crew-pic"><img src="/crew/${esc(c.file)}" alt="" width="800" height="1200" loading="lazy" decoding="async"><figcaption>${esc(fullName(c))}</figcaption></figure>`).join('')}
     </div>`, 'mars-side') : ''}
-  ${panel('CREDITS', `
-    ${eyebrow(T('Website and Panolab at ZKM'))}
-    <ul class="credits-list">
-      ${CREDITS_SORTED.map(([first, last]) => `<li>${first ? `${esc(first)} ` : ''}<b>${esc(last)}</b></li>`).join('')}
-    </ul>`, 'mars-side credits')}
   ${panel('PRODUCTION', `
     ${eyebrow(T('Produced by'))}
     <p>ZKM | ${T('Center for Art and Media Karlsruhe')}<br>

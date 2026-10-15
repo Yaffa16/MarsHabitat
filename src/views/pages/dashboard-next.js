@@ -862,6 +862,8 @@ function hwBody(ctx, w, hw) {
   const gases = list.filter((s) => /ppm/i.test(String(s.unit || '')) && !/(^|[^a-z])o2([^a-z]|$)|oxygen/i.test(`${s.id} ${s.label}`)).map((s, i) => ({ ...s, colour: ['#7fe0b0', '#b48cff', '#f2d16b'][i % 3] }));
   const nowSum = power.filter((s) => hw.current(s)).reduce((acc, s) => acc + Number(s.value || 0), 0);
   const val = (s, dp) => (hw.current(s) ? fx(s.value, dp) : '—');
+  // the terrarium's figure in red while it is above its range of normal readings (content/home-assistant.json, ok — 15 October)
+  const tHot = !!(temp.length && temp[0].ok && hw.current(temp[0]) && Number(temp[0].value) > temp[0].ok[1]);
   const name = (s) => s.label.replace(/\s*·\s*power draw$/i, '');
   return `
         <header class="dn-sec"><div><p class="dn-eye">${esc(w('The habitat’s own devices'))} · ${esc(T('hourly average'))}</p><h2>${esc(T('Habitat hardware'))}</h2></div><div class="dn-sec-r">${livePill(T)}</div></header>
@@ -869,7 +871,7 @@ function hwBody(ctx, w, hw) {
           ${power.length ? `<div class="dn-cht is-power"><div class="dn-cht-h"><span>${esc(w('Power draw'))} · W</span><b>${power.some((s) => hw.current(s)) ? fint(nowSum) : '—'}<small> W ${esc(w('now'))}</small></b></div>${chart(power, { H: 220 })}
             <div class="dn-legend">${power.map((s) => `<span><i style="background:${s.colour}"></i>${esc(name(s))}</span>`).join('')}</div></div>` : ''}
           <div class="dn-cht-col">
-            ${temp.length ? `<div class="dn-cht"><div class="dn-cht-h"><span>${esc(T(temp[0].label))}</span><b>${val(temp[0], 1)}<small> °C</small></b></div>${chart(temp.slice(0, 1).map((s) => ({ ...s, colour: '#ff8b4d' })), { H: 92, area: true })}</div>` : ''}
+            ${temp.length ? `<div class="dn-cht"><div class="dn-cht-h"><span>${esc(T(temp[0].label))}</span><b${tHot ? ' class="is-over" style="color:#e0322b"' : ''}>${val(temp[0], 1)}<small> °C</small></b></div>${chart(temp.slice(0, 1).map((s) => ({ ...s, colour: '#ff8b4d' })), { H: 92, area: true })}</div>` : ''}
             ${gases.length ? `<div class="dn-cht"><div class="dn-cht-h"><span>${esc(w('Gases'))} · ${gases.map((s) => esc(s.label.split(' ·')[0])).join(' · ')}</span><b>${gases.map((s) => val(s, 2)).join(' · ')}<small> ppm</small></b></div>${chart(gases, { H: 92, area: true })}</div>` : ''}
           </div>
         </div>`;

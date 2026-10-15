@@ -474,7 +474,7 @@ function slowChat(ctx) {
         </div>
       </li>
     </ol>
-    <p class="p4-cta"><a class="sheet-cta" href="#write"><span>${T('Write to the crew')}</span><span aria-hidden="true">→</span></a></p>
+    ${ctx.mission.open ? `<p class="p4-cta"><a class="sheet-cta" href="#write"><span>${T('Write to the crew')}</span><span aria-hidden="true">→</span></a></p>` : ''}
   </section>`;
 }
 

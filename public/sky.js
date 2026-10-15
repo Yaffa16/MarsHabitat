@@ -10,11 +10,12 @@
  * took turns through the six and the five as a desk does until then). Each comes somewhere else each time, clear of the Earth, the habitat and the line (the page
  * marks them: data-sky-round, data-sky-solid) and of everything else in the sky: nothing is ever drawn over anything
  * else. What it shows comes with
- * the page (the JSON block in the sky); what it learns later it takes from what the page already fetches, never polling
- * on its own:
- *  - the dome's own refresh (/api/dome, every 20 s, dome.js) rewrites the communication pop-up's latest-exchange line
- *    when there is a new exchange — only then is the board asked for (/api/board) and its published cards read, the way
- *    the board itself shows them (a message still waiting for mission control is never among them);
+ * the page (the JSON block in the sky); what it learns later:
+ *  - new exchanges, from the board (/api/board), its published cards read the way the board itself shows them (a
+ *    message still waiting for mission control is never among them): asked whenever a page's communication room
+ *    rewrites its latest-exchange line, and where a page has no such line — the first page and the landing screen, since
+ *    the dome went — once a minute, with the version the sky has, so the cards come only when something is new
+ *    (14 October: until then the sky kept the exchanges it came with until the page was next loaded);
  *  - public/cloud.js keeps the Habitat panel's strip of newest pictures (#cloud-latest) in line with the folder, and the
  *    snapshots follow the strip.
  * A touch on a snapshot or an exchange brings a note beside it saying what it is (the live feed from the habitat; the
@@ -756,16 +757,31 @@
       return { id: r.id, who: r.who, at: r.at, text: clip(r.text), reply: r.reply ? clip(r.reply) : '', rwho: r.reply ? r.rwho : '', rat: r.reply ? r.rat : '' };
     });
   }
-  var latest = document.querySelector('[data-field="comms-text"]'), asking = false;
+  var latest = document.querySelector('[data-field="comms-text"]'), asking = false, boardV = '';
+  // which exchanges, and whether each has its answer yet: the sky is filled afresh only when that has changed
+  var exKey = function (list) { return list.map(function (e) { return e.id + ':' + (e.reply ? 1 : 0); }).join(','); };
+  var pageLang = document.documentElement.getAttribute('lang') || '';   // a screen's language is in its address, not a cookie
+  function askBoard() {
+    if (asking || !window.fetch) return; asking = true;
+    fetch('/api/board?lang=' + encodeURIComponent(pageLang) + (boardV ? '&v=' + encodeURIComponent(boardV) : ''), { cache: 'no-store', credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d) return;
+        if (d.version) boardV = String(d.version);
+        if (typeof d.cards !== 'string') return;                     // nothing new since the version it had
+        var ex = fromCards(d.cards);
+        if (exKey(ex) !== exKey(model.ex)) { model.ex = ex; renew(); }
+      })
+      .catch(function () { /* the sky keeps what it has */ })
+      .then(function () { asking = false; });
+  }
   if (latest && window.MutationObserver && window.fetch) {
-    new MutationObserver(function () {
-      if (asking) return; asking = true;
-      fetch('/api/board', { cache: 'no-store', credentials: 'same-origin' })
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (d) { if (d && typeof d.cards === 'string') { model.ex = fromCards(d.cards); renew(); } })
-        .catch(function () { /* the sky keeps what it has */ })
-        .then(function () { asking = false; });
-    }).observe(latest, { childList: true, characterData: true, subtree: true });
+    new MutationObserver(askBoard).observe(latest, { childList: true, characterData: true, subtree: true });
+  } else if (window.fetch) {
+    // no communication room on this page to watch (the first page and the landing screen have none since the dome went):
+    // the board asked once a minute, with the version it has — the cards come back only when something is new — so an
+    // exchange answered in the evening reaches the sky the same evening, not at the next midnight's reload (14 October)
+    setInterval(function () { if (!document.hidden) askBoard(); }, 60000);
   }
 
   /* ------------------------------------------------------------ new pictures, as the Habitat panel's strip changes */

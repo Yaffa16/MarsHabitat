@@ -7,8 +7,10 @@ module.exports = function cookies(req, res, next) {
     for (const part of header.split(';')) {
       const i = part.indexOf('=');
       if (i < 0) continue;
-      const k = part.slice(0, i).trim();
-      if (k) req.cookies[k] = decodeURIComponent(part.slice(i + 1).trim());
+      const k = part.slice(0, i).trim(), v = part.slice(i + 1).trim();
+      // a cookie that is not percent-encoded as it should be (x=50%, set by another site on the same domain) is taken
+      // as it stands: decoding it threw, and every address answered 500 to that browser
+      if (k) { try { req.cookies[k] = decodeURIComponent(v); } catch { req.cookies[k] = v; } }
     }
   }
   res.cookie = (name, value, opts = {}) => {

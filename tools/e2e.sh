@@ -772,7 +772,7 @@ echo "$ABOUTFR" | grep -q '<p>Dans le cadre du projet MARS! – Mobilizing Aware
   && ok "the About page in French is October's text, set in its paragraphs — the workshops and the exhibition linked in their sentence, the distance the station's own, Pourquoi faisons-nous cela ?, L’Habitat – Red Dust City, Le changement de perspective, Messages envoyés dans l’espace, Qui sommes-nous ? — and the English keeps its paragraphs as they were" || bad "the About page's French is not October's text"
 # the About page, pared down: no "At this moment" panel, no "What is kept", no row of message states; the path of a message
 # in six steps — Write, Transmit, Reached MARS!platz, Pending approval, Transmitted to space, Replied back; under Who we are
-# the crew without a heading or a note over them, the credits without a heading, and no "Reach the production"
+# the crew without a heading or a note over them, and no "Reach the production"
 ! echo "$ABOUT" | grep -q 'At this moment</div>' && ! echo "$ABOUT" | grep -q 'What is kept' && ! echo "$ABOUT" | grep -q 'Message states as shown in the interface' && ! echo "$ABOUT" | grep -q 'class="pipe' \
   && ! echo "$ABOUT" | grep -q 'Inside the habitat' && ! echo "$ABOUT" | grep -q 'addressed by designation' && ! echo "$ABOUT" | grep -q 'Outside the habitat' && ! echo "$ABOUT" | grep -q 'Reach the production' && ! echo "$ABOUT" | grep -q 'Replace these entries' \
   && ok "the About page no longer carries At this moment, What is kept, the row of states, Inside/Outside the habitat, the crew's note or Reach the production" || bad "a removed About panel is still on the page"
@@ -788,21 +788,14 @@ echo "$ABOUTFR" | grep -q '<p>Dans le cadre du projet MARS! – Mobilizing Aware
   && echo "$ABOUT" | grep -q '<img src="/crew/benetschik.jpg"' && echo "$ABOUT" | grep -q '<figcaption>Laura Benetschik</figcaption>' && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/benetschik.jpg)" = "200" ] \
   && echo "$ABOUT" | grep -q '<img src="/crew/eger.jpg"' && echo "$ABOUT" | grep -q '<figcaption>Ralf Eger</figcaption>' && [ "$(curl -s -o /dev/null -w '%{http_code}' $B/crew/eger.jpg)" = "200" ] \
   && ok "Who we are carries none of the old placeholder credits, and the crew's sixteen portraits, each with a name — Franziska Klöck (kloeck.jpg), Finn Milbrandt, Laura Benetschik and Ralf Eger (14 October) among them, and the robot dog, Robodog, after the people" || bad "the old credits are still there, or the portraits are not, or they carry no names"
-# the credits for the website and the Panolab at ZKM (14 October: "in the About page, add a credits list to the website and
-# Panolab at ZKM, in alphabetical order of their last name"): under Who we are, between the crew and the production — the
-# names in the order of the surnames (Schütze among the S, Gerigk as the crew list spells him), SpaceSpeak among them (linked
-# once on the page, in About)
-node -e '
-const h = process.argv[1];
-const i = h.indexOf("<ul class=\"credits-list\">"), j = h.indexOf("</ul>", i);
-const names = [...h.slice(i, j).matchAll(/<li>([\s\S]*?)<\/li>/g)].map((m) => m[1].replace(/<[^>]+>/g, ""));
-const want = ["Götz Dipper", "Jan Gerigk", "Yasha Jain", "Johannes Jensen", "Andy Koch", "Andreas Kugel", "Bernd Lintermann", "Tina Lorenz", "Finn Milbrandt", "Marc Schütze", "Volker Sommerfeld", "SpaceSpeak", "Dan Wilcox"];
-const crew = h.indexOf("class=\"crew-wall\""), prod = h.indexOf("<div class=\"eyebrow\">Produced by</div>");
-process.exit(i > -1 && JSON.stringify(names) === JSON.stringify(want) && crew > -1 && crew < i && i < prod
-  && h.includes("<li><b>SpaceSpeak</b></li>") && h.includes("<div class=\"eyebrow\">Website and Panolab at ZKM</div>") ? 0 : 1);
-' "$ABOUT" && curl -s -H "Cookie: mcs_lang=de" $B/about | grep -q '<div class="eyebrow">Website und Panolab am ZKM</div>' && curl -s -H "Cookie: mcs_lang=fr" $B/about | grep -q '<div class="eyebrow">Site web et Panolab au ZKM</div>' \
-  && grep -qF '.credits-list { margin: 0; padding: 0; list-style: none; columns: 3 12em; column-gap: 32px; }' public/station.css \
-  && ok "About credits the website and the Panolab at ZKM under Who we are — thirteen names in the order of the surnames, Dipper to Wilcox, SpaceSpeak among them — the heading in the three languages" || bad "the credits for the website and the Panolab are not on the About page as they should be"
+# no credits on the site (15 October: "Remove credits from the website"): the list for the website and the Panolab at ZKM
+# that stood under Who we are from 14 October is gone in every language, with its heading, its words and its styles; the
+# crew's portraits and the production with its partners stay
+ABOUTDE=$(curl -s -H "Cookie: mcs_lang=de" $B/about); ABOUTFR=$(curl -s -H "Cookie: mcs_lang=fr" $B/about)
+! echo "$ABOUT$ABOUTDE$ABOUTFR" | grep -q 'credits-list\|Website and Panolab at ZKM\|Website und Panolab am ZKM\|Site web et Panolab au ZKM\|SpaceSpeak</b>' \
+  && ! echo "$ABOUT" | grep -q 'mars-side credits' && ! grep -q 'credits-list' public/station.css && ! grep -q 'Website and Panolab at ZKM' src/lib/i18n.js && ! grep -q 'const CREDITS' src/views/pages/info.js \
+  && echo "$ABOUT" | grep -q 'class="crew-wall"' && echo "$ABOUT" | grep -q '<div class="eyebrow">Produced by</div>' && echo "$ABOUTDE" | grep -q 'class="crew-wall"' \
+  && ok "no credits on the website any more — the list for the website and the Panolab at ZKM is gone from About in every language, with its words and styles; the crew's portraits and the production stay (15 October)" || bad "the credits are still on the website"
 # Who we are without its CREW panel (8 October: "from the About page, under Who we are, remove the Crew tab with all the
 # text") — the three officers of the day, their briefs, portraits and states, stood first there; the crew's portraits and
 # the producer stay, and the dashboard's Crew Moods keeps the officers' role lines; the producer's line names the department
@@ -1920,12 +1913,13 @@ grep -aq "/Subtype /Image" /tmp/record3.pdf && ok "the PDF record carries the ph
 curl -s $B/dashboard | grep -q "PLACEHOLDER" && bad "a placeholder marker reached the station" || ok "placeholder markers never reach the station"
 curl -s $B/dashboard | grep -q "Drinking water" && ok "inventory names come from the file" || bad "inventory names missing"
 # the stores (13 October: "replace Medical Kit and Fire Extinguisher with Tampons, starting amount 80, and Toilet paper,
-# starting amount 14"; 14 October: "Change the Default toilet paper rolls to 20")
+# starting amount 14"; 14 October: "Change the Default toilet paper rolls to 20"; 15 October: "The toilet paper roll should be
+# 60 to start with")
 DST=$(curl -s $B/dashboard)
-echo "$DST" | grep -q 'title="Tampons: 80 pcs of 80"' && echo "$DST" | grep -q 'title="Toilet paper: 20 rolls of 20"' \
-  && node -e 'const f = (p) => require(p).inventory.find((x) => x.key === "toilet_paper").start; process.exit(f(process.argv[1]) === 20 && f(process.argv[2]) === 20 ? 0 : 1)' "$PWD/content/crew-and-inventory.json" "$PWD/content/plan/crew-and-inventory.json" \
+echo "$DST" | grep -q 'title="Tampons: 80 pcs of 80"' && echo "$DST" | grep -q 'title="Toilet paper: 60 rolls of 60"' \
+  && node -e 'const f = (p) => require(p).inventory.find((x) => x.key === "toilet_paper").start; process.exit(f(process.argv[1]) === 60 && f(process.argv[2]) === 60 ? 0 : 1)' "$PWD/content/crew-and-inventory.json" "$PWD/content/plan/crew-and-inventory.json" \
   && ! echo "$DST" | grep -q 'Medical kits\|Fire extinguishers' && grep -q '"key": "toilet_paper"' content/plan/crew-and-inventory.json && ! grep -q '"key": "medical"\|"key": "extinguishers"' content/crew-and-inventory.json content/plan/crew-and-inventory.json \
-  && ok "the Resources: drinking water, food rations, tampons (80 carried in) and toilet paper (20 rolls — 14 until 14 October) — no medical kits or fire extinguishers, in the plan too" || bad "the stores are not water, rations, tampons and toilet paper"
+  && ok "the Resources: drinking water, food rations, tampons (80 carried in) and toilet paper (60 rolls — 14 until 14 October, 20 until 15 October) — no medical kits or fire extinguishers, in the plan too" || bad "the stores are not water, rations, tampons and toilet paper"
 
 node -e '
 const fs=require("fs"),p=process.env.CONTENT_DIR+"/schedule.json";
@@ -2772,11 +2766,11 @@ grep -q "location.reload" public/screen.js && grep -q "venueDate() !== day0" pub
   && grep -qF "var day0 = venueDate(), built = document.body.getAttribute('data-v') || '', due = false;" public/screen.js \
   && grep -qF "function reloadWhenFree() { if (busy()) { due = true; return; } due = false; reload(); }" public/screen.js \
   && grep -qF ".then(function (j) { if (j && j.v && String(j.v) !== built) reloadWhenFree(); })" public/screen.js \
-  && grep -qF "setInterval(function () { if (venueDate() !== day0) reloadWhenFree(); }, 30000);" public/screen.js \
+  && grep -qF "setInterval(function () { if (venueDate() !== day0) reloadIfUp(); }, 30000);" public/screen.js && grep -qF ".then(function (r) { if (r.ok) reloadWhenFree(); })" public/screen.js \
   && V9=$(echo "$SCRV" | grep -o 'data-v="[0-9a-z]*"' | head -1 | cut -d'"' -f2) && [ -n "$V9" ] \
   && [ "$(curl -s -o /dev/null -w '%{http_code}' "$B/api/screens/version")" = "200" ] && curl -s "$B/api/screens/version" | grep -q "\"v\":\"$V9\"" \
   && echo "$SCRV" | grep -q "/screen.js?v=$V9" \
-  && ok "no screen reloads on a timer: only when the station has been started anew — the page's version (data-v) against /api/screens/version — and at the venue's midnight, waiting for anyone writing" || bad "the screens still reload on a timer, or cannot tell a new station"
+  && ok "no screen reloads on a timer: only when the station has been started anew — the page's version (data-v) against /api/screens/version — and at the venue's midnight — that one, too, only once the station answers (14 October) —, waiting for anyone writing" || bad "the screens still reload on a timer, or cannot tell a new station"
 # the landing screen is the first page as the site has it now: the way to the habitat, with the sky, under the ticker
 curl -s -b $SK "$B/screen/landing?lang=en" | grep -q '<div class="space-room" id="space-room">' && curl -s -b $SK "$B/screen/landing?lang=en" | grep -q 'id="dome-sky-data"' && ! curl -s -b $SK "$B/screen/landing" | grep -q 'id="habitat-dome"' \
   && ok "the landing screen shows the way to the habitat — the Earth, the line, the sky around it — under the ticker" || bad "the landing screen is not the first page"
@@ -4390,6 +4384,16 @@ SRV6=$!
 sleep 3
 curl -s http://localhost:8098/api/ticker | grep -q '"phase":"COMPLETE"' && curl -s http://localhost:8098/api/ticker | grep -q '"open":false' && curl -s http://localhost:8098/write | grep -q 'CHANNEL CLOSED' \
   && ok "the day after the run the station is closed — the channel and the desk closed at the last day's midnight" || bad "the day after the run the station is still open"
+# a post to the closed channel is refused before a writer is named — no visitor is minted for it, so the record's count
+# of visitors stops with the run — and the slowest chat on the first page offers no Write to the crew any more: the
+# composer it led to is closed (14 October)
+VB6=$(DATA_DIR="$DATA6" node -e 'console.log(require("./src/db").db.prepare("SELECT COUNT(*) n FROM visitor").get().n)')
+curl -s -o /dev/null -X POST -d "body=Anyone there after the close?" http://localhost:8098/communicate
+VA6=$(DATA_DIR="$DATA6" node -e 'console.log(require("./src/db").db.prepare("SELECT COUNT(*) n FROM visitor").get().n)')
+LAND6=$(curl -s -H 'Cookie: mcs_lang=en' http://localhost:8098/)
+[ -n "$VB6" ] && [ "$VB6" = "$VA6" ] && [ "$(DATA_DIR="$DATA6" node -e 'console.log(require("./src/db").db.prepare("SELECT COUNT(*) n FROM message").get().n)')" = "0" ] \
+  && echo "$LAND6" | grep -q 'id="slowest-chat"' && ! echo "$LAND6" | grep -q 'class="sheet-cta"' \
+  && ok "after the close a post mints no visitor and takes no message, and the first page's slowest chat stands without its Write to the crew key" || bad "after the close a post still mints a visitor, or the first page still offers to write"
 kill $SRV6 2>/dev/null; wait $SRV6 2>/dev/null
 rm -rf "$DATA6" "$CONT6"
 
@@ -4522,9 +4526,28 @@ grep -qF 'const tagW = 20 + text.length * 8.4;' src/views/pages/public.js && gre
 # (9 October: the Power chart's legend names its lines alone — "remove the low and high from the description below it";
 # the other charts keep the day's low and high)
 echo "$LAND3H" | grep -q '<li><i style="background:[^"]*"></i><span class="hw-name">Crickets</span></li>' && echo "$LAND3H" | grep -q '<span class="hw-name">Food</span></li>' \
-  && echo "$LAND3H" | grep -q '<span class="hw-name">Cricket Terrarium Temperature</span><span class="hw-range">low [0-9.]* · high [0-9.]*</span></li>' \
+  && echo "$LAND3H" | grep -q '<span class="hw-name">Cricket Terrarium Temperature</span><span class="hw-range">low [0-9.]* · high [0-9.]* · OK 25–35 °C</span></li>' \
   && ! echo "$LAND3H" | grep -q 'hw-name">Crickets · power draw' && echo "$LAND3H" | grep -q '<title>Crickets · power draw</title>' && ! echo "$LAND3H" | grep -q 'hw-val' \
   && ok "the legend names each line with its low and high for the day, and no reading beside it — Crickets, Food, the shared · power draw dropped (the line's tooltip keeps it)" || bad "the legend still carries the reading, lost its range, or keeps the shared suffix"
+# the cricket terrarium's range of normal readings (15 October: "The cricket temp range of ok should be 25-35, above that
+# show red"): ok [25, 35] in content/home-assistant.json, its chart 0–40 — the band shaded, its upper limit a fine red line;
+# at 22.4 °C nothing red. Readings of 36.8 °C come in (two minutes of them, so the hour's mean is above 35 too): the stretch
+# of the line above 35 is drawn again in red, the end and the figure's pill red, the day's high in the legend red, and At a
+# Glance's tile red; gone again, all as it was
+node -e 'const c = require(process.argv[1]).sensors.find((x) => x.id === "m5_temperatur_cricket_temperature"); process.exit(JSON.stringify(c.ok) === "[25,35]" && JSON.stringify(c.range) === "[0,40]" ? 0 : 1)' "$PWD/content/home-assistant.json" \
+  && CRK=$(echo "$LAND3H" | node -e 'let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const f = s.split("<figure class=\"hw-chart hw-temperature\"")[1] || ""; process.stdout.write(f.split("</figure>")[0]); });') \
+  && echo "$CRK" | grep -q '<rect x="[0-9.]*" y="[0-9.]*" width="[0-9.]*" height="[0-9.]*" class="hw-ok"><title>OK 25–35 °C</title></rect>' && echo "$CRK" | grep -q 'class="hw-limit"' \
+  && echo "$CRK" | grep -q 'class="hw-line hw-over" stroke="#e0322b"' && echo "$CRK" | grep -q 'clip-path="url(#hwg-temperature-0-over)"' && echo "$CRK" | grep -q '<clipPath id="hwg-temperature-0-over">' \
+  && ! echo "$CRK" | grep -q 'hw-tag is-over\|fill="#e0322b" class="hw-end"\|hw-over-t' && echo "$CRK" | grep -q 'class="hw-ax">40</text>' \
+  && grep -q 'body.landing .hw-ok { fill: rgba(var(--cobalt-rgb),.09); }' public/aura.css && grep -q 'body.landing .hw-limit { stroke: #e0322b;' public/aura.css \
+  && DATA_DIR="$DATA3" node -e 'const { db } = require("./src/db"); const ins = db.prepare("INSERT OR IGNORE INTO ha_reading (entity, t, value, state, unit) VALUES (?, ?, ?, ?, ?)"); for (let k = 1; k <= 25; k++) ins.run("m5_temperatur_cricket_temperature", Date.now() - k * 5000, 36.8, "36.8", "°C");' \
+  && HOT3=$(curl -s $B3/dashboard | node -e 'let s = ""; process.stdin.on("data", (c) => s += c).on("end", () => { const f = s.split("<figure class=\"hw-chart hw-temperature\"")[1] || ""; process.stdout.write(f.split("</figure>")[0]); });') \
+  && echo "$HOT3" | grep -q '<g class="hw-tag is-over"><rect x="[0-9.]*" y="[0-9.]*" width="[0-9.]*" height="26" rx="13" fill="#e0322b"/>' && echo "$HOT3" | grep -q 'dominant-baseline="central">36.8 °C</text></g>' \
+  && echo "$HOT3" | grep -q 'r="4.2" fill="#e0322b" class="hw-end"' && echo "$HOT3" | grep -q '<span class="hw-over-t">high 3[0-9.]*</span> · OK 25–35 °C' \
+  && curl -s $B3/at-a-glance | tr -d '\n' | grep -q '<div class="glance-tile is-over">    <span class="gt-label">Cricket Terrarium Temperature</span>    <span class="gt-value">36.8<em>°C</em>' \
+  && DATA_DIR="$DATA3" node -e 'const { db } = require("./src/db"); db.prepare("DELETE FROM ha_reading WHERE entity = ? AND value = 36.8").run("m5_temperatur_cricket_temperature");' \
+  && ! curl -s $B3/dashboard | grep -q 'hw-tag is-over' && ! curl -s $B3/at-a-glance | grep -q 'glance-tile is-over' \
+  && ok "the cricket terrarium's range is 25–35 °C — the band shaded on its chart (0–40), the limit a red line; above 35 the line, its end, the figure's pill, the day's high and At a Glance's tile are red; inside it nothing is" || bad "the cricket terrarium's 25–35 °C range or its red above 35 is not shown as it should be"
 # the charts fill their tiles: drawn for the width the page asks for (?w=, hardware.js measures its tiles — the type
 # keeps its size on a desk and on a phone alike), 720 wide until it does; the legend's lines side by side under the plot;
 # the folder the whole width of the dashboard at every desk width
@@ -5025,6 +5048,78 @@ echo "$L61" | grep -q '/write?err=Too%20many%20transmissions%20from%20your%20pos
 kill $SRV3 2>/dev/null; wait $SRV3 2>/dev/null
 kill $MOCK 2>/dev/null; wait $MOCK 2>/dev/null
 rm -rf "$DATA3" "$CONT3"
+
+echo "── before the doors open: what the test of the whole build found (14 October)"
+# 14 October, the day before the run: "test the entire code for any issues as a final build before deployment" — the
+# PC's own files through this suite, a browser, a fake clock across the run's dates and three readers of the code. What
+# they found, each put right and checked here: the livestream's radio server cutting a playlist off took the station's
+# process down; one cookie not percent-encoded made every address answer 500; /screen/constructor answered with the
+# page's context; ?hours=abc answered 500; wrong passwords at the desk were never held back; a message mission control
+# rejected stayed on the square's board; and on the browser's side the pages asked the station every ten seconds all
+# run long, the desk's poll multiplied, a screen could reload itself onto an error page, the first page's sky never
+# learnt a new exchange, and after the close the first page still offered to write to the crew.
+DATA7=$(mktemp -d); CONT7=$(mktemp -d); cp content/*.json "$CONT7"/
+# a radio server that sends the playlist's head and then drops the line
+node -e 'require("http").createServer((q, s) => { s.writeHead(200, { "Content-Type": "application/vnd.apple.mpegurl", "Content-Length": "5000" }); s.write("#EXTM3U\n#EXT-X-VERSION:3\n"); setTimeout(() => q.socket.destroy(), 150); }).listen(8128, "127.0.0.1")' > /dev/null 2>&1 &
+MOCK7=$!
+DATA_DIR="$DATA7" CONTENT_DIR="$CONT7" node src/db/seed.js > /dev/null 2>&1
+DATA_DIR="$DATA7" CONTENT_DIR="$CONT7" PORT=8127 CRITICAL_POLL=false HA_POLL=false CLOUD_POLL=false SPACESPEAK_ENABLED=false SCREENS_USER= SCREENS_PASSWORD= \
+  LIVESTREAM_URL=http://127.0.0.1:8128/hls/stream.m3u8 node src/server.js > /tmp/srv-prelaunch.log 2>&1 &
+SRV7=$!
+sleep 3
+B7=http://localhost:8127
+C7=$(curl -s -o /dev/null -w '%{http_code}' $B7/screen/livestream/stream.m3u8); S7=$(curl -s -o /dev/null -w '%{http_code}' $B7/screen/livestream/seg-1.ts); sleep 1
+[ "$C7" = "502" ] && [ "$S7" = "502" ] && kill -0 $SRV7 2>/dev/null && [ "$(curl -s $B7/healthz)" = "ok" ] \
+  && grep -qF "process.on('unhandledRejection', (e) => console.error('[MCS] unhandled refusal:', (e && e.stack) || e));" src/server.js \
+  && grep -qF "liveProxy(res, u).catch(() => liveGone(res));" src/server.js \
+  && ok "a livestream cut off half-way — the playlist or a segment — answers 502 and the station runs on (it ended the station's process until 14 October); a refusal nobody catches is logged, never the end of the process" || bad "a livestream cut off half-way still takes the station down"
+[ "$(curl -s -o /dev/null -w '%{http_code}' -H 'Cookie: x=50%; mcs_lang=en' $B7/)" = "200" ] && [ "$(curl -s -o /dev/null -w '%{http_code}' -H 'Cookie: x=%E0%A4%A' $B7/aura.css)" = "200" ] \
+  && curl -s -H 'Cookie: junk=%zz; mcs_lang=fr' $B7/ | grep -q '<html lang="fr"' \
+  && ok "a cookie that is not percent-encoded (x=50%, as another site on the domain may set) is taken as it stands — every address answered 500 to that browser until 14 October — and the cookies beside it are still read" || bad "a malformed cookie still breaks the site"
+SC7=""; for n in constructor __proto__ toString hasOwnProperty valueOf; do SC7="$SC7$(curl -s -o /dev/null -w '%{http_code}' $B7/screen/$n)"; done
+[ "$SC7" = "404404404404404" ] && ! curl -s $B7/screen/constructor | grep -q '"mission":' && [ "$(curl -s -o /dev/null -w '%{http_code}' $B7/screen/board)" = "200" ] \
+  && ok "a screen is found by its own name only: /screen/constructor, /screen/__proto__ and the like answer with the list (404) — the first answered with the page's context as JSON" || bad "a name every object carries still opens something under /screen"
+H7=""; for q in abc 1e300 -5 0 99999; do H7="$H7$(curl -s -o /dev/null -w '%{http_code}' "$B7/api/sensors/history?metric=co2&hours=$q")$(curl -s -o /dev/null -w '%{http_code}' "$B7/api/hardware/readings?hours=$q")"; done
+[ "$H7" = "200200200200200200200200200200" ] && curl -s "$B7/api/hardware/readings?hours=48" | grep -q '"since":"' \
+  && ok "?hours= that is no number of hours (abc, 1e300, -5, 0) is the default and a great one the most allowed — never a 500; ?hours=48 still reaches back" || bad "?hours= still answers 500"
+# the square's board: what the writing screen sends stands on it at once, until mission control rejects it
+A7=/tmp/admin7.jar; rm -f $A7
+curl -s -c $A7 -o /dev/null -d "username=$CONTROL_USER&password=$CONTROL_PASSWORD" $B7/control/login
+curl -s -o /dev/null -d 'body=From the square, to be rejected' $B7/screen/write
+curl -s -o /dev/null -d 'body=From the square, to be kept' $B7/screen/write
+R7B=$(curl -s "$B7/api/board?station=1&lang=en" | grep -c 'to be rejected')
+R7ID=$(DATA_DIR="$DATA7" node -e 'console.log(require("./src/db").db.prepare("SELECT id FROM message WHERE body = ?").get("From the square, to be rejected").id)')
+curl -s -b $A7 -o /dev/null -X POST $B7/control/$R7ID/reject
+[ "$R7B" = "1" ] && [ "$(DATA_DIR="$DATA7" node -e 'console.log(require("./src/db").db.prepare("SELECT state FROM message WHERE id = ?").get(Number(process.argv[1])).state)' "$R7ID")" = "REJECTED" ] \
+  && ! curl -s "$B7/api/board?station=1&lang=en" | grep -q 'to be rejected' && ! curl -s "$B7/screen/board?lang=en" | grep -q 'to be rejected' \
+  && curl -s "$B7/api/board?station=1&lang=en" | grep -q 'From the square, to be kept' \
+  && ok "a message from the writing screen stands on the square's board at once, and leaves it when mission control rejects it — it stood there marked ABGELEHNT until 14 October, and only Delete took it away" || bad "a rejected message is still on the square's board"
+# the desk's sign-in: twenty wrong passwords within a minute, for the whole station, and the twenty-first is not even worked out
+W7=""; for i in $(seq 1 21); do W7="$W7 $(curl -s -o /dev/null -w '%{http_code}' -d "username=$CONTROL_USER&password=not-the-password" $B7/control/login)"; done
+[ "$(echo $W7 | tr ' ' '\n' | grep -c '^401$')" = "20" ] && [ "$(echo $W7 | awk '{print $NF}')" = "429" ] \
+  && curl -s -d "username=$CONTROL_USER&password=not-the-password" $B7/control/login | grep -q 'Too many wrong tries just now. Wait a minute and try again.' \
+  && curl -s -b $A7 $B7/control | grep -q 'id="queue"' \
+  && grep -qF "const WRONG_MAX = 20, WRONG_WINDOW_MS = 60 * 1000;" src/routes/control.js \
+  && grep -qF "const caught = (fn) => (req, res, next) => Promise.resolve().then(() => fn(req, res, next)).catch(next);" src/routes/control.js \
+  && grep -qF "router.get('/media/verify', caught(async (req, res) => {" src/routes/control.js && [ "$(grep -c '}), caught(async (req, res) => {' src/routes/control.js)" = "2" ] \
+  && grep -qF '[ "${CONTROL_PASSWORD:-${ADMIN_PASSWORD:-}}" = "change-this-before-opening" ]' docker-entrypoint.sh \
+  && ok "the desk's sign-in holds back a flood of guesses — after twenty wrong passwords within a minute it answers 429 for the rest of it, the operator already signed in untouched; the desk's handlers that wait hand their errors to Express; the container warns about .env.example's passphrase too" || bad "the desk's sign-in still takes guesses without end"
+kill $SRV7 2>/dev/null; wait $SRV7 2>/dev/null
+kill $MOCK7 2>/dev/null; wait $MOCK7 2>/dev/null
+rm -rf "$DATA7" "$CONT7"
+# the browser's side: the running line asks every ten seconds only in the minute either side of the opening (every five
+# minutes otherwise — it went on asking every ten seconds all run long, from every open page); the desk's poll is one
+# chain however often the tab is left; a screen reloads at midnight, and the writing screen asks for its fresh composer,
+# only once the station answers; the first page's sky asks the board once a minute where no communication room tells it
+# of a new exchange; a resize listener goes with its crossing
+grep -qF "if (left < 60000 && left > -60000) refetch();" src/views/pages/public.js && grep -qF "timers.push(setInterval(refetch, 5 * 60 * 1000));" src/views/pages/public.js \
+  && grep -qF "function later() { clearTimeout(timer); timer = setTimeout(poll, wait); }" public/control.js && grep -qF ".then(function () { asking = false; later(); });" public/control.js \
+  && grep -qF ".then(function (r) { if (r.ok) reloadWhenFree(); })" public/screen.js \
+  && grep -qF ".catch(function () { setTimeout(refresh, 10000); });" public/composer.js && ! grep -qF ".catch(function () { window.location.reload(); });" public/composer.js \
+  && grep -qF "var refit = function () { if (block.isConnected) fitWord(clock); else window.removeEventListener('resize', refit); };" public/composer.js \
+  && grep -qF "setInterval(function () { if (!document.hidden) askBoard(); }, 60000);" public/sky.js && grep -qF "if (exKey(ex) !== exKey(model.ex)) { model.ex = ex; renew(); }" public/sky.js \
+  && grep -qF "if (tries.size > 1000) for (const [k, v] of tries)" src/lib/screens-auth.js \
+  && ok "in the browser: the running line asks every ten seconds only round the opening; the desk's poll stays one chain; screens reload and the writing screen refreshes only once the station answers; the first page's sky learns new exchanges once a minute; the screens' door forgets old wrong tries" || bad "a browser-side fix of 14 October is missing"
 
 echo
 [ $FAIL -eq 0 ] && echo "ALL CHECKS PASSED" || echo "SOME CHECKS FAILED"
